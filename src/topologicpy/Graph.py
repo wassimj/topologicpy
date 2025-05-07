@@ -65,6 +65,20 @@ except:
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
 
+try:
+    from graphviz import Digraph
+except:
+    print("Graph - Installing required graphviz library.")
+    try:
+        os.system("pip install graphviz")
+    except:
+        os.system("pip install graphviz --user")
+    try:
+        from graphviz import Digraph
+        print("Graph - graphviz library installed correctly.")
+    except:
+        warnings.warn("Graph - Error: Could not import graphviz.")
+    
 GraphQueueItem = namedtuple('GraphQueueItem', ['edges'])
 
 class WorkerProcessPool(object):
@@ -1417,7 +1431,7 @@ class Graph:
         from topologicpy.Helper import Helper
 
         if weightKey:
-            if "len" in weightKey.lower() or "dis" in wireightKey.lower():
+            if "len" in weightKey.lower() or "dis" in weightKey.lower():
                 weightKey = "length"
         nx_graph = Graph.NetworkXGraph(graph)
         if "vert" in method.lower():
@@ -5566,7 +5580,7 @@ class Graph:
 
         """
         import numpy as np
-        adj_matrix = Graph.AdjacencyMatrix(g)
+        adj_matrix = Graph.AdjacencyMatrix(graph)
         np_adj_matrix = np.array(adj_matrix)
         degree_matrix = np.diag(np_adj_matrix.sum(axis=1))
         return degree_matrix.tolist()
@@ -6125,7 +6139,7 @@ class Graph:
             format = "turtle"
             ext = ".ttl"
         n = len(ext)
-        # Make sure the file extension is .brep
+        # Make sure the file extension is .bot
         ext = path[len(path)-n:len(path)]
         if ext.lower() != ext:
             path = path+ext
@@ -6674,7 +6688,7 @@ class Graph:
         if not isinstance(path, str):
             print("Graph.ExportToGEXF - Error: the input path parameter is not a valid string. Returning None.")
             return None
-        # Make sure the file extension is .brep
+        # Make sure the file extension is .gexf
         ext = path[len(path)-5:len(path)]
         if ext.lower() != ".gexf":
             path = path+".gexf"
@@ -6868,6 +6882,243 @@ class Graph:
 
         create_gexf_file(nodes, edges, defaultEdgeType, node_attributes, edge_attributes, path)
         return True
+
+    @staticmethod
+    def ExportToGraphVizGraph(graph,
+                              path,
+                              device = 'svg_inline', deviceKey=None,
+                              scale = 1, scaleKey=None,
+                              directed=False, directedKey=None,
+        layout = 'dot', # or circo fdp neato nop nop1 nop2 osage patchwork sfdp twopi
+        layoutKey=None,
+        rankDir='TB', rankDirKey=None, # or LR, RL, BT
+        bgColor='white', bgColorKey=None,
+        fontName='Arial', fontNameKey=None,
+        fontSize= 12, fontSizeKey=None,
+        vertexSep= 0.5, vertexSepKey=None,
+        rankSep= 0.5, rankSepKey=None,
+        splines='True', splinesKey=None,
+        showGraphLabel = False,
+        graphLabel='', graphLabelKey=None,
+        graphLabelLoc='t', graphLabelLocKey=None,
+        showVertexLabel = False,
+        vertexLabelPrefix='' , vertexLabelKey=None,
+        vertexWidth=0.5, vertexWidthKey=None,
+        vertexHeight=0.5, vertexHeightKey=None,
+        vertexFixedSize=False, vertexFixedSizeKey=None,
+        vertexShape='circle', vertexShapeKey=None,
+        vertexStyle='filled', vertexStyleKey=None,
+        vertexFillColor='lightgray', vertexFillColorKey=None,
+        vertexColor='black', vertexColorKey=None,
+        vertexFontColor='black', vertexFontColorKey=None,
+        showEdgeLabel = False,
+        edgeLabelPrefix='', edgeLabelKey=None,
+        edgeColor='black', edgeColorKey=None,
+        edgeWidth=1, edgeWidthKey=None,
+        edgeStyle='solid', edgeStyleKey=None,
+        edgeArrowhead='normal', edgeArrowheadKey=None,
+        edgeFontColor='black', edgeFontColorKey=None,
+        overwrite=False,
+        silent=False):
+        """
+        Exports the input graph to a GraphViz `.gv` (dot) file.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        path : str
+            The path to the output file (e.g., "output.gv").
+        device : str, optional
+            The output format device, such as 'svg_inline', 'pdf', or 'png'. The default is 'svg_inline'.
+        deviceKey : str, optional
+            Dictionary key to override the `device` value. Default is None.
+        scale : float, optional
+            Global scaling factor. Default is 1.
+        scaleKey : str, optional
+            Dictionary key to override the `scale` per-graph. Default is None.
+        directed : bool, optional
+            Whether to treat the graph as directed. Default is False.
+        directedKey : str, optional
+            Dictionary key to override the `directed` flag per-graph. Default is None.
+        layout : str, optional
+            Layout engine to use. Options include 'dot', 'circo', 'fdp', 'neato', 'osage', 'sfdp', etc. Default is 'dot'.
+        layoutKey : str, optional
+            Dictionary key to override the `layout` per-graph. Default is None.
+        rankDir : str, optional
+            Direction of graph ranking. Options: 'TB' (top-bottom), 'LR' (left-right), 'RL', 'BT'. Default is 'TB'.
+        rankDirKey : str, optional
+            Dictionary key to override `rankDir` per-graph. Default is None.
+        bgColor : str, optional
+            Background color. Default is 'white'.
+        bgColorKey : str, optional
+            Dictionary key to override `bgColor`. Default is None.
+        fontName : str, optional
+            Name of the font to use for all text. Default is 'Arial'.
+        fontNameKey : str, optional
+            Dictionary key to override `fontName`. Default is None.
+        fontSize : int or float, optional
+            Size of font in points. Default is 12.
+        fontSizeKey : str, optional
+            Dictionary key to override `fontSize`. Default is None.
+        vertexSep : float, optional
+            Minimum separation between vertices. Default is 0.5.
+        vertexSepKey : str, optional
+            Dictionary key to override `vertexSep`. Default is None.
+        rankSep : float, optional
+            Separation between ranks. Default is 0.5.
+        rankSepKey : str, optional
+            Dictionary key to override `rankSep`. Default is None.
+        splines : str, optional
+            Whether to use spline edges. Can be 'true', 'false', or 'polyline'. Default is 'True'.
+        splinesKey : str, optional
+            Dictionary key to override `splines`. Default is None.
+        showGraphLabel : bool, optional
+            Whether to show a label for the whole graph. Default is False.
+        graphLabel : str, optional
+            Text for the graph label. Default is an empty string.
+        graphLabelKey : str, optional
+            Dictionary key to override `graphLabel`. Default is None.
+        graphLabelLoc : str, optional
+            Position of the graph label: 't' (top), 'b' (bottom), 'c' (center). Default is 't'.
+        graphLabelLocKey : str, optional
+            Dictionary key to override `graphLabelLoc`. Default is None.
+        showVertexLabel : bool, optional
+            Whether to display vertex labels. Default is False.
+        vertexLabelPrefix : str, optional
+            Text prefix for vertex labels. Default is empty string.
+        vertexLabelKey : str, optional
+            Dictionary key used to retrieve label text from vertex dictionary. Default is None.
+        vertexWidth : float, optional
+            Width of each vertex. Default is 0.5.
+        vertexWidthKey : str, optional
+            Dictionary key to override `vertexWidth`. Default is None.
+        vertexHeight : float, optional
+            Height of each vertex. Default is 0.5.
+        vertexHeightKey : str, optional
+            Dictionary key to override `vertexHeight`. Default is None.
+        vertexFixedSize : bool, optional
+            Whether vertices should be fixed in size. Default is False.
+        vertexFixedSizeKey : str, optional
+            Dictionary key to override `vertexFixedSize`. Default is None.
+        vertexShape : str, optional
+            Shape of the vertex ('circle', 'ellipse', 'box', etc.). Default is 'circle'.
+        vertexShapeKey : str, optional
+            Dictionary key to override `vertexShape`. Default is None.
+        vertexStyle : str, optional
+            Style of vertex (e.g., 'filled', 'dashed'). Default is 'filled'.
+        vertexStyleKey : str, optional
+            Dictionary key to override `vertexStyle`. Default is None.
+        vertexFillColor : str, optional
+            Fill color for vertices. Default is 'lightgray'.
+        vertexFillColorKey : str, optional
+            Dictionary key to override `vertexFillColor`. Default is None.
+        vertexColor : str, optional
+            Border color for vertices. Default is 'black'.
+        vertexColorKey : str, optional
+            Dictionary key to override `vertexColor`. Default is None.
+        vertexFontColor : str, optional
+            Font color for vertex labels. Default is 'black'.
+        vertexFontColorKey : str, optional
+            Dictionary key to override `vertexFontColor`. Default is None.
+        showEdgeLabel : bool, optional
+            Whether to display edge labels. Default is False.
+        edgeLabelPrefix : str, optional
+            Text prefix for edge labels. Default is empty string.
+        edgeLabelKey : str, optional
+            Dictionary key used to retrieve label text from edge dictionary. Default is None.
+        edgeColor : str, optional
+            Color of edges. Default is 'black'.
+        edgeColorKey : str, optional
+            Dictionary key to override `edgeColor`. Default is None.
+        edgeWidth : float, optional
+            Width (thickness) of edges. Default is 1.
+        edgeWidthKey : str, optional
+            Dictionary key to override `edgeWidth`. Default is None.
+        edgeStyle : str, optional
+            Style of the edge line (e.g., 'solid', 'dashed'). Default is 'solid'.
+        edgeStyleKey : str, optional
+            Dictionary key to override `edgeStyle`. Default is None.
+        edgeArrowhead : str, optional
+            Arrowhead style for directed edges. Default is 'normal'.
+        edgeArrowheadKey : str, optional
+            Dictionary key to override `edgeArrowhead`. Default is None.
+        edgeFontColor : str, optional
+            Font color for edge labels. Default is 'black'.
+        edgeFontColorKey : str, optional
+            Dictionary key to override `edgeFontColor`. Default is None.
+        overwrite : bool, optional
+            If True, overwrites existing files at the given path. Default is False.
+        silent : bool, optional
+            If True, suppresses console output. Default is False.
+
+        Returns
+        -------
+        bool
+            True if the graph was successfully exported. False otherwise.
+        """
+
+        from topologicpy.Topology import Topology
+        from os.path import exists
+        dot = Graph.GraphVizGraph(
+        graph,
+        device = device, deviceKey = deviceKey,
+        scale = scale, scaleKey = scaleKey,
+        directed = directed, directedKey = directedKey,
+        layout = layout,
+        layoutKey = layoutKey,
+        rankDir= rankDir, rankDirKey = rankDirKey,
+        bgColor=bgColor, bgColorKey=bgColorKey,
+        fontName=fontName, fontNameKey=fontNameKey,
+        fontSize= fontSize, fontSizeKey=fontSizeKey,
+        vertexSep= vertexSep, vertexSepKey=vertexSepKey,
+        rankSep= rankSep, rankSepKey=rankSepKey,
+        splines=splines, splinesKey=splinesKey,
+        showGraphLabel = showGraphLabel,
+        graphLabel=graphLabel, graphLabelKey=graphLabelKey,
+        graphLabelLoc=graphLabelLoc, graphLabelLocKey=graphLabelLocKey,
+
+        showVertexLabel = showVertexLabel,
+        vertexLabelPrefix=vertexLabelPrefix , vertexLabelKey=vertexLabelKey,
+        vertexWidth=vertexWidth, vertexWidthKey=vertexWidthKey,
+        vertexHeight=vertexHeight, vertexHeightKey=vertexHeightKey,
+        vertexFixedSize=vertexFixedSize, vertexFixedSizeKey=vertexFixedSizeKey,
+        vertexShape=vertexShape, vertexShapeKey=vertexShapeKey,
+        vertexStyle=vertexStyle, vertexStyleKey=vertexStyleKey,
+        vertexFillColor=vertexFillColor, vertexFillColorKey=vertexFillColorKey,
+        vertexColor=vertexColor, vertexColorKey=vertexColorKey,
+        vertexFontColor=vertexFontColor, vertexFontColorKey=vertexFontColorKey,
+
+        showEdgeLabel = showEdgeLabel,
+        edgeLabelPrefix=edgeLabelPrefix, edgeLabelKey=edgeLabelKey,
+        edgeColor=edgeColor, edgeColorKey=edgeColorKey,
+        edgeWidth=edgeWidth, edgeWidthKey=edgeWidthKey,
+        edgeStyle=edgeStyle, edgeStyleKey=edgeStyleKey,
+        edgeArrowhead=edgeArrowhead, edgeArrowheadKey=edgeArrowheadKey,
+        edgeFontColor=edgeFontColor, edgeFontColorKey=edgeFontColorKey,
+        silent=silent)
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ExportToGraphVizGraph - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(path, str):
+            if not silent:
+                print("Graph.ExportToGraphVizGraph - Error: the input path parameter is not a valid string. Returning None.")
+            return None
+        # Make sure the file extension is .gv
+        ext = path[len(path)-3:len(path)]
+        if ext.lower() != ".gv":
+            path = path+".gv"
+        if not overwrite and exists(path):
+            if not silent:
+                print("Graph.ExportToGraphVizGraph - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        try:
+            dot.save(filename=path)
+            return True
+        except:
+            return False
 
     @staticmethod
     def ExportToJSON(graph, path, verticesKey="vertices", edgesKey="edges", vertexLabelKey="", edgeLabelKey="", xKey="x", yKey="y", zKey="z", indent=4, sortKeys=False, mantissa=6, overwrite=False):
@@ -8187,6 +8438,287 @@ class Graph:
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
         return global_clustering_coefficient(adjacency_matrix)
     
+    @staticmethod
+    def GraphVizGraph(
+        graph,
+        device = 'svg_inline', deviceKey=None,
+        scale = 1, scaleKey=None,
+        directed=False, directedKey=None,
+        layout = 'dot', # or circo fdp neato nop nop1 nop2 osage patchwork sfdp twopi
+        layoutKey=None,
+        rankDir='TB', rankDirKey=None, # or LR, RL, BT
+        bgColor='white', bgColorKey=None,
+        fontName='Arial', fontNameKey=None,
+        fontSize= 12, fontSizeKey=None,
+        vertexSep= 0.5, vertexSepKey=None,
+        rankSep= 0.5, rankSepKey=None,
+        splines='true', splinesKey=None,
+        showGraphLabel = False,
+        graphLabel='', graphLabelKey=None,
+        graphLabelLoc='t', graphLabelLocKey=None,
+
+        showVertexLabel = False,
+        vertexLabelPrefix='' , vertexLabelKey=None,
+        vertexWidth=0.5, vertexWidthKey=None,
+        vertexHeight=0.5, vertexHeightKey=None,
+        vertexFixedSize=False, vertexFixedSizeKey=None,
+        vertexShape='circle', vertexShapeKey=None,
+        vertexStyle='filled', vertexStyleKey=None,
+        vertexFillColor='lightgray', vertexFillColorKey=None,
+        vertexColor='black', vertexColorKey=None,
+        vertexFontColor='black', vertexFontColorKey=None,
+
+        showEdgeLabel = False,
+        edgeLabelPrefix='', edgeLabelKey=None,
+        edgeColor='black', edgeColorKey=None,
+        edgeWidth=1, edgeWidthKey=None,
+        edgeStyle='solid', edgeStyleKey=None,
+        edgeArrowhead='normal', edgeArrowheadKey=None,
+        edgeFontColor='black', edgeFontColorKey=None,
+        silent=False
+    ):
+        """
+        Converts the input graph to a GraphViz graph. GraphViz should be installed separately, using your system's package manager.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        device : str, optional
+            The output format device, such as 'svg_inline', 'pdf', or 'png'. The default is 'svg_inline'.
+        deviceKey : str, optional
+            Dictionary key to override the `device` value. Default is None.
+        scale : float, optional
+            Global scaling factor. Default is 1.
+        scaleKey : str, optional
+            Dictionary key to override the `scale` per-graph. Default is None.
+        directed : bool, optional
+            Whether to treat the graph as directed. Default is False.
+        directedKey : str, optional
+            Dictionary key to override the `directed` flag per-graph. Default is None.
+        layout : str, optional
+            Layout engine to use. Options include 'dot', 'circo', 'fdp', 'neato', 'osage', 'sfdp', etc. Default is 'dot'.
+        layoutKey : str, optional
+            Dictionary key to override the `layout` per-graph. Default is None.
+        rankDir : str, optional
+            Direction of graph ranking. Options: 'TB' (top-bottom), 'LR' (left-right), 'RL', 'BT'. Default is 'TB'.
+        rankDirKey : str, optional
+            Dictionary key to override `rankDir` per-graph. Default is None.
+        bgColor : str, optional
+            Background color. Default is 'white'.
+        bgColorKey : str, optional
+            Dictionary key to override `bgColor`. Default is None.
+        fontName : str, optional
+            Name of the font to use for all text. Default is 'Arial'.
+        fontNameKey : str, optional
+            Dictionary key to override `fontName`. Default is None.
+        fontSize : int or float, optional
+            Size of font in points. Default is 12.
+        fontSizeKey : str, optional
+            Dictionary key to override `fontSize`. Default is None.
+        vertexSep : float, optional
+            Minimum separation between vertices. Default is 0.5.
+        vertexSepKey : str, optional
+            Dictionary key to override `vertexSep`. Default is None.
+        rankSep : float, optional
+            Separation between ranks. Default is 0.5.
+        rankSepKey : str, optional
+            Dictionary key to override `rankSep`. Default is None.
+        splines : str, optional
+            Whether to use spline edges. Can be 'true', 'false', or 'polyline'. Default is 'True'.
+        splinesKey : str, optional
+            Dictionary key to override `splines`. Default is None.
+        showGraphLabel : bool, optional
+            Whether to show a label for the whole graph. Default is False.
+        graphLabel : str, optional
+            Text for the graph label. Default is an empty string.
+        graphLabelKey : str, optional
+            Dictionary key to override `graphLabel`. Default is None.
+        graphLabelLoc : str, optional
+            Position of the graph label: 't' (top), 'b' (bottom), 'c' (center). Default is 't'.
+        graphLabelLocKey : str, optional
+            Dictionary key to override `graphLabelLoc`. Default is None.
+        showVertexLabel : bool, optional
+            Whether to display vertex labels. Default is False.
+        vertexLabelPrefix : str, optional
+            Text prefix for vertex labels. Default is empty string.
+        vertexLabelKey : str, optional
+            Dictionary key used to retrieve label text from vertex dictionary. Default is None.
+        vertexWidth : float, optional
+            Width of each vertex. Default is 0.5.
+        vertexWidthKey : str, optional
+            Dictionary key to override `vertexWidth`. Default is None.
+        vertexHeight : float, optional
+            Height of each vertex. Default is 0.5.
+        vertexHeightKey : str, optional
+            Dictionary key to override `vertexHeight`. Default is None.
+        vertexFixedSize : bool, optional
+            Whether vertices should be fixed in size. Default is False.
+        vertexFixedSizeKey : str, optional
+            Dictionary key to override `vertexFixedSize`. Default is None.
+        vertexShape : str, optional
+            Shape of the vertex ('circle', 'ellipse', 'box', etc.). Default is 'circle'.
+        vertexShapeKey : str, optional
+            Dictionary key to override `vertexShape`. Default is None.
+        vertexStyle : str, optional
+            Style of vertex (e.g., 'filled', 'dashed'). Default is 'filled'.
+        vertexStyleKey : str, optional
+            Dictionary key to override `vertexStyle`. Default is None.
+        vertexFillColor : str, optional
+            Fill color for vertices. Default is 'lightgray'.
+        vertexFillColorKey : str, optional
+            Dictionary key to override `vertexFillColor`. Default is None.
+        vertexColor : str, optional
+            Border color for vertices. Default is 'black'.
+        vertexColorKey : str, optional
+            Dictionary key to override `vertexColor`. Default is None.
+        vertexFontColor : str, optional
+            Font color for vertex labels. Default is 'black'.
+        vertexFontColorKey : str, optional
+            Dictionary key to override `vertexFontColor`. Default is None.
+        showEdgeLabel : bool, optional
+            Whether to display edge labels. Default is False.
+        edgeLabelPrefix : str, optional
+            Text prefix for edge labels. Default is empty string.
+        edgeLabelKey : str, optional
+            Dictionary key used to retrieve label text from edge dictionary. Default is None.
+        edgeColor : str, optional
+            Color of edges. Default is 'black'.
+        edgeColorKey : str, optional
+            Dictionary key to override `edgeColor`. Default is None.
+        edgeWidth : float, optional
+            Width (thickness) of edges. Default is 1.
+        edgeWidthKey : str, optional
+            Dictionary key to override `edgeWidth`. Default is None.
+        edgeStyle : str, optional
+            Style of the edge line (e.g., 'solid', 'dashed'). Default is 'solid'.
+        edgeStyleKey : str, optional
+            Dictionary key to override `edgeStyle`. Default is None.
+        edgeArrowhead : str, optional
+            Arrowhead style for directed edges. Default is 'normal'.
+        edgeArrowheadKey : str, optional
+            Dictionary key to override `edgeArrowhead`. Default is None.
+        edgeFontColor : str, optional
+            Font color for edge labels. Default is 'black'.
+        edgeFontColorKey : str, optional
+            Dictionary key to override `edgeFontColor`. Default is None.
+        overwrite : bool, optional
+            If True, overwrites existing files at the given path. Default is False.
+        silent : bool, optional
+            If True, suppresses console output. Default is False.
+
+        Returns
+        -------
+        graphviz.graphs.Graph
+            The created GraphViz graph.
+        """
+
+        from graphviz import Digraph
+        from graphviz import Graph as Udgraph
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.GraphVizGraph - Error: the input graph parameter is not a valid graph. Returning None.")
+            return None
+        # Set Graph-level attributes
+        def get_attr(dict, keyName, default):
+            if keyName:
+                return Dictionary.ValueAtKey(dict, keyName, default)
+            return default
+
+        graph_dict = Topology.Dictionary(graph)
+
+        is_directed =  get_attr(graph_dict, directedKey, directed)
+        if is_directed:
+            gv_graph = Digraph()
+        else:
+            gv_graph = Udgraph()
+        
+        if showGraphLabel:
+            label_value = get_attr(graph_dict, graphLabelKey, graphLabel)
+        else:
+            label_value = ''
+        gv_graph.attr(
+            layout = get_attr(graph_dict, layoutKey, layout),
+            rankdir=get_attr(graph_dict, rankDirKey, rankDir),
+            bgcolor=get_attr(graph_dict, bgColorKey, bgColor),
+            fontname=get_attr(graph_dict, fontNameKey, fontName),
+            fontsize=get_attr(graph_dict, fontSizeKey, str(fontSize)),
+            vertexsep=get_attr(graph_dict, vertexSepKey, str(vertexSep)),
+            ranksep=get_attr(graph_dict, rankSepKey, str(rankSep)),
+            splines=get_attr(graph_dict, splinesKey, splines),
+            label=label_value,
+            labelloc=get_attr(graph_dict, graphLabelLocKey, graphLabelLoc),
+            device = get_attr(graph_dict, deviceKey, device)
+        )
+
+        # Get the Vertices and Edges from the Topologic Graph
+        mesh_data = Graph.MeshData(graph)
+
+        # Set Vertex Attributes
+        verts = mesh_data['vertices']
+        vert_dicts = mesh_data['vertexDictionaries']
+        for i, v in enumerate(verts):
+            v_dict = vert_dicts[i]
+            if showVertexLabel:
+                label_value = get_attr(v_dict, vertexLabelKey, f"{vertexLabelPrefix}{i}")
+            else:
+                label_value = ''
+            
+            fixed_size_value = get_attr(v_dict, vertexFixedSizeKey, vertexFixedSize)
+
+            if fixed_size_value:
+                fixed_size_value = "True"
+            else:
+                fixed_size_value = "False"
+            
+            if "nop" in get_attr(graph_dict, layoutKey, layout):
+                pos_value = f"{v[0]*scale},{v[1]*scale}!"
+            else:
+                pos_value = ""
+            gv_graph.node(
+                str(i),
+                pos = pos_value,
+                label= label_value,
+                shape=get_attr(v_dict, vertexShapeKey, vertexShape),
+                width=str(get_attr(v_dict, vertexWidthKey, vertexWidth)),
+                height=str(get_attr(v_dict, vertexHeightKey, vertexHeight)),
+                fixedSize=fixed_size_value,
+                style=get_attr(v_dict, vertexStyleKey, vertexStyle),
+                fillcolor=get_attr(v_dict, vertexFillColorKey, vertexFillColor),
+                color=get_attr(v_dict, vertexColorKey, vertexColor),
+                fontcolor=get_attr(v_dict, vertexFontColorKey, vertexFontColor)
+            )
+        
+        # Set Edge attributes
+        edges = mesh_data['edges']
+        edge_dicts = mesh_data['edgeDictionaries']
+        for i, e in enumerate(edges):
+            sid = e[0]
+            eid = e[1]
+
+            e_dict = edge_dicts[i]
+            if showEdgeLabel:
+                label_value = get_attr(e_dict, edgeLabelKey, f"{edgeLabelPrefix}{i}")
+            else:
+                label_value = ''
+
+            gv_graph.edge(
+                str(sid),
+                str(eid),
+                label= label_value,
+                color= get_attr(e_dict, edgeColorKey, edgeColor),
+                penwidth=str(get_attr(e_dict, edgeWidthKey, edgeWidth)),
+                style= get_attr(e_dict, edgeStyleKey, edgeStyle),
+                arrowhead= get_attr(e_dict, edgeArrowheadKey, edgeArrowhead),
+                fontcolor= get_attr(e_dict, edgeFontColorKey, edgeFontColor),
+            )
+
+        return gv_graph
+
     @staticmethod
     def Guid(graph):
         """
@@ -10544,36 +11076,36 @@ class Graph:
         data = []
         for graph in new_graphs:
             data += Plotly.DataByGraph(graph,
-                                       sagitta=sagitta,
-                                       absolute=absolute,
-                                       sides=sides,
-                                       angle=angle,
-                                       vertexColor=vertexColor,
-                                       vertexColorKey=vertexColorKey,
-                                       vertexSize=vertexSize,
-                                       vertexSizeKey=vertexSizeKey,
-                                       vertexLabelKey=vertexLabelKey,
-                                       vertexGroupKey=vertexGroupKey,
-                                       vertexGroups=vertexGroups,
-                                       vertexMinGroup=vertexMinGroup,
-                                       vertexMaxGroup=vertexMaxGroup,
-                                       showVertices=showVertices,
-                                       showVertexLabel=showVertexLabel,
-                                       showVertexLegend=showVertexLegend,
-                                       edgeColor=edgeColor,
-                                       edgeColorKey=edgeColorKey,
-                                       edgeWidth=edgeWidth,
-                                       edgeWidthKey=edgeWidthKey,
-                                       edgeLabelKey=edgeLabelKey,
-                                       edgeGroupKey=edgeGroupKey,
-                                       edgeGroups=edgeGroups,
-                                       edgeMinGroup=edgeMinGroup,
-                                       edgeMaxGroup=edgeMaxGroup,
-                                       showEdges=showEdges,
-                                       showEdgeLabel=showEdgeLabel,
-                                       showEdgeLegend=showEdgeLegend,
-                                       colorScale=colorScale,
-                                       silent=silent)
+                                    sagitta=sagitta,
+                                    absolute=absolute,
+                                    sides=sides,
+                                    angle=angle,
+                                    vertexColor=vertexColor,
+                                    vertexColorKey=vertexColorKey,
+                                    vertexSize=vertexSize,
+                                    vertexSizeKey=vertexSizeKey,
+                                    vertexLabelKey=vertexLabelKey,
+                                    vertexGroupKey=vertexGroupKey,
+                                    vertexGroups=vertexGroups,
+                                    vertexMinGroup=vertexMinGroup,
+                                    vertexMaxGroup=vertexMaxGroup,
+                                    showVertices=showVertices,
+                                    showVertexLabel=showVertexLabel,
+                                    showVertexLegend=showVertexLegend,
+                                    edgeColor=edgeColor,
+                                    edgeColorKey=edgeColorKey,
+                                    edgeWidth=edgeWidth,
+                                    edgeWidthKey=edgeWidthKey,
+                                    edgeLabelKey=edgeLabelKey,
+                                    edgeGroupKey=edgeGroupKey,
+                                    edgeGroups=edgeGroups,
+                                    edgeMinGroup=edgeMinGroup,
+                                    edgeMaxGroup=edgeMaxGroup,
+                                    showEdges=showEdges,
+                                    showEdgeLabel=showEdgeLabel,
+                                    showEdgeLegend=showEdgeLegend,
+                                    colorScale=colorScale,
+                                    silent=silent)
         fig = Plotly.FigureByData(data, width=width, height=height, xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize, backgroundColor=backgroundColor,
                                   marginLeft=marginLeft, marginRight=marginRight, marginTop=marginTop, marginBottom=marginBottom, tolerance=tolerance)
         Plotly.Show(fig, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
