@@ -4487,7 +4487,7 @@ class Graph:
                 weightClosenessCentrality: float = 0.0,
                 weightDegreeCentrality: float = 0.0,
                 weightDiameter: float = 0.0,
-                weightEigenCentrality: float = 0.0,
+                weightEigenVectorCentrality: float = 0.0,
                 weightGlobalClusteringCoefficient: float = 0.0,
                 weightPageRank: float = 0.0,
                 weightStructure: float = 0.0,
@@ -4521,8 +4521,8 @@ class Graph:
             The desired weight for degree centrality similarity (graph-level and node-level). Default is 0.0.
         weightDiameter : float , optional
             The desired weight for diameter similarity (graph-level and node-level). Default is 0.0.
-        weightEigenCentrality : float , optional
-            The desired weight for eigen centrality similarity (graph-level and node-level). Default is 0.0.
+        weightEigenVectorCentrality : float , optional
+            The desired weight for eigenvector centrality similarity (graph-level and node-level). Default is 0.0.
         weightGeometry : float , optional
             The desired weight for geometric similarity (vertex positions). Default is 0.0.
         weightGlobalClusteringCoefficient : float , optional
@@ -4559,7 +4559,7 @@ class Graph:
             "betwenness_centrality"
             "closeness_centrality"
             "degree_centrality"
-            "eigen_centrality"
+            "eigenvector_centrality"
             "geometry"
             "global_clustering_coefficient"
             "jaccard"
@@ -4722,9 +4722,9 @@ class Graph:
             diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
             return round((1 - diff), mantissa)
         
-        def eigen_centrality_similarity(graphA, graphB, mantissa=6):
-            v1 = safe_mean(Graph.EigenCentrality(graphA))
-            v2 = safe_mean(Graph.EigenCentrality(graphB))
+        def eigenvector_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.EigenVectorCentrality(graphA))
+            v2 = safe_mean(Graph.EigenVectorCentrality(graphB))
             if v1 == 0 and v2 == 0:
                 return 1
             diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
@@ -4807,7 +4807,7 @@ class Graph:
                             weightClosenessCentrality,
                             weightDegreeCentrality,
                             weightDiameter,
-                            weightEigenCentrality,
+                            weightEigenVectorCentrality,
                             weightGlobalClusteringCoefficient,
                             weightPageRank,
                             weightStructure,
@@ -4819,7 +4819,7 @@ class Graph:
         closeness_centrality_score = closeness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightClosenessCentrality else 0
         degree_centrality_score = degree_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightDegreeCentrality else 0
         diameter_score = diameter_similarity(graphA, graphB, mantissa=mantissa) if weightDiameter else 0
-        eigen_centrality_score = eigen_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightEigenCentrality else 0
+        eigenvector_centrality_score = eigenvector_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightEigenVectorCentrality else 0
         global_clustering_coefficient_score = global_clustering_coefficient_similarity(graphA, graphB, mantissa=mantissa) if weightGlobalClusteringCoefficient else 0
         geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
         jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
@@ -4834,7 +4834,7 @@ class Graph:
             closeness_centrality_score * weightClosenessCentrality +
             degree_centrality_score * weightDegreeCentrality +
             diameter_score * weightDiameter +
-            eigen_centrality_score * weightEigenCentrality +
+            eigenvector_centrality_score * weightEigenVectorCentrality +
             geometry_score * weightGeometry +
             global_clustering_coefficient_score * weightGlobalClusteringCoefficient +
             jaccard_score * weightJaccard +
@@ -4854,7 +4854,7 @@ class Graph:
                  "betwenness_centrality": round(betweenness_centrality_score, mantissa),
                  "closeness_centrality": round(closeness_centrality_score, mantissa),
                  "degree_centrality": round(degree_centrality_score, mantissa),
-                 "eigen_centrality": round(eigen_centrality_score, mantissa),
+                 "eigenvector_centrality": round(eigenvector_centrality_score, mantissa),
                  "geometry": round(geometry_score, mantissa),
                  "global_clustering_coefficient": round(global_clustering_coefficient_score, mantissa),
                  "jaccard": round(jaccard_score, mantissa),
@@ -5239,9 +5239,9 @@ class Graph:
             if "len" in weightKey.lower() or "dis" in weightKey.lower():
                 weightKey = "length"
         nx_graph = Graph.NetworkXGraph(graph)
-        elements = Graph.Vertices(graph)
-        elements_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nxCompatible)
-        values = [round(v, mantissa) for v in list(elements_dict.values())]
+        vertices = Graph.Vertices(graph)
+        vertices_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nxCompatible)
+        values = [round(v, mantissa) for v in list(vertices_dict.values())]
         if normalize == True:
             if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
                 values = [round(v, mantissa) for v in Helper.Normalize(values)]
@@ -5254,10 +5254,10 @@ class Graph:
             max_value = max(values)
 
         for i, value in enumerate(values):
-            d = Topology.Dictionary(elements[i])
+            d = Topology.Dictionary(vertices[i])
             color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
             d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
-            elements[i] = Topology.SetDictionary(elements[i], d)
+            vertices[i] = Topology.SetDictionary(vertices[i], d)
 
         return values
 
@@ -6051,7 +6051,7 @@ class Graph:
         return list(dict.fromkeys(edges)) # remove duplicates
     
     @staticmethod
-    def EigenCentrality(graph, normalize: bool = False, key: str = "eigen_centrality", colorKey: str = "ec_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def EigenVectorCentrality(graph, normalize: bool = False, key: str = "eigen_vector_centrality", colorKey: str = "evc_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the eigenvector centrality of the input graph. The order of the returned list is the same as the order of vertices.
 
@@ -6064,9 +6064,9 @@ class Graph:
         normalize : bool, optional
             If set to True, the centrality values are normalized to be in the range 0 to 1. The default is False.
         key : str, optional
-            The desired dictionary key under which to store the eigenvector centrality score. The default is "eigen_centrality".
+            The desired dictionary key under which to store the eigenvector centrality score. The default is "eigen_vector_centrality".
         colorKey : str, optional
-            The desired dictionary key under which to store the eigenvector centrality color. The default is "ec_color".
+            The desired dictionary key under which to store the eigenvector centrality color. The default is "evc_color".
         colorScale : str, optional
             The desired type of Plotly color scale to use (e.g., "viridis", "plasma"). Default is "viridis".
             For a full list of names, see https://plotly.com/python/builtin-colorscales/.
@@ -6092,7 +6092,7 @@ class Graph:
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.EigenCentrality - Error: The input graph is not a valie Topologic Graph. Returning None.")
+                print("Graph.EigenVectorCentrality - Error: The input graph is not a valie Topologic Graph. Returning None.")
             return None
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
         vertices = Graph.Vertices(graph)
@@ -10474,9 +10474,9 @@ class Graph:
         return outgoing_vertices
     
     @staticmethod
-    def PageRank(graph, alpha: float = 0.85, maxIterations: int = 100, normalize: bool = True, directed: bool = False, key: str = "page_rank", mantissa: int = 6, tolerance: float = 0.0001):
+    def PageRank(graph, alpha: float = 0.85, maxIterations: int = 100, normalize: bool = True, directed: bool = False, key: str = "page_rank", colorKey="pr_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Calculates PageRank scores for nodes in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
+        Calculates PageRank scores for vertices in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
 
         Parameters
         ----------
@@ -10492,6 +10492,11 @@ class Graph:
             If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.
         key : str , optional
             The dictionary key under which to store the page_rank score. The default is "page_rank"
+        colorKey : str , optional
+            The desired dictionary key under which to store the pagerank color. The default is "pr_color".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
             The desired length of the mantissa.
         tolerance : float , optional
@@ -10506,6 +10511,7 @@ class Graph:
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        from topologicpy.Color import Color
 
         vertices = Graph.Vertices(graph)
         num_vertices = len(vertices)
@@ -10513,7 +10519,7 @@ class Graph:
             print("Graph.PageRank - Error: The input graph parameter has no vertices. Returning None")
             return None
         initial_score = 1.0 / num_vertices
-        scores = [initial_score for vertex in vertices]
+        values = [initial_score for vertex in vertices]
         for _ in range(maxIterations):
             new_scores = [0 for vertex in vertices]
             for i, vertex in enumerate(vertices):
@@ -10522,23 +10528,36 @@ class Graph:
                     if len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed)) > 0:
                         vi = Vertex.Index(incoming_vertex, vertices, tolerance=tolerance)
                         if not vi == None:
-                            incoming_score += scores[vi] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
+                            incoming_score += values[vi] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
                 new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
 
             # Check for convergence
-            if all(abs(new_scores[i] - scores[i]) <= tolerance for i in range(len(vertices))):
+            if all(abs(new_scores[i] - values[i]) <= tolerance for i in range(len(vertices))):
                 break
 
-            scores = new_scores
+            values = new_scores
         if normalize == True:
-            scores = Helper.Normalize(scores, mantissa=mantissa)
+            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
         else:
-            scores = [round(x, mantissa) for x in scores]
+            min_value = min(values)
+            max_value = max(values)
+
+        for i, value in enumerate(values):
+            d = Topology.Dictionary(vertices[i])
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            vertices[i] = Topology.SetDictionary(vertices[i], d)
+        
         for i, v in enumerate(vertices):
             d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, scores[i])
+            d = Dictionary.SetValueAtKey(d, key, values[i])
             v = Topology.SetDictionary(v, d)
-        return scores
+        return values
 
     @staticmethod
     def Partition(graph, method: str = "Betweenness", n: int = 2, m: int = 10, key: str ="partition",
