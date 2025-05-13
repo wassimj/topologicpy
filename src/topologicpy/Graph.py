@@ -278,6 +278,93 @@ class _DrawTree(object):
         return self.__str__()
 
 class Graph:
+
+    @staticmethod
+    def AccessibilityCentrality(graph, step: int = 2, normalize: bool = False, key: str = "accessibility_centrality", colorKey: str = "ac_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the accessibility centrality of each vertex in the graph using random walks of fixed step length.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        step : int, optional
+            The length of the random walk (number of steps). Default is 2.
+        normalize : bool, optional
+            If True, normalize the output to the range 0 to 1. Default is False.
+        key : str, optional
+            Dictionary key to store the accessibility centrality value. Default is "accessibility_centrality".
+        colorKey : str, optional
+            Dictionary key to store the color value. Default is "ac_color".
+        colorScale : str, optional
+            Name of the Plotly color scale to use. Default is "viridis".
+        mantissa : int, optional
+            Decimal precision. Default is 6.
+        tolerance : float, optional
+            The desired Tolerance. Not used here but included for API compatibility. Default is 0.0001.
+        silent : bool, optional
+            If True, suppresses error/warning messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of accessibility centrality values for each vertex in the graph.
+        """
+        import numpy as np
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.AccessibilityCentrality - Error: The input graph paramter is not a valid Topologic Graph. Returning None.")
+            return None
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if n == 0:
+            return []
+
+        # Step 1: get transition matrix (row-normalized adjacency matrix)
+        A = np.array(Graph.AdjacencyMatrix(graph), dtype=float)
+        row_sums = A.sum(axis=1, keepdims=True)
+        row_sums[row_sums == 0] = 1  # prevent division by zero
+        P = A / row_sums
+
+        # Step 2: walk matrix of length `step`
+        P_h = np.linalg.matrix_power(P, step)
+
+        # Step 3: compute entropy-based accessibility for each vertex
+        values = []
+        for i in range(n):
+            probs = P_h[i]
+            probs = probs[probs > 0]
+            entropy = -np.sum(probs * np.log(probs))
+            acc = np.exp(entropy)
+            values.append(float(acc))
+
+        # Optional normalization
+        if normalize == True:
+            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
+        else:
+            min_value = min(values)
+            max_value = max(values)
+        
+        # Assign Values and Colors to Dictionaries
+        for i, value in enumerate(values):
+            d = Topology.Dictionary(vertices[i])
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            vertices[i] = Topology.SetDictionary(vertices[i], d)
+
+        return values
+
     @staticmethod
     def AddEdge(graph, edge, transferVertexDictionaries: bool = False, transferEdgeDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -4393,12 +4480,14 @@ class Graph:
     
     @staticmethod
     def Compare(graphA, graphB,
+                weightAccessibilityCentrality: float = 0.0,
                 weightAttributes: float = 0.0,
                 weightGeometry: float = 0.0,
                 weightBetwennessCentrality: float = 0.0,
                 weightClosenessCentrality: float = 0.0,
                 weightDegreeCentrality: float = 0.0,
                 weightDiameter: float = 0.0,
+                weightEigenCentrality: float = 0.0,
                 weightGlobalClusteringCoefficient: float = 0.0,
                 weightPageRank: float = 0.0,
                 weightStructure: float = 0.0,
@@ -4420,6 +4509,8 @@ class Graph:
             The first input graph.
         graphB : topologic Graph
             The second input graph.
+        weightAccessibilityCentrality : float , optional
+            The desired weight for degree accessibility similarity (graph-level and node-level). Default is 0.0.
         weightAttributes : float , optional
             The desired weight for attribute similarity (dictionary key overlap at vertices). Default is 0.0.
         weightBetwennessCentrality : float , optional
@@ -4430,6 +4521,8 @@ class Graph:
             The desired weight for degree centrality similarity (graph-level and node-level). Default is 0.0.
         weightDiameter : float , optional
             The desired weight for diameter similarity (graph-level and node-level). Default is 0.0.
+        weightEigenCentrality : float , optional
+            The desired weight for eigen centrality similarity (graph-level and node-level). Default is 0.0.
         weightGeometry : float , optional
             The desired weight for geometric similarity (vertex positions). Default is 0.0.
         weightGlobalClusteringCoefficient : float , optional
@@ -4461,10 +4554,12 @@ class Graph:
         dict
             A dictionary of similarity scores between 0 (completely dissimilar) and 1 (identical), based on weighted components.
             The keys in the dictionary are:
+            "accessibility_centrality"
             "attribute"
             "betwenness_centrality"
             "closeness_centrality"
             "degree_centrality"
+            "eigen_centrality"
             "geometry"
             "global_clustering_coefficient"
             "jaccard"
@@ -4587,6 +4682,14 @@ class Graph:
         def safe_mean(lst):
                 return sum(lst)/len(lst) if lst else 0
         
+        def accessibility_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.AccessibilityCentrality(graphA))
+            v2 = safe_mean(Graph.AccessibilityCentrality(graphB))
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
         def betweenness_centrality_similarity(graphA, graphB, mantissa=6):
             v1 = safe_mean(Graph.BetweennessCentrality(graphA))
             v2 = safe_mean(Graph.BetweennessCentrality(graphB))
@@ -4614,6 +4717,14 @@ class Graph:
         def diameter_similarity(graphA, graphB, mantissa=6):
             v1 = Graph.Diameter(graphA)
             v2 = Graph.Diameter(graphB)
+            if v1 == 0 and v2 == 0:
+                return 1
+            diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
+            return round((1 - diff), mantissa)
+        
+        def eigen_centrality_similarity(graphA, graphB, mantissa=6):
+            v1 = safe_mean(Graph.EigenCentrality(graphA))
+            v2 = safe_mean(Graph.EigenCentrality(graphB))
             if v1 == 0 and v2 == 0:
                 return 1
             diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
@@ -4689,23 +4800,26 @@ class Graph:
                 print("Graph.Compare - Error: The graphB input parameter is not a valid topologic graph. Returning None.")
             return 
         
-        total_weight = sum([weightAttributes,
+        total_weight = sum([weightAccessibilityCentrality,
+                            weightAttributes,
                             weightGeometry,
                             weightBetwennessCentrality,
                             weightClosenessCentrality,
                             weightDegreeCentrality,
                             weightDiameter,
+                            weightEigenCentrality,
                             weightGlobalClusteringCoefficient,
                             weightPageRank,
                             weightStructure,
                             weightWeisfeilerLehman,
                             weightJaccard])
-
+        accessibility_centrality_score = accessibility_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightAccessibilityCentrality else 0
         attribute_score = attribute_similarity(graphA, graphB, mantissa=mantissa) if weightAttributes else 0
         betweenness_centrality_score = betweenness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightBetwennessCentrality else 0
         closeness_centrality_score = closeness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightClosenessCentrality else 0
         degree_centrality_score = degree_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightDegreeCentrality else 0
         diameter_score = diameter_similarity(graphA, graphB, mantissa=mantissa) if weightDiameter else 0
+        eigen_centrality_score = eigen_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightEigenCentrality else 0
         global_clustering_coefficient_score = global_clustering_coefficient_similarity(graphA, graphB, mantissa=mantissa) if weightGlobalClusteringCoefficient else 0
         geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
         jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
@@ -4714,11 +4828,13 @@ class Graph:
         weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWeisfeilerLehman else 0
 
         weighted_sum = (
+            accessibility_centrality_score * weightAccessibilityCentrality +
             attribute_score * weightAttributes +
             betweenness_centrality_score * weightBetwennessCentrality +
             closeness_centrality_score * weightClosenessCentrality +
             degree_centrality_score * weightDegreeCentrality +
             diameter_score * weightDiameter +
+            eigen_centrality_score * weightEigenCentrality +
             geometry_score * weightGeometry +
             global_clustering_coefficient_score * weightGlobalClusteringCoefficient +
             jaccard_score * weightJaccard +
@@ -4733,10 +4849,12 @@ class Graph:
             overall_score = weighted_sum / total_weight
         
         return  {
+                 "accessibility_centrality": round(accessibility_centrality_score, mantissa),
                  "attribute": round(attribute_score, mantissa),
                  "betwenness_centrality": round(betweenness_centrality_score, mantissa),
                  "closeness_centrality": round(closeness_centrality_score, mantissa),
                  "degree_centrality": round(degree_centrality_score, mantissa),
+                 "eigen_centrality": round(eigen_centrality_score, mantissa),
                  "geometry": round(geometry_score, mantissa),
                  "global_clustering_coefficient": round(global_clustering_coefficient_score, mantissa),
                  "jaccard": round(jaccard_score, mantissa),
@@ -5087,7 +5205,7 @@ class Graph:
         Returns
         -------
         list
-            The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
         import warnings
@@ -5932,6 +6050,87 @@ class Graph:
         _ = graph.Edges(vertices, tolerance, edges) # Hook to Core
         return list(dict.fromkeys(edges)) # remove duplicates
     
+    @staticmethod
+    def EigenCentrality(graph, normalize: bool = False, key: str = "eigen_centrality", colorKey: str = "ec_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the eigenvector centrality of the input graph. The order of the returned list is the same as the order of vertices.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        weightKey : str, optional
+            Ignored in this implementation. Reserved for future use if weighted adjacency matrix is desired.
+        normalize : bool, optional
+            If set to True, the centrality values are normalized to be in the range 0 to 1. The default is False.
+        key : str, optional
+            The desired dictionary key under which to store the eigenvector centrality score. The default is "eigen_centrality".
+        colorKey : str, optional
+            The desired dictionary key under which to store the eigenvector centrality color. The default is "ec_color".
+        colorScale : str, optional
+            The desired type of Plotly color scale to use (e.g., "viridis", "plasma"). Default is "viridis".
+            For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            Also supports color-blind friendly scales: "protanopia", "deuteranopia", "tritanopia".
+        mantissa : int, optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float, optional
+            The convergence tolerance for the power method. Default is 0.0001.
+        silent : bool, optional
+            If set to True, suppresses all messaging and warnings. Default is False.
+
+        Returns
+        -------
+        list
+            A list of eigenvector centrality values corresponding to the vertices in the input graph.
+        """
+        import numpy as np
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.EigenCentrality - Error: The input graph is not a valie Topologic Graph. Returning None.")
+            return None
+        adjacency_matrix = Graph.AdjacencyMatrix(graph)
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if n == 0:
+            return []
+
+        values = np.ones(n)
+        for _ in range(100):
+            x_new = np.dot(adjacency_matrix, values)
+            norm = np.linalg.norm(x_new)
+            if norm == 0:
+                break
+            x_new = x_new / norm
+            if np.linalg.norm(values - x_new) < tolerance:
+                break
+            values = x_new
+        values = [float(x) for x in values]
+        if normalize == True:
+            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
+        else:
+            values = [round(v, mantissa) for v in values]
+            min_value = min(values)
+            max_value = max(values)
+
+        for i, value in enumerate(values):
+            d = Topology.Dictionary(vertices[i])
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            vertices[i] = Topology.SetDictionary(vertices[i], d)
+
+        return values
+
     @staticmethod
     def ExportToAdjacencyMatrixCSV(adjacencyMatrix, path):
         """
