@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.8.26 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.8.28 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.26
+                0.8.28
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -458,6 +458,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InternalBoundaries"><code class="docutils literal notranslate"><span class="pre">Face.InternalBoundaries()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.InternalVertex"><code class="docutils literal notranslate"><span class="pre">Face.InternalVertex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Invert"><code class="docutils literal notranslate"><span class="pre">Face.Invert()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.IsConvex"><code class="docutils literal notranslate"><span class="pre">Face.IsConvex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.IsCoplanar"><code class="docutils literal notranslate"><span class="pre">Face.IsCoplanar()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Isovist"><code class="docutils literal notranslate"><span class="pre">Face.Isovist()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.LShape"><code class="docutils literal notranslate"><span class="pre">Face.LShape()</span></code></a></li>
@@ -518,6 +519,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNPath()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNString"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNString()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCFile"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCFile()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCFile_old"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCFile_old()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCPath()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByMeshData"><code class="docutils literal notranslate"><span class="pre">Graph.ByMeshData()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByNetworkXGraph"><code class="docutils literal notranslate"><span class="pre">Graph.ByNetworkXGraph()</span></code></a></li>
@@ -810,6 +812,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.SelfMerge"><code class="docutils literal notranslate"><span class="pre">Shell.SelfMerge()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Simplify"><code class="docutils literal notranslate"><span class="pre">Shell.Simplify()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Skeleton"><code class="docutils literal notranslate"><span class="pre">Shell.Skeleton()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Square"><code class="docutils literal notranslate"><span class="pre">Shell.Square()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Vertices"><code class="docutils literal notranslate"><span class="pre">Shell.Vertices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Voronoi"><code class="docutils literal notranslate"><span class="pre">Shell.Voronoi()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Shell.html#topologicpy.Shell.Shell.Wires"><code class="docutils literal notranslate"><span class="pre">Shell.Wires()</span></code></a></li>
@@ -906,6 +909,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.ConvexHull"><code class="docutils literal notranslate"><span class="pre">Topology.ConvexHull()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Copy"><code class="docutils literal notranslate"><span class="pre">Topology.Copy()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Degree"><code class="docutils literal notranslate"><span class="pre">Topology.Degree()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Diameter"><code class="docutils literal notranslate"><span class="pre">Topology.Diameter()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Dictionary"><code class="docutils literal notranslate"><span class="pre">Topology.Dictionary()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Difference"><code class="docutils literal notranslate"><span class="pre">Topology.Difference()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Topology.html#topologicpy.Topology.Topology.Dimensionality"><code class="docutils literal notranslate"><span class="pre">Topology.Dimensionality()</span></code></a></li>
@@ -1064,6 +1068,7 @@
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex"><code class="docutils literal notranslate"><span class="pre">Vertex</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AlignCoordinates"><code class="docutils literal notranslate"><span class="pre">Vertex.AlignCoordinates()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreCollinear"><code class="docutils literal notranslate"><span class="pre">Vertex.AreCollinear()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreCoplanar"><code class="docutils literal notranslate"><span class="pre">Vertex.AreCoplanar()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreIpsilateral"><code class="docutils literal notranslate"><span class="pre">Vertex.AreIpsilateral()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreIpsilateralCluster"><code class="docutils literal notranslate"><span class="pre">Vertex.AreIpsilateralCluster()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreOnSameSide"><code class="docutils literal notranslate"><span class="pre">Vertex.AreOnSameSide()</span></code></a></li>
@@ -1086,6 +1091,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsInternal"><code class="docutils literal notranslate"><span class="pre">Vertex.IsInternal()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.IsPeripheral"><code class="docutils literal notranslate"><span class="pre">Vertex.IsPeripheral()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.NearestVertex"><code class="docutils literal notranslate"><span class="pre">Vertex.NearestVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Normal"><code class="docutils literal notranslate"><span class="pre">Vertex.Normal()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Origin"><code class="docutils literal notranslate"><span class="pre">Vertex.Origin()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.OutgoingEdges"><code class="docutils literal notranslate"><span class="pre">Vertex.OutgoingEdges()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.PerpendicularDistance"><code class="docutils literal notranslate"><span class="pre">Vertex.PerpendicularDistance()</span></code></a></li>

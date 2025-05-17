@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Shell module &mdash; topologicpy 0.8.26 documentation</title>
+  <title>topologicpy.Shell module &mdash; topologicpy 0.8.28 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.26
+                0.8.28
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -226,13 +226,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Skeleton" title="topologicpy.Shell.Shell.Skeleton"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Skeleton</span></code></a>([tolerance])</p></td>
 <td><p>Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Vertices" title="topologicpy.Shell.Shell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(shell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Square" title="topologicpy.Shell.Shell.Square"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Square</span></code></a>([origin, size, uSides, vSides, ...])</p></td>
+<td><p>Creates a square.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Vertices" title="topologicpy.Shell.Shell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(shell)</p></td>
 <td><p>Returns the vertices of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Voronoi" title="topologicpy.Shell.Shell.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>(vertices[, face, mantissa, tolerance])</p></td>
 <td><p>Returns a voronoi partitioning of the input face based on the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Wires" title="topologicpy.Shell.Shell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.Wires" title="topologicpy.Shell.Shell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(shell)</p></td>
 <td><p>Returns the wires of the input shell.</p></td>
 </tr>
 </tbody>
@@ -930,6 +933,40 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Shell</dt><dd><p>The created straight skeleton.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Shell.Shell.Square">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Square</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.Square" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a square.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the square. The default is 1.0.</p>
+</dd>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 2.</p>
+</dd>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 2.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the square. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the square. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Shell</dt><dd><p>The created shell square.</p>
 </dd>
 </dl>
 </dd>
