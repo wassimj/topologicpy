@@ -290,13 +290,7 @@ class Grid():
                             d = Dictionary.ByKeysValues(["u","v"],[u,v])
                             if d:
                                 gridVertex.SetDictionary(d)
-                            gridVertices.append(gridVertex)
-                    #     gridVertex = gridVertex.Intersect(face, False)
-                    # if Topology.IsInstance(gridVertex, "Vertex"):
-                    #     d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                    #     if d:
-                    #         gridVertex.SetDictionary(d)
-                    #     gridVertices.append(gridVertex)
+                    gridVertices.append(gridVertex)
         grid = None
         if len(gridVertices) > 0:
             grid = Cluster.ByTopologies(gridVertices)
