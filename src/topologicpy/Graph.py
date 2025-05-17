@@ -2465,6 +2465,204 @@ class Graph:
                   removeCoplanarFaces: bool = False,
                   xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
                   xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
+                  epsilon: float = 0.0001,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
+        
+        """
+        Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.
+
+        Parameters
+        ----------
+        file : file
+            The input IFC file
+        includeTypes : list , optional
+            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+        excludeTypes : list , optional
+            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+        includeRels : list , optional
+            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+        excludeRels : list , optional
+            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+        transferDictionaries : bool , optional
+            NOT USED. If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+        useInternalVertex : bool , optional
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+        storeBREP : bool , optional
+            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        
+        Returns
+        -------
+        topologic_core.Graph
+            The created graph.
+        
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        
+        def vertex_at_key_value(vertices, key, value):
+            for v in vertices:
+                d = Topology.Dictionary(v)
+                d_value = Dictionary.ValueAtKey(d, key)
+                if value == d_value:
+                    return v
+            return None
+        
+        def get_vertices(includeTypes=[], excludeTypes=[], removeCoplanarFaces=False, storeBREP=False, useInternalVertex=useInternalVertex, epsilon=0.0001, tolerance=0.0001):
+            # Get the topologies
+            topologies = Topology.ByIFCFile(file,
+                                            includeTypes=includeTypes,
+                                            excludeTypes=excludeTypes,
+                                        transferDictionaries=True,
+                                        removeCoplanarFaces=removeCoplanarFaces,
+                                        epsilon=epsilon,
+                                        tolerance=tolerance)
+            vertices = []
+            for topology in topologies:
+                if Topology.IsInstance(topology, "Topology"):
+                    if useInternalVertex == True:
+                        v = Topology.InternalVertex(topology)
+                    else:
+                        v = Topology.Centroid(topology)
+                    d = Topology.Dictionary(topology)
+                    if storeBREP:
+                        d = Dictionary.SetValueAtKey(d, "BREP", Topology.BREPString(topology))
+                    if Topology.IsInstance(v, "vertex"):
+                        v = Topology.SetDictionary(v, Topology.Dictionary(topology))
+                        vertices.append(v)
+                    else:
+                        if not silent:
+                            ifc_id = Dictionary.ValueAtKey(Topology.Dictionary(topology), "IFC_global_id", 0)
+                            print(f"Graph.ByIFCFile - Warning: Could not create a vertex for entity {ifc_id}. Skipping")
+            return vertices
+        
+        # Get the relationships
+        def get_relationships(ifc_file, includeRels=[], excludeRels=[]):
+            include_set = set(s.lower() for s in includeRels)
+            exclude_set = set(s.lower() for s in excludeRels)
+
+            relationships = [
+                rel for rel in ifc_file.by_type("IfcRelationship")
+                if (rel.is_a().lower() not in exclude_set) and
+                (not include_set or rel.is_a().lower() in include_set)
+            ]
+
+            return relationships
+        def get_edges(ifc_relationships, vertices):
+            tuples = []
+            edges = []
+
+            for ifc_rel in ifc_relationships:
+                source = None
+                destinations = []
+                if ifc_rel.is_a("IfcRelConnectsPorts"):
+                    source = ifc_rel.RelatingPort
+                    destinations = ifc_rel.RelatedPorts
+                elif ifc_rel.is_a("IfcRelConnectsPortToElement"):
+                    source = ifc_rel.RelatingPort
+                    destinations = [ifc_rel.RelatedElement]
+                elif ifc_rel.is_a("IfcRelAggregates"):
+                    source = ifc_rel.RelatingObject
+                    destinations = ifc_rel.RelatedObjects
+                elif ifc_rel.is_a("IfcRelNests"):
+                    source = ifc_rel.RelatingObject
+                    destinations = ifc_rel.RelatedObjects
+                elif ifc_rel.is_a("IfcRelAssignsToGroup"):
+                    source = ifc_rel.RelatingGroup
+                    destinations = ifc_rel.RelatedObjects
+                elif ifc_rel.is_a("IfcRelConnectsPathElements"):
+                    source = ifc_rel.RelatingElement
+                    destinations = [ifc_rel.RelatedElement]
+                elif ifc_rel.is_a("IfcRelConnectsStructuralMember"):
+                    source = ifc_rel.RelatingStructuralMember
+                    destinations = [ifc_rel.RelatedStructuralConnection]
+                elif ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
+                    source = ifc_rel.RelatingStructure
+                    destinations = ifc_rel.RelatedElements
+                elif ifc_rel.is_a("IfcRelFillsElement"):
+                    source = ifc_rel.RelatingOpeningElement
+                    destinations = [ifc_rel.RelatedBuildingElement]
+                elif ifc_rel.is_a("IfcRelSpaceBoundary"):
+                    source = ifc_rel.RelatingSpace
+                    destinations = [ifc_rel.RelatedBuildingElement]
+                elif ifc_rel.is_a("IfcRelVoidsElement"):
+                    source = ifc_rel.RelatingBuildingElement
+                    destinations = [ifc_rel.RelatedOpeningElement]
+                elif ifc_rel.is_a("IfcRelDefinesByProperties") or ifc_rel.is_a("IfcRelAssociatesMaterial") or ifc_rel.is_a("IfcRelDefinesByType"):
+                    source = None
+                    destinations = None
+                else:
+                    print("Graph.ByIFCFile - Warning: The relationship", ifc_rel, "is not supported. Skipping.")
+                if source:
+                    sv = vertex_at_key_value(vertices, key="IFC_global_id", value=getattr(source, 'GlobalId', 0))
+                    if sv:
+                        si = Vertex.Index(sv, vertices, tolerance=tolerance)
+                        if not si == None:
+                            for destination in destinations:
+                                if destination == None:
+                                    continue
+                                ev = vertex_at_key_value(vertices, key="IFC_global_id", value=getattr(destination, 'GlobalId', 0))
+                                if ev:
+                                    ei = Vertex.Index(ev, vertices, tolerance=tolerance)
+                                    if not ei == None:
+                                        if not si == ei:
+                                            if not [si,ei] in tuples:
+                                                tuples.append([si,ei])
+                                                tuples.append([ei,si])
+                                                e = Edge.ByVertices([sv,ev])
+                                                if Topology.IsInstance(e, "edge"):
+                                                    d = Dictionary.ByKeysValues(["IFC_global_id", "IFC_name", "IFC_type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
+                                                    e = Topology.SetDictionary(e, d)
+                                                    edges.append(e)
+                                                else:
+                                                    if not silent:
+                                                        if not silent:
+                                                            print(f"Graph.ByIFCFile - Warning: Could not create an edge for relationship {ifc_rel.id()}. Skipping")
+
+            return edges
+        
+        vertices = get_vertices(includeTypes=includeTypes,
+                                excludeTypes=excludeTypes,
+                                removeCoplanarFaces=removeCoplanarFaces,
+                                storeBREP=storeBREP,
+                                useInternalVertex=useInternalVertex,
+                                epsilon=epsilon,
+                                tolerance=0.0001)
+        relationships = get_relationships(file, includeRels=includeRels, excludeRels=excludeRels)
+        edges = get_edges(relationships, vertices)
+        return Graph.ByVerticesEdges(vertices, edges)
+        
+    @staticmethod
+    def ByIFCFile_old(file,
+                  includeTypes: list = [],
+                  excludeTypes: list = [],
+                  includeRels: list = [],
+                  excludeRels: list = [],
+                  transferDictionaries: bool = False,
+                  useInternalVertex: bool = False,
+                  storeBREP: bool = False,
+                  removeCoplanarFaces: bool = False,
+                  xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
+                  xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
                   tolerance: float = 0.0001):
         """
         Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.

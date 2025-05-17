@@ -286,12 +286,17 @@ class Grid():
                     vTempVec = Vector.Multiply(uvVector, v, tolerance=tolerance)
                     gridVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+uTempVec[0], Vertex.Y(origin, mantissa=mantissa)+vTempVec[1], Vertex.Z(origin, mantissa=mantissa)+uTempVec[2])
                     if clip and Topology.IsInstance(face, "Face"):
-                        gridVertex = gridVertex.Intersect(face, False)
-                    if Topology.IsInstance(gridVertex, "Vertex"):
-                        d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                        if d:
-                            gridVertex.SetDictionary(d)
-                        gridVertices.append(gridVertex)
+                        if Vertex.IsInternal(gridVertex, face):
+                            d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                            if d:
+                                gridVertex.SetDictionary(d)
+                            gridVertices.append(gridVertex)
+                    #     gridVertex = gridVertex.Intersect(face, False)
+                    # if Topology.IsInstance(gridVertex, "Vertex"):
+                    #     d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                    #     if d:
+                    #         gridVertex.SetDictionary(d)
+                    #     gridVertices.append(gridVertex)
         grid = None
         if len(gridVertices) > 0:
             grid = Cluster.ByTopologies(gridVertices)
@@ -347,12 +352,17 @@ class Grid():
                 for v in vRange:
                     gridVertex = Face.VertexByParameters(face, u, v)
                     if clip and Topology.IsInstance(face, "Face"):
-                        gridVertex = gridVertex.Intersect(face, False)
-                    if Topology.IsInstance(gridVertex, "Vertex"):
-                        d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                        if d:
-                            gridVertex.SetDictionary(d)
-                        gridVertices.append(gridVertex)
+                        if Vertex.IsInternal(gridVertex, face):
+                            d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                            if d:
+                                gridVertex.SetDictionary(d)
+                            gridVertices.append(gridVertex)
+                    #     gridVertex = gridVertex.Intersect(face, False)
+                    # if Topology.IsInstance(gridVertex, "Vertex"):
+                    #     d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                    #     if d:
+                    #         gridVertex.SetDictionary(d)
+                    #     gridVertices.append(gridVertex)
         grid = None
         if len(gridVertices) > 0:
             grid = Cluster.ByTopologies(gridVertices)

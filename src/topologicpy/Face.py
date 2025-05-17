@@ -1927,6 +1927,34 @@ class Face():
         else:
             inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance)
         return inverted_face
+    @staticmethod
+    def IsConvex(face, mantissa: int = 6, silent: bool = False) -> bool:
+        """
+        Returns True if the input face is convex. Returns False otherwise.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The  input face.
+        mantissa : int , optional
+            The length of the desired mantissa. The default is 6.
+        silent : bool , optional
+            If set to True no warnings or errors are printed. The default is False.
+        Returns
+        -------
+        bool
+            True if the nput face is convex. False otherwise.
+
+        """
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(face, "face"):
+            if not silent:
+                print("Face.IsConvex - Error: The input face parameter is not a valid topologic face. Returning None.")
+            return None
+        eb = Face.ExternalBoundary(face)
+        eb = Face.ByWire(eb)
+        return all(Face.InteriorAngles(eb)) < 180
 
     @staticmethod
     def IsCoplanar(faceA, faceB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
@@ -2468,9 +2496,9 @@ class Face():
             flat_face = Topology.Difference(flat_face, Face.ByWire(obs))
         
         # Check that the viewpoint is inside the face
-        if not Vertex.IsInternal(flat_vertex, flat_face):
-            print("Face.Isovist - Error: The viewpoint is not inside the face. Returning None.")
-            return None
+        # if not Vertex.IsInternal(flat_vertex, flat_face):
+        #     print("Face.Isovist - Error: The viewpoint is not inside the face. Returning None.")
+        #     return None
         targets = Topology.Vertices(flat_face)
         distances = []
         for target in targets:
@@ -3544,7 +3572,7 @@ class Face():
         return Face.ByWire(wire, tolerance=tolerance)
 
     @staticmethod
-    def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001) -> list:
+    def Triangulate(face, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
         Triangulates the input face and returns a list of faces.
 
@@ -3571,6 +3599,8 @@ class Face():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -3638,7 +3668,8 @@ class Face():
             from topologicpy.Topology import Topology
 
             if not Topology.IsInstance(face, "Face"):
-                print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
+                if not silent:
+                    print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
                 return None
             if not meshSize:
                 bounding_face = Face.BoundingRectangle(face)
@@ -3713,7 +3744,8 @@ class Face():
             return faces
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
+            if not silent:
+                print("Face.Triangulate - Error: The input face parameter is not a valid face. Returning None.")
             return None
         vertices = Topology.Vertices(face)
         if len(vertices) == 3: # Already a triangle

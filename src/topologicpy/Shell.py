@@ -1847,6 +1847,42 @@ class Shell():
         return final_result
 
     @staticmethod
+    def Square(origin= None, size: float = 1.0,
+                  uSides: int = 2, vSides: int = 2, direction: list = [0, 0, 1],
+                  placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates a square.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
+        size : float , optional
+            The size of the square. The default is 1.0.
+        length : float , optional
+            The length of the square. The default is 1.0.
+        uSides : int , optional
+            The number of sides along the width. The default is 2.
+        vSides : int , optional
+            The number of sides along the length. The default is 2.
+        direction : list , optional
+            The vector representing the up direction of the square. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Shell
+            The created shell square.
+
+        """
+        return Shell.Rectangle(origin=origin, width=size, length=size,
+                  uSides=uSides, vSides=vSides, direction=direction,
+                  placement=placement, tolerance=tolerance)
+    
+    @staticmethod
     def Vertices(shell) -> list:
         """
         Returns the vertices of the input shell.

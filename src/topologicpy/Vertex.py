@@ -153,6 +153,50 @@ class Vertex():
         return True
     
     @staticmethod
+    def AreCoplanar(vertices: list, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> bool:
+        """
+        Returns True if the input list of vertices are coplanar. Returns False otherwise.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001
+        silent : bool , optional
+            If set to True, no warnings or errors are printed. The default is False.
+
+        Returns
+        -------
+        bool
+            True if the input vertices are coplanar.
+
+        """
+        from topologicpy.Topology import Topology
+        from numpy.linalg import svd
+
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Vertex.Normal - Error: The vertices input parameter is not a valid list. Returning None.")
+            return None
+        
+        verts = [v for v in vertices if Topology.IsInstance(v, "vertex")]
+
+        if len(verts) < 3:
+            if not silent:
+                print("Vertex.AreCoplanar - Error: The list of vertices contains less than 3 valid topologic vertices. Returning None.")
+            return None  # At least 3 vertices are needed
+        
+        coords = np.array([Vertex.Coordinates(v, mantissa=mantissa) for v in vertices])
+
+        # Check if points are coplanar using SVD
+        _, s, vh = svd(coords - coords.mean(axis=0))
+        rank = (s > tolerance).sum()
+        return (rank <= 2)
+    
+    @staticmethod
     def AreIpsilateral(vertices: list, face) -> bool:
         """
         Returns True if the input list of vertices are on one side of a face. Returns False otherwise. If at least one of the vertices is on the face, this method return True.
@@ -1453,6 +1497,57 @@ class Vertex():
             sorted_indices = [x for _, x in sorted(zip(distances, indices))]
         return vertices[sorted_indices[0]]
 
+    @staticmethod
+    def Normal(vertices, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the normal vector of a list of co-planar Topologic vertices.
+        Depending on the order of the vertices, the normal can be flipped 180 degrees.
+
+        Parameters
+        ----------
+        vertices : list
+            A list of Topologic Vertex objects that are assumed to be co-planar.
+        mantissa : int, optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float, optional
+           The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True no warnings or errors are printed. The default is False.
+
+        Returns
+        -------
+        list
+            A unit normal vector [x, y, z] of the plane defined by the vertices, or None if invalid.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        import numpy as np
+
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Vertex.Normal - Error: The vertices input parameter is not a valid list. Returning None.")
+            return None
+        
+        verts = [v for v in vertices if Topology.IsInstance(v, "vertex")]
+
+        if len(verts) < 3:
+            if not silent:
+                print("Vertex.Normal - Error: The list of vertices contains less than 3 valid topologic vertices. Returning None.")
+            return None  # At least 3 vertices are needed
+
+        coords = np.array([Vertex.Coordinates(v, mantissa=mantissa) for v in verts])
+        centroid = np.mean(coords, axis=0)
+        centered = coords - centroid
+
+        # Use SVD to find the normal as the vector corresponding to the smallest singular value
+        _, _, vh = np.linalg.svd(centered)
+        normal = vh[-1]  # The last row is the normal of the best-fit plane
+
+        norm = np.linalg.norm(normal)
+        if norm < tolerance:
+            return None  # Degenerate normal
+        return list(np.round(normal / norm, mantissa))
+    
     @staticmethod
     def Origin():
         """

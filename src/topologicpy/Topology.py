@@ -2118,9 +2118,13 @@ class Topology():
         return Topology.ByDXFFile(file, sides=sides)
 
     @staticmethod
-    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False, epsilon=0.0001, tolerance=0.0001):
+    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False,
+                  removeCoplanarFaces=False,
+                  xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
+                  xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
+                  epsilon=0.0001, tolerance=0.0001, silent=False):
         """
-        Create a list of topologies by importing them from an IFC file.
+        Create a topology by importing it from an IFC file.
 
         Parameters
         ----------
@@ -2134,215 +2138,143 @@ class Topology():
             If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+        xMin : float, optional
+            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+        yMin : float, optional
+            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+        zMin : float, optional
+            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+        xMax : float, optional
+            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+        yMax : float, optional
+            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+        zMax : float, optional
+            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
         epsilon : float , optional
-                The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.0001.
-            tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         Returns
         -------
         list
             The created list of topologies.
         
         """
-
-        import ifcopenshell, ifcopenshell.geom
-        from topologicpy.Dictionary import Dictionary
+        import ifcopenshell
+        import ifcopenshell.geom
         from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        import numpy as np
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from concurrent.futures import ThreadPoolExecutor
+        import random
 
-        def get_psets(entity):
-            # Initialize the PSET dictionary for this entity
-            psets = {}
-            
-            # Check if the entity has a GlobalId
-            if not hasattr(entity, 'GlobalId'):
-                raise ValueError("The provided entity does not have a GlobalId.")
-            
-            # Get the property sets related to this entity
-            for definition in entity.IsDefinedBy:
-                if definition.is_a('IfcRelDefinesByProperties'):
-                    property_set = definition.RelatingPropertyDefinition
-                    
-                    # Check if it is a property set
-                    if not property_set == None:
-                        if property_set.is_a('IfcPropertySet'):
-                            pset_name = "IFC_"+property_set.Name
-                            
-                            # Dictionary to hold individual properties
-                            properties = {}
-                            
-                            # Iterate over the properties in the PSET
-                            for prop in property_set.HasProperties:
-                                if prop.is_a('IfcPropertySingleValue'):
-                                    # Get the property name and value
-                                    prop_name = "IFC_"+prop.Name
-                                    prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
-                                    properties[prop_name] = prop_value
-                            
-                            # Add this PSET to the dictionary for this entity
-                            psets[pset_name] = properties
-            return psets
-        
-        def get_color_transparency_material(entity):
-            import random
+        # Early filtering in parallel (safe)
+        def is_valid(product):
+            is_a = product.is_a().lower()
+            include = [t.lower() for t in includeTypes]
+            exclude = [t.lower() for t in excludeTypes]
+            return (not include or is_a in include) and (is_a not in exclude)
 
-            # Set default Material Name and ID
-            material_list = []
-            # Set default transparency based on entity type or material
-            default_transparency = 0.0
-            
-            # Check if the entity is an opening or made of glass
-            is_a = entity.is_a().lower()
-            if "opening" in is_a or "window" in is_a or "door" in is_a or "space" in is_a:
-                default_transparency = 0.7
-            elif "space" in is_a:
-                default_transparency = 0.8
-            
-            # Check if the entity has constituent materials (e.g., glass)
-            else:
-                # Check for associated materials (ConstituentMaterial or direct material assignment)
-                materials_checked = False
-                if hasattr(entity, 'HasAssociations'):
-                    for rel in entity.HasAssociations:
-                        if rel.is_a('IfcRelAssociatesMaterial'):
-                            material = rel.RelatingMaterial
-                            if material.is_a('IfcMaterial') and 'glass' in material.Name.lower():
-                                default_transparency = 0.5
-                                materials_checked = True
-                            elif material.is_a('IfcMaterialLayerSetUsage'):
-                                material_layers = material.ForLayerSet.MaterialLayers
-                                for layer in material_layers:
-                                    material_list.append(layer.Material.Name)
-                                    if 'glass' in layer.Material.Name.lower():
-                                        default_transparency = 0.5
-                                        materials_checked = True
-                                        
-                # Check for ConstituentMaterial if available
-                if hasattr(entity, 'HasAssociations') and not materials_checked:
-                    for rel in entity.HasAssociations:
-                        if rel.is_a('IfcRelAssociatesMaterial'):
-                            material = rel.RelatingMaterial
-                            if material.is_a('IfcMaterialConstituentSet'):
-                                for constituent in material.MaterialConstituents:
-                                    material_list.append(constituent.Material.Name)
-                                    if 'glass' in constituent.Material.Name.lower():
-                                        default_transparency = 0.5
-                                        materials_checked = True
+        with ThreadPoolExecutor() as executor:
+            products = list(file.by_type("IfcProduct"))
+            valid_entities = list(executor.map(lambda p: p if is_valid(p) else None, products))
+            valid_entities = [e for e in valid_entities if e is not None]
 
-                # Check if the entity has ShapeAspects with associated materials or styles
-                if hasattr(entity, 'HasShapeAspects') and not materials_checked:
-                    for shape_aspect in entity.HasShapeAspects:
-                        if hasattr(shape_aspect, 'StyledByItem') and shape_aspect.StyledByItem:
-                            for styled_item in shape_aspect.StyledByItem:
-                                for style in styled_item.Styles:
-                                    if style.is_a('IfcSurfaceStyle'):
-                                        for surface_style in style.Styles:
-                                            if surface_style.is_a('IfcSurfaceStyleRendering'):
-                                                transparency = getattr(surface_style, 'Transparency', default_transparency)
-                                                if transparency > 0:
-                                                    default_transparency = transparency
-
-            # Try to get the actual color and transparency if defined
-            if hasattr(entity, 'Representation') and entity.Representation:
-                for rep in entity.Representation.Representations:
-                    for item in rep.Items:
-                        if hasattr(item, 'StyledByItem') and item.StyledByItem:
-                            for styled_item in item.StyledByItem:
-                                if hasattr(styled_item, 'Styles'):
-                                    for style in styled_item.Styles:
-                                        if style.is_a('IfcSurfaceStyle'):
-                                            for surface_style in style.Styles:
-                                                if surface_style.is_a('IfcSurfaceStyleRendering'):
-                                                    color = surface_style.SurfaceColour
-                                                    transparency = getattr(surface_style, 'Transparency', default_transparency)
-                                                    return (color.Red*255, color.Green*255, color.Blue*255), transparency, material_list
-            
-            # If no color is defined, return a consistent random color based on the entity type
-            if "wall" in is_a:
-                color = (175, 175, 175)
-            elif "slab" in is_a:
-                color = (200, 200, 200)
-            elif "space" in is_a:
-                color = (250, 250, 250)
-            else:
-                random.seed(hash(is_a))
-                color = (random.random(), random.random(), random.random())
-            
-            return color, default_transparency, material_list
-        # Create a 4x4 unity matrix
-        matrix = [[1.0 if i == j else 0.0 for j in range(4)] for i in range(4)]
-        def convert_to_topology(entity, settings, transferDictionaries=False):    
-            if hasattr(entity, "Representation") and entity.Representation:
-                for rep in entity.Representation.Representations:
-                    shape_topology = None
-                    if rep.is_a("IfcShapeRepresentation"):
-                        # Generate the geometry for this entity
-                        try:
-                            shape = ifcopenshell.geom.create_shape(settings, entity)
-                            trans = shape.transformation
-                            # Convert into a 4x4 matrix
-                            matrix = [trans.matrix[i:i+4] for i in range(0, len(trans.matrix), 4)]
-                            # Get grouped vertices and grouped faces     
-                            grouped_verts = shape.geometry.verts
-                            verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
-                            grouped_edges = shape.geometry.edges
-                            edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
-                            grouped_faces = shape.geometry.faces
-                            faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
-                            #shape_topology = ifc_to_topologic_geometry(verts, edges, faces)
-                            #shape_topology = Topology.SelfMerge(Topology.ByGeometry(verts, edges, faces))
-                            shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
-                            if not shape_topology == None:
-                                if removeCoplanarFaces == True:
-                                    shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
-                                shape_topology = Topology.Transform(shape_topology, matrix)
-
-                                # Store relevant information
-                                if transferDictionaries == True:
-                                    color, transparency, material_list = get_color_transparency_material(entity)
-                                    if color == None:
-                                        color = "white"
-                                    if transparency == None:
-                                        transparency = 0
-                                    entity_dict = {
-                                        "TOPOLOGIC_id": str(Topology.UUID(shape_topology)),
-                                        "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
-                                        "TOPOLOGIC_type": Topology.TypeAsString(shape_topology),
-                                        "TOPOLOGIC_color": color,
-                                        "TOPOLOGIC_opacity": 1.0 - transparency,
-                                        "IFC_global_id": getattr(entity, 'GlobalId', 0),
-                                        "IFC_name": getattr(entity, 'Name', "Untitled"),
-                                        "IFC_type": entity.is_a(),
-                                        "IFC_material_list": material_list,
-                                    }
-                                    topology_dict = Dictionary.ByPythonDictionary(entity_dict)
-                                    # Get PSETs dictionary
-                                    pset_python_dict = get_psets(entity)
-                                    pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
-                                    topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                                    shape_topology = Topology.SetDictionary(shape_topology, topology_dict)
-                        except:
-                            pass
-                        return shape_topology
-            return None
-
-        # Main Code
-        topologies = []
         settings = ifcopenshell.geom.settings()
-        #settings.set("dimensionality", ifcopenshell.ifcopenshell_wrapper.SOLID)
         settings.set(settings.USE_WORLD_COORDS, True)
-        products = file.by_type("IfcProduct")
-        entities = []
-        for product in products:
-            is_a = product.is_a()
-            if (is_a in includeTypes or len(includeTypes) == 0) and (not is_a in excludeTypes):
-                entities.append(product)
+        settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
+
         topologies = []
-        for entity in entities:
-            topologies.append(convert_to_topology(entity, settings, transferDictionaries=transferDictionaries))
-        return topologies
+        for entity in valid_entities:
+            if not hasattr(entity, "Representation") or not entity.Representation:
+                continue
+            shape = ifcopenshell.geom.create_shape(settings, entity)
+            topology = None
+            if hasattr(shape.geometry, 'brep_data'):
+                brep_string = shape.geometry.brep_data
+                topology = Topology.ByBREPString(brep_string)
+                if not topology:
+                    if not silent:
+                        print(f"Topology.ByIFCFile - Warning: Could not convert entity {getattr(entity, 'GlobalId', 0)} to a topology. Skipping.")
+                    continue
+                if removeCoplanarFaces:
+                    topology = Topology.RemoveCoplanarFaces(topology, epsilon=epsilon, tolerance=tolerance)
+            else:
+                if not silent:
+                    print(f"Topology.ByIFCFile - Warning: Entity {getattr(entity, 'GlobalId', 0)} does not have a BREP. Skipping.")
+                continue
+            
+
+            if transferDictionaries:
+                entity_dict = {
+                    "TOPOLOGIC_id": str(Topology.UUID(topology)),
+                    "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
+                    "TOPOLOGIC_type": Topology.TypeAsString(topology),
+                    "IFC_global_id": getattr(entity, 'GlobalId', 0),
+                    "IFC_name": getattr(entity, 'Name', "Untitled"),
+                    "IFC_type": entity.is_a()
+                }
+
+                # Optionally add property sets
+                psets = {}
+                if hasattr(entity, 'IsDefinedBy'):
+                    for rel in entity.IsDefinedBy:
+                        if rel.is_a('IfcRelDefinesByProperties'):
+                            pdef = rel.RelatingPropertyDefinition
+                            if pdef and pdef.is_a('IfcPropertySet'):
+                                key = f"IFC_{pdef.Name}"
+                                props = {}
+                                for prop in pdef.HasProperties:
+                                    if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
+                                        props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
+                                psets[key] = props
+
+                final_dict = Dictionary.ByPythonDictionary(entity_dict)
+                if psets:
+                    pset_dict = Dictionary.ByPythonDictionary(psets)
+                    final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
+                
+                topology = Topology.SetDictionary(topology, final_dict)
+
+            topologies.append(topology)
+        
+        final_topologies = []
+        for topology in topologies:
+            faces = []
+
+            for w in Topology.Wires(topology):
+                # Skip trivial wires (e.g. edges)
+                if len(Topology.Vertices(w)) < 3:
+                    continue
+
+                # Only attempt face creation if the wire is closed
+                if Wire.IsClosed(w) and Wire.IsManifold(w):
+                    f = Face.ByWire(w)
+                    if f:
+                        faces.append(f)
+                        continue
+
+                # fallback: keep wire
+                faces.append(w)
+
+            # Avoid unnecessary Cluster/SelfMerge if there's only one face
+            if len(faces) == 1:
+                final_topology = faces[0]
+            else:
+                final_topology = Topology.SelfMerge(Cluster.ByTopologies(faces))
+                if final_topology == None:
+                    final_topology = Cluster.ByTopologies(faces)
+            if transferDictionaries:
+                d = Topology.Dictionary(topology)
+                final_topology = Topology.SetDictionary(final_topology, d)
+
+            final_topologies.append(final_topology)
+        return final_topologies
 
     @staticmethod
     def _ByIFCFile_old(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
@@ -4398,75 +4330,137 @@ class Topology():
         return contexts
 
     @staticmethod
-    def ConvexHull(topology, mantissa: int = 6, tolerance: float = 0.0001):
+    def ConvexHull(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a convex hull
+        Computes the convex hull of the input topology.
+        Returns a Face in 2D (even embedded in 3D), or a Cell/Shell in 3D.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input Topology.
-        mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+        mantissa : int, optional
+            Precision of the coordinates. Default is 6.
+        tolerance : float, optional
+            Tolerance value for geometric operations. Default is 0.0001.
+        silent : bool, optional
+            If True, suppresses warning and error messages.
 
         Returns
         -------
         topologic_core.Topology
-            The created convex hull of the input topology.
-
+            The convex hull of the topology as a Face (2D) or Cell/Shell (3D).
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
-        from topologicpy.Cluster import Cluster        
-        
-        def convexHull3D(item, tolerance, option):
-            if item:
-                vertices = Topology.Vertices(item)
-                pointList = []
-                for v in vertices:
-                    pointList.append(Vertex.Coordinates(v, mantissa=mantissa))
-                points = np.array(pointList)
-                if option:
-                    hull = ConvexHull(points, qhull_options=option)
-                else:
-                    hull = ConvexHull(points)
-                faces = []
-                for simplex in hull.simplices:
-                    edges = []
-                    for i in range(len(simplex)-1):
-                        sp = hull.points[simplex[i]]
-                        ep = hull.points[simplex[i+1]]
-                        sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
-                        ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                        edges.append(Edge.ByVertices([sv, ev], tolerance=tolerance))
-                    sp = hull.points[simplex[-1]]
-                    ep = hull.points[simplex[0]]
-                    sv = Vertex.ByCoordinates(sp[0], sp[1], sp[2])
-                    ev = Vertex.ByCoordinates(ep[0], ep[1], ep[2])
-                    edges.append(Edge.ByVertices([sv, ev], tolerance=tolerance))
-                    faces.append(Face.ByWire(Wire.ByEdges(edges, tolerance=tolerance), tolerance=tolerance))
-            try:
-                c = Cell.ByFaces(faces, tolerance=tolerance)
-                return c
-            except:
-                returnTopology = Topology.SelfMerge(Cluster.ByTopologies(faces), tolerance=tolerance)
-                if Topology.Type(returnTopology) == Topology.TypeID("Shell"):
-                    return Shell.ExternalBoundary(returnTopology, tolerance=tolerance)
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        import numpy as np
+        from scipy.spatial import ConvexHull as SciPyConvexHull
+
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.ConvexHull - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.ConvexHull - Error: Input is not a valid topology. Returning None.")
             return None
-        returnObject = None
-        try:
-            returnObject = convexHull3D(topology, tolerance, None)
-        except:
-            returnObject = convexHull3D(topology, tolerance, 'QJ')
-        return returnObject
+
+        def convexHull_2d(vertices, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Edge import Edge
+            from topologicpy.Wire import Wire
+            from topologicpy.Face import Face
+            from topologicpy.Cluster import Cluster
+            from topologicpy.Topology import Topology
+
+            import numpy as np
+            from scipy.spatial import ConvexHull as SciPyConvexHull
+
+            cluster = Cluster.ByTopologies(vertices)
+            normal = Vertex.Normal(vertices)
+            centroid = Topology.Centroid(cluster)
+            flat_cluster = Topology.Flatten(cluster, origin=centroid, direction=normal)
+            flat_verts = Topology.Vertices(flat_cluster)
+            coords = np.array([[Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)] for v in flat_verts])
+            try:
+                hull = SciPyConvexHull(coords)
+            except:
+                if not silent:
+                    print("Topology.ConvexHull - Error computing 2D hull. Returning None.")
+                return None
+
+            # Reconstruct 3D points from 2D hull
+            hull_indices = hull.vertices
+            sorted_coords = coords[hull_indices]
+
+            edges = []
+            for i in range(len(sorted_coords)):
+                p1 = sorted_coords[i]
+                p2 = sorted_coords[(i + 1) % len(sorted_coords)]
+                v1 = Vertex.ByCoordinates(*p1)
+                v2 = Vertex.ByCoordinates(*p2)
+                edges.append(Edge.ByVertices([v1, v2], tolerance=tolerance))
+            convex_hull = Wire.ByEdges(edges, tolerance=tolerance)
+            if Topology.IsInstance(convex_hull, "wire"):
+                convex_hull_2 = Face.ByWire(convex_hull, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(convex_hull_2, "face"):
+                convex_hull_2 = convex_hull
+            convex_hull = Topology.Unflatten(convex_hull_2, origin=centroid, direction=normal)
+            return convex_hull
+        
+        vertices = Topology.Vertices(topology)
+        if len(vertices) < 3:
+            if not silent:
+                print("Topology.ConvexHull - Error: Need at least 3 points to compute a convex hull.")
+            return None
+        
+        coords = np.array([Vertex.Coordinates(v, mantissa=mantissa) for v in vertices])
+
+        if Vertex.AreCoplanar(vertices, mantissa=mantissa, tolerance=tolerance, silent=silent):
+            # Planar case
+            return convexHull_2d(vertices, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        else:
+            # Non-planar case
+            try:
+                hull = SciPyConvexHull(coords)
+            except:
+                try:
+                    hull = SciPyConvexHull(coords, qhull_options="QJ")
+                except Exception as e:
+                    if not silent:
+                        print(f"Topology.ConvexHull - 3D hull failed even with QJ: {e}")
+                    return None
+            faces = []
+            for simplex in hull.simplices:
+                points = coords[simplex]
+                edges = []
+                for i in range(len(points)):
+                    p1 = points[i]
+                    p2 = points[(i + 1) % len(points)]
+                    v1 = Vertex.ByCoordinates(*p1)
+                    v2 = Vertex.ByCoordinates(*p2)
+                    edges.append(Edge.ByVertices([v1, v2], tolerance=tolerance))
+                wire = Wire.ByEdges(edges, tolerance=tolerance)
+                face = Face.ByWire(wire, tolerance=tolerance)
+                faces.append(face)
+
+            convex_hull = Cell.ByFaces(faces, tolerance=tolerance, silent=True)
+            if convex_hull:
+                convex_hull_2 = Topology.RemoveCoplanarFaces(convex_hull, tolerance=tolerance, silent=True)
+                if not convex_hull_2:
+                    return convex_hull
+            else:
+                convex_hull = Shell.ByFaces(faces, tolerance=tolerance, silent=True)
+                if convex_hull:
+                    convex_hull_2 = Topology.RemoveCoplanarFaces(convex_hull, tolerance=tolerance, silent=True)
+                    if not convex_hull_2:
+                        return convex_hull
+                else:
+                    convex_hull = Cluster.ByTopologies(faces)
+            return convex_hull
     
     @staticmethod
     def Copy(topology, deep=False):
@@ -4498,6 +4492,63 @@ class Topology():
         if len(keys) > 0:
             return_topology = Topology.SetDictionary(return_topology, d)
         return return_topology
+    
+    @staticmethod
+    def Diameter(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Computes the diameter of the convex hull of the given topology.
+        The diameter is the maximum distance between any two vertices on the convex hull.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        float
+            The diameter of the convex hull of the topology.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Diameter - Error: The input topology parameter is not a valid Topology. Returning None.")
+            return None
+        if Topology.IsInstance(topology, "Vertex"):
+            return 0.0
+        if Topology.IsInstance(topology, "Edge"):
+            sv = Edge.StartVertex(topology)
+            ev = Edge.EndVertex(topology)
+            return Vertex.Distance(sv, ev, mantissa=mantissa)
+
+        # Step 1: Get the convex hull
+        hull = Topology.ConvexHull(topology, tolerance=tolerance, mantissa=mantissa, silent=silent)
+        if not hull:
+            return 0.0
+
+        # Step 2: Get all unique vertices of the hull
+        vertices = Topology.Vertices(hull)
+        num_vertices = len(vertices)
+        if num_vertices < 2:
+            return 0.0
+
+        # Step 3: Find the furthest pair
+        max_distance = 0.0
+        for i in range(num_vertices):
+            for j in range(i + 1, num_vertices):
+                dist = Vertex.Distance(vertices[i], vertices[j], mantissa=mantissa)
+                if dist > max_distance:
+                    max_distance = dist
+
+        return round(max_distance, mantissa)
     
     @staticmethod
     def Dictionary(topology):
@@ -7429,7 +7480,7 @@ class Topology():
             distances = []
             for v in vertices:
                 distances.append(Vertex.PerpendicularDistance(v, face=face2, mantissa=6))
-            d = sum(distances)/len(distances)
+            d = sum(distances) / len(distances) if distances else float('inf')
             return d <= epsilon
 
         def cluster_faces_on_planes(faces, epsilon=1e-6):
@@ -8928,7 +8979,8 @@ class Topology():
                                               intensities=intensities,
                                               colorScale=colorScale,
                                               mantissa=mantissa,
-                                              tolerance=tolerance))
+                                              tolerance=tolerance,
+                                              silent=silent))
                 topology_counter += offset
         figure = Plotly.FigureByData(data=data, width=width, height=height,
                                      xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
@@ -10149,7 +10201,7 @@ class Topology():
         selectors = []
         for aFace in topologyFaces:
             if len(Topology.Vertices(aFace)) > 3:
-                triFaces = Face.Triangulate(aFace, mode=mode, meshSize=meshSize, tolerance=tolerance)
+                triFaces = Face.Triangulate(aFace, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent)
             else:
                 triFaces = [aFace]
             for triFace in triFaces:

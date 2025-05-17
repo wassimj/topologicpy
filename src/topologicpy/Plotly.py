@@ -809,7 +809,8 @@ class Plotly:
                        faceLegendLabel="Topology Faces",
                        faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, intensities=[], colorScale="viridis", mantissa=6, tolerance=0.0001):
+                       intensityKey=None, intensities=[], colorScale="viridis",
+                       mantissa=6, tolerance=0.0001, silent=False):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -1188,7 +1189,7 @@ class Plotly:
                 f_dictionaries = []
                 all_triangles = []
                 for tp_face in tp_faces:
-                    triangles = Face.Triangulate(tp_face, tolerance=tolerance)
+                    triangles = Face.Triangulate(tp_face, tolerance=tolerance, silent=silent)
                     if isinstance(triangles, list):
                         for tri in triangles:
                             if faceColorKey or faceOpacityKey or faceLabelKey or faceGroupKey:
