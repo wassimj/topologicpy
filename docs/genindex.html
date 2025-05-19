@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Index &mdash; topologicpy 0.8.28 documentation</title>
+  <title>Index &mdash; topologicpy 0.8.29 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -30,7 +30,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.28
+                0.8.29
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -129,6 +129,8 @@
 </li>
       <li><a href="topologicpy.CSG.html#topologicpy.CSG.CSG.AddOperationVertex">AddOperationVertex() (topologicpy.CSG.CSG static method)</a>
 </li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.AddRule">AddRule() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
+</li>
       <li><a href="topologicpy.CSG.html#topologicpy.CSG.CSG.AddTopologyVertex">AddTopologyVertex() (topologicpy.CSG.CSG static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddVertex">AddVertex() (topologicpy.Graph.Graph static method)</a>
@@ -178,6 +180,10 @@
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Apertures">Apertures() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.ApertureTopologies">ApertureTopologies() (topologicpy.Topology.Topology static method)</a>
+</li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.ApplicableRules">ApplicableRules() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
+</li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule">ApplyRule() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
 </li>
       <li><a href="topologicpy.Wire.html#topologicpy.Wire.Wire.Arc">Arc() (topologicpy.Wire.Wire static method)</a>
 </li>
@@ -1001,6 +1007,8 @@
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByDataFrame">FigureByDataFrame() (topologicpy.Plotly.Plotly static method)</a>
 </li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput">FigureByInputOutput() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
+</li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByJSONFile">FigureByJSONFile() (topologicpy.Plotly.Plotly static method)</a>
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByJSONPath">FigureByJSONPath() (topologicpy.Plotly.Plotly static method)</a>
@@ -1009,12 +1017,14 @@
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByPieChart">FigureByPieChart() (topologicpy.Plotly.Plotly static method)</a>
 </li>
-      <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByTopology">FigureByTopology() (topologicpy.Plotly.Plotly static method)</a>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule">FigureByRule() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
 </li>
-      <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToJSON">FigureExportToJSON() (topologicpy.Plotly.Plotly static method)</a>
+      <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureByTopology">FigureByTopology() (topologicpy.Plotly.Plotly static method)</a>
 </li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToJSON">FigureExportToJSON() (topologicpy.Plotly.Plotly static method)</a>
+</li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToPDF">FigureExportToPDF() (topologicpy.Plotly.Plotly static method)</a>
 </li>
       <li><a href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.FigureExportToPNG">FigureExportToPNG() (topologicpy.Plotly.Plotly static method)</a>
@@ -1495,6 +1505,8 @@
 </li>
         <li><a href="topologicpy.PyG.html#module-topologicpy.PyG">topologicpy.PyG</a>
 </li>
+        <li><a href="topologicpy.ShapeGrammar.html#module-topologicpy.ShapeGrammar">topologicpy.ShapeGrammar</a>
+</li>
         <li><a href="topologicpy.Shell.html#module-topologicpy.Shell">topologicpy.Shell</a>
 </li>
         <li><a href="topologicpy.Sun.html#module-topologicpy.Sun">topologicpy.Sun</a>
@@ -1604,8 +1616,12 @@
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.OpenVertices">OpenVertices() (topologicpy.Topology.Topology static method)</a>
 </li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle">OperationByTitle() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
+</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles">OperationTitles() (topologicpy.ShapeGrammar.ShapeGrammar method)</a>
+</li>
       <li><a href="topologicpy.PyG.html#topologicpy.PyG.PyG.Optimizer">Optimizer() (topologicpy.PyG.PyG static method)</a>
 </li>
       <li><a href="topologicpy.Graph.html#topologicpy.Graph.Graph.Order">Order() (topologicpy.Graph.Graph static method)</a>
@@ -1876,6 +1892,8 @@
 </li>
       <li><a href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.SetValuesAtKeys">SetValuesAtKeys() (topologicpy.Dictionary.Dictionary static method)</a>
 </li>
+      <li><a href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar">ShapeGrammar (class in topologicpy.ShapeGrammar)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedEdges">SharedEdges() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SharedFaces">SharedFaces() (topologicpy.Topology.Topology static method)</a>
@@ -1946,10 +1964,10 @@
       </ul></li>
       <li><a href="topologicpy.Polyskel.html#topologicpy.Polyskel.skeletonize">skeletonize() (in module topologicpy.Polyskel)</a>
 </li>
-      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Slice">Slice() (topologicpy.Topology.Topology static method)</a>
-</li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Slice">Slice() (topologicpy.Topology.Topology static method)</a>
+</li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.SmallestFaces">SmallestFaces() (topologicpy.Topology.Topology static method)</a>
 </li>
       <li><a href="topologicpy.Topology.html#topologicpy.Topology.Topology.Snapshots">Snapshots() (topologicpy.Topology.Topology static method)</a>
@@ -2243,6 +2261,13 @@
 
       <ul>
         <li><a href="topologicpy.PyG.html#module-topologicpy.PyG">module</a>
+</li>
+      </ul></li>
+      <li>
+    topologicpy.ShapeGrammar
+
+      <ul>
+        <li><a href="topologicpy.ShapeGrammar.html#module-topologicpy.ShapeGrammar">module</a>
 </li>
       </ul></li>
       <li>

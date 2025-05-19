@@ -30,6 +30,7 @@ Submodules
    topologicpy.Plotly
    topologicpy.Polyskel
    topologicpy.PyG
+   topologicpy.ShapeGrammar
    topologicpy.Shell
    topologicpy.Speckle
    topologicpy.Sun
