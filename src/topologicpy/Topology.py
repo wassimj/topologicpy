@@ -9949,7 +9949,6 @@ class Topology():
             
             # Extract translation (last column of the matrix)
             translation = [m[3] for m in matrix[:3]]
-            print("translation", translation)
             x_translate, y_translate, z_translate = translation
             
             # Extract rotation (top-left 3x3 part of the matrix)
@@ -9957,7 +9956,6 @@ class Topology():
             
             # Extract scaling (diagonal of the matrix)
             scaling_factors = [matrix[m][m] for m in [0,1,2]]  # scaling is stored in the diagonal of the rotation matrix
-            print(scaling_factors)
             x_scale, y_scale, z_scale = scaling_factors
             
             # Step 1: Apply Scaling

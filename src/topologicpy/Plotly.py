@@ -592,6 +592,7 @@ class Plotly:
             mode = "markers+text"
         else:
             mode = "markers"
+
         vData2 = go.Scatter3d(x=x,
                             y=y,
                             z=z,
@@ -603,11 +604,13 @@ class Plotly:
                                         opacity=1,
                                         sizemode="diameter"),
                             mode=mode,
+                            customdata = labels,
                             legendgroup=legendGroup,
                             legendrank=legendRank,
                             text=labels,
                             hoverinfo='text',
-                            hovertext=labels
+                            hovertext=labels,
+                            hovertemplate=["Click "+label for label in labels]
                             )
         if borderWidth > 0 or borderWidthKey:
             vData1 = go.Scatter3d(x=x,
@@ -676,14 +679,13 @@ class Plotly:
             labels = []
             for j, elements_cluster in enumerate(elements_clusters):
                 d_color = color
-                labels.append("Edge_"+str(j+1).zfill(n))
                 d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
                         d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
                         d_color = Color.AnyToHex(d_color)
                     if not labelKey == None:
-                        label = str(Dictionary.ValueAtKey(d, key=labelKey)) or ""
+                        labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
                     if not widthKey == None:
                         e_width = Dictionary.ValueAtKey(d, key=widthKey)
                         if not e_width == None:
@@ -727,8 +729,10 @@ class Plotly:
                                     line=dict(color=d_color, width=width),
                                     legendgroup=legendGroup,
                                     legendrank=legendRank,
-                                    text=label,
-                                    hoverinfo='text')
+                                    text=labels,
+                                    customdata=labels,
+                                    hoverinfo='text',
+                                    hovertext=labels)
                 traces.append(trace)
         else:
             x = []
