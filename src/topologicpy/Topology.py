@@ -2118,17 +2118,15 @@ class Topology():
         return Topology.ByDXFFile(file, sides=sides)
 
     @staticmethod
-    def ByIFCFile(file, includeTypes=[], excludeTypes=[], transferDictionaries=False,
+    def ByIFCFile(ifc_file, includeTypes=[], excludeTypes=[], transferDictionaries=False,
                   removeCoplanarFaces=False,
-                  xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
-                  xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
                   epsilon=0.0001, tolerance=0.0001, silent=False):
         """
         Create a topology by importing it from an IFC file.
 
         Parameters
         ----------
-        file : file object
+        ifc_file : file object
             The input IFC file.
         includeTypes : list , optional
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
@@ -2138,18 +2136,6 @@ class Topology():
             If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
         removeCoplanarFaces : bool , optional
             If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
-        xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
-        yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
-        zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
-        xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
-        yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
-        zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
         epsilon : float , optional
             The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
         tolerance : float , optional
@@ -2162,119 +2148,89 @@ class Topology():
             The created list of topologies.
         
         """
+        import multiprocessing
         import ifcopenshell
         import ifcopenshell.geom
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from concurrent.futures import ThreadPoolExecutor
-        import random
-
-        # Early filtering in parallel (safe)
-        def is_valid(product):
-            is_a = product.is_a().lower()
-            include = [t.lower() for t in includeTypes]
-            exclude = [t.lower() for t in excludeTypes]
-            return (not include or is_a in include) and (is_a not in exclude)
-
-        with ThreadPoolExecutor() as executor:
-            products = list(file.by_type("IfcProduct"))
-            valid_entities = list(executor.map(lambda p: p if is_valid(p) else None, products))
-            valid_entities = [e for e in valid_entities if e is not None]
-
+        
+        # 1 Guard against including and excluding the same types
+        includeTypes = [s.lower() for s in includeTypes]
+        excludeTypes = [s.lower() for s in excludeTypes]
+        if len(includeTypes) > 0 and len(excludeTypes) > 0:
+            excludeTypes = [s for s in excludeTypes if s not in includeTypes]
+        # 2 Setup geometry settings
         settings = ifcopenshell.geom.settings()
         settings.set(settings.USE_WORLD_COORDS, True)
+        # A string representation of the OCC representation
+        settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.NATIVE)
+        # A string representation of the OCC representation
         settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
+        
+        # 3 Create iterator
+        it = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
+        if not it.initialize():
+            if not silent:
+                print("Topology.ByIFCFile")
+            raise RuntimeError("Geometry iterator failed to initialize")
 
+        # 4) Loop over shapes
         topologies = []
-        for entity in valid_entities:
-            if not hasattr(entity, "Representation") or not entity.Representation:
-                continue
-            shape = ifcopenshell.geom.create_shape(settings, entity)
-            topology = None
-            if hasattr(shape.geometry, 'brep_data'):
-                brep_string = shape.geometry.brep_data
-                topology = Topology.ByBREPString(brep_string)
-                if not topology:
-                    if not silent:
-                        print(f"Topology.ByIFCFile - Warning: Could not convert entity {getattr(entity, 'GlobalId', 0)} to a topology. Skipping.")
-                    continue
+
+        while True:
+            shape = it.get()
+            element = ifc_file.by_guid(shape.guid)
+            element_type = element.is_a().lower()
+            if ((element_type in includeTypes) or (len(includeTypes) == 0)) and ((not element_type in excludeTypes) or (len(excludeTypes) == 0)):
+                geom = shape.geometry
+                topology = Topology.ByBREPString(geom.brep_data)
+                faces = Topology.Faces(topology)
+                new_faces = []
+                for face in faces:
+                    eb = Face.ExternalBoundary(face)
+                    ib = Face.InternalBoundaries(face)
+                    f = Face.ByWires(eb, ib)
+                    new_faces.append(f)
+                topology = Topology.SelfMerge(Cluster.ByTopologies(new_faces))
                 if removeCoplanarFaces:
                     topology = Topology.RemoveCoplanarFaces(topology, epsilon=epsilon, tolerance=tolerance)
-            else:
-                if not silent:
-                    print(f"Topology.ByIFCFile - Warning: Entity {getattr(entity, 'GlobalId', 0)} does not have a BREP. Skipping.")
-                continue
-            
+                if transferDictionaries:
+                    element_dict = {
+                        "TOPOLOGIC_id": str(Topology.UUID(topology)),
+                        "TOPOLOGIC_name": getattr(element, 'Name', "Untitled"),
+                        "TOPOLOGIC_type": Topology.TypeAsString(topology),
+                        "IFC_global_id": getattr(element, 'GlobalId', 0),
+                        "IFC_name": getattr(element, 'Name', "Untitled"),
+                        "IFC_type": element_type
+                    }
 
-            if transferDictionaries:
-                entity_dict = {
-                    "TOPOLOGIC_id": str(Topology.UUID(topology)),
-                    "TOPOLOGIC_name": getattr(entity, 'Name', "Untitled"),
-                    "TOPOLOGIC_type": Topology.TypeAsString(topology),
-                    "IFC_global_id": getattr(entity, 'GlobalId', 0),
-                    "IFC_name": getattr(entity, 'Name', "Untitled"),
-                    "IFC_type": entity.is_a()
-                }
+                    # Optionally add property sets
+                    psets = {}
+                    if hasattr(element, 'IsDefinedBy'):
+                        for rel in element.IsDefinedBy:
+                            if rel.is_a('IfcRelDefinesByProperties'):
+                                pdef = rel.RelatingPropertyDefinition
+                                if pdef and pdef.is_a('IfcPropertySet'):
+                                    key = f"IFC_{pdef.Name}"
+                                    props = {}
+                                    for prop in pdef.HasProperties:
+                                        if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
+                                            props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
+                                    psets[key] = props
 
-                # Optionally add property sets
-                psets = {}
-                if hasattr(entity, 'IsDefinedBy'):
-                    for rel in entity.IsDefinedBy:
-                        if rel.is_a('IfcRelDefinesByProperties'):
-                            pdef = rel.RelatingPropertyDefinition
-                            if pdef and pdef.is_a('IfcPropertySet'):
-                                key = f"IFC_{pdef.Name}"
-                                props = {}
-                                for prop in pdef.HasProperties:
-                                    if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
-                                        props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
-                                psets[key] = props
+                    final_dict = Dictionary.ByPythonDictionary(element_dict)
+                    if psets:
+                        pset_dict = Dictionary.ByPythonDictionary(psets)
+                        final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
+                    
+                    topology = Topology.SetDictionary(topology, final_dict)
+                topologies.append(topology)
+            if not it.next():
+                break
 
-                final_dict = Dictionary.ByPythonDictionary(entity_dict)
-                if psets:
-                    pset_dict = Dictionary.ByPythonDictionary(psets)
-                    final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
-                
-                topology = Topology.SetDictionary(topology, final_dict)
-
-            topologies.append(topology)
-        
-        final_topologies = []
-        for topology in topologies:
-            faces = []
-
-            for w in Topology.Wires(topology):
-                # Skip trivial wires (e.g. edges)
-                if len(Topology.Vertices(w)) < 3:
-                    continue
-
-                # Only attempt face creation if the wire is closed
-                if Wire.IsClosed(w) and Wire.IsManifold(w):
-                    f = Face.ByWire(w)
-                    if f:
-                        faces.append(f)
-                        continue
-
-                # fallback: keep wire
-                faces.append(w)
-
-            # Avoid unnecessary Cluster/SelfMerge if there's only one face
-            if len(faces) == 1:
-                final_topology = faces[0]
-            else:
-                final_topology = Topology.SelfMerge(Cluster.ByTopologies(faces))
-                if final_topology == None:
-                    final_topology = Cluster.ByTopologies(faces)
-            if transferDictionaries:
-                d = Topology.Dictionary(topology)
-                final_topology = Topology.SetDictionary(final_topology, d)
-
-            final_topologies.append(final_topology)
-        return final_topologies
+        return topologies
 
     @staticmethod
     def _ByIFCFile_old(file, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False):
@@ -6590,15 +6546,19 @@ class Topology():
                     return False, None
         # Done with Exclusion Tests.
 
-        faces_a = Topology.Faces(topologyA)
-        faces_b = Topology.Faces(topologyB)
-        if len(faces_a) > 0 and len(faces_b) > 0:
-            largest_faces_a = Topology.LargestFaces(topologyA)
-            largest_faces_b = Topology.LargestFaces(topologyB)
+        if Topology.IsInstance(topologyA, "face"):
+            largest_faces_a = [topologyA]
+            largest_faces_b = [topologyB]
         else:
-            if not silent:
-                print("Topology.IsSimilar - Error: The topologies do not have faces. Returning None.")
-            return False, None
+            faces_a = Topology.Faces(topologyA)
+            faces_b = Topology.Faces(topologyB)
+            if len(faces_a) > 0 and len(faces_b) > 0:
+                largest_faces_a = Topology.LargestFaces(topologyA)
+                largest_faces_b = Topology.LargestFaces(topologyB)
+            else:
+                if not silent:
+                    print("Topology.IsSimilar - Error: The topologies do not have faces. Returning None.")
+                return False, None
 
     # Process largest faces
         for face_a in largest_faces_a:
