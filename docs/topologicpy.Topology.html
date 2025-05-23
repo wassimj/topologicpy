@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.8.29 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.8.30 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.29
+                0.8.30
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -374,7 +374,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByGeometry" title="topologicpy.Topology.Topology.ByGeometry"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByGeometry</span></code></a>([vertices, edges, faces, ...])</p></td>
 <td><p>Create a topology by the input lists of vertices, edges, and faces.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCFile" title="topologicpy.Topology.Topology.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(ifc_file[, includeTypes, ...])</p></td>
 <td><p>Create a topology by importing it from an IFC file.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ByIFCPath" title="topologicpy.Topology.Topology.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, includeTypes, ...])</p></td>
@@ -1260,12 +1260,12 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByIFCFile">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByIFCFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xMax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yMax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zMax</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByIFCFile" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByIFCFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifc_file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByIFCFile" title="Permalink to this definition"></a></dt>
 <dd><p>Create a topology by importing it from an IFC file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>file</strong><span class="classifier">file object</span></dt><dd><p>The input IFC file.</p>
+<dt><strong>ifc_file</strong><span class="classifier">file object</span></dt><dd><p>The input IFC file.</p>
 </dd>
 <dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].</p>
 </dd>
@@ -1274,18 +1274,6 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. The default is False.</p>
 </dd>
 <dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. The default is False.</p>
-</dd>
-<dt><strong>xMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. The default is -0.5.</p>
-</dd>
-<dt><strong>yMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. The default is -0.5.</p>
-</dd>
-<dt><strong>zMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. The default is -0.5.</p>
-</dd>
-<dt><strong>xMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. The default is 0.5.</p>
-</dd>
-<dt><strong>yMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. The default is 0.5.</p>
-</dd>
-<dt><strong>zMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. The default is 0.5.</p>
 </dd>
 <dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
 </dd>
