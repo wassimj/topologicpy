@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ShapeGrammar module &mdash; topologicpy 0.8.30 documentation</title>
+  <title>topologicpy.ShapeGrammar module &mdash; topologicpy 0.8.31 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.30
+                0.8.31
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -161,6 +161,12 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplyRule</span></code></a>(topology[, rule, matrix, ...])</p></td>
 <td><p>Returns rules applicable to the input topology.</p></td>
 </tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByInputOutput</span></code></a>(input, output[, silent])</p></td>
+<td><p>Returns the Plotly figure of the input and output topologies as a rule.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByRule</span></code></a>(rule[, silent])</p></td>
+<td><p>Returns the Plotly figure of the input rule.</p></td>
+</tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByInputOutput</span></code></a>(input, output[, silent])</p></td>
 <td><p>Returns the Plotly figure of the input and output topologies as a rule.</p></td>
 </tr>
@@ -262,8 +268,8 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput">
-<span class="sig-name descname"><span class="pre">FigureByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput">
+<span class="sig-name descname"><span class="pre">ClusterByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the Plotly figure of the input and output topologies as a rule.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -285,6 +291,52 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule">
+<span class="sig-name descname"><span class="pre">ClusterByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the Plotly figure of the input rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>rule</strong><span class="classifier">dict</span></dt><dd><p>The input rule</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses error/warning messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cluster</dt><dd><p>The created rule cluster</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput">
+<span class="sig-name descname"><span class="pre">FigureByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the Plotly figure of the input and output topologies as a rule.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
+</dd>
+<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses error/warning messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Plotly.Figure</dt><dd><p>The created plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule">
 <span class="sig-name descname"><span class="pre">FigureByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the Plotly figure of the input rule.</p>
@@ -299,7 +351,8 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>This function does not return a value</dt><dd></dd>
+<dt>Plotly.Figure</dt><dd><p>The create plotly figure</p>
+</dd>
 </dl>
 </dd>
 </dl>
