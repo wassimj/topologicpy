@@ -202,7 +202,7 @@ class CSG():
             if not silent:
                 print("CSG.Connect - Error: The input vertexB parameter is not a valid vertex. Returning None.")
             return None
-        edge = Edge.ByVertices(vertexA, vertexB, tolerance=tolerance)
+        edge = Edge.ByVertices(vertexA, vertexB, tolerance=tolerance, silent=silent)
         if graph == None:
             vertices = [vertexA, vertexB]
             edges = [edge]

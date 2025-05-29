@@ -571,6 +571,9 @@ class Face():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
 
         Returns
         -------
@@ -604,8 +607,7 @@ class Face():
         
         # Try the simple method first
         face = None
-        ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell))
-        #ext_boundary = Shell.ExternalBoundary(shell)
+        ext_boundary = Wire.RemoveCollinearEdges(Shell.ExternalBoundary(shell), tolerance=tolerance, silent=silent)
         if Topology.IsInstance(ext_boundary, "Wire"):
             face = Face.ByWire(ext_boundary, silent=silent)
         elif Topology.IsInstance(ext_boundary, "Cluster"):
@@ -629,7 +631,7 @@ class Face():
             new_vertices.append(new_v)
         planar_shell = Topology.SelfMerge(Topology.ReplaceVertices(planar_shell, verticesA=vertices, verticesB=new_vertices), tolerance=tolerance)
         ext_boundary = Shell.ExternalBoundary(planar_shell, tolerance=tolerance)
-        ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
+        ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(ext_boundary, "Topology"):
             print("Face.ByShell - Error: Could not derive the external boundary of the input shell parameter. Returning None.")
             return None
@@ -637,9 +639,9 @@ class Face():
         if Topology.IsInstance(ext_boundary, "Wire"):
             if not Topology.IsPlanar(ext_boundary, tolerance=tolerance):
                 ext_boundary = Wire.Planarize(ext_boundary, origin=origin, tolerance=tolerance)
-            ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance)
+            ext_boundary = Topology.RemoveCollinearEdges(ext_boundary, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             try:
-                face = Face.ByWire(ext_boundary)
+                face = Face.ByWire(ext_boundary, tolerance=tolerance, silent=silent)
                 face = Topology.Unflatten(face, origin=origin, direction=normal)
                 return face
             except:
@@ -663,11 +665,11 @@ class Face():
             int_wires = []
             for int_boundary in int_boundaries:
                 temp_wires = Topology.Wires(int_boundary)
-                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
+                int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, tolerance=tolerance, silent=silent))
                 #int_wires.append(temp_wires[0])
 
             temp_wires = Topology.Wires(ext_boundary)
-            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
+            ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             #ext_wire = temp_wires[0]
             face = Face.ByWires(ext_wire, int_wires)
             face = Topology.Unflatten(face, origin=origin, direction=normal)
@@ -676,7 +678,7 @@ class Face():
             return None
     
     @staticmethod
-    def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 0.0, tolerance: float = 0.0001):
+    def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face by thickening the input wire. This method assumes the wire is manifold and planar.
 
@@ -690,6 +692,8 @@ class Face():
             The desired offset to the interior of the wire. The default is 0.0.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -710,7 +714,7 @@ class Face():
             print("Face.ByThickenedWire - Error: The input wire parameter is not a manifold wire. Returning None.")
             return None
         three_vertices = Topology.Vertices(wire)[0:3]
-        temp_w = Wire.ByVertices(three_vertices, close=True)
+        temp_w = Wire.ByVertices(three_vertices, close=True, tolerance=tolerance, silent=silent)
         flat_face = Face.ByWire(temp_w, tolerance=tolerance)
         origin = Vertex.Origin()
         normal = Face.Normal(flat_face)
@@ -733,7 +737,7 @@ class Face():
             out_vertices = Topology.Vertices(outside_wire)[1:-1]
             in_vertices = Topology.Vertices(inside_wire)[1:-1]
             vertices = [sv2] + out_vertices + [ev2,ev1] + in_vertices + [sv1]
-            return_face = Face.ByWire(Wire.ByVertices(vertices))
+            return_face = Face.ByWire(Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=silent))
         else:
             return_face = Face.ByWires(outside_wire, [inside_wire])
         return_face = Topology.Unflatten(return_face, origin=origin, direction=normal)
@@ -773,7 +777,7 @@ class Face():
                 print("Face.ByVertices - Error: The input vertices parameter does not contain at least three valid vertices. Returning None.")
             return None
         
-        w = Wire.ByVertices(vertexList, tolerance=tolerance)
+        w = Wire.ByVertices(vertexList, close=True, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(w, "Wire"):
             if not silent:
                 print("Face.ByVertices - Error: Could not create the base wire. Returning None.")
@@ -782,8 +786,8 @@ class Face():
             if not silent:
                 print("Face.ByVertices - Error: Could not create a closed base wire. Returning None.")
             return None
-        f = Face.ByWire(w, tolerance=tolerance)
-        if not Topology.IsInstance(w, "Wire"):
+        f = Face.ByWire(w, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(f, "Face"):
             if not silent:
                 print("Face.ByVertices - Error: Could not create the face. Returning None.")
             return None
@@ -851,7 +855,7 @@ class Face():
         import inspect
 
         def triangulateWire(wire):
-            wire = Topology.RemoveCollinearEdges(wire)
+            wire = Topology.RemoveCollinearEdges(wire, angTolerance=0.1, tolerance=tolerance, silent=silent)
             vertices = Topology.Vertices(wire)
             shell = Shell.Delaunay(vertices)
             if Topology.IsInstance(shell, "Topology"):
@@ -1707,7 +1711,7 @@ class Face():
             return None
         ib_wires = []
         for ib in ib_list:
-            ib = Wire.ByVertices(Topology.Vertices(ib))
+            ib = Wire.ByVertices(Topology.Vertices(ib), close=True, tolerance=tolerance, silent=silent)
             ib = Wire.Reverse(ib)
             if isinstance(radiusKey, str):
                 ib = Topology.TransferDictionariesBySelectors(ib, selectors=f_vertices, tranVertices=True)
@@ -1721,7 +1725,7 @@ class Face():
         return Face.ByWires(eb, ib_wires)
 
     @staticmethod
-    def Harmonize(face, tolerance: float = 0.0001):
+    def Harmonize(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a harmonized version of the input face such that the *u* and *v* origins are always in the upperleft corner.
 
@@ -1731,6 +1735,8 @@ class Face():
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1744,19 +1750,20 @@ class Face():
         from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Harmonize - Error: The input face parameter is not a valid face. Returning None.")
+            if not silent:
+                print("Face.Harmonize - Error: The input face parameter is not a valid face. Returning None.")
             return None
         normal = Face.Normal(face)
         origin = Topology.Centroid(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         world_origin = Vertex.Origin()
         vertices = Topology.Vertices(Face.ExternalBoundary(flatFace))
-        harmonizedEB = Wire.ByVertices(vertices)
+        harmonizedEB = Wire.ByVertices(vertices, close=True, tolerance=tolerance, silent=silent)
         internalBoundaries = Face.InternalBoundaries(flatFace)
         harmonizedIB = []
         for ib in internalBoundaries:
             ibVertices = Topology.Vertices(ib)
-            harmonizedIB.append(Wire.ByVertices(ibVertices))
+            harmonizedIB.append(Wire.ByVertices(ibVertices, close=True, tolerance=tolerance, silent=silent))
         harmonizedFace = Face.ByWires(harmonizedEB, harmonizedIB, tolerance=tolerance)
         harmonizedFace = Topology.Unflatten(harmonizedFace, origin=origin, direction=normal)
         return harmonizedFace
@@ -1895,7 +1902,7 @@ class Face():
         return vert
 
     @staticmethod
-    def Invert(face, tolerance: float = 0.0001):
+    def Invert(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face that is an inverse (mirror) of the input face.
 
@@ -1905,6 +1912,8 @@ class Face():
             The input face.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1920,12 +1929,12 @@ class Face():
         eb = Face.ExternalBoundary(face)
         vertices = Topology.Vertices(eb)
         vertices.reverse()
-        inverted_wire = Wire.ByVertices(vertices)
+        inverted_wire = Wire.ByVertices(vertices, close=Wire.IsClosed(eb), tolerance=tolerance, silent=silent)
         internal_boundaries = Face.InternalBoundaries(face)
         if not internal_boundaries:
-            inverted_face = Face.ByWire(inverted_wire, tolerance=tolerance)
+            inverted_face = Face.ByWire(inverted_wire, tolerance=tolerance, silent=silent)
         else:
-            inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance)
+            inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance, silent=silent)
         return inverted_face
     @staticmethod
     def IsConvex(face, mantissa: int = 6, silent: bool = False) -> bool:
@@ -2140,7 +2149,7 @@ class Face():
         return Face.ByWire(i_shape_wire, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def Isovist(face, vertex, obstacles: list = [], direction: list = [0,1,0], fov: float = 360, transferDictionaries: bool = False, metrics: bool = False, triangles: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the face representing the isovist projection from the input viewpoint.
         This method assumes all input is in 2D. Z coordinates are ignored.
@@ -2199,6 +2208,8 @@ class Face():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional:
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -2481,7 +2492,7 @@ class Face():
         vertices = Topology.Vertices(eb)
         coords = [Vertex.Coordinates(v, outputType="xy") for v in vertices]
         new_vertices = [Vertex.ByCoordinates(coord) for coord in coords]
-        eb = Wire.ByVertices(new_vertices, close=True)
+        eb = Wire.ByVertices(new_vertices, close=True, tolerance=tolerance, silent=silent)
 
         ib_list = Face.InternalBoundaries(flat_face)
         new_ib_list = []
@@ -2489,7 +2500,7 @@ class Face():
             vertices = Topology.Vertices(ib)
             coords = [Vertex.Coordinates(v, outputType="xy") for v in vertices]
             new_vertices = [Vertex.ByCoordinates(coord) for coord in coords]
-            new_ib_list.append(Wire.ByVertices(new_vertices, close=True))
+            new_ib_list.append(Wire.ByVertices(new_vertices, close=True, tolerance=tolerance, silent=silent))
 
         flat_face = Face.ByWires(eb, new_ib_list)
         for obs in flat_obstacles:
@@ -2508,7 +2519,7 @@ class Face():
         edges = []
         for target in targets:
             if Vertex.Distance(flat_vertex, target) > tolerance:
-                e = Edge.ByVertices(flat_vertex, target, silent=True)
+                e = Edge.ByVertices([flat_vertex, target], tolerance=tolerance, silent=True)
                 e = Edge.SetLength(e, length=max_d, bothSides=False, tolerance=tolerance)
                 edges.append(e)
         shell = Topology.Slice(flat_face, Cluster.ByTopologies(edges))
@@ -2533,11 +2544,12 @@ class Face():
                     sv = vertices[Vertex.Index(Edge.StartVertex(edge), vertices, tolerance=0.01)]
                     ev = vertices[Vertex.Index(Edge.EndVertex(edge), vertices, tolerance=0.01)]
                     if Vertex.Distance(sv, ev) > tolerance:
-                        new_edges.append(Edge.ByVertices([sv,ev]))
+                        new_edges.append(Edge.ByVertices([sv,ev], tolerance=tolerance, silent=True))
                 w = Wire.ByEdges(new_edges, tolerance=0.01)
                 return_face = Face.ByWire(w)
             if not Topology.IsInstance(return_face, "Face"):
-                print("Face.Isovist - Error: Could not create isovist. Returning None.")
+                if not silent:
+                    print("Face.Isovist - Error: Could not create isovist. Returning None.")
                 return None 
         compAngle = 0
         if fov == 360:
@@ -2555,9 +2567,10 @@ class Face():
         if not Topology.IsInstance(return_face, "face"):
             return_face = Topology.SelfMerge(return_face)
         if return_face == None:
-            print("Face.Isovist - Error: Could not create isovist. Returning None.")
+            if not silent:
+                print("Face.Isovist - Error: Could not create isovist. Returning None.")
             return None
-        simpler_face = Face.RemoveCollinearEdges(return_face)
+        simpler_face = Face.RemoveCollinearEdges(return_face, angTolerance=0.1, tolerance=tolerance, silent=silent)
         if Topology.IsInstance(simpler_face, "face"):
             if transferDictionaries == True or metrics == True:
                 j_edges = [Topology.Edges(t) for t in obstacles]
@@ -2729,10 +2742,10 @@ class Face():
             edges = Topology.Edges(return_face)
             for edge in edges:
                 d = Topology.Dictionary(edge)
-                if Vertex.Distance(Edge.StartVertex(edge), v) > 0.0001:
-                    e1 = Edge.ByVertices(Edge.StartVertex(edge), v)
-                    if Vertex.Distance(Edge.EndVertex(edge), v) > 0.0001:
-                        e2 = Edge.ByVertices(Edge.EndVertex(edge), v)
+                if Vertex.Distance(Edge.StartVertex(edge), v) > tolerance:
+                    e1 = Edge.ByVertices([Edge.StartVertex(edge), v], tolerance=tolerance, silent=True)
+                    if Vertex.Distance(Edge.EndVertex(edge), v) > tolerance:
+                        e2 = Edge.ByVertices([Edge.EndVertex(edge), v], tolerance=tolerance, silent=True)
                         triangle = Topology.SelfMerge(Cluster.ByTopologies(edge, e1, e2))
                         if Topology.IsInstance(triangle, "wire"):
                             if Wire.IsClosed(triangle):
@@ -2863,7 +2876,7 @@ class Face():
         return Face.ByWire(l_shape_wire, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def MedialAxis(face, resolution: int = 0, externalVertices: bool = False, internalVertices: bool = False, toLeavesOnly: bool = False, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a wire representing an approximation of the medial axis of the input topology. See https://en.wikipedia.org/wiki/Medial_axis.
 
@@ -2883,6 +2896,8 @@ class Face():
             The desired angular tolerance in degrees for removing collinear edges. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -2953,7 +2968,7 @@ class Face():
 
         tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
         if Topology.IsInstance(tempWire, "Wire") and angTolerance > 0:
-            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance)
+            tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         medialAxisEdges = Wire.Edges(tempWire)
         for v in theVertices:
             nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
@@ -2962,12 +2977,12 @@ class Face():
                 if toLeavesOnly:
                     adjVertices = Topology.AdjacentTopologies(nv, tempWire)
                     if len(adjVertices) < 2:
-                        medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance))
+                        medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance, silent=silent))
                 else:
-                    medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance))
+                    medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance, silent=silent))
         medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
         if Topology.IsInstance(medialAxis, "Wire") and angTolerance > 0:
-            medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance)
+            medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         medialAxis = Topology.Unflatten(medialAxis, origin=origin,direction=normal)
         return medialAxis
 
@@ -3281,7 +3296,7 @@ class Face():
         return Face.ByWire(wire, tolerance=tolerance)
     
     @staticmethod
-    def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def RemoveCollinearEdges(face, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes any collinear edges in the input face.
 
@@ -3293,6 +3308,8 @@ class Face():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -3305,13 +3322,14 @@ class Face():
         import inspect
         
         if not Topology.IsInstance(face, "Face"):
-            print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
+            if not silent:
+                print("Face.RemoveCollinearEdges - Error: The input face parameter is not a valid face. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
-        eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance)
-        ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance) for w in Face.InternalBoundaries(face)]
+        eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+        ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=silent) for w in Face.InternalBoundaries(face)]
         return Face.ByWires(eb, ib)
     
     @staticmethod

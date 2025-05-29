@@ -114,7 +114,7 @@ class Edge():
         return round(ang, mantissa)
 
     @staticmethod
-    def Bisect(edgeA, edgeB, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001):
+    def Bisect(edgeA, edgeB, length: float = 1.0, placement: int = 0, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a bisecting edge between edgeA and edgeB.
 
@@ -134,6 +134,8 @@ class Edge():
             If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. The default is 0.
         tolerance : float , optional
             The desired tolerance to decide if an Edge can be created. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -171,29 +173,34 @@ class Edge():
             return edge1, edge2
         
         if not Topology.IsInstance(edgeA, "Edge"):
-            print("Edge.Bisect - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Bisect - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
             return None
         if not Topology.IsInstance(edgeB, "Edge"):
-            print("Edge.Bisect - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Bisect - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
             return None
         if Edge.Length(edgeA) <= tolerance:
-            print("Edge.Bisect - Error: The input edgeA parameter is shorter than the input tolerance parameter. Returning None.")
+            if not silent:
+                print("Edge.Bisect - Error: The input edgeA parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         if Edge.Length(edgeB) <= tolerance:
-            print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
+            if not silent:
+                print("Edge.Bisect - Error: The input edgeB parameter is shorter than the input tolerance parameter. Returning None.")
             return None
         
         
         edge1, edge2 = process_edges(edgeA, edgeB, tolerance=tolerance)
         if edge1 == None or edge2 == None:
-            print("Edge.Bisect - Error: The input edgeA and edgeB parameters do not share a vertex and thus cannot be bisected. Returning None.")
+            if not silent:
+                print("Edge.Bisect - Error: The input edgeA and edgeB parameters do not share a vertex and thus cannot be bisected. Returning None.")
             return None
         sv = Edge.StartVertex(edge1)
         dir1 = Edge.Direction(edge1)
         dir2 = Edge.Direction(edge2)
         bisecting_vector = Vector.Bisect(dir1, dir2)
         ev = Topology.TranslateByDirectionDistance(sv, bisecting_vector, length)
-        bisecting_edge = Edge.ByVertices([sv, ev])
+        bisecting_edge = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
         if placement == 0:
             bisecting_edge = Topology.TranslateByDirectionDistance(bisecting_edge, Vector.Reverse(bisecting_vector), length*0.5)
         elif placement == 2:
@@ -366,7 +373,7 @@ class Edge():
             return None
 
         endVertex = Topology.TranslateByDirectionDistance(origin, direction=direction[:3], distance=length)
-        edge = Edge.ByVertices(origin, endVertex, tolerance=tolerance)
+        edge = Edge.ByVertices(origin, endVertex, tolerance=tolerance, silent=silent)
         return edge
 
     @staticmethod
@@ -472,11 +479,11 @@ class Edge():
             The first input edge. This edge will be extended to meet edgeB.
         edgeB : topologic_core.Edge
             The second input edge. This edge will be used to extend edgeA.
-        silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
         Returns
         -------
         topologic_core.Edge or topologic_core.Wire
@@ -496,7 +503,7 @@ class Edge():
             distances.append(Vertex.Distance(pair[0], pair[1]))
         v_list = Helper.Sort(v_list, distances)
         closest_pair = v_list[0]
-        return_edge = Edge.ByVertices(closest_pair, silent=silent)
+        return_edge = Edge.ByVertices(closest_pair, tolerance=tolerance, silent=silent)
         if return_edge == None:
             if not silent:
                 print("Edge.ConnectToEdge - Warning: Could not connect the two edges. Returning None.")
@@ -617,7 +624,7 @@ class Edge():
 
 
     @staticmethod
-    def Extend(edge, distance: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
+    def Extend(edge, distance: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Extends the input edge by the input distance.
 
@@ -633,6 +640,8 @@ class Edge():
             If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -659,7 +668,7 @@ class Edge():
         else:
             sve = Edge.StartVertex(edge)
             eve = Edge.VertexByDistance(edge, distance=distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=True)
+        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ExtendToEdge(edgeA, edgeB, mantissa: int = 6, step: bool = True, tolerance: float = 0.0001, silent: bool = False):
@@ -728,14 +737,14 @@ class Edge():
         
         d = max(d1, d2)*2
         v2 = Topology.TranslateByDirectionDistance(v2, direction=edge_direction, distance=d)
-        new_edge = Edge.ByVertices(v1, v2)
+        new_edge = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=silent)
         
         svb = Edge.StartVertex(edgeB)
         evb = Edge.EndVertex(edgeB)
 
         intVertex = Topology.Intersect(new_edge, edgeB, tolerance=tolerance)
         if intVertex:
-            return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=True)
+            return Edge.ByVertices([v1, intVertex], tolerance=tolerance, silent=silent)
         if not silent:
             print("Edge.ExtendToEdge - Warning: The operation failed. Connecting the edges instead. Returning a Wire.")
         return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
@@ -1323,7 +1332,7 @@ class Edge():
         return normal_edge
 
     @staticmethod
-    def Normalize(edge, useEndVertex: bool = False, tolerance: float = 0.0001):
+    def Normalize(edge, useEndVertex: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a normalized edge that has the same direction as the input edge, but a length of 1.
 
@@ -1335,6 +1344,8 @@ class Edge():
             If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -1345,7 +1356,8 @@ class Edge():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Normalize - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Normalize - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
         if not useEndVertex:
             sv = Edge.StartVertex(edge)
@@ -1353,7 +1365,7 @@ class Edge():
         else:
             sv = Edge.VertexByDistance(edge, 1.0, Edge.StartVertex(edge))
             ev = Edge.EndVertex(edge)
-        return Edge.ByVertices([sv, ev], tolerance=tolerance)
+        return Edge.ByVertices([sv, ev], tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ParameterAtVertex(edge, vertex, mantissa: int = 6, silent: bool = False) -> float:
@@ -1395,7 +1407,7 @@ class Edge():
         return round(parameter, mantissa)
 
     @staticmethod
-    def Reverse(edge, tolerance: float = 0.0001):
+    def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates an edge that has the reverse direction of the input edge.
 
@@ -1405,6 +1417,8 @@ class Edge():
             The input edge.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1415,9 +1429,10 @@ class Edge():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print("Edge.Reverse - Error: The input edge parameter is not a valid topologic edge. Returning None.")
             return None
-        return Edge.ByVertices([Edge.EndVertex(edge), Edge.StartVertex(edge)], tolerance=tolerance)
+        return Edge.ByVertices([Edge.EndVertex(edge), Edge.StartVertex(edge)], tolerance=tolerance, silent=silent)
     
     @staticmethod
     def SetLength(edge , length: float = 1.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
@@ -1482,7 +1497,7 @@ class Edge():
         return vert
 
     @staticmethod
-    def Trim(edge, distance: float = 0.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001):
+    def Trim(edge, distance: float = 0.0, bothSides: bool = True, reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Trims the input edge by the input distance.
 
@@ -1498,6 +1513,8 @@ class Edge():
             If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1527,7 +1544,7 @@ class Edge():
         else:
             sve = Edge.StartVertex(edge)
             eve = Edge.VertexByDistance(edge, distance=-distance, origin=ev, tolerance=tolerance)
-        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=True)
+        return Edge.ByVertices([sve, eve], tolerance=tolerance, silent=silent)
 
     @staticmethod
     def TrimByEdge(edgeA, edgeB, reverse: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -1587,9 +1604,9 @@ class Edge():
                 intVertex = None
             if intVertex:
                 if reverse:
-                        return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
+                        return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=silent)
                 else:
-                    return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=True)
+                    return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=silent)
             else:
                 return None
         
@@ -1598,9 +1615,9 @@ class Edge():
         intVertex = Topology.Intersect(edgeA, edgeB)
         if intVertex and (Vertex.IsInternal(intVertex, edgeA)):
             if reverse:
-                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=True)
+                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=slient)
             else:
-                return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=True)
+                return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=silent)
         return edgeA
 
     @staticmethod

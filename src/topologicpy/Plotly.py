@@ -730,7 +730,6 @@ class Plotly:
                                     legendgroup=legendGroup,
                                     legendrank=legendRank,
                                     text=labels,
-                                    customdata=labels,
                                     hoverinfo='text',
                                     hovertext=labels)
                 traces.append(trace)

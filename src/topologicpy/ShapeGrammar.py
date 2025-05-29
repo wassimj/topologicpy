@@ -384,7 +384,7 @@ class ShapeGrammar:
         
         return result_output
 
-    def FigureByInputOutput(self, input, output, silent: bool = False):
+    def ClusterByInputOutput(self, input, output, silent: bool = False):
         """
         Returns the Plotly figure of the input and output topologies as a rule.
 
@@ -407,15 +407,14 @@ class ShapeGrammar:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Cluster import Cluster
-        from topologicpy.Plotly import Plotly
 
         if not Topology.IsInstance(input, "Topology"):
             if not silent:
-                print("ShapeGrammar.DrawInputOutput - Error: The input topology parameter is not a valid topology. Returning None.")
+                print("ShapeGrammar.ClusterByInputOutput - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(output, "Topology"):
             if not silent:
-                print("ShapeGrammar.DrawInputOutput - Error: The output topology parameter is not a valid topology. Returning None.")
+                print("ShapeGrammar.ClusterByInputOutput - Error: The output topology parameter is not a valid topology. Returning None.")
             return None
 
         input_bb = Topology.BoundingBox(input)
@@ -463,6 +462,65 @@ class ShapeGrammar:
         cone = Topology.Translate(cone, 1.65, 0, 0)
         cluster = Cluster.ByTopologies([temp_input, temp_output, cyl, cone])
         cluster = Topology.Place(cluster, originA=Topology.Centroid(cluster), originB=Vertex.Origin())
+        return cluster
+    
+    def ClusterByRule(self, rule, silent: bool = False):
+        """
+        Returns the Plotly figure of the input rule.
+
+        Parameters
+        ----------
+        rule : dict
+            The input rule
+        silent : bool, optional
+            If True, suppresses error/warning messages. Default is False.
+        
+        Returns
+        -------
+        topologic_core.Cluster
+            The created rule cluster
+        """
+                
+        if not isinstance(rule, dict):
+            if not silent:
+                print("ShapeGrammar.ClusterByRule - Error: The input rule parameter is not a valid rule. Returning None.")
+            return None
+        input = rule["input"]
+        output = self.ApplyRule(input, rule)
+        return self.ClusterByInputOutput(input, output, silent=silent)
+    
+    def FigureByInputOutput(self, input, output, silent: bool = False):
+        """
+        Returns the Plotly figure of the input and output topologies as a rule.
+
+        Parameters
+        ----------
+        input : topologic_core.Topology
+            The input topology
+        output : topologic_core.Topology
+            The output topology
+        silent : bool, optional
+            If True, suppresses error/warning messages. Default is False.
+        
+        Returns
+        -------
+        Plotly.Figure
+            The created plotly figure.
+        """
+
+        from topologicpy.Topology import Topology
+        from topologicpy.Plotly import Plotly
+
+        if not Topology.IsInstance(input, "Topology"):
+            if not silent:
+                print("ShapeGrammar.FigureByInputOutput - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(output, "Topology"):
+            if not silent:
+                print("ShapeGrammar.FigureByInputOutput - Error: The output topology parameter is not a valid topology. Returning None.")
+            return None
+
+        cluster = self.ClusterByInputOutput(input, output, silent=silent)
         data = Plotly.DataByTopology(cluster)
         fig = Plotly.FigureByData(data)
         return fig
@@ -480,7 +538,8 @@ class ShapeGrammar:
         
         Returns
         -------
-        This function does not return a value
+        Plotly.Figure
+            The create plotly figure
         """
         from topologicpy.Topology import Topology
         if not isinstance(rule, dict):
@@ -489,4 +548,4 @@ class ShapeGrammar:
             return None
         input = rule["input"]
         output = self.ApplyRule(input, rule)
-        return self.FigureByInputOutput(input, output)
+        return self.FigureByInputOutput(input, output, silent=silent)

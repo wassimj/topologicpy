@@ -171,7 +171,7 @@ class WorkerProcess(Process):
                 if self.used[i + self.start_index][j] == 1 or self.used[j][i + self.start_index]:
                     continue
                 if Vertex.Distance(source, destination) > self.tolerance:
-                    edge = Edge.ByVertices([source, destination])
+                    edge = Edge.ByVertices([source, destination], tolerance=self.tolerance, silent=True)
                     e = Topology.Intersect(edge, face)
                     if Topology.IsInstance(e, "Edge"):
                         edges.append(edge)
@@ -437,7 +437,7 @@ class Graph:
         for vertex in vertices:
             graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance=tolerance)
             new_vertices.append(nv)
-        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance)
+        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance, silent=silent)
         if transferEdgeDictionaries == True:
             d = Topology.Dictionary(edge)
             keys = Dictionary.Keys(d)
@@ -10132,6 +10132,153 @@ class Graph:
                     d = Dictionary.ByKeysValues(keys, values)
                     edge = Topology.SetDictionary(edge, d)
         return max_flow
+
+    @staticmethod
+    def MergeVertices(graph, *vertices, targetVertex=None, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Merges the input vertices into one vertex and reconnects all edges to the new vertex.
+        If two of the input vertices are the end points of the same edge, that edge is deleted.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        *vertices : topologic_core.Vertex
+            Two or more instances of `topologic_core.Topology` to be processed.
+        targetVertex : topologic_core.Vertex, optional
+            The target vertex to merge into. If None, a centroid is computed. Default is None.
+        transferDictionaries : bool, optional
+            If True, the dictionaries of all input vertices (including the target vertex if given) are merged. Default is True.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            A new graph with the vertices merged and edges updated.
+        """
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        import inspect
+
+        if not Topology.IsInstance(graph, "Graph"):
+            print("Graph:", graph)
+            if not silent:
+                print("Graph.MergeVertices - Error: The input graph is not valid. Returning None.")
+            return None
+
+        if len(vertices) == 0:
+            if not silent:
+                print("Graph.MergeVertices - Error: The input vertices parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        if len(vertices) == 1:
+            vertices = vertices[0]
+            if isinstance(vertices, list):
+                if len(vertices) == 0:
+                    if not silent:
+                        print("Graph.MergeVertices - Error: The input topologies parameter is an empty list. Returning None.")
+                        curframe = inspect.currentframe()
+                        calframe = inspect.getouterframes(curframe, 2)
+                        print('caller name:', calframe[1][3])
+                    return None
+                else:
+                    vertexList = [x for x in vertices if Topology.IsInstance(x, "Topology")]
+                    if len(vertexList) == 0:
+                        if not silent:
+                            print("Graph.MergeVertices - Error: The input topologies parameter does not contain any valid vertices. Returning None.")
+                            curframe = inspect.currentframe()
+                            calframe = inspect.getouterframes(curframe, 2)
+                            print('caller name:', calframe[1][3])
+                        return None
+            else:
+                if not silent:
+                    print("Graph.MergeVertices - Error: The input vertices parameter contains only one vertex. Returning None.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return None
+        else:
+            vertexList = Helper.Flatten(list(vertices))
+            vertexList = [x for x in vertexList if Topology.IsInstance(x, "Vertex")]
+        if len(vertexList) == 0:
+            if not silent:
+                print("Graph.MergeVertices - Error: The input parameters do not contain any valid vertices. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        # Step 1: gather all vertices and edges
+        all_vertices = Graph.Vertices(graph)
+        all_edges = Graph.Edges(graph)
+
+        # Step 2: determine merged vertex
+        dictionaries = []
+        if targetVertex and Topology.IsInstance(targetVertex, "Vertex"):
+            merged_vertex = targetVertex
+            if targetVertex not in all_vertices:
+                all_vertices.append(targetVertex)
+            dictionaries.append(Topology.Dictionary(targetVertex))
+        else:
+            # Compute centroid
+            merged_vertex = Topology.Centroid(Cluster.ByTopologies(vertexList))
+
+        # Step 3: collect dictionaries
+        if transferDictionaries:
+            for v in vertexList:
+                d = Topology.Dictionary(v)
+                dictionaries.append(d)
+            merged_dict = Dictionary.ByMergedDictionaries(*dictionaries)
+            merged_vertex = Topology.SetDictionary(merged_vertex, merged_dict, silent=True)
+
+        # Step 4: remove merged vertices from all_vertices
+        for v in vertexList:
+            for gv in all_vertices:
+                if Topology.IsSame(v, gv):
+                    all_vertices.remove(gv)
+                    break
+
+        # Step 5: rebuild edge list
+        new_edges = []
+        seen = set()
+        for edge in all_edges:
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+
+            sv_merged = any(Topology.IsSame(sv, v) for v in vertexList)
+            ev_merged = any(Topology.IsSame(ev, v) for v in vertexList)
+
+            if sv_merged and ev_merged:
+                continue  # Remove edges between merged vertices
+
+            new_sv = merged_vertex if sv_merged else sv
+            new_ev = merged_vertex if ev_merged else ev
+
+            if Topology.IsSame(new_sv, new_ev):
+                continue  # Avoid self-loop
+
+            key = tuple(sorted([Topology.UUID(new_sv), Topology.UUID(new_ev)]))
+            if key in seen:
+                continue
+            seen.add(key)
+
+            new_edge = Edge.ByVertices([new_sv, new_ev])
+            if Topology.IsInstance(new_edge, "edge"):
+                d = Topology.Dictionary(edge)
+                if d:
+                    new_edge = Topology.SetDictionary(new_edge, d, silent=True)
+                new_edges.append(new_edge)
+
+        all_vertices.append(merged_vertex)
+        return Graph.ByVerticesEdges(all_vertices, new_edges)
 
     @staticmethod
     def MeshData(graph, mantissa: int = 6, tolerance: float = 0.0001):

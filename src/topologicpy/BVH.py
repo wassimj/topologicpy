@@ -252,7 +252,7 @@ class BVH:
         return clash_detection(bvh, query)
 
     # Function to recursively add nodes and edges to the TopologicPy Graph
-    def Graph(bvh, tolerance=0.0001):
+    def Graph(bvh, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a graph from the input bvh tree.
 
@@ -262,6 +262,8 @@ class BVH:
             The input BVH Tree.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
         
         Returns
         -------
@@ -284,8 +286,8 @@ class BVH:
                 d = Vertex.Distance(parent_vertex, current_vertex)
                 if d <= tolerance:
                     current_vertex = Topology.Translate(current_vertex, tolerance*random.uniform(2,50), tolerance*random.uniform(2,50), tolerance*random.uniform(2,50))
-                edge = Edge.ByVertices(parent_vertex, current_vertex, tolerance=tolerance)
-                graph = Graph.AddEdge(graph, edge, silent=True)
+                edge = Edge.ByVertices(parent_vertex, current_vertex, tolerance=tolerance, silent=silent)
+                graph = Graph.AddEdge(graph, edge, silent=silent)
             
             # Recursively add child nodes
             if bvh_node.left:

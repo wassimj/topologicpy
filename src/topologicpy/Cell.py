@@ -301,7 +301,7 @@ class Cell():
 
     @staticmethod
     def ByThickenedFace(face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001):
+                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cell by thickening the input face.
 
@@ -319,6 +319,8 @@ class Cell():
             If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -348,15 +350,15 @@ class Cell():
         bottomEdges = Topology.Edges(bottomFace)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
-            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=True)
-            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=True)
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=silent)
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=silent)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
             cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
     def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001):
+                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cell by thickening the input shell. The shell must be open.
 
@@ -374,6 +376,8 @@ class Cell():
             If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -388,7 +392,8 @@ class Cell():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         if not Topology.IsInstance(shell, "Shell"):
-            print("Cell.ByThickenedShell - Error: The input shell parameter is not a valid topologic Shell. Returning None.")
+            if not silent:
+                print("Cell.ByThickenedShell - Error: The input shell parameter is not a valid topologic Shell. Returning None.")
             return None
         if reverse == True and bothSides == False:
             thickness = -thickness
@@ -403,8 +408,8 @@ class Cell():
         bottomEdges = Wire.Edges(bottomWire)
         for bottomEdge in bottomEdges:
             topEdge = Topology.Translate(bottomEdge, direction[0]*thickness, direction[1]*thickness, direction[2]*thickness)
-            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=True)
-            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=True)
+            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=silent)
+            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=silent)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
             cellFace = Face.ByWire(cellWire, tolerance=tolerance)
             cellFaces.append(cellFace)

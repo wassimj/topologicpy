@@ -1105,7 +1105,7 @@ class Cluster():
         return Cluster.ByTopologies(cellComplexes+cells)
     
     @staticmethod
-    def MysticRose(wire= None, origin= None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001):
+    def MysticRose(wire= None, origin= None, radius: float = 0.5, sides: int = 16, perimeter: bool = True, direction: list = [0, 0, 1], placement:str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a mystic rose.
 
@@ -1127,6 +1127,8 @@ class Cluster():
             The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -1153,7 +1155,7 @@ class Cluster():
         if perimeter:
             edges = Wire.Edges(wire)
         for comb in combs:
-            edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]], tolerance=tolerance))
+            edges.append(Edge.ByVertices([vertices[comb[0]], vertices[comb[1]]], tolerance=tolerance, silent=silent))
         return Cluster.ByTopologies(edges)
     
     @staticmethod

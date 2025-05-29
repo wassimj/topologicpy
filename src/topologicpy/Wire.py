@@ -146,7 +146,7 @@ class Wire():
         vertices = []
         for arc_point in arc_points:
             vertices.append(Vertex.ByCoordinates(list(arc_point)))
-        arc = Wire.ByVertices(vertices, close=False, tolerance=tolerance)
+        arc = Wire.ByVertices(vertices, close=False, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(arc, "Wire"):
             if not silent:
                 print("Wire.Arc - Error: Could not create an arc. Returning None.")
@@ -204,10 +204,10 @@ class Wire():
                 print("Wire.ArcByEdge - Warning: Could not create an arc. Returning the original edge.")
             return edge
         cv = Edge.EndVertex(norm)
-        return Wire.Arc(sv, cv, ev, sides=sides, close=close)
+        return Wire.Arc(sv, cv, ev, sides=sides, close=close, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def BoundingRectangle(topology, optimize: int = 0, mantissa: int = 6, tolerance=0.0001):
+    def BoundingRectangle(topology, optimize: int = 0, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a wire representing a bounding rectangle of the input topology. The returned wire contains a dictionary with key "zrot" that represents rotations around the Z axis. If applied the resulting wire will become axis-aligned.
 
@@ -223,7 +223,9 @@ class Wire():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
-        
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
         Returns
         -------
         topologic_core.Wire
@@ -251,11 +253,14 @@ class Wire():
             return [x_min, y_min, maxX, maxY]
 
         if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Wire.BoundingRectangle - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
 
         vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
         if Vertex.AreCollinear(vertices, mantissa=mantissa, tolerance=tolerance):
-            print("Wire.BoundingRectangle - Error: All vertices of the input topology parameter are collinear and thus no bounding rectangle can be created. Returning None.")
+            if not silent:
+                print("Wire.BoundingRectangle - Error: All vertices of the input topology parameter are collinear and thus no bounding rectangle can be created. Returning None.")
             return None
         start = time.time()
         period = 0
@@ -266,15 +271,18 @@ class Wire():
             end = time.time()
             period = end - start
         if result == True:
-            print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
+            if not silent:
+                print("Wire.BoundingRectangle - Error: Could not find three vertices that are not colinear within 30 seconds. Returning None.")
             return None
-        w = Wire.ByVertices(vList, close=True, tolerance=tolerance)
+        w = Wire.ByVertices(vList, close=True, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(w, "Wire"):
-            print("Wire.BoundingRectangle - Error: Could not create wire from three vertices. Returning None.")
+            if not silent:
+                print("Wire.BoundingRectangle - Error: Could not create wire from three vertices. Returning None.")
             return None
         f = Face.ByWire(w, tolerance=tolerance)
         if not Topology.IsInstance(f, "Face"):
-            print("Wire.BoundingRectangle - Error: Could not create face from wire. Returning None.")
+            if not silent:
+                print("Wire.BoundingRectangle - Error: Could not create face from wire. Returning None.")
             return None
         f_origin = Topology.Centroid(f)
         normal = Face.Normal(f, mantissa=mantissa)
@@ -329,7 +337,7 @@ class Wire():
         vb3 = Vertex.ByCoordinates(maxX, maxY, 0)
         vb4 = Vertex.ByCoordinates(x_min, maxY, 0)
 
-        boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
+        boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance, silent=silent)
         boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, axis=[0, 0, 1], angle=-best_z)
         boundingRectangle = Topology.Unflatten(boundingRectangle, origin=f_origin, direction=normal)
         dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
@@ -598,7 +606,7 @@ class Wire():
         #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
         #     wire_edges.append(w_e)
         
-        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
+        return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=silent)
         #wire_edges = Topology.Edges(wire_edges)
         wire_edges = [Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides=True) for w_e in Topology.Edges(return_wire)]
         return_wire_edges = Topology.Edges(return_wire)
@@ -838,7 +846,7 @@ class Wire():
         return return_wire
 
     @staticmethod
-    def ByVertices(vertices: list, close: bool = True, tolerance: float = 0.0001):
+    def ByVertices(vertices: list, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a wire from the input list of vertices.
 
@@ -850,6 +858,8 @@ class Wire():
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
@@ -865,19 +875,20 @@ class Wire():
             return None
         vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
         if len(vertexList) < 2:
-            print("Wire.ByVertices - Error: The number of vertices is less than 2. Returning None.")
+            if not silent:
+                print("Wire.ByVertices - Error: The number of vertices is less than 2. Returning None.")
             return None
         edges = []
         for i in range(len(vertexList)-1):
             v1 = vertexList[i]
             v2 = vertexList[i+1]
-            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, silent=True)
+            e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=silent)
             if Topology.IsInstance(e, "Edge"):
                 edges.append(e)
         if close:
             v1 = vertexList[-1]
             v2 = vertexList[0]
-            e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance, silent=True)
+            e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=silent)
             if Topology.IsInstance(e, "Edge"):
                 edges.append(e)
         if len(edges) < 1:
@@ -890,7 +901,7 @@ class Wire():
         return wire
 
     @staticmethod
-    def ByVerticesCluster(cluster, close: bool = True, tolerance: float = 0.0001):
+    def ByVerticesCluster(cluster, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a wire from the input cluster of vertices.
 
@@ -902,7 +913,9 @@ class Wire():
             If True the last vertex will be connected to the first vertex to close the wire. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001
-
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+        
         Returns
         -------
         topologic_core.Wire
@@ -912,9 +925,11 @@ class Wire():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Wire.ByVerticesCluster - Error: The input cluster parameter is not a valid cluster. Returning None.")
             return None
         vertices = Topology.Vertices(cluster)
-        return Wire.ByVertices(vertices, close=close, tolerance=tolerance)
+        return Wire.ByVertices(vertices, close=close, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
