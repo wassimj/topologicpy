@@ -7897,13 +7897,13 @@ class Topology():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return topology
-        if len(dictionary.Keys()) < 1:
-            if not silent:
-                print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            return topology
+        # if len(dictionary.Keys()) < 1:
+        #     if not silent:
+        #         print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
+        #         curframe = inspect.currentframe()
+        #         calframe = inspect.getouterframes(curframe, 2)
+        #         print('caller name:', calframe[1][3])
+        #     return topology
         _ = topology.SetDictionary(dictionary)
         return topology
     

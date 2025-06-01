@@ -49,6 +49,99 @@ except:
 
 class CellComplex():
     @staticmethod
+    def AdjacencyDictionary(cellComplex, cellLabelKey: str = None,  faceKey: str = None, includeWeights: bool = False, reverse: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the adjacency dictionary of the input Graph.
+
+        Parameters
+        ----------
+        cellComplex : topologic_core.CellComplex
+            The input cellComplex.
+        cellLabelKey : str , optional
+            The returned cells are labelled according to the dictionary values stored under this key.
+            If the cellLabelKey does not exist, it will be created and the cells are labelled numerically and stored in the vertex dictionary under this key. The default is None.
+        faceKey : str , optional
+            If set, the faces' dictionaries will be searched for this key to set their weight. If the key is set to "Area" (case insensitive), the area of the shared faces will be used as its weight. If set to None, a weight of 1 will be used. The default is None.
+        includeWeights : bool , optional
+            If set to True, edge weights are included. Otherwise, they are not. The default is False.
+        reverse : bool , optional
+                If set to True, the cells are sorted in reverse order (only if cellLabelKey is set). Otherwise, they are not. The default is False.
+
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        dict
+            The adjacency dictionary.
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(cellComplex, "CellComplex"):
+            if not silent:
+                print("CellComplex.AdjacencyDictionary - Error: The input cellComplex input parameter is not a valid cellComplex. Returning None.")
+            return None
+        if cellLabelKey == None:
+            cellLabelKey = "__label__"
+        if not isinstance(cellLabelKey, str):
+            if not silent:
+                print("CellComplex.AdjacencyDictionary - Error: The input cellLabelKey is not a valid string. Returning None.")
+            return None
+        all_cells = Topology.Cells(cellComplex)
+        labels = []
+        n = max(len(str(len(all_cells))), 3)
+        for i, cell in enumerate(all_cells):
+            d = Topology.Dictionary(cell)
+            value = Dictionary.ValueAtKey(d, cellLabelKey)
+            if value == None:
+                value = str(i+1).zfill(n)
+            if d == None:
+                d = Dictionary.ByKeyValue(cellLabelKey, value)
+            else:
+                d = Dictionary.SetValueAtKey(d, cellLabelKey, value)
+            cell = Topology.SetDictionary(cell, d)
+            labels.append(value)
+        all_cells = Helper.Sort(all_cells, labels)
+        labels.sort()
+        order = len(all_cells)
+        adjDict = {}
+        for i in range(order):
+            cell = all_cells[i]
+            cell_label = labels[i]
+            adjCells = Topology.AdjacentTopologies(cell, hostTopology=cellComplex, topologyType="cell")
+            temp_list = []
+            for adjCell in adjCells:
+                adj_label = Dictionary.ValueAtKey(Topology.Dictionary(adjCell), cellLabelKey)
+                adj_index = labels.index(adj_label)
+                if includeWeights == True:
+                    if faceKey == None:
+                        weight = 1
+                    elif "area" in faceKey.lower():
+                        shared_topologies = Topology.SharedTopologies(cell, adjCell)
+                        faces = shared_topologies.get("faces", [])
+                        weight = sum([Face.Area(face, mantissa=mantissa) for face in faces])
+                    else:
+                        shared_topologies = Topology.SharedTopologies(cell, adjCell)
+                        faces = shared_topologies.get("faces", [])
+                        weight = sum([Dictionary.ValueAtKey(Topology.Dictionary(face),faceKey, 0) for face in faces])
+                    if not adj_index == None:
+                        temp_list.append((adj_label, weight))
+                else:
+                    if not adj_index == None:
+                        temp_list.append(adj_label)
+            temp_list.sort()
+            adjDict[cell_label] = temp_list
+        if cellLabelKey == "__label__": # This is label we added, so remove it
+            for cell in all_cells:
+                d = Topology.Dictionary(cell)
+                d = Dictionary.RemoveKey(d, cellLabelKey)
+                cell = Topology.SetDictionary(cell, d)
+        return adjDict
+
+    @staticmethod
     def Box(origin= None,
             width: float = 1.0, length: float = 1.0, height: float = 1.0,
             uSides: int = 2, vSides: int = 2, wSides: int = 2,
@@ -159,7 +252,7 @@ class CellComplex():
             if transferDictionaries == True:
                 for temp_cell in temp_cells:
                     v = Topology.InternalVertex(temp_cell, tolerance=tolerance)
-                    enclosing_cells = Vertex.EnclosingCell(v, cluster)
+                    enclosing_cells = Vertex.EnclosingCells(v, cluster)
                     dictionaries = [Topology.Dictionary(ec) for ec in enclosing_cells]
                     d = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
                     temp_cell = Topology.SetDictionary(temp_cell, d)
@@ -1049,6 +1142,125 @@ class CellComplex():
             return None
         shells = Topology.Shells(cellComplex)
         return shells
+
+
+    def _grow_connected_group(seed_idx, group_size, adjacency, visited_global):
+        """
+        Attempts to grow a group of the given size starting from seed_idx using adjacency.
+        Returns a list of indices if successful, else None.
+        """
+        from collections import deque
+        import random
+
+        group = [seed_idx]
+        visited = set(group)
+        queue = deque([seed_idx])
+
+        while queue and len(group) < group_size:
+            current = queue.popleft()
+            neighbors = adjacency.get(current, [])
+            random.shuffle(neighbors)
+            for neighbor in neighbors:
+                if neighbor not in visited and neighbor not in visited_global:
+                    group.append(neighbor)
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+                    if len(group) >= group_size:
+                        break
+
+        return group if len(group) == group_size else None
+
+    def SubCombinations(cellComplex,
+                        minCells: int = 2,
+                        maxCells: int = None,
+                        maxCombinations: int = 100,
+                        timeLimit: int = 10,
+                        silent: bool = False):
+        """
+        Creates sub-combination cellComplexes of the input cellComplex. Warning: This is prone to combinatorial explosion.
+
+        Parameters
+        ----------
+        cellComplex : topologic_core.cellComplex
+            The input cellComplex
+        minCells : int , optional
+            The minimum number of cells to include in a combination. The default is 2.
+        maxCells : int , optional
+            The maximum number of cells to include in a combinations. The default is None which means the maximum will be set to the number of cells in the cellComplex minus 1.
+        maxCombinations : int , optional
+            The maximum number of combinations to create. The default is 100.
+        timeLimit : int , optional
+                The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual CellComplexes.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is external to the input topology. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of created CellComplex sub-combinations.
+
+        """
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        import random
+        import time
+
+        if not Topology.IsInstance(cellComplex, "CellComplex"):
+            if not silent:
+                print("CellComplex.SubCombinations - Error: The cellComplex input parameter is not a valid cellComplex. Returning None.")
+            return None
+
+        
+        start_time = time.time()
+        all_cells = CellComplex.Cells(cellComplex)
+        num_cells = len(all_cells)
+        indices = list(range(num_cells))
+        cell_label_key = "index"
+        # 1. Assign a unique index to each cell's dictionary
+        all_cells = [Topology.SetDictionary(cell, Dictionary.ByKeyValue(cell_label_key, i)) for i, cell in enumerate(all_cells)]
+        if maxCells == None:
+            maxCells = len(all_cells) - 1
+        # 2. Allocate counts per group size
+        group_sizes = list(range(minCells, maxCells + 1))
+        combinations_per_size = maxCombinations // len(group_sizes)
+
+        # 3. Build adjacency dict
+        adjacency = CellComplex.AdjacencyDictionary(cellComplex, cellLabelKey=cell_label_key, faceKey=None, includeWeights=False)
+
+        results = []
+        seen_groups = set()  # sets of sorted indices
+
+        # 4. Start from longest group size
+        for group_size in reversed(group_sizes):
+            remaining = combinations_per_size
+            tries = 0
+            max_tries = combinations_per_size * 10  # fallback guard
+            while remaining > 0 and time.time() - start_time < timeLimit and tries < max_tries:
+                random.shuffle(indices)
+                for seed in indices:
+                    if time.time() - start_time > timeLimit:
+                        break
+                    group = CellComplex._grow_connected_group(seed, group_size, adjacency, visited_global=seen_groups)
+                    if group:
+                        key = tuple(sorted(group))
+                        if key not in seen_groups:
+                            tries += 1
+                            seen_groups.add(key)
+                            results.append(group)
+                            remaining -= 1
+                    if remaining <= 0 or tries >= max_tries:
+                        break
+        # 5. Build CellComplex SubCombinations
+        return_combinations = []
+        for i, result in enumerate(reversed(results)):
+            cells = [all_cells[i] for i in result]
+            combination = Topology.SelfMerge(Cluster.ByTopologies(cells))
+            if Topology.IsInstance(combination, "CellComplex"):
+                return_combinations.append(combination)
+        return return_combinations
 
     @staticmethod
     def Tetrahedron(origin = None, length: float = 1, depth: int = 1, direction=[0,0,1], placement="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):

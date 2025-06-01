@@ -306,29 +306,45 @@ class Edge():
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        import inspect
         
         edge = None
         if not Topology.IsInstance(vertexA, "Vertex"):
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The input vertexA parameter is not a valid topologic vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not Topology.IsInstance(vertexB, "Vertex"):
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The input vertexB parameter is not a valid topologic vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if Topology.IsSame(vertexA, vertexB):
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The input vertexA and vertexB parameters are the same vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if Vertex.Distance(vertexA, vertexB) <= tolerance:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: The distance between the input vertexA and vertexB parameters is less than the input tolerance. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         try:
             edge = topologic.Edge.ByStartVertexEndVertex(vertexA, vertexB)  # Hook to Core
         except:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: Could not create an edge. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             edge = None
         return edge
     

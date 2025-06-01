@@ -1004,58 +1004,75 @@ class Face():
         else:
             internalBoundaries = Cluster.Wires(internalBoundariesCluster)
         return Face.ByWires(externalBoundary, internalBoundaries, tolerance=tolerance, silent=silent)
-    
+
     @staticmethod
-    def NorthArrow(origin= None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
-                   placement: str = "center", tolerance: float = 0.0001):
+    def CHS(origin= None, radius: float = 0.5, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a north arrow.
+        Creates a circular hollow section (CHS).
 
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the circle. The default is 1.
-        sides : int , optional
-            The number of sides of the circle. The default is 16.
+            The outer radius of the CHS. The default is 0.5.
+        thickness : float , optional
+            The thickness of the CHS. The default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
-        northAngle : float , optional
-            The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
+            The vector representing the up direction of the CHS. The default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the CHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
 
         Returns
         -------
         topologic_core.Face
-            The created circle.
+            The created face.
 
         """
-        from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
-        if not Topology.IsInstance(origin, "Vertex"):
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        
+        if thickness >= radius:
+            if not silent:
+                print("Face.SHS - Error: The thickness value is larger than or equal to the outer radius value. Returning None.")
+            return None
+        if origin == None:
             origin = Vertex.Origin()
         
-        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0, 0, 1], placement="center", tolerance=tolerance)
-        r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
-        r = Topology.Translate(r, -0.005*radius,0,0)
-        arrow = Topology.Difference(c, r, tolerance=tolerance)
-        arrow = Topology.Rotate(arrow, origin=Vertex.Origin(), axis=[0, 0, 1], angle=northAngle)
+        outer_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
+        inner_wire = Wire.Circle(origin=Vertex.Origin(), radius=radius-thickness, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance)
+        return_face = Face.ByWires(outer_wire, [inner_wire])
+        if not Topology.IsInstance(return_face, "face"):
+            if not silent:
+                print("Face.CHS - Error: Could not create the face for the CHS. Returning None.")
+            return None
+        
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement.lower() == "lowerleft":
-            arrow = Topology.Translate(arrow, radius, radius, 0)
+            xOffset = radius
+            yOffset = radius
         elif placement.lower() == "upperleft":
-            arrow = Topology.Translate(arrow, radius, -radius, 0)
+            xOffset = radius
+            yOffset = -radius
         elif placement.lower() == "lowerright":
-            arrow = Topology.Translate(arrow, -radius, radius, 0)
+            xOffset = -radius
+            yOffset = radius
         elif placement.lower() == "upperright":
-            arrow = Topology.Translate(arrow, -radius, -radius, 0)
-        arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
-        arrow = Topology.Orient(arrow, origin=origin, dirA=[0,0,1], dirB=direction)
-        return arrow
-
+            xOffset = -radius
+            yOffset = -radius
+        return_face = Topology.Translate(return_face, x=xOffset, y=yOffset, z=zOffset)
+        return_face = Topology.Place(return_face, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_face = Topology.Orient(return_face, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_face
+    
     @staticmethod
     def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001):
@@ -1218,19 +1235,19 @@ class Face():
 
         if not isinstance(width, int) and not isinstance(width, float):
             if not silent:
-                print("Wire.CrossShape - Error: The width input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The width input parameter is not a valid number. Returning None.")
             return None
         if not isinstance(length, int) and not isinstance(length, float):
             if not silent:
-                print("Wire.CrossShape - Error: The length input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The length input parameter is not a valid number. Returning None.")
             return None
         if not isinstance(a, int) and not isinstance(a, float):
             if not silent:
-                print("Wire.CrossShape - Error: The a input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The a input parameter is not a valid number. Returning None.")
             return None
         if not isinstance(b, int) and not isinstance(b, float):
             if not silent:
-                print("Wire.CrossShape - Error: The b input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The b input parameter is not a valid number. Returning None.")
             return None
         if c == None:
             c = width/2
@@ -1238,72 +1255,72 @@ class Face():
             d = length/2
         if not isinstance(c, int) and not isinstance(c, float):
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter is not a valid number. Returning None.")
             return None
         if not isinstance(d, int) and not isinstance(d, float):
             if not silent:
-                print("Wire.CrossShape - Error: The d input parameter is not a valid number. Returning None.")
+                print("Face.CrossShape - Error: The d input parameter is not a valid number. Returning None.")
         if width <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
         if length <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
             return None
         if a <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
         if b <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
         if c <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
         if d <= tolerance:
             if not silent:
-                print("Wire.CrossShape - Error: The d input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+                print("Face.CrossShape - Error: The d input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
             return None
         if a >= (width - tolerance*2):
             if not silent:
-                print("Wire.CrossShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+                print("Face.CrossShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
             return None
         if b >= (length - tolerance*2):
             if not silent:
-                print("Wire.CrossShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+                print("Face.CrossShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
             return None
         if c <= (tolerance + a/2):
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter must be more than half the a input parameter. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter must be more than half the a input parameter. Returning None.")
             return None
         if d <= (tolerance + b/2):
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter must be more than half the b input parameter. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter must be more than half the b input parameter. Returning None.")
             return None
         if c >= (width - tolerance - a/2):
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the a input parameter. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter must be less than the width minus half the a input parameter. Returning None.")
             return None
         if d >= (length - tolerance - b/2):
             if not silent:
-                print("Wire.CrossShape - Error: The c input parameter must be less than the width minus half the b input parameter. Returning None.")
+                print("Face.CrossShape - Error: The c input parameter must be less than the width minus half the b input parameter. Returning None.")
             return None
         if origin == None:
             origin = Vertex.Origin()
         if not Topology.IsInstance(origin, "vertex"):
             if not silent:
-                print("Wire.CrossShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+                print("Face.CrossShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
             return None
         if not isinstance(direction, list):
             if not silent:
-                print("Wire.CrossShape - Error: The direction input parameter is not a valid list. Returning None.")
+                print("Face.CrossShape - Error: The direction input parameter is not a valid list. Returning None.")
             return None
         if not len(direction) == 3:
             if not silent:
-                print("Wire.CrossShape - Error: The direction input parameter is not a valid vector. Returning None.")
+                print("Face.CrossShape - Error: The direction input parameter is not a valid vector. Returning None.")
             return None
         cross_shape_wire = Wire.CrossShape(origin=origin,
                                    width=width,
@@ -1667,7 +1684,7 @@ class Face():
         return True
 
     @staticmethod
-    def Fillet(face, radius: float = 0, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
+    def Fillet(face, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):
         """
         Fillets (rounds) the interior and exterior corners of the input face given the input radius. See https://en.wikipedia.org/wiki/Fillet_(mechanics)
 
@@ -1675,8 +1692,10 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
-        radius : float
-            The desired radius of the fillet.
+        radius : float , optional
+            The desired radius of the fillet. The default is 0.
+        sides : int , optional
+            The number of sides (segments) of the fillet. The default is 16.
         radiusKey : str , optional
             If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.
         tolerance : float , optional
@@ -1704,7 +1723,7 @@ class Face():
         f_vertices = Topology.Vertices(face)
         if isinstance(radiusKey, str):
             eb = Topology.TransferDictionariesBySelectors(eb, selectors=f_vertices, tranVertices=True)
-        eb = Wire.Fillet(eb, radius=radius, radiusKey=radiusKey, tolerance=tolerance)
+        eb = Wire.Fillet(eb, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
         if not Topology.IsInstance(eb, "Wire"):
             if not silent:
                 print("Face.Fillet - Error: The operation failed. Returning None.")
@@ -1716,7 +1735,7 @@ class Face():
             if isinstance(radiusKey, str):
                 ib = Topology.TransferDictionariesBySelectors(ib, selectors=f_vertices, tranVertices=True)
             
-            ib_wire = Wire.Fillet(ib, radius=radius, radiusKey=radiusKey, tolerance=tolerance, silent=silent)
+            ib_wire = Wire.Fillet(ib, radius=radius, sides=sides, radiusKey=radiusKey, tolerance=tolerance, silent=True)
             if Topology.IsInstance(ib, "Wire"):
                 ib_wires.append(ib_wire)
             else:
@@ -3130,6 +3149,57 @@ class Face():
         return Edge.ByVertices([iv, ev], tolerance=tolerance, silent=silent)
 
     @staticmethod
+    def NorthArrow(origin= None, radius: float = 0.5, sides: int = 16, direction: list = [0, 0, 1], northAngle: float = 0.0,
+                   placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates a north arrow.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+        radius : float , optional
+            The radius of the circle. The default is 1.
+        sides : int , optional
+            The number of sides of the circle. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the circle. The default is [0, 0, 1].
+        northAngle : float , optional
+            The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
+        placement : str , optional
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created circle.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        if not Topology.IsInstance(origin, "Vertex"):
+            origin = Vertex.Origin()
+        
+        c = Face.Circle(origin=origin, radius=radius, sides=sides, direction=[0, 0, 1], placement="center", tolerance=tolerance)
+        r = Face.Rectangle(origin=origin, width=radius*0.01,length=radius*1.2, placement="lowerleft")
+        r = Topology.Translate(r, -0.005*radius,0,0)
+        arrow = Topology.Difference(c, r, tolerance=tolerance)
+        arrow = Topology.Rotate(arrow, origin=Vertex.Origin(), axis=[0, 0, 1], angle=northAngle)
+        if placement.lower() == "lowerleft":
+            arrow = Topology.Translate(arrow, radius, radius, 0)
+        elif placement.lower() == "upperleft":
+            arrow = Topology.Translate(arrow, radius, -radius, 0)
+        elif placement.lower() == "lowerright":
+            arrow = Topology.Translate(arrow, -radius, radius, 0)
+        elif placement.lower() == "upperright":
+            arrow = Topology.Translate(arrow, -radius, -radius, 0)
+        arrow = Topology.Place(arrow, originA=Vertex.Origin(), originB=origin)
+        arrow = Topology.Orient(arrow, origin=origin, dirA=[0,0,1], dirB=direction)
+        return arrow
+    
+    @staticmethod
     def PlaneEquation(face, mantissa: int = 6) -> dict:
         """
         Returns the a, b, c, d coefficients of the plane equation of the input face. The input face is assumed to be planar.
@@ -3331,6 +3401,201 @@ class Face():
         eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=silent) for w in Face.InternalBoundaries(face)]
         return Face.ByWires(eb, ib)
+    
+    @staticmethod
+    def RHS(origin= None, width: float = 1.0, length: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a rectangluar hollow section (RHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).
+        width : float , optional
+            The width of the RHS. The default is 1.0.
+        length : float , optional
+            The length of the RHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the RHS. The default is 0.25.
+        outerFillet : float , optional
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+        innerFillet : float , optional
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+        sides : int , optional
+            The desired number of sides of the fillets. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the RHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created face.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if 2*thickness >= width:
+            if not silent:
+                print("Face.RHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
+            return None
+        if 2*thickness >= width:
+            if not silent:
+                print("Face.RHS - Error: Twice the thickness value is larger than or equal to the length value. Returning None.")
+            return None
+        outer_dimension = min(width, length)
+        fillet_dimension = 2*outerFillet*thickness
+        if  fillet_dimension > outer_dimension:
+            if not silent:
+                print("Face.RHS = Error: The outer fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        inner_dimension = min(width, length) - 2*thickness
+        fillet_dimension = 2*innerFillet*thickness
+        if fillet_dimension > inner_dimension:
+            if not silent:
+                print("Face.RHS = Error: The inner fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        outer_wire = Wire.Rectangle(origin=Vertex.Origin(), width=width, length=length, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
+        inner_wire = Wire.Rectangle(origin=Vertex.Origin(), width=width-thickness*2, length=length-thickness*2, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
+        if outerFillet > 0:
+           outer_wire = Wire.Fillet(outer_wire, radius=outerFillet*thickness, sides=sides, silent=silent)
+        if innerFillet > 0:
+           inner_wire = Wire.Fillet(inner_wire, radius=innerFillet*thickness, sides=sides, silent=silent) 
+        return_face = Face.ByWires(outer_wire, [inner_wire], silent=silent)
+        if not Topology.IsInstance(return_face, "face"):
+            if not silent:
+                print("Face.RHS - Error: Could not create the face for the RHS. Returning None.")
+            return None
+        
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+        return_face = Topology.Translate(return_face, x=xOffset, y=yOffset, z=zOffset)
+        return_face = Topology.Place(return_face, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_face = Topology.Orient(return_face, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_face
+    
+    @staticmethod
+    def Ring(origin= None, radius: float = 0.5, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a circular ring. This is an alias method for creating a circular hollow section (CHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the ring. The default is None which results in the ring being placed at (0, 0, 0).
+        radius : float , optional
+            The outer radius of the ring. The default is 0.5.
+        thickness : float , optional
+            The thickness of the ring. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the ring. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the ring. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created face.
+
+        """
+        
+        if thickness >= radius:
+            if not silent:
+                print("Face.Ring - Error: The thickness value is larger than or equal to the outer radius value. Returning None.")
+            return None
+        return Face.CHS(origin=origin,
+                        radius=radius,
+                        thickness=thickness,
+                        sides=sides,
+                        direction=direction,
+                        placement=placement,
+                        tolerance=tolerance,
+                        silent=silent)
+    @staticmethod
+    def SHS(origin= None, size: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a square hollow section (SHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).
+        size : float , optional
+            The outer size of the SHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the SHS. The default is 0.25.
+        outerFillet : float , optional
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+        innerFillet : float , optional
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+        sides : int , optional
+            The desired number of sides of the fillets. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the SHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the SHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created face.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        
+        if 2*thickness >= size:
+            if not silent:
+                print("Face.SHS - Error: Twice the thickness value is larger than or equal to the outer size value. Returning None.")
+            return None
+        fillet_dimension = 2*outerFillet*thickness
+        if  fillet_dimension > size:
+            if not silent:
+                print("Face.RHS = Error: The outer fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        inner_dimension = size - 2*thickness
+        fillet_dimension = 2*innerFillet*thickness
+        if fillet_dimension > inner_dimension:
+            if not silent:
+                print("Face.RHS = Error: The inner fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        return Face.RHS(origin = origin, width = size, length = size, thickness = thickness, outerFillet = outerFillet, innerFillet = innerFillet, sides = sides, direction = direction, placement = placement, tolerance = tolerance, silent = silent)
     
     @staticmethod
     def Simplify(face, tolerance=0.0001):

@@ -649,6 +649,80 @@ class Cell():
         return capsule
 
     @staticmethod
+    def CHS(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a circular hollow section (CHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
+        radius : float , optional
+            The outer radius of the CHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the CHS. The default is 0.25.
+        height : float , optional
+            The height of the CHS. The default is 1.0.
+        sides : int , optional
+            The desired number of sides of the CSH. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if 2*thickness >= radius:
+            if not silent:
+                print("Cell.CHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        bottom_face = Face.CHS(origin = Vertex.Origin(),radius=radius, thickness=thickness, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByThickenedFace(bottom_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = radius
+            yOffset = radius
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = radius
+            yOffset = -radius
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -radius
+            yOffset = radius
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -radius
+            yOffset = -radius
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+
+    @staticmethod
     def Compactness(cell, reference = "sphere", mantissa: int = 6) -> float:
         """
         Returns the compactness measure of the input cell. If the reference is "sphere", this is also known as 'sphericity' (https://en.wikipedia.org/wiki/Sphericity).
@@ -854,7 +928,357 @@ class Cell():
         except:
             print("Cell.ContainmentStatus - Error: Could not determine containment status. Returning None.")
             return None
- 
+    
+    @staticmethod
+    def CrossShape(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            a=0.25,
+            b=0.25,
+            c=None,
+            d=None,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a Cross-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the Cross-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the Cross-shape. The default is 1.0.
+        height : float , optional
+            The overall height of the C-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+        c : float , optional
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+        d : float , optional
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+        direction : list , optional
+            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created Cross-shape cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if c == None:
+            c = width/2
+        if d == None:
+            d = length/2
+        if not isinstance(c, int) and not isinstance(c, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(d, int) and not isinstance(d, float):
+            if not silent:
+                print("Cell.CrossShape - Error: The d input parameter is not a valid number. Returning None.")
+        if width <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if d <= tolerance:
+            if not silent:
+                print("Cell.CrossShape - Error: The d input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance*2):
+            if not silent:
+                print("Cell.CrossShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance*2):
+            if not silent:
+                print("Cell.CrossShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if c <= (tolerance + a/2):
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter must be more than half the a input parameter. Returning None.")
+            return None
+        if d <= (tolerance + b/2):
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter must be more than half the b input parameter. Returning None.")
+            return None
+        if c >= (width - tolerance - a/2):
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter must be less than the width minus half the a input parameter. Returning None.")
+            return None
+        if d >= (length - tolerance - b/2):
+            if not silent:
+                print("Cell.CrossShape - Error: The c input parameter must be less than the width minus half the b input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.CrossShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.CrossShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.CrossShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        cross_shape_face = Face.CrossShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   d=d,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return_cell = Cell.ByThickenedFace(cross_shape_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+    
+    @staticmethod
+    def CShape(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            a=0.25,
+            b=0.25,
+            c=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a C-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the C-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the C-shape. The default is 1.0.
+        height : float , optional
+            The overall height of the C-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created C-shape cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.CShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.CShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(height, int) and not isinstance(height, float):
+            if not silent:
+                print("Cell.CShape - Error: The height input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Cell.CShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Cell.CShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if height <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The height input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if c <= tolerance:
+            if not silent:
+                print("Cell.CShape - Error: The c input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Cell.CShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Cell.CShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.CShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.CShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.CShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        c_shape_face = Face.CShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=[0,0,1],
+                                   placement="center",
+                                   tolerance=tolerance,
+                                   silent=silent)
+        
+        return_cell = Cell.ByThickenedFace(c_shape_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+    
     @staticmethod
     def Cube(origin = None,
             size: float = 1,
@@ -1547,6 +1971,153 @@ class Cell():
             return None
     
     @staticmethod
+    def IShape(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            a=0.25,
+            b=0.25,
+            c=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an I-shape cell.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the I-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the I-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
+        c : float , optional
+            The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the I-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created I-shape cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.IShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.IShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Cell.IShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Cell.IShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Cell.IShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.IShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Cell.IShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Cell.IShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Cell.IShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b+c >= (length - tolerance):
+            if not silent:
+                print("Cell.IShape - Error: The b and c input parameters must add to less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.IShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.IShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.IShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        i_shape_face = Face.IShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   c=c,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return_cell = Cell.ByThickenedFace(i_shape_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+        
+    @staticmethod
     def IsOnBoundary(cell, vertex, tolerance: float = 0.0001) -> bool:
         """
         Returns True if the input vertex is on the boundary of the input cell. Returns False otherwise.
@@ -1579,6 +2150,160 @@ class Cell():
         except:
             print("Cell.IsOnBoundary - Error: Could not determine if the input vertex is on the boundary of the input cell. Returning None.")
             return None
+    
+    @staticmethod
+    def LShape(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            a=0.25,
+            b=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates an L-shape.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the L-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the L-shape. The default is 1.0.
+        height : float , optional
+            The overall height of the L-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the L-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created L-shape cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.LShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.LShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(height, int) and not isinstance(height, float):
+            if not silent:
+                print("Cell.LShape - Error: The height input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Cell.LShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Cell.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Cell.LShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.LShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if height <= tolerance:
+            if not silent:
+                print("Cell.LShape - Error: The height input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Cell.LShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Cell.LShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Cell.LShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Cell.LShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.LShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.LShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.LShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        l_shape_face = Face.LShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=[0,0,1],
+                                   placement="center",
+                                   tolerance=tolerance,
+                                   silent=silent)
+        
+        return_cell = Cell.ByThickenedFace(l_shape_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
     
     @staticmethod
     def Octahedron(origin= None, radius: float = 0.5,
@@ -2029,6 +2754,102 @@ class Cell():
         return Cell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod
+    def RHS(origin= None, width: float = 1.0, length: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a rectangluar hollow section (RHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).
+        width : float , optional
+            The width of the RHS. The default is 1.0.
+        length : float , optional
+            The length of the RHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the RHS. The default is 0.25.
+        height : float , optional
+            The height of the RHS. The default is 1.0.
+        outerFillet : float , optional
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+        innerFillet : float , optional
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+        sides : int , optional
+            The desired number of sides of the fillets. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if 2*thickness >= width:
+            if not silent:
+                print("Cell.RHS - Error: Twice the thickness value is larger than or equal to the width value. Returning None.")
+            return None
+        if 2*thickness >= width:
+            if not silent:
+                print("Cell.RHS - Error: Twice the thickness value is larger than or equal to the length value. Returning None.")
+            return None
+        outer_dimension = min(width, length)
+        fillet_dimension = 2*outerFillet*thickness
+        if  fillet_dimension > outer_dimension:
+            if not silent:
+                print("Cell.RHS = Error: The outer fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        inner_dimension = min(width, length) - 2*thickness
+        fillet_dimension = 2*innerFillet*thickness
+        if fillet_dimension > inner_dimension:
+            if not silent:
+                print("Cell.RHS = Error: The inner fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        bottom_face = Face.RHS(origin = Vertex.Origin(), width=width, length=length, thickness=thickness, outerFillet=outerFillet, innerFillet=innerFillet, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
+        return_cell = Cell.ByThickenedFace(bottom_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+
+    @staticmethod
     def Roof(face, angle: float = 45, epsilon: float = 0.01 , tolerance: float = 0.001):
         """
             Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
@@ -2151,6 +2972,76 @@ class Cell():
         _ = cell.Shells(None, shells) # Hook to Core
         return shells
 
+    @staticmethod
+    def SHS(origin= None, size: float = 1.0, height: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a square hollow section (SHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).
+        size : float , optional
+            The size of the SHS. The default is 1.0.
+        length : float , optional
+            The length of the SHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the SHS. The default is 0.25.
+        height : float , optional
+            The height of the SHS. The default is 1.0.
+        outerFillet : float , optional
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+        innerFillet : float , optional
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+        sides : int , optional
+            The desired number of sides of the fillets. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the SHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if 2*thickness >= size:
+            if not silent:
+                print("Cell.SHS - Error: Twice the thickness value is larger than or equal to the size value. Returning None.")
+            return None
+        fillet_dimension = 2*outerFillet*thickness
+        if  fillet_dimension > size:
+            if not silent:
+                print("Cell.SHS = Error: The outer fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        inner_dimension = size - 2*thickness
+        fillet_dimension = 2*innerFillet*thickness
+        if fillet_dimension > inner_dimension:
+            if not silent:
+                print("Cell.SHS = Error: The inner fillet radius input value is too large given the desired dimensions of the RHS. Returning None.")
+            return None
+        return Cell.RHS(origin= origin,
+                        width = size,
+                        length = size,
+                        height = height,
+                        thickness = thickness,
+                        outerFillet = outerFillet,
+                        innerFillet = innerFillet,
+                        sides = sides,
+                        direction = direction,
+                        placement = placement,
+                        tolerance = tolerance,
+                        silent = silent)
+    
     @staticmethod
     def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
                    placement: str = "center", tolerance: float = 0.0001):
@@ -2430,6 +3321,203 @@ class Cell():
         torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
         return torus
     
+    @staticmethod
+    def TShape(origin=None,
+            width=1,
+            length=1,
+            height=1,
+            a=0.25,
+            b=0.25,
+            flipHorizontal = False,
+            flipVertical = False,
+            direction=[0,0,1],
+            placement="center",
+            tolerance=0.0001,
+            silent=False):
+        """
+        Creates a T-shape cell.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
+        width : float , optional
+            The overall width of the T-shape. The default is 1.0.
+        length : float , optional
+            The overall length of the T-shape. The default is 1.0.
+        height : float , optional
+            the overall height of the T-shape. The default is 1.0.
+        a : float , optional
+            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
+        b : float , optional
+            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
+        direction : list , optional
+            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Face
+            The created T-shape.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not isinstance(width, int) and not isinstance(width, float):
+            if not silent:
+                print("Cell.TShape - Error: The width input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(length, int) and not isinstance(length, float):
+            if not silent:
+                print("Cell.TShape - Error: The length input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(a, int) and not isinstance(a, float):
+            if not silent:
+                print("Cell.TShape - Error: The a input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(b, int) and not isinstance(b, float):
+            if not silent:
+                print("Cell.LShape - Error: The b input parameter is not a valid number. Returning None.")
+            return None
+        if width <= tolerance:
+            if not silent:
+                print("Cell.TShape - Error: The width input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if length <= tolerance:
+            if not silent:
+                print("Cell.TShape - Error: The length input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if a <= tolerance:
+            if not silent:
+                print("Cell.TShape - Error: The a input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if b <= tolerance:
+            if not silent:
+                print("Cell.TShape - Error: The b input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if a >= (width - tolerance):
+            if not silent:
+                print("Cell.TShape - Error: The a input parameter must be less than the width input parameter. Returning None.")
+            return None
+        if b >= (length - tolerance):
+            if not silent:
+                print("Cell.TShape - Error: The b input parameter must be less than the length input parameter. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.TShape - Error: The origin input parameter is not a valid topologic vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Cell.TShape - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Cell.TShape - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        t_shape_face = Face.TShape(origin=origin,
+                                   width=width,
+                                   length=length,
+                                   a=a,
+                                   b=b,
+                                   flipHorizontal=flipHorizontal,
+                                   flipVertical=flipVertical,
+                                   direction=direction,
+                                   placement=placement,
+                                   tolerance=tolerance,
+                                   silent=silent)
+        return_cell = Cell.ByThickenedFace(t_shape_face, thickness=height, bothSides=True, reverse=False,
+                            planarize = False, tolerance=tolerance, silent=silent)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+        if placement.lower() == "bottom":
+            zOffset = height*0.5
+        elif placement.lower() == "top":
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerleft":
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperleft":
+            xOffset = width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        elif placement.lower() == "lowerright":
+            xOffset = -width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        elif placement.lower() == "upperright":
+            xOffset = -width*0.5
+            yOffset = -length*0.5
+            zOffset = -height*0.5
+        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
+        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
+        if direction != [0, 0, 1]:
+            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return return_cell
+    
+    @staticmethod
+    def Tube(origin= None, radius: float = 1.0, height: float = 1.0, thickness: float = 0.25, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a Tube. This method is an alias for the circular hollow section (CHS).
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
+        radius : float , optional
+            The outer radius of the CHS. The default is 1.0.
+        thickness : float , optional
+            The thickness of the CHS. The default is 0.25.
+        height : float , optional
+            The height of the CHS. The default is 1.0.
+        sides : int , optional
+            The desired number of sides of the CSH. The default is 16.
+        direction : list , optional
+            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if thickness >= radius:
+            if not silent:
+                print("Cell.Tube - Error: The thickness value is larger than or equal to the outer radius value. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        return Cell.CHS(origin=origin,
+                        radius=radius,
+                        height=height,
+                        thickness=thickness,
+                        sides=sides,
+                        direction=direction,
+                        placement=placement,
+                        tolerance=tolerance,
+                        silent=silent)
+        
     @staticmethod
     def Vertices(cell) -> list:
         """

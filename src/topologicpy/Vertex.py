@@ -726,7 +726,7 @@ class Vertex():
             return None
     
     @staticmethod
-    def EnclosingCell(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
+    def EnclosingCells(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
         """
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
