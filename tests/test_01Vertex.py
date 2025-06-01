@@ -136,22 +136,22 @@ def test_main():
     v9 = Vertex.ByCoordinates(0.7,0.8,0.5)
     v10 = Vertex.ByCoordinates(0.25,0.3,0.75)
     # test 1
-    cells = Vertex.EnclosingCell(v9, cc)
-    assert len(cells) == 0, "EnclosingCell. Length of cells should be 0"
+    cells = Vertex.EnclosingCells(v9, cc)
+    assert len(cells) == 0, "EnclosingCells. Length of cells should be 0"
     # test 2
-    cells = Vertex.EnclosingCell(v10, cc)
-    assert len(cells) == 1, "EnclosingCell. Length of cells should be 1"
+    cells = Vertex.EnclosingCells(v10, cc)
+    assert len(cells) == 1, "EnclosingCells. Length of cells should be 1"
     # test 3
     cell = cells[0]
     centroid = Topology.Centroid(cell)
     coordinates = Vertex.Coordinates(centroid)
-    assert coordinates == [0.25, 0.25, 0.5], "EnclosingCell. Coordinates should be [0.5, 0.5, 0.5]"
+    assert coordinates == [0.25, 0.25, 0.5], "EnclosingCells. Coordinates should be [0.5, 0.5, 0.5]"
 
     # Case 9 - Index
     print("Case 9")
     # test 1
     i = Vertex.Index(v3, v_list1)
-    assert i == 2, "EnclosingCell. Index. i should be 2"
+    assert i == 2, "EnclosingCells. Index. i should be 2"
 
     # Case 10 - IsInternal
     print("Case 10")
