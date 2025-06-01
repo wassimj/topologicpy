@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.8.31 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.8.33 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.31
+                0.8.33
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -182,6 +182,12 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ByWiresCluster" title="topologicpy.Cell.Cell.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, close, ...])</p></td>
 <td><p>Creates a cell by lofting through the input cluster of wires.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.CHS" title="topologicpy.Cell.Cell.CHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHS</span></code></a>([origin, radius, height, thickness, ...])</p></td>
+<td><p>Creates a circular hollow section (CHS).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.CShape" title="topologicpy.Cell.Cell.CShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CShape</span></code></a>([origin, width, length, height, a, ...])</p></td>
+<td><p>Creates a C-shape.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Capsule" title="topologicpy.Cell.Cell.Capsule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Capsule</span></code></a>([origin, radius, height, uSides, ...])</p></td>
 <td><p>Creates a capsule shape.</p></td>
 </tr>
@@ -194,32 +200,38 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ContainmentStatus" title="topologicpy.Cell.Cell.ContainmentStatus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainmentStatus</span></code></a>(cell, vertex[, tolerance])</p></td>
 <td><p>Returns the containment status of the input vertex in relationship to the input cell</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cube" title="topologicpy.Cell.Cell.Cube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cube</span></code></a>([origin, size, uSides, vSides, wSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.CrossShape" title="topologicpy.Cell.Cell.CrossShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossShape</span></code></a>([origin, width, length, height, ...])</p></td>
+<td><p>Creates a Cross-shape.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cube" title="topologicpy.Cell.Cell.Cube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cube</span></code></a>([origin, size, uSides, vSides, wSides, ...])</p></td>
 <td><p>Creates a cube.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cylinder" title="topologicpy.Cell.Cell.Cylinder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cylinder</span></code></a>([origin, radius, height, uSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Cylinder" title="topologicpy.Cell.Cell.Cylinder"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cylinder</span></code></a>([origin, radius, height, uSides, ...])</p></td>
 <td><p>Creates a cylinder.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Decompose" title="topologicpy.Cell.Cell.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cell[, tiltAngle, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Decompose" title="topologicpy.Cell.Cell.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cell[, tiltAngle, tolerance])</p></td>
 <td><p>Decomposes the input cell into its logical components.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Dodecahedron" title="topologicpy.Cell.Cell.Dodecahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dodecahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Dodecahedron" title="topologicpy.Cell.Cell.Dodecahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dodecahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates a dodecahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Edges" title="topologicpy.Cell.Cell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Edges" title="topologicpy.Cell.Cell.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cell)</p></td>
 <td><p>Returns the edges of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Egg" title="topologicpy.Cell.Cell.Egg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Egg</span></code></a>([origin, height, uSides, vSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Egg" title="topologicpy.Cell.Cell.Egg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Egg</span></code></a>([origin, height, uSides, vSides, ...])</p></td>
 <td><p>Creates an egg-shaped cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell)</p></td>
 <td><p>Returns the external boundary of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Faces" title="topologicpy.Cell.Cell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Faces" title="topologicpy.Cell.Cell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cell)</p></td>
 <td><p>Returns the faces of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Hyperboloid" title="topologicpy.Cell.Cell.Hyperboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperboloid</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Hyperboloid" title="topologicpy.Cell.Cell.Hyperboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperboloid</span></code></a>([origin, baseRadius, topRadius, ...])</p></td>
 <td><p>Creates a hyperboloid.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.IShape" title="topologicpy.Cell.Cell.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, height, a, ...])</p></td>
+<td><p>Creates an I-shape cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Icosahedron" title="topologicpy.Cell.Cell.Icosahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Icosahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an icosahedron.</p></td>
@@ -233,17 +245,23 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.IsOnBoundary" title="topologicpy.Cell.Cell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(cell, vertex[, tolerance])</p></td>
 <td><p>Returns True if the input vertex is on the boundary of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Octahedron" title="topologicpy.Cell.Cell.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.LShape" title="topologicpy.Cell.Cell.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, height, a, ...])</p></td>
+<td><p>Creates an L-shape.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Octahedron" title="topologicpy.Cell.Cell.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an octahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Paraboloid" title="topologicpy.Cell.Cell.Paraboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Paraboloid</span></code></a>([origin, focalLength, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Paraboloid" title="topologicpy.Cell.Cell.Paraboloid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Paraboloid</span></code></a>([origin, focalLength, width, ...])</p></td>
 <td><p>Creates a paraboloid cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Pipe" title="topologicpy.Cell.Cell.Pipe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Pipe</span></code></a>(edge[, profile, radius, sides, ...])</p></td>
 <td><p>Creates a pipe along the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Prism" title="topologicpy.Cell.Cell.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a prism.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RHS" title="topologicpy.Cell.Cell.RHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RHS</span></code></a>([origin, width, length, height, ...])</p></td>
+<td><p>Creates a rectangluar hollow section (RHS).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="topologicpy.Cell.Cell.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cell[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input cell.</p></td>
@@ -251,17 +269,23 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Roof" title="topologicpy.Cell.Cell.Roof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Roof</span></code></a>(face[, angle, epsilon, tolerance])</p></td>
 <td><p>Creates a hipped roof through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao &lt;<a class="reference external" href="mailto:gaoxipeng1998&#37;&#52;&#48;gmail&#46;com">gaoxipeng1998<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SHS" title="topologicpy.Cell.Cell.SHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHS</span></code></a>([origin, size, height, thickness, ...])</p></td>
+<td><p>Creates a square hollow section (SHS).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sets" title="topologicpy.Cell.Cell.Sets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sets</span></code></a>(cells, superCells[, tolerance])</p></td>
 <td><p>Classifies the input cells into sets based on their enclosure within the input list of super cells. The order of the sets follows the order of the input list of super cells.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Shells" title="topologicpy.Cell.Cell.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cell)</p></td>
 <td><p>Returns the shells of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Sphere" title="topologicpy.Cell.Cell.Sphere"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sphere</span></code></a>([origin, radius, uSides, vSides, ...])</p></td>
 <td><p>Creates a sphere.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.SurfaceArea" title="topologicpy.Cell.Cell.SurfaceArea"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SurfaceArea</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the surface area of the input cell.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.TShape" title="topologicpy.Cell.Cell.TShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TShape</span></code></a>([origin, width, length, height, a, ...])</p></td>
+<td><p>Creates a T-shape cell.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tetrahedron" title="topologicpy.Cell.Cell.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, length, depth, ...])</p></td>
 <td><p>Creates a recursive tetrahedron cell.</p></td>
@@ -269,16 +293,19 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tube" title="topologicpy.Cell.Cell.Tube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tube</span></code></a>([origin, radius, height, thickness, ...])</p></td>
+<td><p>Creates a Tube.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
 <td><p>Returns the vertices of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the volume of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wedge" title="topologicpy.Cell.Cell.Wedge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wedge</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wedge" title="topologicpy.Cell.Cell.Wedge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wedge</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a Wedge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
 <td><p>Returns the wires of the input cell.</p></td>
 </tr>
 </tbody>
@@ -578,6 +605,82 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.CHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.CHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a circular hollow section (CHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the CHS. The default is 0.25.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the CHS. The default is 1.0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the CSH. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the RHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the RHS. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.CShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.CShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a C-shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the C-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the C-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The overall height of the C-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>c</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the C-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the C-shape. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created C-shape cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.Capsule">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Capsule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSidesEnds</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSidesMiddle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Capsule" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a capsule shape. A capsule is a cylinder with hemispherical ends.</p>
@@ -693,6 +796,48 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>int</dt><dd><p>Returns 0 if the vertex is inside, 1 if it is on the boundary of, and 2 if it is outside the input cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.CrossShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CrossShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.CrossShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a Cross-shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the Cross-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the Cross-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The overall height of the C-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>c</strong><span class="classifier">float , optional</span></dt><dd><p>The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.</p>
+</dd>
+<dt><strong>d</strong><span class="classifier">float , optional</span></dt><dd><p>The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the Cross-shape. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created Cross-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -960,6 +1105,44 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.IShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.IShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an I-shape cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the I-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the I-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>c</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the I-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the I-shape. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created I-shape cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.Icosahedron">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Icosahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Icosahedron" title="Permalink to this definition"></a></dt>
 <dd><p>Creates an icosahedron. See <a class="reference external" href="https://en.wikipedia.org/wiki/Icosahedron">https://en.wikipedia.org/wiki/Icosahedron</a>.</p>
@@ -1049,6 +1232,44 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>bool</dt><dd><p>Returns True if the input vertex is inside the input cell. Returns False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.LShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.LShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an L-shape.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the L-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the L-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The overall height of the L-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the L-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the L-shape. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created L-shape cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1205,6 +1426,48 @@
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.RHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.RHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a rectangluar hollow section (RHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the RHS. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the RHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the RHS. The default is 0.25.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the RHS. The default is 1.0.</p>
+</dd>
+<dt><strong>outerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.</p>
+</dd>
+<dt><strong>innerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the fillets. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the RHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the RHS. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.RemoveCollinearEdges">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveCollinearEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.RemoveCollinearEdges" title="Permalink to this definition"></a></dt>
 <dd><p>Removes any collinear edges in the input cell.</p>
@@ -1251,6 +1514,48 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>cell</dt><dd><p>The created roof.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.SHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.SHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a square hollow section (SHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the SHS. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the SHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the SHS. The default is 0.25.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the SHS. The default is 1.0.</p>
+</dd>
+<dt><strong>outerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.</p>
+</dd>
+<dt><strong>innerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the fillets. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the SHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the RHS. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>
@@ -1358,6 +1663,44 @@ This algorithm depends on the polyskel code which is included in the library. Po
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.TShape">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.TShape" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a T-shape cell.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The overall width of the T-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The overall length of the T-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>the overall height of the T-shape. The default is 1.0.</p>
+</dd>
+<dt><strong>a</strong><span class="classifier">float , optional</span></dt><dd><p>The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>b</strong><span class="classifier">float , optional</span></dt><dd><p>The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the T-shape. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the T-shape. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created T-shape.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.Tetrahedron">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tetrahedron</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">depth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Tetrahedron" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a recursive tetrahedron cell.</p>
@@ -1417,6 +1760,42 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Cell</dt><dd><p>The created torus.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.Tube">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tube</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Tube" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a Tube. This method is an alias for the circular hollow section (CHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the CHS. The default is 0.25.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the CHS. The default is 1.0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the CSH. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the RHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the RHS. This can be “center”, “bottom”, “top”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created cell.</p>
 </dd>
 </dl>
 </dd>

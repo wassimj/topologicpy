@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Face module &mdash; topologicpy 0.8.31 documentation</title>
+  <title>topologicpy.Face module &mdash; topologicpy 0.8.33 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.31
+                0.8.33
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -200,98 +200,110 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ByWiresCluster" title="topologicpy.Face.Face.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(externalBoundary[, ...])</p></td>
 <td><p>Creates a face from the input external boundary (closed wire) and the input cluster of internal boundaries (closed wires).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CShape" title="topologicpy.Face.Face.CShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CHS" title="topologicpy.Face.Face.CHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CHS</span></code></a>([origin, radius, thickness, sides, ...])</p></td>
+<td><p>Creates a circular hollow section (CHS).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CShape" title="topologicpy.Face.Face.CShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
 <td><p>Creates a C-shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Circle" title="topologicpy.Face.Face.Circle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Circle</span></code></a>([origin, radius, sides, fromAngle, ...])</p></td>
 <td><p>Creates a circle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Compactness" title="topologicpy.Face.Face.Compactness"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compactness</span></code></a>(face[, mantissa])</p></td>
 <td><p>Returns the compactness measure of the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CompassAngle" title="topologicpy.Face.Face.CompassAngle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CompassAngle</span></code></a>(face[, north, mantissa, tolerance])</p></td>
 <td><p>Returns the horizontal compass angle in degrees between the normal vector of the input face and the input vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CrossShape" title="topologicpy.Face.Face.CrossShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.CrossShape" title="topologicpy.Face.Face.CrossShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CrossShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
 <td><p>Creates a Cross-shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Edges" title="topologicpy.Face.Face.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Edges" title="topologicpy.Face.Face.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(face)</p></td>
 <td><p>Returns the edges of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Einstein" title="topologicpy.Face.Face.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Einstein" title="topologicpy.Face.Face.Einstein"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Einstein</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an aperiodic monotile, also called an 'einstein' tile (meaning one tile in German, not the name of the famous physicist).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ellipse" title="topologicpy.Face.Face.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ellipse" title="topologicpy.Face.Face.Ellipse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ellipse</span></code></a>([origin, inputMode, width, length, ...])</p></td>
 <td><p>Creates an ellipse and returns all its geometry and parameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExteriorAngles" title="topologicpy.Face.Face.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(face[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExteriorAngles" title="topologicpy.Face.Face.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(face[, ...])</p></td>
 <td><p>Returns the exterior angles of the input face in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExternalBoundary" title="topologicpy.Face.Face.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(face[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.ExternalBoundary" title="topologicpy.Face.Face.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(face[, silent])</p></td>
 <td><p>Returns the external boundary (closed wire) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.FacingToward" title="topologicpy.Face.Face.FacingToward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FacingToward</span></code></a>(face[, direction, asVertex, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.FacingToward" title="topologicpy.Face.Face.FacingToward"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FacingToward</span></code></a>(face[, direction, asVertex, ...])</p></td>
 <td><p>Returns True if the input face is facing toward the input direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Fillet" title="topologicpy.Face.Face.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(face[, radius, radiusKey, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Fillet" title="topologicpy.Face.Face.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(face[, radius, sides, radiusKey, ...])</p></td>
 <td><p>Fillets (rounds) the interior and exterior corners of the input face given the input radius.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Harmonize" title="topologicpy.Face.Face.Harmonize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Harmonize</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Harmonize" title="topologicpy.Face.Face.Harmonize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Harmonize</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Returns a harmonized version of the input face such that the <em>u</em> and <em>v</em> origins are always in the upperleft corner.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IShape" title="topologicpy.Face.Face.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IShape" title="topologicpy.Face.Face.IShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IShape</span></code></a>([origin, width, length, a, b, c, ...])</p></td>
 <td><p>Creates an I-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InteriorAngles" title="topologicpy.Face.Face.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(face[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InteriorAngles" title="topologicpy.Face.Face.InteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InteriorAngles</span></code></a>(face[, ...])</p></td>
 <td><p>Returns the interior angles of the input face in degrees.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalBoundaries" title="topologicpy.Face.Face.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(face)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalBoundaries" title="topologicpy.Face.Face.InternalBoundaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalBoundaries</span></code></a>(face)</p></td>
 <td><p>Returns the internal boundaries (closed wires) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalVertex" title="topologicpy.Face.Face.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.InternalVertex" title="topologicpy.Face.Face.InternalVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalVertex</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Creates a vertex guaranteed to be inside the input face.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Invert" title="topologicpy.Face.Face.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(face[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Invert" title="topologicpy.Face.Face.Invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invert</span></code></a>(face[, tolerance, silent])</p></td>
 <td><p>Creates a face that is an inverse (mirror) of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsConvex" title="topologicpy.Face.Face.IsConvex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConvex</span></code></a>(face[, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsConvex" title="topologicpy.Face.Face.IsConvex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConvex</span></code></a>(face[, mantissa, silent])</p></td>
 <td><p>Returns True if the input face is convex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, mantissa, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.IsCoplanar" title="topologicpy.Face.Face.IsCoplanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoplanar</span></code></a>(faceA, faceB[, mantissa, tolerance])</p></td>
 <td><p>Returns True if the two input faces are coplanar.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Isovist" title="topologicpy.Face.Face.Isovist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Isovist</span></code></a>(face, vertex[, obstacles, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Isovist" title="topologicpy.Face.Face.Isovist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Isovist</span></code></a>(face, vertex[, obstacles, ...])</p></td>
 <td><p>Returns the face representing the isovist projection from the input viewpoint.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.LShape" title="topologicpy.Face.Face.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.LShape" title="topologicpy.Face.Face.LShape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LShape</span></code></a>([origin, width, length, a, b, ...])</p></td>
 <td><p>Creates an L-shape.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.MedialAxis" title="topologicpy.Face.Face.MedialAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MedialAxis</span></code></a>(face[, resolution, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.MedialAxis" title="topologicpy.Face.Face.MedialAxis"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MedialAxis</span></code></a>(face[, resolution, ...])</p></td>
 <td><p>Returns a wire representing an approximation of the medial axis of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Normal" title="topologicpy.Face.Face.Normal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normal</span></code></a>(face[, outputType, mantissa])</p></td>
 <td><p>Returns the normal vector to the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalEdge" title="topologicpy.Face.Face.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(face[, length, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NormalEdge" title="topologicpy.Face.Face.NormalEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalEdge</span></code></a>(face[, length, tolerance, silent])</p></td>
 <td><p>Returns the normal vector to the input face as an edge with the desired input length.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NorthArrow" title="topologicpy.Face.Face.NorthArrow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NorthArrow</span></code></a>([origin, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.NorthArrow" title="topologicpy.Face.Face.NorthArrow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NorthArrow</span></code></a>([origin, radius, sides, ...])</p></td>
 <td><p>Creates a north arrow.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Planarize" title="topologicpy.Face.Face.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(face[, origin, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Planarize" title="topologicpy.Face.Face.Planarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Planarize</span></code></a>(face[, origin, tolerance])</p></td>
 <td><p>Planarizes the input face such that its center of mass is located at the input origin and its normal is pointed in the input direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.PlaneEquation" title="topologicpy.Face.Face.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(face[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.PlaneEquation" title="topologicpy.Face.Face.PlaneEquation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlaneEquation</span></code></a>(face[, mantissa])</p></td>
 <td><p>Returns the a, b, c, d coefficients of the plane equation of the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Project" title="topologicpy.Face.Face.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(faceA, faceB[, direction, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Project" title="topologicpy.Face.Face.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(faceA, faceB[, direction, mantissa, ...])</p></td>
 <td><p>Creates a projection of the first input face unto the second input face.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RHS" title="topologicpy.Face.Face.RHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RHS</span></code></a>([origin, width, length, thickness, ...])</p></td>
+<td><p>Creates a rectangluar hollow section (RHS).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Rectangle" title="topologicpy.Face.Face.Rectangle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rectangle</span></code></a>([origin, width, length, ...])</p></td>
 <td><p>Creates a rectangle.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.RemoveCollinearEdges" title="topologicpy.Face.Face.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(face[, angTolerance, ...])</p></td>
 <td><p>Removes any collinear edges in the input face.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Ring" title="topologicpy.Face.Face.Ring"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Ring</span></code></a>([origin, radius, thickness, sides, ...])</p></td>
+<td><p>Creates a circular ring.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Face.Face.SHS" title="topologicpy.Face.Face.SHS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SHS</span></code></a>([origin, size, thickness, outerFillet, ...])</p></td>
+<td><p>Creates a square hollow section (SHS).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Face.Face.Simplify" title="topologicpy.Face.Face.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(face[, tolerance])</p></td>
 <td><p>Simplifies the input face edges based on the Douglas Peucker algorthim.</p></td>
@@ -780,6 +792,38 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.CHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.CHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a circular hollow section (CHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the CHS. The default is 0.5.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the CHS. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the CHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the CHS. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.CShape">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CShape</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipHorizontal</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flipVertical</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.CShape" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a C-shape.</p>
@@ -1118,14 +1162,16 @@ internal boundaries are considered to be those interior to the original face. Th
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Fillet">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fillet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Fillet" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Fillet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radiusKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Fillet" title="Permalink to this definition"></a></dt>
 <dd><p>Fillets (rounds) the interior and exterior corners of the input face given the input radius. See <a class="reference external" href="https://en.wikipedia.org/wiki/Fillet_(mechanics">https://en.wikipedia.org/wiki/Fillet_(mechanics</a>)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float</span></dt><dd><p>The desired radius of the fillet.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the fillet. The default is 0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides (segments) of the fillet. The default is 16.</p>
 </dd>
 <dt><strong>radiusKey</strong><span class="classifier">str , optional</span></dt><dd><p>If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.</p>
 </dd>
@@ -1650,6 +1696,46 @@ The acceptable range is 1 to 360. The default is 360.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.RHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.RHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a rectangluar hollow section (RHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the RHS. The default is 1.0.</p>
+</dd>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the RHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the RHS. The default is 0.25.</p>
+</dd>
+<dt><strong>outerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.</p>
+</dd>
+<dt><strong>innerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the fillets. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the RHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the RHS. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Face.Face.Rectangle">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Rectangle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Rectangle" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a rectangle.</p>
@@ -1704,6 +1790,76 @@ The acceptable range is 1 to 360. The default is 360.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Face</dt><dd><p>The created face without any collinear edges.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.Ring">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Ring</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.Ring" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a circular ring. This is an alias method for creating a circular hollow section (CHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the ring. The default is None which results in the ring being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the ring. The default is 0.5.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the ring. The default is 0.25.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the ring. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the ring. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created face.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Face.Face.SHS">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SHS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">thickness</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.25</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">innerFillet</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Face.Face.SHS" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a square hollow section (SHS).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex, optional</span></dt><dd><p>The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The outer size of the SHS. The default is 1.0.</p>
+</dd>
+<dt><strong>thickness</strong><span class="classifier">float , optional</span></dt><dd><p>The thickness of the SHS. The default is 0.25.</p>
+</dd>
+<dt><strong>outerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.</p>
+</dd>
+<dt><strong>innerFillet</strong><span class="classifier">float , optional</span></dt><dd><p>The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the fillets. The default is 16.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the SHS. The default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the SHS. This can be “center”, “lowerleft”, “upperleft”, “lowerright”, “upperright”. It is case insensitive. The default is “center”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Face</dt><dd><p>The created face.</p>
 </dd>
 </dl>
 </dd>
