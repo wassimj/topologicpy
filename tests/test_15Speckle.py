@@ -3,6 +3,7 @@ sys.path.append("/workspaces/topologicpy/src")
 
 import topologicpy 
 from topologicpy.Speckle import Speckle
+from topologicpy.Topology import Topology
 
 def run_test(token):
     TOKEN = token
@@ -20,10 +21,10 @@ def run_test(token):
 
     obj = Speckle.SpeckleObject(client=client, stream=stream, branch=branch, commit=commit)
 
-    toplogy_obj = Speckle.TopologyBySpeckleObject(obj)
+    topology_obj = Speckle.TopologyBySpeckleObject(obj)
 
-    for top in toplogy_obj:
-        print(top)
+    first_cell = next(topology_obj)
+    Topology.Show(first_cell, renderer='browser')
 
 #To run test enter your token and select desired stram, branch, and commit
-# run_test()
+run_test("")

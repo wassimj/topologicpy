@@ -31,8 +31,28 @@ from topologicpy.CellComplex import CellComplex
 from topologicpy.Graph import Graph
 from topologicpy.Dictionary import Dictionary
 
+import os 
+import warnings
 from collections import deque
-from typing import List
+from typing import List, Type, Generator 
+
+# Trimesh is required for preliminary mesh processing after it was recieved from Speckle
+# In order to reduce the load on topologic_core
+try:
+    import trimesh
+except:
+    print("Trimesh - Installing required trimesh library.")
+    try:
+        os.system("pip install trimesh")
+    except:
+        os.system("pip install trimesh --user")
+    try:
+        import trimesh
+    except:
+        warnings.warn("trimesh - Error: Could not import trimesh")
+
+class TopologyBuildinigException(Exception):
+    pass
 
 class Speckle:
 
@@ -530,68 +550,88 @@ class Speckle:
         speckle_mesh = operations.receive(obj_id=last_obj_id, remote_transport=transport)
         
         return speckle_mesh
-    
-    @staticmethod
-    def get_name_from_IFC_name(name) ->  str:
-        "Function is used to get clean speckle element name" 
 
-        import re
-        mapping = {
-            "IFC_WALL_REG": r"(Wall)",
-            "IFC_SLAB_REG": r"(Slab)",
-            "IFC_WINDOW_REG": r"(Window)",
-            "IFC_COLUMN_REG": r"(Column)",
-            "IFC_DOOR_REG": r"(Door)",
-            "IFC_SPACE_REG": r"(Space)"
-        }
-
-        for expression in mapping.values():
-            res = re.findall(expression, name)
-            if res:
-                return res[0]
         
-
     @staticmethod
-    def TopologyBySpeckleObject(obj):
-
-        def from_points_to_vertices_3D(points) -> List[Vertex]:
-            points_array_length = len(points)
+    def TopologyBySpeckleObject(obj: Base, threshold: int = 200) -> Generator[Cell, None, None]:
+        # Threshold defines the number of vertices in the array after which 
+        # the convex hull will be applied to better simplify all non-essential elements
+        # such as windows and doors.
+        def transform_faces_from_speckle_to_trimesh(speckle_faces: List[int]) -> List[int]:
+            l = len(speckle_faces)
             i = 0
-            topologic_vertices = []
-            while i < points_array_length:
-                x = points[i]
-                y = points[i+1]
-                z = points[i+2]
-                v = Vertex.ByCoordinates(x, y, z)
-                topologic_vertices.append(v)
 
-                i+=3
-            return topologic_vertices
-
-        def make_faces_from_indices(vertices, face_indices) -> List[Face]:
-            "Helping function used to make a triangular faces"
-            l = len(face_indices)
-            i = 0
-            triangles = []
-
-            while i < l:
-                curr = face_indices[i]
+            trimesh_faces = []
+            while i<l:
+                slice_length = speckle_faces[i]
                 i+=1
-                lis = face_indices[i:curr+i]
-                triangles.append(lis)
-                i+=curr
-            
-            topologic_vertices = from_points_to_vertices_3D(vertices)
-            faces_list = []
+                sli = speckle_faces[i:i+slice_length]
+                trimesh_faces.append(sli)
+                i+=slice_length
+
+            return trimesh_faces
+
+
+        def transform_vertices_from_speckle_to_trimesh(speckle_vertices: List[float]) -> List[List[float]]:
+            l = len(speckle_vertices)
+            i = 0
+
+            trimesh_vertices = []
+            while i<l:
+                triangle = speckle_vertices[i:i+3]
+                rounded_triangle = [round(x, 2) for x in triangle] # Floats were rounded. Could be removed
+                trimesh_vertices.append(rounded_triangle)
+                i+=3
+
+            return trimesh_vertices # Nested list like [[1.0, 1.0, 1.0], [2.0, 2.0, 2.0]]
+
+
+        def build_topologic_triangle_faces(triangles: List[List[float]]) -> List[Face]:
+            topologic_faces = []
 
             for triangle in triangles:
-                v1 = topologic_vertices[triangle[0]]
-                v2 = topologic_vertices[triangle[1]]
-                v3 = topologic_vertices[triangle[2]]
-                f = Face.ByVertices([v1, v2, v3])
-                faces_list.append(f)
+                v1 = Vertex.ByCoordinates(triangle[0][0],
+                                        triangle[0][1],
+                                        triangle[0][2])
+                v2 = Vertex.ByCoordinates(triangle[1][0],
+                                        triangle[1][1],
+                                        triangle[1][2])
+                v3 = Vertex.ByCoordinates(triangle[2][0],
+                                        triangle[2][1],
+                                        triangle[2][2])
 
-            return faces_list
+                face = Face.ByVertices([v1, v2, v3])
+                topologic_faces.append(face)
+
+            return topologic_faces
+
+        def simplify_topology(cells: List[Cell]) -> Cell:
+            """
+            Some of elements recieved from Speckle could be composed of multiple meshes
+            The function makes sure that Speckle elements would be represented as a single Cell
+            """
+            if len(cells) > 1:
+                cell_complex = CellComplex.ByCells(cells)
+
+                try:
+                    return CellComplex.ExternalBoundary(cell_complex)
+                except:
+                    raise TopologyBuildinigException("Failed to get a CellComplex boundary")
+            else:
+                # print("Wow! Simple element was found")
+                return cells[0]
+
+        def get_metadata_for_topology(head: Type[Base]) -> dict:
+            metadata_dictionary = {}
+            # print(head.get_serializable_attributes())
+            for attribute in head.get_serializable_attributes()[1:]:
+                if attribute != 'properties':
+                    try:
+                        metadata_dictionary[attribute] = head[attribute]
+                    except KeyError:
+                        pass
+            
+            return metadata_dictionary
 
         #Stack used for the tree traversal
         stack = deque()
@@ -610,20 +650,41 @@ class Speckle:
             elif isinstance(head, Base):
 
                 if hasattr(head, '@displayValue'):
+                    # Making a dictionary with all metadata from Speckle
+                    metadata_dictionary = get_metadata_for_topology(head)
+                    topologic_metadata_dictionary = Dictionary.ByPythonDictionary(metadata_dictionary)
+
+                    # Mesh processing using trimesh
                     meshes = head['@displayValue']
-                    # print(head.name)
                     if isinstance(meshes, List):
-                        full_name = head.name
-                        short_name = Speckle.get_name_from_IFC_name(full_name)
-                        speckle_id = head.id
-
-                        mesh_faces = []
+                        trimeshes_list = []
                         for mesh in meshes:
-                            # print(mesh.get_serializable_attributes())
-                            faces = make_faces_from_indices(vertices=mesh.vertices,
-                                                            face_indices=mesh.faces)
-                            mesh_faces.append(faces)
+                            t = trimesh.Trimesh(vertices=transform_vertices_from_speckle_to_trimesh(mesh.vertices),
+                                                faces=transform_faces_from_speckle_to_trimesh(mesh.faces))
+                            trimeshes_list.append(t)
+                        concatenated_trimesh = trimesh.util.concatenate(trimeshes_list)
+                        
+                        # Check if mesh is too heavy
+                        # This condition usually filters detailed non essesntial elements like door and windows
+                        # The amount of vertices could be modified
+                        if len(concatenated_trimesh.vertices) > threshold:
+                            trimesh_convex_hull = concatenated_trimesh.convex_hull
 
-                        yield [short_name, full_name, speckle_id, mesh_faces]
+                            topologic_faces = build_topologic_triangle_faces(trimesh_convex_hull.vertices[trimesh_convex_hull.faces])
+                            topologic_cell = Cell.ByFaces(topologic_faces, silent=True)
+                            Topology.AddDictionary(topologic_cell, topologic_metadata_dictionary)
+                            yield topologic_cell
 
-                # stack.pop()
+                        else:
+                            topologic_cells = []
+
+                            # mesh should be splitted to ensure that topologic will build a Cell of a single mesh body
+                            for submesh in concatenated_trimesh.split():
+                                topologic_faces = build_topologic_triangle_faces(submesh.vertices[submesh.faces])
+                                topologic_cell = Cell.ByFaces(topologic_faces, silent=True)
+                                topologic_cells.append(topologic_cell)
+
+                            simplified_topologic_cell = simplify_topology(topologic_cells)
+                            Topology.AddDictionary(simplified_topologic_cell, topologic_metadata_dictionary)
+
+                            yield simplified_topologic_cell   
