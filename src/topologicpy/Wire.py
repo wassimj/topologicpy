@@ -4629,7 +4629,7 @@ class Wire():
         """
         sv, ev = Wire.StartEndVertices(wire)
         return sv
-    
+
     @staticmethod
     def Trapezoid(origin= None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """

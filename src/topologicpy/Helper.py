@@ -287,6 +287,58 @@ class Helper:
         return flat_list
 
     @staticmethod
+    def Grow(seed_idx, group_size, adjacency, visited_global): 
+        """
+        Attempts to grow a spatially connected group of a specified size starting from a given seed index.
+
+        This method uses a breadth-first search strategy to explore neighboring indices from the seed index,
+        guided by the provided adjacency dictionary. It avoids reusing indices that are globally visited.
+        The growth continues until the desired group size is reached or no further expansion is possible.
+
+        Parameters
+        ----------
+        seed_idx : int
+            The index from which to start growing the group.
+        group_size : int
+            The target size of the group to be grown.
+        adjacency : dict
+            A dictionary mapping each index to a list of adjacent indices. This defines the connectivity.
+        visited_global : set
+            A set of indices that have already been used in previously grown groups and should be avoided.
+
+        Returns
+        -------
+        list[int] or None
+            A list of indices representing a connected group of the specified size if successful, otherwise None.
+
+        Notes
+        -----
+        This method is intended for internal use in functions that generate connected subgroups
+        of spatial elements (e.g., cells) based on adjacency. The result may vary between runs due to random shuffling
+        of neighbor order to diversify outputs.
+        """
+        from collections import deque
+        import random
+
+        group = [seed_idx]
+        visited = set(group)
+        queue = deque([seed_idx])
+
+        while queue and len(group) < group_size:
+            current = queue.popleft()
+            neighbors = adjacency.get(current, [])
+            random.shuffle(neighbors)
+            for neighbor in neighbors:
+                if neighbor not in visited and neighbor not in visited_global:
+                    group.append(neighbor)
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+                    if len(group) >= group_size:
+                        break
+
+        return group if len(group) == group_size else None
+    
+    @staticmethod
     def Iterate(listA):
         """
         Iterates the input nested list so that each sublist has the same number of members. To fill extra members, the shorter lists are iterated from their first member.

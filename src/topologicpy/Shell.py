@@ -740,42 +740,6 @@ class Shell():
         return faces
     
     @staticmethod
-    def IsOnBoundary(shell, vertex, tolerance: float = 0.0001) -> bool:
-        """
-        Returns True if the input vertex is on the boundary of the input shell. Returns False otherwise. On the boundary is defined as being on the boundary of one of the shell's external or internal boundaries
-
-        Parameters
-        ----------
-        shell : topologic_core.Shell
-            The input shell.
-        vertex : topologic_core.Vertex
-            The input vertex.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        bool
-            Returns True if the input vertex is inside the input shell. Returns False otherwise.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(shell, "Shell"):
-            return None
-        if not Topology.IsInstance(vertex, "Vertex"):
-            return None
-        boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
-        if Vertex.IsInternal(vertex, boundary, tolerance=tolerance):
-            return True
-        internal_boundaries = Shell.InternalBoundaries(shell, tolerance=tolerance)
-        for ib in internal_boundaries:
-            if Vertex.IsInternal(vertex, ib, tolerance=tolerance):
-                return True
-        return False
-    
-    @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin= None,
                                               llVertex= None,
                                               lrVertex= None,
@@ -1097,6 +1061,41 @@ class Shell():
         """
         return shell.IsClosed()
 
+    @staticmethod
+    def IsOnBoundary(shell, vertex, tolerance: float = 0.0001) -> bool:
+        """
+        Returns True if the input vertex is on the boundary of the input shell. Returns False otherwise. On the boundary is defined as being on the boundary of one of the shell's external or internal boundaries
+
+        Parameters
+        ----------
+        shell : topologic_core.Shell
+            The input shell.
+        vertex : topologic_core.Vertex
+            The input vertex.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        bool
+            Returns True if the input vertex is inside the input shell. Returns False otherwise.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(shell, "Shell"):
+            return None
+        if not Topology.IsInstance(vertex, "Vertex"):
+            return None
+        boundary = Shell.ExternalBoundary(shell, tolerance=tolerance)
+        if Vertex.IsInternal(vertex, boundary, tolerance=tolerance):
+            return True
+        internal_boundaries = Shell.InternalBoundaries(shell, tolerance=tolerance)
+        for ib in internal_boundaries:
+            if Vertex.IsInternal(vertex, ib, tolerance=tolerance):
+                return True
+        return False
 
     @staticmethod
     def Paraboloid(origin= None, focalLength=0.125, width: float = 1, length: float = 1, uSides: int = 16, vSides: int = 16,
@@ -1644,62 +1643,6 @@ class Shell():
         else:
             return None
 
-    def Skeleton(face, tolerance: float = 0.001):
-        """
-            Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
-            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
-
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
-
-        Returns
-        -------
-        topologic_core.Shell
-            The created straight skeleton.
-
-        """
-        from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Topology import Topology
-        import topologic_core as topologic
-        import math
-
-        if not Topology.IsInstance(face, "Face"):
-            return None
-        roof = Wire.Skeleton(face, tolerance=tolerance)
-        if not (Topology.IsInstance(roof, "Wire") or Topology.IsInstance(roof, "Cluster")):
-            print("Shell.Skeleton - Error: Could not create base skeleton wire. Returning None.")
-            return None
-        br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
-        if not Topology.IsInstance(br, "Wire"):
-            print("Shell.Skeleton - Error: Could not create a bounding rectangle wire. Returning None.")
-            return None
-        br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
-        bf = Face.ByWire(br, tolerance=tolerance)
-        if not Topology.IsInstance(bf, "Face"):
-            print("Shell.Skeleton - Error: Could not create a bounding rectangle face. Returning None.")
-            return None
-        large_shell = Topology.Boolean(bf, roof, operation="slice", tolerance=tolerance)
-        if not large_shell:
-            return None
-        faces = Topology.Faces(large_shell)
-        if not faces:
-            return None
-        final_faces = []
-        for f in faces:
-            internalBoundaries = Face.InternalBoundaries(f)
-            if len(internalBoundaries) == 0:
-                final_faces.append(f)
-        shell = Shell.ByFaces(final_faces, tolerance=tolerance)
-        if not Topology.IsInstance(shell, "Shell"):
-            print("Shell.Skeleton - Error: Could not create shell. Returning None.")
-            return None
-        return shell
-
     @staticmethod
     def Simplify(shell, simplifyBoundary: bool = True, mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -1847,6 +1790,63 @@ class Shell():
         return final_result
 
     @staticmethod
+    def Skeleton(face, tolerance: float = 0.001):
+        """
+            Creates a shell through a straight skeleton. This method is contributed by 高熙鹏 xipeng gao <gaoxipeng1998@gmail.com>
+            This algorithm depends on the polyskel code which is included in the library. Polyskel code is found at: https://github.com/Botffy/polyskel
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+
+        Returns
+        -------
+        topologic_core.Shell
+            The created straight skeleton.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        import topologic_core as topologic
+        import math
+
+        if not Topology.IsInstance(face, "Face"):
+            return None
+        roof = Wire.Skeleton(face, tolerance=tolerance)
+        if not (Topology.IsInstance(roof, "Wire") or Topology.IsInstance(roof, "Cluster")):
+            print("Shell.Skeleton - Error: Could not create base skeleton wire. Returning None.")
+            return None
+        br = Wire.BoundingRectangle(roof) #This works even if it is a Cluster not a Wire
+        if not Topology.IsInstance(br, "Wire"):
+            print("Shell.Skeleton - Error: Could not create a bounding rectangle wire. Returning None.")
+            return None
+        br = Topology.Scale(br, Topology.Centroid(br), 1.5, 1.5, 1)
+        bf = Face.ByWire(br, tolerance=tolerance)
+        if not Topology.IsInstance(bf, "Face"):
+            print("Shell.Skeleton - Error: Could not create a bounding rectangle face. Returning None.")
+            return None
+        large_shell = Topology.Boolean(bf, roof, operation="slice", tolerance=tolerance)
+        if not large_shell:
+            return None
+        faces = Topology.Faces(large_shell)
+        if not faces:
+            return None
+        final_faces = []
+        for f in faces:
+            internalBoundaries = Face.InternalBoundaries(f)
+            if len(internalBoundaries) == 0:
+                final_faces.append(f)
+        shell = Shell.ByFaces(final_faces, tolerance=tolerance)
+        if not Topology.IsInstance(shell, "Shell"):
+            print("Shell.Skeleton - Error: Could not create shell. Returning None.")
+            return None
+        return shell
+    
+    @staticmethod
     def Square(origin= None, size: float = 1.0,
                   uSides: int = 2, vSides: int = 2, direction: list = [0, 0, 1],
                   placement: str = "center", tolerance: float = 0.0001):
@@ -1881,6 +1881,33 @@ class Shell():
         return Shell.Rectangle(origin=origin, width=size, length=size,
                   uSides=uSides, vSides=vSides, direction=direction,
                   placement=placement, tolerance=tolerance)
+    
+    @staticmethod
+    def _grow_connected_group(seed_idx, group_size, adjacency, visited_global):
+        """
+        Attempts to grow a group of the given size starting from seed_idx using adjacency.
+        Returns a list of indices if successful, else None.
+        """
+        from collections import deque
+        import random
+
+        group = [seed_idx]
+        visited = set(group)
+        queue = deque([seed_idx])
+
+        while queue and len(group) < group_size:
+            current = queue.popleft()
+            neighbors = adjacency.get(current, [])
+            random.shuffle(neighbors)
+            for neighbor in neighbors:
+                if neighbor not in visited and neighbor not in visited_global:
+                    group.append(neighbor)
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+                    if len(group) >= group_size:
+                        break
+
+        return group if len(group) == group_size else None
     
     @staticmethod
     def Vertices(shell) -> list:

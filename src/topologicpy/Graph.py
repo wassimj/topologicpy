@@ -523,7 +523,7 @@ class Graph:
         _ = graph.AddVertices(vertices, tolerance) # Hook to Core
         return graph
     
-    def AdjacencyDictionary(graph, vertexLabelKey: str = None, edgeKey: str = "Length", includeWeights: bool = False, reverse: bool = False, mantissa: int = 6):
+    def AdjacencyDictionary(graph, vertexLabelKey: str = None, edgeKey: str = "Length", includeWeights: bool = False, mantissa: int = 6):
         """
         Returns the adjacency dictionary of the input Graph.
 
@@ -537,9 +537,7 @@ class Graph:
         edgeKey : str , optional
             If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
         includeWeights : bool , optional
-            If set to True, edge weights are included. Otherwise, they are not. The default is False.
-        reverse : bool , optional
-                If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+            If set to True, edge weights are included. Otherwise, they are not. The default is False.        
         mantissa : int , optional
                 The desired length of the mantissa. The default is 6.
 
@@ -578,9 +576,6 @@ class Graph:
             labels.append(value)
         vertices = Helper.Sort(vertices, labels)
         labels.sort()
-        if reverse == True:
-            vertices.reverse()
-            labels.reverse()
         order = len(vertices)
         adjDict = {}
         for i in range(order):

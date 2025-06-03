@@ -47,6 +47,125 @@ class Dictionary():
         return dictionaries
     '''
     @staticmethod
+    def AdjacencyDictionary(topology, subTopologyType: str = None, labelKey: str = None,  weightKey: str = None, includeWeights: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the adjacency dictionary of the input Shell.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        subTopologyType : str , optional
+            The type of subTopology on which to base the adjacency dictionary.
+        labelKey : str , optional
+            The returned subTopologies are labelled according to the dictionary values stored under this key.
+            If the labelKey does not exist, it will be created and the subTopologies are labelled numerically and stored in the subTopologies' dictionary under this key. The default is None.
+        weightKey : str , optional
+            If set, the sharedTopologies' dictionaries will be searched for this key to set their weight. If the key is set to "Area" or "Length" (case insensitive), the area of shared faces or the length of the shared edges will be used as its weight. If set to None, a weight of 1 will be used. The default is None.
+        includeWeights : bool , optional
+            If set to True, edge weights are included. Otherwise, they are not. The default is False.
+        mantissa : int , optional
+                The desired length of the mantissa. The default is 6.
+        silent : bool , optional
+                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        dict
+            The adjacency dictionary.
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input topology input parameter is not a valid topology. Returning None.")
+            return None
+        # Special Case for Graphs
+
+        if Topology.IsInstance(topology, "Graph"):
+            return Graph.AdjacencyDictionary(topology, vertexLabelKey=labelKey, edgeKey=weightKey, includeWeights=includeWeights, mantissa=mantissa)
+        if labelKey == None:
+            labelKey = "__label__"
+        if not isinstance(labelKey, str):
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input labelKey is not a valid string. Returning None.")
+            return None
+        if Topology.IsInstance(topology, "cellcomplex"):
+            if subTopologyType == None:
+                subTopologyType = "cell"
+            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+        elif Topology.IsInstance(topology, "cell") or Topology.IsInstance(topology, "shell"):
+            if subTopologyType == None:
+                subTopologyType = "face"
+            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+        elif Topology.IsInstance(topology, "face") or Topology.IsInstance(topology, "wire"):
+            if subTopologyType == None:
+                subTopologyType = "edge"
+            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+        labels = []
+        n = max(len(str(len(all_subtopologies))), 3)
+        for i, subtopology in enumerate(all_subtopologies):
+            d = Topology.Dictionary(subtopology)
+            value = Dictionary.ValueAtKey(d, labelKey)
+            if value == None:
+                value = str(i+1).zfill(n)
+            if d == None:
+                d = Dictionary.ByKeyValue(labelKey, value)
+            else:
+                d = Dictionary.SetValueAtKey(d, labelKey, value)
+            subtopology = Topology.SetDictionary(subtopology, d)
+            labels.append(value)
+        all_subtopologies = Helper.Sort(all_subtopologies, labels)
+        labels.sort()
+        order = len(all_subtopologies)
+        adjDict = {}
+        for i in range(order):
+            subtopology = all_subtopologies[i]
+            subt_label = labels[i]
+            adjacent_topologies = Topology.AdjacentTopologies(subtopology, hostTopology=topology, topologyType=subTopologyType)
+            temp_list = []
+            for adj_topology in adjacent_topologies:
+                adj_label = Dictionary.ValueAtKey(Topology.Dictionary(adj_topology), labelKey)
+                adj_index = labels.index(adj_label)
+                if includeWeights == True:
+                    if weightKey == None:
+                        weight = 1
+                    elif "length" in weightKey.lower():
+                        shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
+                        edges = shared_topologies.get("edges", [])
+                        weight = sum([Edge.Length(edge, mantissa=mantissa) for edge in edges])
+                    elif "area" in weightKey.lower():
+                        shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
+                        faces = shared_topologies.get("faces", [])
+                        weight = sum([Edge.Length(edge, mantissa=mantissa) for face in faces])
+                    else:
+                        shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
+                        vertices = shared_topologies.get("vertices", [])
+                        edges = shared_topologies.get("edges", [])
+                        wires = shared_topologies.get("wires", [])
+                        faces = shared_topologies.get("faces", [])
+                        everything = vertices+edges+wires+faces
+                        weight = sum([Dictionary.ValueAtKey(Topology.Dictionary(x),weightKey, 0) for x in everything])
+                        weight = round(weight, mantissa)
+                    if not adj_index == None:
+                        temp_list.append((adj_label, weight))
+                else:
+                    if not adj_index == None:
+                        temp_list.append(adj_label)
+            temp_list.sort()
+            adjDict[subt_label] = temp_list
+        if labelKey == "__label__": # This is label we added, so remove it
+            for subtopology in all_subtopologies:
+                d = Topology.Dictionary(subtopology)
+                d = Dictionary.RemoveKey(d, labelKey)
+                subtopology = Topology.SetDictionary(subtopology, d)
+        return adjDict
+    
+    @staticmethod
     def ByKeyValue(key, value):
         """
         Creates a Dictionary from the input key and the input value.

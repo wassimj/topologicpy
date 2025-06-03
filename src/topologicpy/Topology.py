@@ -7897,13 +7897,6 @@ class Topology():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return topology
-        # if len(dictionary.Keys()) < 1:
-        #     if not silent:
-        #         print("Topology.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
-        #         curframe = inspect.currentframe()
-        #         calframe = inspect.getouterframes(curframe, 2)
-        #         print('caller name:', calframe[1][3])
-        #     return topology
         _ = topology.SetDictionary(dictionary)
         return topology
     
@@ -8862,6 +8855,177 @@ class Topology():
         return returnTopology
     
     @staticmethod
+    def SubCombinations(topology,
+                        subTopologyType=None,
+                        minSize: int = 2,
+                        maxSize: int = None,
+                        maxCombinations: int = 100,
+                        timeLimit: int = 10,
+                        removeCoplanarFaces: bool = False,
+                        removeCollinearEdges: bool = False,
+                        tolerance: float = 0.001,
+                        silent: bool = False):
+        """
+        Creates connected sub-combination topologies of the input topology. Warning: This is prone to combinatorial explosion.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology. This cannot be vertex or edge.
+        subTopologyType : str , optional except when topology is a Cluster
+            The type of subTopology to include in the combinations.
+            If the input is a Cluster, you must specify the subTopologyType.
+            The options are (case insensitive):
+                - "CellComplex"
+                - "Shell"
+                - "Wire"
+            If set to None, it will be set according to the input topology type as follows:
+                - "Cluster" -> User-defined
+                - "CellComplex" -> "CellComplexes"
+                - "Cell" -> "Shells"
+                - "Shell" -> "Shells"
+                - "Face" -> "Wires"
+                - "Wire" -> "Wires"
+                - "Edge" -> None
+                - "Vertex" -> None
+                - "Graph" -> "Graphs"
+        minSize : int , optional
+            The minimum number of subtopologies to include in a combination. This number cannot be less than 2. The default is 2.
+        maxSize : int , optional
+            The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. The default is None which means the maximum will be set to the number of subtopologies minus 1.
+        maxCombinations : int , optional
+            The maximum number of combinations to create. The default is 100.
+        timeLimit : int , optional
+                The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+        removeCollinearEdges : bool , optional
+            If set to True, collinear edges are removed. Otherwise they are not. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+
+        Returns
+        -------
+        list
+            The list of created sub-combinations.
+
+        """
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        import random
+        import time
+
+        if Topology.IsInstance(topology, "cluster") and subTopologyType is None:
+            if not silent:
+                print("Topology.SubCombinations - Error: The topology input parameter is a cluster but the subTopologyType is not specified. Returning None.")
+            return None
+
+        if Topology.IsInstance(topology, "vertex") or Topology.IsInstance(topology, "edge"):
+            if not silent:
+                print("Topology.SubCombinations - Error: The topology input parameter cannot be a vertex or an edge. Returning None.")
+            return None
+
+        mapping = {
+            "cellcomplex": "cell",
+            "cell": "face",
+            "shell": "face",
+            "face": "edge",
+            "wire": "edge",
+            "graph": "vertex"
+        }
+
+        type_string = Topology.TypeAsString(topology).lower()
+        if type_string not in mapping:
+            if not silent:
+                print(f"Topology.SubCombinations - Error: The input topology type ({type_string}) is not supported. Returning None.")
+            return None
+
+        if subTopologyType is None:
+            subTopologyType = mapping[type_string]
+        subTopologyType = subTopologyType.lower()
+
+        if subTopologyType not in ["cell", "face", "edge", "vertex"]:
+            if not silent:
+                print(f"Topology.SubCombinations - Error: Unknown subTopologyType: {subTopologyType}. Returning None.")
+            return None
+
+        if ((type_string in ["cell", "shell"]) and subTopologyType not in ["face", "edge"]) or \
+        ((type_string in ["wire", "face"]) and subTopologyType != "edge"):
+            if not silent:
+                print(f"Topology.SubCombinations - Error: The subTopology type {subTopologyType} is not appropriate for topology of type {type_string}. Returning None.")
+            return None
+
+        all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+        num_subtopologies = len(all_subtopologies)
+        if num_subtopologies < 2:
+            if not silent:
+                print("Topology.SubCombinations - Warning: Not enough subtopologies found. Returning empty list.")
+            return []
+
+        indices = list(range(num_subtopologies))
+        minSize = max(2, minSize)
+        maxSize = num_subtopologies - 1 if maxSize is None else min(maxSize, num_subtopologies - 1)
+
+        subt_label_key = "__index__"
+        all_subtopologies = [Topology.SetDictionary(subt, Dictionary.ByKeyValue(subt_label_key, i)) for i, subt in enumerate(all_subtopologies)]
+
+        group_sizes = list(range(minSize, maxSize + 1))
+        num_sizes = len(group_sizes)
+        per_size_combinations = maxCombinations // num_sizes
+        per_size_time = timeLimit / num_sizes
+
+        adjacency = Dictionary.AdjacencyDictionary(topology, subTopologyType=subTopologyType, labelKey=subt_label_key, weightKey=None, includeWeights=False)
+
+        results = []
+        seen_groups = set()
+
+        for group_size in reversed(group_sizes):
+            size_start_time = time.time()
+            remaining = per_size_combinations
+            tries = 0
+            max_tries = per_size_combinations * 10
+
+            while remaining > 0 and (time.time() - size_start_time) < per_size_time and tries < max_tries:
+                random.shuffle(indices)
+                for seed in indices:
+                    if (time.time() - size_start_time) > per_size_time:
+                        break
+                    group = Helper.Grow(seed, group_size, adjacency, visited_global=seen_groups)
+                    if group:
+                        key = tuple(sorted(group))
+                        if key not in seen_groups:
+                            tries += 1
+                            seen_groups.add(key)
+                            results.append(group)
+                            remaining -= 1
+                    if remaining <= 0 or tries >= max_tries:
+                        break
+
+        return_combinations = []
+        for result in reversed(results):
+            subtopologies = [all_subtopologies[i] for i in result]
+            # Special case for graphs
+            if Topology.IsInstance(topology, "Graph"):
+                edges = Graph.Edges(topology, vertices = subtopologies)
+                combination = Graph.ByVerticesEdges(subtopologies, edges)
+            else:
+                combination = Topology.SelfMerge(Cluster.ByTopologies(subtopologies), tolerance=tolerance)
+                if removeCollinearEdges:
+                    if Topology.IsInstance(combination, "face") or Topology.IsInstance(combination, "wire"):
+                        combination = Topology.RemoveCollinearEdges(combination, tolerance=tolerance)
+                if removeCoplanarFaces:
+                    if Topology.IsInstance(combination, "cellcomplex") or Topology.IsInstance(combination, "cell") or Topology.IsInstance(combination, "shell"):
+                        combination = Topology.RemoveCoplanarFaces(combination, tolerance=tolerance)
+            return_combinations.append(combination)
+
+        return return_combinations
+
+    @staticmethod
     def Taper(topology, origin=None, ratioRange: list = [0, 1], triangulate: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.
@@ -9188,7 +9352,7 @@ class Topology():
         return Topology.SubTopologies(topology=topology, subTopologyType="cluster")
     
     @staticmethod
-    def SubTopologies(topology, subTopologyType="vertex"):
+    def SubTopologies(topology, subTopologyType="vertex", silent: bool = False):
         """
         Returns the subtopologies of the input topology as specified by the subTopologyType input string.
 
@@ -9198,7 +9362,8 @@ class Topology():
             The input topology.
         subTopologyType : str , optional
             The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "vertex".
-
+        silent : bool , optional
+            If set to True, no warnings or errors will be printed. The default is False.
         Returns
         -------
         list
@@ -9206,14 +9371,27 @@ class Topology():
 
         """
         from topologicpy.Face import Face
+        from topologicpy.Graph import Graph
 
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+            if not silent:
+                print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if Topology.TypeAsString(topology).lower() == subTopologyType.lower():
             return [topology]
         
         subTopologies = []
+
+        # Special case for Graphs
+        if Topology.IsInstance(topology, "graph"):
+            if subTopologyType.lower() == "vertex":
+                return Graph.Vertices(topology)
+            elif subTopologyType.lower() == "edge":
+                return Graph.Edges(topology)
+            else:
+                if not silent:
+                    print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not a valid subTopology of Graphs. Returning None.")
+                return None
 
         # Spcecial case for faces to return vertices in CW/CCW order.
         if Topology.IsInstance(topology, "face") and (subTopologyType.lower() == "vertex" or subTopologyType.lower() == "edge"):
