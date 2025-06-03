@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.8.33 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.8.35 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.33
+                0.8.35
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,46 +164,49 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Flatten" title="topologicpy.Helper.Helper.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(listA)</p></td>
 <td><p>Flattens the input nested list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Iterate" title="topologicpy.Helper.Helper.Iterate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iterate</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Grow" title="topologicpy.Helper.Helper.Grow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Grow</span></code></a>(seed_idx, group_size, adjacency, ...)</p></td>
+<td><p>Attempts to grow a spatially connected group of a specified size starting from a given seed index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Iterate" title="topologicpy.Helper.Helper.Iterate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iterate</span></code></a>(listA)</p></td>
 <td><p>Iterates the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
 <td><p>Forces the strings in the input list to be unique if they have duplicates.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MaximumIndices" title="topologicpy.Helper.Helper.MaximumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumIndices</span></code></a>(listA[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MaximumIndices" title="topologicpy.Helper.Helper.MaximumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumIndices</span></code></a>(listA[, silent])</p></td>
 <td><p>Returns a list of indices of the maximum value in the input list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
 <td><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MinimumIndices" title="topologicpy.Helper.Helper.MinimumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumIndices</span></code></a>(listA[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MinimumIndices" title="topologicpy.Helper.Helper.MinimumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumIndices</span></code></a>(listA[, silent])</p></td>
 <td><p>Returns a list of indices of the minimum value in the input list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
 <td><p>Normalizes the input list so that it is in the range 0 to 1</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
 <td><p>Returns the position of the item in the list or the position it would have been inserts.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveEven" title="topologicpy.Helper.Helper.RemoveEven"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEven</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveEven" title="topologicpy.Helper.Helper.RemoveEven"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEven</span></code></a>(listA)</p></td>
 <td><p>Removes the even indexed members of the input list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveOdd" title="topologicpy.Helper.Helper.RemoveOdd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveOdd</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveOdd" title="topologicpy.Helper.Helper.RemoveOdd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveOdd</span></code></a>(listA)</p></td>
 <td><p>Removes the odd indexed members of the input list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
 <td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
 <td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
 <td><p>Transposes the input list (swaps rows and columns).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
 <td><p>Trims the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>()</p></td>
 <td><p>Returns the current version of the software.</p></td>
 </tr>
 </tbody>
@@ -310,6 +313,39 @@ This works for lists made out of numeric or string values.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.Grow">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Grow</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">seed_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">group_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">adjacency</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">visited_global</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Grow" title="Permalink to this definition"></a></dt>
+<dd><p>Attempts to grow a spatially connected group of a specified size starting from a given seed index.</p>
+<p>This method uses a breadth-first search strategy to explore neighboring indices from the seed index,
+guided by the provided adjacency dictionary. It avoids reusing indices that are globally visited.
+The growth continues until the desired group size is reached or no further expansion is possible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>seed_idx</strong><span class="classifier">int</span></dt><dd><p>The index from which to start growing the group.</p>
+</dd>
+<dt><strong>group_size</strong><span class="classifier">int</span></dt><dd><p>The target size of the group to be grown.</p>
+</dd>
+<dt><strong>adjacency</strong><span class="classifier">dict</span></dt><dd><p>A dictionary mapping each index to a list of adjacent indices. This defines the connectivity.</p>
+</dd>
+<dt><strong>visited_global</strong><span class="classifier">set</span></dt><dd><p>A set of indices that have already been used in previously grown groups and should be avoided.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list[int] or None</dt><dd><p>A list of indices representing a connected group of the specified size if successful, otherwise None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>This method is intended for internal use in functions that generate connected subgroups
+of spatial elements (e.g., cells) based on adjacency. The result may vary between runs due to random shuffling
+of neighbor order to diversify outputs.</p>
 </dd></dl>
 
 <dl class="py method">
