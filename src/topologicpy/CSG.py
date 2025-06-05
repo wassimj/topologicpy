@@ -56,7 +56,7 @@ class CSG():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -121,7 +121,7 @@ class CSG():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -183,7 +183,7 @@ class CSG():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -248,7 +248,7 @@ class CSG():
         graph : topologic_core.Graph
             The input graph.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -358,7 +358,7 @@ class CSG():
         scale : float , optional
             A desired scale to resize the placed topologies. The default is 1.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------

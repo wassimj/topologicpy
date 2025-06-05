@@ -150,7 +150,7 @@ class ShapeGrammar:
         matrix : list
             The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. The default is None.
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -205,7 +205,7 @@ class ShapeGrammar:
         keys : list , optional
             The list of dictionary keys to semantically match the rules. The default is None which means dictionaries are not considered.
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -258,7 +258,7 @@ class ShapeGrammar:
         tolerance : float, optional
             The desired Tolerance. Not used here but included for API compatibility. Default is 0.0001.
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -395,7 +395,7 @@ class ShapeGrammar:
         output : topologic_core.Topology
             The output topology
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -473,7 +473,7 @@ class ShapeGrammar:
         rule : dict
             The input rule
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -500,7 +500,7 @@ class ShapeGrammar:
         output : topologic_core.Topology
             The output topology
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -534,7 +534,7 @@ class ShapeGrammar:
         rule : dict
             The input rule
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------

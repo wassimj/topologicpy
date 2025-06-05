@@ -303,7 +303,7 @@ class Graph:
         tolerance : float, optional
             The desired Tolerance. Not used here but included for API compatibility. Default is 0.0001.
         silent : bool, optional
-            If True, suppresses error/warning messages. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -383,7 +383,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -462,7 +462,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -497,7 +497,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -788,7 +788,7 @@ class Graph:
         vertex : topologic_core.Vertex
             the input vertex.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -826,7 +826,7 @@ class Graph:
         tolerance : float , optional
                 The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -884,7 +884,7 @@ class Graph:
         tolerance : float , optional
                 The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -938,7 +938,7 @@ class Graph:
         timeLimit : int , optional
             The time limit in second. The default is 10 seconds.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1562,7 +1562,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1624,7 +1624,7 @@ class Graph:
         key : str , optional
             The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. The default is "bridge".
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2076,7 +2076,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -4525,7 +4525,7 @@ class Graph:
         maxColors : int , optional
             The desired maximum number of colors to test against. The default is 3.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
        
         Returns
         -------
@@ -4740,7 +4740,7 @@ class Graph:
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5069,7 +5069,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5145,7 +5145,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5189,7 +5189,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5470,7 +5470,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         topologicpy.Graph
@@ -5497,7 +5497,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         topologicpy.Graph
@@ -5648,7 +5648,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5760,7 +5760,7 @@ class Graph:
         key : str , optional
             The vertex dictionary key under which to store the cut status. 0 means the vertex is NOT a cut vertex. 1 means that the vertex IS a cut vertex. The default is "cut".
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -5958,7 +5958,7 @@ class Graph:
         tolerance : float , optional
                 The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -7594,7 +7594,7 @@ class Graph:
         mantissa : int , optional
                 The desired length of the mantissa. The default is 6.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -7630,7 +7630,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -7701,7 +7701,7 @@ class Graph:
         maxIterations : int , optional
             This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -7834,7 +7834,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -9332,7 +9332,7 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -9646,7 +9646,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         normalized : bool , optional
             If set to True, the returned Laplacian matrix is normalized. The default is False.
 
@@ -9710,7 +9710,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -9742,7 +9742,7 @@ class Graph:
         tolerance : float, optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -9992,6 +9992,59 @@ class Graph:
         return longest_path
 
     @staticmethod
+    def Match(graphA, graphB, vertexKey: str = None, silent: bool = False):
+        """
+        Matches two input graphs using isomorphism coupled with semantic matching.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph. This should be the smaller sub-graph or a graph isomorphice with the second input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKey : str , optional
+            If set, the dictionaries of the vertices will be searched for this key and their values matched.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries that match the vertices of graphA to the vertices of graphB.
+        """
+        
+        import networkx as nx
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Map - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Map - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+
+        nx_ga = Graph.NetworkXGraph(graphA)
+        nx_gb = Graph.NetworkXGraph(graphB)
+
+        def node_match(n1, n2):
+            if vertexKey:
+                return str(n1.get(vertexKey)) == str(n2.get(vertexKey))
+            return True  # topology-only match
+
+        matcher = nx.algorithms.isomorphism.GraphMatcher(
+            nx_gb, nx_ga, node_match=node_match if vertexKey else None
+        )
+
+        matches = list(matcher.subgraph_isomorphisms_iter())
+        if not matches and not silent:
+            print("Graph.Match - Warning: No subgraph isomorphisms found.")
+        return matches
+
+
+    @staticmethod
     def MaximumDelta(graph):
         """
         Returns the maximum delta of the input graph. The maximum delta of a graph is the maximum degree of a vertex in the graph. 
@@ -10147,7 +10200,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -10630,7 +10683,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -10642,6 +10695,7 @@ class Graph:
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         import warnings
+        import os
 
         try:
             import networkx as nx
@@ -10667,27 +10721,17 @@ class Graph:
         vertices = Graph.Vertices(graph)
         edges = Graph.Edges(graph)
         mesh_data = Graph.MeshData(graph)
-        order = len(vertices)
-        nodes = []
-        for i in range(order):
-            v = vertices[i]
-            d = Topology.Dictionary(vertices[i])
-            if d:
-                keys = Dictionary.Keys(d)
-                if not keys:
-                    keys = []
-                values = Dictionary.Values(d)
-                if not values:
-                    values = []
-                keys += [xKey, yKey, zKey]
-                values += [Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa)]
-                d = Dictionary.ByKeysValues(keys, values)
-                pythonD = Dictionary.PythonDictionary(d)
-                nodes.append((i, pythonD))
-            else:
-                nodes.append((i, {"name": str(i)}))
-        nxGraph.add_nodes_from(nodes)
 
+        # Add nodes with attributes
+        for i, v in enumerate(vertices):
+            d = Topology.Dictionary(v)
+            pythonD = Dictionary.PythonDictionary(d) if d else {}
+            pythonD[xKey] = Vertex.X(v, mantissa)
+            pythonD[yKey] = Vertex.Y(v, mantissa)
+            pythonD[zKey] = Vertex.Z(v, mantissa)
+            nxGraph.add_node(i, **pythonD)
+
+        # Add edges
         mesh_edges = mesh_data['edges']
         for i, mesh_edge in enumerate(mesh_edges):
             sv_i = mesh_edge[0]
@@ -10695,11 +10739,12 @@ class Graph:
             sv = vertices[sv_i]
             ev = vertices[ev_i]
             edge_length = Vertex.Distance(sv, ev, mantissa=mantissa)
-            edge_dict = Topology.Dictionary(edges[i])
+            edge_dict = Topology.Dictionary(edges[i]) if i < len(edges) else None
             edge_attributes = Dictionary.PythonDictionary(edge_dict) if edge_dict else {}
             edge_attributes['length'] = edge_length
             nxGraph.add_edge(sv_i, ev_i, **edge_attributes)
-
+        
+        # Reshape it into a 2D spring layout for future display
         pos = nx.spring_layout(nxGraph, k=0.2)
         nx.set_node_attributes(nxGraph, pos, "pos")
         return nxGraph
@@ -10927,7 +10972,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -11612,7 +11657,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -11709,7 +11754,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -12082,7 +12127,7 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -12276,7 +12321,7 @@ class Graph:
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------

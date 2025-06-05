@@ -212,7 +212,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -256,7 +256,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -315,7 +315,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -444,7 +444,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -572,7 +572,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
 
         Returns
@@ -693,7 +693,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -756,7 +756,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -805,7 +805,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -838,7 +838,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -932,7 +932,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -975,7 +975,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -1025,7 +1025,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1221,7 +1221,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1374,7 +1374,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1624,7 +1624,7 @@ class Face():
         face : topologic_core.Face
             The input face.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1701,7 +1701,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1755,7 +1755,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1864,7 +1864,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1932,7 +1932,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2087,7 +2087,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2228,7 +2228,7 @@ class Face():
         tolerance : float , optional:
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2815,7 +2815,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2916,7 +2916,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -3123,7 +3123,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3379,7 +3379,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3430,7 +3430,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3518,7 +3518,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3565,7 +3565,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3771,7 +3771,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3883,7 +3883,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -4137,7 +4137,7 @@ class Face():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------

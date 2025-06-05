@@ -1079,7 +1079,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1226,7 +1226,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1442,7 +1442,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1869,7 +1869,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2093,7 +2093,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2153,7 +2153,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         list
@@ -2623,7 +2623,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3079,7 +3079,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3313,7 +3313,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -3551,7 +3551,7 @@ class Topology():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -3718,7 +3718,7 @@ class Topology():
             keys : str or list or comma-separated str input parameters
                 The key or keys in the topology's dictionary to use for clustering.
             silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
 
 
             Returns
@@ -4101,7 +4101,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5667,7 +5667,7 @@ class Topology():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5811,7 +5811,7 @@ class Topology():
         tolerance : float , ptional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -5878,7 +5878,7 @@ class Topology():
         tolerance : float , ptional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -6071,7 +6071,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -6259,7 +6259,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -6340,7 +6340,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         list
@@ -6389,7 +6389,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         list
@@ -6474,7 +6474,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -6881,7 +6881,7 @@ class Topology():
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -6963,7 +6963,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -7049,7 +7049,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -7870,7 +7870,7 @@ class Topology():
         dictionary : topologic_core.Dictionary
             The input dictionary.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -8108,7 +8108,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         list
@@ -8165,9 +8165,12 @@ class Topology():
 
              showEdges=True,
              edgeWidth=None,
-             edgeWidthKey = None,
+             edgeWidthKey=None,
              edgeColor=None,
-             edgeColorKey = None,
+             edgeColorKey=None,
+             edgeDash=False,
+             edgeDashKey=None,
+
              edgeLabelKey=None,
              showEdgeLabel = False,
              edgeGroupKey=None,
@@ -8181,7 +8184,7 @@ class Topology():
              faceOpacity=0.5,
              faceOpacityKey=None,
              faceColor="#FAFAFA",
-             faceColorKey = None,
+             faceColorKey=None,
              faceLabelKey=None,
              faceGroupKey=None,
              faceGroups=[], 
@@ -8220,10 +8223,10 @@ class Topology():
              cbUnits="",
              colorScale="Viridis",
              
-             sagitta = 0,
-             absolute = False,
-             sides = 8,
-             angle = 0,
+             sagitta=0,
+             absolute=False,
+             sides=8,
+             angle=0,
              mantissa=6,
              tolerance=0.0001,
              silent=False):
@@ -8293,6 +8296,10 @@ class Topology():
             The default is "black".
         edgeColorKey : str , optional
             The key under which to find the color of the edge. The default is None.
+        edgeDash : bool , optional
+            If set to True, the edges are drawn as dashed lines. The default is False.
+        edgeDashKey : str , optional
+            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
         edgeWidthKey : str , optional
             The key under which to find the width of the edge. The default is None.
         edgeLabelKey : str , optional
@@ -8407,7 +8414,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -8598,7 +8605,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         Returns
         -------
         list
@@ -8753,7 +8760,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
 
         Returns
@@ -8904,7 +8911,7 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------

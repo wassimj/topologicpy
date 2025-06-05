@@ -50,7 +50,7 @@ class Helper:
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -164,7 +164,7 @@ class Helper:
         keys : str or list or comma-separated str input parameters
             The key or keys in the topology's dictionary to use for clustering.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
 
         Returns
@@ -464,7 +464,7 @@ class Helper:
         listA : list
             The input list.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -500,7 +500,7 @@ class Helper:
         listA : list
             The input list.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------

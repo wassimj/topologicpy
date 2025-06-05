@@ -67,7 +67,7 @@ class Dictionary():
         mantissa : int , optional
                 The desired length of the mantissa. The default is 6.
         silent : bool , optional
-                If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+                If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -281,7 +281,7 @@ class Dictionary():
         dictionaries : list or comma separated dictionaries
             The input list of dictionaries to be merged.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -905,7 +905,7 @@ class Dictionary():
         defaultValue : any , optional
             The default value to return if the key or value are not found. The default is None.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------

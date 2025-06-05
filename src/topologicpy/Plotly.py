@@ -300,6 +300,8 @@ class Plotly:
                     edgeColorKey: str = None,
                     edgeWidth: float = 1,
                     edgeWidthKey: str = None,
+                    edgeDash: bool = False,
+                    edgeDashKey: str = None,
                     edgeLabelKey: str = None,
                     edgeGroupKey: str = None,
                     edgeGroups: list = [],
@@ -378,6 +380,10 @@ class Plotly:
             The dictionary key under which to find the edge width. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
+        edgeDash : bool , optional
+            If set to True, the edges are drawn as dashed lines. The default is False.
+        edgeDashKey : str , optional
+            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
         edgeGroupKey : str , optional
             The dictionary key to use to display the edge group. The default is None.
         edgeGroups : list , optional
@@ -391,7 +397,7 @@ class Plotly:
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         silent : bool , optional
-            If set to True, no error and warning messages are printed. Otherwise, they are. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -473,7 +479,7 @@ class Plotly:
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
-                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
+                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
         return data
     
     @staticmethod
@@ -632,7 +638,7 @@ class Plotly:
         return return_value
 
     @staticmethod
-    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, dash=False, dashKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
     
         from topologicpy.Color import Color
         from topologicpy.Dictionary import Dictionary
@@ -670,8 +676,8 @@ class Plotly:
             maxGroup = 1
         
 
-        if colorKey or widthKey or labelKey or groupKey:
-            keys = [x for x in [colorKey, widthKey, labelKey, groupKey] if not x == None]
+        if colorKey or widthKey or labelKey or groupKey or dashKey:
+            keys = [x for x in [colorKey, widthKey, labelKey, groupKey, dashKey] if not x == None]
             temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
             dict_clusters = temp_dict["dictionaries"]
             elements_clusters = temp_dict['elements']
@@ -684,6 +690,8 @@ class Plotly:
                     if not colorKey == None:
                         d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
                         d_color = Color.AnyToHex(d_color)
+                    if not dashKey == None:
+                        d_dash = Dictionary.ValueAtKey(d, key=dashKey) or dash
                     if not labelKey == None:
                         labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
                     if not widthKey == None:
@@ -719,6 +727,10 @@ class Plotly:
                     marker_width = width[0]*0.25
                 else:
                     marker_width = width*0.25
+                if dash:
+                    dot = "dot"
+                else:
+                    dot = "solid"
                 trace = go.Scatter3d(x=x,
                                     y=y,
                                     z=z,
@@ -726,7 +738,7 @@ class Plotly:
                                     showlegend=showLegend,
                                     marker=dict(symbol="circle", size=marker_width, color=color),
                                     mode=mode,
-                                    line=dict(color=d_color, width=width),
+                                    line=dict(color=d_color, width=width, dash=dot),
                                     legendgroup=legendGroup,
                                     legendrank=legendRank,
                                     text=labels,
@@ -747,6 +759,10 @@ class Plotly:
                 mode = "lines+text"
             else:
                 mode = "lines"
+            if dash:
+                dot = "dot"
+            else:
+                dot = "solid"
             trace = go.Scatter3d(x=x,
                                 y=y,
                                 z=z,
@@ -754,7 +770,7 @@ class Plotly:
                                 showlegend=showLegend,
                                 marker_size=0,
                                 mode=mode,
-                                line=dict(color=color, width=width),
+                                line=dict(color=color, width=width, dash=dot),
                                 legendgroup=legendGroup,
                                 legendrank=legendRank,
                                 text=label,
@@ -788,6 +804,8 @@ class Plotly:
                        edgeWidthKey=None,
                        edgeColor="black",
                        edgeColorKey=None,
+                       edgeDash=False,
+                       edgeDashKey=None,
                        edgeLabelKey=None,
                        showEdgeLabel=False,
                        edgeGroupKey=None,
@@ -883,6 +901,10 @@ class Plotly:
             The default is "black".
         edgeColorKey : str , optional
             The dictionary key under which to find the edge color.The default is None.
+        edgeDash : bool , optional
+            If set to True, the edges are drawn as dashed lines. The default is False.
+        edgeDashKey : str , optional
+            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
         edgeLabelKey : str , optional
             The dictionary key to use to display the edge label. The default is None.
         edgeGroupKey : str , optional
