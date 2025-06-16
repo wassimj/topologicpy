@@ -9690,7 +9690,7 @@ class Graph:
                                 yKey=yKey,
                                 zKey=zKey,
                                 mantissa=mantissa)
-        return json.dumps(jsonld_data, indent=indent, ort_keys=sortKeys)
+        return json.dumps(jsonld_data, indent=indent, sort_keys=sortKeys)
 
     @staticmethod
     def ExportToJSONLD(graph,
