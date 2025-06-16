@@ -10147,28 +10147,37 @@ class Topology():
         """
         import uuid
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Graph import Graph
 
         predefined_namespace_dns = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
-        cellComplexes = Topology.CellComplexes(topology)
-        cells = Topology.Cells(topology)
-        shells = Topology.Shells(topology)
-        faces = Topology.Faces(topology)
-        wires = Topology.Wires(topology)
-        edges = Topology.Edges(topology)
-        vertices = Topology.Vertices(topology)
-        apertures = Topology.Apertures(topology, subTopologyType="all")
-        subTopologies = cellComplexes+cells+shells+faces+wires+edges+vertices+apertures
-        dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
-        dictionaries += [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in subTopologies]
-        dict_str = str(dictionaries)
-        top_geom = Topology.Geometry(topology, mantissa=6)
-        verts_str = str(top_geom['vertices'])
-        edges_str = str(top_geom['edges'])
-        faces_str = str(top_geom['faces'])
-        geo_str = verts_str+edges_str+faces_str
-        final_str = geo_str+dict_str
-        uuid_str = uuid.uuid5(namespace_uuid, final_str)
+        if Topology.IsInstance(topology, "graph"):
+            mesh_data = Graph.MeshData(topology)
+            verts_str = str(mesh_data["vertices"])
+            edges_str = str(mesh_data["edges"])
+            dict_str = str(mesh_data['vertexDictionaries']+mesh_data["edgeDictionaries"])
+            final_str = verts_str+edges_str+dict_str
+            uuid_str = uuid.uuid5(namespace_uuid, final_str)
+        else:
+            cellComplexes = Topology.CellComplexes(topology)
+            cells = Topology.Cells(topology)
+            shells = Topology.Shells(topology)
+            faces = Topology.Faces(topology)
+            wires = Topology.Wires(topology)
+            edges = Topology.Edges(topology)
+            vertices = Topology.Vertices(topology)
+            apertures = Topology.Apertures(topology, subTopologyType="all")
+            subTopologies = cellComplexes+cells+shells+faces+wires+edges+vertices+apertures
+            dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
+            dictionaries += [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in subTopologies]
+            dict_str = str(dictionaries)
+            top_geom = Topology.Geometry(topology, mantissa=6)
+            verts_str = str(top_geom['vertices'])
+            edges_str = str(top_geom['edges'])
+            faces_str = str(top_geom['faces'])
+            geo_str = verts_str+edges_str+faces_str
+            final_str = geo_str+dict_str
+            uuid_str = uuid.uuid5(namespace_uuid, final_str)
         return str(uuid_str)
     
     @staticmethod

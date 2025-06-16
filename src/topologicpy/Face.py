@@ -2080,6 +2080,10 @@ class Face():
             The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
         c : float , optional
             The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+        flipHorizontal : bool , optional
+            if set to True, the shape is flipped horizontally. The default is False.
+        flipVertical : bool , optional
+            if set to True, the shape is flipped vertically. The default is False.
         direction : list , optional
             The vector representing the up direction of the I-shape. The default is [0, 0, 1].
         placement : str , optional

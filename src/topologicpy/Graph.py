@@ -723,6 +723,68 @@ class Graph:
                     matrix[evi][svi] = valueBwd
         return matrix
     
+
+    @staticmethod
+    def AdjacencyMatrixCSVString(graph, vertexKey=None, reverse=False, edgeKeyFwd=None, edgeKeyBwd=None, bidirKey=None, bidirectional=True, useEdgeIndex=False, useEdgeLength=False, mantissa: int = 6, tolerance=0.0001):
+        """
+        Returns the adjacency matrix CSV string of the input Graph. See https://en.wikipedia.org/wiki/Adjacency_matrix.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexKey : str , optional
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
+        reverse : bool , optional
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+        edgeKeyFwd : str , optional
+            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+        edgeKeyBwd : str , optional
+            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+        bidirKey : bool , optional
+            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
+        bidirectional : bool , optional
+            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.
+        useEdgeIndex : bool , optional
+            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        useEdgeLength : bool , optional
+            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        str
+            A string in CSV format representing the adjacency matrix.
+            Returns an empty string if conversion fails.
+        """
+        import io
+
+        adj_matrix = Graph.AdjacencyMatrix(graph,
+                                           vertexKey=vertexKey,
+                                           reverse=reverse,
+                                           edgeKeyFwd=edgeKeyFwd,
+                                           edgeKeyBwd=edgeKeyBwd,
+                                           bidirKey=bidirKey,
+                                           bidirectional=bidirectional,
+                                           useEdgeIndex=useEdgeIndex,
+                                           useEdgeLength=useEdgeLength,
+                                           mantissa=mantissa,
+                                           tolerance=tolerance)
+
+        try:
+            # Convert the adjacency matrix (nested list) to a DataFrame
+            adjacency_matrix_df = pd.DataFrame(adj_matrix)
+
+            # Use a buffer to get the CSV output as a string
+            csv_buffer = io.StringIO()
+            adjacency_matrix_df.to_csv(csv_buffer, index=False, header=False)
+            return csv_buffer.getvalue()
+        except Exception as e:
+            return ""
+        
     @staticmethod
     def AdjacencyList(graph, vertexKey=None, reverse=True, tolerance=0.0001):
         """
@@ -9466,6 +9528,267 @@ class Graph:
         return True
 
     @staticmethod
+    def JSONLDData(graph, context=None, verticesKey="nodes", edgesKey="edges", labelKey="label", sourceKey="source", targetKey="target", categoryKey="category", xKey="x", yKey="y", zKey="z", mantissa=6):
+        """
+        Exports the Graph to a JSON-LD representation.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The TopologicPy Graph object to export.
+        context : dict, optional
+            A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        labelKey : str , optional
+            The desired key name to use for label. The default is "label".
+        sourceKey : str , optional
+            The desired key name to use for source. The default is "source".
+        targetKey : str , optional
+            The desired key name to use for target. The default is "target".
+        categoryKey : str , optional
+            The desired key name to use for lcategoryabel. The default is "category".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
+        Returns
+        -------
+        dict
+            A JSON-LD representation of the graph.
+        """
+        from topologicpy.Graph import Graph
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if context is None:
+            context = {
+                labelKey: "rdfs:"+labelKey,
+                categoryKey: "schema:"+categoryKey,
+                xKey: "schema:"+xKey,
+                yKey: "schema:"+yKey,
+                zKey: "schema:"+zKey,
+                "Graph": "https://topologic.app/vocab#Graph",
+                "Vertex": "https://topologic.app/vocab#Vertex",
+                "Edge": "https://topologic.app/vocab#Edge"
+            }
+
+        
+        # Helper: Serialize a Vertex
+        def serialize_vertex(vertex):
+            props = Dictionary.PythonDictionary(Topology.Dictionary(vertex))
+            coords = Vertex.Coordinates(vertex, mantissa=mantissa)
+            props.update({
+                "@type": "Vertex",
+                xKey: coords[0],
+                yKey: coords[1],
+                zKey: coords[2],
+            })
+            props["@id"] = Topology.UUID(vertex)
+            return props
+
+        # Helper: Serialize an Edge
+        def serialize_edge(edge, tp_edge, edge_dict, s_vertices):
+            sv = edge[0]
+            ev = edge[1]
+            edge_dict.update({
+                "@type": "Edge",
+                sourceKey: s_vertices[sv]["@id"],
+                targetKey: s_vertices[ev]["@id"]
+            })
+            edge_dict["@id"] = Topology.UUID(tp_edge)
+            return edge_dict
+
+        # Assemble graph
+        jsonld = {
+            "@context": context,
+            "@id": Topology.UUID(graph),
+            "@type": "Graph",
+            verticesKey: [],
+            edgesKey: []
+        }
+
+        vertices = Graph.Vertices(graph)
+        tp_edges = Graph.Edges(graph)
+        mesh_data = Graph.MeshData(graph)
+        m_edges = mesh_data['edges']
+        edge_dicts = mesh_data['edgeDictionaries']
+
+        s_vertices = []
+        for v in vertices:
+            sv = serialize_vertex(v)
+            s_vertices.append(sv)
+            jsonld[verticesKey].append(sv)
+
+        for i, tp_edge in enumerate(tp_edges):
+            se = serialize_edge(m_edges[i], tp_edge, edge_dicts[i], s_vertices)
+            jsonld[edgesKey].append(se)
+
+        return jsonld
+
+    @staticmethod
+    def JSONLDString(graph, context=None, verticesKey="nodes", edgesKey="edges", labelKey="label", sourceKey="source", targetKey="target", categoryKey="category", xKey="x", yKey="y", zKey="z", indent=2, sortKeys=False, mantissa=6):
+        """
+        Converts the input graph into a JSON-LD string.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The TopologicPy Graph object to export.
+        context : dict, optional
+            A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.)
+        context : dict, optional
+            A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        labelKey : str , optional
+            The desired key name to use for label. The default is "label".
+        sourceKey : str , optional
+            The desired key name to use for source. The default is "source".
+        targetKey : str , optional
+            The desired key name to use for target. The default is "target".
+        categoryKey : str , optional
+            The desired key name to use for lcategoryabel. The default is "category".
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
+        indent : int , optional
+            The desired indent. The default is 2.
+        sortKeys : bool , optional
+            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        Returns
+        -------
+        dict
+            A JSON-LD representation of the graph.
+        """
+        import json
+        jsonld_data = Graph.JSONLDData(graph,
+                                context=context,
+                                verticesKey=verticesKey,
+                                edgesKey=edgesKey,
+                                labelKey=labelKey,
+                                sourceKey=sourceKey,
+                                targetKey=targetKey,
+                                categoryKey=categoryKey,
+                                xKey=xKey,
+                                yKey=yKey,
+                                zKey=zKey,
+                                mantissa=mantissa)
+        return json.dumps(jsonld_data, indent=indent, ort_keys=sortKeys)
+
+    @staticmethod
+    def ExportToJSONLD(graph,
+                       path,
+                       context=None,
+                       verticesKey="nodes",
+                       edgesKey="edges",
+                       labelKey="label",
+                       sourceKey="source",
+                       targetKey="target",
+                       categoryKey="category",
+                       xKey="x",
+                       yKey="y",
+                       zKey="z",
+                       indent=2,
+                       sortKeys=False,
+                       mantissa=6,
+                       overwrite=False):
+        """
+        Exports the input graph to a JSON file.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        path : str
+            The path to the JSON file.
+        verticesKey : str , optional
+            The desired key name to call vertices. The default is "vertices".
+        edgesKey : str , optional
+            The desired key name to call edges. The default is "edges".
+        vertexLabelKey : str , optional
+            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+            Note: If vertex labels are not unique, they will be forced to be unique.
+        edgeLabelKey : str , optional
+            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+            Note: If edge labels are not unique, they will be forced to be unique.
+        xKey : str , optional
+            The desired key name to use for x-coordinates. The default is "x".
+        yKey : str , optional
+            The desired key name to use for y-coordinates. The default is "y".
+        zKey : str , optional
+            The desired key name to use for z-coordinates. The default is "z".
+        indent : int , optional
+            The desired amount of indent spaces to use. The default is 4.
+        sortKeys : bool , optional
+            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+
+        Returns
+        -------
+        bool
+            The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.
+
+        """
+        import json
+        from os.path import exists
+        # Make sure the file extension is .json
+        ext = path[len(path)-5:len(path)]
+        if ext.lower() != ".json":
+            path = path+".json"
+        if not overwrite and exists(path):
+            print("Graph.ExportToJSONLD - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            return None
+        f = None
+        try:
+            if overwrite == True:
+                f = open(path, "w")
+            else:
+                f = open(path, "x") # Try to create a new File
+        except:
+            raise Exception("Graph.ExportToJSONLD - Error: Could not create a new file at the following location: "+path)
+        if (f):
+            jsonld_data = Graph.JSONLDData(graph,
+                                context=context,
+                                verticesKey=verticesKey,
+                                edgesKey=edgesKey,
+                                labelKey=labelKey,
+                                sourceKey=sourceKey,
+                                targetKey=targetKey,
+                                categoryKey=categoryKey,
+                                xKey=xKey,
+                                yKey=yKey,
+                                zKey=zKey,
+                                mantissa=mantissa)
+            if jsonld_data != None:
+                json.dump(jsonld_data, f, indent=indent, sort_keys=sortKeys)
+                f.close()
+                return True
+            else:
+                f.close()
+                return False
+        return False
+
+    @staticmethod
     def JSONData(graph,
                  verticesKey: str = "vertices",
                  edgesKey: str = "edges",
@@ -9597,7 +9920,7 @@ class Graph:
                    sortKeys=False,
                    mantissa=6):
         """
-        Converts the input graph into JSON data.
+        Converts the input graph into a JSON string.
 
         Parameters
         ----------
@@ -9991,58 +10314,269 @@ class Graph:
             longest_path = Topology.SetDictionary(longest_path, d)
         return longest_path
 
-    @staticmethod
-    def Match(graphA, graphB, vertexKey: str = None, silent: bool = False):
+    def Match(graphA, graphB, vertexKeys: list = None, edgeKeys: list = None, maxMatches: int = 10, timeLimit: int = 10, tolerance: float = 0.0, silent: bool = False):
         """
-        Matches two input graphs using isomorphism coupled with semantic matching.
+        Matches graphA as a subgraph of graphB using structural and semantic similarity.
 
         Parameters
         ----------
         graphA : topologic_core.Graph
-            The first input graph. This should be the smaller sub-graph or a graph isomorphice with the second input graph.
+            The smaller graph (subgraph).
         graphB : topologic_core.Graph
-            The second input graph.
-        vertexKey : str , optional
-            If set, the dictionaries of the vertices will be searched for this key and their values matched.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            The larger graph (supergraph).
+        vertexKeys : str or list of str, optional
+            Keys used to semantically compare vertices.
+        edgeKeys : str or list of str, optional
+            Keys used to semantically compare edges.
+        maxMatches : int , optional
+            The maximum number of matches to find. The default is 10.
+        timeLimit : int , optional
+                The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to finding the matches.
+        tolerance : float, optional
+            Allowed numeric deviation or minimum string similarity (e.g. 0.2 = ≥80% match). Default is 0.
+        silent : bool, optional
+            If True, suppresses warnings and errors.
 
         Returns
         -------
-        list
-            A list of dictionaries that match the vertices of graphA to the vertices of graphB.
+        list of dict
+            List of mappings from node index in graphA to graphB, sorted by descending similarity.
         """
-        
         import networkx as nx
         from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
+        from topologicpy.Helper import Helper
+        from difflib import SequenceMatcher
+        import time
 
-        if not Topology.IsInstance(graphA, "graph"):
+        def string_similarity(s1, s2):
+            return SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+
+        if not Topology.IsInstance(graphA, "Graph") or not Topology.IsInstance(graphB, "Graph"):
             if not silent:
-                print("Graph.Map - Error: The graphA input parameter is not a valid graph. Returning None.")
+                print("Graph.Match - Error: One or both inputs are not valid Graphs.")
             return None
-        
-        if not Topology.IsInstance(graphB, "graph"):
-            if not silent:
-                print("Graph.Map - Error: The graphB input parameter is not a valid graph. Returning None.")
-            return None
+
+        # Normalize keys
+        if isinstance(vertexKeys, str):
+            vertexKeys = [vertexKeys]
+        if isinstance(edgeKeys, str):
+            edgeKeys = [edgeKeys]
 
         nx_ga = Graph.NetworkXGraph(graphA)
         nx_gb = Graph.NetworkXGraph(graphB)
 
+        def similarity_score(val1, val2):
+            try:
+                v1 = float(val1)
+                v2 = float(val2)
+                if v1 == 0:
+                    return 1.0 if abs(v2) <= tolerance else 0.0
+                diff = abs(v1 - v2) / abs(v1)
+                return max(0.0, 1.0 - diff)
+            except (ValueError, TypeError):
+                return string_similarity(str(val1), str(val2))
+
+        def compute_mapping_score(mapping):
+            total_score = 0
+            count = 0
+
+            # Score vertices
+            for i_b, i_a in mapping.items():
+                a_attrs = nx_ga.nodes[i_a]
+                b_attrs = nx_gb.nodes[i_b]
+                if vertexKeys:
+                    for key in vertexKeys:
+                        if key in a_attrs and key in b_attrs:
+                            score = similarity_score(a_attrs[key], b_attrs[key])
+                            total_score += score
+                            count += 1
+
+            # Score edges
+            for (i_a1, i_a2) in nx_ga.edges:
+                if i_a1 in mapping and i_a2 in mapping:
+                    j_b1 = mapping[i_a1]
+                    j_b2 = mapping[i_a2]
+                    if nx_gb.has_edge(j_b1, j_b2):
+                        a_attrs = nx_ga.get_edge_data(i_a1, i_a2)
+                        b_attrs = nx_gb.get_edge_data(j_b1, j_b2)
+                        if edgeKeys:
+                            for key in edgeKeys:
+                                if key in a_attrs and key in b_attrs:
+                                    score = similarity_score(a_attrs[key], b_attrs[key])
+                                    total_score += score
+                                    count += 1
+
+            return total_score / count if count > 0 else 1.0
+
         def node_match(n1, n2):
-            if vertexKey:
-                return str(n1.get(vertexKey)) == str(n2.get(vertexKey))
-            return True  # topology-only match
+            if vertexKeys:
+                for key in vertexKeys:
+                    if key not in n1 or key not in n2:
+                        return False
+                    sim = similarity_score(n1[key], n2[key])
+                    if sim < (1.0 - tolerance):
+                        return False
+            return True
+
+        def edge_match(e1, e2):
+            if edgeKeys:
+                for key in edgeKeys:
+                    if key not in e1 or key not in e2:
+                        return False
+                    sim = similarity_score(e1[key], e2[key])
+                    if sim < (1.0 - tolerance):
+                        return False
+            return True
 
         matcher = nx.algorithms.isomorphism.GraphMatcher(
-            nx_gb, nx_ga, node_match=node_match if vertexKey else None
+            nx_gb, nx_ga,
+            node_match=node_match if vertexKeys else None,
+            edge_match=edge_match if edgeKeys else None
         )
 
-        matches = list(matcher.subgraph_isomorphisms_iter())
-        if not matches and not silent:
+        start = time.time()
+        raw_matches = []
+        for i, m in enumerate(matcher.subgraph_isomorphisms_iter()):
+            raw_matches.append(m)
+            elapsed_time = time.time() - start
+            if i + 1 >= maxMatches or elapsed_time >= timeLimit:
+                break
+        
+        if not raw_matches and not silent:
             print("Graph.Match - Warning: No subgraph isomorphisms found.")
-        return matches
+            return []
 
+        scores = [compute_mapping_score(m) for m in raw_matches]
+        sorted_matches = Helper.Sort(raw_matches, scores, reverseFlags=[True])
+        return sorted_matches
+
+    # @staticmethod
+    # def Match(graphA, graphB, vertexKeys=None, edgeKeys=None, tolerance: float = 0.0, silent: bool = False):
+    #     """
+    #     Matches graphA as a subgraph of graphB using structural and semantic similarity.
+
+    #     Parameters
+    #     ----------
+    #     graphA : topologic_core.Graph
+    #         The smaller graph (subgraph).
+    #     graphB : topologic_core.Graph
+    #         The larger graph (supergraph).
+    #     vertexKeys : str or list of str, optional
+    #         Keys used to semantically compare vertices.
+    #     edgeKeys : str or list of str, optional
+    #         Keys used to semantically compare edges.
+    #     tolerance : float, optional
+    #         Allowed numeric deviation or minimum string similarity (e.g. 0.2 = ≥80% match). Default is 0.
+    #     silent : bool, optional
+    #         If True, suppresses warnings and errors.
+
+    #     Returns
+    #     -------
+    #     list of dict
+    #         List of mappings from node index in graphA to graphB, sorted by descending similarity.
+    #     """
+    #     import networkx as nx
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Graph import Graph
+    #     from topologicpy.Helper import Helper
+    #     from difflib import SequenceMatcher
+
+    #     def string_similarity(s1, s2):
+    #         return SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+
+    #     if not Topology.IsInstance(graphA, "Graph") or not Topology.IsInstance(graphB, "Graph"):
+    #         if not silent:
+    #             print("Graph.Match - Error: One or both inputs are not valid Graphs.")
+    #         return None
+
+    #     # Normalize keys
+    #     if isinstance(vertexKeys, str):
+    #         vertexKeys = [vertexKeys]
+    #     if isinstance(edgeKeys, str):
+    #         edgeKeys = [edgeKeys]
+
+    #     nx_ga = Graph.NetworkXGraph(graphA)
+    #     nx_gb = Graph.NetworkXGraph(graphB)
+
+    #     def similarity_score(val1, val2):
+    #         try:
+    #             v1 = float(val1)
+    #             v2 = float(val2)
+    #             if v1 == 0:
+    #                 return 1.0 if abs(v2) <= tolerance else 0.0
+    #             diff = abs(v1 - v2) / abs(v1)
+    #             return max(0.0, 1.0 - diff)
+    #         except (ValueError, TypeError):
+    #             return string_similarity(str(val1), str(val2))
+
+    #     def compute_mapping_score(mapping):
+    #         total_score = 0
+    #         count = 0
+
+    #         # Score vertices
+    #         for i_a, i_b in mapping.items():
+    #             a_attrs = nx_ga.nodes[i_a]
+    #             b_attrs = nx_gb.nodes[i_b]
+    #             if vertexKeys:
+    #                 for key in vertexKeys:
+    #                     if key in a_attrs and key in b_attrs:
+    #                         score = similarity_score(a_attrs[key], b_attrs[key])
+    #                         total_score += score
+    #                         count += 1
+
+    #         # Score edges
+    #         for (i_a1, i_a2) in nx_ga.edges:
+    #             if i_a1 in mapping and i_a2 in mapping:
+    #                 j_b1 = mapping[i_a1]
+    #                 j_b2 = mapping[i_a2]
+    #                 if nx_gb.has_edge(j_b1, j_b2):
+    #                     a_attrs = nx_ga.get_edge_data(i_a1, i_a2)
+    #                     b_attrs = nx_gb.get_edge_data(j_b1, j_b2)
+    #                     if edgeKeys:
+    #                         for key in edgeKeys:
+    #                             if key in a_attrs and key in b_attrs:
+    #                                 score = similarity_score(a_attrs[key], b_attrs[key])
+    #                                 total_score += score
+    #                                 count += 1
+
+    #         return total_score / count if count > 0 else 1.0
+
+    #     def node_match(n1, n2):
+    #         if vertexKeys:
+    #             for key in vertexKeys:
+    #                 if key not in n1 or key not in n2:
+    #                     return False
+    #                 sim = similarity_score(n1[key], n2[key])
+    #                 if sim < (1.0 - tolerance):
+    #                     return False
+    #         return True
+
+    #     def edge_match(e1, e2):
+    #         if edgeKeys:
+    #             for key in edgeKeys:
+    #                 if key not in e1 or key not in e2:
+    #                     return False
+    #                 sim = similarity_score(e1[key], e2[key])
+    #                 if sim < (1.0 - tolerance):
+    #                     return False
+    #         return True
+
+    #     matcher = nx.algorithms.isomorphism.GraphMatcher(
+    #         nx_gb, nx_ga,
+    #         node_match=node_match if vertexKeys else None,
+    #         edge_match=edge_match if edgeKeys else None
+    #     )
+
+    #     raw_matches = list(matcher.subgraph_isomorphisms_iter())
+    #     if not raw_matches and not silent:
+    #         print("Graph.Match - Warning: No subgraph isomorphisms found.")
+    #         return []
+
+    #     scores = [compute_mapping_score(m) for m in raw_matches]
+    #     sorted_matches = Helper.Sort(raw_matches, scores, reverse=True)
+
+    #     return sorted_matches
 
     @staticmethod
     def MaximumDelta(graph):

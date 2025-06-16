@@ -1122,6 +1122,7 @@ class Cell():
             width=1,
             length=1,
             height=1,
+            wSides=1,
             a=0.25,
             b=0.25,
             c=0.25,
@@ -1129,6 +1130,7 @@ class Cell():
             flipVertical = False,
             direction=[0,0,1],
             placement="center",
+            mantissa=6,
             tolerance=0.0001,
             silent=False):
         """
@@ -1144,16 +1146,24 @@ class Cell():
             The overall length of the C-shape. The default is 1.0.
         height : float , optional
             The overall height of the C-shape. The default is 1.0.
+        wSides : int , optional
+            The desired number of sides along the Z-axis. The default is 1.
         a : float , optional
             The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
         b : float , optional
             The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.
         c : float , optional
             The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.
+        flipHorizontal : bool , optional
+            if set to True, the shape is flipped horizontally. The default is False.
+        flipVertical : bool , optional
+            if set to True, the shape is flipped vertically. The default is False.
         direction : list , optional
             The vector representing the up direction of the C-shape. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        mantissa: int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -1166,7 +1176,7 @@ class Cell():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -1234,8 +1244,8 @@ class Cell():
         if not len(direction) == 3:
             if not silent:
                 print("Cell.CShape - Error: The direction input parameter is not a valid vector. Returning None.")
-            return None
-        c_shape_face = Face.CShape(origin=origin,
+            return None        
+        c_shape_wire = Wire.CShape(origin=origin,
                                    width=width,
                                    length=length,
                                    a=a,
@@ -1247,9 +1257,12 @@ class Cell():
                                    placement="center",
                                    tolerance=tolerance,
                                    silent=silent)
-        
-        return_cell = Cell.ByThickenedFace(c_shape_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+        distance = height/wSides
+        wires = [c_shape_wire]
+        for i in range(wSides):
+            c_shape_wire = Topology.Translate(c_shape_wire, 0, 0, distance)
+            wires.append(c_shape_wire)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -1972,18 +1985,20 @@ class Cell():
     
     @staticmethod
     def IShape(origin=None,
-            width=1,
-            length=1,
-            height=1,
-            a=0.25,
-            b=0.25,
-            c=0.25,
-            flipHorizontal = False,
-            flipVertical = False,
-            direction=[0,0,1],
-            placement="center",
-            tolerance=0.0001,
-            silent=False):
+            width: float = 1,
+            length: float = 1,
+            height: float = 1,
+            wSides: int = 1,
+            a: float = 0.25,
+            b: float = 0.25,
+            c: float = 0.25,
+            flipHorizontal: bool = False,
+            flipVertical: bool = False,
+            direction: list = [0,0,1],
+            placement: str = "center",
+            mantissa: int = 6,
+            tolerance: float = 0.0001,
+            silent: bool = False):
         """
         Creates an I-shape cell.
 
@@ -1995,16 +2010,26 @@ class Cell():
             The overall width of the I-shape. The default is 1.0.
         length : float , optional
             The overall length of the I-shape. The default is 1.0.
+        height : float , optional
+            The overall height of the I-shape. The default is 1.0.
+        wSides : int , optional
+            The desired number of sides along the Z-Axis. The default is 1.
         a : float , optional
             The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
         b : float , optional
             The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
         c : float , optional
             The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+        flipHorizontal : bool , optional
+            if set to True, the shape is flipped horizontally. The default is False.
+        flipVertical : bool , optional
+            if set to True, the shape is flipped vertically. The default is False.
         direction : list , optional
             The vector representing the up direction of the I-shape. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the I-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -2017,7 +2042,7 @@ class Cell():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -2074,7 +2099,7 @@ class Cell():
             if not silent:
                 print("Cell.IShape - Error: The direction input parameter is not a valid vector. Returning None.")
             return None
-        i_shape_face = Face.IShape(origin=origin,
+        i_shape_wire = Wire.IShape(origin=origin,
                                    width=width,
                                    length=length,
                                    a=a,
@@ -2082,12 +2107,18 @@ class Cell():
                                    c=c,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
-                                   placement=placement,
+                                   direction=[0,0,1],
+                                   placement="center",
                                    tolerance=tolerance,
                                    silent=silent)
-        return_cell = Cell.ByThickenedFace(i_shape_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+        distance = height/wSides
+        wires = [i_shape_wire]
+        for i in range(wSides):
+            i_shape_wire = Topology.Translate(i_shape_wire, 0, 0, distance)
+            wires.append(i_shape_wire)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        # move down to center
+        return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -2156,12 +2187,14 @@ class Cell():
             width=1,
             length=1,
             height=1,
+            wSides=1,
             a=0.25,
             b=0.25,
             flipHorizontal = False,
             flipVertical = False,
             direction=[0,0,1],
             placement="center",
+            mantissa=6,
             tolerance=0.0001,
             silent=False):
         """
@@ -2177,14 +2210,22 @@ class Cell():
             The overall length of the L-shape. The default is 1.0.
         height : float , optional
             The overall height of the L-shape. The default is 1.0.
+        wSides : int , optional
+            The desired number of sides along the Z-axis. The default is 1.
         a : float , optional
             The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
         b : float , optional
             The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+        flipHorizontal : bool , optional
+            if set to True, the shape is flipped horizontally. The default is False.
+        flipVertical : bool , optional
+            if set to True, the shape is flipped vertically. The default is False.
         direction : list , optional
             The vector representing the up direction of the L-shape. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the L-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        manitssa : int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -2197,7 +2238,7 @@ class Cell():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -2262,7 +2303,7 @@ class Cell():
             if not silent:
                 print("Cell.LShape - Error: The direction input parameter is not a valid vector. Returning None.")
             return None
-        l_shape_face = Face.LShape(origin=origin,
+        l_shape_wire = Wire.LShape(origin=origin,
                                    width=width,
                                    length=length,
                                    a=a,
@@ -2273,9 +2314,12 @@ class Cell():
                                    placement="center",
                                    tolerance=tolerance,
                                    silent=silent)
-        
-        return_cell = Cell.ByThickenedFace(l_shape_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+        distance = height/wSides
+        wires = [l_shape_wire]
+        for i in range(wSides):
+            l_shape_wire = Topology.Translate(l_shape_wire, 0, 0, distance)
+            wires.append(l_shape_wire)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -3326,12 +3370,14 @@ class Cell():
             width=1,
             length=1,
             height=1,
+            wSides=1,
             a=0.25,
             b=0.25,
             flipHorizontal = False,
             flipVertical = False,
             direction=[0,0,1],
             placement="center",
+            mantissa=6,
             tolerance=0.0001,
             silent=False):
         """
@@ -3347,14 +3393,22 @@ class Cell():
             The overall length of the T-shape. The default is 1.0.
         height : float , optional
             the overall height of the T-shape. The default is 1.0.
+        wSides : int , optional
+            The desired number of sides along the Z-axis. The default is 1.
         a : float , optional
             The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
         b : float , optional
             The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
+        flipHorizontal : bool , optional
+            if set to True, the shape is flipped horizontally. The default is False.
+        flipVertical : bool , optional
+            if set to True, the shape is flipped vertically. The default is False.
         direction : list , optional
             The vector representing the up direction of the T-shape. The default is [0, 0, 1].
         placement : str , optional
             The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+        mantissa: int , optional
+            The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -3367,7 +3421,7 @@ class Cell():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not isinstance(width, int) and not isinstance(width, float):
@@ -3424,19 +3478,26 @@ class Cell():
             if not silent:
                 print("Cell.TShape - Error: The direction input parameter is not a valid vector. Returning None.")
             return None
-        t_shape_face = Face.TShape(origin=origin,
+        t_shape_wire = Wire.TShape(origin=origin,
                                    width=width,
                                    length=length,
                                    a=a,
                                    b=b,
                                    flipHorizontal=flipHorizontal,
                                    flipVertical=flipVertical,
-                                   direction=direction,
-                                   placement=placement,
+                                   direction=[0,0,1],
+                                   placement="center",
                                    tolerance=tolerance,
                                    silent=silent)
-        return_cell = Cell.ByThickenedFace(t_shape_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+
+        distance = height/wSides
+        wires = [t_shape_wire]
+        for i in range(wSides):
+            t_shape_wire = Topology.Translate(t_shape_wire, 0, 0, distance)
+            wires.append(t_shape_wire)
+        return_cell = Cell.ByWires(wires, triangulate=False, mantissa=mantissa, tolerance=tolerance, silent=silent)
+        # move down to center
+        return_cell = Topology.Translate(return_cell, 0, 0, -height*0.5)
         xOffset = 0
         yOffset = 0
         zOffset = 0

@@ -551,10 +551,10 @@ class Plotly:
                         if not labelKey == None:
                             labels[m] = Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" ")
                         if not sizeKey == None:
-                            sizes[m] = Dictionary.ValueAtKey(d, key=sizeKey)
+                            sizes[m] = float(Dictionary.ValueAtKey(d, key=sizeKey))
                             if sizes[m] == None:
                                sizes[m] = size
-                            if sizes[m] <= 0:
+                            if float(sizes[m]) <= 0:
                                 sizes[m] = 1.1
                         if not borderColorKey == None:
                             temp_color = Dictionary.ValueAtKey(d, key=borderColorKey)
