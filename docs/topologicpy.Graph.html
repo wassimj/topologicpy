@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.36 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.37 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.36
+                0.8.37
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -173,172 +173,178 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrix" title="topologicpy.Graph.Graph.AdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrix</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
 <td><p>Returns the adjacency matrix of the input Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="topologicpy.Graph.Graph.AdjacencyMatrixCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixCSVString</span></code></a>(graph[, vertexKey, ...])</p></td>
+<td><p>Returns the adjacency matrix CSV string of the input Graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex[, silent])</p></td>
 <td><p>Returns the list of vertices connected to the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection" title="topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByCompassDirection</span></code></a>(graph, vertex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection" title="topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByCompassDirection</span></code></a>(graph, vertex)</p></td>
 <td><p>Returns the list of vertices connected to the input vertex that are in the input compass direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByVector" title="topologicpy.Graph.Graph.AdjacentVerticesByVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByVector</span></code></a>(graph, vertex[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByVector" title="topologicpy.Graph.Graph.AdjacentVerticesByVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByVector</span></code></a>(graph, vertex[, ...])</p></td>
 <td><p>Returns the list of vertices connected to the input vertex that are in the input vector direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns all the paths that connect the input vertices within the allowed time limit in seconds.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
 <td><p>Returns the average clustering coefficient of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTGraph" title="topologicpy.Graph.Graph.BOTGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTGraph</span></code></a>(graph[, bidirectional, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTGraph" title="topologicpy.Graph.Graph.BOTGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTGraph</span></code></a>(graph[, bidirectional, ...])</p></td>
 <td><p>Creates an RDF graph according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTString" title="topologicpy.Graph.Graph.BOTString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTString</span></code></a>(graph[, format, bidirectional, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTString" title="topologicpy.Graph.Graph.BOTString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTString</span></code></a>(graph[, format, bidirectional, ...])</p></td>
 <td><p>Returns an RDF graph serialized string according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessCentrality" title="topologicpy.Graph.Graph.BetweennessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessCentrality</span></code></a>(graph[, method, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessCentrality" title="topologicpy.Graph.Graph.BetweennessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessCentrality</span></code></a>(graph[, method, ...])</p></td>
 <td><p>Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See <a class="reference external" href="https://en.wikipedia.org/wiki/Betweenness_centrality">https://en.wikipedia.org/wiki/Betweenness_centrality</a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessPartition" title="topologicpy.Graph.Graph.BetweennessPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessPartition</span></code></a>(graph[, n, m, key, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessPartition" title="topologicpy.Graph.Graph.BetweennessPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessPartition</span></code></a>(graph[, n, m, key, ...])</p></td>
 <td><p>Computes a partition of the input graph based on the edge betweenness method.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Bridges" title="topologicpy.Graph.Graph.Bridges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bridges</span></code></a>(graph[, key, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Bridges" title="topologicpy.Graph.Graph.Bridges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bridges</span></code></a>(graph[, key, silent])</p></td>
 <td><p>Returns the list of bridge edges in the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, ...])</p></td>
 <td><p>Returns graphs according to the input folder path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path[, ...])</p></td>
 <td><p>Returns graphs according to the input path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByCSVPath" title="topologicpy.Graph.Graph.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, graphIDHeader, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByCSVPath" title="topologicpy.Graph.Graph.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, graphIDHeader, ...])</p></td>
 <td><p>Returns graphs according to the input folder path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNFile" title="topologicpy.Graph.Graph.ByDGCNNFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNFile</span></code></a>(file[, key, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNFile" title="topologicpy.Graph.Graph.ByDGCNNFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNFile</span></code></a>(file[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN File.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNPath" title="topologicpy.Graph.Graph.ByDGCNNPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNPath</span></code></a>(path[, key, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNPath" title="topologicpy.Graph.Graph.ByDGCNNPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNPath</span></code></a>(path[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNString" title="topologicpy.Graph.Graph.ByDGCNNString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNString</span></code></a>(string[, key, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNString" title="topologicpy.Graph.Graph.ByDGCNNString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNString</span></code></a>(string[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCFile" title="topologicpy.Graph.Graph.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCFile" title="topologicpy.Graph.Graph.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Create a Graph from an IFC file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCFile_old" title="topologicpy.Graph.Graph.ByIFCFile_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile_old</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCFile_old" title="topologicpy.Graph.Graph.ByIFCFile_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile_old</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Create a Graph from an IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCPath" title="topologicpy.Graph.Graph.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCPath" title="topologicpy.Graph.Graph.ByIFCPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCPath</span></code></a>(path[, includeTypes, ...])</p></td>
 <td><p>Create a Graph from an IFC path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByMeshData" title="topologicpy.Graph.Graph.ByMeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByMeshData</span></code></a>(vertices, edges[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByMeshData" title="topologicpy.Graph.Graph.ByMeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByMeshData</span></code></a>(vertices, edges[, ...])</p></td>
 <td><p>Creates a graph from the input mesh data</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByNetworkXGraph" title="topologicpy.Graph.Graph.ByNetworkXGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNetworkXGraph</span></code></a>(nxGraph[, xKey, yKey, zKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByNetworkXGraph" title="topologicpy.Graph.Graph.ByNetworkXGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByNetworkXGraph</span></code></a>(nxGraph[, xKey, yKey, zKey, ...])</p></td>
 <td><p>Converts the input NetworkX graph into a topologic Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByTopology" title="topologicpy.Graph.Graph.ByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopology</span></code></a>(topology[, direct, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByTopology" title="topologicpy.Graph.Graph.ByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopology</span></code></a>(topology[, direct, ...])</p></td>
 <td><p>Creates a graph.See <a class="reference external" href="https://en.wikipedia.org/wiki/Graph_(discrete_mathematics">https://en.wikipedia.org/wiki/Graph_(discrete_mathematics</a>).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="topologicpy.Graph.Graph.ByVerticesEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesEdges</span></code></a>(vertices, edges)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="topologicpy.Graph.Graph.ByVerticesEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesEdges</span></code></a>(vertices, edges)</p></td>
 <td><p>Creates a graph from the input list of vertices and edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ChromaticNumber" title="topologicpy.Graph.Graph.ChromaticNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChromaticNumber</span></code></a>(graph[, maxColors, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ChromaticNumber" title="topologicpy.Graph.Graph.ChromaticNumber"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ChromaticNumber</span></code></a>(graph[, maxColors, silent])</p></td>
 <td><p>Returns the chromatic number of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="topologicpy.Graph.Graph.ClosenessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosenessCentrality</span></code></a>(graph[, weightKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ClosenessCentrality" title="topologicpy.Graph.Graph.ClosenessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosenessCentrality</span></code></a>(graph[, weightKey, ...])</p></td>
 <td><p>Returns the closeness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See <a class="reference external" href="https://en.wikipedia.org/wiki/Betweenness_centrality">https://en.wikipedia.org/wiki/Betweenness_centrality</a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Color" title="topologicpy.Graph.Graph.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a>(graph[, oldKey, key, maxColors, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Color" title="topologicpy.Graph.Graph.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a>(graph[, oldKey, key, maxColors, tolerance])</p></td>
 <td><p>Colors the input vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Community" title="topologicpy.Graph.Graph.Community"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Community</span></code></a>(graph[, key, mantissa, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Community" title="topologicpy.Graph.Graph.Community"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Community</span></code></a>(graph[, key, mantissa, tolerance, ...])</p></td>
 <td><p>Computes the best community partition of the input graph based on the Louvain method.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CommunityPartition" title="topologicpy.Graph.Graph.CommunityPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommunityPartition</span></code></a>(graph[, key, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CommunityPartition" title="topologicpy.Graph.Graph.CommunityPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommunityPartition</span></code></a>(graph[, key, mantissa, ...])</p></td>
 <td><p>Computes the best community partition of the input graph based on the Louvain method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Compare" title="topologicpy.Graph.Graph.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(graphA, graphB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Compare" title="topologicpy.Graph.Graph.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(graphA, graphB[, ...])</p></td>
 <td><p>Compares two graphs and returns a similarity score based on attributres, geometry, metrics, structure,  the Weisfeiler-Lehman graph kernel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Complement" title="topologicpy.Graph.Graph.Complement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complement</span></code></a>(graph[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Complement" title="topologicpy.Graph.Graph.Complement"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complement</span></code></a>(graph[, tolerance, silent])</p></td>
 <td><p>Creates the complement graph of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Complete" title="topologicpy.Graph.Graph.Complete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complete</span></code></a>(graph[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Complete" title="topologicpy.Graph.Graph.Complete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Complete</span></code></a>(graph[, silent])</p></td>
 <td><p>Completes the graph by conneting unconnected vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Connect" title="topologicpy.Graph.Graph.Connect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connect</span></code></a>(graph, verticesA, verticesB[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Connect" title="topologicpy.Graph.Graph.Connect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connect</span></code></a>(graph, verticesA, verticesB[, tolerance])</p></td>
 <td><p>Connects the two lists of input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ConnectedComponents" title="topologicpy.Graph.Graph.ConnectedComponents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConnectedComponents</span></code></a>(graph[, key, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ConnectedComponents" title="topologicpy.Graph.Graph.ConnectedComponents"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConnectedComponents</span></code></a>(graph[, key, tolerance, ...])</p></td>
 <td><p>Returns the connected components (islands) of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Connectivity" title="topologicpy.Graph.Graph.Connectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connectivity</span></code></a>(graph[, vertices, weightKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Connectivity" title="topologicpy.Graph.Graph.Connectivity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connectivity</span></code></a>(graph[, vertices, weightKey, ...])</p></td>
 <td><p>Return the connectivity measure of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContainsEdge" title="topologicpy.Graph.Graph.ContainsEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainsEdge</span></code></a>(graph, edge[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContainsEdge" title="topologicpy.Graph.Graph.ContainsEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainsEdge</span></code></a>(graph, edge[, tolerance])</p></td>
 <td><p>Returns True if the input graph contains the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContainsVertex" title="topologicpy.Graph.Graph.ContainsVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainsVertex</span></code></a>(graph, vertex[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContainsVertex" title="topologicpy.Graph.Graph.ContainsVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContainsVertex</span></code></a>(graph, vertex[, tolerance])</p></td>
 <td><p>Returns True if the input graph contains the input Vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContractEdge" title="topologicpy.Graph.Graph.ContractEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContractEdge</span></code></a>(graph, edge[, vertex, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ContractEdge" title="topologicpy.Graph.Graph.ContractEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ContractEdge</span></code></a>(graph, edge[, vertex, tolerance])</p></td>
 <td><p>Contracts the input edge in the input graph into a single vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CutVertices" title="topologicpy.Graph.Graph.CutVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CutVertices</span></code></a>(graph[, key, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CutVertices" title="topologicpy.Graph.Graph.CutVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CutVertices</span></code></a>(graph[, key, silent])</p></td>
 <td><p>Returns the list of cut vertices in the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeCentrality" title="topologicpy.Graph.Graph.DegreeCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeCentrality</span></code></a>(graph[, vertices, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeCentrality" title="topologicpy.Graph.Graph.DegreeCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeCentrality</span></code></a>(graph[, vertices, ...])</p></td>
 <td><p>Returns the degree centrality of the input graph. The order of the returned list is the same as the order of vertices. See <a class="reference external" href="https://en.wikipedia.org/wiki/Degree_centrality">https://en.wikipedia.org/wiki/Degree_centrality</a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeMatrix" title="topologicpy.Graph.Graph.DegreeMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeMatrix</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeMatrix" title="topologicpy.Graph.Graph.DegreeMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeMatrix</span></code></a>(graph)</p></td>
 <td><p>Returns the degree matrix of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeSequence" title="topologicpy.Graph.Graph.DegreeSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeSequence</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DegreeSequence" title="topologicpy.Graph.Graph.DegreeSequence"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeSequence</span></code></a>(graph)</p></td>
 <td><p>Returns the degree sequence of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Density" title="topologicpy.Graph.Graph.Density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Density</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Density" title="topologicpy.Graph.Graph.Density"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Density</span></code></a>(graph)</p></td>
 <td><p>Returns the density of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Depth" title="topologicpy.Graph.Graph.Depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Depth</span></code></a>(graph[, vertex, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Depth" title="topologicpy.Graph.Graph.Depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Depth</span></code></a>(graph[, vertex, tolerance, silent])</p></td>
 <td><p>Computes the maximum depth of the input graph rooted at the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DepthMap" title="topologicpy.Graph.Graph.DepthMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthMap</span></code></a>(graph[, vertices, key, type, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DepthMap" title="topologicpy.Graph.Graph.DepthMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthMap</span></code></a>(graph[, vertices, key, type, ...])</p></td>
 <td><p>Return the depth map of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph)</p></td>
 <td><p>Returns the diameter of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Dictionary" title="topologicpy.Graph.Graph.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Dictionary" title="topologicpy.Graph.Graph.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(graph)</p></td>
 <td><p>Returns the dictionary of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Distance" title="topologicpy.Graph.Graph.Distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Distance</span></code></a>(graph, vertexA, vertexB[, type, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Distance" title="topologicpy.Graph.Graph.Distance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Distance</span></code></a>(graph, vertexA, vertexB[, type, ...])</p></td>
 <td><p>Returns the shortest-path distance between the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edge" title="topologicpy.Graph.Graph.Edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edge</span></code></a>(graph, vertexA, vertexB[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edge" title="topologicpy.Graph.Graph.Edge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edge</span></code></a>(graph, vertexA, vertexB[, tolerance])</p></td>
 <td><p>Returns the edge in the input graph that connects in the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edges" title="topologicpy.Graph.Graph.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(graph[, vertices, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Edges" title="topologicpy.Graph.Graph.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(graph[, vertices, tolerance])</p></td>
 <td><p>Returns the edges found in the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.EigenVectorCentrality" title="topologicpy.Graph.Graph.EigenVectorCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EigenVectorCentrality</span></code></a>(graph[, normalize, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.EigenVectorCentrality" title="topologicpy.Graph.Graph.EigenVectorCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EigenVectorCentrality</span></code></a>(graph[, normalize, ...])</p></td>
 <td><p>Returns the eigenvector centrality of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV" title="topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToAdjacencyMatrixCSV</span></code></a>(adjacencyMatrix, path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV" title="topologicpy.Graph.Graph.ExportToAdjacencyMatrixCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToAdjacencyMatrixCSV</span></code></a>(adjacencyMatrix, path)</p></td>
 <td><p>Exports the input graph into a set of CSV files compatible with DGL.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToBOT" title="topologicpy.Graph.Graph.ExportToBOT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBOT</span></code></a>(graph, path[, format, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToBOT" title="topologicpy.Graph.Graph.ExportToBOT"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToBOT</span></code></a>(graph, path[, format, ...])</p></td>
 <td><p>Exports the input graph to an RDF graph serialized according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToCSV" title="topologicpy.Graph.Graph.ExportToCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToCSV</span></code></a>(graph, path, graphLabel[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToCSV" title="topologicpy.Graph.Graph.ExportToCSV"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToCSV</span></code></a>(graph, path, graphLabel[, ...])</p></td>
 <td><p>Exports the input graph into a set of CSV files compatible with DGL.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGEXF" title="topologicpy.Graph.Graph.ExportToGEXF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEXF</span></code></a>(graph[, path, graphWidth, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGEXF" title="topologicpy.Graph.Graph.ExportToGEXF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGEXF</span></code></a>(graph[, path, graphWidth, ...])</p></td>
 <td><p>Exports the input graph to a Graph Exchange XML (GEXF) file format.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGraphVizGraph" title="topologicpy.Graph.Graph.ExportToGraphVizGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGraphVizGraph</span></code></a>(graph, path[, device, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToGraphVizGraph" title="topologicpy.Graph.Graph.ExportToGraphVizGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToGraphVizGraph</span></code></a>(graph, path[, device, ...])</p></td>
 <td><p>Exports the input graph to a GraphViz <cite>.gv</cite> (dot) file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSON" title="topologicpy.Graph.Graph.ExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSON</span></code></a>(graph, path[, verticesKey, ...])</p></td>
+<td><p>Exports the input graph to a JSON file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ExportToJSONLD" title="topologicpy.Graph.Graph.ExportToJSONLD"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToJSONLD</span></code></a>(graph, path[, context, ...])</p></td>
 <td><p>Exports the input graph to a JSON file.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.FiedlerVector" title="topologicpy.Graph.Graph.FiedlerVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FiedlerVector</span></code></a>(graph[, mantissa, silent])</p></td>
@@ -386,8 +392,14 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONData" title="topologicpy.Graph.Graph.JSONData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONData</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
 <td><p>Converts the input graph into JSON data.</p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONLDData" title="topologicpy.Graph.Graph.JSONLDData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONLDData</span></code></a>(graph[, context, verticesKey, ...])</p></td>
+<td><p>Exports the Graph to a JSON-LD representation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONLDString" title="topologicpy.Graph.Graph.JSONLDString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONLDString</span></code></a>(graph[, context, verticesKey, ...])</p></td>
+<td><p>Converts the input graph into a JSON-LD string.</p></td>
+</tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.JSONString" title="topologicpy.Graph.Graph.JSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">JSONString</span></code></a>(graph[, verticesKey, edgesKey, ...])</p></td>
-<td><p>Converts the input graph into JSON data.</p></td>
+<td><p>Converts the input graph into a JSON string.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Laplacian" title="topologicpy.Graph.Graph.Laplacian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Laplacian</span></code></a>([silent, normalized])</p></td>
 <td><p>Returns the Laplacian matrix of the input graph.</p></td>
@@ -404,8 +416,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.LongestPath" title="topologicpy.Graph.Graph.LongestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LongestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the longest path that connects the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Match" title="topologicpy.Graph.Graph.Match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Match</span></code></a>(graphA, graphB[, vertexKey, silent])</p></td>
-<td><p>Matches two input graphs using isomorphism coupled with semantic matching.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Match" title="topologicpy.Graph.Graph.Match"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Match</span></code></a>(graphB[, vertexKeys, edgeKeys, ...])</p></td>
+<td><p>Matches graphA as a subgraph of graphB using structural and semantic similarity.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.MaximumDelta" title="topologicpy.Graph.Graph.MaximumDelta"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumDelta</span></code></a>(graph)</p></td>
 <td><p>Returns the maximum delta of the input graph.</p></td>
@@ -735,6 +747,47 @@ If the vertexLabelKey does not exist, it will be created and the vertices are la
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The adjacency matrix.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.AdjacencyMatrixCSVString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyMatrixCSVString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyFwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeyBwd</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeIndex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdgeLength</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the adjacency matrix CSV string of the input Graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Adjacency_matrix">https://en.wikipedia.org/wiki/Adjacency_matrix</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.</p>
+</dd>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.</p>
+</dd>
+<dt><strong>edgeKeyFwd</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.</p>
+</dd>
+<dt><strong>edgeKeyBwd</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.</p>
+</dd>
+<dt><strong>bidirKey</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None</p>
+</dd>
+<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.</p>
+</dd>
+<dt><strong>useEdgeIndex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.</p>
+</dd>
+<dt><strong>useEdgeLength</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>A string in CSV format representing the adjacency matrix.
+Returns an empty string if conversion fails.</p>
 </dd>
 </dl>
 </dd>
@@ -2910,6 +2963,52 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.ExportToJSONLD">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToJSONLD</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nodes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourceKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'source'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targetKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categoryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ExportToJSONLD" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input graph to a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the JSON file.</p>
+</dd>
+<dt><strong>verticesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call vertices. The default is “vertices”.</p>
+</dd>
+<dt><strong>edgesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call edges. The default is “edges”.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
+Note: If vertex labels are not unique, they will be forced to be unique.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
+Note: If edge labels are not unique, they will be forced to be unique.</p>
+</dd>
+<dt><strong>xKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for x-coordinates. The default is “x”.</p>
+</dd>
+<dt><strong>yKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for y-coordinates. The default is “y”.</p>
+</dd>
+<dt><strong>zKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for z-coordinates. The default is “z”.</p>
+</dd>
+<dt><strong>indent</strong><span class="classifier">int , optional</span></dt><dd><p>The desired amount of indent spaces to use. The default is 4.</p>
+</dd>
+<dt><strong>sortKeys</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the keys will be sorted. Otherwise, they won’t be. The default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>The status of exporting the JSON file. If True, the operation was successful. Otherwise, it was unsuccesful.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.FiedlerVector">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FiedlerVector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.FiedlerVector" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the Fiedler vector of a graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Algebraic_connectivity">https://en.wikipedia.org/wiki/Algebraic_connectivity</a>.</p>
@@ -3395,9 +3494,97 @@ Note: If edge labels are not unique, they will be forced to be unique.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.JSONLDData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">JSONLDData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nodes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourceKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'source'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targetKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categoryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.JSONLDData" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the Graph to a JSON-LD representation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The TopologicPy Graph object to export.</p>
+</dd>
+<dt><strong>context</strong><span class="classifier">dict, optional</span></dt><dd><p>A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).</p>
+</dd>
+<dt><strong>verticesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call vertices. The default is “vertices”.</p>
+</dd>
+<dt><strong>edgesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call edges. The default is “edges”.</p>
+</dd>
+<dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for label. The default is “label”.</p>
+</dd>
+<dt><strong>sourceKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for source. The default is “source”.</p>
+</dd>
+<dt><strong>targetKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for target. The default is “target”.</p>
+</dd>
+<dt><strong>categoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for lcategoryabel. The default is “category”.</p>
+</dd>
+<dt><strong>xKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for x-coordinates. The default is “x”.</p>
+</dd>
+<dt><strong>yKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for y-coordinates. The default is “y”.</p>
+</dd>
+<dt><strong>zKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for z-coordinates. The default is “z”.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A JSON-LD representation of the graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.JSONLDString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">JSONLDString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'nodes'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourceKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'source'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targetKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'target'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categoryKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.JSONLDString" title="Permalink to this definition"></a></dt>
+<dd><p>Converts the input graph into a JSON-LD string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The TopologicPy Graph object to export.</p>
+</dd>
+<dt><strong>context</strong><span class="classifier">dict, optional</span></dt><dd><p>A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.)</p>
+</dd>
+<dt><strong>context</strong><span class="classifier">dict, optional</span></dt><dd><p>A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).</p>
+</dd>
+<dt><strong>verticesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call vertices. The default is “vertices”.</p>
+</dd>
+<dt><strong>edgesKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to call edges. The default is “edges”.</p>
+</dd>
+<dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for label. The default is “label”.</p>
+</dd>
+<dt><strong>sourceKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for source. The default is “source”.</p>
+</dd>
+<dt><strong>targetKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for target. The default is “target”.</p>
+</dd>
+<dt><strong>categoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for lcategoryabel. The default is “category”.</p>
+</dd>
+<dt><strong>xKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for x-coordinates. The default is “x”.</p>
+</dd>
+<dt><strong>yKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for y-coordinates. The default is “y”.</p>
+</dd>
+<dt><strong>zKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired key name to use for z-coordinates. The default is “z”.</p>
+</dd>
+<dt><strong>indent</strong><span class="classifier">int , optional</span></dt><dd><p>The desired indent. The default is 2.</p>
+</dd>
+<dt><strong>sortKeys</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the keys will be sorted. Otherwise, they won’t be. The default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+</dd>
+<dt><strong>Returns</strong></dt><dd></dd>
+<dt><strong>——-</strong></dt><dd></dd>
+<dt><strong>dict</strong></dt><dd><p>A JSON-LD representation of the graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.JSONString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">JSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgesKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'x'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">indent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.JSONString" title="Permalink to this definition"></a></dt>
-<dd><p>Converts the input graph into JSON data.</p>
+<dd><p>Converts the input graph into a JSON string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -3582,24 +3769,32 @@ This is used in weighted graphs. if weightKey is set to “Length” or “Dista
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Match">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Match" title="Permalink to this definition"></a></dt>
-<dd><p>Matches two input graphs using isomorphism coupled with semantic matching.</p>
+<span class="sig-name descname"><span class="pre">Match</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxMatches</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeLimit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Match" title="Permalink to this definition"></a></dt>
+<dd><p>Matches graphA as a subgraph of graphB using structural and semantic similarity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graphA</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The first input graph. This should be the smaller sub-graph or a graph isomorphice with the second input graph.</p>
+<dt><strong>graphA</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The smaller graph (subgraph).</p>
 </dd>
-<dt><strong>graphB</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The second input graph.</p>
+<dt><strong>graphB</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The larger graph (supergraph).</p>
 </dd>
-<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the dictionaries of the vertices will be searched for this key and their values matched.</p>
+<dt><strong>vertexKeys</strong><span class="classifier">str or list of str, optional</span></dt><dd><p>Keys used to semantically compare vertices.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>edgeKeys</strong><span class="classifier">str or list of str, optional</span></dt><dd><p>Keys used to semantically compare edges.</p>
+</dd>
+<dt><strong>maxMatches</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of matches to find. The default is 10.</p>
+</dd>
+<dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to finding the matches.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Allowed numeric deviation or minimum string similarity (e.g. 0.2 = ≥80% match). Default is 0.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses warnings and errors.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>A list of dictionaries that match the vertices of graphA to the vertices of graphB.</p>
+<dt>list of dict</dt><dd><p>List of mappings from node index in graphA to graphB, sorted by descending similarity.</p>
 </dd>
 </dl>
 </dd>
