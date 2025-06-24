@@ -324,6 +324,7 @@ class Dictionary():
             return new_dictionaries[0]
         else:
             dictionaries = return_dictionaries
+        
         sinkKeys = []
         sinkValues = []
         d = dictionaries[0]

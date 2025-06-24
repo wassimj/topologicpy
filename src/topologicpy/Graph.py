@@ -6295,7 +6295,9 @@ class Graph:
         if not vertices:
             edges = []
             _ = graph.Edges(edges, tolerance) # Hook to Core
-            return edges
+            if not edges:
+                return []
+            return list(dict.fromkeys(edges)) # remove duplicates
         else:
             vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
@@ -12910,3 +12912,342 @@ class Graph:
         denominator = sum(max(weights1.get(k, 0), weights2.get(k, 0)) for k in keys)
 
         return round(numerator / denominator, mantissa) if denominator != 0 else 0.0
+
+    @staticmethod
+    def _vertex_is_same(v1, v2, key=None):
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        d1 = Topology.Dictionary(v1)
+        d2 = Topology.Dictionary(v2)
+        a = Dictionary.ValueAtKey(d1, key, "0")
+        b = Dictionary.ValueAtKey(d2, key, "1")
+        return a == b
+
+    @staticmethod
+    def _vertex_in_list(vertex, vertex_list, key=None):
+        for i, v1 in enumerate(vertex_list):
+            if Graph._vertex_is_same(vertex, v1, key=key):
+                return i+1
+        return False
+
+    @staticmethod
+    def _edge_in_list(edge, edge_list, vertices_a, vertices_b, key=None):
+        sv1 = vertices_a[edge[0]]
+        ev1 = vertices_a[edge[1]]
+        for i, e in enumerate(edge_list):
+            sv2 = vertices_b[e[0]]
+            ev2 = vertices_b[e[1]]
+            if (Graph._vertex_is_same(sv1, sv2, key=key) and Graph._vertex_is_same(ev1, ev2, key=key)) or \
+                (Graph._vertex_is_same(sv1, ev2, key=key) and Graph._vertex_is_same(ev1, sv2, key=key)):
+                return i+1
+        return False
+
+    @staticmethod
+    def Union(graphA, graphB, vertexKey: str, silent: bool = False):
+        """
+        Union the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKey : str
+            The vertex dictionary key to use to determine if two vertices are the same. 
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are merged.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Union - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Union - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexKey, str):
+            if not silent:
+                print("Graph.Union - Error: The vertexKey input parameter is not a valid string. Returning None.")
+            return None
+        vertices_a = Graph.Vertices(graphA)
+        vertices_a_new = []
+        for v in vertices_a:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_a_new.append(v_new)
+        vertices_a = vertices_a_new
+        vertices_b = Graph.Vertices(graphB)
+        vertices_b_new = []
+        for v in vertices_b:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_b_new.append(v_new)
+        vertices_b = vertices_b_new
+        mesh_data_a = Graph.MeshData(graphA)
+        mesh_data_b = Graph.MeshData(graphB)
+        edges_a = mesh_data_a['edges']
+        edges_b = mesh_data_b['edges']
+        edges_a_dicts = mesh_data_a['edgeDictionaries']
+        edges_b_dicts = mesh_data_b['edgeDictionaries']
+
+        union_vertices = []
+
+        def _add_vertex(v):
+            for i, uv in enumerate(union_vertices):
+                if Graph._vertex_is_same(v, uv, key=vertexKey):
+                    d_a = Topology.Dictionary(v)
+                    d_b = Topology.Dictionary(uv)
+                    d_c = Dictionary.ByMergedDictionaries(d_a, d_b)
+                    uv = Topology.SetDictionary(uv, d_c)
+                    return i
+            union_vertices.append(v)
+            return len(union_vertices) - 1
+
+        # Map original vertices to indices in union list
+        index_map_a = [_add_vertex(v) for v in vertices_a]
+        index_map_b = [_add_vertex(v) for v in vertices_b]
+
+        union_edges = []
+
+        def _add_edge(i, j, dictionary):
+            vi = union_vertices[i]
+            vj = union_vertices[j]
+            for k, e in enumerate(union_edges):
+                svi = Edge.StartVertex(e)
+                evi = Edge.EndVertex(e)
+                if (Graph._vertex_is_same(svi, vi, key=vertexKey) and Graph._vertex_is_same(evi, vj, key=vertexKey)) or \
+                (Graph._vertex_is_same(svi, vj, key=vertexKey) and Graph._vertex_is_same(evi, vi, key=vertexKey)):
+                    # Merge dictionaries
+                    d_a = Topology.Dictionary(e)
+                    d_c = Dictionary.ByMergedDictionaries([d_a, dictionary], silent=True)
+                    new_edge = Edge.ByVertices(vi, vj)
+                    new_edge = Topology.SetDictionary(new_edge, d_c, silent=True)
+                    union_edges[k] = new_edge
+                    return
+            # If not found, add new edge
+            edge = Edge.ByVertices(vi, vj)
+            edge = Topology.SetDictionary(edge, dictionary)
+            union_edges.append(edge)
+
+        # Add edges from A
+        for idx, e in enumerate(edges_a):
+            i = index_map_a[e[0]]
+            j = index_map_a[e[1]]
+            _add_edge(i, j, Dictionary.ByPythonDictionary(edges_a_dicts[idx]))
+
+        # Add edges from B, merging duplicates
+        for idx, e in enumerate(edges_b):
+            i = index_map_b[e[0]]
+            j = index_map_b[e[1]]
+            _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
+
+        return Graph.ByVerticesEdges(union_vertices, union_edges)
+
+    @staticmethod
+    def Intersect(graphA, graphB, vertexKey: str, silent: bool = False):
+        """
+        Intersect the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKey : str
+            The vertex dictionary key to use to determine if two vertices are the same. 
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are merged.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Intersect - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Intersect - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexKey, str):
+            if not silent:
+                print("Graph.Intersect - Error: The vertexKey input parameter is not a valid string. Returning None.")
+            return None
+
+        vertices_a = Graph.Vertices(graphA)
+        vertices_a_new = []
+        for v in vertices_a:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_a_new.append(v_new)
+        vertices_a = vertices_a_new
+        vertices_b = Graph.Vertices(graphB)
+        vertices_b_new = []
+        for v in vertices_b:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_b_new.append(v_new)
+        vertices_b = vertices_b_new
+        mesh_data_a = Graph.MeshData(graphA)
+        mesh_data_b = Graph.MeshData(graphB)
+        edges_a = mesh_data_a['edges']
+        edges_b = mesh_data_b['edges']
+        edges_a_dicts = mesh_data_a['edgeDictionaries']
+        edges_b_dicts = mesh_data_b['edgeDictionaries']
+
+        common_vertices = []
+        for i, v in enumerate(vertices_a):
+            j = Graph._vertex_in_list(v, vertices_b, key=vertexKey)
+            if j:
+                d_a = Topology.Dictionary(v)
+                d_b = Topology.Dictionary(vertices_b[j-1])
+                d_c = Dictionary.ByMergedDictionaries([d_a, d_b], silent=True)
+                v = Topology.SetDictionary(v, d_c, silent=True)
+                common_vertices.append(v)
+        common_edges = []
+
+        for i, e in enumerate(edges_a):
+            j = Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, key=vertexKey)
+            if j:
+                # Merge the dictionaries
+                d_a = Dictionary.ByPythonDictionary(edges_a_dicts[i])
+                d_b = Dictionary.ByPythonDictionary(edges_b_dicts[j-1]) # We added 1 to j to avoid 0 which can be interpreted as False.
+                d_c = Dictionary.ByMergedDictionaries([d_a, d_b], silent=True)
+                print("Intersect - d_c:", d_c)
+                print(Dictionary.Keys(d_c), Dictionary.Values(d_c))
+                # Create the edge
+                final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
+                # Set the edge's dictionary
+                final_edge = Topology.SetDictionary(final_edge, d_c, silent=True)
+                # Add the final edge to the list
+                common_edges.append(final_edge)
+
+        return Graph.ByVerticesEdges(common_vertices, common_edges)
+
+    @staticmethod
+    def Difference(graphA, graphB, vertexKey: str, silent: bool = False):
+        """
+        Intersect the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKey : str
+            The vertex dictionary key to use to determine if two vertices are the same. 
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are not merged.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Difference - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Difference - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexKey, str):
+            if not silent:
+                print("Graph.Difference - Error: The vertexKey input parameter is not a valid string. Returning None.")
+            return None
+        vertices_a = Graph.Vertices(graphA)
+        vertices_b = Graph.Vertices(graphB)
+        mesh_data_a = Graph.MeshData(graphA)
+        mesh_data_b = Graph.MeshData(graphB)
+        edges_a = mesh_data_a['edges']
+        edges_b = mesh_data_b['edges']
+        edges_a_dicts = mesh_data_a['edgeDictionaries']
+
+        diff_vertices = [v for v in vertices_a if not Graph._vertex_in_list(v, vertices_b, key=vertexKey)]
+        diff_edges = []
+
+        for i, e in enumerate(edges_a):
+            if not Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, key=vertexKey):
+                # Create the edge
+                if Graph._vertex_in_list(vertices_a[e[0]], diff_vertices, key=vertexKey) and Graph._vertex_in_list(vertices_a[e[1]], diff_vertices, key=vertexKey):
+                    final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
+                    # Set the edge's dictionary
+                    final_edge = Topology.SetDictionary(final_edge, Dictionary.ByPythonDictionary(edges_a_dicts[i]), silent=True)
+                    # Add the final edge to the list
+                    diff_edges.append(final_edge)
+
+        return Graph.ByVerticesEdges(diff_vertices, diff_edges)
+
+    @staticmethod
+    def SymmetricDifference(graphA, graphB, vertexKey: str, silent: bool = False):
+        """
+        Find the symmetric difference pf the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKey : str
+            The vertex dictionary key to use to determine if two vertices are the same. 
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are not merged.
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.SymmetricDifference - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.SymmetricDifference - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        if not isinstance(vertexKey, str):
+            if not silent:
+                print("Graph.SymmetricDifference - Error: The vertexKey input parameter is not a valid string. Returning None.")
+            return None
+        diffAB = Graph.Difference(graphA, graphB, vertexKey=vertexKey, silent=True)
+        diffBA = Graph.Difference(graphB, graphA, vertexKey=vertexKey, silent=True)
+        return Graph.Union(diffAB, diffBA, vertexKey=vertexKey, silent=True)

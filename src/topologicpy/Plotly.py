@@ -551,7 +551,7 @@ class Plotly:
                         if not labelKey == None:
                             labels[m] = Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" ")
                         if not sizeKey == None:
-                            sizes[m] = float(Dictionary.ValueAtKey(d, key=sizeKey))
+                            sizes[m] = float(Dictionary.ValueAtKey(d, key=sizeKey, defaultValue=sizes[m]))
                             if sizes[m] == None:
                                sizes[m] = size
                             if float(sizes[m]) <= 0:
