@@ -12914,38 +12914,49 @@ class Graph:
         return round(numerator / denominator, mantissa) if denominator != 0 else 0.0
 
     @staticmethod
-    def _vertex_is_same(v1, v2, key=None):
+    def _vertex_is_same(v1, v2, keys=None, tolerance=0.0001):
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+
+        if keys == None or keys == [] or keys == "":
+            return Vertex.Distance(v1, v2) <= tolerance
+        
+        if isinstance(keys, str):
+            if "loc" in keys.lower() or "coord" in keys.lower() or "xyz" in keys.lower():
+                return Vertex.Distance(v1, v2) <= tolerance
+        if not isinstance(keys, list):
+            keys = [keys]
+        
         d1 = Topology.Dictionary(v1)
         d2 = Topology.Dictionary(v2)
-        a = Dictionary.ValueAtKey(d1, key, "0")
-        b = Dictionary.ValueAtKey(d2, key, "1")
+        a = [Dictionary.ValueAtKey(d1, k, "0") for k in keys]
+        b = [Dictionary.ValueAtKey(d2, k, "1") for k in keys]
         return a == b
 
     @staticmethod
-    def _vertex_in_list(vertex, vertex_list, key=None):
+    def _vertex_in_list(vertex, vertex_list, keys=None, tolerance=0.0001):
         for i, v1 in enumerate(vertex_list):
-            if Graph._vertex_is_same(vertex, v1, key=key):
+            if Graph._vertex_is_same(vertex, v1, keys=keys, tolerance=tolerance):
                 return i+1
         return False
 
     @staticmethod
-    def _edge_in_list(edge, edge_list, vertices_a, vertices_b, key=None):
+    def _edge_in_list(edge, edge_list, vertices_a, vertices_b, keys=None, tolerance=0.0001):
         sv1 = vertices_a[edge[0]]
         ev1 = vertices_a[edge[1]]
         for i, e in enumerate(edge_list):
             sv2 = vertices_b[e[0]]
             ev2 = vertices_b[e[1]]
-            if (Graph._vertex_is_same(sv1, sv2, key=key) and Graph._vertex_is_same(ev1, ev2, key=key)) or \
-                (Graph._vertex_is_same(sv1, ev2, key=key) and Graph._vertex_is_same(ev1, sv2, key=key)):
+            if (Graph._vertex_is_same(sv1, sv2, keys=keys, tolerance=tolerance) and Graph._vertex_is_same(ev1, ev2, keys=keys, tolerance=tolerance)) or \
+                (Graph._vertex_is_same(sv1, ev2, keys=keys, tolerance=tolerance) and Graph._vertex_is_same(ev1, sv2, keys=keys, tolerance=tolerance)):
                 return i+1
         return False
 
     @staticmethod
-    def Union(graphA, graphB, vertexKey: str, silent: bool = False):
+    def Union(graphA, graphB, vertexKeys=None, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Union the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Union the two input graphs based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -12953,11 +12964,18 @@ class Graph:
             The first input graph.
         graphB : topologic_core.Graph
             The second input graph.
-        vertexKey : str
-            The vertex dictionary key to use to determine if two vertices are the same. 
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
+            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. The default is False.
-
+        
         Returns
         -------
         topologic_core.Graph
@@ -12968,6 +12986,7 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(graphA, "graph"):
             if not silent:
@@ -12976,10 +12995,6 @@ class Graph:
         if not Topology.IsInstance(graphB, "graph"):
             if not silent:
                 print("Graph.Union - Error: The graphB input parameter is not a valid graph. Returning None.")
-            return None
-        if not isinstance(vertexKey, str):
-            if not silent:
-                print("Graph.Union - Error: The vertexKey input parameter is not a valid string. Returning None.")
             return None
         vertices_a = Graph.Vertices(graphA)
         vertices_a_new = []
@@ -13008,11 +13023,16 @@ class Graph:
 
         def _add_vertex(v):
             for i, uv in enumerate(union_vertices):
-                if Graph._vertex_is_same(v, uv, key=vertexKey):
+                if Graph._vertex_is_same(v, uv, keys=vertexKeys):
                     d_a = Topology.Dictionary(v)
                     d_b = Topology.Dictionary(uv)
                     d_c = Dictionary.ByMergedDictionaries(d_a, d_b)
-                    uv = Topology.SetDictionary(uv, d_c)
+                    if useCentroid:
+                        c = Topology.Centroid(Cluster.ByTopologies([v, uv]))
+                    else:
+                        c = uv
+                    c = Topology.SetDictionary(c, d_c)
+                    union_vertices[i] = c
                     return i
             union_vertices.append(v)
             return len(union_vertices) - 1
@@ -13029,8 +13049,8 @@ class Graph:
             for k, e in enumerate(union_edges):
                 svi = Edge.StartVertex(e)
                 evi = Edge.EndVertex(e)
-                if (Graph._vertex_is_same(svi, vi, key=vertexKey) and Graph._vertex_is_same(evi, vj, key=vertexKey)) or \
-                (Graph._vertex_is_same(svi, vj, key=vertexKey) and Graph._vertex_is_same(evi, vi, key=vertexKey)):
+                if (Graph._vertex_is_same(svi, vi, keys=vertexKeys, tolerance=tolerance) and Graph._vertex_is_same(evi, vj, keys=vertexKeys, tolerance=tolerance)) or \
+                (Graph._vertex_is_same(svi, vj, keys=vertexKeys, tolerance=tolerance) and Graph._vertex_is_same(evi, vi, keys=vertexKeys, tolerance=tolerance)):
                     # Merge dictionaries
                     d_a = Topology.Dictionary(e)
                     d_c = Dictionary.ByMergedDictionaries([d_a, dictionary], silent=True)
@@ -13047,20 +13067,22 @@ class Graph:
         for idx, e in enumerate(edges_a):
             i = index_map_a[e[0]]
             j = index_map_a[e[1]]
-            _add_edge(i, j, Dictionary.ByPythonDictionary(edges_a_dicts[idx]))
+            if not i == j:
+                _add_edge(i, j, Dictionary.ByPythonDictionary(edges_a_dicts[idx]))
 
         # Add edges from B, merging duplicates
         for idx, e in enumerate(edges_b):
             i = index_map_b[e[0]]
             j = index_map_b[e[1]]
-            _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
+            if not i == j:
+                _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
 
         return Graph.ByVerticesEdges(union_vertices, union_edges)
-
+    
     @staticmethod
-    def Intersect(graphA, graphB, vertexKey: str, silent: bool = False):
+    def Impose(graphA, graphB, vertexKeys=None, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Intersect the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Imposes the second input graph on the first input graph based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -13068,10 +13090,18 @@ class Graph:
             The first input graph.
         graphB : topologic_core.Graph
             The second input graph.
-        vertexKey : str
-            The vertex dictionary key to use to determine if two vertices are the same. 
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
+            Otherwise, the coordinates of the vertex of the second input graph are used. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. The default is False.
+        
 
         Returns
         -------
@@ -13083,6 +13113,238 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Cluster import Cluster
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Impose - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Impose - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        vertices_a = Graph.Vertices(graphA)
+        vertices_a_new = []
+        for v in vertices_a:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_a_new.append(v_new)
+        vertices_a = vertices_a_new
+        vertices_b = Graph.Vertices(graphB)
+        vertices_b_new = []
+        for v in vertices_b:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_b_new.append(v_new)
+        vertices_b = vertices_b_new
+        mesh_data_a = Graph.MeshData(graphA)
+        mesh_data_b = Graph.MeshData(graphB)
+        edges_a = mesh_data_a['edges']
+        edges_b = mesh_data_b['edges']
+        edges_a_dicts = mesh_data_a['edgeDictionaries']
+        edges_b_dicts = mesh_data_b['edgeDictionaries']
+
+        union_vertices = []
+
+        def _add_vertex(v):
+            for i, uv in enumerate(union_vertices):
+                if Graph._vertex_is_same(v, uv, keys=vertexKeys):
+                    d_c = Topology.Dictionary(v) # Dictionaries of graphB are imposed.
+                    if useCentroid:
+                        c = Topology.Centroid(Cluster.ByTopologies([v, uv]))
+                    else:
+                        c = v
+                    c = Topology.SetDictionary(c, d_c)
+                    union_vertices[i] = c
+                    return i
+            union_vertices.append(v)
+            return len(union_vertices) - 1
+
+        # Map original vertices to indices in union list
+        index_map_a = [_add_vertex(v) for v in vertices_a]
+        index_map_b = [_add_vertex(v) for v in vertices_b]
+
+        union_edges = []
+
+        def _add_edge(i, j, dictionary):
+            vi = union_vertices[i]
+            vj = union_vertices[j]
+            for k, e in enumerate(union_edges):
+                svi = Edge.StartVertex(e)
+                evi = Edge.EndVertex(e)
+                if (Graph._vertex_is_same(svi, vi, keys=vertexKeys, tolerance=tolerance) and Graph._vertex_is_same(evi, vj, keys=vertexKeys, tolerance=tolerance)) or \
+                (Graph._vertex_is_same(svi, vj, keys=vertexKeys, tolerance=tolerance) and Graph._vertex_is_same(evi, vi, keys=vertexKeys, tolerance=tolerance)):
+                    # Impose edge dictionary from graphB
+                    new_edge = Edge.ByVertices(vi, vj)
+                    new_edge = Topology.SetDictionary(new_edge, dictionary, silent=True)
+                    union_edges[k] = new_edge
+                    return
+            # If not found, add new edge
+            edge = Edge.ByVertices(vi, vj)
+            edge = Topology.SetDictionary(edge, dictionary)
+            union_edges.append(edge)
+
+        # Add edges from A
+        for idx, e in enumerate(edges_a):
+            i = index_map_a[e[0]]
+            j = index_map_a[e[1]]
+            if not i == j:
+                _add_edge(i, j, Dictionary.ByPythonDictionary(edges_a_dicts[idx]))
+
+        # Add edges from B, merging duplicates
+        for idx, e in enumerate(edges_b):
+            i = index_map_b[e[0]]
+            j = index_map_b[e[1]]
+            if not i == j:
+                _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
+
+        return Graph.ByVerticesEdges(union_vertices, union_edges)
+    
+    @staticmethod
+    def Imprint(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Imprints the second input graph on the first input graph based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
+            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are merged.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Imprint - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Imprint - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+
+        vertices_a = Graph.Vertices(graphA)
+        vertices_a_new = []
+        for v in vertices_a:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_a_new.append(v_new)
+        vertices_a = vertices_a_new
+        vertices_b = Graph.Vertices(graphB)
+        vertices_b_new = []
+        for v in vertices_b:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_b_new.append(v_new)
+        vertices_b = vertices_b_new
+        mesh_data_a = Graph.MeshData(graphA)
+        mesh_data_b = Graph.MeshData(graphB)
+        topo_edges_a = Graph.Edges(graphA)
+        edges_a = mesh_data_a['edges']
+        edges_b = mesh_data_b['edges']
+        edges_b_dicts = mesh_data_b['edgeDictionaries']
+
+        final_vertices = []
+        vertex_map = {}
+        for i, a in enumerate(vertices_a):
+            j = Graph._vertex_in_list(a, vertices_b, keys=vertexKeys, tolerance=tolerance)
+            if j:
+                b = vertices_b[j-1]
+                if useCentroid:
+                    c = Topology.Centroid(Cluster.ByTopologies([a, b]))
+                else:
+                    c = a
+                d_c = Topology.Dictionary(b)
+                c = Topology.SetDictionary(c, d_c, silent=True)
+                vertex_map[i] = c
+                final_vertices.append(c)
+            else:
+                final_vertices.append(a)
+        if len(final_vertices) < 1:
+            if not silent:
+                print("Graph.Imprint - Warning: graphA and graphB do not intersect. Returning None.")
+            return None
+
+        final_edges = []
+
+        for i, e in enumerate(edges_a):
+            j = Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, keys=vertexKeys, tolerance=tolerance)
+            if j:
+                # Merge the dictionaries
+                d_c = Dictionary.ByPythonDictionary(edges_b_dicts[j-1]) # We added 1 to j to avoid 0 which can be interpreted as False.
+                # Create the edge
+                #final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
+                sv = vertex_map[e[0]]
+                ev = vertex_map[e[1]]
+                final_edge = Edge.ByVertices(sv, ev)
+                # Set the edge's dictionary
+                final_edge = Topology.SetDictionary(final_edge, d_c, silent=True)
+                # Add the final edge to the list
+                final_edges.append(final_edge)
+            else:
+                final_edges.append(topo_edges_a[i])
+
+        return Graph.ByVerticesEdges(final_vertices, final_edges)
+
+    @staticmethod
+    def Intersect(graphA, graphB, vertexKeys, vertexColorKey="color", useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Intersect the two input graphs based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
+            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are merged.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graphA, "graph"):
             if not silent:
@@ -13091,10 +13353,6 @@ class Graph:
         if not Topology.IsInstance(graphB, "graph"):
             if not silent:
                 print("Graph.Intersect - Error: The graphB input parameter is not a valid graph. Returning None.")
-            return None
-        if not isinstance(vertexKey, str):
-            if not silent:
-                print("Graph.Intersect - Error: The vertexKey input parameter is not a valid string. Returning None.")
             return None
 
         vertices_a = Graph.Vertices(graphA)
@@ -13121,27 +13379,40 @@ class Graph:
         edges_b_dicts = mesh_data_b['edgeDictionaries']
 
         common_vertices = []
-        for i, v in enumerate(vertices_a):
-            j = Graph._vertex_in_list(v, vertices_b, key=vertexKey)
+        vertex_map = {}
+        for i, a in enumerate(vertices_a):
+            j = Graph._vertex_in_list(a, vertices_b, keys=vertexKeys, tolerance=tolerance)
             if j:
-                d_a = Topology.Dictionary(v)
-                d_b = Topology.Dictionary(vertices_b[j-1])
+                b = vertices_b[j-1]
+                if useCentroid:
+                    c = Topology.Centroid(Cluster.ByTopologies([a, b]))
+                else:
+                    c = a
+                d_a = Topology.Dictionary(a)
+                d_b = Topology.Dictionary(b)
                 d_c = Dictionary.ByMergedDictionaries([d_a, d_b], silent=True)
-                v = Topology.SetDictionary(v, d_c, silent=True)
-                common_vertices.append(v)
+                c = Topology.SetDictionary(c, d_c, silent=True)
+                vertex_map[i] = c
+                common_vertices.append(c)
+        if len(common_vertices) < 1:
+            if not silent:
+                print("Graph.Intersect - Warning: graphA and graphB do not intersect. Returning None.")
+            return None
+
         common_edges = []
 
         for i, e in enumerate(edges_a):
-            j = Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, key=vertexKey)
+            j = Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, keys=vertexKeys, tolerance=tolerance)
             if j:
                 # Merge the dictionaries
                 d_a = Dictionary.ByPythonDictionary(edges_a_dicts[i])
                 d_b = Dictionary.ByPythonDictionary(edges_b_dicts[j-1]) # We added 1 to j to avoid 0 which can be interpreted as False.
                 d_c = Dictionary.ByMergedDictionaries([d_a, d_b], silent=True)
-                print("Intersect - d_c:", d_c)
-                print(Dictionary.Keys(d_c), Dictionary.Values(d_c))
                 # Create the edge
-                final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
+                #final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
+                sv = vertex_map[e[0]]
+                ev = vertex_map[e[1]]
+                final_edge = Edge.ByVertices(sv, ev)
                 # Set the edge's dictionary
                 final_edge = Topology.SetDictionary(final_edge, d_c, silent=True)
                 # Add the final edge to the list
@@ -13150,9 +13421,9 @@ class Graph:
         return Graph.ByVerticesEdges(common_vertices, common_edges)
 
     @staticmethod
-    def Difference(graphA, graphB, vertexKey: str, silent: bool = False):
+    def Difference(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Intersect the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Intersect the two input graphs based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -13160,8 +13431,14 @@ class Graph:
             The first input graph.
         graphB : topologic_core.Graph
             The second input graph.
-        vertexKey : str
-            The vertex dictionary key to use to determine if two vertices are the same. 
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            This is not used here, but included for API consistency for boolean operations.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. The default is False.
 
@@ -13184,25 +13461,36 @@ class Graph:
             if not silent:
                 print("Graph.Difference - Error: The graphB input parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexKey, str):
-            if not silent:
-                print("Graph.Difference - Error: The vertexKey input parameter is not a valid string. Returning None.")
-            return None
+
         vertices_a = Graph.Vertices(graphA)
+        vertices_a_new = []
+        for v in vertices_a:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_a_new.append(v_new)
+        vertices_a = vertices_a_new
         vertices_b = Graph.Vertices(graphB)
+        vertices_b_new = []
+        for v in vertices_b:
+            d = Topology.Dictionary(v)
+            v_new = Vertex.ByCoordinates(Vertex.Coordinates(v))
+            v_new = Topology.SetDictionary(v_new, d)
+            vertices_b_new.append(v_new)
+        vertices_b = vertices_b_new
         mesh_data_a = Graph.MeshData(graphA)
         mesh_data_b = Graph.MeshData(graphB)
         edges_a = mesh_data_a['edges']
         edges_b = mesh_data_b['edges']
         edges_a_dicts = mesh_data_a['edgeDictionaries']
 
-        diff_vertices = [v for v in vertices_a if not Graph._vertex_in_list(v, vertices_b, key=vertexKey)]
+        diff_vertices = [v for v in vertices_a if not Graph._vertex_in_list(v, vertices_b, keys=vertexKeys, tolerance=tolerance)]
         diff_edges = []
 
         for i, e in enumerate(edges_a):
-            if not Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, key=vertexKey):
+            if not Graph._edge_in_list(e, edges_b, vertices_a, vertices_b, keys=vertexKeys, tolerance=tolerance):
                 # Create the edge
-                if Graph._vertex_in_list(vertices_a[e[0]], diff_vertices, key=vertexKey) and Graph._vertex_in_list(vertices_a[e[1]], diff_vertices, key=vertexKey):
+                if Graph._vertex_in_list(vertices_a[e[0]], diff_vertices, keys=vertexKeys, tolerance=tolerance) and Graph._vertex_in_list(vertices_a[e[1]], diff_vertices, keys=vertexKeys, tolerance=tolerance):
                     final_edge = Edge.ByVertices(vertices_a[e[0]], vertices_a[e[1]])
                     # Set the edge's dictionary
                     final_edge = Topology.SetDictionary(final_edge, Dictionary.ByPythonDictionary(edges_a_dicts[i]), silent=True)
@@ -13212,9 +13500,9 @@ class Graph:
         return Graph.ByVerticesEdges(diff_vertices, diff_edges)
 
     @staticmethod
-    def SymmetricDifference(graphA, graphB, vertexKey: str, silent: bool = False):
+    def Merge(graphA, graphB, vertexKeys=None, vertexColorKey="color", useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Find the symmetric difference pf the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Merges the two input graphs based on the input vertex keys. This is an alias for Graph.Union. See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -13222,8 +13510,57 @@ class Graph:
             The first input graph.
         graphB : topologic_core.Graph
             The second input graph.
-        vertexKey : str
-            The vertex dictionary key to use to determine if two vertices are the same. 
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        vertexColorKey : str , optional
+            The dictionary key that is storing the vertex's color. The final colors will be averaged. The default is "color".
+        useCentroid : bool , optional
+            If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
+            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+        
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are merged.
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graphA, "graph"):
+            if not silent:
+                print("Graph.Union - Error: The graphA input parameter is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.Union - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        return Graph.Union(graphA, graphB, vertexKeys=vertexKeys, vertexColorKey=vertexColorKey, useCentroid=useCentroid, tolerance=tolerance, silent=silent)
+    
+    @staticmethod
+    def SymmetricDifference(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.001, silent: bool = False):
+        """
+        Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on the input vertex keys. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            This is not used here, but included for API consistency for boolean operations.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. The default is False.
 
@@ -13244,10 +13581,49 @@ class Graph:
             if not silent:
                 print("Graph.SymmetricDifference - Error: The graphB input parameter is not a valid graph. Returning None.")
             return None
-        if not isinstance(vertexKey, str):
+        diffAB = Graph.Difference(graphA, graphB, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
+        diffBA = Graph.Difference(graphB, graphA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
+        return Graph.Union(diffAB, diffBA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
+    
+    @staticmethod
+    def XOR(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.001, silent: bool = False):
+        """
+        Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on an input vertex key. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        vertexKeys : list or str , optional
+            The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
+            If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
+            vertices (within the tolerance) will be used to determine sameness. The default is None.
+        useCentroid : bool , optional
+            This is not used here, but included for API consistency for boolean operations.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            the resultant graph. Vertex and edge dictionaries are not merged.
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graphA, "graph"):
             if not silent:
-                print("Graph.SymmetricDifference - Error: The vertexKey input parameter is not a valid string. Returning None.")
+                print("Graph.XOR - Error: The graphA input parameter is not a valid graph. Returning None.")
             return None
-        diffAB = Graph.Difference(graphA, graphB, vertexKey=vertexKey, silent=True)
-        diffBA = Graph.Difference(graphB, graphA, vertexKey=vertexKey, silent=True)
-        return Graph.Union(diffAB, diffBA, vertexKey=vertexKey, silent=True)
+        if not Topology.IsInstance(graphB, "graph"):
+            if not silent:
+                print("Graph.XOR - Error: The graphB input parameter is not a valid graph. Returning None.")
+            return None
+        diffAB = Graph.Difference(graphA, graphB, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
+        diffBA = Graph.Difference(graphB, graphA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
+        return Graph.Union(diffAB, diffBA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)

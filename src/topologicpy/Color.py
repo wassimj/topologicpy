@@ -55,7 +55,80 @@ class Color:
 
         return return_hex.upper()
     
-    
+    @staticmethod
+    def AverageHex(*colors, silent: bool = False):
+        """
+        Averages the input list of hex colors.
+
+        Parameters
+        ----------
+        colors : *list or str
+            The input color parameter which can be any of RGB, CMYK, CSS Named Color, or Hex
+
+        Returns
+        -------
+        str
+            A hexadecimal color string in the format '#RRGGBB'.
+        """
+        from topologicpy.Helper import Helper
+        import inspect
+
+        def avg(hex1, hex2):
+            # Remove leading "#" if present
+            hex1 = hex1.lstrip('#')
+            hex2 = hex2.lstrip('#')
+
+            # Convert to RGB components
+            r1, g1, b1 = int(hex1[0:2], 16), int(hex1[2:4], 16), int(hex1[4:6], 16)
+            r2, g2, b2 = int(hex2[0:2], 16), int(hex2[2:4], 16), int(hex2[4:6], 16)
+
+            # Compute average for each channel
+            r_avg = (r1 + r2) // 2
+            g_avg = (g1 + g2) // 2
+            b_avg = (b1 + b2) // 2
+
+            # Return as hex string
+            return f"#{r_avg:02X}{g_avg:02X}{b_avg:02X}"
+        
+        if len(colors) == 0:
+            if not silent:
+                print("Color.AverageColors - Error: The input colors parameter is an empty list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        if len(colors) == 1:
+            colorList = colors[0]
+            if isinstance(colorList, list):
+                if len(colorList) == 0:
+                    if not silent:
+                        print("Color.AverageHex - Error: The input colors parameter is an empty list. Returning None.")
+                        curframe = inspect.currentframe()
+                        calframe = inspect.getouterframes(curframe, 2)
+                        print('caller name:', calframe[1][3])
+                    return None
+            else:
+                if not silent:
+                    print("Color.AverageHex - Warning: The input colors parameter contains only one color. Returning the same topology.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return colorList
+        else:
+            colorList = Helper.Flatten(list(colors))
+            colorList = [x for x in colorList if isinstance(x, str)]
+        if len(colorList) == 0:
+            if not silent:
+                print("Color.AverageHex - Error: The input parameters do not contain any valid colors. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        final_color = Color.AnyToHex(colorList[0])
+        for clr in colorList[1:]:
+            final_color = avg(final_color, Color.AnyToHex(clr))
+        return final_color
+
     @staticmethod
     def ByCSSNamedColor(color, alpha: float = None):
         """
