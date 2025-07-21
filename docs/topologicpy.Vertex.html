@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.40 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.41 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.40
+                0.8.41
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -248,7 +248,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Project" title="topologicpy.Vertex.Vertex.Project"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Project</span></code></a>(vertex, face[, direction, mantissa])</p></td>
 <td><p>Returns a vertex that is the projection of the input vertex unto the input face.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Separate" title="topologicpy.Vertex.Vertex.Separate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Separate</span></code></a>(*vertices[, minDistance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Separate" title="topologicpy.Vertex.Vertex.Separate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Separate</span></code></a>(*vertices[, minDistance, ...])</p></td>
 <td><p>Separates the input vertices such that no two vertices are within the input minimum distance.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Transform" title="topologicpy.Vertex.Vertex.Transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transform</span></code></a>(vertex, matrix[, mantissa, silent])</p></td>
@@ -1067,7 +1067,7 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.Separate">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Separate" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Separate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">iterations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strength</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Separate" title="Permalink to this definition"></a></dt>
 <dd><p>Separates the input vertices such that no two vertices are within the input minimum distance.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
@@ -1075,6 +1075,12 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dt><strong>vertices</strong><span class="classifier"><a href="#id1"><span class="problematic" id="id2">*</span></a>topologicpy.Vertex</span></dt><dd><p>One or more instances of a topologic vertex to be processed.</p>
 </dd>
 <dt><strong>minDistance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum distance. The default is 0.0001.</p>
+</dd>
+<dt><strong>iterations</strong><span class="classifier">int</span></dt><dd><p>The number of iterations to run the repulsion simulation. The default is 100.</p>
+</dd>
+<dt><strong>strength</strong><span class="classifier">float</span></dt><dd><p>The force multiplier controlling how strongly vertices repel each other. The default is 0.1.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>

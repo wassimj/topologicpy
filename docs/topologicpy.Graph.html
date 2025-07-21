@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.40 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.41 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.40
+                0.8.41
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -365,29 +365,35 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Guid" title="topologicpy.Graph.Graph.Guid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Guid</span></code></a>(graph)</p></td>
 <td><p>Returns the guid of the input graph</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Impose" title="topologicpy.Graph.Graph.Impose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.HasseDiagram" title="topologicpy.Graph.Graph.HasseDiagram"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasseDiagram</span></code></a>(topology[, types, topDown, ...])</p></td>
+<td><p>Constructs a Hasse diagram from the input topology as a directed graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Impose" title="topologicpy.Graph.Graph.Impose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Impose</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
 <td><p>Imposes the second input graph on the first input graph based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Imprint" title="topologicpy.Graph.Graph.Imprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Imprint" title="topologicpy.Graph.Graph.Imprint"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Imprint</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
 <td><p>Imprints the second input graph on the first input graph based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingEdges" title="topologicpy.Graph.Graph.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(graph, vertex[, directed, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingEdges" title="topologicpy.Graph.Graph.IncomingEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingEdges</span></code></a>(graph, vertex[, directed, ...])</p></td>
 <td><p>Returns the incoming edges connected to a vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingVertices" title="topologicpy.Graph.Graph.IncomingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingVertices</span></code></a>(graph, vertex[, directed, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IncomingVertices" title="topologicpy.Graph.Graph.IncomingVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IncomingVertices</span></code></a>(graph, vertex[, directed, ...])</p></td>
 <td><p>Returns the incoming vertices connected to a vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Intersect" title="topologicpy.Graph.Graph.Intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Intersect" title="topologicpy.Graph.Graph.Intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Intersect</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
 <td><p>Intersect the two input graphs based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsBipartite" title="topologicpy.Graph.Graph.IsBipartite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsBipartite</span></code></a>(graph[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsBipartite" title="topologicpy.Graph.Graph.IsBipartite"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsBipartite</span></code></a>(graph[, tolerance])</p></td>
 <td><p>Returns True if the input graph is bipartite.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsComplete" title="topologicpy.Graph.Graph.IsComplete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsComplete</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsComplete" title="topologicpy.Graph.Graph.IsComplete"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsComplete</span></code></a>(graph)</p></td>
 <td><p>Returns True if the input graph is complete.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsConnected" title="topologicpy.Graph.Graph.IsConnected"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConnected</span></code></a>(graph, vertexA, vertexB[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsConnected" title="topologicpy.Graph.Graph.IsConnected"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsConnected</span></code></a>(graph, vertexA, vertexB[, silent])</p></td>
 <td><p>Returns True if the two input vertices are directly connected by an edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsEmpty" title="topologicpy.Graph.Graph.IsEmpty"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsEmpty</span></code></a>(graph[, silent])</p></td>
+<td><p>Tests if the input graph is empty (Has no vertices).</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.IsErdoesGallai" title="topologicpy.Graph.Graph.IsErdoesGallai"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsErdoesGallai</span></code></a>(graph, sequence)</p></td>
 <td><p>Returns True if the input sequence satisfies the Erdős–Gallai theorem.</p></td>
@@ -3294,6 +3300,54 @@ Valid partition numbers start from 1. Cut edges receive a partition number of 0.
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.HasseDiagram">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasseDiagram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">types</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['vertex',</span> <span class="pre">'edge',</span> <span class="pre">'wire',</span> <span class="pre">'face',</span> <span class="pre">'shell',</span> <span class="pre">'cell',</span> <span class="pre">'cellComplex']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topDown</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexTypeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'type'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeBREP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.HasseDiagram" title="Permalink to this definition"></a></dt>
+<dd><p>Constructs a Hasse diagram from the input topology as a directed graph. See: <a class="reference external" href="https://en.wikipedia.org/wiki/Hasse_diagram">https://en.wikipedia.org/wiki/Hasse_diagram</a>
+Vertices represent topologies (vertices, edges, wires, faces, shells, cells, cellComplexes).
+Edges represent inclusion (e.g. vertex ⊂ edge, edge ⊂ wire).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
+</dd>
+<dt><strong>types</strong><span class="classifier">optional, list</span></dt><dd><p>The list of topology types that you wish to encode in the Hasse diagram.
+This list must be ordered according to topologic_core’s class hierarchy.
+If you are not interested in representing some topology types. These can be omitted.
+The default is:
+[“vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellComplex”].</p>
+</dd>
+<dt><strong>topDown</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the graph edges are directed from topologies to their subtopologies.
+Otherwise, they are directed from topologies to their supertopologies. The default is False.</p>
+</dd>
+<dt><strong>minDistance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum distance between the vertices of the graph. The default is 0.1.</p>
+</dd>
+<dt><strong>vertexLabelKey: str , optional</strong></dt><dd><p>The desired vertex dictionary key under which to store a unique label (of the form Type_Index). The default is “label”.</p>
+</dd>
+<dt><strong>vertexTypeKey: str , optional</strong></dt><dd><p>The desired vertex dictionary key under which to store the topology type (e.g. “vertex”, “edge”, “wire”). The default is “type”.</p>
+</dd>
+<dt><strong>vertexColorKey: str , optional</strong></dt><dd><p>The desired vertex dictionary key under which to store the topology color. The default is “color”.</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). The default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.
+In addition to these, three color-blind friendly scales are included. These are “protanopia”, “deuteranopia”, and “tritanopia” for red, green, and blue colorblindness respectively.</p>
+</dd>
+<dt><strong>storeBREP</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, store the BRep of the topology in its representative vertex. The default is False.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph</dt><dd><p>The created Hesse diagram graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Impose">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Impose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useCentroid</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Impose" title="Permalink to this definition"></a></dt>
 <dd><p>Imposes the second input graph on the first input graph based on the input vertex keys. See <a class="reference external" href="https://en.wikipedia.org/wiki/Boolean_operation">https://en.wikipedia.org/wiki/Boolean_operation</a>.</p>
@@ -3508,6 +3562,28 @@ Otherwise, the coordinates of the vertex of the first input graph are used. The 
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>bool</dt><dd><p>True if the input vertices are connected by an edge. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.IsEmpty">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsEmpty</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.IsEmpty" title="Permalink to this definition"></a></dt>
+<dd><p>Tests if the input graph is empty (Has no vertices).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the two input graphs are isomorphic. False otherwise</p>
 </dd>
 </dl>
 </dd>
