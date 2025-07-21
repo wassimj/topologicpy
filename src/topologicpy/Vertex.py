@@ -1819,7 +1819,7 @@ class Vertex():
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
     @staticmethod
-    def Separate(*vertices, minDistance: float = 0.0001, silent: bool = False):
+    def Separate(*vertices, minDistance: float = 0.0001, iterations: int = 100, strength: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Separates the input vertices such that no two vertices are within the input minimum distance.
 
@@ -1829,6 +1829,12 @@ class Vertex():
             One or more instances of a topologic vertex to be processed.
         minDistance : float , optional
             The desired minimum distance. The default is 0.0001.
+        iterations : int
+            The number of iterations to run the repulsion simulation. The default is 100.
+        strength : float
+            The force multiplier controlling how strongly vertices repel each other. The default is 0.1.
+        tolerance : float
+            The desired tolerance. The default is 0.0001.
         silent : bool , optional
                 If set to True, error and warning messages are suppressed. The default is False.
 
@@ -1840,10 +1846,7 @@ class Vertex():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
-        from topologicpy.Dictionary import Dictionary
-        from math import sqrt
-        from scipy.spatial import KDTree
-        import numpy as np
+        import math
 
         if len(vertices) == 0:
             if not silent:
@@ -1873,33 +1876,37 @@ class Vertex():
             if not silent:
                 print("Vertex.Separate - Error: The input parameters do not contain any valid vertices. Returning None.")
             return None
-    
-        coords = np.array([[v.X(), v.Y(), v.Z()] for v in vertexList])  # Extract coordinates
-        tree = KDTree(coords)  # Build k-d tree for efficient neighbor search
+
+        minDistance = minDistance + tolerance # Add a bit of a safety factor
+
+        # Convert to mutable coordinates
+        coords = [[v.X(), v.Y(), v.Z()] for v in vertices]
         
-        for i, vertex in enumerate(coords):
-            neighbors = tree.query_ball_point(vertex, minDistance)
-            for neighbor_index in neighbors:
-                if neighbor_index != i:  # Avoid self-comparison
-                    direction = coords[neighbor_index] - vertex
-                    distance = np.linalg.norm(direction)
-                    if distance < minDistance:
-                        # Move current vertex away from its neighbor
-                        adjustment = (minDistance - distance) / 2
-                        unit_vector = direction / distance if distance != 0 else np.random.rand(3)
-                        coords[i] -= unit_vector * adjustment
-                        coords[neighbor_index] += unit_vector * adjustment
-
-            # Rebuild the k-d tree after adjustment
-            tree = KDTree(coords)
-
-        # Convert adjusted coordinates back to Vertex objects
-        separated_vertices = [Vertex.ByCoordinates(x, y, z) for x, y, z in coords]
-        for i, vertex in enumerate(vertexList):
-            d = Topology.Dictionary(vertex)
-            if len(Dictionary.Keys(d)) > 0:
-                separated_vertices[i] = Topology.SetDictionary(separated_vertices[i], d)
-        return separated_vertices
+        for _ in range(iterations):
+            for i in range(len(coords)):
+                for j in range(i + 1, len(coords)):
+                    dx = coords[j][0] - coords[i][0]
+                    dy = coords[j][1] - coords[i][1]
+                    dz = coords[j][2] - coords[i][2]
+                    dist = math.sqrt(dx*dx + dy*dy + dz*dz)
+                    
+                    if dist < minDistance and dist > 1e-9:
+                        # Calculate repulsion vector
+                        repel = (minDistance - dist) / dist * strength
+                        shift = [dx * repel * 0.5, dy * repel * 0.5, dz * repel * 0.5]
+                        coords[i][0] -= shift[0]
+                        coords[i][1] -= shift[1]
+                        coords[i][2] -= shift[2]
+                        coords[j][0] += shift[0]
+                        coords[j][1] += shift[1]
+                        coords[j][2] += shift[2]
+        
+        # Reconstruct TopologicPy Vertex objects
+        new_vertices = [Vertex.ByCoordinates(x, y, z) for x, y, z in coords]
+        # Transfer the dictionaries
+        for i, v in enumerate(new_vertices):
+            v = Topology.SetDictionary(v, Topology.Dictionary(vertices[i]))
+        return new_vertices
 
     @staticmethod
     def Transform(vertex, matrix, mantissa: int = 6, silent: bool = False):

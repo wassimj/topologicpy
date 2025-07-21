@@ -8162,7 +8162,10 @@ class Topology():
              vertexMaxGroup=None, 
              showVertexLegend=False,
              vertexLegendLabel="Vertices",
-
+             
+             directed=False,
+             arrowSize=0.1,
+             arrowSizeKey=None,
              showEdges=True,
              edgeWidth=None,
              edgeWidthKey=None,
@@ -8281,7 +8284,12 @@ class Topology():
             If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
         vertexLegendLabel : str , optional
             The legend label string used to identify vertices. The default is "Topology Vertices".
-        
+        directed : bool , optional
+            If set to True, arrowheads are drawn to show direction. The default is False.
+        arrowSize : int, optional
+            The desired size of arrowheads for directed graphs. The default is 0.1.
+        arrowSizeKey: str , optional
+            The edge dictionary key under which to find the arrowhead size. The default is None.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         edgeWidth : float , optional
@@ -8470,6 +8478,9 @@ class Topology():
                                            absolute=absolute,
                                            sides=sides,
                                            angle=angle,
+                                           directed=directed,
+                                           arrowSize=arrowSize,
+                                           arrowSizeKey=arrowSizeKey,
                                            vertexColor=vertexColor,
                                            vertexColorKey=vertexColorKey,
                                            vertexSize=vSize,
@@ -8543,6 +8554,9 @@ class Topology():
                                               vertexLegendLabel=str(i+1)+": "+name+" ("+vertexLegendLabel+")",
                                               vertexLegendRank=topology_counter+1,
                                               vertexLegendGroup=topology_counter+1,
+                                              directed=directed,
+                                              arrowSize=arrowSize,
+                                              arrowSizeKey=arrowSizeKey,
                                               showEdges=showEdges,
                                               edgeWidth=eWidth,
                                               edgeWidthKey=edgeWidthKey,

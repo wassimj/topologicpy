@@ -277,6 +277,9 @@ class Plotly:
                     absolute: bool = False,
                     sides: int = 8,
                     angle: float = 0,
+                    directed: bool = False,
+                    arrowSize: int = 0.1,
+                    arrowSizeKey: str = None,
                     vertexColor: str = "black",
                     vertexColorKey: str = None,
                     vertexSize: float = 10,
@@ -330,6 +333,12 @@ class Plotly:
             For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
         sides : int , optional
             The number of sides of the arc. The default is 8.
+        directed : bool , optional
+            If set to True, arrowheads are drawn to show direction. The default is False.
+        arrowSize : int, optional
+            The desired size of arrowheads for directed graphs. The default is 0.1.
+        arrowSizeKey: str , optional
+            The edge dictionary key under which to find the arrowhead size. The default is None.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -479,7 +488,7 @@ class Plotly:
                 geo = Topology.Geometry(e_cluster, mantissa=mantissa)
                 vertices = geo['vertices']
                 edges = geo['edges']
-                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
+                data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
         return data
     
     @staticmethod
@@ -638,11 +647,60 @@ class Plotly:
         return return_value
 
     @staticmethod
-    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, dash=False, dashKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, dash=False, dashKey=None, directed=False, arrowSize=0.1, arrowSizeKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
     
         from topologicpy.Color import Color
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
+
+        def create_arrowheads(x, y, z, arrowSize=4):
+            import plotly.graph_objects as go
+            import numpy as np
+
+            arrow_traces = []
+
+            # Compute segment directions
+            cone_x, cone_y, cone_z = [], [], []
+            cone_u, cone_v, cone_w = [], [], []
+
+            for i in range(len(x) - 1):
+                if x[i] == None or x[i+1] == None:
+                    continue
+                u = x[i+1] - x[i]
+                v = y[i+1] - y[i]
+                w = z[i+1] - z[i]
+
+                norm = np.linalg.norm([u, v, w])
+                if norm > 0:
+                    u /= norm
+                    v /= norm
+                    w /= norm
+                    cone_x.append(x[i+1])
+                    cone_y.append(y[i+1])
+                    cone_z.append(z[i+1])
+                    cone_u.append(u)
+                    cone_v.append(v)
+                    cone_w.append(w)
+
+            cone_trace = go.Cone(
+                x=cone_x,
+                y=cone_y,
+                z=cone_z,
+                u=cone_u,
+                v=cone_v,
+                w=cone_w,
+                sizemode="raw",
+                sizeref=arrowSize,
+                showscale=False,
+                colorscale=[[0, color], [1, color]],
+                anchor="tip",
+                name="",  # Hide legend
+                hoverinfo="skip",
+                showlegend=False
+            )
+            arrow_traces.append(cone_trace)
+
+            return arrow_traces
         traces = []
         x = []
         y = []
@@ -676,8 +734,8 @@ class Plotly:
             maxGroup = 1
         
 
-        if colorKey or widthKey or labelKey or groupKey or dashKey:
-            keys = [x for x in [colorKey, widthKey, labelKey, groupKey, dashKey] if not x == None]
+        if colorKey or widthKey or labelKey or groupKey or dashKey or arrowSizeKey:
+            keys = [x for x in [colorKey, widthKey, labelKey, groupKey, dashKey, arrowSizeKey] if not x == None]
             temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
             dict_clusters = temp_dict["dictionaries"]
             elements_clusters = temp_dict['elements']
@@ -692,6 +750,8 @@ class Plotly:
                         d_color = Color.AnyToHex(d_color)
                     if not dashKey == None:
                         d_dash = Dictionary.ValueAtKey(d, key=dashKey) or dash
+                    if not arrowSizeKey == None:
+                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey) or arrowSize
                     if not labelKey == None:
                         labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
                     if not widthKey == None:
@@ -744,6 +804,9 @@ class Plotly:
                                     text=labels,
                                     hoverinfo='text',
                                     hovertext=labels)
+                if directed:
+                    arrow_traces = create_arrowheads(x, y, z, arrowSize=d_arrowSize)
+                    traces += arrow_traces
                 traces.append(trace)
         else:
             x = []
@@ -775,6 +838,9 @@ class Plotly:
                                 legendrank=legendRank,
                                 text=label,
                                 hoverinfo='text')
+            if directed:
+                arrow_traces = create_arrowheads(x, y, z, arrowSize=arrowSize)
+                traces += arrow_traces
             traces.append(trace)
         return traces
 
@@ -799,6 +865,9 @@ class Plotly:
                        vertexLegendLabel="Topology Vertices",
                        vertexLegendRank=1,
                        vertexLegendGroup=1,
+                       directed=False,
+                       arrowSize=0.1,
+                       arrowSizeKey=None,
                        showEdges=True,
                        edgeWidth=1,
                        edgeWidthKey=None,
@@ -884,7 +953,12 @@ class Plotly:
             The legend rank order of the vertices of this topology. The default is 1.
         vertexLegendGroup : int , optional
             The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
-        
+        directed : bool , optional
+            If set to True, arrowheads are drawn to show direction. The default is False.
+        arrowSize : int, optional
+            The desired size of arrowheads for directed graphs. The default is 0.1.
+        arrowSizeKey: str , optional
+            The edge dictionary key under which to find the arrowhead size. The default is None.
         showEdges : bool , optional
             If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
         edgeWidth : float , optional
@@ -1194,7 +1268,7 @@ class Plotly:
                 vertices = geo['vertices']
                 edges = geo['edges']
                 if len(edges) > 0:
-                    data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+                    data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             if not faceColorKey == None:

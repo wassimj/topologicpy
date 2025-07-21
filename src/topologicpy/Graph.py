@@ -7752,6 +7752,34 @@ class Graph:
         return graph
 
     @staticmethod
+    def IsEmpty(graph, silent: bool = False):
+        """
+        Tests if the input graph is empty (Has no vertices).
+        
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+        
+        Returns
+        -------
+        bool
+            True if the two input graphs are isomorphic. False otherwise
+
+        """
+        
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.IsEmpty - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        return (len(Graph.Vertices(graph)) == 0)
+    
+    @staticmethod
     def IsIsomorphic(graphA, graphB, maxIterations=10, silent=False):
         """
         Tests if the two input graphs are isomorphic according to the Weisfeiler Lehman graph isomorphism test. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
@@ -9191,6 +9219,142 @@ class Graph:
             print("Graph.Guid - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
         return graph.GetGUID()
+
+    @staticmethod
+    def HasseDiagram(topology, types=["vertex", "edge", "wire", "face", "shell", "cell", "cellComplex"], topDown: bool = False, minDistance: float=0.1, vertexLabelKey: str="label", vertexTypeKey: str="type", vertexColorKey: str="color", colorScale: str="viridis", storeBREP: bool = False, tolerance: float=0.0001, silent: bool=False):
+        """
+            Constructs a Hasse diagram from the input topology as a directed graph. See: https://en.wikipedia.org/wiki/Hasse_diagram
+            Vertices represent topologies (vertices, edges, wires, faces, shells, cells, cellComplexes).
+            Edges represent inclusion (e.g. vertex ⊂ edge, edge ⊂ wire).
+
+            Parameters
+            ----------
+            topology : topologic_core.Topology
+                The input topology
+            types : optional, list
+                The list of topology types that you wish to encode in the Hasse diagram.
+                This list must be ordered according to topologic_core's class hierarchy.
+                If you are not interested in representing some topology types. These can be omitted.
+                The default is:
+                ["vertex", "edge", "wire", "face", "shell", "cell", "cellComplex"].
+            topDown : bool , optional
+                If set to True, the graph edges are directed from topologies to their subtopologies.
+                Otherwise, they are directed from topologies to their supertopologies. The default is False. 
+            minDistance : float , optional
+                The desired minimum distance between the vertices of the graph. The default is 0.1.
+            vertexLabelKey: str , optional
+                The desired vertex dictionary key under which to store a unique label (of the form Type_Index). The default is "label".
+            vertexTypeKey: str , optional
+                The desired vertex dictionary key under which to store the topology type (e.g. "vertex", "edge", "wire"). The default is "type".
+            vertexColorKey: str , optional
+                The desired vertex dictionary key under which to store the topology color. The default is "color".
+            colorScale : str , optional
+                The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+                In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+            storeBREP : bool , optional
+                If set to True, store the BRep of the topology in its representative vertex. The default is False.
+            tolerance : float
+                The desired tolerance. The default is 0.0001.
+            silent : bool , optional
+                    If set to True, error and warning messages are suppressed. The default is False.
+
+            Returns
+            -------
+            topologic_core.Graph
+                The created Hesse diagram graph.
+
+            """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Topology import Topology
+
+        def label(topo, index):
+            cls = Topology.TypeAsString(topo)
+            return f"{cls}_{index}"
+        
+        def collect_topologies(topology, topo_types):
+            """
+            Returns a dict of all sub-topologies by dimension.
+            """
+            topo_by_type = {}
+            for sub_type in topo_types:
+                topo_by_type[sub_type] = Topology.SubTopologies(topology, subTopologyType=sub_type)
+            return topo_by_type
+        
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Graph.HasseDiagram - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        if minDistance <= tolerance:
+            if not silent:
+                print("Graph.HasseDiagram - Error: The input minDistance parameter cannot be less than the input tolerance parameter. Returning None.")
+            return None
+        types = [t.lower() for t in types]
+        for type in types:
+            if type not in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex"]:
+                if not silent:
+                    print("Graph.HasseDiagram - Error: Unknown type found in the types input parameter. Returning None.")
+                return None
+
+        topology_type = Topology.TypeAsString(topology).lower()
+        try:
+            sub_types = types[:types.index(topology_type)]
+        except:
+            sub_types = types
+        topo_by_type = collect_topologies(topology, sub_types)
+        all_topos = []
+        topo_ids = {}
+        index = 0
+
+        # Flatten and assign unique labels
+        for sub_type in sub_types:
+            color = Color.AnyToHex(Color.ByValueInRange(float(types.index(sub_type)), minValue=0, maxValue=6, colorScale=colorScale))
+            lbl_index = 1
+            for t in topo_by_type[sub_type]:
+                lbl = label(t, lbl_index)
+                d = Topology.Dictionary(t)
+                d = Dictionary.SetValuesAtKeys(d, [vertexLabelKey, vertexTypeKey, vertexColorKey], [lbl, sub_type, color])
+                t = Topology.SetDictionary(t, d)
+                all_topos.append(t)
+                topo_ids[lbl] = index
+                index += 1
+                lbl_index += 1
+
+        # Create graph vertices
+        graph_vertices = [Topology.Centroid(_) for _ in all_topos]
+
+        # Add dictionaries to each vertex
+        for i, t in enumerate(all_topos):
+            d = Topology.Dictionary(t)
+            if storeBREP == True:
+                d = Dictionary.SetValueAtKey(d,"brep", Topology.BREPString(t))
+            graph_vertices[i] = Topology.SetDictionary(graph_vertices[i], d)
+        
+        graph_vertices = Vertex.Separate(graph_vertices, minDistance= minDistance, tolerance=tolerance)
+        # Build edges of Hasse diagram
+        graph_edges = []
+        for parent_type in sub_types[1:]:
+            for parent in topo_by_type[parent_type]:
+                parent_label = Dictionary.ValueAtKey(Topology.Dictionary(parent), vertexLabelKey)
+                children = Topology.SubTopologies(parent, subTopologyType=types[types.index(parent_type) - 1])
+                for child in children:
+                    child_label = Dictionary.ValueAtKey(Topology.Dictionary(child), vertexLabelKey)
+                    child_id = topo_ids.get(child_label)
+                    parent_id = topo_ids.get(parent_label)
+                    if child_id is not None and parent_id is not None:
+                        if topDown:
+                            sv = graph_vertices[parent_id]
+                            ev = graph_vertices[child_id]
+                        else:
+                            sv = graph_vertices[child_id]
+                            ev = graph_vertices[parent_id]
+                        graph_edges.append(Edge.ByVertices(sv, ev, tolerance=tolerance, silent=silent))
+
+        return_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        return_graph = Graph.SetDictionary(return_graph, Topology.Dictionary(topology))
+        return return_graph
 
     @staticmethod
     def IncomingEdges(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
