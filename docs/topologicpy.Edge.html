@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Edge module &mdash; topologicpy 0.8.41 documentation</title>
+  <title>topologicpy.Edge module &mdash; topologicpy 0.8.42 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.41
+                0.8.42
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -165,7 +165,7 @@
 <td><p>Creates a straight edge representing the normal to the input face.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOffset2D" title="topologicpy.Edge.Edge.ByOffset2D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOffset2D</span></code></a>(edge[, offset, tolerance])</p></td>
-<td><p>Creates and edge offset from the input edge.</p></td>
+<td><p>Creates an edge offset from the input edge in the XY plane.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ByOriginDirectionLength" title="topologicpy.Edge.Edge.ByOriginDirectionLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByOriginDirectionLength</span></code></a>([origin, direction, ...])</p></td>
 <td><p>Creates a straight edge from the input parameters.</p></td>
@@ -361,25 +361,7 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.ByOffset2D">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOffset2D</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.ByOffset2D" title="Permalink to this definition"></a></dt>
-<dd><p>Creates and edge offset from the input edge. This method is intended for edges that are in the XY plane.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
-</dd>
-<dt><strong>offset</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset. The default is 1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Edge</dt><dd><p>An edge offset from the input edge.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Creates an edge offset from the input edge in the XY plane.</p>
 </dd></dl>
 
 <dl class="py method">
