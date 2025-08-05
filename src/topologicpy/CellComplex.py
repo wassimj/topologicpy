@@ -104,7 +104,7 @@ class CellComplex():
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -990,7 +990,7 @@ class CellComplex():
             return None
 
     @staticmethod
-    def RemoveCollinearEdges(cellComplex, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def RemoveCollinearEdges(cellComplex, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = True):
         """
         Removes any collinear edges in the input cellComplex.
 
@@ -1002,6 +1002,8 @@ class CellComplex():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+                If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -1023,7 +1025,7 @@ class CellComplex():
         cells = CellComplex.Cells(cellComplex)
         clean_cells = []
         for cell in cells:
-            clean_cells.append(Cell.RemoveCollinearEdges(cell, angTolerance=angTolerance, tolerance=tolerance))
+            clean_cells.append(Cell.RemoveCollinearEdges(cell, angTolerance=angTolerance, tolerance=tolerance, silent=silent))
         return CellComplex.ByCells(clean_cells, tolerance=tolerance)
     
     @staticmethod
@@ -1098,6 +1100,8 @@ class CellComplex():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------

@@ -2762,7 +2762,7 @@ class Cell():
         return prism
 
     @staticmethod
-    def RemoveCollinearEdges(cell, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def RemoveCollinearEdges(cell, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes any collinear edges in the input cell.
 
@@ -2774,6 +2774,8 @@ class Cell():
             The desired angular tolerance. The default is 0.1.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -2786,15 +2788,16 @@ class Cell():
         import inspect
         
         if not Topology.IsInstance(cell, "Cell"):
-            print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
+            if not silent:
+                print("Cell.RemoveCollinearEdges - Error: The input cell parameter is not a valid cell. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         faces = Cell.Faces(cell)
         clean_faces = []
         for face in faces:
-            clean_faces.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
+            clean_faces.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance, silent=silent))
         return Cell.ByFaces(clean_faces, tolerance=tolerance)
     
     @staticmethod

@@ -465,15 +465,13 @@ class Wire():
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Vector import Vector
-        from topologicpy.Helper import Helper
+        from topologicpy.Helper import Helper        
 
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.ByOffset - Error: The input wire parameter is not a valid wire. Returning None.")
                 return None
         
-        #temp_face = Face.ByWire(wire)
-        #original_area = Face.Area(temp_face)
         if reverse == True:
             fac = -1
         else:
@@ -481,13 +479,10 @@ class Wire():
         origin = Topology.Centroid(wire)
         temp_vertices = [Topology.Vertices(wire)[0], Topology.Vertices(wire)[1], Topology.Centroid(wire)]
         temp_face = Face.ByWire(Wire.ByVertices(temp_vertices, close=True, tolerance=tolerance), silent=silent)
-        temp_normal = Face.Normal(temp_face)
-        flat_wire = Topology.Flatten(wire, direction=temp_normal, origin=origin)
         normal = Face.Normal(temp_face)
         flat_wire = Topology.Flatten(wire, direction=normal, origin=origin)
         original_edges = Topology.Edges(wire)
         edges = Topology.Edges(flat_wire)
-        original_edges = Topology.Edges(wire)
         offsets = []
         offset_edges = []
         final_vertices = []
@@ -495,9 +490,7 @@ class Wire():
         edge_dictionaries = []
         for i, edge in enumerate(edges):
             d = Topology.Dictionary(original_edges[i])
-            d_offset = Dictionary.ValueAtKey(d, offsetKey)
-            if d_offset == None:
-                d_offset = offset
+            d_offset = Dictionary.ValueAtKey(d, key=offsetKey, defaultValue=offset)
             d_offset = d_offset*fac
             offsets.append(d_offset)
             offset_edge = Edge.ByOffset2D(edge, d_offset)
@@ -595,23 +588,7 @@ class Wire():
                 v1 = Topology.SetDictionary(v1, Topology.Dictionary(v_a), silent=True)
             if bisectors == True:
                 bisectors_list.append(Edge.ByVertices(v_a, v1))
-        
-        
-        # wire_edges = []
-        # for i in range(len(final_vertices)-1):
-        #     v1 = final_vertices[i]
-        #     v2 = final_vertices[i+1]
-        #     w_e = Edge.ByVertices(v1,v2)
-        #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
-        #     wire_edges.append(w_e)
-        # if Wire.IsClosed(wire):
-        #     v1 = final_vertices[-1]
-        #     v2 = final_vertices[0]
-        #     #w_e = Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides = True)
-        #     wire_edges.append(w_e)
-        
         return_wire = Wire.ByVertices(final_vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=silent)
-        #wire_edges = Topology.Edges(wire_edges)
         wire_edges = [Edge.SetLength(w_e, Edge.Length(w_e)+(2*epsilon), bothSides=True) for w_e in Topology.Edges(return_wire)]
         return_wire_edges = Topology.Edges(return_wire)
         if transferDictionaries == True:
@@ -651,7 +628,6 @@ class Wire():
                     print("Wire.ByOffset - Warning: The resulting wire is non-manifold, please check your offsets.")
                     print("Wire.ByOffset - Warning: Pursuing a workaround, but it might take longer to complete.")
                 
-                #cycles = Wire.Cycles(return_wire, maxVertices = len(final_vertices))
                 temp_wire = Topology.SelfMerge(Cluster.ByTopologies(wire_edges))
                 cycles = Wire.Cycles(temp_wire, maxVertices = len(final_vertices))
                 if len(cycles) > 0:
@@ -679,7 +655,6 @@ class Wire():
                     return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, Topology.Vertices(return_wire), tranVertices=True, tolerance=tolerance, numWorkers=numWorkers)
                     return_cycle = Topology.TransferDictionariesBySelectors(return_cycle, sel_edges, tranEdges=True, tolerance=tolerance, numWorkers=numWorkers)
                     return_wire = return_cycle
-
         return_wire = Topology.Unflatten(return_wire, direction=normal, origin=origin)
         if transferDictionaries == True:
             return_wire = Topology.SetDictionary(return_wire, Topology.Dictionary(wire), silent=True)
@@ -3728,7 +3703,7 @@ class Wire():
             return None
 
         new_wire = cleanup(wire)
-        wires = Wire.Split(new_wire) if not Wire.IsManifold(new_wire) else [new_wire]
+        wires = Wire.Split(new_wire) if not Wire.IsManifold(new_wire, silent=silent) else [new_wire]
 
         processed_wires = [remove_collinear_vertices(w) for w in wires]
 

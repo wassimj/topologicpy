@@ -6992,16 +6992,16 @@ class Topology():
             return_topology = Wire.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "Face"):
-            return_topology = Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return_topology = Face.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "Shell"):
-            return_topology = Shell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return_topology = Shell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "Cell"):
-            return_topology = Cell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return_topology = Cell.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "CellComplex"):
-            return_topology = CellComplex.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance)
+            return_topology = CellComplex.RemoveCollinearEdges(topology, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
             return return_topology
         elif Topology.IsInstance(topology, "Cluster"):
             topologies = []
@@ -7009,7 +7009,7 @@ class Topology():
             topologies += Cluster.FreeEdges(topology)
             faces = Topology.Faces(topology)
             for face in faces:
-                topologies.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance))
+                topologies.append(Face.RemoveCollinearEdges(face, angTolerance=angTolerance, tolerance=tolerance, silent=silent))
             return_topology = Topology.SelfMerge(Cluster.ByTopologies(topologies), tolerance=tolerance)
         return return_topology
 

@@ -827,7 +827,7 @@ class Face():
         return Face.ByVertices(vertices, tolerance=tolerance)
 
     @staticmethod
-    def ByWire(wire, tolerance: float = 0.0001, silent=False):
+    def ByWire(wire, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a face from the input closed wire.
 
@@ -942,14 +942,21 @@ class Face():
         """
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
+        import inspect
 
         if not Topology.IsInstance(externalBoundary, "Wire"):
             if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a valid topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not Wire.IsClosed(externalBoundary):
             if not silent:
                 print("Face.ByWires - Error: The input externalBoundary parameter is not a closed topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         ibList = [x for x in internalBoundaries if Topology.IsInstance(x, "Wire") and Wire.IsClosed(x)]
         face = None
@@ -958,6 +965,9 @@ class Face():
         except:
             if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             face = None
         return face
 
@@ -3404,7 +3414,7 @@ class Face():
             return None
         eb = Wire.RemoveCollinearEdges(Face.Wire(face), angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         ib = [Wire.RemoveCollinearEdges(w, angTolerance=angTolerance, tolerance=tolerance, silent=silent) for w in Face.InternalBoundaries(face)]
-        return Face.ByWires(eb, ib)
+        return Face.ByWires(eb, ib, silent=silent)
     
     @staticmethod
     def RHS(origin= None, width: float = 1.0, length: float = 1.0, thickness: float = 0.25, outerFillet: float = 0.0, innerFillet: float = 0.0, sides: int = 16, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
@@ -3602,35 +3612,51 @@ class Face():
         return Face.RHS(origin = origin, width = size, length = size, thickness = thickness, outerFillet = outerFillet, innerFillet = innerFillet, sides = sides, direction = direction, placement = placement, tolerance = tolerance, silent = silent)
     
     @staticmethod
-    def Simplify(face, tolerance=0.0001):
+    def Simplify(face, method='douglas-peucker', tolerance=0.0001, silent=False):
         """
-        Simplifies the input face edges based on the Douglas Peucker algorthim. See https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm
-        Part of this code was contributed by gaoxipeng. See https://github.com/wassimj/topologicpy/issues/35
+        Simplifies the input wire edges based on the selected algorithm: Douglas-Peucker or Visvalingam–Whyatt.
         
         Parameters
         ----------
         face : topologic_core.Face
             The input face.
+        method : str, optional
+            The simplification method to use: 'douglas-peucker' or 'visvalingam-whyatt' or 'reumann-witkam'.
+            The default is 'douglas-peucker'.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
-
+            The desired tolerance.
+            If using the douglas-peucker method, edge lengths shorter than this amount will be removed.
+            If using the visvalingam-whyatt method, triangulare areas less than is amount will be removed.
+            If using the Reumann-Witkam method, the tolerance specifies the maximum perpendicular distance allowed
+            between any point and the current line segment; points falling within this distance are discarded.
+            The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+            
         Returns
         -------
         topologic_core.Face
             The simplified face.
+        
         """
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(face, "Face"):
-            print("Face.Simplify - Error: The input face parameter is not a valid face. Returning None.")
+            if not silent:
+                print("Face.Simplify - Error: The input face parameter is not a valid face. Returning None.")
             return None
         
         eb = Face.ExternalBoundary(face)
-        eb = Wire.Simplify(eb, tolerance=tolerance)
+        eb = Wire.Simplify(eb, method=method, tolerance=tolerance, silent=silent)
         ibList = Face.InternalBoundaries(face)
-        ibList = [Wire.Simplify(ib) for ib in ibList]
-        return Face.ByWires(eb, ibList)
+        ibList = [Wire.Simplify(ib, method=method, tolerance=tolerance, silent=silent) for ib in ibList]
+        return_face = Face.ByWires(eb, ibList, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(return_face, "Face"):
+            if not silent:
+                print("Face.Simplify - Error: Could not simplify the face. Returning the original input face.")
+            return face
+        return return_face
     
     @staticmethod
     def Skeleton(face, boundary: bool = True, tolerance: float = 0.001):

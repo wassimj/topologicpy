@@ -743,15 +743,16 @@ class Plotly:
             labels = []
             for j, elements_cluster in enumerate(elements_clusters):
                 d_color = color
+                d_arrowSize = arrowSize
+                d_dash = dash
                 d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
-                        d_color = Dictionary.ValueAtKey(d, key=colorKey) or color
-                        d_color = Color.AnyToHex(d_color)
+                        d_color = Color.AnyToHex(Dictionary.ValueAtKey(d, key=colorKey, default=color))
                     if not dashKey == None:
-                        d_dash = Dictionary.ValueAtKey(d, key=dashKey) or dash
+                        d_dash = Dictionary.ValueAtKey(d, key=dashKey, default=dash)
                     if not arrowSizeKey == None:
-                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey) or arrowSize
+                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey, default=arrowSize)
                     if not labelKey == None:
                         labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
                     if not widthKey == None:
@@ -787,7 +788,7 @@ class Plotly:
                     marker_width = width[0]*0.25
                 else:
                     marker_width = width*0.25
-                if dash:
+                if d_dash:
                     dot = "dot"
                 else:
                     dot = "solid"

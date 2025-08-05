@@ -256,31 +256,63 @@ class Edge():
     @staticmethod
     def ByOffset2D(edge, offset: float = 1.0, tolerance: float = 0.0001):
         """
-        Creates and edge offset from the input edge. This method is intended for edges that are in the XY plane.
-
-        Parameters
-        ----------
-        edge : topologic_core.Edge
-            The input edge.
-        offset : float , optional
-            The desired offset. The default is 1.
-        tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Edge
-            An edge offset from the input edge.
-
+        Creates an edge offset from the input edge in the XY plane.
         """
         from topologicpy.Topology import Topology
-        from topologicpy.Vector import Vector
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
 
-        n = Edge.Normal(edge)
-        n = Vector.Normalize(n)
-        n = Vector.Multiply(n, offset, tolerance=tolerance)
-        edge = Topology.Translate(edge, n[0], n[1], n[2])
-        return edge
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+
+        x1, y1, _ = Vertex.Coordinates(sv)
+        x2, y2, _ = Vertex.Coordinates(ev)
+
+        dx = x2 - x1
+        dy = y2 - y1
+        length = (dx**2 + dy**2)**0.5
+        if length < tolerance:
+            return None
+
+        # Perpendicular vector to the left
+        nx = -dy / length
+        ny = dx / length
+
+        ox = nx * offset
+        oy = ny * offset
+
+        new_sv = Vertex.ByCoordinates(x1 + ox, y1 + oy, 0)
+        new_ev = Vertex.ByCoordinates(x2 + ox, y2 + oy, 0)
+
+        return Edge.ByVertices(new_sv, new_ev)
+    # @staticmethod
+    # def ByOffset2D(edge, offset: float = 1.0, tolerance: float = 0.0001):
+    #     """
+    #     Creates and edge offset from the input edge. This method is intended for edges that are in the XY plane.
+
+    #     Parameters
+    #     ----------
+    #     edge : topologic_core.Edge
+    #         The input edge.
+    #     offset : float , optional
+    #         The desired offset. The default is 1.
+    #     tolerance : float , optional
+    #         The desired tolerance. The default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Edge
+    #         An edge offset from the input edge.
+
+    #     """
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Vector import Vector
+
+    #     n = Edge.Normal(edge)
+    #     n = Vector.Normalize(n)
+    #     n = Vector.Multiply(n, offset, tolerance=tolerance)
+    #     edge = Topology.Translate(edge, n[0], n[1], n[2])
+    #     return edge
 
     @staticmethod
     def ByStartVertexEndVertex(vertexA, vertexB, tolerance: float = 0.0001, silent=False):
