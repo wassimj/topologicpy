@@ -944,7 +944,7 @@ class Topology():
 
 
     @staticmethod
-    def Inherit(targets, sources, keys: list = None, tolerance: float = 0.0001, silent: bool = False):
+    def Inherit(targets, sources, keys: list = None, exclusive: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Transfers dictionary information from topologiesB to topologiesA based on co-location of internal vertices.
 
@@ -954,6 +954,8 @@ class Topology():
             The list of target topologies that will inherit the dictionaries.
         sources : list of topologic_core. Topology
             The list of source topologies from which to inherit dictionary information.
+        exclusive : bool , optional
+            If set to True, a target will inherit information only from the first eligible source. The default is True.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
         silent : bool , optional
@@ -983,17 +985,19 @@ class Topology():
             iv = Topology.InternalVertex(top_a, tolerance=tolerance, silent=silent)
             d_a = Topology.Dictionary(top_a, silent=silent)
             found = False
-            for top_b in topologies_b:
+            for j, top_b in enumerate(topologies_b):
                 if Vertex.IsInternal(iv, top_b, tolerance=tolerance, silent=silent):
                     d_b = Topology.Dictionary(top_b)
                     if isinstance(keys, list):
                         values = Dictionary.ValuesAtKeys(d_b, keys, silent=silent)
-                        d_c = Dictionary.SetValuesAtKeys(d_a, keys, values, silent=silent)
+                        d_c = Dictionary.ByKeysValues(keys, values)
+                        d_a = Dictionary.ByMergedDictionaries(d_a, d_c, silent=silent)
                     else:
-                        d_c = Dictionary.SetValuesAtKeys(d_a, Dictionary.Keys(d_b, silent=silent), Dictionary.Values(d_b, silent=silent))
-                    top_a = Topology.SetDictionary(top_a, d_c, silent=silent)
+                        d_a = Dictionary.ByMergedDictionaries(d_a, d_b, silent=silent)
+                    top_a = Topology.SetDictionary(top_a, d_a, silent=silent)
                     found = True
-                    break
+                    if exclusive:
+                        break
             if found == False:
                 if not silent:
                     print("Topology.Inherit - Warning: Could not find a source for target number: "+str(i+1)+". Consider increasing the tolerance value.")
@@ -4432,9 +4436,9 @@ class Topology():
             if not silent:
                 print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
-        if Topology.IsInstance(topology, "Topology"):
-            # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
-            topology = Topology.ByJSONString(Topology.JSONString([topology]))[0]
+        # if Topology.IsInstance(topology, "Topology"):
+        #     # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
+        #     topology = Topology.ByJSONString(Topology.JSONString([topology]))[0]
         axes = axes.lower()
         x_flag = "x" in axes
         y_flag = "y" in axes

@@ -19,6 +19,40 @@ import math
 
 class Color:
 
+    def AddHex(*colors):
+        """
+        Adds the input hexadecimal color codes channel-wise, clipping each channel to a max of 255.
+
+        Parameters
+        ----------
+        colors : *list or str
+            The input list of hexadecimal colors.
+
+        Returns
+        -------
+        str
+            The resulting hex color after addition (e.g., "#FF88FF").
+        """
+        import inspect
+        from topologicpy.Helper import Helper
+        
+        def add(hex1, hex2):
+            # Remove "#" if present
+            hex1 = hex1.lstrip('#')
+            hex2 = hex2.lstrip('#')
+
+            # Convert to RGB integers
+            r1, g1, b1 = int(hex1[0:2], 16), int(hex1[2:4], 16), int(hex1[4:6], 16)
+            r2, g2, b2 = int(hex2[0:2], 16), int(hex2[2:4], 16), int(hex2[4:6], 16)
+
+            # Add each channel, clip to 255
+            r = min(r1 + r2, 255)
+            g = min(g1 + g2, 255)
+            b = min(b1 + b2, 255)
+
+            # Return as hex string
+            return f"#{r:02X}{g:02X}{b:02X}"
+
     @staticmethod
     def AnyToHex(color):
         """
@@ -35,6 +69,8 @@ class Color:
             A hexadecimal color string in the format '#RRGGBB'.
         """
         return_hex = None
+        if isinstance(color, list) and all(isinstance(item, str) for item in color):
+            return Color.Average(color)
         if isinstance(color, list):
             if len(color) == 4: # Probably CMYK
                 if all(0 <= x <= 1 for x in color[:4]):
@@ -56,7 +92,7 @@ class Color:
         return return_hex.upper()
     
     @staticmethod
-    def AverageHex(*colors, silent: bool = False):
+    def Average(*colors, silent: bool = False):
         """
         Averages the input list of hex colors.
 
