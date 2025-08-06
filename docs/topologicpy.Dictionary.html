@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.42 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.43 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.42
+                0.8.43
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -191,16 +191,16 @@ values.append(value)</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.AdjacencyDictionary" title="topologicpy.Dictionary.Dictionary.AdjacencyDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyDictionary</span></code></a>(topology[, ...])</p></td>
 <td><p>Returns the adjacency dictionary of the input Shell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByKeyValue" title="topologicpy.Dictionary.Dictionary.ByKeyValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByKeyValue</span></code></a>(key, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByKeyValue" title="topologicpy.Dictionary.Dictionary.ByKeyValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByKeyValue</span></code></a>(key, value[, silent])</p></td>
 <td><p>Creates a Dictionary from the input key and the input value.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByKeysValues" title="topologicpy.Dictionary.Dictionary.ByKeysValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByKeysValues</span></code></a>(keys, values)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByKeysValues" title="topologicpy.Dictionary.Dictionary.ByKeysValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByKeysValues</span></code></a>(keys, values[, silent])</p></td>
 <td><p>Creates a Dictionary from the input list of keys and the input list of values.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByMergedDictionaries" title="topologicpy.Dictionary.Dictionary.ByMergedDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByMergedDictionaries</span></code></a>(*dictionaries[, silent])</p></td>
 <td><p>Creates a dictionary by merging the list of input dictionaries.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPythonDictionary</span></code></a>(pythonDictionary)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPythonDictionary</span></code></a>(pythonDictionary[, silent])</p></td>
 <td><p>Creates a dictionary equivalent to the input python dictionary.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Copy" title="topologicpy.Dictionary.Dictionary.Copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code></a>(dictionary[, silent])</p></td>
@@ -209,29 +209,32 @@ values.append(value)</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Filter" title="topologicpy.Dictionary.Dictionary.Filter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Filter</span></code></a>(elements, dictionaries[, searchType, ...])</p></td>
 <td><p>Filters the input list of dictionaries based on the input parameters.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Keys" title="topologicpy.Dictionary.Dictionary.Keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keys</span></code></a>(dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Keys" title="topologicpy.Dictionary.Dictionary.Keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Keys</span></code></a>(dictionary[, silent])</p></td>
 <td><p>Returns the keys of the input dictionary.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ListAttributeValues" title="topologicpy.Dictionary.Dictionary.ListAttributeValues"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListAttributeValues</span></code></a>(listAttribute)</p></td>
 <td><p>Returns the list of values embedded in the input listAttribute.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary[, silent])</p></td>
 <td><p>Returns the input dictionary as a python dictionary</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key[, silent])</p></td>
 <td><p>Removes the key (and its associated value) from the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value[, silent])</p></td>
 <td><p>Creates a key/value pair in the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="topologicpy.Dictionary.Dictionary.SetValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValuesAtKeys</span></code></a>(dictionary, keys, values)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="topologicpy.Dictionary.Dictionary.SetValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValuesAtKeys</span></code></a>(dictionary, keys, values[, ...])</p></td>
 <td><p>Creates a key/value pair in the input dictionary.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValueAtKey" title="topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueAtKey</span></code></a>(dictionary, key[, defaultValue, ...])</p></td>
 <td><p>Returns the value of the input key in the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary[, silent])</p></td>
 <td><p>Returns the list of values in the input dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValuesAtKeys" title="topologicpy.Dictionary.Dictionary.ValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValuesAtKeys</span></code></a>(dictionary, keys[, ...])</p></td>
+<td><p>Returns the list of values of the input list of keys in the input dictionary.</p></td>
 </tr>
 </tbody>
 </table>
@@ -270,7 +273,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ByKeyValue">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByKeyValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByKeyValue" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByKeyValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByKeyValue" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a Dictionary from the input key and the input value.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -278,6 +281,8 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dt><strong>key</strong><span class="classifier">str</span></dt><dd><p>The string representing the key of the value in the dictionary.</p>
 </dd>
 <dt><strong>value</strong><span class="classifier">int, float, str, or list</span></dt><dd><p>A value corresponding to the input key. A value can be an integer, a float, a string, or a list.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -292,7 +297,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ByKeysValues">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByKeysValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByKeysValues" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByKeysValues</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByKeysValues" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a Dictionary from the input list of keys and the input list of values.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -300,6 +305,8 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dt><strong>keys</strong><span class="classifier">list</span></dt><dd><p>A list of strings representing the keys of the dictionary.</p>
 </dd>
 <dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -336,12 +343,14 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ByPythonDictionary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByPythonDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pythonDictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByPythonDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pythonDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a dictionary equivalent to the input python dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>pythonDictionary</strong><span class="classifier">dict</span></dt><dd><p>The input python dictionary.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -408,12 +417,14 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.Keys">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.Keys" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Keys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.Keys" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the keys of the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -448,12 +459,14 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.PythonDictionary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PythonDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">PythonDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the input dictionary as a python dictionary</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -468,7 +481,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.RemoveKey">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RemoveKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="Permalink to this definition"></a></dt>
 <dd><p>Removes the key (and its associated value) from the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -476,6 +489,8 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
 </dd>
 <dt><strong>key</strong><span class="classifier">string</span></dt><dd><p>The input key.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -490,7 +505,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.SetValueAtKey">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetValueAtKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetValueAtKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">value</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a key/value pair in the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -500,6 +515,8 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dt><strong>key</strong><span class="classifier">string</span></dt><dd><p>The input key.</p>
 </dd>
 <dt><strong>value</strong><span class="classifier">int , float , string, or list</span></dt><dd><p>The value associated with the key.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -514,7 +531,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.SetValuesAtKeys">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetValuesAtKeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetValuesAtKeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a key/value pair in the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -522,6 +539,8 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dt><strong>keys</strong><span class="classifier">list</span></dt><dd><p>A list of strings representing the keys of the dictionary.</p>
 </dd>
 <dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -562,18 +581,46 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.Values">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.Values" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Values</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.Values" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the list of values in the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
 </dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of values found in the input dictionary.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ValuesAtKeys">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValuesAtKeys</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ValuesAtKeys" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of values of the input list of keys in the input dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
+</dd>
+<dt><strong>keys</strong><span class="classifier">list</span></dt><dd><p>The input list of keys.</p>
+</dd>
+<dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The default value to return if the key or value are not found. The default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of values found at the input list of keys in the input dictionary.</p>
 </dd>
 </dl>
 </dd>
