@@ -75,6 +75,7 @@ class Dictionary():
             The adjacency dictionary.
         """
         from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
@@ -116,7 +117,7 @@ class Dictionary():
             if d == None:
                 d = Dictionary.ByKeyValue(labelKey, value)
             else:
-                d = Dictionary.SetValueAtKey(d, labelKey, value)
+                d = Dictionary.SetValueAtKey(d, labelKey, value, silent=silent)
             subtopology = Topology.SetDictionary(subtopology, d)
             labels.append(value)
         all_subtopologies = Helper.Sort(all_subtopologies, labels)
@@ -129,7 +130,7 @@ class Dictionary():
             adjacent_topologies = Topology.AdjacentTopologies(subtopology, hostTopology=topology, topologyType=subTopologyType)
             temp_list = []
             for adj_topology in adjacent_topologies:
-                adj_label = Dictionary.ValueAtKey(Topology.Dictionary(adj_topology), labelKey)
+                adj_label = Dictionary.ValueAtKey(Topology.Dictionary(adj_topology), labelKey, silent=silent)
                 adj_index = labels.index(adj_label)
                 if includeWeights == True:
                     if weightKey == None:
@@ -141,7 +142,7 @@ class Dictionary():
                     elif "area" in weightKey.lower():
                         shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
                         faces = shared_topologies.get("faces", [])
-                        weight = sum([Edge.Length(edge, mantissa=mantissa) for face in faces])
+                        weight = sum([Face.Area(face, mantissa=mantissa) for face in faces])
                     else:
                         shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
                         vertices = shared_topologies.get("vertices", [])
@@ -166,7 +167,7 @@ class Dictionary():
         return adjDict
     
     @staticmethod
-    def ByKeyValue(key, value):
+    def ByKeyValue(key, value, silent: bool = False):
         """
         Creates a Dictionary from the input key and the input value.
 
@@ -176,6 +177,8 @@ class Dictionary():
             The string representing the key of the value in the dictionary.
         value : int, float, str, or list
             A value corresponding to the input key. A value can be an integer, a float, a string, or a list.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -184,9 +187,10 @@ class Dictionary():
 
         """
         if not isinstance(key, str):
-            print("Dictionary.ByKeyValue - Error: The input key is not a valid string. Returning None.")
+            if not silent:
+                print("Dictionary.ByKeyValue - Error: The input key is not a valid string. Returning None.")
             return None
-        return Dictionary.ByKeysValues([key], [value])
+        return Dictionary.ByKeysValues([key], [value], silent=silent)
     
     
     @staticmethod
@@ -234,7 +238,7 @@ class Dictionary():
         return attr
     
     @staticmethod
-    def ByKeysValues(keys, values):
+    def ByKeysValues(keys, values, silent: bool = False):
         """
         Creates a Dictionary from the input list of keys and the input list of values.
 
@@ -244,6 +248,8 @@ class Dictionary():
             A list of strings representing the keys of the dictionary.
         values : list
             A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -253,13 +259,16 @@ class Dictionary():
         """
         
         if not isinstance(keys, list):
-            print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
             return None
         if not isinstance(values, list):
-            print("Dictionary.ByKeysValues - Error: The input values parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Dictionary.ByKeysValues - Error: The input values parameter is not a valid list. Returning None.")
             return None
         if len(keys) != len(values):
-            print("Dictionary.ByKeysValues - Error: The input keys and values parameters are not of equal length. Returning None.")
+            if not silent:
+                print("Dictionary.ByKeysValues - Error: The input keys and values parameters are not of equal length. Returning None.")
             return None
         stl_keys = []
         stl_values = []
@@ -440,7 +449,7 @@ class Dictionary():
     '''
 
     @staticmethod
-    def ByPythonDictionary(pythonDictionary):
+    def ByPythonDictionary(pythonDictionary, silent: bool = False):
         """
         Creates a dictionary equivalent to the input python dictionary.
 
@@ -448,6 +457,8 @@ class Dictionary():
         ----------
         pythonDictionary : dict
             The input python dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -456,7 +467,8 @@ class Dictionary():
 
         """
         if not isinstance(pythonDictionary, dict):
-            print("Dictionary.ByPythonDictionary - Error: The input dictionary parameter is not a valid python dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.ByPythonDictionary - Error: The input dictionary parameter is not a valid python dictionary. Returning None.")
             return None
         keys = list(pythonDictionary.keys())
         values = []
@@ -480,7 +492,8 @@ class Dictionary():
             A copy of the input dictionary.
 
         """
-        if not isinstance(dictionary, topologic_core.Dictionary):
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(dictionary, "dictionary"):
             if not silent:
                 print("Dictionary.Copy - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
             return None
@@ -580,7 +593,7 @@ class Dictionary():
         return {"filteredDictionaries": filteredDictionaries, "otherDictionaries": otherDictionaries, "filteredIndices": filteredIndices, "otherIndices": otherIndices, "filteredElements": filteredElements, "otherElements": otherElements}
 
     @staticmethod
-    def Keys(dictionary):
+    def Keys(dictionary, silent: bool = False):
         """
         Returns the keys of the input dictionary.
 
@@ -588,6 +601,8 @@ class Dictionary():
         ----------
         dictionary : topologic_core.Dictionary or dict
             The input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -596,8 +611,14 @@ class Dictionary():
 
         """
         from topologicpy.Topology import Topology
+        import inspect
+
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
-            print("Dictionary.Keys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.Keys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if isinstance(dictionary, dict):
             return list(dictionary.keys())
@@ -627,7 +648,7 @@ class Dictionary():
         return returnList    
        
     @staticmethod
-    def PythonDictionary(dictionary):
+    def PythonDictionary(dictionary, silent: bool = False):
         """
         Returns the input dictionary as a python dictionary
 
@@ -635,6 +656,8 @@ class Dictionary():
         ----------
         dictionary : topologic_core.Dictionary
             The input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -645,10 +668,12 @@ class Dictionary():
         from topologicpy.Topology import Topology
 
         if isinstance(dictionary, dict):
-            print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning that dictionary.")
+            if not silent:
+                print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning that dictionary.")
             return dictionary
         if not Topology.IsInstance(dictionary, "Dictionary"):
-            print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic dictionary. Returning None.")
             return None
         keys = dictionary.Keys()
         pythonDict = {}
@@ -674,7 +699,7 @@ class Dictionary():
         return pythonDict
 
     @staticmethod
-    def RemoveKey(dictionary, key):
+    def RemoveKey(dictionary, key, silent: bool = False):
         """
         Removes the key (and its associated value) from the input dictionary.
 
@@ -684,6 +709,8 @@ class Dictionary():
             The input dictionary.
         key : string
             The input key.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -713,10 +740,12 @@ class Dictionary():
             return Dictionary.ByKeysValues(new_keys, new_values)
         
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
-            print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(key, str):
-            print("Dictionary.RemoveKey - Error: The input key parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Dictionary.RemoveKey - Error: The input key parameter is not a valid string. Returning None.")
             return None
 
         if isinstance(dictionary, dict):
@@ -727,7 +756,7 @@ class Dictionary():
             return None
         
     @staticmethod
-    def SetValueAtKey(dictionary, key, value):
+    def SetValueAtKey(dictionary, key, value, silent: bool = False):
         """
         Creates a key/value pair in the input dictionary.
 
@@ -739,6 +768,8 @@ class Dictionary():
             The input key.
         value : int , float , string, or list
             The value associated with the key.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -768,10 +799,12 @@ class Dictionary():
             return d
         
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
-            print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(key, str):
-            print("Dictionary.SetValueAtKey - Error: The input key parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Dictionary.SetValueAtKey - Error: The input key parameter is not a valid string. Returning None.")
             return None
         if value == None:
             value = "__NONE__"
@@ -783,7 +816,7 @@ class Dictionary():
             return None
     
     @staticmethod
-    def SetValuesAtKeys(dictionary, keys, values):
+    def SetValuesAtKeys(dictionary, keys, values, silent: bool = False):
         """
         Creates a key/value pair in the input dictionary.
 
@@ -793,6 +826,8 @@ class Dictionary():
             A list of strings representing the keys of the dictionary.
         values : list
             A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -802,17 +837,20 @@ class Dictionary():
         """
         
         if not isinstance(keys, list):
-            print("Dictionary.SetValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Dictionary.SetValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
             return None
         if not isinstance(values, list):
-            print("Dictionary.SetValuesAtkeys - Error: The input values parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Dictionary.SetValuesAtkeys - Error: The input values parameter is not a valid list. Returning None.")
             return None
         if len(keys) != len(values):
-            print("Dictionary.SetValuesAtKeys - Error: The input keys and values parameters are not of equal length. Returning None.")
+            if not silent:
+                print("Dictionary.SetValuesAtKeys - Error: The input keys and values parameters are not of equal length. Returning None.")
             return None
         
         for i, key in enumerate(keys):
-            dictionary = Dictionary.SetValueAtKey(dictionary, key, values[i])
+            dictionary = Dictionary.SetValueAtKey(dictionary, key, values[i], silent=silent)
         return dictionary
     
     @staticmethod
@@ -930,18 +968,9 @@ class Dictionary():
         elif isinstance(dictionary, dict):
             return dictionary.get(key, defaultValue)
         return defaultValue
-        
-        # if isinstance(dictionary, dict):
-        #     attr = dictionary[key]
-        # elif Topology.IsInstance(dictionary, "Dictionary"):
-        #     attr = dictionary.ValueAtKey(key)
-        # else:
-        #     return None
-        # return_value = Dictionary._ConvertAttribute(attr)
-        # return return_value
-        
+    
     @staticmethod
-    def Values(dictionary):
+    def Values(dictionary, silent: bool = False):
         """
         Returns the list of values in the input dictionary.
 
@@ -949,6 +978,8 @@ class Dictionary():
         ----------
         dictionary : topologic_core.Dictionary or dict
             The input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -959,7 +990,8 @@ class Dictionary():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
-            print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            if not silent:
+                print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         keys = None
         if isinstance(dictionary, dict):
@@ -981,5 +1013,48 @@ class Dictionary():
             returnList.append(attr)
         return returnList
     
+    @staticmethod
+    def ValuesAtKeys(dictionary, keys, defaultValue=None, silent: bool = False):
+        """
+        Returns the list of values of the input list of keys in the input dictionary.
+
+        Parameters
+        ----------
+        dictionary : topologic_core.Dictionary or dict
+            The input dictionary.
+        keys : list
+            The input list of keys.
+        defaultValue : any , optional
+            The default value to return if the key or value are not found. The default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        list
+            The list of values found at the input list of keys in the input dictionary.
+
+        """
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+            return None
+        if not isinstance(keys, list):
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
+            return None
+        
+        local_keys = [k for k in keys if isinstance(k, str)]
+        if len(local_keys) == 0:
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input keys parameter does not contain valid key strings. Returning None.")
+            return None
+        if not len(local_keys) == len(keys):
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input keys parameter contains invalid values. Returning None.")
+            return None
+        return [Dictionary.ValueAtKey(dictionary, key, defaultValue=defaultValue, silent=silent) for key in keys]
     
 

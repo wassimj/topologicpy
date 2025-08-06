@@ -941,7 +941,64 @@ class Topology():
             return Cluster.ByTopologies(return_list)
         else:
             return None
+
+
+    @staticmethod
+    def Inherit(targets, sources, keys: list = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Transfers dictionary information from topologiesB to topologiesA based on co-location of internal vertices.
+
+        Parameters
+        ----------
+        targets : list of topologic_core.Topology
+            The list of target topologies that will inherit the dictionaries.
+        sources : list of topologic_core. Topology
+            The list of source topologies from which to inherit dictionary information.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
         
+        Returns
+        -------
+        list
+            The list of target topologies with the dictionary information inherited from the list of source topologies.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+
+        topologies_a = [a for a in targets if Topology.IsInstance(a, "Topology")]
+        if len(topologies_a) == 0:
+            if not silent:
+                print("Topology.Inherit - Error: The list of targets does not contain any valid topologies. Returning None.")
+            return None
+        topologies_b = [b for b in sources if Topology.IsInstance(b, "Topology")]
+        if len(topologies_b) == 0:
+            if not silent:
+                print("Topology.Inherit - Error: The list of sources does not contain any valid topologies. Returning None.")
+            return None
+        for i, top_a in enumerate(topologies_a):
+            iv = Topology.InternalVertex(top_a, tolerance=tolerance, silent=silent)
+            d_a = Topology.Dictionary(top_a, silent=silent)
+            found = False
+            for top_b in topologies_b:
+                if Vertex.IsInternal(iv, top_b, tolerance=tolerance, silent=silent):
+                    d_b = Topology.Dictionary(top_b)
+                    if isinstance(keys, list):
+                        values = Dictionary.ValuesAtKeys(d_b, keys, silent=silent)
+                        d_c = Dictionary.SetValuesAtKeys(d_a, keys, values, silent=silent)
+                    else:
+                        d_c = Dictionary.SetValuesAtKeys(d_a, Dictionary.Keys(d_b, silent=silent), Dictionary.Values(d_b, silent=silent))
+                    top_a = Topology.SetDictionary(top_a, d_c, silent=silent)
+                    found = True
+                    break
+            if found == False:
+                if not silent:
+                    print("Topology.Inherit - Warning: Could not find a source for target number: "+str(i+1)+". Consider increasing the tolerance value.")
+        return targets
+
     @staticmethod
     def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001):
         """
@@ -4144,7 +4201,7 @@ class Topology():
         return round(max_distance, mantissa)
     
     @staticmethod
-    def Dictionary(topology):
+    def Dictionary(topology, silent: bool = False):
         """
         Returns the dictionary of the input topology
 
@@ -4152,6 +4209,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -4160,12 +4219,13 @@ class Topology():
 
         """
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
-            print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         return topology.GetDictionary()
     
     @staticmethod
-    def Dimensionality(topology):
+    def Dimensionality(topology, silent: bool = False):
         """
         Returns the dimensionality of the input topology
 
@@ -4173,6 +4233,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -4181,12 +4243,13 @@ class Topology():
 
         """
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Dimensionality - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Dimensionality - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         return topology.Dimensionality()
     
     @staticmethod
-    def Divide(topologyA, topologyB, transferDictionary=False, addNestingDepth=False):
+    def Divide(topologyA, topologyB, transferDictionary=False, addNestingDepth=False, silent: bool = False):
         """
         Divides the input topology by the input tool and places the results in the contents of the input topology.
 
@@ -4200,6 +4263,8 @@ class Topology():
             If set to True the dictionary of the input topology is transferred to the divided topologies.
         addNestingDepth : bool , optional
             If set to True the nesting depth of the division is added to the dictionaries of the divided topologies.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
@@ -4210,13 +4275,15 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(topologyA, "Topology"):
-            print("Topology.Divide - Error: the input topologyA parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Divide - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(topologyB, "Topology"):
-            print("Topology.Divide - Error: the input topologyB parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Divide - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
         try:
-            _ = topologyA.Divide(topologyB, False) # Don't transfer dictionaries just yet
+            _ = topologyA.Divide(topologyB, False) # Don't transfer dictionaries just yet # Hook to Core
         except:
             raise Exception("TopologyDivide - Error: Divide operation failed.")
         nestingDepth = "1"
@@ -4251,7 +4318,7 @@ class Topology():
                 _ = Topology.SetDictionary(topologyA, parentDictionary)
                 values[keys.index("nesting_depth")] = nestingDepth+"_"+str(i+1)
                 d = Dictionary.ByKeysValues(keys, values)
-                _ = contents[i].SetDictionary(d)
+                _ = contents[i].SetDictionary(d) # Hook to Core
             if addNestingDepth and  not transferDictionary:
                 parentDictionary = Topology.Dictionary(topologyA)
                 if parentDictionary != None:
@@ -4275,7 +4342,7 @@ class Topology():
         return topologyA
     
     @staticmethod
-    def Explode(topology, origin=None, scale: float = 1.25, typeFilter: str = None, axes: str = "xyz", transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def Explode(topology, origin=None, scale: float = 1.25, typeFilter: str = None, axes: str = "xyz", transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Explodes the input topology. See https://en.wikipedia.org/wiki/Exploded-view_drawing.
 
@@ -4297,6 +4364,8 @@ class Topology():
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
         
         Returns
         -------
@@ -4348,17 +4417,20 @@ class Topology():
             return typeFilter
         
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Explode - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Explode - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.CenterOfMass(topology)
         if not typeFilter:
             typeFilter = getTypeFilter(topology)
         if not isinstance(typeFilter, str):
-            print("Topology.Explode - Error: the input typeFilter parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.Explode - Error: the input typeFilter parameter is not a valid string. Returning None.")
             return None
         if not isinstance(axes, str):
-            print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
         if Topology.IsInstance(topology, "Topology"):
             # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
@@ -4368,7 +4440,8 @@ class Topology():
         y_flag = "y" in axes
         z_flag = "z" in axes
         if not x_flag and not y_flag and not z_flag:
-            print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
 
         topologies = []
@@ -4405,7 +4478,7 @@ class Topology():
             if transferDictionaries == True:
                 newTopology = Topology.SetDictionary(newTopology, Topology.Dictionary(aTopology))
             newTopologies.append(newTopology)
-        return Cluster.ByTopologies(newTopologies)
+        return Cluster.ByTopologies(newTopologies, silent=silent)
     
     @staticmethod
     def ExportToBIM(topologies, path : str, overwrite: bool = False, version: str = "1.0.0",
