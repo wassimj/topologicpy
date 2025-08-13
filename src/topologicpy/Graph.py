@@ -4576,6 +4576,56 @@ class Graph:
         return topologic.Graph.ByVerticesEdges(vertices, edges) # Hook to Core
     
     @staticmethod
+    def Choice(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "choice", colorKey="ch_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+        """
+            This is an alias method for Graph.BetweenessCentrality. Returns the choice (Betweeness Centrality) of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        method : str , optional
+            The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
+        weightKey : str , optional
+            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+            the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+        normalize : bool , optional
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+        nxCompatible : bool , optional
+            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
+        key : str , optional
+            The desired dictionary key under which to store the betweenness centrality score. The default is "betweenness_centrality".
+        colorKey : str , optional
+            The desired dictionary key under which to store the betweenness centrality color. The default is "betweenness_centrality".
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+
+        Returns
+        -------
+        list
+            The choice (betweenness centrality) of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+        """
+        return Graph.BetweennessCentrality(graph,
+                                           method=method,
+                                           weightKey=weightKey,
+                                           normalize=normalize,
+                                           nxCompatible=nxCompatible,
+                                           key=key,
+                                           colorKey=colorKey,
+                                           colorScale=colorScale,
+                                           mantissa=mantissa,
+                                           tolerance=tolerance,
+                                           silent=silent)
+
+
+    @staticmethod
     def ChromaticNumber(graph, maxColors: int = 3, silent: bool = False):
         """
         Returns the chromatic number of the input graph. See https://en.wikipedia.org/wiki/Graph_coloring.
@@ -5427,94 +5477,159 @@ class Graph:
         graph = Graph.RemoveVertex(graph,ev, tolerance=tolerance)
         return graph
     
+
     @staticmethod
-    def ClosenessCentrality(graph, weightKey="length", normalize: bool = False, nxCompatible: bool = True, key: str = "closeness_centrality", colorKey="cc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    def ClosenessCentrality(
+        graph,
+        weightKey: str = "length",
+        normalize: bool = False,
+        nxCompatible: bool = True,
+        key: str = "closeness_centrality",
+        colorKey: str = "cc_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-            Returns the closeness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+        Returns the closeness centrality of the input graph. The order of the returned
+        list matches the order of Graph.Vertices(graph).
+        See: https://en.wikipedia.org/wiki/Closeness_centrality
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
         weightKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
-            the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
-            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+            If specified, this edge attribute will be used as the distance weight when
+            computing shortest paths. If set to a name containing "Length" or "Distance",
+            it will be mapped to "length".
+            Note: Graph.NetworkXGraph automatically provides a "length" attribute on all edges.
         normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+            If True, the returned values are rescaled to [0, 1]. Otherwise raw values
+            from NetworkX (optionally using the improved formula) are returned.
         nxCompatible : bool , optional
-            If set to True, use networkX to scale by the fraction of nodes reachable. This gives the Wasserman and Faust improved formula.
-            For single component graphs it is the same as the original formula.
+            If True, use NetworkX's wf_improved scaling (Wasserman and Faust).
+            For single-component graphs it matches the original formula.
         key : str , optional
-            The desired dictionary key under which to store the closeness centrality score. The default is "closeness_centrality".
+            The dictionary key under which to store the closeness centrality score.
         colorKey : str , optional
-            The desired dictionary key under which to store the closeness centrality color. The default is "cc_color".
+            The dictionary key under which to store a color derived from the score.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+            Plotly color scale name (e.g., "viridis", "plasma").
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         tolerance : float , optional
             The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
 
         Returns
         -------
-        list
-            The closeness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
-
+        list[float]
+            Closeness centrality values for vertices in the same order as Graph.Vertices(graph).
         """
         import warnings
-
         try:
             import networkx as nx
-        except:
-            print("Graph.ClosenessCentrality - Information: Installing required networkx library.")
-            try:
-                os.system("pip install networkx")
-            except:
-                os.system("pip install networkx --user")
-            try:
-                import networkx as nx
-                print("Graph.ClosenessCentrality - Infromation: networkx library installed correctly.")
-            except:
-                warnings.warn("Graph.ClosenessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
-                return None
-        
+        except Exception as e:
+            warnings.warn(
+                f"Graph.ClosenessCentrality - Error: networkx is required but not installed ({e}). Returning None."
+            )
+            return None
+
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
+        # Topology.IsInstance is case-insensitive, so a single call is sufficient.
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.ClosenessCentrality - Error: The input graph is not a valid graph. Returning None.")
+                print("Graph.ClosenessCentrality - Error: The input is not a valid Graph. Returning None.")
             return None
-        
-        if weightKey:
-            if "len" in weightKey.lower() or "dis" in weightKey.lower():
-                weightKey = "length"
-        nx_graph = Graph.NetworkXGraph(graph)
         vertices = Graph.Vertices(graph)
-        vertices_dict = nx.closeness_centrality(nx_graph, distance=weightKey, wf_improved=nxCompatible)
-        values = [round(v, mantissa) for v in list(vertices_dict.values())]
-        if normalize == True:
-            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
-                values = [round(v, mantissa) for v in Helper.Normalize(values)]
-            else:
-                values = Helper.Normalize(values)
-            min_value = 0
-            max_value = 1
-        else:
-            min_value = min(values)
-            max_value = max(values)
+        if len(vertices) == 0:
+            if not silent:
+                print("Graph.ClosenessCentrality - Warning: Graph has no vertices. Returning [].")
+            return []
 
-        for i, value in enumerate(values):
+        # Normalize the weight key semantics
+        distance_attr = None
+        if isinstance(weightKey, str) and weightKey:
+            if ("len" in weightKey.lower()) or ("dis" in weightKey.lower()):
+                weightKey = "length"
+            distance_attr = weightKey
+
+        # Build the NX graph
+        nx_graph = Graph.NetworkXGraph(graph)
+
+        # Graph.NetworkXGraph automatically adds "length" to all edges.
+        # So if distance_attr == "length", we trust it and skip per-edge checks.
+        if distance_attr and distance_attr != "length":
+            # For any non-"length" custom attribute, verify presence; else fall back unweighted.
+            attr_missing = any(
+                (distance_attr not in data) or (data[distance_attr] is None)
+                for _, _, data in nx_graph.edges(data=True)
+            )
+            if attr_missing:
+                if not silent:
+                    print("Graph.ClosenessCentrality - Warning: The specified edge attribute was not found on all edges. Falling back to unweighted closeness.")
+                distance_arg = None
+            else:
+                distance_arg = distance_attr
+        else:
+            # Use "length" directly or unweighted if distance_attr is falsy.
+            distance_arg = distance_attr if distance_attr else None
+
+        # Compute centrality (dict keyed by NetworkX nodes)
+        try:
+            cc_dict = nx.closeness_centrality(nx_graph, distance=distance_arg, wf_improved=nxCompatible)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.ClosenessCentrality - Error: NetworkX failed to compute centrality ({e}). Returning None.")
+            return None
+
+        # NetworkX vertex ids are in the same numerice order as the list of vertices starting from 0.
+        raw_values = []
+        for i, v in enumerate(vertices):
+            try:
+                raw_values.append(float(cc_dict.get(i, 0.0)))
+            except Exception:
+                if not silent:
+                    print(f,"Graph.ClosenessCentrality - Warning: Could not retrieve score for vertex {i}. Assigning a Zero (0).")
+                raw_values.append(0.0)
+
+        # Optional normalization ONLY once, then rounding once at the end
+        values_for_return = Helper.Normalize(raw_values) if normalize else raw_values
+
+        # Values for color scaling should reflect the displayed numbers
+        color_values = values_for_return
+
+        # Single rounding at the end for return values
+        if mantissa is not None and mantissa >= 0:
+            values_for_return = [round(v, mantissa) for v in values_for_return]
+
+        # Prepare color mapping range, guarding equal-range case
+        if color_values:
+            min_value = min(color_values)
+            max_value = max(color_values)
+        else:
+            min_value, max_value = 0.0, 1.0
+
+        if abs(max_value - min_value) < tolerance:
+            max_value = min_value + tolerance
+
+        # Annotate vertices with score and color
+        for i, value in enumerate(color_values):
             d = Topology.Dictionary(vertices[i])
-            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            color_hex = Color.AnyToHex(
+                Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale)
+            )
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [values_for_return[i], color_hex])
             vertices[i] = Topology.SetDictionary(vertices[i], d)
 
-        return values
+        return values_for_return
 
     @staticmethod
     def Community(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -5684,7 +5799,7 @@ class Graph:
     @staticmethod
     def Connectivity(graph, vertices=None, weightKey: str = None, normalize: bool = False, key: str = "connectivity", colorKey: str = "cn_color", colorScale="Viridis", mantissa: int = 6, tolerance = 0.0001, silent = False):
         """
-        Return the connectivity measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the connectivity of all the vertices in the input graph is computed. See https://www.spacesyntax.online/term/connectivity/.
+        This is an alias method for Graph.DegreeCentrality. Return the connectivity measure of the input list of vertices within the input graph. The order of the returned list is the same as the order of the input list of vertices. If no vertices are specified, the connectivity of all the vertices in the input graph is computed. See https://www.spacesyntax.online/term/connectivity/.
 
         Parameters
         ----------
@@ -5718,38 +5833,17 @@ class Graph:
             The connectivity score of the input list of vertices within the input graph. The values are in the range 0 to 1 if normalized.
 
         """
-        
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
-        from topologicpy.Color import Color
+        return Graph.DegreeCentrality(graph=graph,
+                                      vertices=vertices,
+                                      weightKey=weightKey,
+                                      normalize=normalize,
+                                      key="connectivity",
+                                      colorKey=colorKey,
+                                      colorScale=colorScale,
+                                      mantissa=mantissa,
+                                      tolerance=tolerance,
+                                      silent=silent)
 
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.Connectivity - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        if vertices == None:
-            vertices = Graph.Vertices(graph)
-        values = [Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) for v in vertices]
-        values = [round(v, mantissa) for v in values]
-        if normalize == True:
-            if mantissa > 0:
-                values = [round(v, mantissa) for v in Helper.Normalize(values)]
-            else:
-                values = Helper.Normalize(values)
-            min_value = 0
-            max_value = 1
-        else:
-            min_value = min(values)
-            max_value = max(values)
-
-        for i, value in enumerate(values):
-            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
-            d = Topology.Dictionary(vertices[i])
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
-            v = Topology.SetDictionary(vertices[i], d)
-        return values
-    
     @staticmethod
     def ContainsEdge(graph, edge, tolerance=0.0001):
         """
@@ -5884,7 +5978,7 @@ class Graph:
                          tolerance: float = 0.001,
                          silent: bool = False):
         """
-            Returns the degree centrality of the input graph. The order of the returned list is the same as the order of vertices. See https://en.wikipedia.org/wiki/Degree_centrality.
+        Returns the degree centrality of the input graph. The order of the returned list is the same as the order of vertices. See https://en.wikipedia.org/wiki/Degree_centrality.
 
         Parameters
         ----------
@@ -5911,30 +6005,42 @@ class Graph:
         Returns
         -------
         list
-            The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The degree centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
 
         """
         
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Color import Color
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
+        from topologicpy.Color import Color
 
-        if not Topology.IsInstance(graph, "graph"):
+        if not Topology.IsInstance(graph, "Graph"):
             if not silent:
                 print("Graph.DegreeCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
+        if vertices == None:
+            vertices = Graph.Vertices(graph)
+        values = [Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) for v in vertices]
+        if normalize == True:
+            if mantissa > 0:
+                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            else:
+                values = Helper.Normalize(values)
+            min_value = 0
+            max_value = 1
+        else:
+            min_value = min(values)
+            max_value = max(values)
+        
+        if abs(max_value - min_value) < tolerance:
+            max_value = min_value + tolerance
 
-        return Graph.Connectivity(graph,
-                                  vertices=vertices,
-                                  weightKey=weightKey,
-                                  normalize=normalize,
-                                  key=key,
-                                  colorKey=colorKey,
-                                  colorScale=colorScale,
-                                  mantissa=mantissa,
-                                  tolerance=tolerance,
-                                  silent=silent)
+        for i, value in enumerate(values):
+            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Topology.Dictionary(vertices[i])
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+            v = Topology.SetDictionary(vertices[i], d)
+        return values
     
     @staticmethod
     def DegreeMatrix(graph):
@@ -9441,6 +9547,70 @@ class Graph:
             sv = Edge.StartVertex(edge)
             incoming_vertices.append(Graph.NearestVertex(graph, sv))
         return incoming_vertices
+    
+    @staticmethod
+    def Integration(
+        graph,
+        weightKey: str = "length",
+        normalize: bool = False,
+        nxCompatible: bool = True,
+        key: str = "integration",
+        colorKey: str = "in_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        This is an alias method for Graph.ClosenessCentrality. Returns the integration (closeness centrality) of the input graph. The order of the returned
+        list matches the order of Graph.Vertices(graph).
+        See: https://en.wikipedia.org/wiki/Closeness_centrality
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        weightKey : str , optional
+            If specified, this edge attribute will be used as the distance weight when
+            computing shortest paths. If set to a name containing "Length" or "Distance",
+            it will be mapped to "length".
+            Note: Graph.NetworkXGraph automatically provides a "length" attribute on all edges.
+        normalize : bool , optional
+            If True, the returned values are rescaled to [0, 1]. Otherwise raw values
+            from NetworkX (optionally using the improved formula) are returned.
+        nxCompatible : bool , optional
+            If True, use NetworkX's wf_improved scaling (Wasserman and Faust).
+            For single-component graphs it matches the original formula.
+        key : str , optional
+            The dictionary key under which to store the closeness centrality score.
+        colorKey : str , optional
+            The dictionary key under which to store a color derived from the score.
+        colorScale : str , optional
+            Plotly color scale name (e.g., "viridis", "plasma").
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        tolerance : float , optional
+            The desired tolerance. The default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. The default is False.
+
+        Returns
+        -------
+        list[float]
+            Integration (closeness centrality) values for vertices in the same order as Graph.Vertices(graph).
+        """
+        return Graph.ClosenessCentrality(
+        graph,
+        weightKey=weightKey,
+        normalize=normalize,
+        nxCompatible=nxCompatible,
+        key=key,
+        colorKey=colorKey,
+        colorScale=colorScale,
+        mantissa=mantissa,
+        tolerance=tolerance,
+        silent=silent
+        )
     
     @staticmethod
     def IsBipartite(graph, tolerance=0.0001):
