@@ -4800,7 +4800,8 @@ class Graph:
                 weightJaccard: float = 0.0,
                 vertexIDKey: str = "id",
                 edgeWeightKey: str = None,
-                iterations: int = 3,
+                vertexKey: str = None,
+                iterations: int = 2,
                 mantissa: int = 6,
                 silent: bool = False):
         """
@@ -4847,8 +4848,10 @@ class Graph:
             The dictionary key under which to find the weight of the edge for weighted graphs.
             If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
             The default is None which means all edges are treated as if they have a weight of 1.
+        vertexKey: str , optional
+            The vertex key to use for the Weifeiler-Lehman initial labels. The default is None which means it will use vertex degree as an initial label.
         iterations : int , optional
-            The desired number of Weisfeiler-Lehman iterations. Default is 3.
+            The desired number of Weisfeiler-Lehman kernel iterations. Default is 2.
         mantissa : int , optional
             The desired length of the mantissa. The default is 6.
         silent : bool , optional
@@ -4935,7 +4938,7 @@ class Graph:
                 If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
                 The default is None which means all edges are treated as if they have a weight of 1.
             iterations : int , optional
-                The desired number of Weisfeiler-Lehman iterations. Default is 3.
+                The desired number of Weisfeiler-Lehman iterations. Default is 2.
             mantissa : int , optional
                 The desired length of the mantissa. The default is 6.
 
@@ -5062,39 +5065,9 @@ class Graph:
 
             return round((vertex_score + edge_score) / 2, mantissa)
 
-        def weisfeiler_lehman_fingerprint(graph, iterations=3):
-            vertices = Graph.Vertices(graph)
-            labels = {}
-
-            for v in vertices:
-                d = Topology.Dictionary(v)
-                label = str(Dictionary.ValueAtKey(d, "label")) if d and Dictionary.ValueAtKey(d, "label") else "0"
-                labels[v] = label
-
-            all_label_counts = Counter()
-
-            for _ in range(iterations):
-                new_labels = {}
-                for v in vertices:
-                    neighbors = Graph.AdjacentVertices(graph, v)
-                    neighbor_labels = sorted(labels.get(n, "0") for n in neighbors)
-                    long_label = labels[v] + "_" + "_".join(neighbor_labels)
-                    hashed_label = hashlib.md5(long_label.encode()).hexdigest()
-                    new_labels[v] = hashed_label
-                    all_label_counts[hashed_label] += 1
-                labels = new_labels
-
-            return all_label_counts
-
-        def weisfeiler_lehman_similarity(graphA, graphB, iterations=3, mantissa=6):
-            f1 = weisfeiler_lehman_fingerprint(graphA, iterations)
-            f2 = weisfeiler_lehman_fingerprint(graphB, iterations)
-
-            common_labels = set(f1.keys()) & set(f2.keys())
-            score = sum(min(f1[label], f2[label]) for label in common_labels)
-            norm = max(sum(f1.values()), sum(f2.values()), 1)
-
-            return round(score / norm, mantissa)
+        def weisfeiler_lehman_similarity(graphA, graphB, key=None, iterations=3, mantissa=6):
+            score = Graph.WLKernel(graphA, graphB, key=key, iterations=iterations, normalize=True, mantissa=mantissa)
+            return score
         
         if not Topology.IsInstance(graphA, "graph"):
             if not silent:
@@ -5130,7 +5103,7 @@ class Graph:
         jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
         pagerank_score = pagerank_similarity(graphA, graphB, mantissa=mantissa) if weightPageRank else 0
         structure_score = structure_similarity(graphA, graphB, mantissa=mantissa) if weightStructure else 0
-        weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, iterations, mantissa=mantissa) if weightWeisfeilerLehman else 0
+        weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, key=vertexKey, iterations=iterations, mantissa=mantissa) if weightWeisfeilerLehman else 0
 
         weighted_sum = (
             accessibility_centrality_score * weightAccessibilityCentrality +
@@ -13919,6 +13892,171 @@ class Graph:
         diffBA = Graph.Difference(graphB, graphA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
         return Graph.Union(diffAB, diffBA, vertexKeys=vertexKeys, useCentroid=useCentroid, tolerance=tolerance, silent=True)
     
+    @staticmethod
+    def WLFeatures(graph, key: str = None, iterations: int = 2, silent: bool = False):
+        """
+        Returns a Weisfeiler-Lehman subtree features for a Graph. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The  input graph.
+        key : str , optional
+            The vertex key to use as an initial label. The default is None which means the vertex degree is used instead.
+        iterations : int , optional
+            The desired number of WL iterations. (non-negative int). The default is 2.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        dict
+            {feature_id: count} where feature_id is an int representing a WL label.
+        """
+
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from collections import defaultdict
+        
+        def _neighbors_map(graph):
+            """
+            Returns:
+                vertices: list of vertex objects in a stable order
+                vidx: dict mapping vertex -> index
+                nbrs: dict index -> sorted list of neighbor indices
+            """
+            vertices = Graph.Vertices(graph)
+            vidx = {v: i for i, v in enumerate(vertices)}
+            nbrs = {}
+            for v in vertices:
+                i = vidx[v]
+                adj = Graph.AdjacentVertices(graph, v) or []
+                nbrs[i] = sorted(vidx[a] for a in adj if a in vidx and a is not v)
+            return vertices, vidx, nbrs
+
+        def _initial_labels(graph, key=None, default="degree"):
+            """
+            Returns an integer label per node index using either vertex dictionary labels
+            or a structural default (degree or constant).
+            """
+            vertices, vidx, nbrs = _neighbors_map(graph)
+            labels = {}
+            if key:
+                found_any = False
+                tmp = {}
+                for v in vertices:
+                    d = Topology.Dictionary(v)
+                    val = Dictionary.ValueAtKey(d, key)
+                    if val is not None:
+                        found_any = True
+                    tmp[vidx[v]] = str(val) if val is not None else None
+                if found_any:
+                    # fill missing with a sentinel
+                    for i, val in tmp.items():
+                        labels[i] = val if val is not None else "__MISSING__"
+                else:
+                    # fall back to structural init if no labels exist
+                    if default == "degree":
+                        labels = {i: str(len(nbrs[i])) for i in nbrs}
+                    else:
+                        labels = {i: "0" for i in nbrs}
+            else: # Add a vertex degree information.
+                _ = Graph.DegreeCentrality(graph, key="_dc_")
+                return _initial_labels(graph, key="_dc_")
+            return labels, nbrs
+
+        def _canonize_string_labels(str_labels):
+            """
+            Deterministically map arbitrary strings to dense integer ids.
+            Returns:
+                int_labels: dict node_index -> int label
+                vocab: dict string_label -> int id
+            """
+            # stable order by string to keep mapping deterministic across runs
+            unique = sorted(set(str_labels.values()))
+            vocab = {lab: k for k, lab in enumerate(unique)}
+            return {i: vocab[s] for i, s in str_labels.items()}, vocab
+
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.WLFeatures - Error: The input graph parameter is not a valid topologic graph. Returning None.")
+            return None
+        
+        str_labels, nbrs = _initial_labels(graph, key=key)
+        features = defaultdict(int)
+
+        # iteration 0
+        labels, _ = _canonize_string_labels(str_labels)
+        for lab in labels.values():
+            features[lab] += 1
+
+        # WL iterations
+        cur = labels
+        for _ in range(iterations):
+            new_str = {}
+            for i in nbrs:
+                neigh = [cur[j] for j in nbrs[i]]
+                neigh.sort()
+                new_str[i] = f"{cur[i]}|{','.join(map(str, neigh))}"
+            cur, _ = _canonize_string_labels(new_str)
+            for lab in cur.values():
+                features[lab] += 1
+
+        return dict(features)
+
+    @staticmethod
+    def WLKernel(graphA, graphB, key: str = None, iterations: int = 2, normalize: bool = True, mantissa: int = 6, silent: bool = False):
+        """
+        Returns a cosine-normalized Weisfeiler-Lehman kernel between two graphs. See https://en.wikipedia.org/wiki/Weisfeiler_Leman_graph_isomorphism_test
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        key : str , optional
+            The vertex key to use as an initial label. The default is None which means the vertex degree is used instead.
+        iterations : int , optional
+            The desired number of WL iterations. (non-negative int). The default is 2.
+        normalize : bool , optional
+            if set to True, the returned value is normalized between 0 and 1. The default is True.
+        mantissa : int , optional
+            The desired length of the mantissa. The default is 6.
+        
+        Returns
+        -------
+        float
+            The cosine-normalized Weisfeiler-Lehman kernel
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graphA, "Graph"):
+            if not silent:
+                print("Graph.WLFeatures - Error: The input graphA parameter is not a valid topologic graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "Graph"):
+            if not silent:
+                print("Graph.WLFeatures - Error: The input graphB parameter is not a valid topologic graph. Returning None.")
+            return None
+        f1 = Graph.WLFeatures(graphA, key=key, iterations=iterations)
+        f2 = Graph.WLFeatures(graphB, key=key, iterations=iterations)
+
+        # dot product
+        keys = set(f1) | set(f2)
+        dot = sum(f1.get(k, 0) * f2.get(k, 0) for k in keys)
+
+        if not normalize:
+            return round(float(dot), mantissa)
+
+        import math
+        n1 = math.sqrt(sum(v*v for v in f1.values()))
+        n2 = math.sqrt(sum(v*v for v in f2.values()))
+        return_value = float(dot) / (n1 * n2) if n1 > 0 and n2 > 0 else 0.0
+        return round(return_value, mantissa)
+
     @staticmethod
     def XOR(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.001, silent: bool = False):
         """
