@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Neo4j module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Neo4j module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -179,30 +179,30 @@
 <dt><strong>neo4jGraph</strong><span class="classifier">neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver</span></dt><dd><p>The input neo4j driver.</p>
 </dd>
 <dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned vertices are labelled according to the dictionary values stored under this key.
-If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is “label”.</p>
+If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. Default is “label”.</p>
 </dd>
-<dt><strong>defaultVertexLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex label to use if no value is found under the vertexLabelKey. The default is “NODE”.</p>
+<dt><strong>defaultVertexLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex label to use if no value is found under the vertexLabelKey. Default is “NODE”.</p>
 </dd>
 <dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned vertices are categorized according to the dictionary values stored under this key. The dfefault is “category”.</p>
 </dd>
-<dt><strong>defaultVertexCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex category to use if no value is found under the vertexCategoryKey. The default is None.</p>
+<dt><strong>defaultVertexCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex category to use if no value is found under the vertexCategoryKey. Default is None.</p>
 </dd>
 <dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned edges are labelled according to the dictionary values stored under this key.
-If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. The default is “label”.</p>
+If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. Default is “label”.</p>
 </dd>
-<dt><strong>defaultEdgeLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge label to use if no value is found under the edgeLabelKey. The default is “CONNECTED_TO”.</p>
+<dt><strong>defaultEdgeLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge label to use if no value is found under the edgeLabelKey. Default is “CONNECTED_TO”.</p>
 </dd>
 <dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned edges are categorized according to the dictionary values stored under this key. The dfefault is “category”.</p>
 </dd>
-<dt><strong>defaultEdgeCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge category to use if no value is found under the edgeCategoryKey. The default is None.</p>
+<dt><strong>defaultEdgeCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge category to use if no value is found under the edgeCategoryKey. Default is None.</p>
 </dd>
 <dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the output Neo4j graph is forced to be bidirectional. The defaul is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -250,21 +250,21 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 </dd>
 <dt><strong>cypher</strong><span class="classifier">str, optional</span></dt><dd><p>If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.</p>
 </dd>
-<dt><strong>xMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. The default is -0.5.</p>
+<dt><strong>xMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s X coordinate. Default is -0.5.</p>
 </dd>
-<dt><strong>yMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. The default is -0.5.</p>
+<dt><strong>yMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Y coordinate. Default is -0.5.</p>
 </dd>
-<dt><strong>zMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. The default is -0.5.</p>
+<dt><strong>zMin</strong><span class="classifier">float, optional</span></dt><dd><p>The desired minimum value to assign for a vertex’s Z coordinate. Default is -0.5.</p>
 </dd>
-<dt><strong>xMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. The default is 0.5.</p>
+<dt><strong>xMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s X coordinate. Default is 0.5.</p>
 </dd>
-<dt><strong>yMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. The default is 0.5.</p>
+<dt><strong>yMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Y coordinate. Default is 0.5.</p>
 </dd>
-<dt><strong>zMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. The default is 0.5.</p>
+<dt><strong>zMax</strong><span class="classifier">float, optional</span></dt><dd><p>The desired maximum value to assign for a vertex’s Z coordinate. Default is 0.5.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, no warnings or error messages are displayed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -308,17 +308,17 @@ If the edgeLabelKey does not exist, it will be created and the edges are labelle
 </dd>
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input topologic graph.</p>
 </dd>
-<dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex’s label value. The default is None which means the vertex gets the name ‘TopologicGraphVertex’.</p>
+<dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex’s label value. Default is None which means the vertex gets the name ‘TopologicGraphVertex’.</p>
 </dd>
-<dt><strong>relationshipKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge’s relationship value. The default is None which means the edge gets the relationship type ‘Connected To’.</p>
+<dt><strong>relationshipKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge’s relationship value. Default is None which means the edge gets the relationship type ‘Connected To’.</p>
 </dd>
 <dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges in the neo4j graph are set to be bi-drectional.</p>
 </dd>
 <dt><strong>deleteAll</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, all previous entities are deleted before adding the new entities.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

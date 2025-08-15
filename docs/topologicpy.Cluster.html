@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -255,9 +255,9 @@ The method will attempt to evaluate Y based on the specified xRange.
 xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.</p>
 </div></blockquote>
 </dd>
-<dt><strong>xString</strong><span class="classifier">str , optional</span></dt><dd><p>The string used to represent the X independent variable. The default is ‘X’ (uppercase).</p>
+<dt><strong>xString</strong><span class="classifier">str , optional</span></dt><dd><p>The string used to represent the X independent variable. Default is ‘X’ (uppercase).</p>
 </dd>
-<dt><strong>yString</strong><span class="classifier">str , optional</span></dt><dd><p>The string used to represent the Y independent variable. The default is ‘Y’ (uppercase).</p>
+<dt><strong>yString</strong><span class="classifier">str , optional</span></dt><dd><p>The string used to represent the Y independent variable. Default is ‘Y’ (uppercase).</p>
 </dd>
 <dt><strong>Returns:</strong></dt><dd><dl class="simple">
 <dt>topologic_core.Cluster</dt><dd><p>The created cluster of vertices.</p>
@@ -278,9 +278,9 @@ xRange and yRange CANNOT be None or unspecified at the same time. One or the oth
 <dd class="field-odd"><dl class="simple">
 <dt><strong>*topologies</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>One or more instances of <cite>topologic_core.Topology</cite> to be processed.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -343,14 +343,14 @@ xRange and yRange CANNOT be None or unspecified at the same time. One or the oth
 <dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies to be clustered.</p>
 </dd>
 <dt><strong>selectors</strong><span class="classifier">list , optional</span></dt><dd><p>If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-If set to None, the list of topologies is expected to be a list of vertices. The default is None.</p>
+If set to None, the list of topologies is expected to be a list of vertices. Default is None.</p>
 </dd>
 <dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-make sure the keys list includes “X”, “Y”, and/or “Z” (case insensitive). The default is [“x”, “y”, “z”]</p>
+make sure the keys list includes “X”, “Y”, and/or “Z” (case insensitive). Default is [“x”, “y”, “z”]</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). The default is 0.5.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). Default is 0.5.</p>
 </dd>
-<dt><strong>minSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of points required to form a dense region (cluster). The default is 2.</p>
+<dt><strong>minSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of points required to form a dense region (cluster). Default is 2.</p>
 </dd>
 </dl>
 </dd>
@@ -412,7 +412,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -434,7 +434,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -456,7 +456,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -478,7 +478,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -500,7 +500,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -522,7 +522,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -544,7 +544,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -587,16 +587,16 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies. If this is not a list of topologic vertices then please provide a list of selectors</p>
 </dd>
 <dt><strong>selectors</strong><span class="classifier">list , optional</span></dt><dd><p>If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-If set to None, the list of topologies is expected to be a list of vertices. The default is None.</p>
+If set to None, the list of topologies is expected to be a list of vertices. Default is None.</p>
 </dd>
 <dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-make sure the keys list includes “X”, “Y”, and/or “Z” (case insensitive). The default is [“x”, “y”, “z”]</p>
+make sure the keys list includes “X”, “Y”, and/or “Z” (case insensitive). Default is [“x”, “y”, “z”]</p>
 </dd>
-<dt><strong>k</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of clusters. The default is 4.</p>
+<dt><strong>k</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of clusters. Default is 4.</p>
 </dd>
 <dt><strong>maxIterations</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of iterations for the clustering algorithm</p>
 </dd>
-<dt><strong>centroidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key under which to store the cluster’s centroid (this is not to be confused with the actual geometric centroid of the cluster). The default is “k_centroid”</p>
+<dt><strong>centroidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key under which to store the cluster’s centroid (this is not to be confused with the actual geometric centroid of the cluster). Default is “k_centroid”</p>
 </dd>
 </dl>
 </dd>
@@ -618,7 +618,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cells</strong><span class="classifier">list</span></dt><dd><p>The input list of cells.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -640,21 +640,21 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire , optional</span></dt><dd><p>The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the mystic rose. The default is 1.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the mystic rose. Default is 1.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the mystic rose. The default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the mystic rose. Default is 16.</p>
 </dd>
-<dt><strong>perimeter</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the perimeter edges are included in the output. The default is True.</p>
+<dt><strong>perimeter</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the perimeter edges are included in the output. Default is True.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the mystic rose. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the mystic rose. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the mystic rose. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the mystic rose. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -714,21 +714,21 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the tripod. The default is 1.0.</p>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the tripod. Default is 1.0.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radiues of the tripod. The default is 0.03</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radiues of the tripod. Default is 0.03</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the tripod. The default is 4.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the tripod. Default is 4.</p>
 </dd>
 <dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the colors of the axes.</p>
 </dd>
-<dt><strong>xColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the X axis. The default is “red”.</p>
+<dt><strong>xColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the X axis. Default is “red”.</p>
 </dd>
-<dt><strong>yColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Y axis. The default is “green”.</p>
+<dt><strong>yColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Y axis. Default is “green”.</p>
 </dd>
-<dt><strong>zColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Z axis. The default is “blue”.</p>
+<dt><strong>zColor</strong><span class="classifier">str , optional</span></dt><dd><p>The color to use for the Z axis. Default is “blue”.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to use for transforming the tripod. The default is None which means the tripod will be placed at the origin and will be axis-aligned.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to use for transforming the tripod. Default is None which means the tripod will be placed at the origin and will be axis-aligned.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Edge module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Edge module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -283,9 +283,9 @@ edge2 (Edge): The target 2D edge.</p>
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>bracket</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the returned angle is bracketed between 0 and 180. The default is False.</p>
+<dt><strong>bracket</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the returned angle is bracketed between 0 and 180. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -309,17 +309,17 @@ edge2 (Edge): The target 2D edge.</p>
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic Edge</span></dt><dd><p>The second topologic Edge.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the bisecting edge. The default is 1.0.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the bisecting edge. Default is 1.0.</p>
 </dd>
 <dt><strong>placement</strong><span class="classifier">int , optional</span></dt><dd><p>The desired placement of the bisecting edge.
 If set to 0, the bisecting edge centroid will be placed at the end vertex of the first edge.
 If set to 1, the bisecting edge start vertex will be placed at the end vertex of the first edge.
 If set to 2, the bisecting edge end vertex will be placed at the end vertex of the first edge.
-If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. The default is 0.</p>
+If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. Default is 0.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an Edge can be created. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an Edge can be created. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -341,11 +341,11 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. Default is None.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. Default is 1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -373,13 +373,13 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The origin (start vertex) of the edge.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The desired direction vector of the edge. The default is [0,0,1] (pointing up in the Z direction)</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The desired direction vector of the edge. Default is [0,0,1] (pointing up in the Z direction)</p>
 </dd>
-<dt><strong>length: float , optional</strong></dt><dd><p>The desired length of edge. The default is 1.0.</p>
+<dt><strong>length: float , optional</strong></dt><dd><p>The desired length of edge. Default is 1.0.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -403,9 +403,9 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 </dd>
 <dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex. This is considered the end vertex.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an Edge can be created. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an Edge can be created. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -427,9 +427,9 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices. The first item is considered the start vertex and the last item is considered the end vertex.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -451,7 +451,7 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance to decide if an edge can be created. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -475,9 +475,9 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to extend edgeA.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -499,7 +499,7 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -541,7 +541,7 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -566,15 +566,15 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. The default is 1.</p>
+<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. Default is 1.</p>
 </dd>
-<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be extended by half the distance at each end. The default is False.</p>
+<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be extended by half the distance at each end. Default is False.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. The default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -598,11 +598,11 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to extend edgeA.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -646,9 +646,9 @@ If set to any number other than 0, 1, or 2, the bisecting edge centroid will be 
 </dd>
 <dt><strong>edges</strong><span class="classifier">list</span></dt><dd><p>The input list of edges.</p>
 </dd>
-<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.</p>
+<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input edge is identical to an edge from the list. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input edge is identical to an edge from the list. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -673,9 +673,9 @@ The intersection vertex does not necessarily fall within the extents of either e
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -700,9 +700,9 @@ This code is based on a contribution by <a class="reference external" href="http
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -726,9 +726,9 @@ This code is based on a contribution by <a class="reference external" href="http
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -752,9 +752,9 @@ This code is based on a contribution by <a class="reference external" href="http
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -776,7 +776,7 @@ This code is based on a contribution by <a class="reference external" href="http
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -796,11 +796,11 @@ This code is based on a contribution by <a class="reference external" href="http
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. The default is None which results in the edge being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. The default is 1.0.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. Default is 1.0.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The desired direction (vector) of the edge. Default is [1,0,0] (along the X-axis).</p>
 </dd>
 <dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The desired placement of the edge. The options are:
 1. “center” which places the center of the edge at the origin.
@@ -808,7 +808,7 @@ This code is based on a contribution by <a class="reference external" href="http
 3. “end” which places the end of the edge at the origin.
 The default is “center”. It is case insensitive.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -829,7 +829,7 @@ The default is “center”. It is case insensitive.</p>
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-by the angle value around the axis defined by the input edge. The default is 0.0.</p>
+by the angle value around the axis defined by the input edge. Default is 0.0.</p>
 </dd>
 </dl>
 </dd>
@@ -851,19 +851,19 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the normal edge. The default is 1.0.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the normal edge. Default is 1.0.</p>
 </dd>
 <dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The desired u parameter placement of the normal edge. A value of 0.0 places the normal edge
 at the start vertex of the input edge, a value of 0.5 places the normal edge
 at the midpoint of the input edge, and a value of 1.0 places the normal edge
-at the end vertex of the input edge. The default is 0.5</p>
+at the end vertex of the input edge. Default is 0.5</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-by the angle value around the axis defined by the input edge. The default is 0.0.</p>
+by the angle value around the axis defined by the input edge. Default is 0.0.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -885,11 +885,11 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>useEndVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.</p>
+<dt><strong>useEndVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -913,9 +913,9 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 </dd>
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -937,9 +937,9 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -961,13 +961,13 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The desired length of the edge. Default is 1.</p>
 </dd>
-<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be offset symmetrically from each end. The default is True.</p>
+<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be offset symmetrically from each end. Default is True.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. The default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1009,15 +1009,15 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. The default is 0.</p>
+<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. Default is 0.</p>
 </dd>
-<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be trimmed by half the distance at each end. The default is False.</p>
+<dt><strong>bothSides</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be trimmed by half the distance at each end. Default is False.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. The default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1041,11 +1041,11 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 </dd>
 <dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge. This edge will be used to trim edgeA.</p>
 </dd>
-<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, which segment is preserved is reversed. Otherwise, it is not. The default is False.</p>
+<dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, which segment is preserved is reversed. Otherwise, it is not. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1067,13 +1067,13 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. The default is 0.</p>
+<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The offset distance. Default is 0.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1095,7 +1095,7 @@ by the angle value around the axis defined by the input edge. The default is 0.0
 <dd class="field-odd"><dl class="simple">
 <dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
 </dd>
-<dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>u</em> parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.</p>
+<dt><strong>u</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>u</em> parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Plotly module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Plotly module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -249,26 +249,26 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
 </dd>
-<dt><strong>values</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the color bar. The default is [].</p>
+<dt><strong>values</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the color bar. Default is [].</p>
 </dd>
-<dt><strong>nTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the color bar. The default is 5.</p>
+<dt><strong>nTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the color bar. Default is 5.</p>
 </dd>
-<dt><strong>xPosition</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the color bar. The default is -0.15.</p>
+<dt><strong>xPosition</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the color bar. Default is -0.15.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the color bar. The default is 15</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the color bar. Default is 15</p>
 </dd>
-<dt><strong>outlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the color bar. The default is 0.</p>
+<dt><strong>outlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the color bar. Default is 0.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the color bar. The default is “”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the color bar. Default is “”.</p>
 </dd>
-<dt><strong>subTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the color bar. The default is “”.</p>
+<dt><strong>subTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the color bar. Default is “”.</p>
 </dd>
-<dt><strong>units: str , optional</strong></dt><dd><p>The units used in the color bar. The default is “”</p>
+<dt><strong>units: str , optional</strong></dt><dd><p>The units used in the color bar. Default is “”</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). The default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.
 In addition to these, three color-blind friendly scales are included. These are “protanopia”, “deuteranopia”, and “tritanopia” for red, green, and blue colorblindness respectively.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the color bar. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the color bar. Default is 6.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -329,18 +329,18 @@ In addition to these, three color-blind friendly scales are included. These are 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
-<dt><strong>sagitta</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.</p>
+<dt><strong>sagitta</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 0 which means a straight edge is drawn instead of an arc. Default is 0.</p>
 </dd>
-<dt><strong>absolute</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. The default is False.
-For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.</p>
+<dt><strong>absolute</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. Default is False.
+For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. Default is True.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the arc. The default is 8.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the arc. Default is 8.</p>
 </dd>
-<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. The default is False.</p>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. Default is False.</p>
 </dd>
-<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. The default is 0.1.</p>
+<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. Default is 0.1.</p>
 </dd>
-<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. The default is None.</p>
+<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. Default is None.</p>
 </dd>
 <dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -350,31 +350,31 @@ For example, if the length of the edge is 10, the sagitta is set to 0.5, and abs
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex color. The default is None.</p>
+<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex color. Default is None.</p>
 </dd>
-<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. The default is 6.</p>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. Default is 6.</p>
 </dd>
-<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. The default is None.</p>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
 </dd>
-<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. The default is None.</p>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
 </dd>
-<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. The default is [].</p>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
 </dd>
-<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>showVertexLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.</p>
+<dt><strong>showVertexLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>showVertexLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.</p>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. Default is False.</p>
 </dd>
-<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. The default is “Topology Vertices”.</p>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
 </dd>
-<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. The default is 1.</p>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
 </dd>
-<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. The default is 1.</p>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
 </dd>
 <dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -384,31 +384,31 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge color. The default is None.</p>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge color. Default is None.</p>
 </dd>
-<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. The default is 1.</p>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
 </dd>
-<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge width. The default is None.</p>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge width. Default is None.</p>
 </dd>
-<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. The default is None.</p>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
 </dd>
-<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. The default is False.</p>
+<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. Default is False.</p>
 </dd>
-<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. The default is None.</p>
+<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. Default is None.</p>
 </dd>
-<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. The default is None.</p>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
 </dd>
-<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of groups to use for indexing the color of edges. The default is None.</p>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of groups to use for indexing the color of edges. Default is None.</p>
 </dd>
-<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>showEdgeLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.</p>
+<dt><strong>showEdgeLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>showEdgeLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.</p>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edge legend will be drawn. Otherwise, it will not be drawn. Default is False.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). The default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -430,9 +430,9 @@ The default is “black”.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology. This must contain faces and or edges.</p>
 </dd>
-<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the output vertices. The default is 1.1.</p>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the output vertices. Default is 1.1.</p>
 </dd>
 <dt><strong>vertexSizeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex size.The default is None.</p>
 </dd>
@@ -446,7 +446,7 @@ The default is “black”.</p>
 </dd>
 <dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex color.The default is None.</p>
 </dd>
-<dt><strong>vertexBorderWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired width of the border of the output vertices. The default is 1.</p>
+<dt><strong>vertexBorderWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired width of the border of the output vertices. Default is 1.</p>
 </dd>
 <dt><strong>vertexBorderColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -456,33 +456,33 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. The default is None.</p>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
 </dd>
-<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. The default is None.</p>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
 </dd>
-<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. The default is [].</p>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
 </dd>
-<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. The default is “Topology Vertices”.</p>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
 </dd>
-<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. The default is 1.</p>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
 </dd>
-<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. The default is 1.</p>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
 </dd>
-<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. The default is False.</p>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. Default is False.</p>
 </dd>
-<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. The default is 0.1.</p>
+<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. Default is 0.1.</p>
 </dd>
-<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. The default is None.</p>
+<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. Default is None.</p>
 </dd>
-<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. The default is 1.</p>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
 </dd>
 <dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge width.The default is None.</p>
 </dd>
@@ -496,31 +496,31 @@ The default is “black”.</p>
 </dd>
 <dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge color.The default is None.</p>
 </dd>
-<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. The default is False.</p>
+<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. Default is False.</p>
 </dd>
-<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. The default is None.</p>
+<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. Default is None.</p>
 </dd>
-<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. The default is None.</p>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
 </dd>
-<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. The default is None.</p>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
 </dd>
-<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. The default is [].</p>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. Default is [].</p>
 </dd>
-<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. The default is “Topology Edges”.</p>
+<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. Default is “Topology Edges”.</p>
 </dd>
-<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. The default is 2.</p>
+<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. Default is 2.</p>
 </dd>
-<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. The default is 2.</p>
+<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. Default is 2.</p>
 </dd>
-<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.</p>
+<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.</p>
 </dd>
 <dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the face opacity.The default is None.</p>
 </dd>
@@ -534,33 +534,33 @@ The default is “#FAFAFA”.</p>
 </dd>
 <dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the face color.The default is None.</p>
 </dd>
-<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. The default is None.</p>
+<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. Default is None.</p>
 </dd>
-<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. The default is None.</p>
+<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. Default is None.</p>
 </dd>
-<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].</p>
+<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].</p>
 </dd>
-<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.</p>
+<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.</p>
+<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. The default is “Topology Faces”.</p>
+<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. Default is “Topology Faces”.</p>
 </dd>
-<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. The default is 3.</p>
+<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. Default is 3.</p>
 </dd>
-<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. The default is 3.</p>
+<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. Default is 3.</p>
 </dd>
-<dt><strong>intensityKey: str, optional</strong></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.</p>
+<dt><strong>intensityKey: str, optional</strong></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.</p>
 </dd>
-<dt><strong>intensities</strong><span class="classifier">list , optional</span></dt><dd><p>The list of intensities against which to index the intensity of the vertex. The default is [].</p>
+<dt><strong>intensities</strong><span class="classifier">list , optional</span></dt><dd><p>The list of intensities against which to index the intensity of the vertex. Default is [].</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). The default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -584,7 +584,7 @@ The default is “#FAFAFA”.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The image file path.</p>
 </dd>
-<dt><strong>format</strong><span class="classifier">str , optional</span></dt><dd><p>The desired format. This can be any of “jpg”, “jpeg”, “pdf”, “png”, “svg”, or “webp”. It is case insensitive. The default is “png”.</p>
+<dt><strong>format</strong><span class="classifier">str , optional</span></dt><dd><p>The desired format. This can be any of “jpg”, “jpeg”, “pdf”, “png”, “svg”, or “webp”. It is case insensitive. Default is “png”.</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 1920.</p>
 </dd>
@@ -612,25 +612,25 @@ The default is “#FAFAFA”.</p>
 </dd>
 <dt><strong>categories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the X and Y axes.</p>
 </dd>
-<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.</p>
+<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.</p>
 </dd>
-<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.</p>
+<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. The default is “Confusion Matrix”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Confusion Matrix”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual Categories”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual Categories”.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted Categories”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted Categories”.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 500.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
 </dd>
-<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. The default is True.</p>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. Default is True.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). The default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. The default is 10.</p>
+<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -642,13 +642,13 @@ The default is “#FAFAFA”.</p>
 - A named CSS color.
 The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -672,11 +672,11 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The predicted values to display.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. The default is “Correlation between Actual and Predicted Values”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Correlation between Actual and Predicted Values”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual Values”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual Values”.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted Values”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted Values”.</p>
 </dd>
 <dt><strong>dotColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the dots. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -694,11 +694,11 @@ The default is ‘blue’.</p>
 - A named CSS color.
 The default is ‘red’.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 800.</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 800.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 600.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 600.</p>
 </dd>
-<dt><strong>theme</strong><span class="classifier">str , optional</span></dt><dd><p>The plotly color scheme to use. The options are “dark”, “light”, “default”. The default is “default”.</p>
+<dt><strong>theme</strong><span class="classifier">str , optional</span></dt><dd><p>The plotly color scheme to use. The options are “dark”, “light”, “default”. Default is “default”.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -710,13 +710,13 @@ The default is ‘red’.</p>
 - A named CSS color.
 The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -742,13 +742,13 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 950.</p>
 </dd>
-<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>axisSize</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the X, Y, Z, axes. The default is 1.</p>
+<dt><strong>axisSize</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the X, Y, Z, axes. Default is 1.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -768,7 +768,7 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the bottom margin. The default value is 0.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -792,23 +792,23 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>data_labels</strong><span class="classifier">list</span></dt><dd><p>The labels to use for the data.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 500.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. The default is “Training and Testing Results”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. Default is “Training and Testing Results”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. The default is “Epochs”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. Default is “Epochs”.</p>
 </dd>
-<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. The default is 1.0.</p>
+<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. Default is 1.0.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. The default is “Accuracy and Loss”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. Default is “Accuracy and Loss”.</p>
 </dd>
-<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. The default is 0.1.</p>
+<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. Default is 0.1.</p>
 </dd>
-<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. The default is False.</p>
+<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. Default is False.</p>
 </dd>
-<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. The default is “Line”.</p>
+<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. Default is “Line”.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -828,13 +828,13 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 - A named CSS color.
 The default is ‘lightgray’</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -897,25 +897,25 @@ The default is ‘lightgray’</p>
 </dd>
 <dt><strong>categories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the X and Y axes.</p>
 </dd>
-<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.</p>
+<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.</p>
 </dd>
-<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.</p>
+<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. The default is “Confusion Matrix”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Confusion Matrix”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. The default is “Actual”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual”.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. The default is “Predicted”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted”.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 500.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
 </dd>
-<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. The default is True.</p>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. Default is True.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). The default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. The default is 10.</p>
+<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -927,15 +927,15 @@ The default is ‘lightgray’</p>
 - A named CSS color.
 The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of digits of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of digits of the mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -969,9 +969,9 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology. This must contain faces and or edges.</p>
 </dd>
-<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. The default is 1.1.</p>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. Default is 1.1.</p>
 </dd>
 <dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -981,27 +981,27 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. The default is None.</p>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
 </dd>
-<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. The default is None.</p>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
 </dd>
-<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. The default is [].</p>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
 </dd>
-<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.</p>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. The default is “Topology Vertices”.</p>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
 </dd>
-<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. The default is 1.</p>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
 </dd>
-<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. The default is 1.</p>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
 </dd>
-<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. The default is 1.</p>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
 </dd>
 <dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -1011,27 +1011,27 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. The default is None.</p>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
 </dd>
-<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. The default is None.</p>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
 </dd>
-<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. The default is [].</p>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. Default is [].</p>
 </dd>
-<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. The default is “Topology Edges”.</p>
+<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. Default is “Topology Edges”.</p>
 </dd>
-<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. The default is 2.</p>
+<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. Default is 2.</p>
 </dd>
-<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. The default is 2.</p>
+<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. Default is 2.</p>
 </dd>
-<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.</p>
+<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.</p>
 </dd>
 <dt><strong>faceColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output faces. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -1041,33 +1041,33 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “#FAFAFA”.</p>
 </dd>
-<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. The default is None.</p>
+<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. Default is None.</p>
 </dd>
-<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. The default is None.</p>
+<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. Default is None.</p>
 </dd>
-<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].</p>
+<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].</p>
 </dd>
-<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.</p>
+<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.</p>
+<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. The default is “Topology Faces”.</p>
+<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. Default is “Topology Faces”.</p>
 </dd>
-<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. The default is 3.</p>
+<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. Default is 3.</p>
 </dd>
-<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. The default is 3.</p>
+<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. Default is 3.</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 950.</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 950.</p>
 </dd>
-<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
 - An rgb list (e.g. [255,0,0])
@@ -1087,39 +1087,39 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the bottom margin. The default value is 0.</p>
 </dd>
-<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera). The default is [-1.25, -1.25, 1.25].</p>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera). Default is [-1.25, -1.25, 1.25].</p>
 </dd>
-<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). The default is [0, 0, 0].</p>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
 </dd>
-<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. The default is [0, 0, 1].</p>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). The default is “notebook”.</p>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). Default is “notebook”.</p>
 </dd>
-<dt><strong>intensityKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.</p>
+<dt><strong>intensityKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.</p>
 </dd>
-<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the colorbar is shown. The default is False.</p>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the colorbar is shown. Default is False.</p>
 </dd>
-<dt><strong>cbValues</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the colorbar. The default is [].</p>
+<dt><strong>cbValues</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the colorbar. Default is [].</p>
 </dd>
-<dt><strong>cbTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the colorbar. The default is 5.</p>
+<dt><strong>cbTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the colorbar. Default is 5.</p>
 </dd>
-<dt><strong>cbX</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the colorbar. The default is -0.15.</p>
+<dt><strong>cbX</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the colorbar. Default is -0.15.</p>
 </dd>
-<dt><strong>cbWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the colorbar. The default is 15</p>
+<dt><strong>cbWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the colorbar. Default is 15</p>
 </dd>
-<dt><strong>cbOutlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the colorbar. The default is 0.</p>
+<dt><strong>cbOutlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the colorbar. Default is 0.</p>
 </dd>
-<dt><strong>cbTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the colorbar. The default is “”.</p>
+<dt><strong>cbTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the colorbar. Default is “”.</p>
 </dd>
-<dt><strong>cbSubTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the colorbar. The default is “”.</p>
+<dt><strong>cbSubTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the colorbar. Default is “”.</p>
 </dd>
-<dt><strong>cbUnits: str , optional</strong></dt><dd><p>The units used in the colorbar. The default is “”</p>
+<dt><strong>cbUnits: str , optional</strong></dt><dd><p>The units used in the colorbar. Default is “”</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). The default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the colorbar. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the colorbar. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1166,9 +1166,9 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. The default is 1920.</p>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. The default is 1200.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
 </dd>
 <dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
 </dd>
@@ -1194,9 +1194,9 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. The default is 1920.</p>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. The default is 1200.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
 </dd>
 <dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
 </dd>
@@ -1222,9 +1222,9 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. The default is 1920.</p>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. The default is 1200.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
 </dd>
 <dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
 </dd>
@@ -1289,13 +1289,13 @@ Currently, this is limited to:
 <dd class="field-odd"><dl class="simple">
 <dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
 </dd>
-<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. The default is [-1.25, -1.25, 1.25].</p>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. Default is [-1.25, -1.25, 1.25].</p>
 </dd>
-<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). The default is [0, 0, 0].</p>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
 </dd>
-<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. The default is [0, 0, 1].</p>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. The default is “perspective”</p>
+<dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. Default is “perspective”</p>
 </dd>
 </dl>
 </dd>
@@ -1317,15 +1317,15 @@ Currently, this is limited to:
 <dd class="field-odd"><dl class="simple">
 <dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
 </dd>
-<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. The default is [0, 0, 0].</p>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. Default is [0, 0, 0].</p>
 </dd>
-<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). The default is [0, 0, 0].</p>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
 </dd>
-<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. The default is [0, 0, 1].</p>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.</p>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.</p>
 </dd>
-<dt><strong>projection</strong><span class="classifier">str, optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. The default is “perspective”</p>
+<dt><strong>projection</strong><span class="classifier">str, optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. Default is “perspective”</p>
 </dd>
 </dl>
 </dd>

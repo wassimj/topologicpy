@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Sun module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Sun module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -238,7 +238,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Latitude">https://en.wikipedia.org/wiki/Latitude</a>.</p>
 </dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. The default is the current year.</p>
+<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
 </dd>
 </dl>
 </dd>
@@ -286,19 +286,19 @@
 </dd>
 <dt><strong>longitude</strong><span class="classifier">float</span></dt><dd><p>The input longitude. See <a class="reference external" href="https://en.wikipedia.org/wiki/Longitude">https://en.wikipedia.org/wiki/Longitude</a>.</p>
 </dd>
-<dt><strong>minuteInterval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location for the date path. The default is 30.</p>
+<dt><strong>minuteInterval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location for the date path. Default is 30.</p>
 </dd>
-<dt><strong>dayInterval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days for the hourly path to compute the sun location. The default is 15.</p>
+<dt><strong>dayInterval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days for the hourly path to compute the sun location. Default is 15.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides to divide the diagram horizontally (along the azimuth). The default is 180.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides to divide the diagram horizontally (along the azimuth). Default is 180.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides to divide the diagram paths vertically (along the altitude). The default is 180.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides to divide the diagram paths vertically (along the altitude). Default is 180.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 <dt><strong>compass</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a compass (shell) is included. Othwerwise, it is is not.</p>
 </dd>
@@ -334,11 +334,11 @@
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -364,20 +364,20 @@
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. The default is None.</p>
+<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.</p>
 </dd>
-<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.</p>
+<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.</p>
 </dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. The default is 60.</p>
+<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
 <dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
 The default is None.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -403,20 +403,20 @@ The default is None.</p>
 </dd>
 <dt><strong>hour</strong><span class="classifier">datetime</span></dt><dd><p>The input hour.</p>
 </dd>
-<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day of the year to compute the sun location. The default is 1.</p>
+<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day of the year to compute the sun location. Default is 1.</p>
 </dd>
-<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day of the year to compute the sun location. The default is 365.</p>
+<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day of the year to compute the sun location. Default is 365.</p>
 </dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. The default is 5.</p>
+<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
 <dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
 The default is None.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -442,13 +442,13 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -470,7 +470,7 @@ The default is None.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
 </dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. The default is the current year.</p>
+<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
 </dd>
 </dl>
 </dd>
@@ -492,7 +492,7 @@ The default is None.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
 </dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. The default is the current year.</p>
+<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
 </dd>
 </dl>
 </dd>
@@ -566,7 +566,7 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -592,11 +592,11 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -622,17 +622,17 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. The default is None.</p>
+<dt><strong>startTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.</p>
 </dd>
-<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.</p>
+<dt><strong>endTime</strong><span class="classifier">datetime , optional</span></dt><dd><p>The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.</p>
 </dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. The default is 60.</p>
+<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -658,17 +658,17 @@ The default is None.</p>
 </dd>
 <dt><strong>hour</strong><span class="classifier">datetime</span></dt><dd><p>The input hour.</p>
 </dd>
-<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day to compute the sun location. The default is 1.</p>
+<dt><strong>startDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired start day to compute the sun location. Default is 1.</p>
 </dd>
-<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day to compute the sun location. The default is 365.</p>
+<dt><strong>endDay</strong><span class="classifier">integer , optional</span></dt><dd><p>The desired end day to compute the sun location. Default is 365.</p>
 </dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. The default is 5.</p>
+<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
-<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.</p>
+<dt><strong>north</strong><span class="classifier">float, optional</span></dt><dd><p>The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.</p>
 </dd>
 </dl>
 </dd>
@@ -690,7 +690,7 @@ The default is None.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>latitude</strong><span class="classifier">float</span></dt><dd><p>The input latitude.</p>
 </dd>
-<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. The default is the current year.</p>
+<dt><strong>year</strong><span class="classifier">integer , optional</span></dt><dd><p>The input year. Default is the current year.</p>
 </dd>
 </dl>
 </dd>

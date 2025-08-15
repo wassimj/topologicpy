@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -286,38 +286,38 @@ return None</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>building</strong><span class="classifier">topologic_core.CellComplex or topologic_core.Cell</span></dt><dd><p>The input building topology.</p>
 </dd>
-<dt><strong>shadingSurfaces</strong><span class="classifier">topologic_core.Topology , optional</span></dt><dd><p>The input topology for shading surfaces. The default is None.</p>
+<dt><strong>shadingSurfaces</strong><span class="classifier">topologic_core.Topology , optional</span></dt><dd><p>The input topology for shading surfaces. Default is None.</p>
 </dd>
-<dt><strong>osModelPath</strong><span class="classifier">str , optional</span></dt><dd><p>The path to the template OSM file. The default is “./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm”.</p>
+<dt><strong>osModelPath</strong><span class="classifier">str , optional</span></dt><dd><p>The path to the template OSM file. Default is “./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm”.</p>
 </dd>
-<dt><strong>weatherFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input energy plus weather (epw) file. The default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw”.</p>
+<dt><strong>weatherFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input energy plus weather (epw) file. Default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw”.</p>
 </dd>
-<dt><strong>designDayFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input design day (ddy) file path. The default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy”,</p>
+<dt><strong>designDayFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input design day (ddy) file path. Default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy”,</p>
 </dd>
 <dt><strong>floorLevels</strong><span class="classifier">list , optional</span></dt><dd><p>The list of floor level Z heights including the lowest most and the highest most levels. If set to None, this method will attempt to
 find the floor levels from the horizontal faces of the input topology</p>
 </dd>
-<dt><strong>buildingName</strong><span class="classifier">str , optional</span></dt><dd><p>The desired name of the building. The default is “TopologicBuilding”.</p>
+<dt><strong>buildingName</strong><span class="classifier">str , optional</span></dt><dd><p>The desired name of the building. Default is “TopologicBuilding”.</p>
 </dd>
-<dt><strong>buildingType</strong><span class="classifier">str , optional</span></dt><dd><p>The building type. The default is “Commercial”.</p>
+<dt><strong>buildingType</strong><span class="classifier">str , optional</span></dt><dd><p>The building type. Default is “Commercial”.</p>
 </dd>
-<dt><strong>defaultSpaceType</strong><span class="classifier">str , optional</span></dt><dd><p>The default space type to apply to spaces that do not have a type assigned in their dictionary. The default is “189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8”.</p>
+<dt><strong>defaultSpaceType</strong><span class="classifier">str , optional</span></dt><dd><p>The default space type to apply to spaces that do not have a type assigned in their dictionary. Default is “189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8”.</p>
 </dd>
-<dt><strong>northAxis</strong><span class="classifier">float , optional</span></dt><dd><p>The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. The default is 0.0.</p>
+<dt><strong>northAxis</strong><span class="classifier">float , optional</span></dt><dd><p>The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. Default is 0.0.</p>
 </dd>
-<dt><strong>glazingRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. The default is 0.</p>
+<dt><strong>glazingRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. Default is 0.</p>
 </dd>
-<dt><strong>coolingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the cooling system should activate. The default is 25.0.</p>
+<dt><strong>coolingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the cooling system should activate. Default is 25.0.</p>
 </dd>
-<dt><strong>heatingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the heating system should activate. The default is 25.0..</p>
+<dt><strong>heatingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the heating system should activate. Default is 25.0..</p>
 </dd>
-<dt><strong>spaceNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space name value. The default is “Name”.</p>
+<dt><strong>spaceNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space name value. Default is “Name”.</p>
 </dd>
-<dt><strong>spaceTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space type value. The default is “Type”.</p>
+<dt><strong>spaceTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space type value. Default is “Type”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -413,7 +413,7 @@ find the floor levels from the horizontal faces of the input topology</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path for saving the file.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -439,7 +439,7 @@ find the floor levels from the horizontal faces of the input topology</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path for saving the file.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True any file with the same name is over-written. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -485,17 +485,17 @@ find the floor levels from the horizontal faces of the input topology</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
 </dd>
-<dt><strong>reportName</strong><span class="classifier">str , optional</span></dt><dd><p>The input report name. The default is “HVACSizingSummary”.</p>
+<dt><strong>reportName</strong><span class="classifier">str , optional</span></dt><dd><p>The input report name. Default is “HVACSizingSummary”.</p>
 </dd>
-<dt><strong>reportForString</strong><span class="classifier">str, optional</span></dt><dd><p>The input report for string. The default is “Entire Facility”.</p>
+<dt><strong>reportForString</strong><span class="classifier">str, optional</span></dt><dd><p>The input report for string. Default is “Entire Facility”.</p>
 </dd>
-<dt><strong>tableName</strong><span class="classifier">str , optional</span></dt><dd><p>The input table name. The default is “Zone Sensible Cooling”.</p>
+<dt><strong>tableName</strong><span class="classifier">str , optional</span></dt><dd><p>The input table name. Default is “Zone Sensible Cooling”.</p>
 </dd>
-<dt><strong>columnName</strong><span class="classifier">str , optional</span></dt><dd><p>The input column name. The default is “Calculated Design Load”.</p>
+<dt><strong>columnName</strong><span class="classifier">str , optional</span></dt><dd><p>The input column name. Default is “Calculated Design Load”.</p>
 </dd>
-<dt><strong>rowNames</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of row names. The default is [].</p>
+<dt><strong>rowNames</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of row names. Default is [].</p>
 </dd>
-<dt><strong>units</strong><span class="classifier">str , optional</span></dt><dd><p>The input units. The default is “W”.</p>
+<dt><strong>units</strong><span class="classifier">str , optional</span></dt><dd><p>The input units. Default is “W”.</p>
 </dd>
 </dl>
 </dd>
@@ -573,7 +573,7 @@ find the floor levels from the horizontal faces of the input topology</p>
 </dd>
 <dt><strong>outputFolder</strong><span class="classifier">str</span></dt><dd><p>The path to the output folder.</p>
 </dd>
-<dt><strong>removeFiles</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the working files are removed at the end of the process. The default is False.</p>
+<dt><strong>removeFiles</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the working files are removed at the end of the process. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -731,7 +731,7 @@ find the floor levels from the horizontal faces of the input topology</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>model</strong><span class="classifier">openstudio.openstudiomodelcore.Model</span></dt><dd><p>The input OSM model.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -274,23 +274,23 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>xList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of x-coordinates. The default is None.</p>
+<dt><strong>xList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of x-coordinates. Default is None.</p>
 </dd>
-<dt><strong>yList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of y-coordinates. The default is None.</p>
+<dt><strong>yList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of y-coordinates. Default is None.</p>
 </dd>
-<dt><strong>zList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of z-coordinates. The default is None.</p>
+<dt><strong>zList</strong><span class="classifier">list , optional</span></dt><dd><p>The input numerical list of z-coordinates. Default is None.</p>
 </dd>
-<dt><strong>xEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the x coordinates. The default is 0.0001.</p>
+<dt><strong>xEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the x coordinates. Default is 0.0001.</p>
 </dd>
-<dt><strong>yEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the y coordinates. The default is 0.0001.</p>
+<dt><strong>yEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the y coordinates. Default is 0.0001.</p>
 </dd>
-<dt><strong>zEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the z coordinates. The default is 0.0001.</p>
+<dt><strong>zEpsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for the z coordinates. Default is 0.0001.</p>
 </dd>
 <dt><strong>transferDictionary</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the dictionary of the input vertex is transferred to the new vertex.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -312,9 +312,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -336,11 +336,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors are printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -452,9 +452,9 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The X coordinate. The default is 0.</p>
+<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The X coordinate. Default is 0.</p>
 </dd>
-<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The Y coordinate. The default is 0.</p>
+<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The Y coordinate. Default is 0.</p>
 </dd>
 <dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The Z coordinate. The defaults is 0.</p>
 </dd>
@@ -478,7 +478,7 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -520,9 +520,9 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. The default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
+<dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. Default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -544,7 +544,7 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -568,7 +568,7 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 </dd>
 <dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology in which to search for the connected super topologies.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The topology type to search for. This can be any of “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The topology type to search for. This can be any of “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -592,9 +592,9 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>includeCentroid</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. The default is True.</p>
+<dt><strong>includeCentroid</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. Default is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -618,11 +618,11 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, return only the first found enclosing cell. The default is True.</p>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, return only the first found enclosing cell. Default is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is enclosed in a cell. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -664,9 +664,9 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of topologic vertices.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for retrieving vertex coordinates. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for retrieving vertex coordinates. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -692,7 +692,7 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -716,9 +716,9 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.</p>
+<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is identical to a vertex from the list. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is identical to a vertex from the list. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -742,13 +742,13 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of nearest vertices to consider. The default is 3.</p>
+<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of nearest vertices to consider. Default is 3.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The key that holds the value to be interpolated in the dictionaries of the vertices. The default is “intensity”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The key that holds the value to be interpolated in the dictionaries of the vertices. Default is “intensity”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -772,7 +772,7 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertexA is coincident with the input vertexB. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertexA is coincident with the input vertexB. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -796,9 +796,9 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is external to the input topology. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is external to the input topology. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -822,9 +822,9 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is internal to the input topology. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is internal to the input topology. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -859,9 +859,9 @@ A vertex is said to be peripheral to the input topology if:
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is peripheral to the input topology. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is peripheral to the input topology. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -885,9 +885,9 @@ A vertex is said to be peripheral to the input topology if:
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology to be searched for the nearest vertex.</p>
 </dd>
-<dt><strong>useKDTree</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.</p>
+<dt><strong>useKDTree</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the algorithm will use a KDTree method to search for the nearest vertex. Default is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -910,11 +910,11 @@ Depending on the order of the vertices, the normal can be flipped 180 degrees.</
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>A list of Topologic Vertex objects that are assumed to be co-planar.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True no warnings or errors are printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -956,7 +956,7 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input host topology to which the vertex belongs.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -980,7 +980,7 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>mantissa: int , optional</strong></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa: int , optional</strong></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -1002,7 +1002,7 @@ coincident with the input vertex.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -1023,11 +1023,11 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>x</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired x coordinate. The default is 0.</p>
+<dt><strong>x</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired x coordinate. Default is 0.</p>
 </dd>
-<dt><strong>y</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired y coordinate. The default is 0.</p>
+<dt><strong>y</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired y coordinate. Default is 0.</p>
 </dd>
-<dt><strong>z</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired z coordinate. The default is 0.</p>
+<dt><strong>z</strong><span class="classifier">float , optional.</span></dt><dd><p>The desired z coordinate. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -1050,9 +1050,9 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 </dd>
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face that receives the projection of the input vertex.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">vector, optional</span></dt><dd><p>The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.</p>
+<dt><strong>direction</strong><span class="classifier">vector, optional</span></dt><dd><p>The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -1074,15 +1074,15 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dd class="field-odd"><dl>
 <dt><strong>vertices</strong><span class="classifier"><a href="#id1"><span class="problematic" id="id2">*</span></a>topologicpy.Vertex</span></dt><dd><p>One or more instances of a topologic vertex to be processed.</p>
 </dd>
-<dt><strong>minDistance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum distance. The default is 0.0001.</p>
+<dt><strong>minDistance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum distance. Default is 0.0001.</p>
 </dd>
-<dt><strong>iterations</strong><span class="classifier">int</span></dt><dd><p>The number of iterations to run the repulsion simulation. The default is 100.</p>
+<dt><strong>iterations</strong><span class="classifier">int</span></dt><dd><p>The number of iterations to run the repulsion simulation. Default is 100.</p>
 </dd>
-<dt><strong>strength</strong><span class="classifier">float</span></dt><dd><p>The force multiplier controlling how strongly vertices repel each other. The default is 0.1.</p>
+<dt><strong>strength</strong><span class="classifier">float</span></dt><dd><p>The force multiplier controlling how strongly vertices repel each other. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1106,9 +1106,9 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 </dd>
 <dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The 4x4 transformation matrix.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1130,7 +1130,7 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -1152,7 +1152,7 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -1174,7 +1174,7 @@ The keys in the dictionary are [“a”, “b”, “c”. “d”]</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>

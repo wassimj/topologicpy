@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Shell module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Shell module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -252,21 +252,21 @@
 </dd>
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces.</p>
 </dd>
-<dt><strong>maximumGap</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the maximum gap between the faces. The default is 0.5.</p>
+<dt><strong>maximumGap</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the maximum gap between the faces. Default is 0.5.</p>
 </dd>
 <dt><strong>mergeJunctions</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the interior junctions are merged into a single vertex. Otherwise, diagonal edges are added to resolve transitions between different gap distances.</p>
 </dd>
-<dt><strong>threshold</strong><span class="classifier">float , optional</span></dt><dd><p>The desired threshold under which vertices are merged into a single vertex. The default is 0.5.</p>
+<dt><strong>threshold</strong><span class="classifier">float , optional</span></dt><dd><p>The desired threshold under which vertices are merged into a single vertex. Default is 0.5.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides along the X axis for the grid that subdivides the input faces to aid in processing. The default is 1.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides along the X axis for the grid that subdivides the input faces to aid in processing. Default is 1.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides along the Y axis for the grid that subdivides the input faces to aid in processing. The default is 1.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides along the Y axis for the grid that subdivides the input faces to aid in processing. Default is 1.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool, optional.</span></dt><dd><p>If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool, optional.</span></dt><dd><p>If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -288,9 +288,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -312,7 +312,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of faces.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -334,11 +334,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire to be thickened.</p>
 </dd>
-<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. The default is 1.0.</p>
+<dt><strong>offsetA</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the exterior of the wire. Default is 1.0.</p>
 </dd>
-<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the interior of the wire. The default is 1.0.</p>
+<dt><strong>offsetB</strong><span class="classifier">float , optional</span></dt><dd><p>The desired offset to the interior of the wire. Default is 1.0.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -360,11 +360,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of wires.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. The default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -386,11 +386,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wires</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of wires.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. The default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -410,21 +410,21 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The  radius of the circle. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The  radius of the circle. Default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the circle. The default is 32.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the circle. Default is 32.</p>
 </dd>
-<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the circle. The default is 0.</p>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the circle. Default is 0.</p>
 </dd>
-<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the circle. The default is 360.</p>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the circle. Default is 360.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the circle. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the circle. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the pie. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the pie. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -448,9 +448,9 @@
 </dd>
 <dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If specified, the delaunay triangulation is clipped to the face.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -492,7 +492,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -532,25 +532,25 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the hyperbolic paraboloid. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the hyperbolic paraboloid. Default is 0.5.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the hyperbolic parabolid. The default is 36.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of the hyperbolic parabolid. Default is 36.</p>
 </dd>
-<dt><strong>rings</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of concentric rings of the hyperbolic parabolid. The default is 10.</p>
+<dt><strong>rings</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of concentric rings of the hyperbolic parabolid. Default is 10.</p>
 </dd>
-<dt><strong>A</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>A</em> constant in the equation z = A*x^2^ + B*y^2^. The default is 2.0.</p>
+<dt><strong>A</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>A</em> constant in the equation z = A*x^2^ + B*y^2^. Default is 2.0.</p>
 </dd>
-<dt><strong>B</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>B</em> constant in the equation z = A*x^2^ + B*y^2^. The default is -2.0.</p>
+<dt><strong>B</strong><span class="classifier">float , optional</span></dt><dd><p>The <em>B</em> constant in the equation z = A*x^2^ + B*y^2^. Default is -2.0.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The  vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The  vector representing the up direction of the hyperbolic paraboloid. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the circle. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the circle. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -570,7 +570,7 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.</p>
 </dd>
 <dt><strong>llVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).</p>
 </dd>
@@ -580,17 +580,17 @@
 </dd>
 <dt><strong>urVertex</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the X axis. The default is 10.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the X axis. Default is 10.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the Y axis. The default is 10.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments along the Y axis. Default is 10.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the hyperbolic paraboloid. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the hyperbolic paraboloid. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the hyperbolic paraboloid. This can be “center”, “lowerleft”, “bottom”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -612,7 +612,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -656,7 +656,7 @@
 </dd>
 <dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -676,28 +676,28 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. The default is 1.</p>
+<dt><strong>focalLength</strong><span class="classifier">float , optional</span></dt><dd><p>The focal length of the parabola. Default is 1.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the parabolic surface. The default is 1.</p>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the parabolic surface. Default is 1.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the parabolic surface. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the parabolic surface. Default is 1.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 16.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 16.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 16.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. Default is 16.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the parabolic surface. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the parabolic surface. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the parabolic surface. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd></dd>
-<dt><strong>If set to True, error and warning messages are suppressed. The default is False.</strong></dt><dd></dd>
+<dt><strong>If set to True, error and warning messages are suppressed. Default is False.</strong></dt><dd></dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
@@ -716,25 +716,25 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the pie. The default is None which results in the pie being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the pie. Default is None which results in the pie being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radiusA</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the pie. The default is 0.5.</p>
+<dt><strong>radiusA</strong><span class="classifier">float , optional</span></dt><dd><p>The outer radius of the pie. Default is 0.5.</p>
 </dd>
-<dt><strong>radiusB</strong><span class="classifier">float , optional</span></dt><dd><p>The inner radius of the pie. The default is 0.25.</p>
+<dt><strong>radiusB</strong><span class="classifier">float , optional</span></dt><dd><p>The inner radius of the pie. Default is 0.25.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the pie. The default is 32.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the pie. Default is 32.</p>
 </dd>
-<dt><strong>rings</strong><span class="classifier">int , optional</span></dt><dd><p>The number of rings of the pie. The default is 1.</p>
+<dt><strong>rings</strong><span class="classifier">int , optional</span></dt><dd><p>The number of rings of the pie. Default is 1.</p>
 </dd>
-<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the pie. The default is 0.</p>
+<dt><strong>fromAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees from which to start creating the arc of the pie. Default is 0.</p>
 </dd>
-<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the pie. The default is 360.</p>
+<dt><strong>toAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees at which to end creating the arc of the pie. Default is 360.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the pie. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the pie. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the pie. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the pie. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -756,11 +756,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -780,21 +780,21 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the rectangle. The default is 1.0.</p>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the rectangle. Default is 1.0.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the rectangle. The default is 1.0.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the rectangle. Default is 1.0.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 2.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 2.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 2.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. Default is 2.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the rectangle. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the rectangle. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the rectangle. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the rectangle. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -816,9 +816,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. The default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -843,13 +843,13 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>angle</strong><span class="classifier">float , optioal</span></dt><dd><p>The desired angle in degrees of the roof. The default is 45.</p>
+<dt><strong>angle</strong><span class="classifier">float , optioal</span></dt><dd><p>The desired angle in degrees of the roof. Default is 45.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance for distance from plane). Default is 0.01. (This is set to a larger number as it was found to work better)</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)</p>
 </dd>
 </dl>
 </dd>
@@ -871,9 +871,9 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. The default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -898,11 +898,11 @@ Part of this code was contributed by gaoxipeng. See <a class="reference external
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
 </dd>
-<dt><strong>simplifyBoundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. The default is True.</p>
+<dt><strong>simplifyBoundary</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. Default is True.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001. Edges shorter than this length will be removed.</p>
 </dd>
 </dl>
 </dd>
@@ -927,7 +927,7 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)</p>
 </dd>
 </dl>
 </dd>
@@ -947,21 +947,21 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. The default is 1.0.</p>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the square. Default is 1.0.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the square. The default is 1.0.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the square. Default is 1.0.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 2.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 2.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 2.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. Default is 2.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the square. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the square. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the square. This can be “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the square. This can be “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1003,11 +1003,11 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. The default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

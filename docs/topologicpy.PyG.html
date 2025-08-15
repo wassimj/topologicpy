@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.PyG module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.PyG module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -308,7 +308,7 @@
 </dd>
 <dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -337,7 +337,7 @@
 </dd>
 <dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicts labels.</p>
 </dd>
-<dt><strong>normalized</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. The default is False.</p>
+<dt><strong>normalized</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -380,7 +380,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dataset</strong><span class="classifier">CustomDataset</span></dt><dd><p>The input dataset</p>
 </dd>
-<dt><strong>graphLabelHeader: str , optional</strong></dt><dd><p>The key string under which the graph labels are stored. The default is “label”.</p>
+<dt><strong>graphLabelHeader: str , optional</strong></dt><dd><p>The key string under which the graph labels are stored. Default is “label”.</p>
 </dd>
 </dl>
 </dd>
@@ -404,9 +404,9 @@
 </dd>
 <dt><strong>split: list , optional</strong></dt><dd><p>The list of ratios. This list must be made out of three numbers adding to 1.</p>
 </dd>
-<dt><strong>shuffle: boolean , optional</strong></dt><dd><p>If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. The default is True.</p>
+<dt><strong>shuffle: boolean , optional</strong></dt><dd><p>If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. Default is True.</p>
 </dd>
-<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The random seed to use for reproducibility. The default is 42.</p>
+<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The random seed to use for reproducibility. Default is 42.</p>
 </dd>
 </dl>
 </dd>
@@ -429,29 +429,29 @@
 <dt><strong>model_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of model. The options are:
 - “Classifier”
 - “Regressor”
-The option is case insensitive. The default is “classifierholdout”</p>
+The option is case insensitive. Default is “classifierholdout”</p>
 </dd>
 <dt><strong>optimizer</strong><span class="classifier">Optimizer</span></dt><dd><p>The desired optimizer.</p>
 </dd>
-<dt><strong>cv_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired cross-validation method. This can be “Holdout” or “K-Fold”. It is case-insensitive. The default is “Holdout”.</p>
+<dt><strong>cv_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired cross-validation method. This can be “Holdout” or “K-Fold”. It is case-insensitive. Default is “Holdout”.</p>
 </dd>
-<dt><strong>split</strong><span class="classifier">list , optional</span></dt><dd><p>The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. The default is [0.8, 0.1, 0.1].</p>
+<dt><strong>split</strong><span class="classifier">list , optional</span></dt><dd><p>The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. Default is [0.8, 0.1, 0.1].</p>
 </dd>
-<dt><strong>k_folds</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of k-folds. The default is 5.</p>
+<dt><strong>k_folds</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of k-folds. Default is 5.</p>
 </dd>
-<dt><strong>hl_widths</strong><span class="classifier">list , optional</span></dt><dd><p>The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. The default is [32].</p>
+<dt><strong>hl_widths</strong><span class="classifier">list , optional</span></dt><dd><p>The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. Default is [32].</p>
 </dd>
-<dt><strong>conv_layer_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of the convolution layer. The options are “Classic”, “GraphConv”, “GINConv”, “SAGEConv”, “TAGConv”, “DGN”. It is case insensitive. The default is “SAGEConv”.</p>
+<dt><strong>conv_layer_type</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of the convolution layer. The options are “Classic”, “GraphConv”, “GINConv”, “SAGEConv”, “TAGConv”, “DGN”. It is case insensitive. Default is “SAGEConv”.</p>
 </dd>
-<dt><strong>pooling</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of pooling. The options are “AvgPooling”, “MaxPooling”, or “SumPooling”. It is case insensitive. The default is “AvgPooling”.</p>
+<dt><strong>pooling</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of pooling. The options are “AvgPooling”, “MaxPooling”, or “SumPooling”. It is case insensitive. Default is “AvgPooling”.</p>
 </dd>
-<dt><strong>batch_size</strong><span class="classifier">int , optional</span></dt><dd><p>The desired batch size. The default is 1.</p>
+<dt><strong>batch_size</strong><span class="classifier">int , optional</span></dt><dd><p>The desired batch size. Default is 1.</p>
 </dd>
-<dt><strong>epochs</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. The default is 1.</p>
+<dt><strong>epochs</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. Default is 1.</p>
 </dd>
-<dt><strong>use_gpu</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the model will attempt to use the GPU. The default is False.</p>
+<dt><strong>use_gpu</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the model will attempt to use the GPU. Default is False.</p>
 </dd>
-<dt><strong>loss_function</strong><span class="classifier">str , optional</span></dt><dd><p>The desired loss function. The options are “Cross-Entropy” or “Negative Log Likelihood”. It is case insensitive. The default is “Cross-Entropy”.</p>
+<dt><strong>loss_function</strong><span class="classifier">str , optional</span></dt><dd><p>The desired loss function. The options are “Cross-Entropy” or “Negative Log Likelihood”. It is case insensitive. Default is “Cross-Entropy”.</p>
 </dd>
 <dt><strong>input_type</strong><span class="classifier">str</span></dt><dd><p>selects the input_type of model such as graph, node or edge</p>
 </dd>
@@ -475,7 +475,7 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -527,7 +527,7 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input trained model.</p>
 </dd>
-<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. The default is “feat”.</p>
+<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. Default is “feat”.</p>
 </dd>
 </dl>
 </dd>
@@ -616,7 +616,7 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input trained model.</p>
 </dd>
-<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. The default is “feat”.</p>
+<dt><strong>nodeATTRKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key used for node attributes. Default is “feat”.</p>
 </dd>
 </dl>
 </dd>
@@ -640,7 +640,7 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The file path at which to save the model.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, any existing file will be overwritten. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, any existing file will be overwritten. Otherwise, it won’t. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -700,17 +700,17 @@ The option is case insensitive. The default is “classifierholdout”</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>amsgrad</strong><span class="classifier">bool , optional.</span></dt><dd><p>amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. The default is True.</p>
+<dt><strong>amsgrad</strong><span class="classifier">bool , optional.</span></dt><dd><p>amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. Default is True.</p>
 </dd>
-<dt><strong>betas</strong><span class="classifier">tuple , optional</span></dt><dd><p>Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. The default is (0.9, 0.999).</p>
+<dt><strong>betas</strong><span class="classifier">tuple , optional</span></dt><dd><p>Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. Default is (0.9, 0.999).</p>
 </dd>
-<dt><strong>eps</strong><span class="classifier">float . optional.</span></dt><dd><p>eps is a term added to the denominator to improve numerical stability. The default is 0.000001.</p>
+<dt><strong>eps</strong><span class="classifier">float . optional.</span></dt><dd><p>eps is a term added to the denominator to improve numerical stability. Default is 0.000001.</p>
 </dd>
-<dt><strong>lr</strong><span class="classifier">float</span></dt><dd><p>The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. The default is 0.001.</p>
+<dt><strong>lr</strong><span class="classifier">float</span></dt><dd><p>The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. Default is 0.001.</p>
 </dd>
-<dt><strong>maximize</strong><span class="classifier">float , optional</span></dt><dd><p>maximize the params based on the objective, instead of minimizing. The default is False.</p>
+<dt><strong>maximize</strong><span class="classifier">float , optional</span></dt><dd><p>maximize the params based on the objective, instead of minimizing. Default is False.</p>
 </dd>
-<dt><strong>weightDecay</strong><span class="classifier">float , optional</span></dt><dd><p>weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. The default is 0.0.</p>
+<dt><strong>weightDecay</strong><span class="classifier">float , optional</span></dt><dd><p>weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. Default is 0.0.</p>
 </dd>
 </dl>
 </dd>
@@ -741,7 +741,7 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The input list of predicted values.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -765,23 +765,23 @@ The option is case insensitive. The default is “classifierholdout”</p>
 </dd>
 <dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>The labels to use for the data.</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. The default is 950.</p>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
 </dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. The default is 500.</p>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. The default is “Training and Testing Results”.</p>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. Default is “Training and Testing Results”.</p>
 </dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. The default is “Epochs”.</p>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. Default is “Epochs”.</p>
 </dd>
-<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. The default is 1.0.</p>
+<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. Default is 1.0.</p>
 </dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. The default is “Accuracy and Loss”.</p>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. Default is “Accuracy and Loss”.</p>
 </dd>
-<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. The default is 0.1.</p>
+<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. Default is 0.1.</p>
 </dd>
-<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. The default is False.</p>
+<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. Default is False.</p>
 </dd>
-<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. The default is “Line”.</p>
+<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. Default is “Line”.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired background color. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -799,15 +799,15 @@ The default is ‘rgba(0,0,0,0)’ (transparent).</p>
 - A named CSS color.
 The default is ‘lightgray’.</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. The default is 0.</p>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. The default is 0.</p>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. The default is 40.</p>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. The default is 0.</p>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
 </dd>
-<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired plotly renderer. The default is “notebook”.</p>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired plotly renderer. Default is “notebook”.</p>
 </dd>
 </dl>
 </dd>

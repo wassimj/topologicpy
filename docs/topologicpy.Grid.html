@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Grid module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Grid module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -173,21 +173,21 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. The default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
 </dd>
-<dt><strong>uOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>u</em> grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. The default is None.</p>
+<dt><strong>uOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>u</em> grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. Default is None.</p>
 </dd>
-<dt><strong>vOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>v</em> grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. The default is None.</p>
+<dt><strong>vOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>v</em> grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. Default is None.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. The default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -209,13 +209,13 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines. The default is [0,0.25,0.5, 0.75, 1.0].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines. Default is [0,0.25,0.5, 0.75, 1.0].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines. The default is [0,0.25,0.5, 0.75, 1.0].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines. Default is [0,0.25,0.5, 0.75, 1.0].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. The default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -235,19 +235,19 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. The default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). Default is None.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. The default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -267,15 +267,15 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. The default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines from the uOrigin. The default is [0.0,0.25,0.5,0.75,1.0].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines from the uOrigin. Default is [0.0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines from the vOrigin. The default is [0.0,0.25,0.5,0.75,1.0].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines from the vOrigin. Default is [0.0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. The default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

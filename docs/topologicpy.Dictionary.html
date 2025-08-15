@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -250,15 +250,15 @@ values.append(value)</p>
 <dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of subTopology on which to base the adjacency dictionary.</p>
 </dd>
 <dt><strong>labelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The returned subTopologies are labelled according to the dictionary values stored under this key.
-If the labelKey does not exist, it will be created and the subTopologies are labelled numerically and stored in the subTopologies’ dictionary under this key. The default is None.</p>
+If the labelKey does not exist, it will be created and the subTopologies are labelled numerically and stored in the subTopologies’ dictionary under this key. Default is None.</p>
 </dd>
-<dt><strong>weightKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the sharedTopologies’ dictionaries will be searched for this key to set their weight. If the key is set to “Area” or “Length” (case insensitive), the area of shared faces or the length of the shared edges will be used as its weight. If set to None, a weight of 1 will be used. The default is None.</p>
+<dt><strong>weightKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the sharedTopologies’ dictionaries will be searched for this key to set their weight. If the key is set to “Area” or “Length” (case insensitive), the area of shared faces or the length of the shared edges will be used as its weight. If set to None, a weight of 1 will be used. Default is None.</p>
 </dd>
-<dt><strong>includeWeights</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, edge weights are included. Otherwise, they are not. The default is False.</p>
+<dt><strong>includeWeights</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, edge weights are included. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -282,7 +282,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>value</strong><span class="classifier">int, float, str, or list</span></dt><dd><p>A value corresponding to the input key. A value can be an integer, a float, a string, or a list.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -306,7 +306,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -328,7 +328,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionaries</strong><span class="classifier">list or comma separated dictionaries</span></dt><dd><p>The input list of dictionaries to be merged.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -350,7 +350,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dd class="field-odd"><dl class="simple">
 <dt><strong>pythonDictionary</strong><span class="classifier">dict</span></dt><dd><p>The input python dictionary.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -394,11 +394,11 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>dictionaries</strong><span class="classifier">list</span></dt><dd><p>The input list of dictionaries to be filtered.</p>
 </dd>
-<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. The default is “any”.</p>
+<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. Default is “any”.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. The default is None which means it will filter by topology type only.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. Default is None which means it will filter by topology type only.</p>
 </dd>
-<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. The default is None which means it will filter by topology type only.</p>
+<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. Default is None which means it will filter by topology type only.</p>
 </dd>
 </dl>
 </dd>
@@ -424,7 +424,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -466,7 +466,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -490,7 +490,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>key</strong><span class="classifier">string</span></dt><dd><p>The input key.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -516,7 +516,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>value</strong><span class="classifier">int , float , string, or list</span></dt><dd><p>The value associated with the key.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -540,7 +540,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -564,9 +564,9 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>key</strong><span class="classifier">string</span></dt><dd><p>The input key.</p>
 </dd>
-<dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The default value to return if the key or value are not found. The default is None.</p>
+<dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The default value to return if the key or value are not found. Default is None.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -588,7 +588,7 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 <dd class="field-odd"><dl class="simple">
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -612,9 +612,9 @@ If the labelKey does not exist, it will be created and the subTopologies are lab
 </dd>
 <dt><strong>keys</strong><span class="classifier">list</span></dt><dd><p>The input list of keys.</p>
 </dd>
-<dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The default value to return if the key or value are not found. The default is None.</p>
+<dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The default value to return if the key or value are not found. Default is None.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>

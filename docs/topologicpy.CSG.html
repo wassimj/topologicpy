@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CSG module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.CSG module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -187,13 +187,13 @@
 </dd>
 <dt><strong>b</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -217,13 +217,13 @@
 </dd>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology..</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -249,11 +249,11 @@
 </dd>
 <dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -293,7 +293,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -315,15 +315,15 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
-<dt><strong>xOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional x offset. The default is 0.</p>
+<dt><strong>xOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional x offset. Default is 0.</p>
 </dd>
-<dt><strong>yOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional y offset. The default is 0.</p>
+<dt><strong>yOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional y offset. Default is 0.</p>
 </dd>
-<dt><strong>zOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional z offset. The default is 0.</p>
+<dt><strong>zOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional z offset. Default is 0.</p>
 </dd>
-<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>A desired scale to resize the placed topologies. The default is 1.</p>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>A desired scale to resize the placed topologies. Default is 1.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>

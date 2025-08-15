@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CellComplex module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.CellComplex module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -242,25 +242,25 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the box. The default is 1.</p>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the box. Default is 1.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the box. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the box. Default is 1.</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the box.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 1.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 1.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int, optional</span></dt><dd><p>The number of sides along the length. The default is 1.</p>
+<dt><strong>vSides</strong><span class="classifier">int, optional</span></dt><dd><p>The number of sides along the length. Default is 1.</p>
 </dd>
-<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. The default is 1.</p>
+<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. Default is 1.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the box. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the box. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the box. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the box. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -282,11 +282,11 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cells</strong><span class="classifier">list</span></dt><dd><p>The list of input cells.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -308,7 +308,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of cells.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -330,9 +330,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input faces.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -354,7 +354,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of faces.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -376,9 +376,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wires</strong><span class="classifier">list</span></dt><dd><p>The input list of wires. The list should contain a minimum of two wires. All wires must have the same number of edges.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. The default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -400,9 +400,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster of wires.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. The default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces will be triangulated. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -442,21 +442,21 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the cube. The default is None which results in the cube being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the cube. The default is 1.</p>
+<dt><strong>size</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the cube. Default is 1.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 1.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 1.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int, optional</span></dt><dd><p>The number of sides along the length. The default is 1.</p>
+<dt><strong>vSides</strong><span class="classifier">int, optional</span></dt><dd><p>The number of sides along the length. Default is 1.</p>
 </dd>
-<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. The default is 1.</p>
+<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. Default is 1.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the cube. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the cube. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the cube. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the cube. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -478,9 +478,9 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>the input cellComplex.</p>
 </dd>
-<dt><strong>tiltAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. The default is 10.</p>
+<dt><strong>tiltAngle</strong><span class="classifier">float , optional</span></dt><dd><p>The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -518,7 +518,7 @@
 <dt><strong>vertices: list , optional</strong></dt><dd><p>The input list of vertices to use for delaunay triangulation. If set to None, the algorithm uses the vertices of the input cell parameter.
 if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -658,15 +658,15 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the octahedron’s circumscribed sphere. The default is 0.5.</p>
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The radius of the octahedron’s circumscribed sphere. Default is 0.5.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the octahedron. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the octahedron. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the octahedron. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the octahedron. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -686,27 +686,27 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the prism. The default is 1.</p>
+<dt><strong>width</strong><span class="classifier">float , optional</span></dt><dd><p>The width of the prism. Default is 1.</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the prism. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the prism. Default is 1.</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The height of the prism.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. The default is 1.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the width. Default is 1.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. The default is 1.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the length. Default is 1.</p>
 </dd>
-<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. The default is 1.</p>
+<dt><strong>wSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the height. Default is 1.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the prism. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the prism. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the prism. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the prism. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -728,11 +728,11 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. The default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -772,21 +772,21 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the edge of the tetrahedron. The default is 1.</p>
+<dt><strong>length</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the edge of the tetrahedron. Default is 1.</p>
 </dd>
 <dt><strong>depth</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of recrusive subdivision levels.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the tetrahedron. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the tetrahedron. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the tetrahedron. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -806,21 +806,21 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).</p>
 </dd>
-<dt><strong>majorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The major radius of the torus. The default is 0.5.</p>
+<dt><strong>majorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The major radius of the torus. Default is 0.5.</p>
 </dd>
-<dt><strong>minorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The minor radius of the torus. The default is 0.1.</p>
+<dt><strong>minorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The minor radius of the torus. Default is 0.1.</p>
 </dd>
-<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the longitude of the torus. The default is 16.</p>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the longitude of the torus. Default is 16.</p>
 </dd>
-<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the latitude of the torus. The default is 8.</p>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the latitude of the torus. Default is 8.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the torus. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the torus. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the torus. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. The default is “center”.</p>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the placement of the origin of the torus. This can be “bottom”, “center”, or “lowerleft”. It is case insensitive. Default is “center”.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -862,7 +862,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
 </dd>
-<dt><strong>manitssa: int , optional</strong></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>manitssa: int , optional</strong></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -885,9 +885,9 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 <dt><strong>vertices: list , optional</strong></dt><dd><p>The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
 if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
-<dt><strong>cell</strong><span class="classifier">topologic_core.Cell , optional</span></dt><dd><p>The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. The default is None.</p>
+<dt><strong>cell</strong><span class="classifier">topologic_core.Cell , optional</span></dt><dd><p>The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -773,11 +773,11 @@
 </dd>
 <dt><strong>apertures</strong><span class="classifier">list</span></dt><dd><p>The input list of apertures.</p>
 </dd>
-<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.</p>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. Default is False.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the apertures. This can be “cell”, “face”, “edge”, or “vertex”. It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the apertures. This can be “cell”, “face”, “edge”, or “vertex”. It is case insensitive. If set to None, the apertures will be added to the input topology. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001. This is larger than the usual 0.0001 as it seems to work better.</p>
 </dd>
 </dl>
 </dd>
@@ -801,9 +801,9 @@
 </dd>
 <dt><strong>contents</strong><span class="classifier">list or topologic_core.Topology</span></dt><dd><p>The input list of contents (of type topologic_core.Topology). A single topology is also accepted as input.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the contents. This can be “cellcomplex”, “cell”, “shell”, “face”, “wire”, “edge”, or “vertex”. It is case insensitive. If set to None, the contents will be added to the input topology. The default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the contents. This can be “cellcomplex”, “cell”, “shell”, “face”, “wire”, “edge”, or “vertex”. It is case insensitive. If set to None, the contents will be added to the input topology. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -849,7 +849,7 @@
 </dd>
 <dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The host topology in which to search.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str</span></dt><dd><p>The type of topology for which to search. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”. It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. The default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str</span></dt><dd><p>The type of topology for which to search. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”. It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -891,7 +891,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -913,7 +913,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type from which to retrieve the apertures. This can be “cell”, “face”, “edge”, or “vertex” or “all”. It is case insensitive. If set to “all”, then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -935,7 +935,7 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>version</strong><span class="classifier">int , optional</span></dt><dd><p>The desired BRep version number. The default is 3.</p>
+<dt><strong>version</strong><span class="classifier">int , optional</span></dt><dd><p>The desired BRep version number. Default is 3.</p>
 </dd>
 </dl>
 </dd>
@@ -959,13 +959,13 @@
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
 </dd>
-<dt><strong>operation</strong><span class="classifier">str , optional</span></dt><dd><p>The boolean operation. This can be one of “union”, “difference”, “intersect”, “symdif”, “merge”, “slice”, “impose”, “imprint”. It is case insensitive. The default is “union”.</p>
+<dt><strong>operation</strong><span class="classifier">str , optional</span></dt><dd><p>The boolean operation. This can be one of “union”, “difference”, “intersect”, “symdif”, “merge”, “slice”, “impose”, “imprint”. It is case insensitive. Default is “union”.</p>
 </dd>
-<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and transferred to the result. The default is False.</p>
+<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -987,15 +987,15 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>optimize</strong><span class="classifier">int , optional</span></dt><dd><p>If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding box. The default is 0.</p>
+<dt><strong>optimize</strong><span class="classifier">int , optional</span></dt><dd><p>If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding box. Default is 0.</p>
 </dd>
-<dt><strong>axes</strong><span class="classifier">str , optional</span></dt><dd><p>Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of “xyz”. It is not case sensitive. The default is “xyz”.</p>
+<dt><strong>axes</strong><span class="classifier">str , optional</span></dt><dd><p>Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of “xyz”. It is not case sensitive. Default is “xyz”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1017,25 +1017,25 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">dotbimpy.file.File</span></dt><dd><p>The input dotbim file.</p>
 </dd>
-<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. Default is “guid”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. Default is “color”. If no color is found, the defaultColor parameter is used.</p>
 </dd>
-<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. Default is “type”. If no type is found, the defaultType parameter is used.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. Default is [255,255,255,1] which is opaque white.</p>
 </dd>
-<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. Default is “Structure”.</p>
 </dd>
-<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. Default is “author”.</p>
 </dd>
 <dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1057,25 +1057,25 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path :str</strong></dt><dd><p>The path to the .bim file.</p>
 </dd>
-<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. Default is “guid”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. Default is “color”. If no color is found, the defaultColor parameter is used.</p>
 </dd>
-<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. Default is “type”. If no type is found, the defaultType parameter is used.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. Default is [255,255,255,1] which is opaque white.</p>
 </dd>
-<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. Default is “Structure”.</p>
 </dd>
-<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. Default is “author”.</p>
 </dd>
 <dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1097,25 +1097,25 @@
 <dd class="field-odd"><dl class="simple">
 <dt><strong>string :str</strong></dt><dd><p>The input dotbim str (in JSON format).</p>
 </dd>
-<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. The default is “guid”.</p>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the the guid of the topology. Default is “guid”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. Default is “color”. If no color is found, the defaultColor parameter is used.</p>
 </dd>
-<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. Default is “type”. If no type is found, the defaultType parameter is used.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. Default is [255,255,255,1] which is opaque white.</p>
 </dd>
-<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. Default is “Structure”.</p>
 </dd>
-<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. The default is “author”.</p>
+<dt><strong>authorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the author of the topology. Default is “author”.</p>
 </dd>
 <dt><strong>dateKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to store the creation date of the topology. This should be in the formate “DD.MM.YYYY”. If no date is found the date of import is used.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1198,11 +1198,11 @@ This is an experimental method with limited capabilities.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">a DXF file object</span></dt><dd><p>The DXF file object.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. The default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. Default is 16.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1225,11 +1225,11 @@ This is an experimental method with limited capabilities.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the DXF file.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. The default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides of splines. Default is 16.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1257,11 +1257,11 @@ This is an experimental method with limited capabilities.</p>
 </dd>
 <dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired highest topology type. The options are: “Vertex”, “Edge”, “Wire”, “Face”, “Shell”, “Cell”, “CellComplex”.
 It is case insensitive. If any of these options are selected, the returned topology will only contain this type either a single topology
-or as a Cluster of these types of topologies. If set to None, a “Cluster” will be returned of vertices, edges, and/or faces. The default is None.</p>
+or as a Cluster of these types of topologies. If set to None, a “Cluster” will be returned of vertices, edges, and/or faces. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1283,19 +1283,19 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>ifc_file</strong><span class="classifier">file object</span></dt><dd><p>The input IFC file.</p>
 </dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].</p>
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].</p>
 </dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].</p>
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. Default is False.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -1315,17 +1315,17 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the IFC file.</p>
 </dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].</p>
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].</p>
 </dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].</p>
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won’t. Default is False.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.0001.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.0001.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -1345,7 +1345,7 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>jsonDictionary</strong><span class="classifier">dict</span></dt><dd><p>The input JSON dictionary.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1367,7 +1367,7 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">file object</span></dt><dd><p>The input JSON file.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1389,7 +1389,7 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The file path to the json file.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1411,7 +1411,7 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 <dd class="field-odd"><dl class="simple">
 <dt><strong>string</strong><span class="classifier">str</span></dt><dd><p>The input JSON string.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -1447,13 +1447,13 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 ‘cell_dicts’, list of dicts
 }</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1476,21 +1476,21 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objFile</strong><span class="classifier">file object</span></dt><dd><p>The OBJ file.</p>
 </dd>
-<dt><strong>mtlFile</strong><span class="classifier">file object , optional</span></dt><dd><p>The MTL file. The default is None.</p>
+<dt><strong>mtlFile</strong><span class="classifier">file object , optional</span></dt><dd><p>The MTL file. Default is None.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. The default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. The default is True.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -1513,19 +1513,19 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objPath</strong><span class="classifier">str</span></dt><dd><p>The path to the OBJ file.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. The default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. The default is True.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -1547,21 +1547,21 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>objString</strong><span class="classifier">str</span></dt><dd><p>The string of the OBJ file.</p>
 </dd>
-<dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The string of the MTL file. The default is None.</p>
+<dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The string of the MTL file. Default is None.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the string. The default is [255, 255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the string. Default is [255, 255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the string. The default is 1.0 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the string. Default is 1.0 (fully opaque).</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. The default is True.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -1603,27 +1603,27 @@ This method is basic and does not support textures and vertex normals.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">file</span></dt><dd><p>The input PDF file</p>
 </dd>
-<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. The default is True.</p>
+<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. Default is True.</p>
 </dd>
-<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. The default is True.</p>
+<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. Default is True.</p>
 </dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. Default is [] which means all PDF objects will be included.
 The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
 </dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. Default is [] which mean no PDF object type will be excluded.
 The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
 </dd>
-<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. The default is None.</p>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. Default is None.</p>
 </dd>
-<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. The default is None.</p>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. Default is None.</p>
 </dd>
-<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. The default is None.</p>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. Default is None.</p>
 </dd>
-<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. The default is None.</p>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1645,27 +1645,27 @@ The possible strings to include in this list are: [“line”, “curve”, “r
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">path</span></dt><dd><p>The input path to the PDF file</p>
 </dd>
-<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. The default is True.</p>
+<dt><strong>wires</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, wires will be constructed when possible. Default is True.</p>
 </dd>
-<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. The default is True.</p>
+<dt><strong>faces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, faces will be constructed when possible. Default is True.</p>
 </dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to include in the returned result. Default is [] which means all PDF objects will be included.
 The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
 </dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>A list of PDF object types to exclude from the returned result. Default is [] which mean no PDF object type will be excluded.
 The possible strings to include in this list are: [“line”, “curve”, “rectangle”, “quadrilateral”]</p>
 </dd>
-<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. The default is None.</p>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge color. Default is None.</p>
 </dd>
-<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. The default is None.</p>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the edge width. Default is None.</p>
 </dd>
-<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. The default is None.</p>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face color. Default is None.</p>
 </dd>
-<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. The default is None.</p>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the face opacity. Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1708,9 +1708,9 @@ C 3.2 1.2 -12.3</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>file</strong><span class="classifier">file object</span></dt><dd><p>The input XYZ file.</p>
 </dd>
-<dt><strong>frameIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each frame in its dictionary. The default is “id”.</p>
+<dt><strong>frameIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each frame in its dictionary. Default is “id”.</p>
 </dd>
-<dt><strong>vertexIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each point in its dictionary. The default is “id”.</p>
+<dt><strong>vertexIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each point in its dictionary. Default is “id”.</p>
 </dd>
 </dl>
 </dd>
@@ -1753,9 +1753,9 @@ C 3.2 1.2 -12.3</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input XYZ file path.</p>
 </dd>
-<dt><strong>frameIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each frame in its dictionary. The default is “id”.</p>
+<dt><strong>frameIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each frame in its dictionary. Default is “id”.</p>
 </dd>
-<dt><strong>vertexIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each point in its dictionary. The default is “id”.</p>
+<dt><strong>vertexIdKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired id key to use to store the ID of each point in its dictionary. Default is “id”.</p>
 </dd>
 </dl>
 </dd>
@@ -1784,13 +1784,13 @@ and thus can give erroneous results. The transformation matrix may not yield an 
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. The default is 10.</p>
+<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. Default is 10.</p>
 </dd>
-<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the longest edge in the input topology is scaled to become of length 1. The default is False.</p>
+<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the longest edge in the input topology is scaled to become of length 1. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1915,7 +1915,7 @@ USE WITH CARE. This methods deletes dictionaries, contents, and contexts</p>
 </dd>
 <dt><strong>keys</strong><span class="classifier">str or list or comma-separated str input parameters</span></dt><dd><p>The key or keys in the topology’s dictionary to use for clustering.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1937,9 +1937,9 @@ USE WITH CARE. This methods deletes dictionaries, contents, and contexts</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. The default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -2026,7 +2026,7 @@ Returns a Face in 2D (even embedded in 3D), or a Cell/Shell in 3D.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Tolerance value for geometric operations. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses warning and error messages.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2048,7 +2048,7 @@ Returns a Face in 2D (even embedded in 3D), or a Cell/Shell in 3D.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>deep</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. The default is False</p>
+<dt><strong>deep</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. Default is False</p>
 </dd>
 </dl>
 </dd>
@@ -2093,11 +2093,11 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2119,7 +2119,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2147,7 +2147,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2175,7 +2175,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 </dd>
 <dt><strong>addNestingDepth</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the nesting depth of the division is added to the dictionaries of the divided topologies.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2217,21 +2217,21 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the explosion. If set to None, the centroid of the input topology will be used. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.</p>
 </dd>
-<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>The scale factor of the explosion. The default is 1.25.</p>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>The scale factor of the explosion. Default is 1.25.</p>
 </dd>
-<dt><strong>typeFilter</strong><span class="classifier">str , optional</span></dt><dd><p>The type of the subtopologies to explode. This can be any of “vertex”, “edge”, “face”, or “cell”. If set to None, a subtopology one level below the type of the input topology will be used. The default is None.</p>
+<dt><strong>typeFilter</strong><span class="classifier">str , optional</span></dt><dd><p>The type of the subtopologies to explode. This can be any of “vertex”, “edge”, “face”, or “cell”. If set to None, a subtopology one level below the type of the input topology will be used. Default is None.</p>
 </dd>
-<dt><strong>axes</strong><span class="classifier">str , optional</span></dt><dd><p>Sets what axes are to be used for exploding the topology. This can be any permutation or substring of “xyz”. It is not case sensitive. The default is “xyz”.</p>
+<dt><strong>axes</strong><span class="classifier">str , optional</span></dt><dd><p>Sets what axes are to be used for exploding the topology. This can be any permutation or substring of “xyz”. It is not case sensitive. Default is “xyz”.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the original subTopologies are transferred to the exploded topologies. Otherwise, they are not. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the original subTopologies are transferred to the exploded topologies. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2255,27 +2255,27 @@ The diameter is the maximum distance between any two vertices on the convex hull
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
-<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. The default is “1.0.0”.</p>
+<dt><strong>version</strong><span class="classifier">str , optional</span></dt><dd><p>The desired version number for the BIM file. Default is “1.0.0”.</p>
 </dd>
-<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the guid of the topology. It is case insensitive. The default is “guid”. If no guid is found, one is generated automatically.</p>
+<dt><strong>guidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the guid of the topology. It is case insensitive. Default is “guid”. If no guid is found, one is generated automatically.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. It is case insensitive. The default is “color”. If no color is found, the defaultColor parameter is used.</p>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the color of the topology. It is case insensitive. Default is “color”. If no color is found, the defaultColor parameter is used.</p>
 </dd>
-<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. It is case insensitive. The default is “type”. If no type is found, the defaultType parameter is used.</p>
+<dt><strong>typeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the the type of the topology. It is case insensitive. Default is “type”. If no type is found, the defaultType parameter is used.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. The default is [255,255,255,1] which is opaque white.</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use for the topology. Default is [255,255,255,1] which is opaque white.</p>
 </dd>
-<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. The default is “Structure”.</p>
+<dt><strong>defaultType</strong><span class="classifier">str , optional</span></dt><dd><p>The default type to use for the topology. Default is “Structure”.</p>
 </dd>
-<dt><strong>author</strong><span class="classifier">str , optional</span></dt><dd><p>The author of the topology. The default is “topologicpy”.</p>
+<dt><strong>author</strong><span class="classifier">str , optional</span></dt><dd><p>The author of the topology. Default is “topologicpy”.</p>
 </dd>
-<dt><strong>date</strong><span class="classifier">str , optional</span></dt><dd><p>The creation date of the topology. This should be in the formate “DD.MM.YYYY”. The default is None which uses the date of export.</p>
+<dt><strong>date</strong><span class="classifier">str , optional</span></dt><dd><p>The creation date of the topology. This should be in the formate “DD.MM.YYYY”. Default is None which uses the date of export.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -2299,9 +2299,9 @@ The diameter is the maximum distance between any two vertices on the convex hull
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
-<dt><strong>version</strong><span class="classifier">int , optional</span></dt><dd><p>The desired version number for the BREP file. The default is 3.</p>
+<dt><strong>version</strong><span class="classifier">int , optional</span></dt><dd><p>The desired version number for the BREP file. Default is 3.</p>
 </dd>
 </dl>
 </dd>
@@ -2327,9 +2327,9 @@ This is experimental and only geometry is exported.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -2353,7 +2353,7 @@ This is experimental and only geometry is exported.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the JSON file.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2377,15 +2377,15 @@ This is experimental and only geometry is exported.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
 </dd>
-<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. Default is “name”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. Default is “color”.</p>
 </dd>
-<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. Default is “opacity”.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
 </dd>
@@ -2404,11 +2404,11 @@ WARNING: The options that use gmsh can be very time consuming and can create ver
 <dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
 calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2470,13 +2470,13 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of topology to filter by. This can be one of “any”, “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, or “cluster”. It is case insensitive. The default is “any”.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of topology to filter by. This can be one of “any”, “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, or “cluster”. It is case insensitive. Default is “any”.</p>
 </dd>
-<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. The default is “any”.</p>
+<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. Default is “any”.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. The default is None which means it will filter by topology type only.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. Default is None which means it will filter by topology type only.</p>
 </dd>
-<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. The default is None which means it will filter by topology type only.</p>
+<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. Default is None which means it will filter by topology type only.</p>
 </dd>
 </dl>
 </dd>
@@ -2500,9 +2500,9 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired output topology type. This must be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. The default is “CellComplex”</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired output topology type. This must be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. Default is “CellComplex”</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -2524,11 +2524,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to place the world origin. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to place the world origin. Default is None.</p>
 </dd>
 <dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -2550,11 +2550,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2610,11 +2610,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt><strong>sources</strong><span class="classifier">list of topologic_core. Topology</span></dt><dd><p>The list of source topologies from which to inherit dictionary information.</p>
 </dd>
-<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a target will inherit information only from the first eligible source. The default is True.</p>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a target will inherit information only from the first eligible source. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2636,11 +2636,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>timeout</strong><span class="classifier">int , optional</span></dt><dd><p>The amount of seconds to wait before timing out. The default is 30 seconds.</p>
+<dt><strong>timeout</strong><span class="classifier">int , optional</span></dt><dd><p>The amount of seconds to wait before timing out. Default is 30 seconds.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , ptional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , ptional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2703,9 +2703,9 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -2751,15 +2751,15 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of percentage tolerance) for finding if two objects are similar. Should be in the range 0 to 1. The default is 0.1 (10%).</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of percentage tolerance) for finding if two objects are similar. Should be in the range 0 to 1. Default is 0.1 (10%).</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2784,14 +2784,14 @@ If the topologies are not similar, the transformation matrix is None.</p>
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 <dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired accepted tolerance for the number of matched number of vertices. For example, an epsilon of 0.1 indicates that
-the algorithm will return True even if 10% of the vertices do not match. The default is 0.1.</p>
+the algorithm will return True even if 10% of the vertices do not match. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2813,7 +2813,7 @@ the algorithm will return True even if 10% of the vertices do not match. The def
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list or topologic_core.Topology</span></dt><dd><p>The input list of topologies or a single topology.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -2835,13 +2835,13 @@ the algorithm will return True even if 10% of the vertices do not match. The def
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true largest faces. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true largest faces. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -2861,13 +2861,13 @@ the algorithm will return True even if 10% of the vertices do not match. The def
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true longest straight edges. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true longest straight edges. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -2893,7 +2893,7 @@ the algorithm will return True even if 10% of the vertices do not match. The def
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The list of input topologies.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -2920,13 +2920,13 @@ the algorithm will return True even if 10% of the vertices do not match. The def
 1: The faces list indexes into the edges list.
 The default is 1.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2958,11 +2958,11 @@ The default is 1.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The x distance value. The default is 0.</p>
+<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The x distance value. Default is 0.</p>
 </dd>
-<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The y distance value. The default is 0.</p>
+<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The y distance value. Default is 0.</p>
 </dd>
-<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The z distance value. The default is 0.</p>
+<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The z distance value. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -2984,7 +2984,7 @@ The default is 1.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3006,15 +3006,15 @@ The default is 1.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list or comma separated topologies</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. Default is “name”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. Default is “color”.</p>
 </dd>
-<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. Default is “opacity”.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
 </dd>
@@ -3033,9 +3033,9 @@ WARNING: The options that use gmsh can be very time consuming and can create ver
 <dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
 calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3137,13 +3137,13 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to locate the input topology. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to locate the input topology. Default is None.</p>
 </dd>
-<dt><strong>dirA</strong><span class="classifier">list , optional</span></dt><dd><p>The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0, 0, 1].</p>
+<dt><strong>dirA</strong><span class="classifier">list , optional</span></dt><dd><p>The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>dirB</strong><span class="classifier">list , optional</span></dt><dd><p>The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. The default is [0, 0, 1].</p>
+<dt><strong>dirB</strong><span class="classifier">list , optional</span></dt><dd><p>The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -3165,11 +3165,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>originA</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.</p>
+<dt><strong>originA</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. Default is None.</p>
 </dd>
-<dt><strong>originB</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+<dt><strong>originB</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -3193,11 +3193,11 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. The default is 10.</p>
+<dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The number of segments to use to increase the number of points on each face. Default is 10.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3219,11 +3219,11 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. The default is 0.1.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance. Default is 0.1.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3267,11 +3267,11 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3295,7 +3295,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>edges</strong><span class="classifier">list</span></dt><dd><p>The input list of edges.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3319,7 +3319,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>faces</strong><span class="classifier">list</span></dt><dd><p>The input list of faces.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3343,7 +3343,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>selectors</strong><span class="classifier">list</span></dt><dd><p>The input list of selectors (vertices).</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3367,7 +3367,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3393,9 +3393,9 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>verticesB</strong><span class="classifier">list</span></dt><dd><p>The second input list of vertices.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3417,15 +3417,15 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>axis</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the axis of rotation. The default is [0, 0, 1] which equates to the Z axis.</p>
+<dt><strong>axis</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the axis of rotation. Default is [0, 0, 1] which equates to the Z axis.</p>
 </dd>
-<dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle of rotation in degrees. The default is 0.</p>
+<dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle of rotation in degrees. Default is 0.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3447,17 +3447,17 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>roll</strong><span class="classifier">float , optional</span></dt><dd><p>The rotation angle in degrees around the X-axis. The default is 0.</p>
+<dt><strong>roll</strong><span class="classifier">float , optional</span></dt><dd><p>The rotation angle in degrees around the X-axis. Default is 0.</p>
 </dd>
-<dt><strong>pitch = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Y-axis. The default is 0.</p>
+<dt><strong>pitch = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Y-axis. Default is 0.</p>
 </dd>
-<dt><strong>yaw = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Z-axis. The default is 0.</p>
+<dt><strong>yaw = float , optional</strong></dt><dd><p>The rotation angle in degrees around the Z-axis. Default is 0.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3479,13 +3479,13 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
 <dt><strong>quaternion</strong><span class="classifier">list or numpy array of size 4</span></dt><dd><p>The input Quaternion list. It should be in the form [x, y, z, w].</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -3507,13 +3507,13 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the scaling. If set to None, the world origin (0, 0, 0) is used. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the scaling. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘x’ component of the scaling factor. The default is 1.</p>
+<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘x’ component of the scaling factor. Default is 1.</p>
 </dd>
-<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘y’ component of the scaling factor. The default is 1.</p>
+<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘y’ component of the scaling factor. Default is 1.</p>
 </dd>
-<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘z’ component of the scaling factor. The default is 1..</p>
+<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The ‘z’ component of the scaling factor. Default is 1..</p>
 </dd>
 </dl>
 </dd>
@@ -3537,7 +3537,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>selector</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>A vertex located on the desired subtopology.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">str , optional.</span></dt><dd><p>The desired subtopology type. This can be of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, or “cellcomplex”. It is case insensitive. The default is “vertex”.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional.</span></dt><dd><p>The desired subtopology type. This can be of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, or “cellcomplex”. It is case insensitive. Default is “vertex”.</p>
 </dd>
 </dl>
 </dd>
@@ -3559,7 +3559,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
 </dd>
 </dl>
 </dd>
@@ -3583,7 +3583,7 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dd>
 <dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3740,13 +3740,13 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true shortest straight edges. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true shortest straight edges. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -3768,13 +3768,13 @@ Also, please note that there is no guarantee that three returned vectors match y
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">topologic_core.Topology or list</span></dt><dd><p>The input topology. This must contain faces and or edges. If the input is a list, a cluster is first created</p>
 </dd>
-<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the opacity of the topology. The default is “opacity”.</p>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the opacity of the topology. Default is “opacity”.</p>
 </dd>
-<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. The default is 1.1.</p>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. Default is 1.1.</p>
 </dd>
-<dt><strong>vertexSizeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the size of the vertex. The default is None.</p>
+<dt><strong>vertexSizeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the size of the vertex. Default is None.</p>
 </dd>
 <dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -3784,9 +3784,9 @@ Also, please note that there is no guarantee that three returned vectors match y
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the vertex. The default is None.</p>
+<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the vertex. Default is None.</p>
 </dd>
-<dt><strong>vertexBorderWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired width of the borders of the output vertices. The default is 0.</p>
+<dt><strong>vertexBorderWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired width of the borders of the output vertices. Default is 0.</p>
 </dd>
 <dt><strong>vertexBorderColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the borders of the output vertices. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -3796,31 +3796,31 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. The default is None.</p>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
 </dd>
-<dt><strong>showVertexLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.</p>
+<dt><strong>showVertexLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. The default is None.</p>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
 </dd>
-<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. The default is [].</p>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
 </dd>
-<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.</p>
+<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
 </dd>
-<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. The default is “Topology Vertices”.</p>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
 </dd>
-<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. The default is False.</p>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. Default is False.</p>
 </dd>
-<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. The default is 0.1.</p>
+<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. Default is 0.1.</p>
 </dd>
-<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. The default is None.</p>
+<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. Default is None.</p>
 </dd>
-<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. The default is 1.</p>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
 </dd>
 <dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -3830,35 +3830,35 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “black”.</p>
 </dd>
-<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the edge. The default is None.</p>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the edge. Default is None.</p>
 </dd>
-<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. The default is False.</p>
+<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. Default is False.</p>
 </dd>
-<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. The default is None.</p>
+<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. Default is None.</p>
 </dd>
-<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the width of the edge. The default is None.</p>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the width of the edge. Default is None.</p>
 </dd>
-<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. The default is None.</p>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
 </dd>
-<dt><strong>showEdgeLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.</p>
+<dt><strong>showEdgeLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
 </dd>
-<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. The default is None.</p>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
 </dd>
-<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. The default is [].</p>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. Default is [].</p>
 </dd>
-<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.</p>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.</p>
 </dd>
-<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. The default is “Topology Edges”.</p>
+<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. Default is “Topology Edges”.</p>
 </dd>
-<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.</p>
+<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.</p>
 </dd>
-<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.</p>
+<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.</p>
 </dd>
-<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the opacity of the face. The default is None.</p>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the opacity of the face. Default is None.</p>
 </dd>
 <dt><strong>faceColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output faces. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -3868,31 +3868,31 @@ The default is “black”.</p>
 - A named CSS color.
 The default is “#FAFAFA”.</p>
 </dd>
-<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the face. The default is None.</p>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the color of the face. Default is None.</p>
 </dd>
-<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. The default is None.</p>
+<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. Default is None.</p>
 </dd>
-<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. The default is None.</p>
+<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. Default is None.</p>
 </dd>
-<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].</p>
+<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].</p>
 </dd>
-<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.</p>
+<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.</p>
+<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.</p>
 </dd>
-<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. The default is False.</p>
+<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. Default is False.</p>
 </dd>
-<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. The default is “Topology Faces”.</p>
+<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. Default is “Topology Faces”.</p>
 </dd>
 <dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 950.</p>
 </dd>
 <dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 950.</p>
 </dd>
-<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
-<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.</p>
+<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.</p>
 </dd>
 <dt><strong>backgroundColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the background. This can be any plotly color string and may be specified as:
 - A hex string (e.g. ‘#ff0000’)
@@ -3910,45 +3910,45 @@ The default is “rgba(0,0,0,0)”.</p>
 </dd>
 <dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the bottom margin. The default value is 0.</p>
 </dd>
-<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera). The default is [-1.25, -1.25, 1.25].</p>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera). Default is [-1.25, -1.25, 1.25].</p>
 </dd>
-<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). The default is [0, 0, 0].</p>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
 </dd>
-<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. The default is [0, 0, 1].</p>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. The default is “perspective”</p>
+<dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. Default is “perspective”</p>
 </dd>
-<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.</p>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.</p>
 </dd>
-<dt><strong>intensityKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.</p>
+<dt><strong>intensityKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.</p>
 </dd>
-<dt><strong>intensities</strong><span class="classifier">list , optional</span></dt><dd><p>The list of intensities against which to index the intensity of the vertex. The default is [].</p>
+<dt><strong>intensities</strong><span class="classifier">list , optional</span></dt><dd><p>The list of intensities against which to index the intensity of the vertex. Default is [].</p>
 </dd>
-<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the colorbar is shown. The default is False.</p>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the colorbar is shown. Default is False.</p>
 </dd>
-<dt><strong>cbValues</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the colorbar. The default is [].</p>
+<dt><strong>cbValues</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the colorbar. Default is [].</p>
 </dd>
-<dt><strong>cbTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the colorbar. The default is 5.</p>
+<dt><strong>cbTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the colorbar. Default is 5.</p>
 </dd>
-<dt><strong>cbX</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the colorbar. The default is -0.15.</p>
+<dt><strong>cbX</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the colorbar. Default is -0.15.</p>
 </dd>
-<dt><strong>cbWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the colorbar. The default is 15</p>
+<dt><strong>cbWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the colorbar. Default is 15</p>
 </dd>
-<dt><strong>cbOutlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the colorbar. The default is 0.</p>
+<dt><strong>cbOutlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the colorbar. Default is 0.</p>
 </dd>
-<dt><strong>cbTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the colorbar. The default is “”.</p>
+<dt><strong>cbTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the colorbar. Default is “”.</p>
 </dd>
-<dt><strong>cbSubTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the colorbar. The default is “”.</p>
+<dt><strong>cbSubTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the colorbar. Default is “”.</p>
 </dd>
-<dt><strong>cbUnits: str , optional</strong></dt><dd><p>The units used in the colorbar. The default is “”</p>
+<dt><strong>cbUnits: str , optional</strong></dt><dd><p>The units used in the colorbar. Default is “”</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). The default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the colorbar. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the colorbar. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -3975,13 +3975,13 @@ The default is “rgba(0,0,0,0)”.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true smallest faces. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed to find the true smallest faces. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.</p>
+<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -4008,9 +4008,9 @@ The default is “rgba(0,0,0,0)”.</p>
 </dd>
 <dt><strong>selectors</strong><span class="classifier">list</span></dt><dd><p>The input list of selectors (vertices).</p>
 </dd>
-<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True only one selector can be used to select on topology. The default is False.</p>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True only one selector can be used to select on topology. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -4034,17 +4034,17 @@ The default is “rgba(0,0,0,0)”.</p>
 </dd>
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The origin (center) of the spin.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the result will be triangulated. The default is True.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the result will be triangulated. Default is True.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the direction of the spin axis. The default is [0, 0, 1].</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the direction of the spin axis. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees for the spin. The default is 360.</p>
+<dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle in degrees for the spin. Default is 360.</p>
 </dd>
-<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides. The default is 16.</p>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of sides. Default is 16.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4091,21 +4091,21 @@ The options are (case insensitive):</p>
 </dd>
 </dl>
 </dd>
-<dt><strong>minSize</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of subtopologies to include in a combination. This number cannot be less than 2. The default is 2.</p>
+<dt><strong>minSize</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of subtopologies to include in a combination. This number cannot be less than 2. Default is 2.</p>
 </dd>
-<dt><strong>maxSize</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. The default is None which means the maximum will be set to the number of subtopologies minus 1.</p>
+<dt><strong>maxSize</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. Default is None which means the maximum will be set to the number of subtopologies minus 1.</p>
 </dd>
-<dt><strong>maxCombinations</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of combinations to create. The default is 100.</p>
+<dt><strong>maxCombinations</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of combinations to create. Default is 100.</p>
 </dd>
-<dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.</p>
+<dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in seconds. Default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>removeCollinearEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear edges are removed. Otherwise they are not. The default is False.</p>
+<dt><strong>removeCollinearEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear edges are removed. Otherwise they are not. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4127,9 +4127,9 @@ The options are (case insensitive):</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The requested subtopology type. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. The default is “vertex”.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The requested subtopology type. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. Default is “vertex”.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors will be printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
@@ -4151,7 +4151,7 @@ The options are (case insensitive):</p>
 </dd>
 <dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The host to topology in which to search for ther supertopologies.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The topology type to search for. This can be any of “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The topology type to search for. This can be any of “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -4185,13 +4185,13 @@ The options are (case insensitive):</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.</p>
 </dd>
 <dt><strong>ratioRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.</p>
 </dd>
@@ -4217,9 +4217,9 @@ The options are (case insensitive):</p>
 </dd>
 <dt><strong>sinks</strong><span class="classifier">list</span></dt><dd><p>The list of topologies to which to transfer the dictionaries.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>numWorkers</strong><span class="classifier">int, optional</span></dt><dd><p>Number of workers run in parallel to process. The default is None which sets the number to twice the number of CPU cores.</p>
+<dt><strong>numWorkers</strong><span class="classifier">int, optional</span></dt><dd><p>Number of workers run in parallel to process. Default is None which sets the number to twice the number of CPU cores.</p>
 </dd>
 </dl>
 </dd>
@@ -4251,7 +4251,7 @@ The options are (case insensitive):</p>
 </dd>
 <dt><strong>tranCells</strong><span class="classifier">bool , optional</span></dt><dd><p>If True transfer dictionaries to the cells of the input topology.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>numWorkers</strong><span class="classifier">int , optional</span></dt><dd><p>Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
 The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.</p>
@@ -4276,7 +4276,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 </dd>
 <dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The input 4x4 transformation matrix.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors will be printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4298,13 +4298,13 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The x translation value. The default is 0.</p>
+<dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The x translation value. Default is 0.</p>
 </dd>
-<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The y translation value. The default is 0.</p>
+<dt><strong>y</strong><span class="classifier">float , optional</span></dt><dd><p>The y translation value. Default is 0.</p>
 </dd>
-<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The z translation value. The default is 0.</p>
+<dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The z translation value. Default is 0.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors will be printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4326,9 +4326,9 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The direction vector in which the topology should be moved. The default is [0, 0, 0]</p>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The direction vector in which the topology should be moved. Default is [0, 0, 0]</p>
 </dd>
-<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The distance by which the toplogy should be moved. The default is 0.</p>
+<dt><strong>distance</strong><span class="classifier">float , optional</span></dt><dd><p>The distance by which the toplogy should be moved. Default is 0.</p>
 </dd>
 </dl>
 </dd>
@@ -4350,7 +4350,7 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topologgy.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. Default is False.</p>
 </dd>
 <dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm. Several options are available:
 0: Classic
@@ -4367,9 +4367,9 @@ WARNING: The options that use gmsh can be very time consuming and can create ver
 <dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
 calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors will be printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4391,13 +4391,13 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.</p>
 </dd>
 <dt><strong>angleRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -4439,7 +4439,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, no warnings or errors will be printed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4475,7 +4475,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 “topology”</p>
 </dd>
 </dl>
-<p>It is case insensitive. The default is None.</p>
+<p>It is case insensitive. Default is None.</p>
 </dd>
 </dl>
 </dd>
@@ -4519,7 +4519,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to translate the world origin. The default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to translate the world origin. Default is None.</p>
 </dd>
 <dt><strong>vector</strong><span class="classifier">list , optional</span></dt><dd><p>The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.</p>
 </dd>
@@ -4569,17 +4569,17 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list or comma separated topologies</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>uuid</strong><span class="classifier">UUID , optional</span></dt><dd><p>The UUID v5 to use to identify these topologies. The default is a UUID based on the topologies themselves.</p>
+<dt><strong>uuid</strong><span class="classifier">UUID , optional</span></dt><dd><p>The UUID v5 to use to identify these topologies. Default is a UUID based on the topologies themselves.</p>
 </dd>
-<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. The default is “name”.</p>
+<dt><strong>nameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the name of the topology. Default is “name”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. The default is “color”.</p>
+<dt><strong>colorKey</strong><span class="classifier">str, optional</span></dt><dd><p>The topology dictionary key under which to find the color of the topology. Default is “color”.</p>
 </dd>
-<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. The default is “opacity”.</p>
+<dt><strong>opacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The topology dictionary key under which to find the opacity of the topology. Default is “opacity”.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).</p>
 </dd>
 <dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y coordinates are transposed so that Y points “up”</p>
 </dd>
@@ -4598,11 +4598,11 @@ WARNING: The options that use gmsh can be very time consuming and can create ver
 <dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
 calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. The default is False.</p>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t. Default is False.</p>
 </dd>
 </dl>
 </dd>

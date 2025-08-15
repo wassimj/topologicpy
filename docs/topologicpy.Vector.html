@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.8.46 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.8.47 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.46
+                0.8.47
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -340,7 +340,7 @@
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -384,7 +384,7 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -435,9 +435,9 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 </dd>
 <dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the direction of the vector is computed from the end point towards the origin. Otherwise, it is computed from the origin towards the end point.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mantissa. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -485,7 +485,7 @@ If the altitude is -90 or 90, the azimuth is assumed to be 0.</p>
 </dd>
 <dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the resulting vector is normalized (i.e. its length is set to 1)</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -511,11 +511,11 @@ Only the first two elements in the input vectors are considered.</p>
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -543,9 +543,9 @@ The possible returned values are:
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -599,11 +599,11 @@ The possible returned values are:
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
 </dd>
-<dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. The default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
+<dt><strong>outputType</strong><span class="classifier">string, optional</span></dt><dd><p>The desired output type. Could be any permutation or substring of “xyz” or the string “matrix”. Default is “xyz”. The input is case insensitive and the coordinates will be returned in the specified order.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -627,11 +627,11 @@ The possible returned values are:
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -655,11 +655,11 @@ The possible returned values are:
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. The default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -734,7 +734,7 @@ within a given tolerance. Returns False otherwise.</p>
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining collinearity. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining collinearity. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -760,7 +760,7 @@ Returns False otherwise.</p>
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining parallelism. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance for determining parallelism. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -784,7 +784,7 @@ Returns False otherwise.</p>
 </dd>
 <dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
@@ -806,7 +806,7 @@ Returns False otherwise.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -828,7 +828,7 @@ Returns False otherwise.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. The default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
 </dd>
 </dl>
 </dd>
@@ -852,7 +852,7 @@ Returns False otherwise.</p>
 </dd>
 <dt><strong>magnitude</strong><span class="classifier">float</span></dt><dd><p>The input magnitude.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. The default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>the desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
