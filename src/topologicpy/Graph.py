@@ -381,9 +381,9 @@ class Graph:
         transferEdgeDictionaries : bool, optional
             If set to True, the dictionaries of the edges are transferred to the graph.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -460,9 +460,9 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -495,9 +495,9 @@ class Graph:
         vertices : list
             The input list of vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -533,13 +533,13 @@ class Graph:
             The input graph.
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
-            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. The default is None.
+            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically and stored in the vertex dictionary under this key. Default is None.
         edgeKey : str , optional
-            If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. The default is "Length".
+            If set, the edges' dictionaries will be searched for this key to set their weight. If the key is set to "length" (case insensitive), the length of the edge will be used as its weight. If set to None, a weight of 1 will be used. Default is "Length".
         includeWeights : bool , optional
-            If set to True, edge weights are included. Otherwise, they are not. The default is False.        
+            If set to True, edge weights are included. Otherwise, they are not. Default is False.        
         mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -627,25 +627,25 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
         reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
         edgeKeyFwd : str , optional
-            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
         edgeKeyBwd : str , optional
-            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
         bidirKey : bool , optional
-            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
+            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None
         bidirectional : bool , optional
-            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.
+            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
         useEdgeIndex : bool , optional
-            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         useEdgeLength : bool , optional
-            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -734,25 +734,25 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
         reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
         edgeKeyFwd : str , optional
-            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
         edgeKeyBwd : str , optional
-            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. The default is None. useEdgeIndex and useEdgeLength override this setting.
+            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
         bidirKey : bool , optional
-            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. The default is None
+            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None
         bidirectional : bool , optional
-            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. The default is True.
+            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
         useEdgeIndex : bool , optional
-            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         useEdgeLength : bool , optional
-            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). The default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -795,11 +795,11 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
         reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -850,7 +850,7 @@ class Graph:
         vertex : topologic_core.Vertex
             the input vertex.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -884,11 +884,11 @@ class Graph:
         vertex : topologic_core.Vertex
             the input vertex.
         compassDirection : str , optional
-            The compass direction. See Vector.CompassDirections(). The default is "Up".
+            The compass direction. See Vector.CompassDirections(). Default is "Up".
         tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -942,11 +942,11 @@ class Graph:
         vertex : topologic_core.Vertex
             the input vertex.
         vector : list , optional
-            The vector direction. The default is [0,0,1].
+            The vector direction. Default is [0,0,1].
         tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -998,9 +998,9 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         timeLimit : int , optional
-            The time limit in second. The default is 10 seconds.
+            The time limit in second. Default is 10 seconds.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1036,7 +1036,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1101,30 +1101,30 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         bidirectional : bool , optional
-            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. Default is False.
         includeAttributes : bool , optional
-            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         includeLabel : bool , optional
-            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+            If set to True, a label is attached to each node. Otherwise, it is not. Default is False.
         includeGeometry : bool , optional
-            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         siteLabel : str , optional
-            The desired site label. The default is "Site_0001".
+            The desired site label. Default is "Site_0001".
         siteDictionary : dict , optional
-            The dictionary of site attributes to include in the output. The default is None.
+            The dictionary of site attributes to include in the output. Default is None.
         buildingLabel : str , optional
-            The desired building label. The default is "Building_0001".
+            The desired building label. Default is "Building_0001".
         buildingDictionary : dict , optional
-            The dictionary of building attributes to include in the output. The default is None.
+            The dictionary of building attributes to include in the output. Default is None.
         storeyPrefix : str , optional
-            The desired prefixed to use for each building storey. The default is "Storey".
+            The desired prefixed to use for each building storey. Default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
             If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -1132,37 +1132,37 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         sourceKey : str , optional
-            The dictionary key used to store the source vertex. The default is "source".
+            The dictionary key used to store the source vertex. Default is "source".
         targetKey : str , optional
-            The dictionary key used to store the target vertex. The default is "target".
+            The dictionary key used to store the target vertex. Default is "target".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "hasX".
+            The desired key name to use for x-coordinates. Default is "hasX".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "hasY".
+            The desired key name to use for y-coordinates. Default is "hasY".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "hasZ".
+            The desired key name to use for z-coordinates. Default is "hasZ".
         geometryKey : str , optional
-            The desired key name to use for geometry. The default is "brep".
+            The desired key name to use for geometry. Default is "brep".
         typeKey : str , optional
-            The dictionary key to use to look up the type of the node. The default is "type".
+            The dictionary key to use to look up the type of the node. Default is "type".
         geometryKey : str , optional
-            The dictionary key to use to look up the geometry of the node. The default is "brep".
+            The dictionary key to use to look up the geometry of the node. Default is "brep".
         spaceType : str , optional
-            The dictionary string value to use to look up vertices of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". Default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". Default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". Default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up vertices of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". Default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up vertices of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". Default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up vertices of type "content". The default is "contents".
+            The dictionary string value to use to look up vertices of type "content". Default is "contents".
         namespace : str , optional
-            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+            The desired namespace to use in the BOT graph. Default is "http://github.com/wassimj/topologicpy/resources".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
             
         Returns
@@ -1415,30 +1415,30 @@ class Graph:
             trix : Trix , RDF/XML-like format for RDF quads
             nquads : N-Quads , N-Triples-like format for RDF quads
         bidirectional : bool , optional
-            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. Default is False.
         includeAttributes : bool , optional
-            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         includeLabel : bool , optional
-            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+            If set to True, a label is attached to each node. Otherwise, it is not. Default is False.
         includeGeometry : bool , optional
-            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         siteLabel : str , optional
-            The desired site label. The default is "Site_0001".
+            The desired site label. Default is "Site_0001".
         siteDictionary : dict , optional
-            The dictionary of site attributes to include in the output. The default is None.
+            The dictionary of site attributes to include in the output. Default is None.
         buildingLabel : str , optional
-            The desired building label. The default is "Building_0001".
+            The desired building label. Default is "Building_0001".
         buildingDictionary : dict , optional
-            The dictionary of building attributes to include in the output. The default is None.
+            The dictionary of building attributes to include in the output. Default is None.
         storeyPrefix : str , optional
-            The desired prefixed to use for each building storey. The default is "Storey".
+            The desired prefixed to use for each building storey. Default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
             If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -1446,35 +1446,35 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         sourceKey : str , optional
-            The dictionary key used to store the source vertex. The default is "source".
+            The dictionary key used to store the source vertex. Default is "source".
         targetKey : str , optional
-            The dictionary key used to store the target vertex. The default is "target".
+            The dictionary key used to store the target vertex. Default is "target".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "hasX".
+            The desired key name to use for x-coordinates. Default is "hasX".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "hasY".
+            The desired key name to use for y-coordinates. Default is "hasY".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "hasZ".
+            The desired key name to use for z-coordinates. Default is "hasZ".
         geometryKey : str , optional
-            The desired key name to use for geometry. The default is "brep".
+            The desired key name to use for geometry. Default is "brep".
         typeKey : str , optional
-            The dictionary key to use to look up the type of the node. The default is "type".
+            The dictionary key to use to look up the type of the node. Default is "type".
         spaceType : str , optional
-            The dictionary string value to use to look up vertices of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". Default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". Default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". Default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up vertices of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". Default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up vertices of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". Default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up vertices of type "content". The default is "contents".
+            The dictionary string value to use to look up vertices of type "content". Default is "contents".
         namespace : str , optional
-            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+            The desired namespace to use in the BOT graph. Default is "http://github.com/wassimj/topologicpy/resources".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         
         Returns
@@ -1525,26 +1525,26 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         method : str , optional
-            The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
+            The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
             the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
         nxCompatible : bool , optional
-            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
+            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. Default is False.
         key : str , optional
-            The desired dictionary key under which to store the betweenness centrality score. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality score. Default is "betweenness_centrality".
         colorKey : str , optional
-            The desired dictionary key under which to store the betweenness centrality color. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality color. Default is "betweenness_centrality".
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1615,16 +1615,16 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         n : int , optional
-            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 2.
+            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. Default is 2.
         m : int , optional
-            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 10.
+            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. Default is 10.
         key : str , optional
-            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            The vertex and edge dictionary key under which to store the parition number. Default is "partition".
             Valid partition numbers start from 1. Cut edges receive a partition number of 0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1684,9 +1684,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         key : str , optional
-            The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. The default is "bridge".
+            The edge dictionary key under which to store the bridge status. 0 means the edge is NOT a bridge. 1 means that the edge IS a bridge. Default is "bridge".
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1787,7 +1787,7 @@ class Graph:
             A list of dictionaries to assign to the vertices of the graph. This list should be in
             the same order and of the same length as the rows in the adjacency matrix.
         silent : bool , optional
-            If set to True, no warnings or error messages are displayed. The default is False.
+            If set to True, no warnings or error messages are displayed. Default is False.
         
         Returns
         -------
@@ -1816,23 +1816,23 @@ class Graph:
             A list of dictionaries to assign to the vertices of the graph. This list should be in
             the same order and of the same length as the rows in the adjacency matrix.
         edgeKeyFwd : str , optional
-            The dictionary key under which to store the edge weight value for forward edge. The default is "weight".
+            The dictionary key under which to store the edge weight value for forward edge. Default is "weight".
         edgeKeyBwd : str , optional
-            The dictionary key under which to store the edge weight value for backward edge. The default is "weight".
+            The dictionary key under which to store the edge weight value for backward edge. Default is "weight".
         xMin : float , optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
         yMin : float , optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
         zMin : float , optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
         xMax : float , optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
         yMax : float , optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float , optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
         silent : bool , optional
-            If set to True, no warnings or error messages are displayed. The default is False.
+            If set to True, no warnings or error messages are displayed. Default is False.
         
         Returns
         -------
@@ -2096,49 +2096,49 @@ class Graph:
         path : str
             The path to the folder containing the .yaml and .csv files for graphs, edges, and nodes.
         graphIDHeader : str , optional
-            The column header string used to specify the graph id. The default is "graph_id".
+            The column header string used to specify the graph id. Default is "graph_id".
         graphLabelHeader : str , optional
-            The column header string used to specify the graph label. The default is "label".
+            The column header string used to specify the graph label. Default is "label".
         graphFeaturesHeader : str , optional
-            The column header string used to specify the graph features. The default is "feat".
+            The column header string used to specify the graph features. Default is "feat".
         edgeSRCHeader : str , optional
-            The column header string used to specify the source vertex id of edges. The default is "src_id".
+            The column header string used to specify the source vertex id of edges. Default is "src_id".
         edgeDSTHeader : str , optional
-            The column header string used to specify the destination vertex id of edges. The default is "dst_id".
+            The column header string used to specify the destination vertex id of edges. Default is "dst_id".
         edgeLabelHeader : str , optional
-            The column header string used to specify the label of edges. The default is "label".
+            The column header string used to specify the label of edges. Default is "label".
         edgeTrainMaskHeader : str , optional
-            The column header string used to specify the train mask of edges. The default is "train_mask".
+            The column header string used to specify the train mask of edges. Default is "train_mask".
         edgeValidateMaskHeader : str , optional
-            The column header string used to specify the validate mask of edges. The default is "val_mask".
+            The column header string used to specify the validate mask of edges. Default is "val_mask".
         edgeTestMaskHeader : str , optional
-            The column header string used to specify the test mask of edges. The default is "test_mask".
+            The column header string used to specify the test mask of edges. Default is "test_mask".
         edgeFeaturesHeader : str , optional
-            The column header string used to specify the features of edges. The default is "feat".
+            The column header string used to specify the features of edges. Default is "feat".
         edgeFeaturesKeys : list , optional
-            The list of dictionary keys to use to index the edge features. The length of this list must match the length of edge features. The default is [].
+            The list of dictionary keys to use to index the edge features. The length of this list must match the length of edge features. Default is [].
         nodeIDHeader : str , optional
-            The column header string used to specify the id of nodes. The default is "node_id".
+            The column header string used to specify the id of nodes. Default is "node_id".
         nodeLabelHeader : str , optional
-            The column header string used to specify the label of nodes. The default is "label".
+            The column header string used to specify the label of nodes. Default is "label".
         nodeTrainMaskHeader : str , optional
-            The column header string used to specify the train mask of nodes. The default is "train_mask".
+            The column header string used to specify the train mask of nodes. Default is "train_mask".
         nodeValidateMaskHeader : str , optional
-            The column header string used to specify the validate mask of nodes. The default is "val_mask".
+            The column header string used to specify the validate mask of nodes. Default is "val_mask".
         nodeTestMaskHeader : str , optional
-            The column header string used to specify the test mask of nodes. The default is "test_mask".
+            The column header string used to specify the test mask of nodes. Default is "test_mask".
         nodeFeaturesHeader : str , optional
-            The column header string used to specify the features of nodes. The default is "feat".
+            The column header string used to specify the features of nodes. Default is "feat".
         nodeXHeader : str , optional
-            The column header string used to specify the X coordinate of nodes. The default is "X".
+            The column header string used to specify the X coordinate of nodes. Default is "X".
         nodeYHeader : str , optional
-            The column header string used to specify the Y coordinate of nodes. The default is "Y".
+            The column header string used to specify the Y coordinate of nodes. Default is "Y".
         nodeZHeader : str , optional
-            The column header string used to specify the Z coordinate of nodes. The default is "Z".
+            The column header string used to specify the Z coordinate of nodes. Default is "Z".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -2398,9 +2398,9 @@ class Graph:
         file : file object
             The input file.
         key : str , optional
-            The desired key for storing the node label. The default is "label".
+            The desired key for storing the node label. Default is "label".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2426,9 +2426,9 @@ class Graph:
         path : str
             The input file path.
         key : str , optional
-            The desired key for storing the node label. The default is "label".
+            The desired key for storing the node label. Default is "label".
         tolerance : str , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2456,9 +2456,9 @@ class Graph:
         string : str
             The input string.
         key : str , optional
-            The desired key for storing the node label. The default is "label".
+            The desired key for storing the node label. Default is "label".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2534,35 +2534,35 @@ class Graph:
         file : file
             The input IFC file
         includeTypes : list , optional
-            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+            A list of IFC object types to include in the graph. Default is [] which means all object types are included.
         excludeTypes : list , optional
-            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+            A list of IFC object types to exclude from the graph. Default is [] which mean no object type is excluded.
         includeRels : list , optional
-            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+            A list of IFC relationship types to include in the graph. Default is [] which means all relationship types are included.
         excludeRels : list , optional
-            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+            A list of IFC relationship types to exclude from the graph. Default is [] which mean no relationship type is excluded.
         transferDictionaries : bool , optional
-            NOT USED. If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+            NOT USED. If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
         useInternalVertex : bool , optional
-            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
-            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+            If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
         yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
         zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
         xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
         yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2729,35 +2729,35 @@ class Graph:
         file : file
             The input IFC file
         includeTypes : list , optional
-            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+            A list of IFC object types to include in the graph. Default is [] which means all object types are included.
         excludeTypes : list , optional
-            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+            A list of IFC object types to exclude from the graph. Default is [] which mean no object type is excluded.
         includeRels : list , optional
-            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+            A list of IFC relationship types to include in the graph. Default is [] which means all relationship types are included.
         excludeRels : list , optional
-            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+            A list of IFC relationship types to exclude from the graph. Default is [] which mean no relationship type is excluded.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
         useInternalVertex : bool , optional
-            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
-            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+            If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
         yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
         zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
         xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
         yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -3154,33 +3154,33 @@ class Graph:
         path : str
             The input IFC file path.
         includeTypes : list , optional
-            A list of IFC object types to include in the graph. The default is [] which means all object types are included.
+            A list of IFC object types to include in the graph. Default is [] which means all object types are included.
         excludeTypes : list , optional
-            A list of IFC object types to exclude from the graph. The default is [] which mean no object type is excluded.
+            A list of IFC object types to exclude from the graph. Default is [] which mean no object type is excluded.
         includeRels : list , optional
-            A list of IFC relationship types to include in the graph. The default is [] which means all relationship types are included.
+            A list of IFC relationship types to include in the graph. Default is [] which means all relationship types are included.
         excludeRels : list , optional
-            A list of IFC relationship types to exclude from the graph. The default is [] which mean no relationship type is excluded.
+            A list of IFC relationship types to exclude from the graph. Default is [] which mean no relationship type is excluded.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
         useInternalVertex : bool , optional
-            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
-            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+            If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
         yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
         zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
         xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
         yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
         
         Returns
         -------
@@ -3244,7 +3244,7 @@ class Graph:
         edgeDictionaries : list , optional
             The python dictionaries of the edges (in the same order as the list of edges).
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3296,17 +3296,17 @@ class Graph:
         nxGraph : NetworkX graph
             The input NetworkX graph.
         xKey : str , optional
-            The dictionary key under which to find the X-Coordinate of the vertex. The default is 'x'.
+            The dictionary key under which to find the X-Coordinate of the vertex. Default is 'x'.
         yKey : str , optional
-            The dictionary key under which to find the Y-Coordinate of the vertex. The default is 'y'.
+            The dictionary key under which to find the Y-Coordinate of the vertex. Default is 'y'.
         zKey : str , optional
-            The dictionary key under which to find the Z-Coordinate of the vertex. The default is 'z'.
+            The dictionary key under which to find the Z-Coordinate of the vertex. Default is 'z'.
         range : tuple , optional
-            The range to use for position coordinates if no values are found in the dictionaries. The default is (-1,1)
+            The range to use for position coordinates if no values are found in the dictionaries. Default is (-1,1)
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3387,25 +3387,25 @@ class Graph:
         topology : topologic_core.Topology
             The input topology.
         direct : bool , optional
-            If set to True, connect the subtopologies directly with a single edge. The default is True.
+            If set to True, connect the subtopologies directly with a single edge. Default is True.
         directApertures : bool , optional
-            If set to True, connect the subtopologies directly with a single edge if they share one or more apertures. The default is False.
+            If set to True, connect the subtopologies directly with a single edge if they share one or more apertures. Default is False.
         viaSharedTopologies : bool , optional
-            If set to True, connect the subtopologies via their shared topologies. The default is False.
+            If set to True, connect the subtopologies via their shared topologies. Default is False.
         viaSharedApertures : bool , optional
-            If set to True, connect the subtopologies via their shared apertures. The default is False.
+            If set to True, connect the subtopologies via their shared apertures. Default is False.
         toExteriorTopologies : bool , optional
-            If set to True, connect the subtopologies to their exterior topologies. The default is False.
+            If set to True, connect the subtopologies to their exterior topologies. Default is False.
         toExteriorApertures : bool , optional
-            If set to True, connect the subtopologies to their exterior apertures. The default is False.
+            If set to True, connect the subtopologies to their exterior apertures. Default is False.
         toContents : bool , optional
-            If set to True, connect the subtopologies to their contents. The default is False.
+            If set to True, connect the subtopologies to their contents. Default is False.
         toOutposts : bool , optional
-            If set to True, connect the topology to the list specified in its outposts. The default is False.
+            If set to True, connect the topology to the list specified in its outposts. Default is False.
         idKey : str , optional
-            The key to use to find outpost by ID. It is case insensitive. The default is "TOPOLOGIC_ID".
+            The key to use to find outpost by ID. It is case insensitive. Default is "TOPOLOGIC_ID".
         outpostsKey : str , optional
-            The key to use to find the list of outposts. It is case insensitive. The default is "outposts".
+            The key to use to find the list of outposts. It is case insensitive. Default is "outposts".
         vertexCategoryKey : str , optional
             The key under which to store the node type. Node categories are:
             0 : main topology
@@ -3427,11 +3427,11 @@ class Graph:
             6 : to outpost
             The default is "category".
         useInternalVertex : bool , optional
-            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. The default is False.
+            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
-            If set to True, store the BRep of the subtopology in its representative vertex. The default is False.
+            If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4585,26 +4585,26 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         method : str , optional
-            The method of computing the betweenness centrality. The options are "vertex" or "edge". The default is "vertex".
+            The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
             the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
         nxCompatible : bool , optional
-            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. The default is False.
+            If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. Default is False.
         key : str , optional
-            The desired dictionary key under which to store the betweenness centrality score. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality score. Default is "betweenness_centrality".
         colorKey : str , optional
-            The desired dictionary key under which to store the betweenness centrality color. The default is "betweenness_centrality".
+            The desired dictionary key under which to store the betweenness centrality color. Default is "betweenness_centrality".
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4635,9 +4635,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         maxColors : int , optional
-            The desired maximum number of colors to test against. The default is 3.
+            The desired maximum number of colors to test against. Default is 3.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
        
         Returns
         -------
@@ -4701,13 +4701,13 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         oldKey : str , optional
-            The existing dictionary key to use to read any pre-existing color information. The default is "color".
+            The existing dictionary key to use to read any pre-existing color information. Default is "color".
         key : str , optional
-            The new dictionary key to use to write out new color information. The default is "color".
+            The new dictionary key to use to write out new color information. Default is "color".
         maxColors : int , optional
-            The desired maximum number of colors to use. If set to None, the chromatic number of the graph is used. The default is None.
+            The desired maximum number of colors to use. If set to None, the chromatic number of the graph is used. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4794,14 +4794,18 @@ class Graph:
                 weightDiameter: float = 0.0,
                 weightEigenVectorCentrality: float = 0.0,
                 weightGlobalClusteringCoefficient: float = 0.0,
+                weightHopper: float = 0.0,
+                weightJaccard: float = 0.0,
                 weightPageRank: float = 0.0,
                 weightStructure: float = 0.0,
                 weightWeisfeilerLehman: float = 0.0,
-                weightJaccard: float = 0.0,
                 vertexIDKey: str = "id",
                 edgeWeightKey: str = None,
-                vertexKey: str = None,
+                wlKey: str = None,
+                hopperKey: str = None,
                 iterations: int = 2,
+                maxHops: int = 2,
+                decay: float = 0.5,
                 mantissa: int = 6,
                 silent: bool = False):
         """
@@ -4833,6 +4837,8 @@ class Graph:
             The desired weight for geometric similarity (vertex positions). Default is 0.0.
         weightGlobalClusteringCoefficient : float , optional
             The desired weight for global clustering coefficient similarity (graph-level and node-level). Default is 0.0.
+        weightHopper : float , optional
+            The desired weight for Hopper kernel similarity. Default is 0.0.
         weightJaccard: float , optional
             The desired weight for the Weighted Jaccard similarity. Default is 0.0.
         weightPageRank : float , optional
@@ -4841,21 +4847,26 @@ class Graph:
             The desired weight for structural similarity (number of vertices and edges). Default is 0.0.
         weightWeisfeilerLehman : float , optional
             The desired weight for Weisfeiler-Lehman kernel similarity (iterative label propagation). Default is 0.0.
-        
         vertexIDKey: str , optional
-            The dictionary key under which to find the unique vertex ID. The default is "id".
+            The dictionary key under which to find the unique vertex ID. Default is "id".
         edgeWeightKey: str , optional
             The dictionary key under which to find the weight of the edge for weighted graphs.
             If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
             The default is None which means all edges are treated as if they have a weight of 1.
-        vertexKey: str , optional
-            The vertex key to use for the Weifeiler-Lehman initial labels. The default is None which means it will use vertex degree as an initial label.
+        wlKey: str , optional
+            The vertex key to use for the Weifeiler-Lehman kernel initial labels. Default is None which means it will use vertex degree as an initial label.
+        hopperKey: str , optional
+            The vertex key to use for the Hopper kernel to derive node features. Default is None which means it will use vertex degree as an initial label.
         iterations : int , optional
-            The desired number of Weisfeiler-Lehman kernel iterations. Default is 2.
+            WL kernel-specific parameter: The desired number of Weisfeiler-Lehman kernel iterations. Default is 2.
+        maxHops : int , optional
+            Hopper kernel-specific parameter: The maximum shortest-path hop distance to consider. Default is 3.
+        decay : float , optional
+            Hopper kernel-specific parameter: A per-hop geometric decay factor in the range (0, 1]. Default is 0.5.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4870,6 +4881,7 @@ class Graph:
             "eigenvector_centrality"
             "geometry"
             "global_clustering_coefficient"
+            "hopper"
             "jaccard"
             "pagerank"
             "structure"
@@ -4932,15 +4944,13 @@ class Graph:
             graph2 : topologic Graph
                 Second graph.
             vertexIDKey: str , optional
-                The dictionary key under which to find the unique vertex ID. The default is "id".
+                The dictionary key under which to find the unique vertex ID. Default is "id".
             edgeWeightKey: str , optional
                 The dictionary key under which to find the weight of the edge for weighted graphs.
                 If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
                 The default is None which means all edges are treated as if they have a weight of 1.
-            iterations : int , optional
-                The desired number of Weisfeiler-Lehman iterations. Default is 2.
             mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
 
             Returns
             -------
@@ -5046,6 +5056,10 @@ class Graph:
             diff = abs(v1 - v2) / max(abs(v1), abs(v2), 1e-6)
             return round((1 - diff), mantissa)
         
+        def hopper_similarity(graphA, graphB, key=None, maxHops=3, decay=0.5, mantissa=6, silent=False):
+            score = Graph.HopperKernel(graphA, graphB, key=key, maxHops=maxHops, decay=decay, normalize=True, mantissa=mantissa, silent=silent)
+            return score
+        
         def pagerank_similarity(graphA, graphB, mantissa=6):
             v1 = safe_mean(Graph.PageRank(graphA))
             v2 = safe_mean(Graph.PageRank(graphB))
@@ -5065,8 +5079,8 @@ class Graph:
 
             return round((vertex_score + edge_score) / 2, mantissa)
 
-        def weisfeiler_lehman_similarity(graphA, graphB, key=None, iterations=3, mantissa=6):
-            score = Graph.WLKernel(graphA, graphB, key=key, iterations=iterations, normalize=True, mantissa=mantissa)
+        def weisfeiler_lehman_similarity(graphA, graphB, key=None, iterations=2, mantissa=6, silent=True):
+            score = Graph.WLKernel(graphA, graphB, key=key, iterations=iterations, normalize=True, mantissa=mantissa, silent=silent)
             return score
         
         if not Topology.IsInstance(graphA, "graph"):
@@ -5087,23 +5101,25 @@ class Graph:
                             weightDiameter,
                             weightEigenVectorCentrality,
                             weightGlobalClusteringCoefficient,
+                            weightHopper,
                             weightPageRank,
                             weightStructure,
                             weightWeisfeilerLehman,
                             weightJaccard])
-        accessibility_centrality_score = accessibility_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightAccessibilityCentrality else 0
-        attribute_score = attribute_similarity(graphA, graphB, mantissa=mantissa) if weightAttributes else 0
-        betweenness_centrality_score = betweenness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightBetwennessCentrality else 0
-        closeness_centrality_score = closeness_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightClosenessCentrality else 0
-        degree_centrality_score = degree_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightDegreeCentrality else 0
-        diameter_score = diameter_similarity(graphA, graphB, mantissa=mantissa) if weightDiameter else 0
-        eigenvector_centrality_score = eigenvector_centrality_similarity(graphA, graphB, mantissa=mantissa) if weightEigenVectorCentrality else 0
-        global_clustering_coefficient_score = global_clustering_coefficient_similarity(graphA, graphB, mantissa=mantissa) if weightGlobalClusteringCoefficient else 0
-        geometry_score = geometry_similarity(graphA, graphB, mantissa=mantissa) if weightGeometry else 0
-        jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=mantissa) if weightJaccard else 0
-        pagerank_score = pagerank_similarity(graphA, graphB, mantissa=mantissa) if weightPageRank else 0
-        structure_score = structure_similarity(graphA, graphB, mantissa=mantissa) if weightStructure else 0
-        weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, key=vertexKey, iterations=iterations, mantissa=mantissa) if weightWeisfeilerLehman else 0
+        accessibility_centrality_score = accessibility_centrality_similarity(graphA, graphB, mantissa=6) if weightAccessibilityCentrality else 0
+        attribute_score = attribute_similarity(graphA, graphB, mantissa=6) if weightAttributes else 0
+        betweenness_centrality_score = betweenness_centrality_similarity(graphA, graphB, mantissa=6) if weightBetwennessCentrality else 0
+        closeness_centrality_score = closeness_centrality_similarity(graphA, graphB, mantissa=6) if weightClosenessCentrality else 0
+        degree_centrality_score = degree_centrality_similarity(graphA, graphB, mantissa=6) if weightDegreeCentrality else 0
+        diameter_score = diameter_similarity(graphA, graphB, mantissa=6) if weightDiameter else 0
+        eigenvector_centrality_score = eigenvector_centrality_similarity(graphA, graphB, mantissa=6) if weightEigenVectorCentrality else 0
+        geometry_score = geometry_similarity(graphA, graphB, mantissa=6) if weightGeometry else 0
+        global_clustering_coefficient_score = global_clustering_coefficient_similarity(graphA, graphB, mantissa=6) if weightGlobalClusteringCoefficient else 0
+        hopper_score = hopper_similarity(graphA, graphB, key=hopperKey, maxHops=maxHops, decay=decay, mantissa=6, silent=silent) if weightHopper else 0
+        jaccard_score = weighted_jaccard_similarity(graphA, graphB, vertexIDKey=vertexIDKey, edgeWeightKey=edgeWeightKey, mantissa=6) if weightJaccard else 0
+        pagerank_score = pagerank_similarity(graphA, graphB, mantissa=6) if weightPageRank else 0
+        structure_score = structure_similarity(graphA, graphB, mantissa=6) if weightStructure else 0
+        weisfeiler_lehman_score = weisfeiler_lehman_similarity(graphA, graphB, key=wlKey, iterations=iterations, mantissa=6, silent=silent) if weightWeisfeilerLehman else 0
 
         weighted_sum = (
             accessibility_centrality_score * weightAccessibilityCentrality +
@@ -5115,6 +5131,7 @@ class Graph:
             eigenvector_centrality_score * weightEigenVectorCentrality +
             geometry_score * weightGeometry +
             global_clustering_coefficient_score * weightGlobalClusteringCoefficient +
+            hopper_score * weightHopper +
             jaccard_score * weightJaccard +
             pagerank_score * weightPageRank +
             structure_score * weightStructure +
@@ -5135,6 +5152,7 @@ class Graph:
                  "eigenvector_centrality": round(eigenvector_centrality_score, mantissa),
                  "geometry": round(geometry_score, mantissa),
                  "global_clustering_coefficient": round(global_clustering_coefficient_score, mantissa),
+                 "hopper": round(hopper_score, mantissa),
                  "jaccard": round(jaccard_score, mantissa),
                  "pagerank": round(pagerank_score, mantissa),
                  "structure": round(structure_score, mantissa),
@@ -5152,9 +5170,9 @@ class Graph:
         graph : topologicpy.Graph
             The input topologic graph.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5228,9 +5246,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5270,11 +5288,11 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         key : str , optional
-            The vertex and edge dictionary key under which to store the component number. The default is "component".
+            The vertex and edge dictionary key under which to store the component number. Default is "component".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5361,9 +5379,9 @@ class Graph:
         edge : topologic_core.Edge
             The input graph edge that needs to be contracted.
         vertex : topollogic.Vertex , optional
-            The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. The default is None.
+            The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5491,11 +5509,11 @@ class Graph:
         colorScale : str , optional
             Plotly color scale name (e.g., "viridis", "plasma").
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5614,13 +5632,13 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to store the partition number. The default is "partition".
+            The dictionary key under which to store the partition number. Default is "partition".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         topologicpy.Graph
@@ -5641,13 +5659,13 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to store the partition number. The default is "partition".
+            The dictionary key under which to store the partition number. Default is "partition".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         topologicpy.Graph
@@ -5736,7 +5754,7 @@ class Graph:
         verticesB : topologic_core.Vertex
             The second list of input vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5779,26 +5797,26 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
-            The input list of vertices. The default is None which means all graph vertices are computed.
+            The input list of vertices. Default is None which means all graph vertices are computed.
         normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         key : str , optional
-            The dictionary key under which to store the connectivity score. The default is "connectivity".
+            The dictionary key under which to store the connectivity score. Default is "connectivity".
         colorKey : str , optional
-            The desired dictionary key under which to store the connectivity color. The default is "cn_color".
+            The desired dictionary key under which to store the connectivity color. Default is "cn_color".
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5829,7 +5847,7 @@ class Graph:
         edge : topologic_core.Edge
             The input edge.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5859,7 +5877,7 @@ class Graph:
         vertex : topologic_core.Vertex
             The input Vertex.
         tolerance : float , optional
-            Ther desired tolerance. The default is 0.0001.
+            Ther desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5887,9 +5905,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         key : str , optional
-            The vertex dictionary key under which to store the cut status. 0 means the vertex is NOT a cut vertex. 1 means that the vertex IS a cut vertex. The default is "cut".
+            The vertex dictionary key under which to store the cut status. 0 means the vertex is NOT a cut vertex. 1 means that the vertex IS a cut vertex. Default is "cut".
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -5962,18 +5980,18 @@ class Graph:
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
        normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. The default is False.
+            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
         key : str , optional
-            The desired dictionary key under which to store the degree centrality score. The default is "degree_centrality".
+            The desired dictionary key under which to store the degree centrality score. Default is "degree_centrality".
         colorKey : str , optional
-            The desired dictionary key under which to store the degree centrality color. The default is "dc_color".
+            The desired dictionary key under which to store the degree centrality color. Default is "dc_color".
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6095,11 +6113,11 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertex : topologic_core.Vertex , optional
-            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
+            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. Default is None.
         tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6149,15 +6167,15 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
-            The input list of vertices. The default is None.
+            The input list of vertices. Default is None.
         key : str , optional
-            The dictionary key under which to store the depth score. The default is "depth".
+            The dictionary key under which to store the depth score. Default is "depth".
         type : str , optional
-            The type of depth distance to calculate. The options are "topological" or "metric". The default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
+            The type of depth distance to calculate. The options are "topological" or "metric". Default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6281,11 +6299,11 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         type : str , optional
-            The type of depth distance to calculate. The options are "topological" or "metric". The default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
+            The type of depth distance to calculate. The options are "topological" or "metric". Default is "topological". See https://www.spacesyntax.online/overview-2/analysis-of-spatial-relations/.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6325,7 +6343,7 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input Vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6358,7 +6376,7 @@ class Graph:
         vertices : list , optional
             An optional list of vertices to restrict the returned list of edges only to those connected to this list.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6398,11 +6416,11 @@ class Graph:
         weightKey : str, optional
             Ignored in this implementation. Reserved for future use if weighted adjacency matrix is desired.
         normalize : bool, optional
-            If set to True, the centrality values are normalized to be in the range 0 to 1. The default is False.
+            If set to True, the centrality values are normalized to be in the range 0 to 1. Default is False.
         key : str, optional
-            The desired dictionary key under which to store the eigenvector centrality score. The default is "eigen_vector_centrality".
+            The desired dictionary key under which to store the eigenvector centrality score. Default is "eigen_vector_centrality".
         colorKey : str, optional
-            The desired dictionary key under which to store the eigenvector centrality color. The default is "evc_color".
+            The desired dictionary key under which to store the eigenvector centrality color. Default is "evc_color".
         colorScale : str, optional
             The desired type of Plotly color scale to use (e.g., "viridis", "plasma"). Default is "viridis".
             For a full list of names, see https://plotly.com/python/builtin-colorscales/.
@@ -6552,32 +6570,32 @@ class Graph:
             trix : Trix , RDF/XML-like format for RDF quads
             nquads : N-Quads , N-Triples-like format for RDF quads
         overwrite : bool , optional
-            If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
+            If set to True, any existing file is overwritten. Otherwise, it is not. Default is False.
         bidirectional : bool , optional
-            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. The default is False.
+            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. Default is False.
         includeAttributes : bool , optional
-            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         includeLabel : bool , optional
-            If set to True, a label is attached to each node. Otherwise, it is not. The default is False.
+            If set to True, a label is attached to each node. Otherwise, it is not. Default is False.
         includeGeometry : bool , optional
-            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. The default is False.
+            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
         siteLabel : str , optional
-            The desired site label. The default is "Site_0001".
+            The desired site label. Default is "Site_0001".
         siteDictionary : dict , optional
-            The dictionary of site attributes to include in the output. The default is None.
+            The dictionary of site attributes to include in the output. Default is None.
         buildingLabel : str , optional
-            The desired building label. The default is "Building_0001".
+            The desired building label. Default is "Building_0001".
         buildingDictionary : dict , optional
-            The dictionary of building attributes to include in the output. The default is None.
+            The dictionary of building attributes to include in the output. Default is None.
         storeyPrefix : str , optional
-            The desired prefixed to use for each building storey. The default is "Storey".
+            The desired prefixed to use for each building storey. Default is "Storey".
         floorLevels : list , optional
             The list of floor levels. This should be a numeric list, sorted from lowest to highest.
             If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -6585,37 +6603,37 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         sourceKey : str , optional
-            The dictionary key used to store the source vertex. The default is "source".
+            The dictionary key used to store the source vertex. Default is "source".
         targetKey : str , optional
-            The dictionary key used to store the target vertex. The default is "target".
+            The dictionary key used to store the target vertex. Default is "target".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "hasX".
+            The desired key name to use for x-coordinates. Default is "hasX".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "hasY".
+            The desired key name to use for y-coordinates. Default is "hasY".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "hasZ".
+            The desired key name to use for z-coordinates. Default is "hasZ".
         geometryKey : str , optional
-            The desired key name to use for geometry. The default is "brep".
+            The desired key name to use for geometry. Default is "brep".
         typeKey : str , optional
-            The dictionary key to use to look up the type of the node. The default is "type".
+            The dictionary key to use to look up the type of the node. Default is "type".
         geometryKey : str , optional
-            The dictionary key to use to look up the geometry of the node. The default is "brep".
+            The dictionary key to use to look up the geometry of the node. Default is "brep".
         spaceType : str , optional
-            The dictionary string value to use to look up vertices of type "space". The default is "space".
+            The dictionary string value to use to look up vertices of type "space". Default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up vertices of type "wall". The default is "wall".
+            The dictionary string value to use to look up vertices of type "wall". Default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up vertices of type "slab". The default is "slab".
+            The dictionary string value to use to look up vertices of type "slab". Default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up vertices of type "door". The default is "door".
+            The dictionary string value to use to look up vertices of type "door". Default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up vertices of type "window". The default is "window".
+            The dictionary string value to use to look up vertices of type "window". Default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up vertices of type "content". The default is "contents".
+            The dictionary string value to use to look up vertices of type "content". Default is "contents".
         namespace : str , optional
-            The desired namespace to use in the BOT graph. The default is "http://github.com/wassimj/topologicpy/resources".
+            The desired namespace to use in the BOT graph. Default is "http://github.com/wassimj/topologicpy/resources".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -6721,81 +6739,81 @@ class Graph:
         graphFeatures : str , optional
             The input graph features. This is a single string of numeric features separated by commas. Example: "3.456, 2.011, 56.4". The defauly is "".
         graphIDHeader : str , optional
-            The desired graph ID column header. The default is "graph_id".
+            The desired graph ID column header. Default is "graph_id".
         graphLabelHeader : str , optional
-            The desired graph label column header. The default is "label".
+            The desired graph label column header. Default is "label".
         graphFeaturesHeader : str , optional
-            The desired graph features column header. The default is "feat".
+            The desired graph features column header. Default is "feat".
         edgeLabelKey : str , optional
-            The edge label dictionary key saved in each graph edge. The default is "label".
+            The edge label dictionary key saved in each graph edge. Default is "label".
         defaultEdgeLabel : int , optional
-            The default edge label to use if no edge label is found. The default is 0.
+            The default edge label to use if no edge label is found. Default is 0.
         edgeLabelHeader : str , optional
-            The desired edge label column header. The default is "label".
+            The desired edge label column header. Default is "label".
         edgeSRCHeader : str , optional
-            The desired edge source column header. The default is "src_id".
+            The desired edge source column header. Default is "src_id".
         edgeDSTHeader : str , optional
-            The desired edge destination column header. The default is "dst_id".
+            The desired edge destination column header. Default is "dst_id".
         edgeFeaturesHeader : str , optional
-            The desired edge features column header. The default is "feat".
+            The desired edge features column header. Default is "feat".
         edgeFeaturesKeys : list , optional
-            The list of feature dictionary keys saved in the dicitonaries of edges. The default is [].
+            The list of feature dictionary keys saved in the dicitonaries of edges. Default is [].
         edgeTrainMaskHeader : str , optional
-            The desired edge train mask column header. The default is "train_mask".
+            The desired edge train mask column header. Default is "train_mask".
         edgeValidateMaskHeader : str , optional
-            The desired edge validate mask column header. The default is "val_mask".
+            The desired edge validate mask column header. Default is "val_mask".
         edgeTestMaskHeader : str , optional
-            The desired edge test mask column header. The default is "test_mask".
+            The desired edge test mask column header. Default is "test_mask".
         edgeMaskKey : str , optional
             The dictionary key where the edge train, validate, test category is to be found. The value should be 0 for train
-            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. The default is "mask".
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. Default is "mask".
         edgeTrainRatio : float , optional
-            The desired ratio of the edge data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
+            The desired ratio of the edge data to use for training. The number must be between 0 and 1. Default is 0.8 which means 80% of the data will be used for training.
             This value is ignored if an edgeMaskKey is foud.
         edgeValidateRatio : float , optional
-            The desired ratio of the edge data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
+            The desired ratio of the edge data to use for validation. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for validation.
             This value is ignored if an edgeMaskKey is foud.
         edgeTestRatio : float , optional
-            The desired ratio of the edge data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+            The desired ratio of the edge data to use for testing. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for testing.
             This value is ignored if an edgeMaskKey is foud.
         bidirectional : bool , optional
-            If set to True, a reversed edge will also be saved for each edge in the graph. Otherwise, it will not. The default is True.
+            If set to True, a reversed edge will also be saved for each edge in the graph. Otherwise, it will not. Default is True.
         nodeFeaturesKeys : list , optional
-            The list of features keys saved in the dicitonaries of nodes. The default is [].
+            The list of features keys saved in the dicitonaries of nodes. Default is [].
         nodeLabelKey : str , optional
-            The node label dictionary key saved in each graph vertex. The default is "label".
+            The node label dictionary key saved in each graph vertex. Default is "label".
         defaultNodeLabel : int , optional
-            The default node label to use if no node label is found. The default is 0.
+            The default node label to use if no node label is found. Default is 0.
         nodeIDHeader : str , optional
-            The desired node ID column header. The default is "node_id".
+            The desired node ID column header. Default is "node_id".
         nodeLabelHeader : str , optional
-            The desired node label column header. The default is "label".
+            The desired node label column header. Default is "label".
         nodeFeaturesHeader : str , optional
-            The desired node features column header. The default is "feat".
+            The desired node features column header. Default is "feat".
         nodeTrainMaskHeader : str , optional
-            The desired node train mask column header. The default is "train_mask".
+            The desired node train mask column header. Default is "train_mask".
         nodeValidateMaskHeader : str , optional
-            The desired node validate mask column header. The default is "val_mask".
+            The desired node validate mask column header. Default is "val_mask".
         nodeTestMaskHeader : str , optional
-            The desired node test mask column header. The default is "test_mask".
+            The desired node test mask column header. Default is "test_mask".
         nodeMaskKey : str , optional
             The dictionary key where the node train, validate, test category is to be found. The value should be 0 for train
-            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. The default is "mask".
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. Default is "mask".
         nodeTrainRatio : float , optional
-            The desired ratio of the node data to use for training. The number must be between 0 and 1. The default is 0.8 which means 80% of the data will be used for training.
+            The desired ratio of the node data to use for training. The number must be between 0 and 1. Default is 0.8 which means 80% of the data will be used for training.
             This value is ignored if an nodeMaskKey is foud.
         nodeValidateRatio : float , optional
-            The desired ratio of the node data to use for validation. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for validation.
+            The desired ratio of the node data to use for validation. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for validation.
             This value is ignored if an nodeMaskKey is foud.
         nodeTestRatio : float , optional
-            The desired ratio of the node data to use for testing. The number must be between 0 and 1. The default is 0.1 which means 10% of the data will be used for testing.
+            The desired ratio of the node data to use for testing. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for testing.
             This value is ignored if an nodeMaskKey is foud.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         overwrite : bool , optional
-            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. The default is False.
+            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. Default is False.
 
         Returns
         -------
@@ -7079,45 +7097,45 @@ class Graph:
         path : str
             The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
         graphWidth : float or int , optional
-            The desired graph width. The default is 20.
+            The desired graph width. Default is 20.
         graphLength : float or int , optional
-            The desired graph length. The default is 20.
+            The desired graph length. Default is 20.
         graphHeight : float or int , optional
-            The desired graph height. The default is 20.
+            The desired graph height. Default is 20.
         defaultVertexColor : str , optional
-            The desired default vertex color. The default is "black".
+            The desired default vertex color. Default is "black".
         defaultVertexSize : float or int , optional
-            The desired default vertex size. The default is 3.
+            The desired default vertex size. Default is 3.
         defaultEdgeColor : str , optional
-            The desired default edge color. The default is "black".
+            The desired default edge color. Default is "black".
         defaultEdgeWeight : float or int , optional
-            The desired default edge weight. The edge weight determines the width of the displayed edge. The default is 3.
+            The desired default edge weight. The edge weight determines the width of the displayed edge. Default is 3.
         defaultEdgeType : str , optional
-            The desired default edge type. This can be one of "directed" or "undirected". The default is "undirected".
+            The desired default edge type. This can be one of "directed" or "undirected". Default is "undirected".
         vertexLabelKey : str , optional
             If specified, the vertex dictionary is searched for this key to determine the vertex label. If not specified
-            the vertex label being is set to "Node X" where is X is a unique number. The default is None.
+            the vertex label being is set to "Node X" where is X is a unique number. Default is None.
         vertexColorKey : str , optional
             If specified, the vertex dictionary is searched for this key to determine the vertex color. If not specified
-            the vertex color is set to the value defined by defaultVertexColor parameter. The default is None.
+            the vertex color is set to the value defined by defaultVertexColor parameter. Default is None.
         vertexSizeKey : str , optional
             If specified, the vertex dictionary is searched for this key to determine the vertex size. If not specified
-            the vertex size is set to the value defined by defaultVertexSize parameter. The default is None.
+            the vertex size is set to the value defined by defaultVertexSize parameter. Default is None.
         edgeLabelKey : str , optional
             If specified, the edge dictionary is searched for this key to determine the edge label. If not specified
-            the edge label being is set to "Edge X" where is X is a unique number. The default is None.
+            the edge label being is set to "Edge X" where is X is a unique number. Default is None.
         edgeColorKey : str , optional
             If specified, the edge dictionary is searched for this key to determine the edge color. If not specified
-            the edge color is set to the value defined by defaultEdgeColor parameter. The default is None.
+            the edge color is set to the value defined by defaultEdgeColor parameter. Default is None.
         edgeWeightKey : str , optional
             If specified, the edge dictionary is searched for this key to determine the edge weight. If not specified
-            the edge weight is set to the value defined by defaultEdgeWeight parameter. The default is None.
+            the edge weight is set to the value defined by defaultEdgeWeight parameter. Default is None.
         overwrite : bool , optional
-            If set to True, any existing file is overwritten. Otherwise, it is not. The default is False.
+            If set to True, any existing file is overwritten. Otherwise, it is not. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7465,7 +7483,7 @@ class Graph:
         path : str
             The path to the output file (e.g., "output.gv").
         device : str, optional
-            The output format device, such as 'svg_inline', 'pdf', or 'png'. The default is 'svg_inline'.
+            The output format device, such as 'svg_inline', 'pdf', or 'png'. Default is 'svg_inline'.
         deviceKey : str, optional
             Dictionary key to override the `device` value. Default is None.
         scale : float, optional
@@ -7585,7 +7603,7 @@ class Graph:
         overwrite : bool, optional
             If True, overwrites existing files at the given path. Default is False.
         silent : bool, optional
-            If True, suppresses console output. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7667,9 +7685,9 @@ class Graph:
         path : str
             The path to the JSON file.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -7677,19 +7695,19 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         indent : int , optional
-            The desired amount of indent spaces to use. The default is 4.
+            The desired amount of indent spaces to use. Default is 4.
         sortKeys : bool , optional
-            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+            If set to True, the keys will be sorted. Otherwise, they won't be. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -7735,9 +7753,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph
         mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -7766,14 +7784,14 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            The vertex and edge dictionary key under which to store the parition number. Default is "partition".
             Valid partition numbers start from 1. Cut edges receive a partition number of 0.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -7840,7 +7858,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -7872,7 +7890,7 @@ class Graph:
         maxIterations : int , optional
             This number limits the number of iterations to prevent the function from running indefinitely, particularly for very large or complex graphs.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -7987,25 +8005,25 @@ class Graph:
             If set to 'cluster 2D', or 'cluster 3D, the nodes will be clustered according to the 'key' input parameter. The overall radius of the cluster is determined by the size input parameter (radius = size/2)
             The default is 'spring 2D'.
         k : float, optional
-            The desired spring constant to use for the attractive and repulsive forces. The default is 0.8.
+            The desired spring constant to use for the attractive and repulsive forces. Default is 0.8.
         seed : int , optional
-            The desired random seed to use. The default is None.
+            The desired random seed to use. Default is None.
         iterations : int , optional
-            The desired maximum number of iterations to solve the forces in the 'spring' mode. The default is 50.
+            The desired maximum number of iterations to solve the forces in the 'spring' mode. Default is 50.
         rootVertex : topologic_core.Vertex , optional
             The desired vertex to use as the root of the tree and radial layouts.
         size : float , optional
             The desired overall size of the graph.
         sides : int , optional
-            The desired number of sides of the circle layout option. The default is 16
+            The desired number of sides of the circle layout option. Default is 16
         length : float, optional
-            The desired horizontal length for the line layout option. The default is 1.0.
+            The desired horizontal length for the line layout option. Default is 1.0.
         key : string, optional
-            The key under which to find the clustering value for the 'cluster_2d' and 'cluster_3d' options. The default is "".
+            The key under which to find the clustering value for the 'cluster_2d' and 'cluster_3d' options. Default is "".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9048,7 +9066,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         device : str, optional
-            The output format device, such as 'svg_inline', 'pdf', or 'png'. The default is 'svg_inline'.
+            The output format device, such as 'svg_inline', 'pdf', or 'png'. Default is 'svg_inline'.
         deviceKey : str, optional
             Dictionary key to override the `device` value. Default is None.
         scale : float, optional
@@ -9168,7 +9186,7 @@ class Graph:
         overwrite : bool, optional
             If True, overwrites existing files at the given path. Default is False.
         silent : bool, optional
-            If True, suppresses console output. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9318,24 +9336,24 @@ class Graph:
                 ["vertex", "edge", "wire", "face", "shell", "cell", "cellComplex"].
             topDown : bool , optional
                 If set to True, the graph edges are directed from topologies to their subtopologies.
-                Otherwise, they are directed from topologies to their supertopologies. The default is False. 
+                Otherwise, they are directed from topologies to their supertopologies. Default is False. 
             minDistance : float , optional
-                The desired minimum distance between the vertices of the graph. The default is 0.1.
+                The desired minimum distance between the vertices of the graph. Default is 0.1.
             vertexLabelKey: str , optional
-                The desired vertex dictionary key under which to store a unique label (of the form Type_Index). The default is "label".
+                The desired vertex dictionary key under which to store a unique label (of the form Type_Index). Default is "label".
             vertexTypeKey: str , optional
-                The desired vertex dictionary key under which to store the topology type (e.g. "vertex", "edge", "wire"). The default is "type".
+                The desired vertex dictionary key under which to store the topology type (e.g. "vertex", "edge", "wire"). Default is "type".
             vertexColorKey: str , optional
-                The desired vertex dictionary key under which to store the topology color. The default is "color".
+                The desired vertex dictionary key under which to store the topology color. Default is "color".
             colorScale : str , optional
-                The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+                The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
                 In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
             storeBREP : bool , optional
-                If set to True, store the BRep of the topology in its representative vertex. The default is False.
+                If set to True, store the BRep of the topology in its representative vertex. Default is False.
             tolerance : float
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
             silent : bool , optional
-                    If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
             Returns
             -------
@@ -9435,6 +9453,278 @@ class Graph:
         return_graph = Graph.SetDictionary(return_graph, Topology.Dictionary(topology))
         return return_graph
 
+
+    @staticmethod
+    def HopperKernel(graphA,
+                    graphB,
+                    key: str = None,
+                    maxHops: int = 3,
+                    decay: float = 0.5,
+                    normalize: bool = True,
+                    mantissa: int = 6,
+                    silent: bool = False):
+        """
+        Returns the Graph Hopper kernel between two graphs. This kernel compares hop-wise shortest-path
+        frontiers between nodes in two graphs using an automatically selected node-level kernel:
+        numeric Radial Basis Function (RBF) if the `key` values are numeric, categorical (delta) if the `key` values are non-numeric,
+        or vertex degree if `key` is None or missing. See Vishwanathan et al. (2010) for path-based graph kernels.
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        key : str , optional
+            The vertex dictionary key used to derive node features. If numeric for most vertices, a numeric
+            RBF node kernel is used; if non-numeric, a delta node kernel is used. If None or missing, the
+            vertex degree is used as a numeric feature. Default is None.
+        maxHops : int , optional
+            The maximum shortest-path hop distance to consider. Default is 3.
+        decay : float , optional
+            A per-hop geometric decay factor in the range (0, 1]. Default is 0.5.
+        normalize : bool , optional
+            If True, the kernel is cosine-normalized using self-kernel values so that identical graphs score 1.0.
+            The default is True.
+        mantissa : int , optional
+            The number of decimal places to which to round the result. Default is 6.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        float
+            The (optionally normalized) Graph Hopper kernel value rounded to the specified mantissa.
+        """
+        from math import sqrt, exp
+        from statistics import median
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        # Validate graphs
+        if not Topology.IsInstance(graphA, "Graph"):
+            if not silent: print("Graph.HopperKernel - Error: The input graphA parameter is not a valid topologic graph. Returning None.")
+            return None
+        if not Topology.IsInstance(graphB, "Graph"):
+            if not silent: print("Graph.HopperKernel - Error: The input graphB parameter is not a valid topologic graph. Returning None.")
+            return None
+
+        # Clamp/clean params
+        if maxHops < 0: maxHops = 0
+        try:
+            decay = float(decay)
+        except Exception:
+            decay = 0.5
+        if decay <= 0: decay = 1.0  # no decay if mis-set
+
+        # Helpers
+        def _vertices_and_index(G):
+            V = Graph.Vertices(G) or []
+            vidx = {v: i for i, v in enumerate(V)}
+            return V, vidx
+
+        def _adj_lists(G, vidx):
+            adj = {i: [] for i in vidx.values()}
+            for v, i in vidx.items():
+                nbrs = Graph.AdjacentVertices(G, v) or []
+                adj[i] = sorted(vidx[n] for n in nbrs if n in vidx and n is not v)
+            return adj
+
+        def _degree_features(adj):
+            # one-dimensional numeric feature as a tuple
+            return {i: (float(len(neigh)),) for i, neigh in adj.items()}
+
+        def _collect_key_values(G, V, vidx):
+            # returns dict idx -> raw value or None
+            vals = {}
+            if key is None:
+                return vals, 0, 0  # empty means fallback later
+            found = 0
+            nonnull = 0
+            for v in V:
+                d = Topology.Dictionary(v)
+                val = Dictionary.ValueAtKey(d, key)
+                if val is not None:
+                    nonnull += 1
+                vals[vidx[v]] = val
+                found += 1
+            return vals, found, nonnull
+
+        def _infer_feature_mode(valsA, valsB):
+            # Decide numeric vs label from available non-null values
+            samples = []
+            for d in (valsA, valsB):
+                for val in d.values():
+                    if val is not None:
+                        samples.append(val)
+            if not samples:
+                return "degree"  # fallback
+            numeric = 0
+            total = 0
+            for x in samples:
+                total += 1
+                try:
+                    float(x)
+                    numeric += 1
+                except Exception:
+                    pass
+            frac = (numeric / total) if total else 0.0
+            return "numeric" if frac >= 0.8 else "label"
+
+        def _features_from_key(mode, vals, adj):
+            if mode == "numeric":
+                # coerce to float, missing -> 0.0
+                feats = {}
+                for i in adj:
+                    v = vals.get(i, None)
+                    try:
+                        feats[i] = (float(v),)
+                    except Exception:
+                        feats[i] = (0.0,)
+                return feats
+            if mode == "label":
+                labs = {}
+                for i in adj:
+                    v = vals.get(i, None)
+                    labs[i] = str(v) if v is not None else "__MISSING__"
+                return labs
+            # degree fallback
+            return _degree_features(adj)
+
+        def _shells_by_hops(adj, max_hops):
+            # For each root, BFS layers up to max_hops. Returns list of lists of sets.
+            n = len(adj)
+            shells = [ [set() for _ in range(max_hops+1)] for _ in range(n) ]
+            for root in range(n):
+                visited = set([root])
+                shells[root][0].add(root)
+                frontier = [root]
+                for h in range(1, max_hops+1):
+                    new_frontier = []
+                    for u in frontier:
+                        for w in adj[u]:
+                            if w not in visited:
+                                visited.add(w)
+                                new_frontier.append(w)
+                    if not new_frontier:
+                        break
+                    shells[root][h].update(new_frontier)
+                    frontier = new_frontier
+            return shells
+
+        def _pairwise_median_sigma(pool):
+            # pool is a list of numeric tuples
+            vals = []
+            m = len(pool)
+            for i in range(m):
+                xi = pool[i]
+                for j in range(i+1, m):
+                    xj = pool[j]
+                    s = 0.0
+                    for a, b in zip(xi, xj):
+                        d = a - b
+                        s += d*d
+                    vals.append(sqrt(s))
+            if not vals:
+                return 1.0
+            med = median(vals)
+            return med if med > 0 else 1.0
+
+        # If Key is None, encode the degree centrality
+        if key == None:
+            _ = Graph.DegreeCentrality(graphA, key="_dc_")
+            _ = Graph.DegreeCentrality(graphB, key="_dc_")
+            key = "_dc_"
+
+        # Indexing and adjacency
+        VA, idxA = _vertices_and_index(graphA)
+        VB, idxB = _vertices_and_index(graphB)
+        adjA = _adj_lists(graphA, idxA)
+        adjB = _adj_lists(graphB, idxB)
+
+        # Build features according to key and data type
+        valsA, _, _ = _collect_key_values(graphA, VA, idxA)
+        valsB, _, _ = _collect_key_values(graphB, VB, idxB)
+        mode = _infer_feature_mode(valsA, valsB) if key is not None else "degree"
+
+        featsA = _features_from_key(mode, valsA, adjA)
+        featsB = _features_from_key(mode, valsB, adjB)
+
+        # Prepare shells
+        shellsA = _shells_by_hops(adjA, maxHops)
+        shellsB = _shells_by_hops(adjB, maxHops)
+
+        # Node kernels
+        hopNormalize = True  # fixed to reduce size bias
+
+        if mode == "label":
+            def knode_AB(x, y):
+                return 1.0 if featsA[x] == featsB[y] else 0.0
+            def knode_AA(x, y):
+                return 1.0 if featsA[x] == featsA[y] else 0.0
+            def knode_BB(x, y):
+                return 1.0 if featsB[x] == featsB[y] else 0.0
+        else:
+            # numeric RBF; estimate sigma from pooled features
+            pool = list(featsA.values()) + list(featsB.values())
+            sigma = _pairwise_median_sigma(pool)
+            denom = 2.0 * (sigma * sigma)
+            def _rbf(fX, fY):
+                s = 0.0
+                for a, b in zip(fX, fY):
+                    d = a - b
+                    s += d*d
+                return exp(-s / denom) if denom > 0 else 0.0
+            def knode_AB(x, y):
+                return _rbf(featsA[x], featsB[y])
+            def knode_AA(x, y):
+                return _rbf(featsA[x], featsA[y])
+            def knode_BB(x, y):
+                return _rbf(featsB[x], featsB[y])
+
+        # Core kernel accumulation
+        def _kernel_raw(shellsX, shellsY, knode_xy):
+            total = 0.0
+            nX = len(shellsX); nY = len(shellsY)
+            for h in range(maxHops+1):
+                hop_sum = 0.0
+                for u in range(nX):
+                    Su = shellsX[u][h]
+                    if not Su: 
+                        continue
+                    for v in range(nY):
+                        Sv = shellsY[v][h]
+                        if not Sv:
+                            continue
+                        inner = 0.0
+                        for x in Su:
+                            for y in Sv:
+                                inner += knode_xy(x, y)
+                        if hopNormalize:
+                            denom_local = float(len(Su) * len(Sv))
+                            if denom_local > 0:
+                                inner /= denom_local
+                        hop_sum += inner
+                total += (decay ** h) * hop_sum
+            return total
+
+        K_ab = _kernel_raw(shellsA, shellsB, knode_AB)
+
+        if not normalize:
+            return round(float(K_ab), mantissa)
+
+        # Self-kernels for normalization
+        K_aa = _kernel_raw(shellsA, shellsA, knode_AA)
+        K_bb = _kernel_raw(shellsB, shellsB, knode_BB)
+
+        denom_norm = (K_aa * K_bb) ** 0.5
+        value = float(K_ab) / denom_norm if denom_norm > 0 else 0.0
+        # Cleanup keys and values that we encoded:
+        if key == "_dc_": 
+            _ = [Topology.SetDictionary(v, Dictionary.RemoveKey(Topology.Dictionary(v), "_dc_")) for v in Graph.Vertices(graphA)]
+            _ = [Topology.SetDictionary(v, Dictionary.RemoveKey(Topology.Dictionary(v), "_dc_")) for v in Graph.Vertices(graphB)]
+        return round(value, mantissa)
+
     @staticmethod
     def IncomingEdges(graph, vertex, directed: bool = False, tolerance: float = 0.0001) -> list:
         """
@@ -9448,9 +9738,9 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
-            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -9492,9 +9782,9 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
-            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -9561,11 +9851,11 @@ class Graph:
         colorScale : str , optional
             Plotly color scale name (e.g., "viridis", "plasma").
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9595,7 +9885,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -9703,7 +9993,7 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9848,25 +10138,25 @@ class Graph:
         context : dict, optional
             A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         labelKey : str , optional
-            The desired key name to use for label. The default is "label".
+            The desired key name to use for label. Default is "label".
         sourceKey : str , optional
-            The desired key name to use for source. The default is "source".
+            The desired key name to use for source. Default is "source".
         targetKey : str , optional
-            The desired key name to use for target. The default is "target".
+            The desired key name to use for target. Default is "target".
         categoryKey : str , optional
-            The desired key name to use for lcategoryabel. The default is "category".
+            The desired key name to use for lcategoryabel. Default is "category".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -9958,29 +10248,29 @@ class Graph:
         context : dict, optional
             A JSON-LD context mapping TopologicPy keys to IRIs (e.g., schema.org, geo, etc.).
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         labelKey : str , optional
-            The desired key name to use for label. The default is "label".
+            The desired key name to use for label. Default is "label".
         sourceKey : str , optional
-            The desired key name to use for source. The default is "source".
+            The desired key name to use for source. Default is "source".
         targetKey : str , optional
-            The desired key name to use for target. The default is "target".
+            The desired key name to use for target. Default is "target".
         categoryKey : str , optional
-            The desired key name to use for lcategoryabel. The default is "category".
+            The desired key name to use for lcategoryabel. Default is "category".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         indent : int , optional
-            The desired indent. The default is 2.
+            The desired indent. Default is 2.
         sortKeys : bool , optional
-            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+            If set to True, the keys will be sorted. Otherwise, they won't be. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         Returns
         -------
         dict
@@ -10028,9 +10318,9 @@ class Graph:
         path : str
             The path to the JSON file.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -10038,19 +10328,19 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         indent : int , optional
-            The desired amount of indent spaces to use. The default is 4.
+            The desired amount of indent spaces to use. Default is 4.
         sortKeys : bool , optional
-            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+            If set to True, the keys will be sorted. Otherwise, they won't be. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -10119,9 +10409,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -10129,21 +10419,21 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         sourceKey : str , optional
-            The dictionary key used to store the source vertex. The default is "source".
+            The dictionary key used to store the source vertex. Default is "source".
         targetKey : str , optional
-            The dictionary key used to store the target vertex. The default is "target".
+            The dictionary key used to store the target vertex. Default is "target".
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         geometryKey : str , optional
-            The desired key name to use for geometry. The default is "brep".
+            The desired key name to use for geometry. Default is "brep".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -10236,9 +10526,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         verticesKey : str , optional
-            The desired key name to call vertices. The default is "vertices".
+            The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
-            The desired key name to call edges. The default is "edges".
+            The desired key name to call edges. Default is "edges".
         vertexLabelKey : str , optional
             If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
             Note: If vertex labels are not unique, they will be forced to be unique.
@@ -10246,17 +10536,17 @@ class Graph:
             If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
             Note: If edge labels are not unique, they will be forced to be unique.
         xKey : str , optional
-            The desired key name to use for x-coordinates. The default is "x".
+            The desired key name to use for x-coordinates. Default is "x".
         yKey : str , optional
-            The desired key name to use for y-coordinates. The default is "y".
+            The desired key name to use for y-coordinates. Default is "y".
         zKey : str , optional
-            The desired key name to use for z-coordinates. The default is "z".
+            The desired key name to use for z-coordinates. Default is "z".
         indent : int , optional
-            The desired amount of indent spaces to use. The default is 4.
+            The desired amount of indent spaces to use. Default is 4.
         sortKeys : bool , optional
-            If set to True, the keys will be sorted. Otherwise, they won't be. The default is False.
+            If set to True, the keys will be sorted. Otherwise, they won't be. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -10269,6 +10559,92 @@ class Graph:
         json_string = json.dumps(json_data, indent=indent, sort_keys=sortKeys)
         return json_string
     
+    @staticmethod
+    def Kernel(graphA,
+               graphB,
+               method: str = "WL",
+               key: str = None,
+               iterations: int = 2,
+               maxHops: int = 3,
+               decay: float = 0.5,
+               normalize: bool = True,
+               mantissa: int = 6,
+               silent: bool = False,
+               **kwargs):
+        """
+        Returns a graph-to-graph kernel value using the selected method. This is a
+        convenience dispatcher over specific kernel implementations (e.g., WL and Hopper).
+
+        Parameters
+        ----------
+        graphA : topologic_core.Graph
+            The first input graph.
+        graphB : topologic_core.Graph
+            The second input graph.
+        method : str , optional
+            The kernel method to use. Supported values: "WL" (Weisfeiler–Lehman),
+            "Hopper" (Graph Hopper). The default is "WL".
+        key : str , optional
+            A vertex dictionary key used by the selected method to derive node labels/features.
+            For "WL", if None the vertex degree is used as the initial label. For "Hopper",
+            if None or missing, the vertex degree is used as a numeric feature. Default is None.
+        iterations : int , optional
+            WL-specific parameter: number of WL iterations. Ignored by other methods. Default is 2.
+        maxHops : int , optional
+            Hopper-specific parameter: maximum shortest-path hop distance. Ignored by other methods. Default is 3.
+        decay : float , optional
+            Hopper-specific parameter: per-hop geometric decay in (0, 1]. Ignored by other methods. Default is 0.5.
+        normalize : bool , optional
+            If True, returns a normalized kernel score in [0, 1] when supported by the method. Default is True.
+        mantissa : int , optional
+            Number of decimal places for rounding the returned value. Default is 6.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
+        **kwargs
+            Reserved for future method-specific options; ignored by current implementations.
+
+        Returns
+        -------
+        float
+            The kernel value computed by the selected method, rounded to `mantissa`,
+            or None if inputs are invalid or the method is unsupported.
+
+        Notes
+        -----
+        - "WL" calls `Graph.WLKernel(graphA, graphB, key=..., iterations=..., normalize=..., mantissa=...)`.
+        - "Hopper" calls `Graph.HopperKernel(graphA, graphB, key=..., maxHops=..., decay=..., normalize=..., mantissa=...)`.
+        - Method selection is case-insensitive and tolerates common aliases for WL.
+        """
+        # Normalize method string and map aliases
+        m = (method or "WL").strip().lower()
+        if m in ("wl", "weisfeiler", "weisfeiler-lehman", "weisfeiler_lehman"):
+            return Graph.WLKernel(
+                graphA=graphA,
+                graphB=graphB,
+                key=key,
+                iterations=iterations,
+                normalize=normalize,
+                mantissa=mantissa,
+                silent=silent
+            )
+        elif m in ("hopper", "graphhopper", "graph_hopper"):
+            return Graph.HopperKernel(
+                graphA=graphA,
+                graphB=graphB,
+                key=key,
+                maxHops=maxHops,
+                decay=decay,
+                normalize=normalize,
+                mantissa=mantissa,
+                silent=silent
+            )
+        else:
+            if not silent:
+                print(f'Graph.Kernel - Error: Unsupported method "{method}". '
+                    f'Supported methods are "WL" and "Hopper". Returning None.')
+            return None
+    
+    @staticmethod
     def Laplacian(graph, silent: bool = False, normalized: bool = False):
         """
         Returns the Laplacian matrix of the input graph. See https://en.wikipedia.org/wiki/Laplacian_matrix.
@@ -10278,9 +10654,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         normalized : bool , optional
-            If set to True, the returned Laplacian matrix is normalized. The default is False.
+            If set to True, the returned Laplacian matrix is normalized. Default is False.
 
         Returns
         -------
@@ -10338,11 +10714,11 @@ class Graph:
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -10372,9 +10748,9 @@ class Graph:
         transferEdgeDictionaries : bool, optional
             If set to True, the dictionaries of the edges of the input graph are transferred to the vertices of the line graph.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -10444,13 +10820,13 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertices : list , optional
-            The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. The default is None.
+            The input list of vertices. If set to None, the local clustering coefficient of all vertices will be computed. Default is None.
         key : str , optional
-            The dictionary key under which to store the local clustering coefficient score. The default is "lcc".
+            The dictionary key under which to store the local clustering coefficient score. Default is "lcc".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -10530,15 +10906,15 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : str , optional
-            The vertex key to maximize. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value must be numeric. The default is None.
+            The vertex key to maximize. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value must be numeric. Default is None.
         edgeKey : str , optional
-            The edge key to maximize. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
+            The edge key to maximize. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the longest path that maximizes the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. Default is "length".
         costKey : str , optional
-            If not None, the total cost of the longest_path will be stored in its dictionary under this key. The default is None. 
+            If not None, the total cost of the longest_path will be stored in its dictionary under this key. Default is None. 
         timeLimit : int , optional
-            The time limit in second. The default is 10 seconds.
+            The time limit in second. Default is 10 seconds.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -10638,9 +11014,9 @@ class Graph:
         edgeKeys : str or list of str, optional
             Keys used to semantically compare edges.
         maxMatches : int , optional
-            The maximum number of matches to find. The default is 10.
+            The maximum number of matches to find. Default is 10.
         timeLimit : int , optional
-                The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to finding the matches.
+                The time limit in seconds. Default is 10 seconds. Note that this time limit only applies to finding the matches.
         tolerance : float, optional
             Allowed numeric deviation or minimum string similarity (e.g. 0.2 = ≥80% match). Default is 0.
         silent : bool, optional
@@ -10924,17 +11300,17 @@ class Graph:
         sink : topologic_core.Vertex
             The input sink/target vertex.
         edgeKeyFwd : str , optional
-            The edge dictionary key to use to find the value of the forward capacity of the edge. If not set, the length of the edge is used as its capacity. The default is None.
+            The edge dictionary key to use to find the value of the forward capacity of the edge. If not set, the length of the edge is used as its capacity. Default is None.
         edgeKeyBwd : str , optional
-            The edge dictionary key to use to find the value of the backward capacity of the edge. This is only considered if the edge is set to be bidrectional. The default is None.
+            The edge dictionary key to use to find the value of the backward capacity of the edge. This is only considered if the edge is set to be bidrectional. Default is None.
         bidirKey : str , optional
-            The edge dictionary key to use to determine if the edge is bidrectional. The default is None.
+            The edge dictionary key to use to determine if the edge is bidrectional. Default is None.
         bidrectional : bool , optional
-            If set to True, the whole graph is considered to be bidirectional. The default is False.
+            If set to True, the whole graph is considered to be bidirectional. Default is False.
         residualKey : str , optional
-            The name of the key to use to store the residual value of each edge capacity in the input graph. The default is "residual".
+            The name of the key to use to store the residual value of each edge capacity in the input graph. Default is "residual".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11041,9 +11417,9 @@ class Graph:
         transferDictionaries : bool, optional
             If True, the dictionaries of all input vertices (including the target vertex if given) are merged. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -11181,9 +11557,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11239,9 +11615,9 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11304,9 +11680,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         edgeKey : string , optional
-            If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. The default is None
+            If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. Default is None
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11372,9 +11748,9 @@ class Graph:
         destinations : list
             The input list of destinations (vertices). Navigation edges will connect these vertices to sources.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         numWorkers : int, optional
-            Number of workers run in parallel to process. The default is None which sets the number to twice the number of CPU cores.
+            Number of workers run in parallel to process. Default is None which sets the number to twice the number of CPU cores.
 
         Returns
         -------
@@ -11516,17 +11892,17 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         xKey : str , optional
-            The dictionary key under which to store the X-Coordinate of the vertex. The default is 'x'.
+            The dictionary key under which to store the X-Coordinate of the vertex. Default is 'x'.
         yKey : str , optional
-            The dictionary key under which to store the Y-Coordinate of the vertex. The default is 'y'.
+            The dictionary key under which to store the Y-Coordinate of the vertex. Default is 'y'.
         zKey : str , optional
-            The dictionary key under which to store the Z-Coordinate of the vertex. The default is 'z'.
+            The dictionary key under which to store the Z-Coordinate of the vertex. Default is 'z'.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -11628,9 +12004,9 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
-            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11672,9 +12048,9 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         directed : bool , optional
-            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. The default is False.
+            If set to True, the graph is considered to be directed. Otherwise, it will be considered as an unidrected graph. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11711,24 +12087,24 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         alpha : float , optional
-            The damping (dampening) factor. The default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
+            The damping (dampening) factor. Default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
         maxIterations : int , optional
-            The maximum number of iterations to calculate the page rank. The default is 100.
+            The maximum number of iterations to calculate the page rank. Default is 100.
         normalize : bool , optional
-            If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. The default is True.
+            If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. Default is True.
         directed : bool , optional
-            If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. The default is False.
+            If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. Default is False.
         key : str , optional
-            The dictionary key under which to store the page_rank score. The default is "page_rank"
+            The dictionary key under which to store the page_rank score. Default is "page_rank"
         colorKey : str , optional
-            The desired dictionary key under which to store the pagerank color. The default is "pr_color".
+            The desired dictionary key under which to store the pagerank color. Default is "pr_color".
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
             The desired length of the mantissa.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11802,20 +12178,20 @@ class Graph:
             - "Betweenness"
             - "Community" or "Louvain"
             - "Fiedler" or "Eigen"
-            It is case insensitive. The default is "Betweenness"
+            It is case insensitive. Default is "Betweenness"
         n : int , optional
-            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 2.
+            The desired number of partitions when selecting the "Betweenness" method. This parameter is ignored for other methods. Default is 2.
         m : int , optional
-            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. The default is 10.
+            The desired maximum number of tries to partition the graph when selecting the "Betweenness" method. This parameter is ignored for other methods. Default is 10.
         key : str , optional
-            The vertex and edge dictionary key under which to store the parition number. The default is "partition".
+            The vertex and edge dictionary key under which to store the parition number. Default is "partition".
             Valid partition numbers start from 1. Cut edges receive a partition number of 0.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -11854,7 +12230,7 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -11901,48 +12277,48 @@ class Graph:
         overwrite : bool , optional
             If set to True, the HTML file is overwritten.
         height : int , optional
-            The desired figure height in pixels. The default is 900 pixels.
+            The desired figure height in pixels. Default is 900 pixels.
         backgroundColor : str, optional
-            The desired background color for the figure. This can be a named color or a hexadecimal value. The default is 'white'.
+            The desired background color for the figure. This can be a named color or a hexadecimal value. Default is 'white'.
         fontColor : str , optional
-            The desired font color for the figure. This can be a named color or a hexadecimal value. The default is 'black'.
+            The desired font color for the figure. This can be a named color or a hexadecimal value. Default is 'black'.
         notebook : bool , optional
-            If set to True, the figure will be targeted at a Jupyter Notebook. Note that this is not working well. Pyvis has bugs. The default is False.
+            If set to True, the figure will be targeted at a Jupyter Notebook. Note that this is not working well. Pyvis has bugs. Default is False.
         vertexSize : int , optional
-            The desired default vertex size. The default is 6.
+            The desired default vertex size. Default is 6.
         vertexSizeKey : str , optional
-            If not set to None, the vertex size will be derived from the dictionary value set at this key. If set to "degree", the size of the vertex will be determined by its degree (number of neighbors). The default is None.
+            If not set to None, the vertex size will be derived from the dictionary value set at this key. If set to "degree", the size of the vertex will be determined by its degree (number of neighbors). Default is None.
         vertexColor : str , optional
-            The desired default vertex color. his can be a named color or a hexadecimal value. The default is 'black'.
+            The desired default vertex color. his can be a named color or a hexadecimal value. Default is 'black'.
         vertexColorKey : str , optional
-            If not set to None, the vertex color will be derived from the dictionary value set at this key. The default is None.
+            If not set to None, the vertex color will be derived from the dictionary value set at this key. Default is None.
         vertexLabelKey : str , optional
-            If not set to None, the vertex label will be derived from the dictionary value set at this key. The default is None.
+            If not set to None, the vertex label will be derived from the dictionary value set at this key. Default is None.
         vertexGroupKey : str , optional
-            If not set to None, the vertex color will be determined by the group the vertex belongs to as derived from the value set at this key. The default is None.
+            If not set to None, the vertex color will be determined by the group the vertex belongs to as derived from the value set at this key. Default is None.
         vertexGroups : list , optional
-            The list of all possible vertex groups. This will help in vertex coloring. The default is None.
+            The list of all possible vertex groups. This will help in vertex coloring. Default is None.
         minVertexGroup : int or float , optional
-            If the vertex groups are numeric, specify the minimum value you wish to consider for vertex coloring. The default is None.
+            If the vertex groups are numeric, specify the minimum value you wish to consider for vertex coloring. Default is None.
         maxVertexGroup : int or float , optional
-            If the vertex groups are numeric, specify the maximum value you wish to consider for vertex coloring. The default is None.
+            If the vertex groups are numeric, specify the maximum value you wish to consider for vertex coloring. Default is None.
         
         edgeWeight : int , optional
-            The desired default weight of the edge. This determines its thickness. The default is 0.
+            The desired default weight of the edge. This determines its thickness. Default is 0.
         edgeWeightKey : str, optional
-            If not set to None, the edge weight will be derived from the dictionary value set at this key. If set to "length" or "distance", the weight of the edge will be determined by its geometric length. The default is None.
+            If not set to None, the edge weight will be derived from the dictionary value set at this key. If set to "length" or "distance", the weight of the edge will be determined by its geometric length. Default is None.
         edgeLabelKey : str , optional
-            If not set to None, the edge label will be derived from the dictionary value set at this key. The default is None.
+            If not set to None, the edge label will be derived from the dictionary value set at this key. Default is None.
         showNeighbors : bool , optional
-            If set to True, a list of neighbors is shown when you hover over a vertex. The default is True.
+            If set to True, a list of neighbors is shown when you hover over a vertex. Default is True.
         selectMenu : bool , optional
-            If set to True, a selection menu will be displayed. The default is True
+            If set to True, a selection menu will be displayed. Default is True
         filterMenu : bool , optional
-            If set to True, a filtering menu will be displayed. The default is True.
+            If set to True, a filtering menu will be displayed. Default is True.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         Returns
         -------
         None
@@ -12094,7 +12470,7 @@ class Graph:
         edge : topologic_core.Edge
             The input edge.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12123,7 +12499,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12150,7 +12526,7 @@ class Graph:
         vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12219,11 +12595,11 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : string , optional
-            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.
         edgeKey : string , optional
-            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. Default is "length".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -12278,15 +12654,15 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         vertexKey : string , optional
-            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. The default is None.
+            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.
         edgeKey : string , optional
-            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. The default is "length".
+            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. Default is "length".
         timeLimit : int , optional
-            The search time limit in seconds. The default is 10 seconds
+            The search time limit in seconds. Default is 10 seconds
         pathLimit: int , optional
-            The number of found paths limit. The default is 10 paths.
+            The number of found paths limit. Default is 10 paths.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12389,14 +12765,14 @@ class Graph:
         *graphs : topologic_core.Graph
             One or more toplogic_core.graph objects.
         sagitta : float , optional
-            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 0 which means a straight edge is drawn instead of an arc. Default is 0.
         absolute : bool , optional
-            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. The default is False.
-            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. Default is False.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. Default is True.
         sides : int , optional
-            The number of sides of the arc. The default is 8.
+            The number of sides of the arc. Default is 8.
         angle : float, optional
-            An additional angle in degrees to rotate arcs (where sagitta is more than 0). The default is 0.
+            An additional angle in degrees to rotate arcs (where sagitta is more than 0). Default is 0.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -12406,27 +12782,27 @@ class Graph:
             - A named CSS color.
             The default is "black".
         vertexColorKey : str , optional
-            The dictionary key under which to find the vertex color. The default is None.
+            The dictionary key under which to find the vertex color. Default is None.
         vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
+            The desired size of the vertices. Default is 1.1.
         vertexSizeKey : str , optional
-            The dictionary key under which to find the vertex size. The default is None.
+            The dictionary key under which to find the vertex size. Default is None.
         vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
+            The dictionary key to use to display the vertex label. Default is None.
         vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
+            The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
+            The list of vertex groups against which to index the color of the vertex. Default is [].
         vertexMinGroup : int or float , optional
-            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
         vertexMaxGroup : int or float , optional
-            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
         showVertexLabel : bool , optional
-            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         showVertexLegend : bool , optional
-            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
+            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. Default is False.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -12436,43 +12812,43 @@ class Graph:
             - A named CSS color.
             The default is "black".
         edgeColorKey : str , optional
-            The dictionary key under which to find the edge color. The default is None.
+            The dictionary key under which to find the edge color. Default is None.
         edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The desired thickness of the output edges. Default is 1.
         edgeWidthKey : str , optional
-            The dictionary key under which to find the edge width. The default is None.
+            The dictionary key under which to find the edge width. Default is None.
         edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+            The dictionary key to use to display the edge label. Default is None.
         edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+            The dictionary key to use to display the edge group. Default is None.
         edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
+            The list of edge groups against which to index the color of the edge. Default is [].
         edgeMinGroup : int or float , optional
-            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
         edgeMaxGroup : int or float , optional
-            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
         showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
         showEdgeLabel : bool , optional
-            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         showEdgeLegend : bool , optional
-            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
+            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. Default is False.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.
+            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
         height : int , optional
             The height in pixels of the figure. The default value is 950.
         xAxis : bool , optional
-            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
         yAxis : bool , optional
-            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
         zAxis : bool , optional
-            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
         axisSize : float , optional
-            The size of the X, Y, Z, axes. The default is 1.
+            The size of the X, Y, Z, axes. Default is 1.
         backgroundColor : str , optional
             The desired color of the background. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -12490,17 +12866,17 @@ class Graph:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
+            The desired location of the camera). Default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0, 0, 0].
+            The desired center (camera target). Default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0, 0, 1].
+            The desired up vector. Default is [0, 0, 1].
         projection : str , optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -12590,14 +12966,14 @@ class Graph:
             The input graph.
         vertexKey : str , optional
             The dictionary key under which to store the cut vertex status of each vertex. See https://en.wikipedia.org/wiki/Cut_(graph_theory).
-            vertex cuts are indicated with a value of 1. The default is "cutVertex".
+            vertex cuts are indicated with a value of 1. Default is "cutVertex".
         edgeKey : str , optional
             The dictionary key under which to store the cut edge status of each edge. See https://en.wikipedia.org/wiki/Cut_(graph_theory).
-            edge cuts are indicated with a value of 1. The default is "cutVertex".
+            edge cuts are indicated with a value of 1. Default is "cutVertex".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -12674,15 +13050,15 @@ class Graph:
         superGraph : topologic_core.Graph
             The input supergraph.
         strict : bool , optional
-            If set to True, each subgraph edge must be represented by a single edge in the supergraph. Otherwise, an edge in the subgraph can be represented either with an edge or a path in the supergraph. The default is False.
+            If set to True, each subgraph edge must be represented by a single edge in the supergraph. Otherwise, an edge in the subgraph can be represented either with an edge or a path in the supergraph. Default is False.
         vertexMatcher : callable, optional
             If specified, this function is called to check if two vertices are matched. The format must be vertex_matcher(sub_vertex, super_vertex, mantissa, tolerance) -> bool.
         vertexKey : str , optional
-            The dictionary key to use for vertex matching if the vertexMatcher input parameter is set to None. The default is "id".
+            The dictionary key to use for vertex matching if the vertexMatcher input parameter is set to None. Default is "id".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12814,7 +13190,7 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12882,9 +13258,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertex : topologic_core.Vertex , optional
-            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. The default is None.
+            The input root vertex. If not set, the first vertex in the graph is set as the root vertex. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -12966,11 +13342,11 @@ class Graph:
             the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
             This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -13016,9 +13392,9 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. The default is None.
+            If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. Default is None.
         reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. The default is False.
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
         
         Returns
         -------
@@ -13060,11 +13436,11 @@ class Graph:
         face : topologic_core.Face
             The input boundary. View edges will be clipped to this face. The holes in the face are used as the obstacles
         viewpointsA : list , optional
-            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. The default is None.
+            The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. Default is None.
         viewpointsB : list , optional
-            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA. If set to None, this parameters will be set to all vertices of the input face. The default is None.
+            The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA. If set to None, this parameters will be set to all vertices of the input face. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -13156,15 +13532,15 @@ class Graph:
         vertexB : topologic_core.Vertex
             The second vertex.
         vertexIDKey : str , optional
-            The dictionary key under which to find the unique vertex ID. The default is "id".
+            The dictionary key under which to find the unique vertex ID. Default is "id".
         edgeWeightKey : str , optional
             The dictionary key under which to find the weight of the edge for weighted graphs.
             If this parameter is specified as "length" or "distance" then the length of the edge is used as its weight.
             The default is None which means all edges are treated as if they have a weight of 1.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -13274,14 +13650,14 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
-            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+            Otherwise, the coordinates of the vertex of the first input graph are used. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -13400,14 +13776,14 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
-            Otherwise, the coordinates of the vertex of the second input graph are used. The default is False.
+            Otherwise, the coordinates of the vertex of the second input graph are used. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
 
         Returns
@@ -13523,14 +13899,14 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
-            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+            Otherwise, the coordinates of the vertex of the first input graph are used. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -13632,14 +14008,14 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
-            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+            Otherwise, the coordinates of the vertex of the first input graph are used. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -13741,13 +14117,13 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             This is not used here, but included for API consistency for boolean operations.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -13820,16 +14196,16 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         vertexColorKey : str , optional
-            The dictionary key that is storing the vertex's color. The final colors will be averaged. The default is "color".
+            The dictionary key that is storing the vertex's color. The final colors will be averaged. Default is "color".
         useCentroid : bool , optional
             If set to True, the coordinates of identical vertices from each graph are averaged to located the new merged vertex of the resulting graph.
-            Otherwise, the coordinates of the vertex of the first input graph are used. The default is False.
+            Otherwise, the coordinates of the vertex of the first input graph are used. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -13863,13 +14239,13 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             This is not used here, but included for API consistency for boolean operations.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -13902,9 +14278,9 @@ class Graph:
         graph : topologic_core.Graph
             The  input graph.
         key : str , optional
-            The vertex key to use as an initial label. The default is None which means the vertex degree is used instead.
+            The vertex key to use as an initial label. Default is None which means the vertex degree is used instead.
         iterations : int , optional
-            The desired number of WL iterations. (non-negative int). The default is 2.
+            The desired number of WL iterations. (non-negative int). Default is 2.
         silent : bool, optional
             If set to True, error and warning messages are suppressed. Default is False.
         
@@ -13962,7 +14338,8 @@ class Graph:
                         labels = {i: "0" for i in nbrs}
             else: # Add a vertex degree information.
                 _ = Graph.DegreeCentrality(graph, key="_dc_")
-                return _initial_labels(graph, key="_dc_")
+                labels, nbrs = _initial_labels(graph, key="_dc_")
+                _ = [Topology.SetDictionary(v, Dictionary.RemoveKey(Topology.Dictionary(v), "_dc_")) for v in Graph.Vertices(graph)]
             return labels, nbrs
 
         def _canonize_string_labels(str_labels):
@@ -14018,13 +14395,13 @@ class Graph:
         graphB : topologic_core.Graph
             The second input graph.
         key : str , optional
-            The vertex key to use as an initial label. The default is None which means the vertex degree is used instead.
+            The vertex key to use as an initial label. Default is None which means the vertex degree is used instead.
         iterations : int , optional
-            The desired number of WL iterations. (non-negative int). The default is 2.
+            The desired number of WL iterations. (non-negative int). Default is 2.
         normalize : bool , optional
-            if set to True, the returned value is normalized between 0 and 1. The default is True.
+            if set to True, the returned value is normalized between 0 and 1. Default is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -14071,13 +14448,13 @@ class Graph:
         vertexKeys : list or str , optional
             The vertex dictionary key (str) or keys (list of str) to use to determine if two vertices are the same.
             If the vertexKeys are set to None or "loc" or "coord" or "xyz" (case insensitive), the distance between the
-            vertices (within the tolerance) will be used to determine sameness. The default is None.
+            vertices (within the tolerance) will be used to determine sameness. Default is None.
         useCentroid : bool , optional
             This is not used here, but included for API consistency for boolean operations.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------

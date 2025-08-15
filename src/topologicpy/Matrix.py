@@ -66,9 +66,9 @@ class Matrix:
         target : list
             The 4X3 matrix representing target coordinate system. The rows are in the order: Origin, X-Axis, Y-Axis, Z-Axis.
         mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -176,11 +176,11 @@ class Matrix:
         Parameters
         ----------
         scaleX : float , optional
-            The desired scaling factor along the X axis. The default is 1.
+            The desired scaling factor along the X axis. Default is 1.
         scaleY : float , optional
-            The desired scaling factor along the X axis. The default is 1.
+            The desired scaling factor along the X axis. Default is 1.
         scaleZ : float , optional
-            The desired scaling factor along the X axis. The default is 1.
+            The desired scaling factor along the X axis. Default is 1.
         
         Returns
         -------
@@ -201,11 +201,11 @@ class Matrix:
         Parameters
         ----------
         translateX : float , optional
-            The desired translation distance along the X axis. The default is 0.
+            The desired translation distance along the X axis. Default is 0.
         translateY : float , optional
-            The desired translation distance along the X axis. The default is 0.
+            The desired translation distance along the X axis. Default is 0.
         translateZ : float , optional
-            The desired translation distance along the X axis. The default is 0.
+            The desired translation distance along the X axis. Default is 0.
         
         Returns
         -------
@@ -415,9 +415,9 @@ class Matrix:
         matrix : list
             The input matrix. Assumed to be a laplacian matrix.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -496,7 +496,7 @@ class Matrix:
         matA : list of list of float
             The input matrix.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------

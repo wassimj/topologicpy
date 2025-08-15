@@ -175,7 +175,7 @@ class Color:
         color : str
             A CSS named color.
         alpha : float , optional
-            THe desired alpha (transparency value). The default is None which means no alpha value will be included in the returned list.
+            THe desired alpha (transparency value). Default is None which means no alpha value will be included in the returned list.
 
         Returns
         -------
@@ -224,7 +224,7 @@ class Color:
         hex : str
             A hexadecimal color string in the format '#RRGGBB'.
         alpha : float , optional
-            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is None
+            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. Default is None
             which means no transparency value will be included in the returned color.
         Returns
         -------
@@ -259,17 +259,17 @@ class Color:
         Parameters
         ----------
         value : float , optional
-            The input value. The default is 0.5.
+            The input value. Default is 0.5.
         minValue : float , optional
-            the input minimum value. The default is 0.0.
+            the input minimum value. Default is 0.0.
         maxValue : float , optional
-            The input maximum value. The default is 1.0.
+            The input maximum value. Default is 1.0.
         alpha : float , optional
-            The alpha (transparency) value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
+            The alpha (transparency) value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. Default is 1.0.
         useAlpha : bool , optional
             If set to True, the returns list includes the alpha value as a fourth element in the list.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
 
         Returns
         -------
@@ -548,7 +548,7 @@ class Color:
         color : list
             The input color list. This is assumed to be in the format [r, g, b] or [r, g, b, a] where the range is from 0 to 255.
         alpha : float , optional
-            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. The default is 1.0.
+            The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. Default is 1.0.
         useAlpha : bool , optional
             If set to True, the returns list includes the alpha value as a fourth element in the list.
 

@@ -70,21 +70,21 @@ class Shell():
         faces : list
             The input list of faces.
         maximumGap : float , optional
-            The length of the maximum gap between the faces. The default is 0.5.
+            The length of the maximum gap between the faces. Default is 0.5.
         mergeJunctions : bool , optional
             If set to True, the interior junctions are merged into a single vertex. Otherwise, diagonal edges are added to resolve transitions between different gap distances.
         threshold : float , optional
-            The desired threshold under which vertices are merged into a single vertex. The default is 0.5.
+            The desired threshold under which vertices are merged into a single vertex. Default is 0.5.
         uSides : int , optional
-            The desired number of sides along the X axis for the grid that subdivides the input faces to aid in processing. The default is 1.
+            The desired number of sides along the X axis for the grid that subdivides the input faces to aid in processing. Default is 1.
         vSides : int , optional
-            The desired number of sides along the Y axis for the grid that subdivides the input faces to aid in processing. The default is 1.
+            The desired number of sides along the Y axis for the grid that subdivides the input faces to aid in processing. Default is 1.
         transferDictionaries : bool, optional.
-            If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. The default is False.
+            If set to True, the dictionaries in the input list of faces are transfered to the faces of the resulting shell. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -278,9 +278,9 @@ class Shell():
         faces : list
             The input list of faces.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -318,7 +318,7 @@ class Shell():
         cluster : topologic_core.Cluster
             The input cluster of faces.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -343,11 +343,11 @@ class Shell():
         wire : topologic_core.Wire
             The input wire to be thickened.
         offsetA : float , optional
-            The desired offset to the exterior of the wire. The default is 1.0.
+            The desired offset to the exterior of the wire. Default is 1.0.
         offsetB : float , optional
-            The desired offset to the interior of the wire. The default is 1.0.
+            The desired offset to the interior of the wire. Default is 1.0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -388,11 +388,11 @@ class Shell():
         wires : list
             The input list of wires.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
        
         Returns
         -------
@@ -524,11 +524,11 @@ class Shell():
         wires : topologic_core.Cluster
             The input cluster of wires.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -554,21 +554,21 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
-            The  radius of the circle. The default is 0.5.
+            The  radius of the circle. Default is 0.5.
         sides : int , optional
-            The number of sides of the circle. The default is 32.
+            The number of sides of the circle. Default is 32.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+            The angle in degrees from which to start creating the arc of the circle. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+            The angle in degrees at which to end creating the arc of the circle. Default is 360.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -589,9 +589,9 @@ class Shell():
         face : topologic_core.Face , optional
             The input face. If specified, the delaunay triangulation is clipped to the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -694,7 +694,7 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -757,7 +757,7 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
+            The origin of the hyperbolic paraboloid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.
         llVertex : topologic_core.Vertex , optional
             The lower left corner of the hyperbolic paraboloid. If set to None, it will be set to (-0.5, -0.5, -0.5).
         lrVertex : topologic_core.Vertex , optional
@@ -767,17 +767,17 @@ class Shell():
         urVertex : topologic_core.Vertex , optional
             The upper right corner of the hyperbolic paraboloid. If set to None, it will be set to (0.5, 0.5, -0.5).
         uSides : int , optional
-            The number of segments along the X axis. The default is 10.
+            The number of segments along the X axis. Default is 10.
         vSides : int , optional
-            The number of segments along the Y axis. The default is 10.
+            The number of segments along the Y axis. Default is 10.
         direction : list , optional
-            The vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].
+            The vector representing the up direction of the hyperbolic paraboloid. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the hyperbolic paraboloid. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hyperbolic paraboloid. This can be "center", "lowerleft", "bottom". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -855,25 +855,25 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. The default is None.
+            The origin of the hyperbolic parabolid. If set to None, it will be placed at the (0, 0, 0) origin. Default is None.
         radius : float , optional
-            The desired radius of the hyperbolic paraboloid. The default is 0.5.
+            The desired radius of the hyperbolic paraboloid. Default is 0.5.
         sides : int , optional
-            The desired number of sides of the hyperbolic parabolid. The default is 36.
+            The desired number of sides of the hyperbolic parabolid. Default is 36.
         rings : int , optional
-            The desired number of concentric rings of the hyperbolic parabolid. The default is 10.
+            The desired number of concentric rings of the hyperbolic parabolid. Default is 10.
         A : float , optional
-            The *A* constant in the equation z = A*x^2^ + B*y^2^. The default is 2.0.
+            The *A* constant in the equation z = A*x^2^ + B*y^2^. Default is 2.0.
         B : float , optional
-            The *B* constant in the equation z = A*x^2^ + B*y^2^. The default is -2.0.
+            The *B* constant in the equation z = A*x^2^ + B*y^2^. Default is -2.0.
         direction : list , optional
-            The  vector representing the up direction of the hyperbolic paraboloid. The default is [0, 0, 1].
+            The  vector representing the up direction of the hyperbolic paraboloid. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "bottom". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1020,7 +1020,7 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1073,7 +1073,7 @@ class Shell():
         vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1106,27 +1106,27 @@ class Shell():
             Parameters
             ----------
             origin : topologic_core.Vertex , optional
-                The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).
+                The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).
             focalLength : float , optional
-                The focal length of the parabola. The default is 1.
+                The focal length of the parabola. Default is 1.
             width : float , optional
-                The width of the parabolic surface. The default is 1.
+                The width of the parabolic surface. Default is 1.
             length : float , optional
-                The length of the parabolic surface. The default is 1.
+                The length of the parabolic surface. Default is 1.
             uSides : int , optional
-                The number of sides along the width. The default is 16.
+                The number of sides along the width. Default is 16.
             vSides : int , optional
-                The number of sides along the length. The default is 16.
+                The number of sides along the length. Default is 16.
             direction : list , optional
-                The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].
+                The vector representing the up direction of the parabolic surface. Default is [0, 0, 1].
             placement : str , optional
-                The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+                The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
             mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
             tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
             silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
             
             Returns
             -------
@@ -1210,25 +1210,25 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the pie. The default is None which results in the pie being placed at (0, 0, 0).
+            The location of the origin of the pie. Default is None which results in the pie being placed at (0, 0, 0).
         radiusA : float , optional
-            The outer radius of the pie. The default is 0.5.
+            The outer radius of the pie. Default is 0.5.
         radiusB : float , optional
-            The inner radius of the pie. The default is 0.25.
+            The inner radius of the pie. Default is 0.25.
         sides : int , optional
-            The number of sides of the pie. The default is 32.
+            The number of sides of the pie. Default is 32.
         rings : int , optional
-            The number of rings of the pie. The default is 1.
+            The number of rings of the pie. Default is 1.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the pie. The default is 0.
+            The angle in degrees from which to start creating the arc of the pie. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the pie. The default is 360.
+            The angle in degrees at which to end creating the arc of the pie. Default is 360.
         direction : list , optional
-            The vector representing the up direction of the pie. The default is [0, 0, 1].
+            The vector representing the up direction of the pie. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the pie. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1337,11 +1337,11 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         origin : topologic_core.Vertex , optional
-            The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. The default is None.
+            The desired origin of the plane unto which the planar shell will be projected. If set to None, the centroid of the input shell will be chosen. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1382,21 +1382,21 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
-            The width of the rectangle. The default is 1.0.
+            The width of the rectangle. Default is 1.0.
         length : float , optional
-            The length of the rectangle. The default is 1.0.
+            The length of the rectangle. Default is 1.0.
         uSides : int , optional
-            The number of sides along the width. The default is 2.
+            The number of sides along the width. Default is 2.
         vSides : int , optional
-            The number of sides along the length. The default is 2.
+            The number of sides along the length. Default is 2.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the rectangle. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1443,9 +1443,9 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1480,13 +1480,13 @@ class Shell():
         face : topologic_core.Face
             The input face.
         angle : float , optioal
-            The desired angle in degrees of the roof. The default is 45.
+            The desired angle in degrees of the roof. Default is 45.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
+            The desired epsilon (another form of tolerance for distance from plane). Default is 0.01. (This is set to a larger number as it was found to work better)
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
@@ -1582,9 +1582,9 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1654,11 +1654,11 @@ class Shell():
         shell : topologic_core.Shell
             The input shell.
         simplifyBoundary : bool , optional
-            If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. The default is True.
+            If set to True, the external boundary of the shell will be simplified as well. Otherwise, it will not be simplified. Default is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001. Edges shorter than this length will be removed.
+            The desired tolerance. Default is 0.0001. Edges shorter than this length will be removed.
 
         Returns
         -------
@@ -1800,7 +1800,7 @@ class Shell():
         face : topologic_core.Face
             The input face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
@@ -1856,21 +1856,21 @@ class Shell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
+            The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
-            The size of the square. The default is 1.0.
+            The size of the square. Default is 1.0.
         length : float , optional
-            The length of the square. The default is 1.0.
+            The length of the square. Default is 1.0.
         uSides : int , optional
-            The number of sides along the width. The default is 2.
+            The number of sides along the width. Default is 2.
         vSides : int , optional
-            The number of sides along the length. The default is 2.
+            The number of sides along the length. Default is 2.
         direction : list , optional
-            The vector representing the up direction of the square. The default is [0, 0, 1].
+            The vector representing the up direction of the square. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the square. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1943,11 +1943,11 @@ class Shell():
         vertices : list
             The input list of vertices.
         face : topologic_core.Face , optional
-            The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. The default is None.
+            The input face. If the face is not set an optimised bounding rectangle of the input vertices is used instead. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------

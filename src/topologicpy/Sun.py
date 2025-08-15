@@ -42,7 +42,7 @@ class Sun():
         latitude : float
             The input latitude.
         year : integer , optional
-            The input year. The default is the current year.
+            The input year. Default is the current year.
 
         Returns
         -------
@@ -85,7 +85,7 @@ class Sun():
         latitude : float
             The input latitude.
         year : integer , optional
-            The input year. The default is the current year.
+            The input year. Default is the current year.
 
         Returns
         -------
@@ -126,7 +126,7 @@ class Sun():
         latitude : float
             The input latitude.
         year : integer , optional
-            The input year. The default is the current year.
+            The input year. Default is the current year.
 
         Returns
         -------
@@ -166,7 +166,7 @@ class Sun():
         latitude : float
             The input latitude. See https://en.wikipedia.org/wiki/Latitude.
         year : integer , optional
-            The input year. The default is the current year.
+            The input year. Default is the current year.
 
         Returns
         -------
@@ -393,7 +393,7 @@ class Sun():
         date : datetime
             The input datetime.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -420,13 +420,13 @@ class Sun():
         date : datetime
             The input datetime.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         
         Returns
@@ -452,11 +452,11 @@ class Sun():
         date : datetime
             The input datetime.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -487,11 +487,11 @@ class Sun():
         date : datetime
             The input datetime.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -524,17 +524,17 @@ class Sun():
         date : datetime
             The input datetime.
         startTime : datetime , optional
-            The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. The default is None.
+            The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.
         endTime : datetime , optional
-            The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.
+            The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.
         interval : int , optional
-            The interval in minutes to compute the sun location. The default is 60.
+            The interval in minutes to compute the sun location. Default is 60.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -568,20 +568,20 @@ class Sun():
         date : datetime
             The input datetime.
         startTime : datetime , optional
-            The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. The default is None.
+            The desired start time to compute the sun location. If set to None, Sun.Sunrise is used. Default is None.
         endTime : datetime , optional
-            The desired end time to compute the sun location. If set to None, Sun.Sunset is used. The default is None.
+            The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.
         interval : int , optional
-            The interval in minutes to compute the sun location. The default is 60.
+            The interval in minutes to compute the sun location. Default is 60.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         sides : int , optional
             If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
             The default is None.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -630,17 +630,17 @@ class Sun():
         hour : datetime
             The input hour.
         startDay : integer , optional
-            The desired start day to compute the sun location. The default is 1.
+            The desired start day to compute the sun location. Default is 1.
         endDay : integer , optional
-            The desired end day to compute the sun location. The default is 365.
+            The desired end day to compute the sun location. Default is 365.
         interval : int , optional
-            The interval in days to compute the sun location. The default is 5.
+            The interval in days to compute the sun location. Default is 5.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -681,20 +681,20 @@ class Sun():
         hour : datetime
             The input hour.
         startDay : integer , optional
-            The desired start day of the year to compute the sun location. The default is 1.
+            The desired start day of the year to compute the sun location. Default is 1.
         endDay : integer , optional
-            The desired end day of the year to compute the sun location. The default is 365.
+            The desired end day of the year to compute the sun location. Default is 365.
         interval : int , optional
-            The interval in days to compute the sun location. The default is 5.
+            The interval in days to compute the sun location. Default is 5.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         sides : int , optional
             If set to None, the path is divided based on the interval. Otherwise, it is equally divided into the number of sides.
             The default is None.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
 
         Returns
         -------
@@ -738,19 +738,19 @@ class Sun():
         longitude : float
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         minuteInterval : int , optional
-            The interval in minutes to compute the sun location for the date path. The default is 30.
+            The interval in minutes to compute the sun location for the date path. Default is 30.
         dayInterval : int , optional
-            The interval in days for the hourly path to compute the sun location. The default is 15.
+            The interval in days for the hourly path to compute the sun location. Default is 15.
         origin : topologic.Vertex , optional
-            The desired origin of the world. If set to None, the origin will be set to (0,0,0). The default is None.
+            The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
-            The desired radius of the sun orbit. The default is 0.5.
+            The desired radius of the sun orbit. Default is 0.5.
         uSides : int , optional
-            The number of sides to divide the diagram horizontally (along the azimuth). The default is 180.
+            The number of sides to divide the diagram horizontally (along the azimuth). Default is 180.
         vSides : int , optional
-            The number of sides to divide the diagram paths vertically (along the altitude). The default is 180.
+            The number of sides to divide the diagram paths vertically (along the altitude). Default is 180.
         north : float, optional
-            The desired compass angle of the north direction. The default is 0 which points in the positive Y-axis direction.
+            The desired compass angle of the north direction. Default is 0 which points in the positive Y-axis direction.
         compass : bool , optional
             If set to True, a compass (shell) is included. Othwerwise, it is is not.
         shell : bool , optional

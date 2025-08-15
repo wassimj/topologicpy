@@ -47,26 +47,26 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         values : list , optional
-            The input list of values to use for the color bar. The default is [].
+            The input list of values to use for the color bar. Default is [].
         nTicks : int , optional
-            The number of ticks to use on the color bar. The default is 5.
+            The number of ticks to use on the color bar. Default is 5.
         xPosition : float , optional
-            The x location of the color bar. The default is -0.15.
+            The x location of the color bar. Default is -0.15.
         width : int , optional
-            The width in pixels of the color bar. The default is 15
+            The width in pixels of the color bar. Default is 15
         outlineWidth : int , optional
-            The width in pixels of the outline of the color bar. The default is 0.
+            The width in pixels of the outline of the color bar. Default is 0.
         title : str , optional
-            The title of the color bar. The default is "".
+            The title of the color bar. Default is "".
         subTitle : str , optional
-            The subtitle of the color bar. The default is "".
+            The subtitle of the color bar. Default is "".
         units: str , optional
-            The units used in the color bar. The default is ""
+            The units used in the color bar. Default is ""
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
             In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the color bar. The default is 6.
+            The desired length of the mantissa for the values listed on the color bar. Default is 6.
         Returns
         -------
         plotly.graph_objs._figure.Figure
@@ -327,18 +327,18 @@ class Plotly:
         graph : topologic_core.Graph
             The input graph.
         sagitta : float , optional
-            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 0 which means a straight edge is drawn instead of an arc. The default is 0.
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 0 which means a straight edge is drawn instead of an arc. Default is 0.
         absolute : bool , optional
-            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. The default is False.
-            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+            If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. Default is False.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. Default is True.
         sides : int , optional
-            The number of sides of the arc. The default is 8.
+            The number of sides of the arc. Default is 8.
         directed : bool , optional
-            If set to True, arrowheads are drawn to show direction. The default is False.
+            If set to True, arrowheads are drawn to show direction. Default is False.
         arrowSize : int, optional
-            The desired size of arrowheads for directed graphs. The default is 0.1.
+            The desired size of arrowheads for directed graphs. Default is 0.1.
         arrowSizeKey: str , optional
-            The edge dictionary key under which to find the arrowhead size. The default is None.
+            The edge dictionary key under which to find the arrowhead size. Default is None.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -348,31 +348,31 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         vertexColorKey : str , optional
-            The dictionary key under which to find the vertex color. The default is None.
+            The dictionary key under which to find the vertex color. Default is None.
         vertexSize : float , optional
-            The desired size of the vertices. The default is 6.
+            The desired size of the vertices. Default is 6.
         vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
+            The dictionary key to use to display the vertex label. Default is None.
         vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
+            The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
+            The list of vertex groups against which to index the color of the vertex. Default is [].
         vertexMinGroup : int or float , optional
-            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
         vertexMaxGroup : int or float , optional
-            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
         showVertexLabels : bool , optional
-            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         showVertexLegend : bool , optional
-            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. The default is False.
+            If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. Default is False.
         vertexLegendLabel : str , optional
-            The legend label string used to identify vertices. The default is "Topology Vertices".
+            The legend label string used to identify vertices. Default is "Topology Vertices".
         vertexLegendRank : int , optional
-            The legend rank order of the vertices of this topology. The default is 1.
+            The legend rank order of the vertices of this topology. Default is 1.
         vertexLegendGroup : int , optional
-            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
+            The number of the vertex legend group to which the vertices of this topology belong. Default is 1.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -382,31 +382,31 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         edgeColorKey : str , optional
-            The dictionary key under which to find the edge color. The default is None.
+            The dictionary key under which to find the edge color. Default is None.
         edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The desired thickness of the output edges. Default is 1.
         edgeWidthKey : str , optional
-            The dictionary key under which to find the edge width. The default is None.
+            The dictionary key under which to find the edge width. Default is None.
         edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+            The dictionary key to use to display the edge label. Default is None.
         edgeDash : bool , optional
-            If set to True, the edges are drawn as dashed lines. The default is False.
+            If set to True, the edges are drawn as dashed lines. Default is False.
         edgeDashKey : str , optional
-            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
+            The key under which to find the boolean flag to draw edges as dashed lines. Default is None.
         edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+            The dictionary key to use to display the edge group. Default is None.
         edgeGroups : list , optional
-            The list of groups to use for indexing the color of edges. The default is None.
+            The list of groups to use for indexing the color of edges. Default is None.
         showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
         showEdgeLabels : bool , optional
-            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         showEdgeLegend : bool , optional
-            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. The default is False.
+            If set to True the edge legend will be drawn. Otherwise, it will not be drawn. Default is False.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -911,9 +911,9 @@ class Plotly:
             The input topology. This must contain faces and or edges.
 
         showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
         vertexSize : float , optional
-            The desired size of the output vertices. The default is 1.1.
+            The desired size of the output vertices. Default is 1.1.
         vertexSizeKey : str , optional
             The dictionary key under which to find the vertex size.The default is None.
         vertexColor : str , optional
@@ -927,7 +927,7 @@ class Plotly:
         vertexColorKey : str , optional
             The dictionary key under which to find the vertex color.The default is None.
         vertexBorderWidth : float , optional
-            The desired width of the border of the output vertices. The default is 1.
+            The desired width of the border of the output vertices. Default is 1.
         vertexBorderColor : str , optional
             The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -937,33 +937,33 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
+            The dictionary key to use to display the vertex label. Default is None.
         vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
+            The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
+            The list of vertex groups against which to index the color of the vertex. Default is [].
         vertexMinGroup : int or float , optional
-            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
         vertexMaxGroup : int or float , optional
-            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertexLegend : bool, optional
-            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. Default is False.
         vertexLegendLabel : str , optional
-            The legend label string used to identify vertices. The default is "Topology Vertices".
+            The legend label string used to identify vertices. Default is "Topology Vertices".
         vertexLegendRank : int , optional
-            The legend rank order of the vertices of this topology. The default is 1.
+            The legend rank order of the vertices of this topology. Default is 1.
         vertexLegendGroup : int , optional
-            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
+            The number of the vertex legend group to which the vertices of this topology belong. Default is 1.
         directed : bool , optional
-            If set to True, arrowheads are drawn to show direction. The default is False.
+            If set to True, arrowheads are drawn to show direction. Default is False.
         arrowSize : int, optional
-            The desired size of arrowheads for directed graphs. The default is 0.1.
+            The desired size of arrowheads for directed graphs. Default is 0.1.
         arrowSizeKey: str , optional
-            The edge dictionary key under which to find the arrowhead size. The default is None.
+            The edge dictionary key under which to find the arrowhead size. Default is None.
         showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
         edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The desired thickness of the output edges. Default is 1.
         edgeWidthKey : str , optional
             The dictionary key under which to find the edge width.The default is None.
         edgeColor : str , optional
@@ -977,32 +977,32 @@ class Plotly:
         edgeColorKey : str , optional
             The dictionary key under which to find the edge color.The default is None.
         edgeDash : bool , optional
-            If set to True, the edges are drawn as dashed lines. The default is False.
+            If set to True, the edges are drawn as dashed lines. Default is False.
         edgeDashKey : str , optional
-            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
+            The key under which to find the boolean flag to draw edges as dashed lines. Default is None.
         edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+            The dictionary key to use to display the edge label. Default is None.
         edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+            The dictionary key to use to display the edge group. Default is None.
         edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
+            The list of edge groups against which to index the color of the edge. Default is [].
         edgeMinGroup : int or float , optional
-            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
         edgeMaxGroup : int or float , optional
-            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
         showEdgeLegend : bool, optional
-            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. Default is False.
         edgeLegendLabel : str , optional
-            The legend label string used to identify edges. The default is "Topology Edges".
+            The legend label string used to identify edges. Default is "Topology Edges".
         edgeLegendRank : int , optional
-            The legend rank order of the edges of this topology. The default is 2.
+            The legend rank order of the edges of this topology. Default is 2.
         edgeLegendGroup : int , optional
-            The number of the edge legend group to which the edges of this topology belong. The default is 2.
+            The number of the edge legend group to which the edges of this topology belong. Default is 2.
         
         showFaces : bool , optional
-            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.
         faceOpacity : float , optional
-            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+            The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.
         faceOpacityKey : str , optional
             The dictionary key under which to find the face opacity.The default is None.
         faceColor : str , optional
@@ -1016,33 +1016,33 @@ class Plotly:
         faceColorKey : str , optional
             The dictionary key under which to find the face color.The default is None.
         faceLabelKey : str , optional
-            The dictionary key to use to display the face label. The default is None.
+            The dictionary key to use to display the face label. Default is None.
         faceGroupKey : str , optional
-            The dictionary key to use to display the face group. The default is None.
+            The dictionary key to use to display the face group. Default is None.
         faceGroups : list , optional
-            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].
+            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].
         faceMinGroup : int or float , optional
-            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.
+            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.
         faceMaxGroup : int or float , optional
-            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.
+            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.
         showFaceLegend : bool, optional
-            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. Default is False.
         faceLegendLabel : str , optional
-            The legend label string used to idenitfy edges. The default is "Topology Faces".
+            The legend label string used to idenitfy edges. Default is "Topology Faces".
         faceLegendRank : int , optional
-            The legend rank order of the faces of this topology. The default is 3.
+            The legend rank order of the faces of this topology. Default is 3.
         faceLegendGroup : int , optional
-            The number of the face legend group to which the faces of this topology belong. The default is 3.
+            The number of the face legend group to which the faces of this topology belong. Default is 3.
         intensityKey: str, optional
-            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
         intensities : list , optional
-            The list of intensities against which to index the intensity of the vertex. The default is [].
+            The list of intensities against which to index the intensity of the vertex. Default is [].
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1335,25 +1335,25 @@ class Plotly:
         categories : list
             The list of categories to use on the X and Y axes.
         minValue : float , optional
-            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.
+            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.
         maxValue : float , optional
-            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.
         title : str , optional
-            The desired title to display. The default is "Confusion Matrix".
+            The desired title to display. Default is "Confusion Matrix".
         xTitle : str , optional
-            The desired X-axis title to display. The default is "Actual Categories".
+            The desired X-axis title to display. Default is "Actual Categories".
         yTitle : str , optional
-            The desired Y-axis title to display. The default is "Predicted Categories".
+            The desired Y-axis title to display. Default is "Predicted Categories".
         width : int , optional
-            The desired width of the figure. The default is 950.
+            The desired width of the figure. Default is 950.
         height : int , optional
-            The desired height of the figure. The default is 500.
+            The desired height of the figure. Default is 500.
         showScale : bool , optional
-            If set to True, a color scale is shown on the right side of the figure. The default is True.
+            If set to True, a color scale is shown on the right side of the figure. Default is True.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         colorSamples : int , optional
-            The number of discrete color samples to use for displaying the data. The default is 10.
+            The number of discrete color samples to use for displaying the data. Default is 10.
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -1365,13 +1365,13 @@ class Plotly:
             - A named CSS color.
             The default is 'rgba(0,0,0,0)' (transparent).
         marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
+            The desired left margin in pixels. Default is 0.
         marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
+            The desired right margin in pixels. Default is 0.
         marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
+            The desired top margin in pixels. Default is 40.
         marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
+            The desired bottom margin in pixels. Default is 0.
         
         Returns
         -------
@@ -1450,25 +1450,25 @@ class Plotly:
         categories : list
             The list of categories to use on the X and Y axes.
         minValue : float , optional
-            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. The default is None.
+            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.
         maxValue : float , optional
-            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. The default is None.
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.
         title : str , optional
-            The desired title to display. The default is "Confusion Matrix".
+            The desired title to display. Default is "Confusion Matrix".
         xTitle : str , optional
-            The desired X-axis title to display. The default is "Actual".
+            The desired X-axis title to display. Default is "Actual".
         yTitle : str , optional
-            The desired Y-axis title to display. The default is "Predicted".
+            The desired Y-axis title to display. Default is "Predicted".
         width : int , optional
-            The desired width of the figure. The default is 950.
+            The desired width of the figure. Default is 950.
         height : int , optional
-            The desired height of the figure. The default is 500.
+            The desired height of the figure. Default is 500.
         showScale : bool , optional
-            If set to True, a color scale is shown on the right side of the figure. The default is True.
+            If set to True, a color scale is shown on the right side of the figure. Default is True.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). The default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         colorSamples : int , optional
-            The number of discrete color samples to use for displaying the data. The default is 10.
+            The number of discrete color samples to use for displaying the data. Default is 10.
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -1480,15 +1480,15 @@ class Plotly:
             - A named CSS color.
             The default is 'rgba(0,0,0,0)' (transparent).
         marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
+            The desired left margin in pixels. Default is 0.
         marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
+            The desired right margin in pixels. Default is 0.
         marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
+            The desired top margin in pixels. Default is 40.
         marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
+            The desired bottom margin in pixels. Default is 0.
         mantissa : int , optional
-            The desired number of digits of the mantissa. The default is 6.
+            The desired number of digits of the mantissa. Default is 6.
 
         """
         #import plotly.figure_factory as ff
@@ -1622,11 +1622,11 @@ class Plotly:
         predicted : list
             The predicted values to display.
         title : str , optional
-            The desired title to display. The default is "Correlation between Actual and Predicted Values".
+            The desired title to display. Default is "Correlation between Actual and Predicted Values".
         xTitle : str , optional
-            The desired X-axis title to display. The default is "Actual Values".
+            The desired X-axis title to display. Default is "Actual Values".
         yTitle : str , optional
-            The desired Y-axis title to display. The default is "Predicted Values".
+            The desired Y-axis title to display. Default is "Predicted Values".
         dotColor : str , optional
             The desired color of the dots. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -1644,11 +1644,11 @@ class Plotly:
             - A named CSS color.
             The default is 'red'.
         width : int , optional
-            The desired width of the figure. The default is 800.
+            The desired width of the figure. Default is 800.
         height : int , optional
-            The desired height of the figure. The default is 600.
+            The desired height of the figure. Default is 600.
         theme : str , optional
-            The plotly color scheme to use. The options are "dark", "light", "default". The default is "default".
+            The plotly color scheme to use. The options are "dark", "light", "default". Default is "default".
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -1660,13 +1660,13 @@ class Plotly:
             - A named CSS color.
             The default is 'rgba(0,0,0,0)' (transparent).
         marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
+            The desired left margin in pixels. Default is 0.
         marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
+            The desired right margin in pixels. Default is 0.
         marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
+            The desired top margin in pixels. Default is 40.
         marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
+            The desired bottom margin in pixels. Default is 0.
         
         Returns
         -------
@@ -1780,23 +1780,23 @@ class Plotly:
         data_labels : list
             The labels to use for the data.
         width : int , optional
-            The desired width of the figure. The default is 950.
+            The desired width of the figure. Default is 950.
         height : int , optional
-            The desired height of the figure. The default is 500.
+            The desired height of the figure. Default is 500.
         title : str , optional
-            The chart title. The default is "Training and Testing Results".
+            The chart title. Default is "Training and Testing Results".
         xTitle : str , optional
-            The X-axis title. The default is "Epochs".
+            The X-axis title. Default is "Epochs".
         xSpacing : float , optional
-            The X-axis spacing. The default is 1.0.
+            The X-axis spacing. Default is 1.0.
         yTitle : str , optional
-            The Y-axis title. The default is "Accuracy and Loss".
+            The Y-axis title. Default is "Accuracy and Loss".
         ySpacing : float , optional
-            The Y-axis spacing. The default is 0.1.
+            The Y-axis spacing. Default is 0.1.
         useMarkers : bool , optional
-            If set to True, markers will be displayed. The default is False.
+            If set to True, markers will be displayed. Default is False.
         chartType : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. Default is "Line".
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -1816,13 +1816,13 @@ class Plotly:
             - A named CSS color.
             The default is 'lightgray'
         marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
+            The desired left margin in pixels. Default is 0.
         marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
+            The desired right margin in pixels. Default is 0.
         marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
+            The desired top margin in pixels. Default is 40.
         marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
+            The desired bottom margin in pixels. Default is 0.
 
         Returns
         -------
@@ -1874,13 +1874,13 @@ class Plotly:
         height : int , optional
             The height in pixels of the figure. The default value is 950.
         xAxis : bool , optional
-            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
         yAxis : bool , optional
-            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
         zAxis : bool , optional
-            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
         axisSize : float , optional
-            The size of the X, Y, Z, axes. The default is 1.
+            The size of the X, Y, Z, axes. Default is 1.
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -1900,7 +1900,7 @@ class Plotly:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2071,9 +2071,9 @@ class Plotly:
             The input topology. This must contain faces and or edges.
 
         showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
         vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
+            The desired size of the vertices. Default is 1.1.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -2083,28 +2083,28 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
+            The dictionary key to use to display the vertex label. Default is None.
         vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
+            The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
+            The list of vertex groups against which to index the color of the vertex. Default is [].
         vertexMinGroup : int or float , optional
-            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
         edgeMaxGroup : int or float , optional
-            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertexLegend : bool, optional
-            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. Default is False.
         vertexLegendLabel : str , optional
-            The legend label string used to identify vertices. The default is "Topology Vertices".
+            The legend label string used to identify vertices. Default is "Topology Vertices".
         vertexLegendRank : int , optional
-            The legend rank order of the vertices of this topology. The default is 1.
+            The legend rank order of the vertices of this topology. Default is 1.
         vertexLegendGroup : int , optional
-            The number of the vertex legend group to which the vertices of this topology belong. The default is 1.
+            The number of the vertex legend group to which the vertices of this topology belong. Default is 1.
         
         showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
         edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The desired thickness of the output edges. Default is 1.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -2114,28 +2114,28 @@ class Plotly:
             - A named CSS color.
             The default is "black".
         edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+            The dictionary key to use to display the edge label. Default is None.
         edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+            The dictionary key to use to display the edge group. Default is None.
         edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
+            The list of edge groups against which to index the color of the edge. Default is [].
         edgeMinGroup : int or float , optional
-            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
         edgeMaxGroup : int or float , optional
-            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
         showEdgeLegend : bool, optional
-            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. Default is False.
         edgeLegendLabel : str , optional
-            The legend label string used to identify edges. The default is "Topology Edges".
+            The legend label string used to identify edges. Default is "Topology Edges".
         edgeLegendRank : int , optional
-            The legend rank order of the edges of this topology. The default is 2.
+            The legend rank order of the edges of this topology. Default is 2.
         edgeLegendGroup : int , optional
-            The number of the edge legend group to which the edges of this topology belong. The default is 2.
+            The number of the edge legend group to which the edges of this topology belong. Default is 2.
         
         showFaces : bool , optional
-            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.
         faceOpacity : float , optional
-            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+            The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -2145,33 +2145,33 @@ class Plotly:
             - A named CSS color.
             The default is "#FAFAFA".
         faceLabelKey : str , optional
-            The dictionary key to use to display the face label. The default is None.
+            The dictionary key to use to display the face label. Default is None.
         faceGroupKey : str , optional
-            The dictionary key to use to display the face group. The default is None.
+            The dictionary key to use to display the face group. Default is None.
         faceGroups : list , optional
-            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].
+            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].
         faceMinGroup : int or float , optional
-            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.
+            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.
         faceMaxGroup : int or float , optional
-            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.
+            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.
         showFaceLegend : bool, optional
-            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. Default is False.
         faceLegendLabel : str , optional
-            The legend label string used to idenitfy edges. The default is "Topology Faces".
+            The legend label string used to idenitfy edges. Default is "Topology Faces".
         faceLegendRank : int , optional
-            The legend rank order of the faces of this topology. The default is 3.
+            The legend rank order of the faces of this topology. Default is 3.
         faceLegendGroup : int , optional
-            The number of the face legend group to which the faces of this topology belong. The default is 3.
+            The number of the face legend group to which the faces of this topology belong. Default is 3.
         width : int , optional
             The width in pixels of the figure. The default value is 950.
         height : int , optional
             The height in pixels of the figure. The default value is 950.
         xAxis : bool , optional
-            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
         yAxis : bool , optional
-            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
         zAxis : bool , optional
-            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
         backgroundColor : list or str , optional
             The desired background color. This can be any color list or plotly color string and may be specified as:
             - An rgb list (e.g. [255,0,0])
@@ -2191,39 +2191,39 @@ class Plotly:
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
+            The desired location of the camera). Default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0, 0, 0].
+            The desired center (camera target). Default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0, 0, 1].
+            The desired up vector. Default is [0, 0, 1].
         renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). The default is "notebook".
+            The desired renderer. See Plotly.Renderers(). Default is "notebook".
         intensityKey : str , optional
-            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
         showScale : bool , optional
-            If set to True, the colorbar is shown. The default is False.
+            If set to True, the colorbar is shown. Default is False.
         cbValues : list , optional
-            The input list of values to use for the colorbar. The default is [].
+            The input list of values to use for the colorbar. Default is [].
         cbTicks : int , optional
-            The number of ticks to use on the colorbar. The default is 5.
+            The number of ticks to use on the colorbar. Default is 5.
         cbX : float , optional
-            The x location of the colorbar. The default is -0.15.
+            The x location of the colorbar. Default is -0.15.
         cbWidth : int , optional
-            The width in pixels of the colorbar. The default is 15
+            The width in pixels of the colorbar. Default is 15
         cbOutlineWidth : int , optional
-            The width in pixels of the outline of the colorbar. The default is 0.
+            The width in pixels of the outline of the colorbar. Default is 0.
         cbTitle : str , optional
-            The title of the colorbar. The default is "".
+            The title of the colorbar. Default is "".
         cbSubTitle : str , optional
-            The subtitle of the colorbar. The default is "".
+            The subtitle of the colorbar. Default is "".
         cbUnits: str , optional
-            The units used in the colorbar. The default is ""
+            The units used in the colorbar. Default is ""
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the colorbar. The default is 6.
+            The desired length of the mantissa for the values listed on the colorbar. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2325,9 +2325,9 @@ class Plotly:
         path : str
             The input file path.
         width : int, optional
-            The width of the exported image in pixels. The default is 1920.
+            The width of the exported image in pixels. Default is 1920.
         height : int , optional
-            The height of the exported image in pixels. The default is 1200.
+            The height of the exported image in pixels. Default is 1200.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
 
@@ -2368,9 +2368,9 @@ class Plotly:
         path : str
             The input file path.
         width : int, optional
-            The width of the exported image in pixels. The default is 1920.
+            The width of the exported image in pixels. Default is 1920.
         height : int , optional
-            The height of the exported image in pixels. The default is 1200.
+            The height of the exported image in pixels. Default is 1200.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
 
@@ -2411,9 +2411,9 @@ class Plotly:
         path : str
             The input file path.
         width : int, optional
-            The width of the exported image in pixels. The default is 1920.
+            The width of the exported image in pixels. Default is 1920.
         height : int , optional
-            The height of the exported image in pixels. The default is 1200.
+            The height of the exported image in pixels. Default is 1200.
         overwrite : bool , optional
             If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't.
 
@@ -2452,13 +2452,13 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [-1.25, -1.25, 1.25].
+            The desired location of the camera. Default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0, 0, 0].
+            The desired center (camera target). Default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0, 0, 1].
+            The desired up vector. Default is [0, 0, 1].
         projection : str , optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
         
         Returns
         -------
@@ -2496,15 +2496,15 @@ class Plotly:
         figure : plotly.graph_objs._figure.Figure
             The input plotly figure.
         camera : list , optional
-            The desired location of the camera. The default is [0, 0, 0].
+            The desired location of the camera. Default is [0, 0, 0].
         center : list , optional
-            The desired center (camera target). The default is [0, 0, 0].
+            The desired center (camera target). Default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0, 0, 1].
+            The desired up vector. Default is [0, 0, 1].
         renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.
+            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.
         projection : str, optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
 
         
         Returns
@@ -2610,7 +2610,7 @@ class Plotly:
         path : str
             The image file path.
         format : str , optional
-            The desired format. This can be any of "jpg", "jpeg", "pdf", "png", "svg", or "webp". It is case insensitive. The default is "png". 
+            The desired format. This can be any of "jpg", "jpeg", "pdf", "png", "svg", or "webp". It is case insensitive. Default is "png". 
         width : int , optional
             The width in pixels of the figure. The default value is 1920.
         height : int , optional

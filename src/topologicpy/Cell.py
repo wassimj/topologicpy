@@ -27,7 +27,7 @@ class Cell():
         cell : topologic_core.Cell
             The cell.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -55,25 +55,25 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).
+            The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
-            The width of the box. The default is 1.
+            The width of the box. Default is 1.
         length : float , optional
-            The length of the box. The default is 1.
+            The length of the box. Default is 1.
         height : float , optional
             The height of the box.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int , optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the box. The default is [0, 0, 1].
+            The vector representing the up direction of the box. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -95,11 +95,11 @@ class Cell():
         faces : list
             The input list of faces.
         planarize : bool, optional
-            If set to True, the input faces are planarized before building the cell. Otherwise, they are not. The default is False.
+            If set to True, the input faces are planarized before building the cell. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -197,9 +197,9 @@ class Cell():
         cell : topologic_core.Cell
             The input cell.
         offset : float , optional
-            The desired offset distance. The default is 1.0.
+            The desired offset distance. Default is 1.0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -235,9 +235,9 @@ class Cell():
         shell : topologic_core.Shell
             The input shell. The shell must be closed for this method to succeed.
         planarize : bool, optional
-            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
+            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -264,11 +264,11 @@ class Cell():
         externalBoundary : topologic_core.Shell
             The input external boundary.
         internalBoundaries : list , optional
-            The input list of internal boundaries (closed shells). The default is an empty list.
+            The input list of internal boundaries (closed shells). Default is an empty list.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -310,17 +310,17 @@ class Cell():
         face : topologic_core.Face
             The input face to be thickened.
         thickness : float , optional
-            The desired thickness. The default is 1.0.
+            The desired thickness. Default is 1.0.
         bothSides : bool
-            If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. The default is True.
+            If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. Default is True.
         reverse : bool
-            If True, the cell will be lofted in the opposite direction of the normal to the face. The default is False.
+            If True, the cell will be lofted in the opposite direction of the normal to the face. Default is False.
         planarize : bool, optional
-            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
+            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -367,17 +367,17 @@ class Cell():
         shell : topologic_core.Shell
             The input shell to be thickened.
         thickness : float , optional
-            The desired thickness. The default is 1.0.
+            The desired thickness. Default is 1.0.
         bothSides : bool
-            If True, the cell will be lofted to each side of the shell. Otherwise, it will be lofted along the input direction. The default is True.
+            If True, the cell will be lofted to each side of the shell. Otherwise, it will be lofted along the input direction. Default is True.
         reverse : bool
-            If True, the cell will be lofted along the opposite of the input direction. The default is False.
+            If True, the cell will be lofted along the opposite of the input direction. Default is False.
         planarize : bool, optional
-            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. The default is False.
+            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -425,17 +425,17 @@ class Cell():
         wires : list
             The input list of wires.
         close : bool , optional
-            If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. The default is False.
+            If set to True, the last wire in the list of input wires will be connected to the first wire in the list of input wires. Default is False.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         planarize : bool, optional
-            If set to True, the created faces are planarized before building the cell. Otherwise, they are not. The default is False.
+            If set to True, the created faces are planarized before building the cell. Otherwise, they are not. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Raises
         ------
@@ -559,11 +559,11 @@ class Cell():
         cluster : Cluster
             The input Cluster of wires.
         close : bool , optional
-            If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. The default is False.
+            If set to True, the last wire in the cluster of input wires will be connected to the first wire in the cluster of input wires. Default is False.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Raises
         ------
@@ -592,23 +592,23 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
+            The location of the origin of the cylinder. Default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the capsule. The default is 0.25.
+            The radius of the capsule. Default is 0.25.
         height : float , optional
-            The height of the capsule. The default is 1.
+            The height of the capsule. Default is 1.
         uSides : int , optional
-            The number of circle segments of the capsule. The default is 16.
+            The number of circle segments of the capsule. Default is 16.
         vSidesEnds : int , optional
-            The number of vertical segments of the end hemispheres. The default is 8.
+            The number of vertical segments of the end hemispheres. Default is 8.
         vSidesMiddle : int , optional
-            The number of vertical segments of the middle cylinder. The default is 1.
+            The number of vertical segments of the middle cylinder. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the capsule. The default is [0, 0, 1].
+            The vector representing the up direction of the capsule. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the capsule. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
+            The description of the placement of the origin of the capsule. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "bottom".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -656,23 +656,23 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
+            The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
-            The outer radius of the CHS. The default is 1.0.
+            The outer radius of the CHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the CHS. The default is 0.25.
+            The thickness of the CHS. Default is 0.25.
         height : float , optional
-            The height of the CHS. The default is 1.0.
+            The height of the CHS. Default is 1.0.
         sides : int , optional
-            The desired number of sides of the CSH. The default is 16.
+            The desired number of sides of the CSH. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+            The vector representing the up direction of the RHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -732,9 +732,9 @@ class Cell():
         cell : topologic_core.Cell
             The input cell.
         reference : str , optional
-            The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. The default is "sphere".
+            The desired reference to which to compare this compactness. The options are "sphere" and "cube". It is case insensitive. Default is "sphere".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -772,25 +772,25 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the cone. The default is None which results in the cone being placed at (0, 0, 0).
+            The location of the origin of the cone. Default is None which results in the cone being placed at (0, 0, 0).
         baseRadius : float , optional
-            The radius of the base circle of the cone. The default is 0.5.
+            The radius of the base circle of the cone. Default is 0.5.
         topRadius : float , optional
-            The radius of the top circle of the cone. The default is 0.
+            The radius of the top circle of the cone. Default is 0.
         height : float , optional
-            The height of the cone. The default is 1.
+            The height of the cone. Default is 1.
         uSides : int , optional
-            The number of circle segments of the cylinder. The default is 16.
+            The number of circle segments of the cylinder. Default is 16.
         vSides : int , optional
-            The number of vertical segments of the cylinder. The default is 1.
+            The number of vertical segments of the cylinder. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the cone. The default is [0, 0, 1].
+            The vector representing the up direction of the cone. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the cone. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -901,7 +901,7 @@ class Cell():
         vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -950,29 +950,29 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the Cross-shape. The default is 1.0.
+            The overall width of the Cross-shape. Default is 1.0.
         length : float , optional
-            The overall length of the Cross-shape. The default is 1.0.
+            The overall length of the Cross-shape. Default is 1.0.
         height : float , optional
-            The overall height of the C-shape. The default is 1.0.
+            The overall height of the C-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the Cross-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the Cross-shape. Default is 0.25.
         c : float , optional
-            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the Y-axis.
         d : float , optional
-            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the X-axis.
         direction : list , optional
-            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the Cross-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1139,35 +1139,35 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+            The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the C-shape. The default is 1.0.
+            The overall width of the C-shape. Default is 1.0.
         length : float , optional
-            The overall length of the C-shape. The default is 1.0.
+            The overall length of the C-shape. Default is 1.0.
         height : float , optional
-            The overall height of the C-shape. The default is 1.0.
+            The overall height of the C-shape. Default is 1.0.
         wSides : int , optional
-            The desired number of sides along the Z-axis. The default is 1.
+            The desired number of sides along the Z-axis. Default is 1.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the C-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the bottom horizontal arm of the C-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the top horizontal arm of the C-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the C-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         mantissa: int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1303,21 +1303,21 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the cube. The default is None which results in the cube being placed at (0, 0, 0).
+            The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).
         size : float , optional
-            The size of the cube. The default is 1.
+            The size of the cube. Default is 1.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int , optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the cube. The default is [0, 0, 1].
+            The vector representing the up direction of the cube. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1338,23 +1338,23 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the cylinder. The default is None which results in the cylinder being placed at (0, 0, 0).
+            The location of the origin of the cylinder. Default is None which results in the cylinder being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the cylinder. The default is 0.5.
+            The radius of the cylinder. Default is 0.5.
         height : float , optional
-            The height of the cylinder. The default is 1.
+            The height of the cylinder. Default is 1.
         uSides : int , optional
-            The number of circle segments of the cylinder. The default is 16.
+            The number of circle segments of the cylinder. Default is 16.
         vSides : int , optional
-            The number of vertical segments of the cylinder. The default is 1.
+            The number of vertical segments of the cylinder. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the cylinder. The default is [0, 0, 1].
+            The vector representing the up direction of the cylinder. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "bottom".
+            The description of the placement of the origin of the cylinder. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "bottom".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1411,9 +1411,9 @@ class Cell():
         cell : topologic_core.Cell
             the input cell.
         tiltAngle : float , optional
-            The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. The default is 10.
+            The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1514,15 +1514,15 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the dodecahedron. The default is None which results in the dodecahedron being placed at (0, 0, 0).
+            The origin location of the dodecahedron. Default is None which results in the dodecahedron being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the dodecahedron's circumscribed sphere. The default is 0.5.
+            The radius of the dodecahedron's circumscribed sphere. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the dodecahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the dodecahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the dodecahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the dodecahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1614,19 +1614,19 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the sphere. The default is None which results in the egg-shaped cell being placed at (0, 0, 0).
+            The origin location of the sphere. Default is None which results in the egg-shaped cell being placed at (0, 0, 0).
         height : float , optional
-            The desired height of of the egg-shaped cell. The default is 1.0.
+            The desired height of of the egg-shaped cell. Default is 1.0.
         uSides : int , optional
-            The desired number of sides along the longitude of the egg-shaped cell. The default is 16.
+            The desired number of sides along the longitude of the egg-shaped cell. Default is 16.
         vSides : int , optional
-            The desired number of sides along the latitude of the egg-shaped cell. The default is 8.
+            The desired number of sides along the latitude of the egg-shaped cell. Default is 8.
         direction : list , optional
-            The vector representing the up direction of the egg-shaped cell. The default is [0, 0, 1].
+            The vector representing the up direction of the egg-shaped cell. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the egg-shaped cell. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the egg-shaped cell. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1751,25 +1751,25 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the hyperboloid. The default is None which results in the hyperboloid being placed at (0, 0, 0).
+            The location of the origin of the hyperboloid. Default is None which results in the hyperboloid being placed at (0, 0, 0).
         baseRadius : float , optional
-            The radius of the base circle of the hyperboloid. The default is 0.5.
+            The radius of the base circle of the hyperboloid. Default is 0.5.
         topRadius : float , optional
-            The radius of the top circle of the hyperboloid. The default is 0.5.
+            The radius of the top circle of the hyperboloid. Default is 0.5.
         height : float , optional
-            The height of the cone. The default is 1.
+            The height of the cone. Default is 1.
         sides : int , optional
-            The number of sides of the cone. The default is 24.
+            The number of sides of the cone. Default is 24.
         direction : list , optional
-            The vector representing the up direction of the hyperboloid. The default is [0, 0, 1].
+            The vector representing the up direction of the hyperboloid. Default is [0, 0, 1].
         twist : float , optional
-            The angle to twist the base cylinder. The default is 60.
+            The angle to twist the base cylinder. Default is 60.
         placement : str , optional
-            The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hyperboloid. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1856,15 +1856,15 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the icosahedron. The default is None which results in the icosahedron being placed at (0, 0, 0).
+            The origin location of the icosahedron. Default is None which results in the icosahedron being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the icosahedron's circumscribed sphere. The default is 0.5.
+            The radius of the icosahedron's circumscribed sphere. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the icosahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the icosahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the icosahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the icosahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1960,9 +1960,9 @@ class Cell():
         cell : topologic_core.Cell
             The input cell.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2005,35 +2005,35 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+            The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the I-shape. The default is 1.0.
+            The overall width of the I-shape. Default is 1.0.
         length : float , optional
-            The overall length of the I-shape. The default is 1.0.
+            The overall length of the I-shape. Default is 1.0.
         height : float , optional
-            The overall height of the I-shape. The default is 1.0.
+            The overall height of the I-shape. Default is 1.0.
         wSides : int , optional
-            The desired number of sides along the Z-Axis. The default is 1.
+            The desired number of sides along the Z-Axis. Default is 1.
         a : float , optional
-            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+            The hortizontal thickness of the central vertical arm of the I-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the bottom horizontal arm of the I-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the top horizontal arm of the I-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the I-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the I-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the I-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2160,7 +2160,7 @@ class Cell():
         vertex : topologic_core.Vertex
             The input vertex.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2203,33 +2203,33 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+            The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the L-shape. The default is 1.0.
+            The overall width of the L-shape. Default is 1.0.
         length : float , optional
-            The overall length of the L-shape. The default is 1.0.
+            The overall length of the L-shape. Default is 1.0.
         height : float , optional
-            The overall height of the L-shape. The default is 1.0.
+            The overall height of the L-shape. Default is 1.0.
         wSides : int , optional
-            The desired number of sides along the Z-axis. The default is 1.
+            The desired number of sides along the Z-axis. Default is 1.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the L-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the L-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the L-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the L-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the L-shape. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         manitssa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2358,15 +2358,15 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).
+            The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the octahedron's circumscribed sphere. The default is 0.5.
+            The radius of the octahedron's circumscribed sphere. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the octahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the octahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2420,29 +2420,29 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the parabolic surface. The default is None which results in the parabolic surface being placed at (0, 0, 0).
+            The origin location of the parabolic surface. Default is None which results in the parabolic surface being placed at (0, 0, 0).
         focalLength : float , optional
-            The focal length of the parabola. The default is 0.125.
+            The focal length of the parabola. Default is 0.125.
         width : float , optional
-            The width of the parabolic surface. The default is 1.
+            The width of the parabolic surface. Default is 1.
         length : float , optional
-            The length of the parabolic surface. The default is 1.
+            The length of the parabolic surface. Default is 1.
         height : float , optional
-            The additional height of the parabolic surface. Please note this is not the height from the spring point to the apex. It is in addition to that to form a base. The default is 0.
+            The additional height of the parabolic surface. Please note this is not the height from the spring point to the apex. It is in addition to that to form a base. Default is 0.
         uSides : int , optional
-            The number of sides along the width. The default is 16.
+            The number of sides along the width. Default is 16.
         vSides : int , optional
-            The number of sides along the length. The default is 16.
+            The number of sides along the length. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the parabolic surface. The default is [0, 0, 1].
+            The vector representing the up direction of the parabolic surface. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the parabolic surface. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-        If set to True, error and warning messages are suppressed. The default is False.
+        If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -2547,21 +2547,21 @@ class Cell():
         edge : topologic_core.Edge
             The centerline of the pipe.
         profile : topologic_core.Wire , optional
-            The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. The default is None.
+            The profile of the pipe. It is assumed that the profile is in the XY plane. If set to None, a circle of radius 0.5 will be used. Default is None.
         radius : float , optional
-            The radius of the pipe. The default is 0.5.
+            The radius of the pipe. Default is 0.5.
         sides : int , optional
-            The number of sides of the pipe. The default is 16.
+            The number of sides of the pipe. Default is 16.
         startOffset : float , optional
-            The offset distance from the start vertex of the centerline edge. The default is 0.
+            The offset distance from the start vertex of the centerline edge. Default is 0.
         endOffset : float , optional
-            The offset distance from the end vertex of the centerline edge. The default is 0.
+            The offset distance from the end vertex of the centerline edge. Default is 0.
         endcapA, optional
             The topology to place at the start vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the direction of the centerline edge.
         endcapB, optional
             The topology to place at the end vertex of the centerline edge. The positive Z direction of the end cap will be oriented in the inverse direction of the centerline edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         
         Returns
         -------
@@ -2677,27 +2677,27 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).
+            The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
-            The width of the prism. The default is 1.
+            The width of the prism. Default is 1.
         length : float , optional
-            The length of the prism. The default is 1.
+            The length of the prism. Default is 1.
         height : float , optional
             The height of the prism.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int , optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the prism. The default is [0, 0, 1].
+            The vector representing the up direction of the prism. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2771,11 +2771,11 @@ class Cell():
         cell : topologic_core.Cell
             The input cell.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2808,29 +2808,29 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).
+            The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).
         width : float , optional
-            The width of the RHS. The default is 1.0.
+            The width of the RHS. Default is 1.0.
         length : float , optional
-            The length of the RHS. The default is 1.0.
+            The length of the RHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the RHS. The default is 0.25.
+            The thickness of the RHS. Default is 0.25.
         height : float , optional
-            The height of the RHS. The default is 1.0.
+            The height of the RHS. Default is 1.0.
         outerFillet : float , optional
-            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). Default is 0.
         innerFillet : float , optional
-            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). Default is 0.
         sides : int , optional
-            The desired number of sides of the fillets. The default is 16.
+            The desired number of sides of the fillets. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+            The vector representing the up direction of the RHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2907,11 +2907,11 @@ class Cell():
         face : topologic_core.Face
             The input face.
         angle : float , optional
-            The desired angle in degrees of the roof. The default is 45.
+            The desired angle in degrees of the roof. Default is 45.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance for distance from plane). The default is 0.01. (This is set to a larger number as it was found to work better)
+            The desired epsilon (another form of tolerance for distance from plane). Default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
@@ -2946,7 +2946,7 @@ class Cell():
         superCells : list
             The list of super cells.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3027,29 +3027,29 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).
+            The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).
         size : float , optional
-            The size of the SHS. The default is 1.0.
+            The size of the SHS. Default is 1.0.
         length : float , optional
-            The length of the SHS. The default is 1.0.
+            The length of the SHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the SHS. The default is 0.25.
+            The thickness of the SHS. Default is 0.25.
         height : float , optional
-            The height of the SHS. The default is 1.0.
+            The height of the SHS. Default is 1.0.
         outerFillet : float , optional
-            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). Default is 0.
         innerFillet : float , optional
-            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). Default is 0.
         sides : int , optional
-            The desired number of sides of the fillets. The default is 16.
+            The desired number of sides of the fillets. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the SHS. The default is [0, 0, 1].
+            The vector representing the up direction of the SHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3098,19 +3098,19 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the sphere. The default is None which results in the sphere being placed at (0, 0, 0).
+            The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the sphere. The default is 0.5.
+            The radius of the sphere. Default is 0.5.
         uSides : int , optional
-            The number of sides along the longitude of the sphere. The default is 16.
+            The number of sides along the longitude of the sphere. Default is 16.
         vSides : int , optional
-            The number of sides along the latitude of the sphere. The default is 8.
+            The number of sides along the latitude of the sphere. Default is 8.
         direction : list , optional
-            The vector representing the up direction of the sphere. The default is [0, 0, 1].
+            The vector representing the up direction of the sphere. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3154,7 +3154,7 @@ class Cell():
         cell : topologic_core.Cell
             The cell.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -3172,19 +3172,19 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).
+            The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).
         length : float , optional
-            The length of the edge of the tetrahedron. The default is 1.
+            The length of the edge of the tetrahedron. Default is 1.
         depth : int , optional
             The desired maximum number of recrusive subdivision levels.
         direction : list , optional
-            The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the tetrahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -3322,21 +3322,21 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).
+            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
         majorRadius : float , optional
-            The major radius of the torus. The default is 0.5.
+            The major radius of the torus. Default is 0.5.
         minorRadius : float , optional
-            The minor radius of the torus. The default is 0.1.
+            The minor radius of the torus. Default is 0.1.
         uSides : int , optional
-            The number of sides along the longitude of the torus. The default is 16.
+            The number of sides along the longitude of the torus. Default is 16.
         vSides : int , optional
-            The number of sides along the latitude of the torus. The default is 8.
+            The number of sides along the latitude of the torus. Default is 8.
         direction : list , optional
-            The vector representing the up direction of the torus. The default is [0, 0, 1].
+            The vector representing the up direction of the torus. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3389,33 +3389,33 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the T-shape. The default is 1.0.
+            The overall width of the T-shape. Default is 1.0.
         length : float , optional
-            The overall length of the T-shape. The default is 1.0.
+            The overall length of the T-shape. Default is 1.0.
         height : float , optional
-            the overall height of the T-shape. The default is 1.0.
+            the overall height of the T-shape. Default is 1.0.
         wSides : int , optional
-            The desired number of sides along the Z-axis. The default is 1.
+            The desired number of sides along the Z-axis. Default is 1.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the T-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the T-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the T-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         mantissa: int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3538,23 +3538,23 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
+            The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
-            The outer radius of the CHS. The default is 1.0.
+            The outer radius of the CHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the CHS. The default is 0.25.
+            The thickness of the CHS. Default is 0.25.
         height : float , optional
-            The height of the CHS. The default is 1.0.
+            The height of the CHS. Default is 1.0.
         sides : int , optional
-            The desired number of sides of the CSH. The default is 16.
+            The desired number of sides of the CSH. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+            The vector representing the up direction of the RHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the RHS. This can be "center", "bottom", "top", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3617,7 +3617,7 @@ class Cell():
         cell : topologic_core.Cell
             The input cell.
         manitssa: int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -3655,21 +3655,21 @@ class Cell():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the Wedge. The default is None which results in the Wedge being placed at (0, 0, 0).
+            The location of the origin of the Wedge. Default is None which results in the Wedge being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the Wedge. The default is 1.0.
+            The overall width of the Wedge. Default is 1.0.
         length : float , optional
-            The overall length of the Wedge. The default is 1.0.
+            The overall length of the Wedge. Default is 1.0.
         height : float , optional
-            The overall height of the Wedge. The default is 1.0.
+            The overall height of the Wedge. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the Wedge. The default is [0, 0, 1].
+            The vector representing the up direction of the Wedge. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the Wedge. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the Wedge. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------

@@ -76,9 +76,9 @@ class Cluster():
                 The method will attempt to evaluate Y based on the specified xRange.
                 xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
         xString : str , optional
-            The string used to represent the X independent variable. The default is 'X' (uppercase).
+            The string used to represent the X independent variable. Default is 'X' (uppercase).
         yString : str , optional
-            The string used to represent the Y independent variable. The default is 'Y' (uppercase).
+            The string used to represent the Y independent variable. Default is 'Y' (uppercase).
 
         Returns:
             topologic_core.Cluster
@@ -152,9 +152,9 @@ class Cluster():
         *topologies : topologic_core.Topology
             One or more instances of `topologic_core.Topology` to be processed.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. The default is False.
+            If set to True, the dictionaries from the input topologies are merged and transferred to the cluster. Otherwise they are not. Default is False.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -287,14 +287,14 @@ class Cluster():
             The input list of topologies to be clustered.
         selectors : list , optional
             If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-            If set to None, the list of topologies is expected to be a list of vertices. The default is None.
+            If set to None, the list of topologies is expected to be a list of vertices. Default is None.
         keys : list, optional
             The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). The default is ["x", "y", "z"]
+            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). Default is ["x", "y", "z"]
         epsilon : float , optional
-            The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). The default is 0.5. 
+            The maximum radius around a data point within which other points are considered to be part of the same sense region (cluster). Default is 0.5. 
         minSamples : int , optional
-            The minimum number of points required to form a dense region (cluster). The default is 2.
+            The minimum number of points required to form a dense region (cluster). Default is 2.
 
         Returns
         -------
@@ -517,7 +517,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -564,7 +564,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -610,7 +610,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -656,7 +656,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -702,7 +702,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -748,7 +748,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -794,7 +794,7 @@ class Cluster():
         cluster : topologic_core.Cluster
             The input cluster.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -866,16 +866,16 @@ class Cluster():
             The input list of topologies. If this is not a list of topologic vertices then please provide a list of selectors
         selectors : list , optional
             If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-            If set to None, the list of topologies is expected to be a list of vertices. The default is None.
+            If set to None, the list of topologies is expected to be a list of vertices. Default is None.
         keys : list, optional
             The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). The default is ["x", "y", "z"]
+            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). Default is ["x", "y", "z"]
         k : int , optional
-            The desired number of clusters. The default is 4.
+            The desired number of clusters. Default is 4.
         maxIterations : int , optional
             The desired maximum number of iterations for the clustering algorithm
         centroidKey : str , optional
-            The desired dictionary key under which to store the cluster's centroid (this is not to be confused with the actual geometric centroid of the cluster). The default is "k_centroid"
+            The desired dictionary key under which to store the cluster's centroid (this is not to be confused with the actual geometric centroid of the cluster). Default is "k_centroid"
 
         Returns
         -------
@@ -1046,7 +1046,7 @@ class Cluster():
         cells : list
             The input list of cells.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1114,21 +1114,21 @@ class Cluster():
         wire : topologic_core.Wire , optional
             The input Wire. if set to None, a circle with the input parameters is created. Otherwise, the input parameters are ignored.
         origin : topologic_core.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the mystic rose. The default is 1.
+            The radius of the mystic rose. Default is 1.
         sides : int , optional
-            The number of sides of the mystic rose. The default is 16.
+            The number of sides of the mystic rose. Default is 16.
         perimeter : bool , optional
-            If True, the perimeter edges are included in the output. The default is True.
+            If True, the perimeter edges are included in the output. Default is True.
         direction : list , optional
-            The vector representing the up direction of the mystic rose. The default is [0, 0, 1].
+            The vector representing the up direction of the mystic rose. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the mystic rose. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1264,21 +1264,21 @@ class Cluster():
         Parameters
         ----------
         size : float , optional
-            The desired size of the tripod. The default is 1.0.
+            The desired size of the tripod. Default is 1.0.
         radius : float , optional
-            The desired radiues of the tripod. The default is 0.03
+            The desired radiues of the tripod. Default is 0.03
         sides : int , optional
-            The desired number of sides of the tripod. The default is 4.
+            The desired number of sides of the tripod. Default is 4.
         faceColorKey : str , optional
             The dictionary key under which to store the colors of the axes.
         xColor : str , optional
-            The color to use for the X axis. The default is "red".
+            The color to use for the X axis. Default is "red".
         yColor : str , optional
-            The color to use for the Y axis. The default is "green".
+            The color to use for the Y axis. Default is "green".
         zColor : str , optional
-            The color to use for the Z axis. The default is "blue".
+            The color to use for the Z axis. Default is "blue".
         matrix : list , optional
-            The desired 4X4 transformation matrix to use for transforming the tripod. The default is None which means the tripod will be placed at the origin and will be axis-aligned. 
+            The desired 4X4 transformation matrix to use for transforming the tripod. Default is None which means the tripod will be placed at the origin and will be axis-aligned. 
 
         Returns
         -------

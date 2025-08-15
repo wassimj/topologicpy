@@ -46,11 +46,11 @@ class Helper:
         listA : list
             The input list.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -164,7 +164,7 @@ class Helper:
         keys : str or list or comma-separated str input parameters
             The key or keys in the topology's dictionary to use for clustering.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
 
         Returns
@@ -427,7 +427,7 @@ class Helper:
         listA : list
             The input nested list.
         threshold : float , optional
-            The desired merge threshold value. The default is 0.0001.
+            The desired merge threshold value. Default is 0.0001.
 
         Returns
         -------
@@ -464,7 +464,7 @@ class Helper:
         listA : list
             The input list.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -500,7 +500,7 @@ class Helper:
         listA : list
             The input list.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -535,7 +535,7 @@ class Helper:
         listA : list
             The input nested list.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------

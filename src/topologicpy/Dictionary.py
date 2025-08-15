@@ -59,15 +59,15 @@ class Dictionary():
             The type of subTopology on which to base the adjacency dictionary.
         labelKey : str , optional
             The returned subTopologies are labelled according to the dictionary values stored under this key.
-            If the labelKey does not exist, it will be created and the subTopologies are labelled numerically and stored in the subTopologies' dictionary under this key. The default is None.
+            If the labelKey does not exist, it will be created and the subTopologies are labelled numerically and stored in the subTopologies' dictionary under this key. Default is None.
         weightKey : str , optional
-            If set, the sharedTopologies' dictionaries will be searched for this key to set their weight. If the key is set to "Area" or "Length" (case insensitive), the area of shared faces or the length of the shared edges will be used as its weight. If set to None, a weight of 1 will be used. The default is None.
+            If set, the sharedTopologies' dictionaries will be searched for this key to set their weight. If the key is set to "Area" or "Length" (case insensitive), the area of shared faces or the length of the shared edges will be used as its weight. If set to None, a weight of 1 will be used. Default is None.
         includeWeights : bool , optional
-            If set to True, edge weights are included. Otherwise, they are not. The default is False.
+            If set to True, edge weights are included. Otherwise, they are not. Default is False.
         mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -178,7 +178,7 @@ class Dictionary():
         value : int, float, str, or list
             A value corresponding to the input key. A value can be an integer, a float, a string, or a list.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -249,7 +249,7 @@ class Dictionary():
         values : list
             A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -290,7 +290,7 @@ class Dictionary():
         dictionaries : list or comma separated dictionaries
             The input list of dictionaries to be merged.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -458,7 +458,7 @@ class Dictionary():
         pythonDictionary : dict
             The input python dictionary.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -513,11 +513,11 @@ class Dictionary():
         dictionaries : list
             The input list of dictionaries to be filtered.
         searchType : str , optional
-            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". The default is "any".
+            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". Default is "any".
         key : str , optional
-            The dictionary key to search within. The default is None which means it will filter by topology type only.
+            The dictionary key to search within. Default is None which means it will filter by topology type only.
         value : str , optional
-            The value to search for at the specified key. The default is None which means it will filter by topology type only.
+            The value to search for at the specified key. Default is None which means it will filter by topology type only.
 
         Returns
         -------
@@ -602,7 +602,7 @@ class Dictionary():
         dictionary : topologic_core.Dictionary or dict
             The input dictionary.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -657,7 +657,7 @@ class Dictionary():
         dictionary : topologic_core.Dictionary
             The input dictionary.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -710,7 +710,7 @@ class Dictionary():
         key : string
             The input key.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -769,7 +769,7 @@ class Dictionary():
         value : int , float , string, or list
             The value associated with the key.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -827,7 +827,7 @@ class Dictionary():
         values : list
             A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -942,9 +942,9 @@ class Dictionary():
         key : string
             The input key.
         defaultValue : any , optional
-            The default value to return if the key or value are not found. The default is None.
+            The default value to return if the key or value are not found. Default is None.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -979,7 +979,7 @@ class Dictionary():
         dictionary : topologic_core.Dictionary or dict
             The input dictionary.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1025,9 +1025,9 @@ class Dictionary():
         keys : list
             The input list of keys.
         defaultValue : any , optional
-            The default value to return if the key or value are not found. The default is None.
+            The default value to return if the key or value are not found. Default is None.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------

@@ -25,21 +25,21 @@ class Grid():
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. The default is None.
+            The input face. If set to None, the grid will be created on the XY plane. Default is None.
         uOrigin : topologic_core.Vertex , optional
-            The origin of the *u* grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. The default is None.
+            The origin of the *u* grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. Default is None.
         vOrigin : topologic_core.Vertex , optional
-            The origin of the *v* grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. The default is None.
+            The origin of the *v* grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. Default is None.
         uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distances for the *u* grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
         vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distances for the *v* grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. The default is False.
+            If True the grid will be clipped by the shape of the input face. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -139,13 +139,13 @@ class Grid():
         face : topologic_core.Face
             The input face.
         uRange : list , optional
-            A list of *u* parameters for the *u* grid lines. The default is [0,0.25,0.5, 0.75, 1.0].
+            A list of *u* parameters for the *u* grid lines. Default is [0,0.25,0.5, 0.75, 1.0].
         vRange : list , optional
-            A list of *v* parameters for the *v* grid lines. The default is [0,0.25,0.5, 0.75, 1.0].
+            A list of *v* parameters for the *v* grid lines. Default is [0,0.25,0.5, 0.75, 1.0].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. The default is False.
+            If True the grid will be clipped by the shape of the input face. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -226,19 +226,19 @@ class Grid():
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. The default is None.
+            The input face. If set to None, the grid will be created on the XY plane. Default is None.
         origin : topologic_core.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). The default is None.
+            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). Default is None.
         uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distances for the *u* grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
         vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. The default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distances for the *v* grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. The default is False.
+            If True the grid will be clipped by the shape of the input face. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -304,15 +304,15 @@ class Grid():
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. The default is None.
+            The input face. If set to None, the grid will be created on the XY plane. Default is None.
         uRange : list , optional
-            A list of *u* parameters for the *u* grid lines from the uOrigin. The default is [0.0,0.25,0.5,0.75,1.0].
+            A list of *u* parameters for the *u* grid lines from the uOrigin. Default is [0.0,0.25,0.5,0.75,1.0].
         vRange : list , optional
-            A list of *v* parameters for the *v* grid lines from the vOrigin. The default is [0.0,0.25,0.5,0.75,1.0].
+            A list of *v* parameters for the *v* grid lines from the vOrigin. Default is [0.0,0.25,0.5,0.75,1.0].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. The default is False.
+            If True the grid will be clipped by the shape of the input face. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------

@@ -112,7 +112,7 @@ class Face():
         faceB : topologic_core.Face
             The second input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -146,7 +146,7 @@ class Face():
         face : topologic_core.Face
             The input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -176,9 +176,9 @@ class Face():
         topology : topologic_core.Topology
             The input topology.
         optimize : int , optional
-            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding rectangle. The default is 0.
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding rectangle. Default is 0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -210,9 +210,9 @@ class Face():
         edges : list
             The input list of edges.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -254,9 +254,9 @@ class Face():
         cluster : topologic_core.Cluster
             The input cluster of edges.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -293,29 +293,29 @@ class Face():
         face : topologic_core.Face
             The input face.
         offset : float , optional
-            The desired offset distance. The default is 1.0.
+            The desired offset distance. Default is 1.0.
         offsetKey : str , optional
-            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
+            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. Default is "offset".
         stepOffsetA : float , optional
-            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. The default is 0.
+            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. Default is 0.
         stepOffsetB : float , optional
-            The amount to offset along the next edge when transitioning between parallel edges with different offsets. The default is 0.
+            The amount to offset along the next edge when transitioning between parallel edges with different offsets. Default is 0.
         stepOffsetKeyA : str , optional
-            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. The default is "stepOffsetA".
+            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. Default is "stepOffsetA".
         stepOffsetKeyB : str , optional
-            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
+            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. Default is "stepOffsetB".
         bisectors : bool , optional
-            If set to True, The bisectors (seams) edges will be included in the returned wire. This will result in the returned shape to be a shell rather than a face. The default is False.
+            If set to True, The bisectors (seams) edges will be included in the returned wire. This will result in the returned shape to be a shell rather than a face. Default is False.
         reverse : bool , optional
-            If set to True, the direction of offsets is reversed. Otherwise, it is not. The default is False.
+            If set to True, the direction of offsets is reversed. Otherwise, it is not. Default is False.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
+            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance for shortest edge to remove). The default is 0.01. (This is set to a larger number as it was found to work better)
+            The desired epsilon (another form of tolerance for shortest edge to remove). Default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -430,21 +430,21 @@ class Face():
         area : float
             The desired area of the created face.
         offsetKey : str , optional
-            The edge dictionary key under which to store the offset value. The default is "offset".
+            The edge dictionary key under which to store the offset value. Default is "offset".
         minOffsetKey : str , optional
-            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. The default is "minOffset".
+            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. Default is "minOffset".
         maxOffsetKey : str , optional
-            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. The default is "maxOffset".
+            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. Default is "maxOffset".
         defaultMinOffset : float , optional
-            The desired minimum edge offset distance. The default is 0.
+            The desired minimum edge offset distance. Default is 0.
         defaultMaxOffset : float , optional
-            The desired maximum edge offset distance. The default is 1.
+            The desired maximum edge offset distance. Default is 1.
         maxIterations: int , optional
-            The desired maximum number of iterations to attempt to converge on a solution. The default is 1.
+            The desired maximum number of iterations to attempt to converge on a solution. Default is 1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -568,11 +568,11 @@ class Face():
         shell : topologic_core.Shell
             The input shell.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
 
         Returns
@@ -687,13 +687,13 @@ class Face():
         wire : topologic_core.Wire
             The input wire to be thickened.
         offsetA : float , optional
-            The desired offset to the exterior of the wire. The default is 1.0.
+            The desired offset to the exterior of the wire. Default is 1.0.
         offsetB : float , optional
-            The desired offset to the interior of the wire. The default is 0.0.
+            The desired offset to the interior of the wire. Default is 0.0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -754,9 +754,9 @@ class Face():
         vertices : list
             The input list of vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -803,9 +803,9 @@ class Face():
         cluster : topologic_core.Cluster
             The input cluster of vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -836,9 +836,9 @@ class Face():
         wire : topologic_core.Wire
             The input wire.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -928,11 +928,11 @@ class Face():
         externalBoundary : topologic_core.Wire
             The input external boundary.
         internalBoundaries : list , optional
-            The input list of internal boundaries (closed wires). The default is an empty list.
+            The input list of internal boundaries (closed wires). Default is an empty list.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -981,11 +981,11 @@ class Face():
         externalBoundary topologic_core.Wire
             The input external boundary (closed wire).
         internalBoundariesCluster : topologic_core.Cluster
-            The input cluster of internal boundaries (closed wires). The default is None.
+            The input cluster of internal boundaries (closed wires). Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1023,19 +1023,19 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the CHS. The default is None which results in the CHS being placed at (0, 0, 0).
+            The location of the origin of the CHS. Default is None which results in the CHS being placed at (0, 0, 0).
         radius : float , optional
-            The outer radius of the CHS. The default is 0.5.
+            The outer radius of the CHS. Default is 0.5.
         thickness : float , optional
-            The thickness of the CHS. The default is 0.25.
+            The thickness of the CHS. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the CHS. The default is [0, 0, 1].
+            The vector representing the up direction of the CHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the CHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the CHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1092,21 +1092,21 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the circle. The default is 1.
+            The radius of the circle. Default is 1.
         sides : int , optional
-            The number of sides of the circle. The default is 16.
+            The number of sides of the circle. Default is 16.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+            The angle in degrees from which to start creating the arc of the circle. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+            The angle in degrees at which to end creating the arc of the circle. Default is 360.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1132,7 +1132,7 @@ class Face():
         face : topologic_core.Face
             The input face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1169,11 +1169,11 @@ class Face():
         face : topologic_core.Face
             The input face.
         north : list , optional
-            The second vector representing the north direction. The default is the positive YAxis ([0,1,0]).
+            The second vector representing the north direction. Default is the positive YAxis ([0,1,0]).
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1211,27 +1211,27 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the Cross-shape. The default is 1.0.
+            The overall width of the Cross-shape. Default is 1.0.
         length : float , optional
-            The overall length of the Cross-shape. The default is 1.0.
+            The overall length of the Cross-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the Cross-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the Cross-shape. Default is 0.25.
         c : float , optional
-            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the Y-axis.
         d : float , optional
-            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the X-axis.
         direction : list , optional
-            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the Cross-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1366,25 +1366,25 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+            The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the C-shape. The default is 1.0.
+            The overall width of the C-shape. Default is 1.0.
         length : float , optional
-            The overall length of the C-shape. The default is 1.0.
+            The overall length of the C-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the C-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the bottom horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the bottom horizontal arm of the C-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the top horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the top horizontal arm of the C-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the C-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1497,15 +1497,15 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0, 0, 0).
+            The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the hexagon determining the size of the tile. The default is 0.5.
+            The radius of the hexagon determining the size of the tile. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -1532,40 +1532,40 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
+            The location of the origin of the ellipse. Default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by which the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. Default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
             3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
             4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
         width : float , optional
-            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+            The width of the ellipse. Default is 2.0. This is considered if the inputMode is 1.
         length : float , optional
-            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+            The length of the ellipse. Default is 1.0. This is considered if the inputMode is 1.
         focalLength : float , optional
-            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+            The focal length of the ellipse. Default is 0.866025. This is considered if the inputMode is 2 or 3.
         eccentricity : float , optional
-            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+            The eccentricity of the ellipse. Default is 0.866025. This is considered if the inputMode is 2.
         majorAxisLength : float , optional
-            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+            The length of the major axis of the ellipse. Default is 1.0. This is considered if the inputMode is 4.
         minorAxisLength : float , optional
-            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+            The length of the minor axis of the ellipse. Default is 0.5. This is considered if the inputMode is 3 or 4.
         sides : int , optional
-            The number of sides of the ellipse. The default is 32.
+            The number of sides of the ellipse. Default is 32.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+            The angle in degrees from which to start creating the arc of the ellipse. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+            The angle in degrees at which to end creating the arc of the ellipse. Default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1598,7 +1598,7 @@ class Face():
             a simple list of interior angles of the external boundary. For example: [270,270,270,270]. Please note that that the interior angles of the
             internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         Returns
         -------
         list
@@ -1634,7 +1634,7 @@ class Face():
         face : topologic_core.Face
             The input face.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1663,13 +1663,13 @@ class Face():
         face : topologic_core.Face
             The input face.
         direction : list , optional
-            The input direction. The default is [0,0,-1].
+            The input direction. Default is [0,0,-1].
         asVertex : bool , optional
-            If set to True, the direction is treated as an actual vertex in 3D space. The default is False.
+            If set to True, the direction is treated as an actual vertex in 3D space. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1703,15 +1703,15 @@ class Face():
         face : topologic_core.Face
             The input face.
         radius : float , optional
-            The desired radius of the fillet. The default is 0.
+            The desired radius of the fillet. Default is 0.
         sides : int , optional
-            The number of sides (segments) of the fillet. The default is 16.
+            The number of sides (segments) of the fillet. Default is 16.
         radiusKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.
+            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1763,9 +1763,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1813,7 +1813,7 @@ class Face():
             a simple list of interior angles of the external boundary. For example: [90,90,90,90]. Please note that that the interior angles of the
             internal boundaries are considered to be those interior to the original face. Thus, they are exterior to the internal boundary.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         Returns
         -------
         list
@@ -1872,9 +1872,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1940,9 +1940,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1975,9 +1975,9 @@ class Face():
         face : topologic_core.Face
             The  input face.
         mantissa : int , optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         silent : bool , optional
-            If set to True no warnings or errors are printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         bool
@@ -2006,9 +2006,9 @@ class Face():
         faceB : topologic_core.Face
             The second input face
         mantissa : int , optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2079,29 +2079,29 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+            The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the I-shape. The default is 1.0.
+            The overall width of the I-shape. Default is 1.0.
         length : float , optional
-            The overall length of the I-shape. The default is 1.0.
+            The overall length of the I-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+            The hortizontal thickness of the central vertical arm of the I-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the bottom horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the bottom horizontal arm of the I-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the top horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the top horizontal arm of the I-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the I-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2197,17 +2197,17 @@ class Face():
             The vertex representing the location of the viewpoint of the isovist.
         obstacles : list , optional
             A list of wires representing the obstacles within the face. All obstacles are assumed to be within the
-            boundary of the face. The default is [].
+            boundary of the face. Default is [].
         direction : list, optional
             The vector representing the direction (in the XY plane) in which the observer is facing. The Z component is ignored.
             The direction follows the Vector.CompassAngle convention where [0,1,0] (North) is considered to be
             in the positive Y direction, [1,0,0] (East) is considered to be in the positive X-direction.
-            Angles are measured in a clockwise fashion. The default is [0,1,0] (North).
+            Angles are measured in a clockwise fashion. Default is [0,1,0] (North).
         fov : float , optional
             The horizontal field of view (fov) angle in degrees. See https://en.wikipedia.org/wiki/Field_of_view.
-            The acceptable range is 1 to 360. The default is 360.
+            The acceptable range is 1 to 360. Default is 360.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the encountered edges will be transfered to the isovist edges. The default is False.
+            If set to True, the dictionaries of the encountered edges will be transfered to the isovist edges. Default is False.
         metrics : bool , optional
             If set to True, the following metrics are calculated and stored in the dictionary of the returned isovist. The keys of the values are:
             - viewpoint : list , the x , y , z coordinates of the location of the viewpoint.
@@ -2236,13 +2236,13 @@ class Face():
             - variance: float, "the mean of the square of deviation between all radial lengths and average radial length of an isovist (Benedikt, 1979)." (from isovists.org)
             - skewness: float, "the mean of the cube of deviation between all radial lengths and average radial length of an isovist (Benediky, 1979)." (from isovists.org) 
         triangles : bool , optional
-            If set to True, the subtended triangles of the isovist are created and stored as contents of the returned isovist face. The default is False.
+            If set to True, the subtended triangles of the isovist are created and stored as contents of the returned isovist face. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional:
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2813,23 +2813,23 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+            The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the L-shape. The default is 1.0.
+            The overall width of the L-shape. Default is 1.0.
         length : float , optional
-            The overall length of the L-shape. The default is 1.0.
+            The overall length of the L-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the L-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the L-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the L-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2918,19 +2918,19 @@ class Face():
         face : topologic_core.Face
             The input face.
         resolution : int , optional
-            The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. The default is 0.
+            The desired resolution of the solution (range is 0: standard resolution to 10: high resolution). This determines the density of the sampling along each edge. Default is 0.
         externalVertices : bool , optional
-            If set to True, the external vertices of the face will be connected to the nearest vertex on the medial axis. The default is False.
+            If set to True, the external vertices of the face will be connected to the nearest vertex on the medial axis. Default is False.
         internalVertices : bool , optional
-            If set to True, the internal vertices of the face will be connected to the nearest vertex on the medial axis. The default is False.
+            If set to True, the internal vertices of the face will be connected to the nearest vertex on the medial axis. Default is False.
         toLeavesOnly : bool , optional
-            If set to True, the vertices of the face will be connected to the nearest vertex on the medial axis only if this vertex is a leaf (end point). Otherwise, it will connect to any nearest vertex. The default is False.
+            If set to True, the vertices of the face will be connected to the nearest vertex on the medial axis only if this vertex is a leaf (end point). Otherwise, it will connect to any nearest vertex. Default is False.
         angTolerance : float , optional
-            The desired angular tolerance in degrees for removing collinear edges. The default is 0.1.
+            The desired angular tolerance in degrees for removing collinear edges. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -3029,9 +3029,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         outputType : string , optional
-            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
+            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. Default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -3133,11 +3133,11 @@ class Face():
         face : topologic_core.Face
             The input face.
         length : float , optional
-            The desired length of the normal edge. The default is 1.
+            The desired length of the normal edge. Default is 1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3171,19 +3171,19 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the circle. The default is 1.
+            The radius of the circle. Default is 1.
         sides : int , optional
-            The number of sides of the circle. The default is 16.
+            The number of sides of the circle. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         northAngle : float , optional
             The angular offset in degrees from the positive Y axis direction. The angle is measured in a counter-clockwise fashion where 0 is positive Y, 90 is negative X, 180 is negative Y, and 270 is positive X.
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3254,9 +3254,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         origin : topologic_core.Vertex , optional
-            The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. The default is None.
+            The desired vertex to use as the origin of the plane to project the face unto. If set to None, the centroidof the input face is used. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -3294,11 +3294,11 @@ class Face():
         faceB : topologic_core.Face
             The face unto which the first input face will be projected.
         direction : list, optional
-            The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
+            The vector direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3352,17 +3352,17 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
-            The width of the rectangle. The default is 1.0.
+            The width of the rectangle. Default is 1.0.
         length : float , optional
-            The length of the rectangle. The default is 1.0.
+            The length of the rectangle. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3389,11 +3389,11 @@ class Face():
         face : topologic_core.Face
             The input face.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3424,27 +3424,27 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the RHS. The default is None which results in the RHS being placed at (0, 0, 0).
+            The location of the origin of the RHS. Default is None which results in the RHS being placed at (0, 0, 0).
         width : float , optional
-            The width of the RHS. The default is 1.0.
+            The width of the RHS. Default is 1.0.
         length : float , optional
-            The length of the RHS. The default is 1.0.
+            The length of the RHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the RHS. The default is 0.25.
+            The thickness of the RHS. Default is 0.25.
         outerFillet : float , optional
-            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). Default is 0.
         innerFillet : float , optional
-            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). Default is 0.
         sides : int , optional
-            The desired number of sides of the fillets. The default is 16.
+            The desired number of sides of the fillets. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the RHS. The default is [0, 0, 1].
+            The vector representing the up direction of the RHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the RHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the RHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3520,19 +3520,19 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the ring. The default is None which results in the ring being placed at (0, 0, 0).
+            The location of the origin of the ring. Default is None which results in the ring being placed at (0, 0, 0).
         radius : float , optional
-            The outer radius of the ring. The default is 0.5.
+            The outer radius of the ring. Default is 0.5.
         thickness : float , optional
-            The thickness of the ring. The default is 0.25.
+            The thickness of the ring. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the ring. The default is [0, 0, 1].
+            The vector representing the up direction of the ring. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the ring. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the ring. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3561,25 +3561,25 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the SHS. The default is None which results in the SHS being placed at (0, 0, 0).
+            The location of the origin of the SHS. Default is None which results in the SHS being placed at (0, 0, 0).
         size : float , optional
-            The outer size of the SHS. The default is 1.0.
+            The outer size of the SHS. Default is 1.0.
         thickness : float , optional
-            The thickness of the SHS. The default is 0.25.
+            The thickness of the SHS. Default is 0.25.
         outerFillet : float , optional
-            The outer fillet multiplication factor based on the thickness (e.g. 1t). The default is 0.
+            The outer fillet multiplication factor based on the thickness (e.g. 1t). Default is 0.
         innerFillet : float , optional
-            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). The default is 0.
+            The inner fillet multiplication factor based on the thickness (e.g. 1.5t). Default is 0.
         sides : int , optional
-            The desired number of sides of the fillets. The default is 16.
+            The desired number of sides of the fillets. Default is 16.
         direction : list , optional
-            The vector representing the up direction of the SHS. The default is [0, 0, 1].
+            The vector representing the up direction of the SHS. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the SHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the SHS. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3631,7 +3631,7 @@ class Face():
             between any point and the current line segment; points falling within this distance are discarded.
             The default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
             
         Returns
         -------
@@ -3669,9 +3669,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         boundary : bool , optional
-            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number than the usual 0.0001 as it was found to work better)
 
         Returns
         -------
@@ -3695,15 +3695,15 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
+            The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
-            The size of the square. The default is 1.0.
+            The size of the square. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the square. The default is [0, 0, 1].
+            The vector representing the up direction of the square. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3722,25 +3722,25 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the squircle. The default is None which results in the squircle being placed at (0, 0, 0).
+            The location of the origin of the squircle. Default is None which results in the squircle being placed at (0, 0, 0).
         radius : float , optional
-            The desired radius of the squircle. The default is 0.5.
+            The desired radius of the squircle. Default is 0.5.
         sides : int , optional
-            The desired number of sides of the squircle. The default is 121.
+            The desired number of sides of the squircle. Default is 121.
         a : float , optional
             The "a" factor affects the x position of the points to interpolate between a circle and a square.
-            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. Default is 2.0.
         b : float , optional
             The "b" factor affects the y position of the points to interpolate between a circle and a square.
-            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. Default is 2.0.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3759,19 +3759,19 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the star. The default is None which results in the star being placed at (0, 0, 0).
+            The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
-            The outer radius of the star. The default is 1.0.
+            The outer radius of the star. Default is 1.0.
         radiusB : float , optional
-            The outer radius of the star. The default is 0.4.
+            The outer radius of the star. Default is 0.4.
         rays : int , optional
-            The number of star rays. The default is 5.
+            The number of star rays. Default is 5.
         direction : list , optional
-            The vector representing the up direction of the star. The default is [0, 0, 1].
+            The vector representing the up direction of the star. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3799,9 +3799,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3851,23 +3851,23 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex, optional
-            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0, 0, 0).
+            The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
-            The width of the bottom edge of the trapezoid. The default is 1.0.
+            The width of the bottom edge of the trapezoid. Default is 1.0.
         widthB : float , optional
-            The width of the top edge of the trapezoid. The default is 0.75.
+            The width of the top edge of the trapezoid. Default is 0.75.
         offsetA : float , optional
-            The offset of the bottom edge of the trapezoid. The default is 0.0.
+            The offset of the bottom edge of the trapezoid. Default is 0.0.
         offsetB : float , optional
-            The offset of the top edge of the trapezoid. The default is 0.0.
+            The offset of the top edge of the trapezoid. Default is 0.0.
         length : float , optional
-            The length of the trapezoid. The default is 1.0.
+            The length of the trapezoid. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the trapezoid. The default is [0, 0, 1].
+            The vector representing the up direction of the trapezoid. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3909,11 +3909,11 @@ class Face():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3937,7 +3937,7 @@ class Face():
             meshSize : float , optional
                 The desired mesh size.
             tolerance : float , optional
-                The desired tolerance. The default is 0.0001.
+                The desired tolerance. Default is 0.0001.
             
             Returns
             -------
@@ -4114,7 +4114,7 @@ class Face():
         wire : topologic_core.Wire
             The input wire.
         reverse : bool , optional
-            If set to True, the effect of the trim will be reversed. The default is False.
+            If set to True, the effect of the trim will be reversed. Default is False.
 
         Returns
         -------
@@ -4151,23 +4151,23 @@ class Face():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the T-shape. The default is 1.0.
+            The overall width of the T-shape. Default is 1.0.
         length : float , optional
-            The overall length of the T-shape. The default is 1.0.
+            The overall length of the T-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the T-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the T-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the T-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4256,9 +4256,9 @@ class Face():
         face : topologic_core.Face
             The input face.
         u : float , optional
-            The *u* parameter of the input face. The default is 0.5.
+            The *u* parameter of the input face. Default is 0.5.
         v : float , optional
-            The *v* parameter of the input face. The default is 0.5.
+            The *v* parameter of the input face. Default is 0.5.
 
         Returns
         -------
@@ -4284,9 +4284,9 @@ class Face():
         vertex : topologic_core.Vertex
             The input vertex.
         outputType : string , optional
-            The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. The default is "uv".
+            The string defining the desired output. This can be any subset or permutation of "uv". It is case insensitive. Default is "uv".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------

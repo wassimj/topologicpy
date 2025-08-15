@@ -69,7 +69,7 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
 
         Returns
         -------
@@ -148,7 +148,7 @@ class Vector(list):
         vectorA : list
             The input vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
 
         Returns
         -------
@@ -231,9 +231,9 @@ class Vector(list):
         reverse : bool , optional
             If set to True the direction of the vector is computed from the end point towards the origin. Otherwise, it is computed from the origin towards the end point.
         mantissa : int , optional
-            The desired mantissa. The default is 6.
+            The desired mantissa. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -286,7 +286,7 @@ class Vector(list):
         normalize : bool , optional
             If set to True, the resulting vector is normalized (i.e. its length is set to 1)
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -368,11 +368,11 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -418,9 +418,9 @@ class Vector(list):
         vector : list
             The input vector.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -526,11 +526,11 @@ class Vector(list):
         vector : list
             The input vector.
         outputType : string, optional
-            The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
+            The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". Default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -576,11 +576,11 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         tolerance : float, optional
-            the desired tolerance. The default is 0.0001.
+            the desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -623,11 +623,11 @@ class Vector(list):
         vectorB : list
             The second vector.
         mantissa : int, optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         tolerance : float, optional
-            the desired tolerance. The default is 0.0001.
+            the desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -728,7 +728,7 @@ class Vector(list):
         vectorB : list
             The second input vector.
         tolerance : float, optional
-            The desired tolerance for determining collinearity. The default is 0.0001.
+            The desired tolerance for determining collinearity. Default is 0.0001.
             
         Returns
         -------
@@ -768,7 +768,7 @@ class Vector(list):
         vectorB : list
             The second input vector.
         tolerance : float, optional
-            The desired tolerance for determining parallelism. The default is 0.0001.
+            The desired tolerance for determining parallelism. Default is 0.0001.
             
         Returns
         -------
@@ -804,7 +804,7 @@ class Vector(list):
         vectorB : list
             The second input vector.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
             
         Returns
         -------
@@ -824,7 +824,7 @@ class Vector(list):
         vector : list
             The input vector.
         mantissa : int
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
 
         Returns
         -------
@@ -844,7 +844,7 @@ class Vector(list):
         vector : list
             The input vector.
         mantissa : int
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
 
         Returns
         -------
@@ -866,7 +866,7 @@ class Vector(list):
         magnitude : float
             The input magnitude.
         tolerance : float, optional
-            the desired tolerance. The default is 0.0001.
+            the desired tolerance. Default is 0.0001.
 
         Returns
         -------

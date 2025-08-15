@@ -47,21 +47,21 @@ class Neo4j:
         cypher : str, optional
             If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.
         xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
         yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
         zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. The default is -0.5.
+            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
         xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
         yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. The default is 0.5.
+            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
         silent : bool, optional
-            If set to True, no warnings or error messages are displayed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -227,30 +227,30 @@ class Neo4j:
             The input neo4j driver.
         vertexLabelKey : str , optional
             The returned vertices are labelled according to the dictionary values stored under this key.
-            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. The default is "label".
+            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. Default is "label".
         defaultVertexLabel : str , optional
-            The default vertex label to use if no value is found under the vertexLabelKey. The default is "NODE".
+            The default vertex label to use if no value is found under the vertexLabelKey. Default is "NODE".
         vertexCategoryKey : str , optional
             The returned vertices are categorized according to the dictionary values stored under this key. The dfefault is "category".
         defaultVertexCategory : str , optional
-            The default vertex category to use if no value is found under the vertexCategoryKey. The default is None.
+            The default vertex category to use if no value is found under the vertexCategoryKey. Default is None.
         edgeLabelKey : str , optional
             The returned edges are labelled according to the dictionary values stored under this key.
-            If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. The default is "label".
+            If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. Default is "label".
         defaultEdgeLabel : str , optional
-            The default edge label to use if no value is found under the edgeLabelKey. The default is "CONNECTED_TO".
+            The default edge label to use if no value is found under the edgeLabelKey. Default is "CONNECTED_TO".
         edgeCategoryKey : str , optional
             The returned edges are categorized according to the dictionary values stored under this key. The dfefault is "category".
         defaultEdgeCategory : str , optional
-            The default edge category to use if no value is found under the edgeCategoryKey. The default is None.
+            The default edge category to use if no value is found under the edgeCategoryKey. Default is None.
         bidirectional : bool , optional
             If set to True, the output Neo4j graph is forced to be bidirectional. The defaul is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -394,17 +394,17 @@ class Neo4j:
         graph : topologic_core.Graph
             The input topologic graph.
         labelKey : str , optional
-            The dictionary key under which to find the vertex's label value. The default is None which means the vertex gets the name 'TopologicGraphVertex'.
+            The dictionary key under which to find the vertex's label value. Default is None which means the vertex gets the name 'TopologicGraphVertex'.
         relationshipKey : str , optional
-            The dictionary key under which to find the edge's relationship value. The default is None which means the edge gets the relationship type 'Connected To'.
+            The dictionary key under which to find the edge's relationship value. Default is None which means the edge gets the relationship type 'Connected To'.
         bidirectional : bool , optional
             If set to True, the edges in the neo4j graph are set to be bi-drectional.
         deleteAll : bool , optional
             If set to True, all previous entities are deleted before adding the new entities.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------

@@ -159,7 +159,7 @@ class Honeybee:
         path : str
             The location of the output file.
         overwrite : bool , optional
-            If set to True this method overwrites any existing file. Otherwise, it won't. The default is False.
+            If set to True this method overwrites any existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -215,29 +215,29 @@ class Honeybee:
         tpBuilding : topologic_core.CellComplex or topologic_core.Cell
             The input building topology.
         tpShadingFaceCluster : topologic_core.Cluster , optional
-            The input cluster for shading faces. The default is None.
+            The input cluster for shading faces. Default is None.
         buildingName : str , optional
-            The desired name of the building. The default is "Generic_Building".
+            The desired name of the building. Default is "Generic_Building".
         defaultProgramIdentifier: str , optional
-            The desired default program identifier. The default is "Generic Office Program".
+            The desired default program identifier. Default is "Generic Office Program".
         defaultConstructionSetIdentifier: str , optional
-            The desired default construction set identifier. The default is "Default Generic Construction Set".
+            The desired default construction set identifier. Default is "Default Generic Construction Set".
         coolingSetpoint : float , optional
-            The desired HVAC cooling set point in degrees Celsius. The default is 25.
+            The desired HVAC cooling set point in degrees Celsius. Default is 25.
         heatingSetpoint : float , optional
-            The desired HVAC heating set point in degrees Celsius. The default is 20.
+            The desired HVAC heating set point in degrees Celsius. Default is 20.
         humidifyingSetpoint : float , optional
-            The desired HVAC humidifying set point in percentage. The default is 55.
+            The desired HVAC humidifying set point in percentage. Default is 55.
         roomNameKey : str , optional
-            The dictionary key under which the room name is stored. The default is "TOPOLOGIC_name".
+            The dictionary key under which the room name is stored. Default is "TOPOLOGIC_name".
         roomTypeKey : str , optional
-            The dictionary key under which the room type is stored. The default is "TOPOLOGIC_type".
+            The dictionary key under which the room type is stored. Default is "TOPOLOGIC_type".
         apertureTypeKey : str , optional
-            The dictionary key under which the aperture type is stored. The default is "TOPOLOGIC_type".
+            The dictionary key under which the aperture type is stored. Default is "TOPOLOGIC_type".
         addSensorGrid : bool , optional
-            If set to True a sensor grid is add to horizontal surfaces. The default is False.
+            If set to True a sensor grid is add to horizontal surfaces. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------

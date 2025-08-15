@@ -212,11 +212,11 @@ class Topology():
         apertures : list
             The input list of apertures.
         exclusive : bool , optional
-            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. The default is False.
+            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. Default is False.
         subTopologyType : string , optional
-            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. The default is None.
+            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
+            The desired tolerance. Default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
 
         Returns
         -------
@@ -263,9 +263,9 @@ class Topology():
         contents : list or topologic_core.Topology
             The input list of contents (of type topologic_core.Topology). A single topology is also accepted as input.
         subTopologyType : string , optional
-            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. The default is None.
+            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -344,7 +344,7 @@ class Topology():
         hostTopology : topologic_core.Topology
             The host topology in which to search.
         topologyType : str
-            The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex". It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. The default is None.
+            The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex". It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. Default is None.
 
         Returns
         -------
@@ -768,7 +768,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         subTopologyType : string , optional
-            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.
+            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.
         
         Returns
         -------
@@ -827,7 +827,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         subTopologyType : string , optional
-            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. The default is None.
+            The subtopology type from which to retrieve the apertures. This can be "cell", "face", "edge", or "vertex" or "all". It is case insensitive. If set to "all", then all apertures will be returned. If set to None, the apertures will be retrieved only from the input topology. Default is None.
        
         Returns
         -------
@@ -955,11 +955,11 @@ class Topology():
         sources : list of topologic_core. Topology
             The list of source topologies from which to inherit dictionary information.
         exclusive : bool , optional
-            If set to True, a target will inherit information only from the first eligible source. The default is True.
+            If set to True, a target will inherit information only from the first eligible source. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1134,13 +1134,13 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         operation : str , optional
-            The boolean operation. This can be one of "union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint". It is case insensitive. The default is "union".
+            The boolean operation. This can be one of "union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint". It is case insensitive. Default is "union".
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. The default is False.
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1279,15 +1279,15 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         optimize : int , optional
-            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. The default is 0 which will result in an axis-aligned bounding box. The default is 0.
+            If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding box so that it reduces its surface area. Default is 0 which will result in an axis-aligned bounding box. Default is 0.
         axes : str , optional
-            Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+            Sets what axes are to be used for rotating the bounding box. This can be any permutation or substring of "xyz". It is not case sensitive. Default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1462,7 +1462,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         version : int , optional
-            The desired BRep version number. The default is 3.
+            The desired BRep version number. Default is 3.
 
         Returns
         -------
@@ -1499,11 +1499,11 @@ class Topology():
         topologyType : str , optional
             The desired highest topology type. The options are: "Vertex", "Edge", "Wire", "Face", "Shell", "Cell", "CellComplex".
             It is case insensitive. If any of these options are selected, the returned topology will only contain this type either a single topology
-            or as a Cluster of these types of topologies. If set to None, a "Cluster" will be returned of vertices, edges, and/or faces. The default is None.
+            or as a Cluster of these types of topologies. If set to None, a "Cluster" will be returned of vertices, edges, and/or faces. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1636,25 +1636,25 @@ class Topology():
         path :str
             The path to the .bim file.
         guidKey : str , optional
-            The key to use to store the the guid of the topology. The default is "guid".
+            The key to use to store the the guid of the topology. Default is "guid".
         colorKey : str , optional
-            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+            The key to use to find the the color of the topology. Default is "color". If no color is found, the defaultColor parameter is used.
         typeKey : str , optional
-            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+            The key to use to find the the type of the topology. Default is "type". If no type is found, the defaultType parameter is used.
         defaultColor : list , optional
-            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+            The default color to use for the topology. Default is [255,255,255,1] which is opaque white.
         defaultType : str , optional
-            The default type to use for the topology. The default is "Structure".
+            The default type to use for the topology. Default is "Structure".
         authorKey : str , optional
-            The key to use to store the author of the topology. The default is "author".
+            The key to use to store the author of the topology. Default is "author".
         dateKey : str , optional
             The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         angTolerance : float , optional
-                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+                The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1694,25 +1694,25 @@ class Topology():
         string :str
             The input dotbim str (in JSON format).
         guidKey : str , optional
-            The key to use to store the the guid of the topology. The default is "guid".
+            The key to use to store the the guid of the topology. Default is "guid".
         colorKey : str , optional
-            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+            The key to use to find the the color of the topology. Default is "color". If no color is found, the defaultColor parameter is used.
         typeKey : str , optional
-            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+            The key to use to find the the type of the topology. Default is "type". If no type is found, the defaultType parameter is used.
         defaultColor : list , optional
-            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+            The default color to use for the topology. Default is [255,255,255,1] which is opaque white.
         defaultType : str , optional
-            The default type to use for the topology. The default is "Structure".
+            The default type to use for the topology. Default is "Structure".
         authorKey : str , optional
-            The key to use to store the author of the topology. The default is "author".
+            The key to use to store the author of the topology. Default is "author".
         dateKey : str , optional
             The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         angTolerance : float , optional
-                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+                The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1784,25 +1784,25 @@ class Topology():
         file : dotbimpy.file.File
             The input dotbim file.
         guidKey : str , optional
-            The key to use to store the the guid of the topology. The default is "guid".
+            The key to use to store the the guid of the topology. Default is "guid".
         colorKey : str , optional
-            The key to use to find the the color of the topology. The default is "color". If no color is found, the defaultColor parameter is used.
+            The key to use to find the the color of the topology. Default is "color". If no color is found, the defaultColor parameter is used.
         typeKey : str , optional
-            The key to use to find the the type of the topology. The default is "type". If no type is found, the defaultType parameter is used.
+            The key to use to find the the type of the topology. Default is "type". If no type is found, the defaultType parameter is used.
         defaultColor : list , optional
-            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+            The default color to use for the topology. Default is [255,255,255,1] which is opaque white.
         defaultType : str , optional
-            The default type to use for the topology. The default is "Structure".
+            The default type to use for the topology. Default is "Structure".
         authorKey : str , optional
-            The key to use to store the author of the topology. The default is "author".
+            The key to use to store the author of the topology. Default is "author".
         dateKey : str , optional
             The key to use to store the creation date of the topology. This should be in the formate "DD.MM.YYYY". If no date is found the date of import is used.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         angTolerance : float , optional
-                The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+                The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1926,11 +1926,11 @@ class Topology():
         file : a DXF file object
             The DXF file object.
         sides : int , optional
-            The desired number of sides of splines. The default is 16.
+            The desired number of sides of splines. Default is 16.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2150,11 +2150,11 @@ class Topology():
         path : str
             The path to the DXF file.
         sides : int , optional
-            The desired number of sides of splines. The default is 16.
+            The desired number of sides of splines. Default is 16.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2202,19 +2202,19 @@ class Topology():
         ifc_file : file object
             The input IFC file.
         includeTypes : list , optional
-            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
+            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].
         excludeTypes : list , optional
-            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
+            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -2315,17 +2315,17 @@ class Topology():
         path : str
             The path to the IFC file.
         includeTypes : list , optional
-            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. The default is [].
+            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].
         excludeTypes : list , optional
-            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. The default is [].
+            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].
         transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. The default is False.
+            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.0001.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.0001.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         Returns
         -------
         list
@@ -2385,7 +2385,7 @@ class Topology():
         file : file object
             The input JSON file.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2409,7 +2409,7 @@ class Topology():
         path : str
             The file path to the json file.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2436,7 +2436,7 @@ class Topology():
         jsonDictionary : dict
             The input JSON dictionary.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2644,7 +2644,7 @@ class Topology():
         string : str
             The input JSON string.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2678,13 +2678,13 @@ class Topology():
             'cell_dicts', list of dicts
             }
         transferDictionaries : bool , optional
-            If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.
+            If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2796,21 +2796,21 @@ class Topology():
         objFile : file object
             The OBJ file.
         mtlFile : file object , optional
-            The MTL file. The default is None.
+            The MTL file. Default is None.
         defaultColor : list , optional
-            The default color to use if none is specified in the file. The default is [255, 255, 255] (white).
+            The default color to use if none is specified in the file. Default is [255, 255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).
+            The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).
         transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. The default is True.
+            If set to True, coplanar faces are merged. Default is True.
         selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
 
         Returns
         -------
@@ -2854,19 +2854,19 @@ class Topology():
         objPath : str
             The path to the OBJ file.
         defaultColor : list , optional
-            The default color to use if none is specified in the file. The default is [255, 255, 255] (white).
+            The default color to use if none is specified in the file. Default is [255, 255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the file. The default is 1.0 (fully opaque).
+            The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).
         transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. The default is True.
+            If set to True, coplanar faces are merged. Default is True.
         selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
 
         Returns
         -------
@@ -2920,21 +2920,21 @@ class Topology():
         objString : str
             The string of the OBJ file.
         mtlString : str , optional
-            The string of the MTL file. The default is None.
+            The string of the MTL file. Default is None.
         defaultColor : list , optional
-            The default color to use if none is specified in the string. The default is [255, 255, 255] (white).
+            The default color to use if none is specified in the string. Default is [255, 255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use if none is specified in the string. The default is 1.0 (fully opaque).
+            The default opacity to use if none is specified in the string. Default is 1.0 (fully opaque).
         transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. The default is True.
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. The default is True.
+            If set to True, coplanar faces are merged. Default is True.
         selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. The default is False.
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
 
         Returns
         -------
@@ -3120,27 +3120,27 @@ class Topology():
         file : file
             The input PDF file
         wires : bool , optional
-            If set to True, wires will be constructed when possible. The default is True.
+            If set to True, wires will be constructed when possible. Default is True.
         faces : bool , optional
-            If set to True, faces will be constructed when possible. The default is True.
+            If set to True, faces will be constructed when possible. Default is True.
         includeTypes : list , optional
-            A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+            A list of PDF object types to include in the returned result. Default is [] which means all PDF objects will be included.
             The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
         excludeTypes : list , optional
-            A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+            A list of PDF object types to exclude from the returned result. Default is [] which mean no PDF object type will be excluded.
             The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
         edgeColorKey : str , optional
-            The dictionary key under which to store the edge color. The default is None.
+            The dictionary key under which to store the edge color. Default is None.
         edgeWidthKey : str , optional
-            The dictionary key under which to store the edge width. The default is None.
+            The dictionary key under which to store the edge width. Default is None.
         faceColorKey : str , optional
-            The dictionary key under which to store the face color. The default is None.
+            The dictionary key under which to store the face color. Default is None.
         faceOpacityKey : str , optional
-            The dictionary key under which to store the face opacity. The default is None.
+            The dictionary key under which to store the face opacity. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3354,27 +3354,27 @@ class Topology():
         path : path
             The input path to the PDF file
         wires : bool , optional
-            If set to True, wires will be constructed when possible. The default is True.
+            If set to True, wires will be constructed when possible. Default is True.
         faces : bool , optional
-            If set to True, faces will be constructed when possible. The default is True.
+            If set to True, faces will be constructed when possible. Default is True.
         includeTypes : list , optional
-            A list of PDF object types to include in the returned result. The default is [] which means all PDF objects will be included.
+            A list of PDF object types to include in the returned result. Default is [] which means all PDF objects will be included.
             The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
         excludeTypes : list , optional
-            A list of PDF object types to exclude from the returned result. The default is [] which mean no PDF object type will be excluded.
+            A list of PDF object types to exclude from the returned result. Default is [] which mean no PDF object type will be excluded.
             The possible strings to include in this list are: ["line", "curve", "rectangle", "quadrilateral"]
         edgeColorKey : str , optional
-            The dictionary key under which to store the edge color. The default is None.
+            The dictionary key under which to store the edge color. Default is None.
         edgeWidthKey : str , optional
-            The dictionary key under which to store the edge width. The default is None.
+            The dictionary key under which to store the edge width. Default is None.
         faceColorKey : str , optional
-            The dictionary key under which to store the face color. The default is None.
+            The dictionary key under which to store the face color. Default is None.
         faceOpacityKey : str , optional
-            The dictionary key under which to store the face opacity. The default is None.
+            The dictionary key under which to store the face opacity. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3488,9 +3488,9 @@ class Topology():
         file : file object
             The input XYZ file.
         frameIdKey : str , optional
-            The desired id key to use to store the ID of each frame in its dictionary. The default is "id".
+            The desired id key to use to store the ID of each frame in its dictionary. Default is "id".
         vertexIdKey : str , optional
-            The desired id key to use to store the ID of each point in its dictionary. The default is "id".
+            The desired id key to use to store the ID of each point in its dictionary. Default is "id".
 
         Returns
         -------
@@ -3570,9 +3570,9 @@ class Topology():
         path : str
             The input XYZ file path.
         frameIdKey : str , optional
-            The desired id key to use to store the ID of each frame in its dictionary. The default is "id".
+            The desired id key to use to store the ID of each frame in its dictionary. Default is "id".
         vertexIdKey : str , optional
-            The desired id key to use to store the ID of each point in its dictionary. The default is "id".
+            The desired id key to use to store the ID of each point in its dictionary. Default is "id".
 
         Returns
         -------
@@ -3606,13 +3606,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         n : int , optional
-            The number of segments to use to increase the number of points on each face. The default is 10.
+            The number of segments to use to increase the number of points on each face. Default is 10.
         normalize : bool , optional
-            If set to True, the longest edge in the input topology is scaled to become of length 1. The default is False.
+            If set to True, the longest edge in the input topology is scaled to become of length 1. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -3779,7 +3779,7 @@ class Topology():
             keys : str or list or comma-separated str input parameters
                 The key or keys in the topology's dictionary to use for clustering.
             silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
 
             Returns
@@ -3886,9 +3886,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3998,7 +3998,7 @@ class Topology():
         tolerance : float, optional
             Tolerance value for geometric operations. Default is 0.0001.
         silent : bool, optional
-            If True, suppresses warning and error messages.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4126,7 +4126,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         deep : bool , optional
-            If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. The default is False
+            If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. Default is False
 
         Returns
         -------
@@ -4158,11 +4158,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4214,7 +4214,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4238,7 +4238,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4268,7 +4268,7 @@ class Topology():
         addNestingDepth : bool , optional
             If set to True the nesting depth of the division is added to the dictionaries of the divided topologies.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4355,21 +4355,21 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin of the explosion. If set to None, the centroid of the input topology will be used. The default is None.
+            The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.
         scale : float , optional
-            The scale factor of the explosion. The default is 1.25.
+            The scale factor of the explosion. Default is 1.25.
         typeFilter : str , optional
-            The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. The default is None.
+            The type of the subtopologies to explode. This can be any of "vertex", "edge", "face", or "cell". If set to None, a subtopology one level below the type of the input topology will be used. Default is None.
         axes : str , optional
-            Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. The default is "xyz".
+            Sets what axes are to be used for exploding the topology. This can be any permutation or substring of "xyz". It is not case sensitive. Default is "xyz".
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original subTopologies are transferred to the exploded topologies. Otherwise, they are not. The default is False.
+            If set to True, the dictionaries of the original subTopologies are transferred to the exploded topologies. Otherwise, they are not. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -4499,27 +4499,27 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
         version : str , optional
-            The desired version number for the BIM file. The default is "1.0.0".
+            The desired version number for the BIM file. Default is "1.0.0".
         guidKey : str , optional
-            The key to use to find the the guid of the topology. It is case insensitive. The default is "guid". If no guid is found, one is generated automatically.
+            The key to use to find the the guid of the topology. It is case insensitive. Default is "guid". If no guid is found, one is generated automatically.
         colorKey : str , optional
-            The key to use to find the the color of the topology. It is case insensitive. The default is "color". If no color is found, the defaultColor parameter is used.
+            The key to use to find the the color of the topology. It is case insensitive. Default is "color". If no color is found, the defaultColor parameter is used.
         typeKey : str , optional
-            The key to use to find the the type of the topology. It is case insensitive. The default is "type". If no type is found, the defaultType parameter is used.
+            The key to use to find the the type of the topology. It is case insensitive. Default is "type". If no type is found, the defaultType parameter is used.
         defaultColor : list , optional
-            The default color to use for the topology. The default is [255,255,255,1] which is opaque white.
+            The default color to use for the topology. Default is [255,255,255,1] which is opaque white.
         defaultType : str , optional
-            The default type to use for the topology. The default is "Structure".
+            The default type to use for the topology. Default is "Structure".
         author : str , optional
-            The author of the topology. The default is "topologicpy".
+            The author of the topology. Default is "topologicpy".
         date : str , optional
-            The creation date of the topology. This should be in the formate "DD.MM.YYYY". The default is None which uses the date of export.
+            The creation date of the topology. This should be in the formate "DD.MM.YYYY". Default is None which uses the date of export.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4643,9 +4643,9 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
         version : int , optional
-            The desired version number for the BREP file. The default is 3.
+            The desired version number for the BREP file. Default is 3.
 
         Returns
         -------
@@ -4695,9 +4695,9 @@ class Topology():
         path : str
             The input file path.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -4892,7 +4892,7 @@ class Topology():
         path : str
             The path to the JSON file.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -4937,9 +4937,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology
         topologyType : str , optional
-            The desired output topology type. This must be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "CellComplex"
+            The desired output topology type. This must be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. Default is "CellComplex"
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -5097,7 +5097,7 @@ class Topology():
         topologies : list or topologic_core.Topology
             The input list of topologies or a single topology.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -5364,9 +5364,9 @@ class Topology():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5418,15 +5418,15 @@ class Topology():
         path : str
             The input file path.
         nameKey : str , optional
-            The topology dictionary key under which to find the name of the topology. The default is "name".
+            The topology dictionary key under which to find the name of the topology. Default is "name".
         colorKey : str, optional
-            The topology dictionary key under which to find the color of the topology. The default is "color".
+            The topology dictionary key under which to find the color of the topology. Default is "color".
         opacityKey : str , optional
-            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+            The topology dictionary key under which to find the opacity of the topology. Default is "opacity".
         defaultColor : list , optional
-            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+            The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
         mode : int , optional
@@ -5445,11 +5445,11 @@ class Topology():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -5512,15 +5512,15 @@ class Topology():
         topologies : list or comma separated topologies
             The input list of topologies.
         nameKey : str , optional
-            The topology dictionary key under which to find the name of the topology. The default is "name".
+            The topology dictionary key under which to find the name of the topology. Default is "name".
         colorKey : str, optional
-            The topology dictionary key under which to find the color of the topology. The default is "color".
+            The topology dictionary key under which to find the color of the topology. Default is "color".
         opacityKey : str , optional
-            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+            The topology dictionary key under which to find the opacity of the topology. Default is "opacity".
         defaultColor : list , optional
-            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+            The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
         mode : int , optional
@@ -5539,9 +5539,9 @@ class Topology():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -5609,13 +5609,13 @@ class Topology():
         topologies : list
             The input list of topologies.
         topologyType : str , optional
-            The type of topology to filter by. This can be one of "any", "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. The default is "any".
+            The type of topology to filter by. This can be one of "any", "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. Default is "any".
         searchType : str , optional
-            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". The default is "any".
+            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". Default is "any".
         key : str , optional
-            The dictionary key to search within. The default is None which means it will filter by topology type only.
+            The dictionary key to search within. Default is None which means it will filter by topology type only.
         value : str , optional
-            The value to search for at the specified key. The default is None which means it will filter by topology type only.
+            The value to search for at the specified key. Default is None which means it will filter by topology type only.
 
         Returns
         -------
@@ -5690,11 +5690,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The input origin. If set to None, The object's centroid will be used to place the world origin. The default is None.
+            The input origin. If set to None, The object's centroid will be used to place the world origin. Default is None.
         direction : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -5740,11 +5740,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         transferDictionaries : bool , optional
-            If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. The default is False.
+            If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5886,9 +5886,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , ptional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5951,11 +5951,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         timeout : int , optional
-            The amount of seconds to wait before timing out. The default is 30 seconds.
+            The amount of seconds to wait before timing out. Default is 30 seconds.
         tolerance : float , ptional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6054,9 +6054,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6140,15 +6140,15 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         epsilon : float , optional
-            The desired epsilon (another form of percentage tolerance) for finding if two objects are similar. Should be in the range 0 to 1. The default is 0.1 (10%).
+            The desired epsilon (another form of percentage tolerance) for finding if two objects are similar. Should be in the range 0 to 1. Default is 0.1 (10%).
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6329,14 +6329,14 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         epsilon : float , optional
             The desired accepted tolerance for the number of matched number of vertices. For example, an epsilon of 0.1 indicates that
-            the algorithm will return True even if 10% of the vertices do not match. The default is 0.1.
+            the algorithm will return True even if 10% of the vertices do not match. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6411,13 +6411,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed to find the true largest faces. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed to find the true largest faces. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -6460,13 +6460,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed to find the true longest straight edges. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed to find the true longest straight edges. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -6510,7 +6510,7 @@ class Topology():
         topologies : list
             The list of input topologies.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -6545,13 +6545,13 @@ class Topology():
             1: The faces list indexes into the edges list.
             The default is 1.
         transferDictionaries : bool , optional
-            If set to True, the python dictionaries will be transferred to the coorespoding topologies. The default is False.
+            If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6695,11 +6695,11 @@ class Topology():
         topology : topologic_core.topology
             The input topology.
         x : float , optional
-            The x distance value. The default is 0.
+            The x distance value. Default is 0.
         y : float , optional
-            The y distance value. The default is 0.
+            The y distance value. Default is 0.
         z : float , optional
-            The z distance value. The default is 0.
+            The z distance value. Default is 0.
 
         Returns
         -------
@@ -6781,7 +6781,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -6874,13 +6874,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The input origin. If set to None, The object's centroid will be used to locate the input topology. The default is None.
+            The input origin. If set to None, The object's centroid will be used to locate the input topology. Default is None.
         dirA : list , optional
-            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. The default is [0, 0, 1].
+            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. Default is [0, 0, 1].
         dirB : list , optional
-            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. The default is [0, 0, 1].
+            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. Default is [0, 0, 1].
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
 
         Returns
         -------
@@ -6911,11 +6911,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         originA : topologic_core.Vertex , optional
-            The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. The default is None.
+            The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. Default is None.
         originB : topologic_core.Vertex , optional
-            The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. The default is None.
+            The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -6954,11 +6954,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         n : int , optional
-            The number of segments to use to increase the number of points on each face. The default is 10.
+            The number of segments to use to increase the number of points on each face. Default is 10.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -7036,11 +7036,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7122,11 +7122,11 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7236,7 +7236,7 @@ class Topology():
         edges : list
             The input list of edges.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7296,7 +7296,7 @@ class Topology():
         faces : list
             The input list of faces.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7342,7 +7342,7 @@ class Topology():
         selectors : list
             The input list of selectors (vertices).
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7384,7 +7384,7 @@ class Topology():
         vertices : list
             The input list of vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7469,9 +7469,9 @@ class Topology():
         verticesB : list
             The second input list of vertices.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7507,15 +7507,15 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
         axis : list , optional
-            The vector representing the axis of rotation. The default is [0, 0, 1] which equates to the Z axis.
+            The vector representing the axis of rotation. Default is [0, 0, 1] which equates to the Z axis.
         angle : float , optional
-            The angle of rotation in degrees. The default is 0.
+            The angle of rotation in degrees. Default is 0.
         angTolerance : float , optional
-            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7620,17 +7620,17 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
         roll : float , optional
-            The rotation angle in degrees around the X-axis. The default is 0.
+            The rotation angle in degrees around the X-axis. Default is 0.
         pitch = float , optional
-            The rotation angle in degrees around the Y-axis. The default is 0.
+            The rotation angle in degrees around the Y-axis. Default is 0.
         yaw = float , optional
-            The rotation angle in degrees around the Z-axis. The default is 0.
+            The rotation angle in degrees around the Z-axis. Default is 0.
         angTolerance : float , optional
-            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7668,13 +7668,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. The default is None.
+            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
         quaternion : list or numpy array of size 4
             The input Quaternion list. It should be in the form [x, y, z, w].
         angTolerance : float , optional
-            The angle tolerance in degrees under which no rotation is carried out. The default is 0.001 degrees.
+            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -7748,13 +7748,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin (center) of the scaling. If set to None, the world origin (0, 0, 0) is used. The default is None.
+            The origin (center) of the scaling. If set to None, the world origin (0, 0, 0) is used. Default is None.
         x : float , optional
-            The 'x' component of the scaling factor. The default is 1.
+            The 'x' component of the scaling factor. Default is 1.
         y : float , optional
-            The 'y' component of the scaling factor. The default is 1.
+            The 'y' component of the scaling factor. Default is 1.
         z : float , optional
-            The 'z' component of the scaling factor. The default is 1..
+            The 'z' component of the scaling factor. Default is 1..
 
         Returns
         -------
@@ -7823,7 +7823,7 @@ class Topology():
         selector : topologic_core.Vertex
             A vertex located on the desired subtopology.
         subTopologyType : str , optional.
-            The desired subtopology type. This can be of "vertex", "edge", "wire", "face", "shell", "cell", or "cellcomplex". It is case insensitive. The default is "vertex".
+            The desired subtopology type. This can be of "vertex", "edge", "wire", "face", "shell", "cell", or "cellcomplex". It is case insensitive. Default is "vertex".
 
         Returns
         -------
@@ -7863,7 +7863,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
 
         Returns
         -------
@@ -7947,7 +7947,7 @@ class Topology():
         dictionary : topologic_core.Dictionary
             The input dictionary.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -8179,13 +8179,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed to find the true shortest straight edges. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed to find the true shortest straight edges. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -8318,13 +8318,13 @@ class Topology():
         topologies : topologic_core.Topology or list
             The input topology. This must contain faces and or edges. If the input is a list, a cluster is first created
         opacityKey : str , optional
-            The key under which to find the opacity of the topology. The default is "opacity".
+            The key under which to find the opacity of the topology. Default is "opacity".
         showVertices : bool , optional
-            If set to True the vertices will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
         vertexSize : float , optional
-            The desired size of the vertices. The default is 1.1.
+            The desired size of the vertices. Default is 1.1.
         vertexSizeKey : str , optional
-            The key under which to find the size of the vertex. The default is None.
+            The key under which to find the size of the vertex. Default is None.
         vertexColor : str , optional
             The desired color of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8334,9 +8334,9 @@ class Topology():
             - A named CSS color.
             The default is "black".
         vertexColorKey : str , optional
-            The key under which to find the color of the vertex. The default is None.
+            The key under which to find the color of the vertex. Default is None.
         vertexBorderWidth : float , optional
-            The desired width of the borders of the output vertices. The default is 0.
+            The desired width of the borders of the output vertices. Default is 0.
         vertexBorderColor : str , optional
             The desired color of the borders of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8346,31 +8346,31 @@ class Topology():
             - A named CSS color.
             The default is "black".
         vertexLabelKey : str , optional
-            The dictionary key to use to display the vertex label. The default is None.
+            The dictionary key to use to display the vertex label. Default is None.
         showVertexLabels : bool , optional
-            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         vertexGroupKey : str , optional
-            The dictionary key to use to display the vertex group. The default is None.
+            The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
-            The list of vertex groups against which to index the color of the vertex. The default is [].
+            The list of vertex groups against which to index the color of the vertex. Default is [].
         vertexMinGroup : int or float , optional
-            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.
         vertexMaxGroup : int or float , optional
-            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. The default is None.
+            For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertexLegend : bool, optional
-            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn't. Default is False.
         vertexLegendLabel : str , optional
-            The legend label string used to identify vertices. The default is "Topology Vertices".
+            The legend label string used to identify vertices. Default is "Topology Vertices".
         directed : bool , optional
-            If set to True, arrowheads are drawn to show direction. The default is False.
+            If set to True, arrowheads are drawn to show direction. Default is False.
         arrowSize : int, optional
-            The desired size of arrowheads for directed graphs. The default is 0.1.
+            The desired size of arrowheads for directed graphs. Default is 0.1.
         arrowSizeKey: str , optional
-            The edge dictionary key under which to find the arrowhead size. The default is None.
+            The edge dictionary key under which to find the arrowhead size. Default is None.
         showEdges : bool , optional
-            If set to True the edges will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.
         edgeWidth : float , optional
-            The desired thickness of the output edges. The default is 1.
+            The desired thickness of the output edges. Default is 1.
         edgeColor : str , optional
             The desired color of the output edges. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8380,36 +8380,36 @@ class Topology():
             - A named CSS color.
             The default is "black".
         edgeColorKey : str , optional
-            The key under which to find the color of the edge. The default is None.
+            The key under which to find the color of the edge. Default is None.
         edgeDash : bool , optional
-            If set to True, the edges are drawn as dashed lines. The default is False.
+            If set to True, the edges are drawn as dashed lines. Default is False.
         edgeDashKey : str , optional
-            The key under which to find the boolean flag to draw edges as dashed lines. The default is None.
+            The key under which to find the boolean flag to draw edges as dashed lines. Default is None.
         edgeWidthKey : str , optional
-            The key under which to find the width of the edge. The default is None.
+            The key under which to find the width of the edge. Default is None.
         edgeLabelKey : str , optional
-            The dictionary key to use to display the edge label. The default is None.
+            The dictionary key to use to display the edge label. Default is None.
         showEdgeLabels : bool , optional
-            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. The default is False.
+            If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         edgeGroupKey : str , optional
-            The dictionary key to use to display the edge group. The default is None.
+            The dictionary key to use to display the edge group. Default is None.
         edgeGroups : list , optional
-            The list of edge groups against which to index the color of the edge. The default is [].
+            The list of edge groups against which to index the color of the edge. Default is [].
         edgeMinGroup : int or float , optional
-            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.
         edgeMaxGroup : int or float , optional
-            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. The default is None.
+            For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.
         showEdgeLegend : bool, optional
-            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the edges of this topology is shown. Otherwise, it isn't. Default is False.
         edgeLegendLabel : str , optional
-            The legend label string used to identify edges. The default is "Topology Edges".
+            The legend label string used to identify edges. Default is "Topology Edges".
         
         showFaces : bool , optional
-            If set to True the faces will be drawn. Otherwise, they will not be drawn. The default is True.
+            If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.
         faceOpacity : float , optional
-            The desired opacity of the output faces (0=transparent, 1=opaque). The default is 0.5.
+            The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.
         faceOpacityKey : str , optional
-            The key under which to find the opacity of the face. The default is None.
+            The key under which to find the opacity of the face. Default is None.
         faceColor : str , optional
             The desired color of the output faces. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8419,31 +8419,31 @@ class Topology():
             - A named CSS color.
             The default is "#FAFAFA".
         faceColorKey : str , optional
-            The key under which to find the color of the face. The default is None.
+            The key under which to find the color of the face. Default is None.
         faceLabelKey : str , optional
-            The dictionary key to use to display the face label. The default is None.
+            The dictionary key to use to display the face label. Default is None.
         faceGroupKey : str , optional
-            The dictionary key to use to display the face group. The default is None.
+            The dictionary key to use to display the face group. Default is None.
         faceGroups : list , optional
-            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. The default is [].
+            The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].
         faceMinGroup : int or float , optional
-            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. The default is None.
+            For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.
         faceMaxGroup : int or float , optional
-            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. The default is None.
+            For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.
         showFaceLegend : bool, optional
-            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. The default is False.
+            If set to True, the legend for the faces of this topology is shown. Otherwise, it isn't. Default is False.
         faceLegendLabel : str , optional
-            The legend label string used to idenitfy edges. The default is "Topology Faces".
+            The legend label string used to idenitfy edges. Default is "Topology Faces".
         width : int , optional
             The width in pixels of the figure. The default value is 950.
         height : int , optional
             The height in pixels of the figure. The default value is 950.
         xAxis : bool , optional
-            If set to True the x axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.
         yAxis : bool , optional
-            If set to True the y axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.
         zAxis : bool , optional
-            If set to True the z axis is drawn. Otherwise it is not drawn. The default is False.
+            If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.
         backgroundColor : str , optional
             The desired color of the background. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -8461,45 +8461,45 @@ class Topology():
         marginBottom : int , optional
             The size in pixels of the bottom margin. The default value is 0.
         camera : list , optional
-            The desired location of the camera). The default is [-1.25, -1.25, 1.25].
+            The desired location of the camera). Default is [-1.25, -1.25, 1.25].
         center : list , optional
-            The desired center (camera target). The default is [0, 0, 0].
+            The desired center (camera target). Default is [0, 0, 0].
         up : list , optional
-            The desired up vector. The default is [0, 0, 1].
+            The desired up vector. Default is [0, 0, 1].
         projection : str , optional
-            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. The default is "perspective"
+            The desired type of projection. The options are "orthographic" or "perspective". It is case insensitive. Default is "perspective"
         renderer : str , optional
-            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. The default is None.
+            The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.
         intensityKey : str , optional
-            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. The default is None.
+            If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
         intensities : list , optional
-            The list of intensities against which to index the intensity of the vertex. The default is [].
+            The list of intensities against which to index the intensity of the vertex. Default is [].
         showScale : bool , optional
-            If set to True, the colorbar is shown. The default is False.
+            If set to True, the colorbar is shown. Default is False.
         cbValues : list , optional
-            The input list of values to use for the colorbar. The default is [].
+            The input list of values to use for the colorbar. Default is [].
         cbTicks : int , optional
-            The number of ticks to use on the colorbar. The default is 5.
+            The number of ticks to use on the colorbar. Default is 5.
         cbX : float , optional
-            The x location of the colorbar. The default is -0.15.
+            The x location of the colorbar. Default is -0.15.
         cbWidth : int , optional
-            The width in pixels of the colorbar. The default is 15
+            The width in pixels of the colorbar. Default is 15
         cbOutlineWidth : int , optional
-            The width in pixels of the outline of the colorbar. The default is 0.
+            The width in pixels of the outline of the colorbar. Default is 0.
         cbTitle : str , optional
-            The title of the colorbar. The default is "".
+            The title of the colorbar. Default is "".
         cbSubTitle : str , optional
-            The subtitle of the colorbar. The default is "".
+            The subtitle of the colorbar. Default is "".
         cbUnits: str , optional
-            The units used in the colorbar. The default is ""
+            The units used in the colorbar. Default is ""
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). The default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
-            The desired length of the mantissa for the values listed on the colorbar. The default is 6.
+            The desired length of the mantissa for the values listed on the colorbar. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -8690,13 +8690,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed to find the true smallest faces. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed to find the true smallest faces. Otherwise they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. The default is 0.01.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -8741,9 +8741,9 @@ class Topology():
         selectors : list
             The input list of selectors (vertices).
         exclusive : bool , optional
-            If set to True only one selector can be used to select on topology. The default is False.
+            If set to True only one selector can be used to select on topology. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -8841,17 +8841,17 @@ class Topology():
         origin : topologic_core.Vertex
             The origin (center) of the spin.
         triangulate : bool , optional
-            If set to True, the result will be triangulated. The default is True.
+            If set to True, the result will be triangulated. Default is True.
         direction : list , optional
-            The vector representing the direction of the spin axis. The default is [0, 0, 1].
+            The vector representing the direction of the spin axis. Default is [0, 0, 1].
         angle : float , optional
-            The angle in degrees for the spin. The default is 360.
+            The angle in degrees for the spin. Default is 360.
         sides : int , optional
-            The desired number of sides. The default is 16.
+            The desired number of sides. Default is 16.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
 
         Returns
@@ -8988,21 +8988,21 @@ class Topology():
                 - "Vertex" -> None
                 - "Graph" -> "Graphs"
         minSize : int , optional
-            The minimum number of subtopologies to include in a combination. This number cannot be less than 2. The default is 2.
+            The minimum number of subtopologies to include in a combination. This number cannot be less than 2. Default is 2.
         maxSize : int , optional
-            The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. The default is None which means the maximum will be set to the number of subtopologies minus 1.
+            The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. Default is None which means the maximum will be set to the number of subtopologies minus 1.
         maxCombinations : int , optional
-            The maximum number of combinations to create. The default is 100.
+            The maximum number of combinations to create. Default is 100.
         timeLimit : int , optional
-                The time limit in seconds. The default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.
+                The time limit in seconds. Default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. The default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
         removeCollinearEdges : bool , optional
-            If set to True, collinear edges are removed. Otherwise they are not. The default is False.
+            If set to True, collinear edges are removed. Otherwise they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9133,13 +9133,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.
+            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.
         ratioRange : list , optional
             The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.
         triangulate : bool , optional
-            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.
 
@@ -9192,13 +9192,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. The default is None.
+            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.
         angleRange : list , optional
             The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.
         triangulate : bool , optional
-            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. The default is False.
+            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -9240,7 +9240,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The input origin. If set to None, The object's centroid will be used to translate the world origin. The default is None.
+            The input origin. If set to None, The object's centroid will be used to translate the world origin. Default is None.
         vector : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
 
@@ -9459,9 +9459,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         subTopologyType : str , optional
-            The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. The default is "vertex".
+            The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. Default is "vertex".
         silent : bool , optional
-            If set to True, no warnings or errors will be printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
         list
@@ -9532,7 +9532,7 @@ class Topology():
         hostTopology : topologic_core.Topology
             The host to topology in which to search for ther supertopologies.
         topologyType : str , optional
-            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.
+            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.
 
         Returns
         -------
@@ -9589,9 +9589,9 @@ class Topology():
         sinks : list
             The list of topologies to which to transfer the dictionaries.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         numWorkers : int, optional
-            Number of workers run in parallel to process. The default is None which sets the number to twice the number of CPU cores.
+            Number of workers run in parallel to process. Default is None which sets the number to twice the number of CPU cores.
 
         Returns
         -------
@@ -9660,7 +9660,7 @@ class Topology():
         tranCells : bool , optional
             If True transfer dictionaries to the cells of the input topology.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -9774,7 +9774,7 @@ class Topology():
         matrix : list
             The input 4x4 transformation matrix.
         silent : bool , optional
-            If set to True, no warnings or errors will be printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9902,13 +9902,13 @@ class Topology():
         topology : topologic_core.topology
             The input topology.
         x : float , optional
-            The x translation value. The default is 0.
+            The x translation value. Default is 0.
         y : float , optional
-            The y translation value. The default is 0.
+            The y translation value. Default is 0.
         z : float , optional
-            The z translation value. The default is 0.
+            The z translation value. Default is 0.
         silent : bool , optional
-            If set to True, no warnings or errors will be printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9979,9 +9979,9 @@ class Topology():
         topology : topologic_core.topology
             The input topology.
         direction : list , optional
-            The direction vector in which the topology should be moved. The default is [0, 0, 0]
+            The direction vector in which the topology should be moved. Default is [0, 0, 0]
         distance : float , optional
-            The distance by which the toplogy should be moved. The default is 0.
+            The distance by which the toplogy should be moved. Default is 0.
 
         Returns
         -------
@@ -10007,7 +10007,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topologgy.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. The default is False.
+            If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. Default is False.
         mode : int , optional
             The desired mode of meshing algorithm. Several options are available:
             0: Classic
@@ -10024,9 +10024,9 @@ class Topology():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, no warnings or errors will be printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -10132,7 +10132,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         silent : bool , optional
-            If set to True, no warnings or errors will be printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -10171,7 +10171,7 @@ class Topology():
                 "graph",
                 "topology"
             
-            It is case insensitive. The default is None.
+            It is case insensitive. Default is None.
 
         Returns
         -------
@@ -10281,17 +10281,17 @@ class Topology():
         topologies : list or comma separated topologies
             The input list of topologies.
         uuid : UUID , optional
-            The UUID v5 to use to identify these topologies. The default is a UUID based on the topologies themselves.
+            The UUID v5 to use to identify these topologies. Default is a UUID based on the topologies themselves.
         nameKey : str , optional
-            The topology dictionary key under which to find the name of the topology. The default is "name".
+            The topology dictionary key under which to find the name of the topology. Default is "name".
         colorKey : str, optional
-            The topology dictionary key under which to find the color of the topology. The default is "color".
+            The topology dictionary key under which to find the color of the topology. Default is "color".
         opacityKey : str , optional
-            The topology dictionary key under which to find the opacity of the topology. The default is "opacity".
+            The topology dictionary key under which to find the opacity of the topology. Default is "opacity".
         defaultColor : list , optional
-            The default color to use if no color is stored in the topology dictionary. The default is [255,255, 255] (white).
+            The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).
         defaultOpacity : float , optional
-            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. The default is 1 (fully opaque).
+            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
         mode : int , optional
@@ -10310,11 +10310,11 @@ class Topology():
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. The default is False.
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
 
         Returns
         -------

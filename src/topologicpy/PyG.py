@@ -1631,7 +1631,7 @@ class PyG:
         dataset : CustomDataset
             The input dataset
         graphLabelHeader: str , optional
-            The key string under which the graph labels are stored. The default is "label".
+            The key string under which the graph labels are stored. Default is "label".
         
         Returns
         -------
@@ -1659,9 +1659,9 @@ class PyG:
         split: list , optional
             The list of ratios. This list must be made out of three numbers adding to 1.
         shuffle: boolean , optional
-            If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. The default is True.
+            If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. Default is True.
         randomState : int , optional
-            The random seed to use for reproducibility. The default is 42.
+            The random seed to use for reproducibility. Default is 42.
                 
         Returns
         -------
@@ -1706,17 +1706,17 @@ class PyG:
         Parameters
         ----------
         amsgrad : bool , optional.
-            amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. The default is True.
+            amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. Default is True.
         betas : tuple , optional
-            Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. The default is (0.9, 0.999).
+            Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. Default is (0.9, 0.999).
         eps : float . optional.
-            eps is a term added to the denominator to improve numerical stability. The default is 0.000001.
+            eps is a term added to the denominator to improve numerical stability. Default is 0.000001.
         lr : float
-            The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. The default is 0.001.
+            The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. Default is 0.001.
         maximize : float , optional
-            maximize the params based on the objective, instead of minimizing. The default is False.
+            maximize the params based on the objective, instead of minimizing. Default is False.
         weightDecay : float , optional
-            weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. The default is 0.0.
+            weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. Default is 0.0.
 
         Returns
         -------
@@ -1747,29 +1747,29 @@ class PyG:
             The desired type of model. The options are:
             - "Classifier"
             - "Regressor"
-            The option is case insensitive. The default is "classifierholdout"
+            The option is case insensitive. Default is "classifierholdout"
         optimizer : Optimizer
             The desired optimizer.
         cv_type : str , optional
-            The desired cross-validation method. This can be "Holdout" or "K-Fold". It is case-insensitive. The default is "Holdout".
+            The desired cross-validation method. This can be "Holdout" or "K-Fold". It is case-insensitive. Default is "Holdout".
         split : list , optional
-            The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. The default is [0.8, 0.1, 0.1].
+            The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. Default is [0.8, 0.1, 0.1].
         k_folds : int , optional
-            The desired number of k-folds. The default is 5.
+            The desired number of k-folds. Default is 5.
         hl_widths : list , optional
-            The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. The default is [32].
+            The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. Default is [32].
         conv_layer_type : str , optional
-            The desired type of the convolution layer. The options are "Classic", "GraphConv", "GINConv", "SAGEConv", "TAGConv", "DGN". It is case insensitive. The default is "SAGEConv".
+            The desired type of the convolution layer. The options are "Classic", "GraphConv", "GINConv", "SAGEConv", "TAGConv", "DGN". It is case insensitive. Default is "SAGEConv".
         pooling : str , optional
-            The desired type of pooling. The options are "AvgPooling", "MaxPooling", or "SumPooling". It is case insensitive. The default is "AvgPooling".
+            The desired type of pooling. The options are "AvgPooling", "MaxPooling", or "SumPooling". It is case insensitive. Default is "AvgPooling".
         batch_size : int , optional
-            The desired batch size. The default is 1.
+            The desired batch size. Default is 1.
         epochs : int , optional
-            The desired number of epochs. The default is 1.
+            The desired number of epochs. Default is 1.
         use_gpu : bool , optional
-            If set to True, the model will attempt to use the GPU. The default is False.
+            If set to True, the model will attempt to use the GPU. Default is False.
         loss_function : str , optional
-            The desired loss function. The options are "Cross-Entropy" or "Negative Log Likelihood". It is case insensitive. The default is "Cross-Entropy".
+            The desired loss function. The options are "Cross-Entropy" or "Negative Log Likelihood". It is case insensitive. Default is "Cross-Entropy".
         input_type : str
             selects the input_type of model such as graph, node or edge
         Returns
@@ -1911,7 +1911,7 @@ class PyG:
         path : str
             The file path at which to save the model.
         overwrite : bool, optional
-            If set to True, any existing file will be overwritten. Otherwise, it won't. The default is False.
+            If set to True, any existing file will be overwritten. Otherwise, it won't. Default is False.
 
         Returns
         -------
@@ -2059,23 +2059,23 @@ class PyG:
         labels : list
             The labels to use for the data.
         width : int , optional
-            The desired width of the figure. The default is 950.
+            The desired width of the figure. Default is 950.
         height : int , optional
-            The desired height of the figure. The default is 500.
+            The desired height of the figure. Default is 500.
         title : str , optional
-            The chart title. The default is "Training and Testing Results".
+            The chart title. Default is "Training and Testing Results".
         xTitle : str , optional
-            The X-axis title. The default is "Epochs".
+            The X-axis title. Default is "Epochs".
         xSpacing : float , optional
-            The X-axis spacing. The default is 1.0.
+            The X-axis spacing. Default is 1.0.
         yTitle : str , optional
-            The Y-axis title. The default is "Accuracy and Loss".
+            The Y-axis title. Default is "Accuracy and Loss".
         ySpacing : float , optional
-            The Y-axis spacing. The default is 0.1.
+            The Y-axis spacing. Default is 0.1.
         useMarkers : bool , optional
-            If set to True, markers will be displayed. The default is False.
+            If set to True, markers will be displayed. Default is False.
         chartType : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. The default is "Line".
+            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. Default is "Line".
         backgroundColor : str , optional
             The desired background color. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -2093,15 +2093,15 @@ class PyG:
             - A named CSS color.
             The default is 'lightgray'.
         marginLeft : int , optional
-            The desired left margin in pixels. The default is 0.
+            The desired left margin in pixels. Default is 0.
         marginRight : int , optional
-            The desired right margin in pixels. The default is 0.
+            The desired right margin in pixels. Default is 0.
         marginTop : int , optional
-            The desired top margin in pixels. The default is 40.
+            The desired top margin in pixels. Default is 40.
         marginBottom : int , optional
-            The desired bottom margin in pixels. The default is 0.
+            The desired bottom margin in pixels. Default is 0.
         renderer : str , optional
-            The desired plotly renderer. The default is "notebook".
+            The desired plotly renderer. Default is "notebook".
 
         Returns
         -------
@@ -2167,7 +2167,7 @@ class PyG:
         predicted : list
             The input list of predicts labels.
         normalized : bool , optional
-            If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. The default is False.
+            If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. Default is False.
 
         Returns
         -------
@@ -2220,7 +2220,7 @@ class PyG:
         model : Model
             The input trained model.
         nodeATTRKey : str , optional
-            The key used for node attributes. The default is "feat".
+            The key used for node attributes. Default is "feat".
     
         Returns
         -------
@@ -2253,7 +2253,7 @@ class PyG:
         model : Model
             The input trained model.
         nodeATTRKey : str , optional
-            The key used for node attributes. The default is "feat".
+            The key used for node attributes. Default is "feat".
 
         Returns
         -------
@@ -2295,7 +2295,7 @@ class PyG:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -2335,7 +2335,7 @@ class PyG:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -2365,7 +2365,7 @@ class PyG:
         predicted : list
             The input list of predicted values.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------

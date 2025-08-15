@@ -86,9 +86,9 @@ class Edge():
         edgeB : topologic Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         bracket : bool
-            If set to True, the returned angle is bracketed between 0 and 180. The default is False.
+            If set to True, the returned angle is bracketed between 0 and 180. Default is False.
 
         Returns
         -------
@@ -125,17 +125,17 @@ class Edge():
         edgeB : topologic Edge
             The second topologic Edge.
         length : float , optional
-            The desired length of the bisecting edge. The default is 1.0.
+            The desired length of the bisecting edge. Default is 1.0.
         placement : int , optional
             The desired placement of the bisecting edge.
             If set to 0, the bisecting edge centroid will be placed at the end vertex of the first edge.
             If set to 1, the bisecting edge start vertex will be placed at the end vertex of the first edge.
             If set to 2, the bisecting edge end vertex will be placed at the end vertex of the first edge.
-            If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. The default is 0.
+            If set to any number other than 0, 1, or 2, the bisecting edge centroid will be placed at the end vertex of the first edge. Default is 0.
         tolerance : float , optional
-            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an Edge can be created. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -217,11 +217,11 @@ class Edge():
         face : topologic_core.Face
             The input face
         origin : topologic_core.Vertex , optional
-            The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. The default is None.
+            The desired origin of the edge. If set to None, the centroid of the face is chosen as the origin of the edge. Default is None.
         length : float , optional
-            The desired length of the edge. The default is 1.
+            The desired length of the edge. Default is 1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -295,9 +295,9 @@ class Edge():
     #     edge : topologic_core.Edge
     #         The input edge.
     #     offset : float , optional
-    #         The desired offset. The default is 1.
+    #         The desired offset. Default is 1.
     #     tolerance : float , optional
-    #         The desired tolerance. The default is 0.0001.
+    #         The desired tolerance. Default is 0.0001.
 
     #     Returns
     #     -------
@@ -326,9 +326,9 @@ class Edge():
         vertexB : topologic_core.Vertex
             The second input vertex. This is considered the end vertex.
         tolerance : float , optional
-            The desired tolerance to decide if an Edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an Edge can be created. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -390,13 +390,13 @@ class Edge():
         origin : topologic_core.Vertex
             The origin (start vertex) of the edge.
         direction : list , optional
-            The desired direction vector of the edge. The default is [0,0,1] (pointing up in the Z direction)
+            The desired direction vector of the edge. Default is [0,0,1] (pointing up in the Z direction)
         length: float , optional
-            The desired length of edge. The default is 1.0.
+            The desired length of edge. Default is 1.0.
         tolerance : float , optional
-            The desired tolerance to decide if an edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an edge can be created. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -434,9 +434,9 @@ class Edge():
         vertices : list
             The input list of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
         tolerance : float , optional
-            The desired tolerance to decide if an edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an edge can be created. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -495,7 +495,7 @@ class Edge():
         cluster : topologic_core.Cluster
             The input cluster of vertices. The first item is considered the start vertex and the last item is considered the end vertex.
         tolerance : float , optional
-            The desired tolerance to decide if an edge can be created. The default is 0.0001.
+            The desired tolerance to decide if an edge can be created. Default is 0.0001.
 
         Returns
         -------
@@ -528,9 +528,9 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge. This edge will be used to extend edgeA.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -568,7 +568,7 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -632,7 +632,7 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -681,15 +681,15 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. The default is 1.
+            The offset distance. Default is 1.
         bothSides : bool , optional
-            If set to True, the edge will be extended by half the distance at each end. The default is False.
+            If set to True, the edge will be extended by half the distance at each end. Default is False.
         reverse : bool , optional
-            If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. The default is False.
+            If set to True, the edge will be extended from its start vertex. Otherwise, it will be extended from its end vertex. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -730,11 +730,11 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge. This edge will be used to extend edgeA.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -833,9 +833,9 @@ class Edge():
         edges : list
             The input list of edges.
         strict : bool , optional
-            If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
+            If set to True, the edge must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.
         tolerance : float , optional
-            The tolerance for computing if the input edge is identical to an edge from the list. The default is 0.0001.
+            The tolerance for computing if the input edge is identical to an edge from the list. Default is 0.0001.
 
         Returns
         -------
@@ -888,9 +888,9 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -952,9 +952,9 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1033,9 +1033,9 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1091,9 +1091,9 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1154,7 +1154,7 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1184,11 +1184,11 @@ class Edge():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the box. The default is None which results in the edge being placed at (0, 0, 0).
+            The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).
         length : float , optional
-            The desired length of the edge. The default is 1.0.
+            The desired length of the edge. Default is 1.0.
         direction : list , optional
-            The desired direction (vector) of the edge. The default is [1,0,0] (along the X-axis).
+            The desired direction (vector) of the edge. Default is [1,0,0] (along the X-axis).
         placement : str , optional
             The desired placement of the edge. The options are:
             1. "center" which places the center of the edge at the origin.
@@ -1196,7 +1196,7 @@ class Edge():
             3. "end" which places the end of the edge at the origin.
             The default is "center". It is case insensitive.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         Returns
         -------
         topologic_core.Edge
@@ -1249,7 +1249,7 @@ class Edge():
             The input edge.
         angle : float , optional
             The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-            by the angle value around the axis defined by the input edge. The default is 0.0.
+            by the angle value around the axis defined by the input edge. Default is 0.0.
 
         Returns
         -------
@@ -1275,19 +1275,19 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         length : float , optional
-            The desired length of the normal edge. The default is 1.0.
+            The desired length of the normal edge. Default is 1.0.
         u : float , optional
             The desired u parameter placement of the normal edge. A value of 0.0 places the normal edge
             at the start vertex of the input edge, a value of 0.5 places the normal edge
             at the midpoint of the input edge, and a value of 1.0 places the normal edge
-            at the end vertex of the input edge. The default is 0.5
+            at the end vertex of the input edge. Default is 0.5
         angle : float , optional
             The desired rotational offset angle in degrees for the normal edge. This rotates the normal edge
-            by the angle value around the axis defined by the input edge. The default is 0.0.
+            by the angle value around the axis defined by the input edge. Default is 0.0.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1389,11 +1389,11 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         useEndVertex : bool , optional
-            If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. The default is False.
+            If True the normalized edge end vertex will be placed at the end vertex of the input edge. Otherwise, the normalized edge start vertex will be placed at the start vertex of the input edge. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1427,9 +1427,9 @@ class Edge():
         vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1464,9 +1464,9 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1492,13 +1492,13 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         length : float , optional
-            The desired length of the edge. The default is 1.
+            The desired length of the edge. Default is 1.
         bothSides : bool , optional
-            If set to True, the edge will be offset symmetrically from each end. The default is True.
+            If set to True, the edge will be offset symmetrically from each end. Default is True.
         reverse : bool , optional
-            If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. The default is False.
+            If set to True, the edge will be offset from its start vertex. Otherwise, it will be offset from its end vertex. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1554,15 +1554,15 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. The default is 0.
+            The offset distance. Default is 0.
         bothSides : bool , optional
-            If set to True, the edge will be trimmed by half the distance at each end. The default is False.
+            If set to True, the edge will be trimmed by half the distance at each end. Default is False.
         reverse : bool , optional
-            If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. The default is False.
+            If set to True, the edge will be trimmed from its start vertex. Otherwise, it will be trimmed from its end vertex. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1606,11 +1606,11 @@ class Edge():
         edgeB : topologic_core.Edge
             The second input edge. This edge will be used to trim edgeA.
         reverse : bool , optional
-            If set to True, which segment is preserved is reversed. Otherwise, it is not. The default is False.
+            If set to True, which segment is preserved is reversed. Otherwise, it is not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1678,13 +1678,13 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         distance : float , optional
-            The offset distance. The default is 0.
+            The offset distance. Default is 0.
         origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6
+            The desired length of the mantissa. Default is 6
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1723,7 +1723,7 @@ class Edge():
         edge : topologic_core.Edge
             The input edge.
         u : float , optional
-            The *u* parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.
+            The *u* parameter along the input topologic Edge. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.
 
         Returns
         -------

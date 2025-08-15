@@ -59,25 +59,25 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the box. The default is None which results in the box being placed at (0, 0, 0).
+            The origin location of the box. Default is None which results in the box being placed at (0, 0, 0).
         width : float , optional
-            The width of the box. The default is 1.
+            The width of the box. Default is 1.
         length : float , optional
-            The length of the box. The default is 1.
+            The length of the box. Default is 1.
         height : float , optional
             The height of the box.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int, optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the box. The default is [0, 0, 1].
+            The vector representing the up direction of the box. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the box. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -100,11 +100,11 @@ class CellComplex():
         cells : list
             The list of input cells.
         transferDictionaries : bool , optional
-            If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. The default is False.
+            If set to True, any dictionaries in the cells are transferred to the CellComplex. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -176,7 +176,7 @@ class CellComplex():
         cluster : topologic_core.Cluster
             The input cluster of cells.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -203,9 +203,9 @@ class CellComplex():
         faces : list
             The input faces.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -270,7 +270,7 @@ class CellComplex():
         cluster : topologic_core.Cluster
             The input cluster of faces.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -296,9 +296,9 @@ class CellComplex():
         wires : list
             The input list of wires. The list should contain a minimum of two wires. All wires must have the same number of edges.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -407,9 +407,9 @@ class CellComplex():
         cluster : topologic_core.Cluster
             The input cluster of wires.
         triangulate : bool , optional
-            If set to True, the faces will be triangulated. The default is True.
+            If set to True, the faces will be triangulated. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -461,21 +461,21 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the cube. The default is None which results in the cube being placed at (0, 0, 0).
+            The origin location of the cube. Default is None which results in the cube being placed at (0, 0, 0).
         size : float , optional
-            The size of the cube. The default is 1.
+            The size of the cube. Default is 1.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int, optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the cube. The default is [0, 0, 1].
+            The vector representing the up direction of the cube. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the cube. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -498,9 +498,9 @@ class CellComplex():
         cellComplex : topologic_core.CellComplex
             the input cellComplex.
         tiltAngle : float , optional
-            The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. The default is 10.
+            The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -643,7 +643,7 @@ class CellComplex():
             The input list of vertices to use for delaunay triangulation. If set to None, the algorithm uses the vertices of the input cell parameter.
             if both are set to none, a unit cube centered around the origin is used.
         tolerance : float , optional
-            the desired tolerance. The default is 0.0001.
+            the desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -835,15 +835,15 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the octahedron. The default is None which results in the octahedron being placed at (0, 0, 0).
+            The origin location of the octahedron. Default is None which results in the octahedron being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the octahedron's circumscribed sphere. The default is 0.5.
+            The radius of the octahedron's circumscribed sphere. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the octahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the octahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -899,27 +899,27 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the prism. The default is None which results in the prism being placed at (0, 0, 0).
+            The origin location of the prism. Default is None which results in the prism being placed at (0, 0, 0).
         width : float , optional
-            The width of the prism. The default is 1.
+            The width of the prism. Default is 1.
         length : float , optional
-            The length of the prism. The default is 1.
+            The length of the prism. Default is 1.
         height : float , optional
             The height of the prism.
         uSides : int , optional
-            The number of sides along the width. The default is 1.
+            The number of sides along the width. Default is 1.
         vSides : int , optional
-            The number of sides along the length. The default is 1.
+            The number of sides along the length. Default is 1.
         wSides : int , optional
-            The number of sides along the height. The default is 1.
+            The number of sides along the height. Default is 1.
         direction : list , optional
-            The vector representing the up direction of the prism. The default is [0, 0, 1].
+            The vector representing the up direction of the prism. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the prism. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -999,11 +999,11 @@ class CellComplex():
         cellComplex : topologic_core.CellComplex
             The input cellComplex.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1087,21 +1087,21 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the tetrahedron. The default is None which results in the tetrahedron being placed at (0, 0, 0).
+            The origin location of the tetrahedron. Default is None which results in the tetrahedron being placed at (0, 0, 0).
         length : float , optional
-            The length of the edge of the tetrahedron. The default is 1.
+            The length of the edge of the tetrahedron. Default is 1.
         depth : int , optional
             The desired maximum number of recrusive subdivision levels.
         direction : list , optional
-            The vector representing the up direction of the tetrahedron. The default is [0, 0, 1].
+            The vector representing the up direction of the tetrahedron. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the tetrahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1234,21 +1234,21 @@ class CellComplex():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the torus. The default is None which results in the torus being placed at (0, 0, 0).
+            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
         majorRadius : float , optional
-            The major radius of the torus. The default is 0.5.
+            The major radius of the torus. Default is 0.5.
         minorRadius : float , optional
-            The minor radius of the torus. The default is 0.1.
+            The minor radius of the torus. Default is 0.1.
         uSides : int , optional
-            The number of sides along the longitude of the torus. The default is 16.
+            The number of sides along the longitude of the torus. Default is 16.
         vSides : int , optional
-            The number of sides along the latitude of the torus. The default is 8.
+            The number of sides along the latitude of the torus. Default is 8.
         direction : list , optional
-            The vector representing the up direction of the torus. The default is [0, 0, 1].
+            The vector representing the up direction of the torus. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1319,7 +1319,7 @@ class CellComplex():
         cellComplex : topologic_core.CellComplex
             The input cellComplex.
         manitssa: int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1352,9 +1352,9 @@ class CellComplex():
             The input list of vertices to use for voronoi partitioning. If set to None, the algorithm uses the vertices of the input cell parameter.
             if both are set to none, a unit cube centered around the origin is used.
         cell : topologic_core.Cell , optional
-            The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. The default is None.
+            The input bounding cell. If set to None, an axes-aligned bounding cell is created from the list of vertices. Default is None.
         tolerance : float , optional
-            the desired tolerance. The default is 0.0001.
+            the desired tolerance. Default is 0.0001.
         
 
         Returns

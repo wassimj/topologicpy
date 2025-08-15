@@ -44,23 +44,23 @@ class Vertex():
             vertex : topologic_core.Vertex
                 The input vertex.
             xList : list , optional
-                The input numerical list of x-coordinates. The default is None.
+                The input numerical list of x-coordinates. Default is None.
             yList : list , optional
-                The input numerical list of y-coordinates. The default is None.
+                The input numerical list of y-coordinates. Default is None.
             zList : list , optional
-                The input numerical list of z-coordinates. The default is None.
+                The input numerical list of z-coordinates. Default is None.
             xEpsilon : float , optional
-                The desired tolerance for the x coordinates. The default is 0.0001.
+                The desired tolerance for the x coordinates. Default is 0.0001.
             yEpsilon : float , optional
-                The desired tolerance for the y coordinates. The default is 0.0001. 
+                The desired tolerance for the y coordinates. Default is 0.0001. 
             zEpsilon : float , optional
-                The desired tolerance for the z coordinates. The default is 0.0001. 
+                The desired tolerance for the z coordinates. Default is 0.0001. 
             transferDictionary : bool , optional
                 if set to True, the dictionary of the input vertex is transferred to the new vertex.
             mantissa : int , optional
-                The desired length of the mantissa. The default is 6.
+                The number of decimal places to round the result to. Default is 6.
             silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
             
             Returns
             -------
@@ -108,9 +108,9 @@ class Vertex():
         vertices : list
             The input list of vertices.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -162,11 +162,11 @@ class Vertex():
         vertices : list
             The input list of vertices.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
         silent : bool , optional
-            If set to True, no warnings or errors are printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -335,9 +335,9 @@ class Vertex():
         Parameters
         ----------
         x : float , optional
-            The X coordinate. The default is 0.
+            The X coordinate. Default is 0.
         y : float , optional
-            The Y coordinate. The default is 0.
+            The Y coordinate. Default is 0.
         z : float , optional
             The Z coordinate. The defaults is 0.
 
@@ -428,7 +428,7 @@ class Vertex():
         vertices : list
             The input list of vertices
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -481,9 +481,9 @@ class Vertex():
         vertex : topologic_core.Vertex
             The input vertex.
         outputType : string, optional
-            The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". The default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
+            The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". Default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -527,7 +527,7 @@ class Vertex():
         vertices : list
             The input list of vertices
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -568,7 +568,7 @@ class Vertex():
         hostTopology : topologic_core.Topology
             The input host topology in which to search for the connected super topologies.
         topologyType : str , optional
-            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. The default is None.
+            The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.
 
         Returns
         -------
@@ -597,9 +597,9 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology.
         includeCentroid : bool
-            If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. The default is True.
+            If set to True, the centroid of the input topology will be considered in finding the nearest subTopology to the input vertex. Default is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -737,11 +737,11 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology.
         exclusive : bool , optional
-            If set to True, return only the first found enclosing cell. The default is True.
+            If set to True, return only the first found enclosing cell. Default is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is enclosed in a cell. The default is 0.0001.
+            The tolerance for computing if the input vertex is enclosed in a cell. Default is 0.0001.
 
         Returns
         -------
@@ -814,9 +814,9 @@ class Vertex():
         vertices : list
             The input list of topologic vertices.
         mantissa : int , optional
-            The desired length of the mantissa for retrieving vertex coordinates. The default is 6.
+            The desired length of the mantissa for retrieving vertex coordinates. Default is 6.
         tolerance : float , optional
-            The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. The default is 0.0001.
+            The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. Default is 0.0001.
 
         Returns
         -------
@@ -892,7 +892,7 @@ class Vertex():
         hostTopology : topologic_core.Topology
             The input host topology to which the vertex belongs.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -930,9 +930,9 @@ class Vertex():
         vertices : list
             The input list of vertices.
         strict : bool , optional
-            If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. The default is False.
+            If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is identical to a vertex from the list. The default is 0.0001.
+            The tolerance for computing if the input vertex is identical to a vertex from the list. Default is 0.0001.
 
         Returns
         -------
@@ -971,13 +971,13 @@ class Vertex():
         vertices : list
             The input list of vertices.
         n : int , optional
-            The maximum number of nearest vertices to consider. The default is 3.
+            The maximum number of nearest vertices to consider. Default is 3.
         key : str , optional
-            The key that holds the value to be interpolated in the dictionaries of the vertices. The default is "intensity".
+            The key that holds the value to be interpolated in the dictionaries of the vertices. Default is "intensity".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. The default is 0.0001.
+            The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. Default is 0.0001.
 
         Returns
         -------
@@ -1082,7 +1082,7 @@ class Vertex():
         vertexB : topologic_core.Vertex
             The second input vertex.
         tolerance : float , optional
-            The tolerance for computing if the input vertexA is coincident with the input vertexB. The default is 0.0001.
+            The tolerance for computing if the input vertexA is coincident with the input vertexB. Default is 0.0001.
 
         Returns
         -------
@@ -1114,9 +1114,9 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is external to the input topology. The default is 0.0001.
+            The tolerance for computing if the input vertex is external to the input topology. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1148,9 +1148,9 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is internal to the input topology. The default is 0.0001.
+            The tolerance for computing if the input vertex is internal to the input topology. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1263,9 +1263,9 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is peripheral to the input topology. The default is 0.0001.
+            The tolerance for computing if the input vertex is peripheral to the input topology. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1364,9 +1364,9 @@ class Vertex():
         topology : topologic_core.Topology
             The input topology to be searched for the nearest vertex.
         useKDTree : bool , optional
-            if set to True, the algorithm will use a KDTree method to search for the nearest vertex. The default is True.
+            if set to True, the algorithm will use a KDTree method to search for the nearest vertex. Default is True.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -1508,11 +1508,11 @@ class Vertex():
         vertices : list
             A list of Topologic Vertex objects that are assumed to be co-planar.
         mantissa : int, optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float, optional
-           The desired tolerance. The default is 0.0001.
+           The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True no warnings or errors are printed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1575,7 +1575,7 @@ class Vertex():
         hostTopology : topologic_core.Topology
             The input host topology to which the vertex belongs.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1613,7 +1613,7 @@ class Vertex():
         face : topologic_core.Face
             The input face.
         mantissa: int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1690,7 +1690,7 @@ class Vertex():
         vertices : list
             The input list of vertices
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -1739,11 +1739,11 @@ class Vertex():
         Parameters
         ----------
         x : float , optional.
-            The desired x coordinate. The default is 0.
+            The desired x coordinate. Default is 0.
         y : float , optional.
-            The desired y coordinate. The default is 0.
+            The desired y coordinate. Default is 0.
         z : float , optional.
-            The desired z coordinate. The default is 0.
+            The desired z coordinate. Default is 0.
 
         Returns
         -------
@@ -1764,9 +1764,9 @@ class Vertex():
         face : topologic_core.Face
             The input face that receives the projection of the input vertex.
         direction : vector, optional
-            The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. The default is None.
+            The direction in which to project the input vertex unto the input face. If not specified, the direction of the projection is the normal of the input face. Default is None.
         mantissa : int , optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
 
         Returns
         -------
@@ -1828,15 +1828,15 @@ class Vertex():
         vertices : *topologicpy.Vertex
             One or more instances of a topologic vertex to be processed.
         minDistance : float , optional
-            The desired minimum distance. The default is 0.0001.
+            The desired minimum distance. Default is 0.0001.
         iterations : int
-            The number of iterations to run the repulsion simulation. The default is 100.
+            The number of iterations to run the repulsion simulation. Default is 100.
         strength : float
-            The force multiplier controlling how strongly vertices repel each other. The default is 0.1.
+            The force multiplier controlling how strongly vertices repel each other. Default is 0.1.
         tolerance : float
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. The default is False.
+                If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1920,9 +1920,9 @@ class Vertex():
         matrix : list
             The 4x4 transformation matrix.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1975,7 +1975,7 @@ class Vertex():
         vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -2001,7 +2001,7 @@ class Vertex():
         vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -2027,7 +2027,7 @@ class Vertex():
         vertex : topologic_core.Vertex
             The input vertex.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------

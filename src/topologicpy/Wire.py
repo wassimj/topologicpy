@@ -36,13 +36,13 @@ class Wire():
         endVertex : topologic_core.Vertex
             The end vertex of the arc.
         sides : int , optional
-            The number of sides of the arc. The default is 16.
+            The number of sides of the arc. Default is 16.
         close : bool , optional
             If set to True, the arc will be closed by connecting the last vertex to the first vertex. Otherwise, it will be left open.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -162,18 +162,18 @@ class Wire():
         edge : topologic_core.Edge
             The location of the start vertex of the arc.
         sagitta : float , optional
-            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. The default is 1.
+            The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 1.
         absolute : bool , optional
             If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge.
-            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. The default is True.
+            For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. Default is True.
         sides : int , optional
-            The number of sides of the arc. The default is 16.
+            The number of sides of the arc. Default is 16.
         close : bool , optional
             If set to True, the arc will be closed by connecting the last vertex to the first vertex. Otherwise, it will be left open.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -218,13 +218,13 @@ class Wire():
         optimize : int , optional
             If set to an integer from 1 (low optimization) to 10 (high optimization), the method will attempt to optimize the bounding rectangle so that it reduces its surface area.
             The minimum optimization number of 0 will result in an axis-aligned bounding rectangle.
-            A maximum optimization number of 10 will attempt to reduce the bounding rectangle's area by 50%. The default is 0.
+            A maximum optimization number of 10 will attempt to reduce the bounding rectangle's area by 50%. Default is 0.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -354,11 +354,11 @@ class Wire():
         edges : list
             The input list of edges.
         orient : bool , optional
-            If set to True the edges are oriented head to tail. Otherwise, they are not. The default is False.
+            If set to True the edges are oriented head to tail. Otherwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -399,7 +399,7 @@ class Wire():
         cluster : topologic_core.Cluster
             The input cluster of edges.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -424,29 +424,29 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         offset : float , optional
-            The desired offset distance. The default is 1.0.
+            The desired offset distance. Default is 1.0.
         offsetKey : str , optional
-            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. The default is "offset".
+            The edge dictionary key under which to find the offset value. If a value cannot be found, the offset input parameter value is used instead. Default is "offset".
         stepOffsetA : float , optional
-            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. The default is 0.
+            The amount to offset along the previous edge when transitioning between parallel edges with different offsets. Default is 0.
         stepOffsetB : float , optional
-            The amount to offset along the next edge when transitioning between parallel edges with different offsets. The default is 0.
+            The amount to offset along the next edge when transitioning between parallel edges with different offsets. Default is 0.
         stepOffsetKeyA : str , optional
-            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. The default is "stepOffsetA".
+            The vertex dictionary key under which to find the step offset A value. If a value cannot be found, the stepOffsetA input parameter value is used instead. Default is "stepOffsetA".
         stepOffsetKeyB : str , optional
-            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. The default is "stepOffsetB".
+            The vertex dictionary key under which to find the step offset B value. If a value cannot be found, the stepOffsetB input parameter value is used instead. Default is "stepOffsetB".
         reverse : bool , optional
-            If set to True, the direction of offsets is reversed. Otherwise, it is not. The default is False.
+            If set to True, the direction of offsets is reversed. Otherwise, it is not. Default is False.
         bisectors : bool , optional
-            If set to True, The bisectors (seams) edges will be included in the returned wire. The default is False.
+            If set to True, The bisectors (seams) edges will be included in the returned wire. Default is False.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. The default is False.
+            If set to True, the dictionaries of the original wire, its edges, and its vertices are transfered to the new wire. Otherwise, they are not. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance for shortest edge to remove). The default is 0.01. (This is set to a larger number as it was found to work better)
+            The desired epsilon (another form of tolerance for shortest edge to remove). Default is 0.01. (This is set to a larger number as it was found to work better)
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -682,21 +682,21 @@ class Wire():
         area : float
             The desired area of the created wire.
         offsetKey : str , optional
-            The edge dictionary key under which to store the offset value. The default is "offset".
+            The edge dictionary key under which to store the offset value. Default is "offset".
         minOffsetKey : str , optional
-            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. The default is "minOffset".
+            The edge dictionary key under which to find the desired minimum edge offset value. If a value cannot be found, the defaultMinOffset input parameter value is used instead. Default is "minOffset".
         maxOffsetKey : str , optional
-            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. The default is "maxOffset".
+            The edge dictionary key under which to find the desired maximum edge offset value. If a value cannot be found, the defaultMaxOffset input parameter value is used instead. Default is "maxOffset".
         defaultMinOffset : float , optional
-            The desired minimum edge offset distance. The default is 0.
+            The desired minimum edge offset distance. Default is 0.
         defaultMaxOffset : float , optional
-            The desired maximum edge offset distance. The default is 1.
+            The desired maximum edge offset distance. Default is 1.
         maxIterations: int , optional
-            The desired maximum number of iterations to attempt to converge on a solution. The default is 1.
+            The desired maximum number of iterations to attempt to converge on a solution. Default is 1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         numWorkers : int , optional
             Number of workers run in parallel to process. If you set it to 1, no parallel processing will take place.
             The default is None which causes the algorithm to use twice the number of cpu cores in the host computer.
@@ -834,11 +834,11 @@ class Wire():
         vertices : list
             the input list of vertices.
         close : bool , optional
-            If True the last vertex will be connected to the first vertex to close the wire. The default is True.
+            If True the last vertex will be connected to the first vertex to close the wire. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -908,11 +908,11 @@ class Wire():
         cluster : topologic_core.cluster
             the input cluster of vertices.
         close : bool , optional
-            If True the last vertex will be connected to the first vertex to close the wire. The default is True.
+            If True the last vertex will be connected to the first vertex to close the wire. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001
+            The desired tolerance. Default is 0.0001
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -937,23 +937,23 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the circle. The default is None which results in the circle being placed at (0, 0, 0).
+            The location of the origin of the circle. Default is None which results in the circle being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the circle. The default is 0.5.
+            The radius of the circle. Default is 0.5.
         sides : int , optional
-            The desired number of sides of the circle. The default is 16.
+            The desired number of sides of the circle. Default is 16.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the circle. The default is 0.
+            The angle in degrees from which to start creating the arc of the circle. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the circle. The default is 360.
+            The angle in degrees at which to end creating the arc of the circle. Default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1028,9 +1028,9 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
                 
         Returns
         -------
@@ -1098,11 +1098,11 @@ class Wire():
         k : int, optional
             The number of nearest neighbors to consider for each point when building the hull. 
             Must be at least 3 for the algorithm to function correctly. Increasing `k` will produce a smoother, 
-            less concave hull, while decreasing `k` may yield a more detailed, concave shape. The default is 3.
+            less concave hull, while decreasing `k` may yield a more detailed, concave shape. Default is 3.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
                 
         Returns
         -------
@@ -1309,9 +1309,9 @@ class Wire():
         topology : topologic_core.Topology
             The input topology.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
                 
         Returns
         -------
@@ -1453,27 +1453,27 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the Cross-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the Cross-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the Cross-shape. The default is 1.0.
+            The overall width of the Cross-shape. Default is 1.0.
         length : float , optional
-            The overall length of the Cross-shape. The default is 1.0.
+            The overall length of the Cross-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the Cross-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the Cross-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the Cross-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the Cross-shape. Default is 0.25.
         c : float , optional
-            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the Y-axis.
+            The distance of the vertical symmetry axis measured from the left side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the Y-axis.
         d : float , optional
-            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. The default is None which results in the Cross-shape being symmetrical on the X-axis.
+            The distance of the horizontal symmetry axis measured from the bottom side of the Cross-shape. Default is None which results in the Cross-shape being symmetrical on the X-axis.
         direction : list , optional
-            The vector representing the up direction of the Cross-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the Cross-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the Cross-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1639,25 +1639,25 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the C-shape. The default is None which results in the C-shape being placed at (0, 0, 0).
+            The location of the origin of the C-shape. Default is None which results in the C-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the C-shape. The default is 1.0.
+            The overall width of the C-shape. Default is 1.0.
         length : float , optional
-            The overall length of the C-shape. The default is 1.0.
+            The overall length of the C-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the C-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the C-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the lower horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the lower horizontal arm of the C-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the upper horizontal arm of the C-shape. The default is 0.25.
+            The vertical thickness of the upper horizontal arm of the C-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the C-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the C-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the C-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1779,9 +1779,9 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         maxVertices : int , optional
-            The maximum number of vertices of the circuits to be searched. The default is 4.
+            The maximum number of vertices of the circuits to be searched. Default is 4.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -1917,17 +1917,17 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the tile. The default is None which results in the tiles first vertex being placed at (0, 0, 0).
+            The location of the origin of the tile. Default is None which results in the tiles first vertex being placed at (0, 0, 0).
         radius : float , optional
-            The radius of the hexagon determining the size of the tile. The default is 0.5.
+            The radius of the hexagon determining the size of the tile. Default is 0.5.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the hexagon determining the location of the tile. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         Returns
         -------
         topologic_core.Wire
@@ -1982,40 +1982,40 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
+            The location of the origin of the ellipse. Default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by which the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. Default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
             3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
             4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
         width : float , optional
-            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+            The width of the ellipse. Default is 2.0. This is considered if the inputMode is 1.
         length : float , optional
-            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+            The length of the ellipse. Default is 1.0. This is considered if the inputMode is 1.
         focalLength : float , optional
-            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+            The focal length of the ellipse. Default is 0.866025. This is considered if the inputMode is 2 or 3.
         eccentricity : float , optional
-            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+            The eccentricity of the ellipse. Default is 0.866025. This is considered if the inputMode is 2.
         majorAxisLength : float , optional
-            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+            The length of the major axis of the ellipse. Default is 1.0. This is considered if the inputMode is 4.
         minorAxisLength : float , optional
-            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+            The length of the minor axis of the ellipse. Default is 0.5. This is considered if the inputMode is 3 or 4.
         sides : int , optional
-            The number of sides of the ellipse. The default is 32.
+            The number of sides of the ellipse. Default is 32.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+            The angle in degrees from which to start creating the arc of the ellipse. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+            The angle in degrees at which to end creating the arc of the ellipse. Default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2034,40 +2034,40 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the ellipse. The default is None which results in the ellipse being placed at (0, 0, 0).
+            The location of the origin of the ellipse. Default is None which results in the ellipse being placed at (0, 0, 0).
         inputMode : int , optional
-            The method by which the ellipse is defined. The default is 1.
+            The method by which the ellipse is defined. Default is 1.
             Based on the inputMode value, only the following inputs will be considered. The options are:
             1. Width and Length (considered inputs: width, length)
             2. Focal Length and Eccentricity (considered inputs: focalLength, eccentricity)
             3. Focal Length and Minor Axis Length (considered inputs: focalLength, minorAxisLength)
             4. Major Axis Length and Minor Axis Length (considered input: majorAxisLength, minorAxisLength)
         width : float , optional
-            The width of the ellipse. The default is 2.0. This is considered if the inputMode is 1.
+            The width of the ellipse. Default is 2.0. This is considered if the inputMode is 1.
         length : float , optional
-            The length of the ellipse. The default is 1.0. This is considered if the inputMode is 1.
+            The length of the ellipse. Default is 1.0. This is considered if the inputMode is 1.
         focalLength : float , optional
-            The focal length of the ellipse. The default is 0.866025. This is considered if the inputMode is 2 or 3.
+            The focal length of the ellipse. Default is 0.866025. This is considered if the inputMode is 2 or 3.
         eccentricity : float , optional
-            The eccentricity of the ellipse. The default is 0.866025. This is considered if the inputMode is 2.
+            The eccentricity of the ellipse. Default is 0.866025. This is considered if the inputMode is 2.
         majorAxisLength : float , optional
-            The length of the major axis of the ellipse. The default is 1.0. This is considered if the inputMode is 4.
+            The length of the major axis of the ellipse. Default is 1.0. This is considered if the inputMode is 4.
         minorAxisLength : float , optional
-            The length of the minor axis of the ellipse. The default is 0.5. This is considered if the inputMode is 3 or 4.
+            The length of the minor axis of the ellipse. Default is 0.5. This is considered if the inputMode is 3 or 4.
         sides : int , optional
-            The number of sides of the ellipse. The default is 32.
+            The number of sides of the ellipse. Default is 32.
         fromAngle : float , optional
-            The angle in degrees from which to start creating the arc of the ellipse. The default is 0.
+            The angle in degrees from which to start creating the arc of the ellipse. Default is 0.
         toAngle : float , optional
-            The angle in degrees at which to end creating the arc of the ellipse. The default is 360.
+            The angle in degrees at which to end creating the arc of the ellipse. Default is 360.
         close : bool , optional
             If set to True, arcs will be closed by connecting the last vertex to the first vertex. Otherwise, they will be left open.
         direction : list , optional
-            The vector representing the up direction of the ellipse. The default is [0, 0, 1].
+            The vector representing the up direction of the ellipse. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the ellipse. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2203,9 +2203,9 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         mantissa : int , optional
-            The length of the desired mantissa. The default is 6.
+            The length of the desired mantissa. Default is 6.
         
         Returns
         -------
@@ -2264,13 +2264,13 @@ class Wire():
         radius : float
             The desired radius of the fillet.
         radiusKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. The default is None.
+            If specified, the dictionary of the vertices will be queried for this key to specify the desired fillet radius. Default is None.
         sides : int , optional
-            The number of sides (segments) of the fillet. The default is 16.
+            The number of sides (segments) of the fillet. Default is 16.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2384,9 +2384,9 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         
         Returns
         -------
@@ -2444,18 +2444,18 @@ class Wire():
         wireB : topologic_core.Wire
             The second input wire.
         n : int , optional
-            The number of intermediate wires to create. The default is 5.
+            The number of intermediate wires to create. Default is 5.
         outputType : str , optional
-            The desired type of output. The options are case insensitive. The default is "contour". The options are:
+            The desired type of output. The options are case insensitive. Default is "contour". The options are:
                 - "Default" or "Contours" (wires are not connected)
                 - "Raster or "Zigzag" or "Toolpath" (the wire ends are connected to create a continuous path)
                 - "Grid" (the wire ends are connected to create a grid). 
         mapping : str , optional
-            The desired type of mapping for wires with different number of vertices. It is case insensitive. The default is "default". The options are:
+            The desired type of mapping for wires with different number of vertices. It is case insensitive. Default is "default". The options are:
                 - "Default" or "Repeat" which repeats the last vertex of the wire with the least number of vertices
                 - "Nearest" which maps the vertices of one wire to the nearest vertex of the next wire creating a list of equal number of vertices.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -2563,7 +2563,7 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2611,7 +2611,7 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2649,9 +2649,9 @@ class Wire():
         wireB : topologic_core.Wire
             The second input wire.
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -2757,29 +2757,29 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the I-shape. The default is None which results in the I-shape being placed at (0, 0, 0).
+            The location of the origin of the I-shape. Default is None which results in the I-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the I-shape. The default is 1.0.
+            The overall width of the I-shape. Default is 1.0.
         length : float , optional
-            The overall length of the I-shape. The default is 1.0.
+            The overall length of the I-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the central vertical arm of the I-shape. The default is 0.25.
+            The hortizontal thickness of the central vertical arm of the I-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the lower horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the lower horizontal arm of the I-shape. Default is 0.25.
         c : float , optional
-            The vertical thickness of the upper horizontal arm of the I-shape. The default is 0.25.
+            The vertical thickness of the upper horizontal arm of the I-shape. Default is 0.25.
         flipHorizontal : bool , optional
-            if set to True, the shape is flipped horizontally. The default is False.
+            if set to True, the shape is flipped horizontally. Default is False.
         flipVertical : bool , optional
-            if set to True, the shape is flipped vertically. The default is False.
+            if set to True, the shape is flipped vertically. Default is False.
         direction : list , optional
-            The vector representing the up direction of the I-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the I-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the I-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2905,7 +2905,7 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -2939,13 +2939,13 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The origin location of the box. The default is None which results in the edge being placed at (0, 0, 0).
+            The origin location of the box. Default is None which results in the edge being placed at (0, 0, 0).
         length : float , optional
-            The desired length of the edge. The default is 1.0.
+            The desired length of the edge. Default is 1.0.
         direction : list , optional
-            The desired direction (vector) of the edge. The default is [1, 0, 0] (along the X-axis).
+            The desired direction (vector) of the edge. Default is [1, 0, 0] (along the X-axis).
         sides : int , optional
-            The desired number of sides/segments. The minimum number of sides is 2. The default is 2.
+            The desired number of sides/segments. The minimum number of sides is 2. Default is 2.
         placement : str , optional
             The desired placement of the edge. The options are:
             1. "center" which places the center of the edge at the origin.
@@ -2953,7 +2953,7 @@ class Wire():
             3. "end" which places the end of the edge at the origin.
             The default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3009,23 +3009,23 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the L-shape. The default is None which results in the L-shape being placed at (0, 0, 0).
+            The location of the origin of the L-shape. Default is None which results in the L-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the L-shape. The default is 1.0.
+            The overall width of the L-shape. Default is 1.0.
         length : float , optional
-            The overall length of the L-shape. The default is 1.0.
+            The overall length of the L-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the L-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the L-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the L-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the L-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the L-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the L-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the L-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3143,11 +3143,11 @@ class Wire():
         offset : float
             The desired offset length of the miter along each edge.
         offsetKey : str , optional
-            If specified, the dictionary of the vertices will be queried for this key to specify the desired offset length. The default is None.
+            If specified, the dictionary of the vertices will be queried for this key to specify the desired offset length. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3247,9 +3247,9 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         outputType : string , optional
-            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. The default is "xyz".
+            The string defining the desired output. This can be any subset or permutation of "xyz". It is case insensitive. Default is "xyz".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -3358,9 +3358,9 @@ class Wire():
         vertexA : topologic_core.Vertex
             The desired start vertex of the wire.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the original wire are transfered to the new wire. Otherwise, they are not. The default is False.
+            If set to True, the dictionaries of the original wire are transfered to the new wire. Otherwise, they are not. Default is False.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3432,11 +3432,11 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         origin : topologic_core.Vertex , optional
-            The desired origin of the plane unto which the planar wire will be projected. If set to None, the centroid of the input wire will be chosen. The default is None.
+            The desired origin of the plane unto which the planar wire will be projected. If set to None, the centroid of the input wire will be chosen. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
 
         Returns
         -------
@@ -3492,11 +3492,11 @@ class Wire():
         face : topologic_core.Face
             The face unto which to project the input wire.
         direction : list, optional
-            The vector representing the direction of the projection. If None, the reverse vector of the receiving face normal will be used. The default is None.
+            The vector representing the direction of the projection. If None, the reverse vector of the receiving face normal will be used. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3551,21 +3551,21 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the rectangle. The default is None which results in the rectangle being placed at (0, 0, 0).
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
         width : float , optional
-            The width of the rectangle. The default is 1.0.
+            The width of the rectangle. Default is 1.0.
         length : float , optional
-            The length of the rectangle. The default is 1.0.
+            The length of the rectangle. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the rectangle. The default is [0, 0, 1].
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3631,11 +3631,11 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         angTolerance : float, optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float, optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3724,13 +3724,13 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         normalize : bool , optional
-            If set to True, the lengths in the list are normalized so that the shortest edge has a length of 1. the default is True.
+            If set to True, the lengths in the list are normalized so that the shortest edge has a length of 1. Default is True.
         rotate : bool , optional
             If set to True, the list is rotated such that the shortest edge appears first.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -3806,11 +3806,11 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         transferDictionaries : bool , optional
-            If set to True the dictionaries of the input wire are transferred to the new wire. Othwerwise, they are not. The default is False.
+            If set to True the dictionaries of the input wire are transferred to the new wire. Othwerwise, they are not. Default is False.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool, optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3858,11 +3858,11 @@ class Wire():
         face : topologic_core.Face
             The input face.
         angle : float , optioal
-            The desired angle in degrees of the roof. The default is 45.
+            The desired angle in degrees of the roof. Default is 45.
         boundary : bool , optional
-            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
@@ -3985,7 +3985,7 @@ class Wire():
             between any point and the current line segment; points falling within this distance are discarded.
             The default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
             
         Returns
         -------
@@ -4152,9 +4152,9 @@ class Wire():
         face : topologic_core.Face
             The input face.
         boundary : bool , optional
-            If set to True the original boundary is returned as part of the roof. Otherwise it is not. The default is True.
+            If set to True the original boundary is returned as part of the roof. Otherwise it is not. Default is True.
         tolerance : float , optional
-            The desired tolerance. The default is 0.001. (This is set to a larger number as it was found to work better)
+            The desired tolerance. Default is 0.001. (This is set to a larger number as it was found to work better)
 
         Returns
         -------
@@ -4174,27 +4174,27 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the spiral. The default is None which results in the spiral being placed at (0, 0, 0).
+            The location of the origin of the spiral. Default is None which results in the spiral being placed at (0, 0, 0).
         radiusA : float , optional
-            The initial radius of the spiral. The default is 0.05.
+            The initial radius of the spiral. Default is 0.05.
         radiusB : float , optional
-            The final radius of the spiral. The default is 0.5.
+            The final radius of the spiral. Default is 0.5.
         height : float , optional
-            The height of the spiral. The default is 1.
+            The height of the spiral. Default is 1.
         turns : int , optional
-            The number of turns of the spiral. The default is 10.
+            The number of turns of the spiral. Default is 10.
         sides : int , optional
-            The number of sides of one full turn in the spiral. The default is 36.
+            The number of sides of one full turn in the spiral. Default is 36.
         clockwise : bool , optional
-            If set to True, the spiral will be oriented in a clockwise fashion. Otherwise, it will be oriented in an anti-clockwise fashion. The default is False.
+            If set to True, the spiral will be oriented in a clockwise fashion. Otherwise, it will be oriented in an anti-clockwise fashion. Default is False.
         reverse : bool , optional
-            If set to True, the spiral will increase in height from the center to the circumference. Otherwise, it will increase in height from the conference to the center. The default is False.
+            If set to True, the spiral will increase in height from the center to the circumference. Otherwise, it will increase in height from the conference to the center. Default is False.
         direction : list , optional
-            The vector representing the up direction of the spiral. The default is [0, 0, 1].
+            The vector representing the up direction of the spiral. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the spiral. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the spiral. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         Returns
         -------
         topologic_core.Wire
@@ -4373,15 +4373,15 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the square. The default is None which results in the square being placed at (0, 0, 0).
+            The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
-            The size of the square. The default is 1.0.
+            The size of the square. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the square. The default is [0, 0, 1].
+            The vector representing the up direction of the square. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the square. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4399,25 +4399,25 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the squircle. The default is None which results in the squircle being placed at (0, 0, 0).
+            The location of the origin of the squircle. Default is None which results in the squircle being placed at (0, 0, 0).
         radius : float , optional
-            The desired radius of the squircle. The default is 0.5.
+            The desired radius of the squircle. Default is 0.5.
         sides : int , optional
-            The desired number of sides of the squircle. The default is 121.
+            The desired number of sides of the squircle. Default is 121.
         a : float , optional
             The "a" factor affects the x position of the points to interpolate between a circle and a square.
-            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. Default is 2.0.
         b : float , optional
             The "b" factor affects the y position of the points to interpolate between a circle and a square.
-            A value of 1 will create a circle. Higher values will create a more square-like shape. The default is 2.0.
+            A value of 1 will create a circle. Higher values will create a more square-like shape. Default is 2.0.
         direction : list , optional
-            The vector representing the up direction of the circle. The default is [0, 0, 1].
+            The vector representing the up direction of the circle. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the circle. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         angTolerance : float , optional
-            The desired angular tolerance. The default is 0.1.
+            The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4483,19 +4483,19 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the star. The default is None which results in the star being placed at (0, 0, 0).
+            The location of the origin of the star. Default is None which results in the star being placed at (0, 0, 0).
         radiusA : float , optional
-            The outer radius of the star. The default is 1.0.
+            The outer radius of the star. Default is 1.0.
         radiusB : float , optional
-            The outer radius of the star. The default is 0.4.
+            The outer radius of the star. Default is 0.4.
         rays : int , optional
-            The number of star rays. The default is 8.
+            The number of star rays. Default is 8.
         direction : list , optional
-            The vector representing the up direction of the star. The default is [0, 0, 1].
+            The vector representing the up direction of the star. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the star. This can be "center", "lowerleft", "upperleft", "lowerright", or "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4617,23 +4617,23 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the trapezoid. The default is None which results in the trapezoid being placed at (0, 0, 0).
+            The location of the origin of the trapezoid. Default is None which results in the trapezoid being placed at (0, 0, 0).
         widthA : float , optional
-            The width of the bottom edge of the trapezoid. The default is 1.0.
+            The width of the bottom edge of the trapezoid. Default is 1.0.
         widthB : float , optional
-            The width of the top edge of the trapezoid. The default is 0.75.
+            The width of the top edge of the trapezoid. Default is 0.75.
         offsetA : float , optional
-            The offset of the bottom edge of the trapezoid. The default is 0.0.
+            The offset of the bottom edge of the trapezoid. Default is 0.0.
         offsetB : float , optional
-            The offset of the top edge of the trapezoid. The default is 0.0.
+            The offset of the top edge of the trapezoid. Default is 0.0.
         length : float , optional
-            The length of the trapezoid. The default is 1.0.
+            The length of the trapezoid. Default is 1.0.
         direction : list , optional
-            The vector representing the up direction of the trapezoid. The default is [0, 0, 1].
+            The vector representing the up direction of the trapezoid. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the trapezoid. This can be "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -4701,23 +4701,23 @@ class Wire():
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the T-shape. The default is None which results in the T-shape being placed at (0, 0, 0).
+            The location of the origin of the T-shape. Default is None which results in the T-shape being placed at (0, 0, 0).
         width : float , optional
-            The overall width of the T-shape. The default is 1.0.
+            The overall width of the T-shape. Default is 1.0.
         length : float , optional
-            The overall length of the T-shape. The default is 1.0.
+            The overall length of the T-shape. Default is 1.0.
         a : float , optional
-            The hortizontal thickness of the vertical arm of the T-shape. The default is 0.25.
+            The hortizontal thickness of the vertical arm of the T-shape. Default is 0.25.
         b : float , optional
-            The vertical thickness of the horizontal arm of the T-shape. The default is 0.25.
+            The vertical thickness of the horizontal arm of the T-shape. Default is 0.25.
         direction : list , optional
-            The vector representing the up direction of the T-shape. The default is [0, 0, 1].
+            The vector representing the up direction of the T-shape. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. The default is "center".
+            The description of the placement of the origin of the T-shape. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -4837,11 +4837,11 @@ class Wire():
         vertex : topologic_core.Vertex
             The input vertex
         origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input wire. The default is None.
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input wire. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -4906,11 +4906,11 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         distance : float , optional
-            The offset distance. The default is 0.
+            The offset distance. Default is 0.
         origin : topologic_core.Vertex , optional
-            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. The default is None.
+            The origin of the offset distance. If set to None, the origin will be set to the start vertex of the input edge. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         
         Returns
         -------
@@ -4978,7 +4978,7 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         u : float , optional
-            The *u* parameter along the input topologic Wire. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. The default is 0.
+            The *u* parameter along the input topologic Wire. A parameter of 0 returns the start vertex. A parameter of 1 returns the end vertex. Default is 0.
 
         Returns
         -------

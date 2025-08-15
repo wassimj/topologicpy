@@ -50,13 +50,13 @@ class CSG():
         topology : topologic_core.Topology
             The input topology..
         matrix : list , optional
-            The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.
+            The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -115,13 +115,13 @@ class CSG():
         b : topologic_core.Vertex
             The second input vertex.
         matrix : list , optional
-            The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.
+            The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -179,11 +179,11 @@ class CSG():
         vertexB : topologic_core.Vertex
             The second input vertex.
         matrix : list , optional
-            The desired 4X4 transformation matrix to apply to the result before any further operations. The default is None.
+            The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -248,7 +248,7 @@ class CSG():
         graph : topologic_core.Graph
             The input graph.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -350,15 +350,15 @@ class CSG():
         graph : topologic_core.Graph
             The input graph.
         xOffset : float , optional
-            An additional x offset. The default is 0.
+            An additional x offset. Default is 0.
         yOffset : float , optional
-            An additional y offset. The default is 0.
+            An additional y offset. Default is 0.
         zOffset : float , optional
-            An additional z offset. The default is 0.
+            An additional z offset. Default is 0.
         scale : float , optional
-            A desired scale to resize the placed topologies. The default is 1.
+            A desired scale to resize the placed topologies. Default is 1.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. The default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------

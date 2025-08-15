@@ -142,13 +142,13 @@ class ShapeGrammar:
         output : topologic_core.Topology
             The output topology of the rule.
         title : str , optional
-            The title of the rule. The default is "Untitled Rule"
+            The title of the rule. Default is "Untitled Rule"
         description : str, optional
-            The description of the rule. The default is "".
+            The description of the rule. Default is "".
         operation : dict , optional
-            The desired rule operation. See Rule Operations. If set to None, the replacement rule is applied. The default is None.
+            The desired rule operation. See Rule Operations. If set to None, the replacement rule is applied. Default is None.
         matrix : list
-            The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. The default is None.
+            The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. Default is None.
         silent : bool, optional
             If set to True, error and warning messages are suppressed. Default is False.
         
@@ -203,7 +203,7 @@ class ShapeGrammar:
         topology : topologic_core.Topology
             The input topology
         keys : list , optional
-            The list of dictionary keys to semantically match the rules. The default is None which means dictionaries are not considered.
+            The list of dictionary keys to semantically match the rules. Default is None which means dictionaries are not considered.
         silent : bool, optional
             If set to True, error and warning messages are suppressed. Default is False.
         
@@ -250,9 +250,9 @@ class ShapeGrammar:
         topology : topologic_core.Topology
             The input topology
         rule : dict , optional
-            The desired rule to apply. The default is None.
+            The desired rule to apply. Default is None.
         matrix : list
-            The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. The default is None.
+            The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. Default is None.
         mantissa : int, optional
             Decimal precision. Default is 6.
         tolerance : float, optional

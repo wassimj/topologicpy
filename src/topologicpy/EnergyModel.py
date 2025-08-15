@@ -139,38 +139,38 @@ class EnergyModel:
         building : topologic_core.CellComplex or topologic_core.Cell
             The input building topology.
         shadingSurfaces : topologic_core.Topology , optional
-            The input topology for shading surfaces. The default is None.
+            The input topology for shading surfaces. Default is None.
         osModelPath : str , optional
-            The path to the template OSM file. The default is "./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm".
+            The path to the template OSM file. Default is "./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm".
         weatherFilePath : str , optional
-            The input energy plus weather (epw) file. The default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw".
+            The input energy plus weather (epw) file. Default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw".
         designDayFilePath : str , optional
-            The input design day (ddy) file path. The default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy",
+            The input design day (ddy) file path. Default is "./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy",
         floorLevels : list , optional
             The list of floor level Z heights including the lowest most and the highest most levels. If set to None, this method will attempt to
             find the floor levels from the horizontal faces of the input topology
         buildingName : str , optional
-            The desired name of the building. The default is "TopologicBuilding".
+            The desired name of the building. Default is "TopologicBuilding".
         buildingType : str , optional
-            The building type. The default is "Commercial".
+            The building type. Default is "Commercial".
         defaultSpaceType : str , optional
-            The default space type to apply to spaces that do not have a type assigned in their dictionary. The default is "189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8".
+            The default space type to apply to spaces that do not have a type assigned in their dictionary. Default is "189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8".
         northAxis : float , optional
-            The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. The default is 0.0.
+            The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. Default is 0.0.
         glazingRatio : float , optional
-            The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. The default is 0.
+            The glazing ratio (ratio of windows to wall) to use for exterior vertical walls that do not have apertures. If you do not wish to use a glazing ratio, set it to 0. Default is 0.
         coolingTemp : float , optional
-            The desired temperature in degrees at which the cooling system should activate. The default is 25.0.
+            The desired temperature in degrees at which the cooling system should activate. Default is 25.0.
         heatingTemp : float , optional
-            The desired temperature in degrees at which the heating system should activate. The default is 25.0..
+            The desired temperature in degrees at which the heating system should activate. Default is 25.0..
         spaceNameKey : str , optional
-            The dictionary key to use to find the space name value. The default is "Name".
+            The dictionary key to use to find the space name value. Default is "Name".
         spaceTypeKey : str , optional
-            The dictionary key to use to find the space type value. The default is "Type".
+            The dictionary key to use to find the space type value. Default is "Type".
         mantissa : int , optional
-            The desired length of the mantissa. The default is 6.
+            The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
@@ -548,7 +548,7 @@ class EnergyModel:
         path : str
             The path for saving the file.
         overwrite : bool, optional
-            If set to True any file with the same name is over-written. The default is False.
+            If set to True any file with the same name is over-written. Default is False.
 
         Returns
         -------
@@ -599,7 +599,7 @@ class EnergyModel:
         path : str
             The path for saving the file.
         overwrite : bool, optional
-            If set to True any file with the same name is over-written. The default is False.
+            If set to True any file with the same name is over-written. Default is False.
 
         Returns
         -------
@@ -690,17 +690,17 @@ class EnergyModel:
         model : openstudio.openstudiomodelcore.Model
             The input OSM model.
         reportName : str , optional
-            The input report name. The default is "HVACSizingSummary".
+            The input report name. Default is "HVACSizingSummary".
         reportForString : str, optional
-            The input report for string. The default is "Entire Facility".
+            The input report for string. Default is "Entire Facility".
         tableName : str , optional
-            The input table name. The default is "Zone Sensible Cooling".
+            The input table name. Default is "Zone Sensible Cooling".
         columnName : str , optional
-            The input column name. The default is "Calculated Design Load".
+            The input column name. Default is "Calculated Design Load".
         rowNames : list , optional
-            The input list of row names. The default is [].
+            The input list of row names. Default is [].
         units : str , optional
-            The input units. The default is "W".
+            The input units. Default is "W".
 
         Returns
         -------
@@ -786,7 +786,7 @@ class EnergyModel:
         outputFolder : str
             The path to the output folder.
         removeFiles : bool , optional
-            If set to True, the working files are removed at the end of the process. The default is False.
+            If set to True, the working files are removed at the end of the process. Default is False.
 
         Returns
         -------
@@ -1012,7 +1012,7 @@ class EnergyModel:
         model : openstudio.openstudiomodelcore.Model
             The input OSM model.
         tolerance : float , optional
-            The desired tolerance. The default is 0.0001.
+            The desired tolerance. Default is 0.0001.
 
         Returns
         -------
