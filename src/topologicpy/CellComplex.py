@@ -194,6 +194,153 @@ class CellComplex():
         return CellComplex.ByCells(cells, tolerance=tolerance)
 
     @staticmethod
+    def ByDisjointedFaces(faces: list,
+                        minOffset: float = 0,
+                        maxOffset: float = 1.0,
+                        minCells: float = 2,
+                        maxCells: float = 10,
+                        maxAttempts: int = 100,
+                        patience: int = 5,
+                        transferDictionaries: bool = False,
+                        exclusive: bool = True,
+                        tolerance: float = 0.0001,
+                        silent: bool = False):
+        """
+        Creates a CellComplex from a list of disjointed faces. The algorithm expands the faces by an offset to find intersections before building cells.
+
+        Parameters
+        ----------
+        faces : list of topologic_core.Face
+            The linput ist of faces.
+        minOffset : float , optional
+            The minimum initial face offset to try. Default is 0.
+        maxOffset : float , optional
+            The final maximum face offset to try. Default is 1.0.
+        minCells : int , optional
+            The minimum number of cells to create. A CellComplex cannot have less than 2 cells. Default is 2.
+        maxCells : int , optional
+            The maximum number of cells to create. Default is 10.
+        maxAttempts : int , optional
+            The desired maximum number of attempts. Default is 100.
+        patience : int , optional
+            The desired number of attempts to wait with no change in the created number of cells. Default is 5.
+        transferDictionaries : bool , optional
+            If set to True, face dictionaries are inhertied. Default is False.
+        exclusive : bool , optional
+            Applies only if transferDictionaries is set to True. If set to True, only one source face contributes its dictionary to a target face. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.CellComplex
+            The created CellComplex
+
+        """
+
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        def trim(cells, n):
+            volumes = [Cell.Volume(c) for c in cells]
+            return_cc = Helper.Sort(cells, volumes)
+            return_cc.reverse()
+            return return_cc[:n]
+
+        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+        if len(faces) == 0:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input list of faces does not contain any valid topologic faces. Returning None.")
+            return None
+        if len(faces) < 3:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input list of faces contains less than three topologic faces. Returning None.")
+            return None
+        if minOffset < 0:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input minOffset parameter is less than 0. Returning None.")
+            return None
+        if minOffset > maxOffset:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input minOffset parameter is greater than the input maxOffset parameter. Returning None.")
+            return None
+        if minCells < 2:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input minCells parameter is less than 2. Returning None.")
+            return None
+        if minCells > maxCells:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input minCells parameter is greater than the input maxCells parameter. Returning None.")
+            return None
+        if maxAttempts <= 0:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input maxAttempts parameter is not greater than 0. Returning None.")
+            return None
+        if patience < 0:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input patience parameter is not greater than or equal to 0. Returning None.")
+            return None
+        if patience > maxAttempts:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: The input patience parameter is greater than the input maxAttempts parameter. Returning None.")
+            return None
+        cc = None
+        attempts = 0
+        increment = float(maxOffset) / float(maxAttempts)
+        cellComplexes = [] # List of all possible cellComplexes
+        patience_list = []
+        offset = minOffset
+        
+        while attempts < maxAttempts:
+            expanded_faces = [Face.ByOffset(f, offset=-offset) for f in faces]
+            try:
+                cc = CellComplex.ByFaces(expanded_faces, silent=True)
+                if Topology.IsInstance(cc, "cellComplex"):
+                    cells = Topology.Cells(cc)
+                    n_cells = len(cells)
+                    if minCells <= n_cells <= maxCells:
+                        cellComplexes.append(cc)
+                    elif n_cells > maxCells:
+                        cells = trim(cells, maxCells)
+                        try:
+                            new_cc = CellComplex.ByCells(cells)
+                            if Topology.IsInstance(new_cc, "CellComplex"):
+                                cellComplexes.append(new_cc)
+                        except:
+                            pass
+                    patience_list.append(n_cells)
+            except:
+                patience_list.append(0)
+            
+            if len(patience_list) >= patience:
+                if len(set(patience_list)) == 1 and not patience_list[0] == 0:
+                    if not silent:
+                        print("CellComplex.ByDisjointedFaces - Warning: Ran out of patience.")
+                    break
+                else:
+                    patience_list = []
+            attempts += 1
+            offset += increment
+
+        if len(cellComplexes) == 0:
+            if not silent:
+                print("CellComplex.ByDisjointedFaces - Error: Could not create a CellComplex. Consider revising the input parameters. Returning None.")
+            return None
+        n_cells = [len(Topology.Cells(c)) for c in cellComplexes] # Get the number of cells in each cellComplex
+        cellComplexes = Helper.Sort(cellComplexes, n_cells) # Sort the cellComplexes by their number of cells
+        for cc in cellComplexes:
+            cells = Topology.Cells(cc)
+        cc = cellComplexes[-1] # Choose the last cellComplex (the one with the most number of cells)
+        if transferDictionaries == True:
+            cc_faces = Topology.Faces(cc)
+            cc_faces = Topology.Inherit(targets=cc_faces, sources=faces, exclusive=exclusive, tolerance=tolerance, silent=silent)
+        return cc
+
+    @staticmethod
     def ByFaces(faces: list, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cellcomplex by merging the input faces.

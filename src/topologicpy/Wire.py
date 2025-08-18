@@ -870,6 +870,7 @@ class Wire():
                 edges.append(e)
             else:
                 if not silent:
+                    print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
                     curframe = inspect.currentframe()
                     calframe = inspect.getouterframes(curframe, 2)
                     print('caller name:', calframe[1][3])
@@ -885,6 +886,7 @@ class Wire():
                     curframe = inspect.currentframe()
                     calframe = inspect.getouterframes(curframe, 2)
                     print('caller name:', calframe[1][3])
+        
         if len(edges) < 1:
             if not silent:
                 print("Wire.ByVertices - Error: The number of edges is less than 1. Returning None.")
@@ -893,9 +895,21 @@ class Wire():
                 print('caller name:', calframe[1][3])
             return None
         elif len(edges) == 1:
+            if not silent:
+                print("Wire.ByVertices - Warning: The wire is made of only one edge.")
             wire = Wire.ByEdges(edges, orient=False, silent=silent)
         else:
             wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+            if Topology.IsInstance(wire, "Edge"):
+                wire = Wire.ByEdges([wire], orient=False, silent=silent)
+        # Final Check
+        if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.ByVertices - Error: Could not create a wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
         return wire
 
     @staticmethod
