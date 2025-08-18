@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CellComplex module &mdash; topologicpy 0.8.47 documentation</title>
+  <title>topologicpy.CellComplex module &mdash; topologicpy 0.8.48 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.47
+                0.8.48
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -161,76 +161,79 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByCellsCluster" title="topologicpy.CellComplex.CellComplex.ByCellsCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCellsCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a cellcomplex by merging the cells within the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByFaces" title="topologicpy.CellComplex.CellComplex.ByFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaces</span></code></a>(faces[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByDisjointedFaces" title="topologicpy.CellComplex.CellComplex.ByDisjointedFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDisjointedFaces</span></code></a>(faces[, minOffset, ...])</p></td>
+<td><p>Creates a CellComplex from a list of disjointed faces.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByFaces" title="topologicpy.CellComplex.CellComplex.ByFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFaces</span></code></a>(faces[, tolerance, silent])</p></td>
 <td><p>Creates a cellcomplex by merging the input faces.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByFacesCluster" title="topologicpy.CellComplex.CellComplex.ByFacesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFacesCluster</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByFacesCluster" title="topologicpy.CellComplex.CellComplex.ByFacesCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByFacesCluster</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Creates a cellcomplex by merging the faces within the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByWires" title="topologicpy.CellComplex.CellComplex.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByWires" title="topologicpy.CellComplex.CellComplex.ByWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWires</span></code></a>(wires[, triangulate, tolerance])</p></td>
 <td><p>Creates a cellcomplex by lofting through the input wires.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByWiresCluster" title="topologicpy.CellComplex.CellComplex.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ByWiresCluster" title="topologicpy.CellComplex.CellComplex.ByWiresCluster"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByWiresCluster</span></code></a>(cluster[, triangulate, tolerance])</p></td>
 <td><p>Creates a cellcomplex by lofting through the wires in the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Cells" title="topologicpy.CellComplex.CellComplex.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(cellComplex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Cells" title="topologicpy.CellComplex.CellComplex.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the cells of the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Cube" title="topologicpy.CellComplex.CellComplex.Cube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cube</span></code></a>([origin, size, uSides, vSides, wSides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Cube" title="topologicpy.CellComplex.CellComplex.Cube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cube</span></code></a>([origin, size, uSides, vSides, wSides, ...])</p></td>
 <td><p>Creates a cube with internal cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Decompose" title="topologicpy.CellComplex.CellComplex.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cellComplex[, tiltAngle, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Decompose" title="topologicpy.CellComplex.CellComplex.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cellComplex[, tiltAngle, tolerance])</p></td>
 <td><p>Decomposes the input cellComplex into its logical components.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Delaunay" title="topologicpy.CellComplex.CellComplex.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>([vertices, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Delaunay" title="topologicpy.CellComplex.CellComplex.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>([vertices, tolerance])</p></td>
 <td><p>Triangulates the input vertices based on the Delaunay method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Edges" title="topologicpy.CellComplex.CellComplex.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cellComplex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Edges" title="topologicpy.CellComplex.CellComplex.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the edges of the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ExternalBoundary" title="topologicpy.CellComplex.CellComplex.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ExternalBoundary" title="topologicpy.CellComplex.CellComplex.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the external boundary (cell) of the input cellComplex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ExternalFaces" title="topologicpy.CellComplex.CellComplex.ExternalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalFaces</span></code></a>(cellComplex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ExternalFaces" title="topologicpy.CellComplex.CellComplex.ExternalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalFaces</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the external faces of the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Faces" title="topologicpy.CellComplex.CellComplex.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Faces" title="topologicpy.CellComplex.CellComplex.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the faces of the input cellComplex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.InternalFaces" title="topologicpy.CellComplex.CellComplex.InternalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalFaces</span></code></a>(cellComplex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.InternalFaces" title="topologicpy.CellComplex.CellComplex.InternalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalFaces</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the internal boundaries (faces) of the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.NonManifoldFaces" title="topologicpy.CellComplex.CellComplex.NonManifoldFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonManifoldFaces</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.NonManifoldFaces" title="topologicpy.CellComplex.CellComplex.NonManifoldFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NonManifoldFaces</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the non-manifold faces of the input cellComplex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Octahedron" title="topologicpy.CellComplex.CellComplex.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Octahedron" title="topologicpy.CellComplex.CellComplex.Octahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Octahedron</span></code></a>([origin, radius, direction, ...])</p></td>
 <td><p>Creates an octahedron.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Prism" title="topologicpy.CellComplex.CellComplex.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Prism" title="topologicpy.CellComplex.CellComplex.Prism"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prism</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a prismatic cellComplex with internal cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.RemoveCollinearEdges" title="topologicpy.CellComplex.CellComplex.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cellComplex[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.RemoveCollinearEdges" title="topologicpy.CellComplex.CellComplex.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(cellComplex[, ...])</p></td>
 <td><p>Removes any collinear edges in the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Shells" title="topologicpy.CellComplex.CellComplex.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Shells" title="topologicpy.CellComplex.CellComplex.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the shells of the input cellComplex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Tetrahedron" title="topologicpy.CellComplex.CellComplex.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, length, depth, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Tetrahedron" title="topologicpy.CellComplex.CellComplex.Tetrahedron"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tetrahedron</span></code></a>([origin, length, depth, ...])</p></td>
 <td><p>Creates a recursive tetrahedron cellComplex with internal cells.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Torus" title="topologicpy.CellComplex.CellComplex.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Torus" title="topologicpy.CellComplex.CellComplex.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Vertices" title="topologicpy.CellComplex.CellComplex.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cellComplex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Vertices" title="topologicpy.CellComplex.CellComplex.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the vertices of the input cellComplex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Volume" title="topologicpy.CellComplex.CellComplex.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cellComplex[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Volume" title="topologicpy.CellComplex.CellComplex.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cellComplex[, mantissa])</p></td>
 <td><p>Returns the volume of the input cellComplex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Voronoi" title="topologicpy.CellComplex.CellComplex.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>([vertices, cell, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Voronoi" title="topologicpy.CellComplex.CellComplex.Voronoi"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Voronoi</span></code></a>([vertices, cell, tolerance])</p></td>
 <td><p>Partitions the input cell based on the Voronoi method.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Wires" title="topologicpy.CellComplex.CellComplex.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Wires" title="topologicpy.CellComplex.CellComplex.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cellComplex)</p></td>
 <td><p>Returns the wires of the input cellComplex.</p></td>
 </tr>
 </tbody>
@@ -315,6 +318,46 @@
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.CellComplex</dt><dd><p>The created cellcomplex.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.CellComplex.CellComplex.ByDisjointedFaces">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDisjointedFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minCells</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxCells</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxAttempts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CellComplex.CellComplex.ByDisjointedFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a CellComplex from a list of disjointed faces. The algorithm expands the faces by an offset to find intersections before building cells.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>faces</strong><span class="classifier">list of topologic_core.Face</span></dt><dd><p>The linput ist of faces.</p>
+</dd>
+<dt><strong>minOffset</strong><span class="classifier">float , optional</span></dt><dd><p>The minimum initial face offset to try. Default is 0.</p>
+</dd>
+<dt><strong>maxOffset</strong><span class="classifier">float , optional</span></dt><dd><p>The final maximum face offset to try. Default is 1.0.</p>
+</dd>
+<dt><strong>minCells</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of cells to create. A CellComplex cannot have less than 2 cells. Default is 2.</p>
+</dd>
+<dt><strong>maxCells</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of cells to create. Default is 10.</p>
+</dd>
+<dt><strong>maxAttempts</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of attempts. Default is 100.</p>
+</dd>
+<dt><strong>patience</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of attempts to wait with no change in the created number of cells. Default is 5.</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, face dictionaries are inhertied. Default is False.</p>
+</dd>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>Applies only if transferDictionaries is set to True. If set to True, only one source face contributes its dictionary to a target face. Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.CellComplex</dt><dd><p>The created CellComplex</p>
 </dd>
 </dl>
 </dd>
