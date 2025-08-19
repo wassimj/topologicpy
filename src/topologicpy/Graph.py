@@ -839,6 +839,47 @@ class Graph:
         return adjList
 
     @staticmethod
+    def AdjacentEdges(graph, edge, silent: bool = False):
+        """
+        Returns the list of edges connected to the input edge.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        edge : topologic_core.Edge
+            the input edge.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of adjacent edges.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AdjacentEdges - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        if not Topology.IsInstance(edge, "Edge"):
+            if not silent:
+                print("Graph.AdjacentEdges - Error: The input edge is not a valid edge. Returning None.")
+            return None
+        edges = []
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+        edges.extend(Graph.Edges(graph, [sv]))
+        edges.extend(Graph.Edges(graph, [ev]))
+        print(edges)
+        edges = [e for e in edges if not Topology.IsSame(e, edge)]
+        # Complete the algorithm here
+        return edges
+    
+    @staticmethod
     def AdjacentVertices(graph, vertex, silent: bool = False):
         """
         Returns the list of vertices connected to the input vertex.
@@ -12464,7 +12505,7 @@ class Graph:
 
     @staticmethod
     def Quotient(topology,
-                topologyType: str = None,
+                topologyType: str = "vertex",
                 key: str = None,
                 groupLabelKey: str = None,
                 groupCountKey: str = "count",
@@ -12480,8 +12521,8 @@ class Graph:
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology or topologic_core.Graph
+            The input topology or graph.
         topologyType : str
             The type of subtopology for which to search. This can be one of "vertex", "edge", "face", "cell". It is case-insensitive.
         key : str , optional
@@ -12510,9 +12551,9 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
 
-        if not Topology.IsInstance(topology, "Topology"):
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
-                print("Graph.Quotient - Error: The input topology parameter is not a valid Topology. Returning None.")
+                print("Graph.Quotient - Error: The input topology parameter is not a valid Topology or Graph. Returning None.")
             return None
         if topologyType.lower() not in {"vertex", "edge", "face", "cell"}:
             if not silent:
@@ -12676,6 +12717,8 @@ class Graph:
 
             group_vertices.append(v)
 
+        group_vertices = Vertex.Separate(group_vertices, minDistance = 0.1, strength=0.5, silent=silent)
+
         # 7) Edges, with optional weights
         edges = []
         for (a, b), w in group_edges.items():
@@ -12690,6 +12733,7 @@ class Graph:
                 edges.append(e)
             except Exception:
                 continue
+
 
         return Graph.ByVerticesEdges(group_vertices, edges)
 

@@ -339,7 +339,7 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : topologic_core.Topology or topologic_core.graph
             The input topology.
         hostTopology : topologic_core.Topology
             The host topology in which to search.
@@ -352,11 +352,14 @@ class Topology():
             The list of adjacent topologies.
 
         """
+
+        from topologicpy.Graph import Graph
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AdjacentTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        if not Topology.IsInstance(hostTopology, "Topology"):
-            print("Topology.AdjacentTopologies - Error: the input hostTopology parameter is not a valid topology. Returning None.")
+        if not Topology.IsInstance(hostTopology, "Topology") and not Topology.IsInstance(hostTopology, "Graph"):
+            print("Topology.AdjacentTopologies - Error: the input hostTopology parameter is not a valid topology or graph. Returning None.")
             return None
         if not topologyType:
             topologyType = Topology.TypeAsString(topology).lower()
@@ -370,21 +373,28 @@ class Topology():
         error = False
         if Topology.IsInstance(topology, "Vertex"):
             if topologyType.lower() == "vertex":
-                try:
-                    _ = topology.AdjacentVertices(hostTopology, adjacentTopologies) # Hook to Core
-                except:
+                if Topology.IsInstance(hostTopology, "graph"):
+                    adjacentTopologies = Graph.AdjacentVertices(hostTopology, topology)
+                else:
                     try:
-                        _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
+                        _ = topology.AdjacentVertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
-                        error = True
+                        try:
+                            _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
+                        except:
+                            error = True
             elif topologyType.lower() == "edge":
-                try:
-                    _ = topologic.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies) # Hook to Core
-                except:
+                if Topology.IsInstance(hostTopology, "graph"):
+                    adjacentTopologies = Graph.Edges(hostTopology, [topology])
+                    print("Topology.AdjacentTopologies - adjacentTopologies:", adjacentTopologies)
+                else:
                     try:
-                        _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
+                        _ = topologic.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies) # Hook to Core
                     except:
-                        error = True
+                        try:
+                            _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
+                        except:
+                            error = True
             elif topologyType.lower() == "wire":
                 try:
                     _ = topologic.VertexUtility.AdjacentWires(topology, hostTopology, adjacentTopologies) # Hook to Core
@@ -432,10 +442,13 @@ class Topology():
                 except:
                     error = True
             elif topologyType.lower() == "edge":
-                try:
-                    _ = topology.AdjacentEdges(hostTopology, adjacentTopologies) # Hook to Core
-                except:
-                    error = True
+                if Topology.IsInstance(hostTopology, "graph"):
+                    adjacentTopologies = Graph.AdjacentEdges(hostTopology, topology)
+                else:
+                    try:
+                        _ = topology.AdjacentEdges(hostTopology, adjacentTopologies) # Hook to Core
+                    except:
+                        error = True
             elif topologyType.lower() == "wire":
                 try:
                     _ = topologic.EdgeUtility.AdjacentWires(topology, adjacentTopologies) # Hook to Core
@@ -5391,7 +5404,7 @@ class Topology():
         tVertices = []
         if transposeAxes:
             for v in vertices:
-                tVertices.append([v[0], v[2], v[1]])
+                tVertices.append([v[0], -v[2], v[1]])
             vertices = tVertices
         for v in vertices:
             lines.append("v " + str(v[0]) + " " + str(v[1]) + " " + str(v[2]))
