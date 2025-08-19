@@ -1098,6 +1098,143 @@ class Shell():
         return False
 
     @staticmethod
+    def MobiusStrip(origin = None,
+                    radius: float=0.5,
+                    height: float=1,
+                    uSides=32,
+                    vSides=1,
+                    twists: int = 1,
+                    direction: list = [0, 0, 1],
+                    placement: str = "center",
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
+
+
+        """
+        Creates a Möbius strip. See: https://en.wikipedia.org/wiki/M%C3%B6bius_strip
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The location of the origin of the Möbius strip. Default is None which results in the Möbius strip being placed at (0, 0, 0).
+        radius : float , optional
+            The radius of the Möbius strip. Default is 0.5.
+        height : float , optional
+            The height of the Möbius strip. Default is 1.
+        uSides : int , optional
+            The number of circle segments of the Möbius strip. Default is 16.
+        vSides : int , optional
+            The number of vertical segments of the Möbius strip. Default is 1.
+        twists : int , optional
+            The number of twists (multiples of a 180 degree rotation) of the Möbius strip. Default is 1.
+        direction : list , optional
+            The vector representing the up direction of the Möbius strip. Default is [0, 0, 1].
+        placement : str , optional
+            Not implemented. The description of the placement of the origin of the Möbius strip. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "bottom".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        
+        if not isinstance(radius, int) and not isinstance(radius, float):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The radius input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(height, int) and not isinstance(height, float):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The height input parameter is not a valid number. Returning None.")
+            return None
+        if not isinstance(uSides, int):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The uSides input parameter is not a valid integer. Returning None.")
+            return None
+        if not isinstance(vSides, int):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The vSides input parameter is not a valid integer. Returning None.")
+            return None
+        if not isinstance(twists, int):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The twists input parameter is not a valid integer. Returning None.")
+            return None
+        if radius <= tolerance:
+            if not silent:
+                print("Shell.MobiusStrip - Error: The radius input parameter must be a positive number greater than the tolerance input parameter. Returning None.")
+            return None
+        if height <= tolerance:
+            if not silent:
+                print("Shell.MobiusStrip - Error: The height input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
+            return None
+        if uSides <= 3:
+            if not silent:
+                print("Shell.MobiusStrip - Error: The uSides input parameter must be a positive integer greater than 2. Returning None.")
+            return None
+        if vSides < 1:
+            if not silent:
+                print("Shell.MobiusStrip - Error: The vSides input parameter must be a positive integer greater than 0. Returning None.")
+            return None
+        if origin == None:
+            origin = Vertex.Origin()
+        if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The origin input parameter is not a valid topologic Vertex. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Shell.MobiusStrip - Error: The direction input parameter is not a valid list. Returning None.")
+            return None
+        if not len(direction) == 3:
+            if not silent:
+                print("Shell.MobiusStrip - Error: The direction input parameter is not a valid vector. Returning None.")
+            return None
+        
+        total_angle = 180*twists
+        cir = Wire.Circle(origin=origin, radius=radius, sides=uSides)
+        c_verts = Topology.Vertices(cir)
+        wires = []
+        for i, v in enumerate(c_verts):
+            vb = Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), -height*0.5)
+            vt = Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), height*0.5)
+            e = Edge.ByVertices([vb, vt])
+            d = Edge.Normal(Edge.ByVertices(Vertex.Origin(), v))
+            angle = float(total_angle)/float(uSides)*float(i)
+            e = Topology.Rotate(e, origin=v, axis=d, angle=angle)
+            verts = []
+            for j in range(vSides+1):
+                vp = Edge.VertexByParameter(e, float(j)/float(vSides))
+                verts.append(vp)
+            w = Wire.ByVertices(verts, close=False, silent=True)
+            wires.append(w)
+            # Create the last wire
+            if i == 0:
+                e = Edge.ByVertices([vb, vt])
+                e = Topology.Rotate(e, origin=v, axis=d, angle=total_angle)
+                verts = []
+                for j in range(vSides+1):
+                    vp = Edge.VertexByParameter(e, float(j)/float(vSides))
+                    verts.append(vp)
+                last_wire = Wire.ByVertices(verts, close=False, silent=True)
+
+        wires.append(last_wire)
+        m = Shell.ByWires(wires, silent=silent, tolerance=tolerance)
+        if not Topology.IsInstance(m, "Shell"):
+            if not silent:
+                print("Shell.MobiusStrip - Error: Could not create a mobius strip. Returning None.")
+            return None
+        m = Topology.Orient(m, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return m
+
+    @staticmethod
     def Paraboloid(origin= None, focalLength=0.125, width: float = 1, length: float = 1, uSides: int = 16, vSides: int = 16,
                     direction: list = [0, 0, 1], placement: str ="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """

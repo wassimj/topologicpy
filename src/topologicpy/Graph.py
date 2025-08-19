@@ -8159,24 +8159,28 @@ class Graph:
             Returns:
                 A numpy array representing the adjacency matrix.
             """
+
             
+
             # Get the number of nodes from the edge list.
-            flat_list = Helper.Flatten(edge_list)
-            flat_list = [x for x in flat_list if not x == None]
-            num_nodes = max(flat_list) + 1
+            if len(edge_list) > 0:
+                flat_list = Helper.Flatten(edge_list)
+                flat_list = [x for x in flat_list if not x == None]
+                num_nodes = max(flat_list) + 1
 
-            # Create an adjacency matrix.
-            adjacency_matrix = np.zeros((num_nodes, num_nodes))
+                # Create an adjacency matrix.
+                adjacency_matrix = np.zeros((num_nodes, num_nodes))
 
-            # Fill in the adjacency matrix.
-            for edge in edge_list:
-                adjacency_matrix[edge[0], edge[1]] = 1
-                adjacency_matrix[edge[1], edge[0]] = 1
+                # Fill in the adjacency matrix.
+                for edge in edge_list:
+                    adjacency_matrix[edge[0], edge[1]] = 1
+                    adjacency_matrix[edge[1], edge[0]] = 1
 
-            return adjacency_matrix
+                return adjacency_matrix
+            else:
+                return None
 
         def tree_from_edge_list(edge_list, root_index=0):
-            
             adj_matrix = edge_list_to_adjacency_matrix(edge_list)
             num_nodes = adj_matrix.shape[0]
             root = _Tree(str(root_index))
@@ -12457,7 +12461,238 @@ class Graph:
         net.show_buttons()
         net.show(path, notebook=notebook)
         return None
+
+    @staticmethod
+    def Quotient(topology,
+                topologyType: str = None,
+                key: str = None,
+                groupLabelKey: str = None,
+                groupCountKey: str = "count",
+                weighted: bool = False,
+                edgeWeightKey: str = "weight",
+                idKey: str = None,
+                silent: bool = False):
+        """
+        Construct the quotient graph induced by grouping sub-topologies (Cells/Faces/Edges/Vertices)
+        by a dictionary value. Two groups are connected if any member of one is adjacent to any member
+        of the other via Topology.AdjacentTopologies. If weighted=True, edge weights count the number
+        of distinct member-level adjacencies across groups. See https://en.wikipedia.org/wiki/Quotient_graph
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        topologyType : str
+            The type of subtopology for which to search. This can be one of "vertex", "edge", "face", "cell". It is case-insensitive.
+        key : str , optional
+            Dictionary key used to form groups. If None, all items fall into one group.
+        groupLabelKey : str , optional
+            Vertex-dictionary key storing the group label. Default is "group_label".
+        groupCountKey : str , optional
+            Vertex-dictionary key storing the group size. Default is "count".
+        weighted : bool , optional
+            If True, store counts of cross-group adjacencies on edges under edgeWeightKey. Default is False.
+        edgeWeightKey : str , optional
+            Edge-dictionary key storing the weight when weighted=True. Default "weight".
+        idKey : str , optional
+            Optional dictionary key that uniquely identifies each sub-topology. If provided and present
+            on both members, lookup is O(1) without calling Topology.IsSame. If missing, falls back to Topology.IsSame. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Graph.Quotient - Error: The input topology parameter is not a valid Topology. Returning None.")
+            return None
+        if topologyType.lower() not in {"vertex", "edge", "face", "cell"}:
+            if not silent:
+                print("Graph.Quotient - Error: topologyType must be one of 'Cell','Face','Edge','Vertex'. Returning None.")
+            return None
+        if not isinstance(key, str):
+            if not silent:
+                print("Graph.Quotient - Error: The input key parameter is not a valid string. Returning None.")
+            return None
+        if groupLabelKey == None:
+            groupLabelKey = key
+        if not isinstance(groupLabelKey, str):
+            if not silent:
+                print("Graph.Quotient - Error: The input groupLabelKey parameter is not a valid string. Returning None.")
+            return None
+        if not isinstance(groupCountKey, str):
+            if not silent:
+                print("Graph.Quotient - Error: The input groupCountKey parameter is not a valid string. Returning None.")
+            return None
+        if not isinstance(weighted, bool):
+            if not silent:
+                print("Graph.Quotient - Error: The input weighted parameter is not a valid boolean. Returning None.")
+            return None
+        if not isinstance(edgeWeightKey, str):
+            if not silent:
+                print("Graph.Quotient - Error: The input edgeWeightKey parameter is not a valid string. Returning None.")
+            return None
         
+        # 1) Collect sub-topologies
+        getters = {
+            "vertex": Topology.Vertices,
+            "edge": Topology.Edges,
+            "face": Topology.Faces,
+            "cell": Topology.Cells,
+        }
+        subs = getters[topologyType.lower()](topology)
+        if not subs:
+            if not silent:
+                print("Graph.Quotient - Error: No subtopologies found. Returning None.")
+            return None
+
+        # 2) Optional O(1) index via a unique idKey in dictionaries
+        def _get_dict(st):
+            try:
+                return Topology.Dictionary(st)
+            except Exception:
+                return None
+
+        id_index = {}
+        if idKey is not None:
+            for i, st in enumerate(subs):
+                d = _get_dict(st)
+                if d is None:
+                    continue
+                try:
+                    uid = Dictionary.ValueAtKey(d, idKey)
+                except Exception:
+                    uid = None
+                if uid is not None and uid not in id_index:
+                    id_index[uid] = i  # first seen wins
+
+        # 3) Labels for grouping
+        def _label(st):
+            if key is None:
+                return None
+            d = _get_dict(st)
+            if d is None:
+                return None
+            try:
+                return Dictionary.ValueAtKey(d, key)
+            except Exception:
+                return None
+
+        labels = [_label(st) for st in subs]
+
+        # 4) Partition indices by label
+        groups = {}
+        for i, lbl in enumerate(labels):
+            groups.setdefault(lbl, []).append(i)
+
+        group_labels = list(groups.keys())
+        label_to_group_idx = {lbl: gi for gi, lbl in enumerate(group_labels)}
+        item_to_group_idx = {i: label_to_group_idx[lbl] for lbl, idxs in groups.items() for i in idxs}
+
+        # Helper to resolve neighbor index j for a given neighbor topology nb
+        def _neighbor_index(nb):
+            # Try idKey shortcut
+            if idKey is not None:
+                d = _get_dict(nb)
+                if d is not None:
+                    try:
+                        uid = Dictionary.ValueAtKey(d, idKey)
+                    except Exception:
+                        uid = None
+                    if uid is not None:
+                        j = id_index.get(uid)
+                        if j is not None:
+                            return j
+            # Fallback: linear scan using Topology.IsSame
+            for j, st in enumerate(subs):
+                try:
+                    if Topology.IsSame(nb, st):
+                        return j
+                except Exception:
+                    continue
+            return None
+
+        # 5) Group adjacency with optional weights
+        # Use a set to ensure each unordered member-pair is counted once
+        seen_member_pairs = set()
+        group_edges = {}  # (a,b) -> weight
+
+        for i, st in enumerate(subs):
+            try:
+                neighs = Topology.AdjacentTopologies(st, topology, topologyType)
+            except Exception:
+                neighs = []
+            gi = item_to_group_idx[i]
+            for nb in neighs:
+                j = _neighbor_index(nb)
+                if j is None or j == i:
+                    continue
+                aij = (i, j) if i < j else (j, i)
+                if aij in seen_member_pairs:
+                    continue
+                seen_member_pairs.add(aij)
+
+                gj = item_to_group_idx[j]
+                if gi == gj:
+                    continue
+                a, b = (gi, gj) if gi < gj else (gj, gi)
+                group_edges[(a, b)] = group_edges.get((a, b), 0) + 1
+
+        # 6) One vertex per group at mean of member centroids
+        group_vertices = []
+        for lbl in group_labels:
+            idxs = groups[lbl]
+            pts = []
+            for i in idxs:
+                try:
+                    c = Topology.Centroid(subs[i])
+                    pts.append(c)
+                except Exception:
+                    pass
+            if pts:
+                try:
+                    xs = [Vertex.X(p) for p in pts]
+                    ys = [Vertex.Y(p) for p in pts]
+                    zs = [Vertex.Z(p) for p in pts]
+                    v = Vertex.ByCoordinates(sum(xs)/len(xs), sum(ys)/len(ys), sum(zs)/len(zs))
+                except Exception:
+                    v = Vertex.ByCoordinates(0, 0, 0)
+            else:
+                v = Vertex.ByCoordinates(0, 0, 0)
+
+            try:
+                d = Dictionary.ByKeysValues([groupLabelKey, groupCountKey], [lbl, len(idxs)])
+                v = Topology.SetDictionary(v, d)
+            except Exception:
+                pass
+
+            group_vertices.append(v)
+
+        # 7) Edges, with optional weights
+        edges = []
+        for (a, b), w in group_edges.items():
+            try:
+                e = Edge.ByStartVertexEndVertex(group_vertices[a], group_vertices[b])
+                if weighted:
+                    try:
+                        d = Dictionary.ByKeysValues([edgeWeightKey], [w])
+                        e = Topology.SetDictionary(e, d)
+                    except Exception:
+                        pass
+                edges.append(e)
+            except Exception:
+                continue
+
+        return Graph.ByVerticesEdges(group_vertices, edges)
+
     @staticmethod
     def RemoveEdge(graph, edge, tolerance=0.0001):
         """

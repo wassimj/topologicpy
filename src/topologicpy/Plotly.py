@@ -558,7 +558,7 @@ class Plotly:
                             if not temp_color == None:
                                 colors[m] = Color.AnyToHex(temp_color)
                         if not labelKey == None:
-                            labels[m] = Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" ")
+                            labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" "))
                         if not sizeKey == None:
                             sizes[m] = float(Dictionary.ValueAtKey(d, key=sizeKey, defaultValue=sizes[m]))
                             if sizes[m] == None:

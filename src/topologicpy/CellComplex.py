@@ -296,7 +296,7 @@ class CellComplex():
         offset = minOffset
         
         while attempts < maxAttempts:
-            expanded_faces = [Face.ByOffset(f, offset=-offset) for f in faces]
+            expanded_faces = [Face.ByOffset(f, offset=-offset, silent=silent) for f in faces]
             try:
                 cc = CellComplex.ByFaces(expanded_faces, silent=True)
                 if Topology.IsInstance(cc, "cellComplex"):

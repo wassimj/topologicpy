@@ -3003,7 +3003,7 @@ class Wire():
         for i in range(1, sides):
             vertices.append(Edge.VertexByParameter(edge, i*unitDistance))
         vertices.append(Edge.EndVertex(edge))
-        return Wire.ByVertices(vertices, closed=False, tolerance=tolerance)
+        return Wire.ByVertices(vertices, close=False, tolerance=tolerance)
 
     @staticmethod
     def LShape(origin=None,
