@@ -1175,7 +1175,7 @@ class Shell():
             if not silent:
                 print("Shell.MobiusStrip - Error: The height input parameter must be a positive number  greater than the tolerance input parameter. Returning None.")
             return None
-        if uSides <= 3:
+        if uSides < 3:
             if not silent:
                 print("Shell.MobiusStrip - Error: The uSides input parameter must be a positive integer greater than 2. Returning None.")
             return None

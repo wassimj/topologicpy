@@ -6255,53 +6255,79 @@ class Graph:
         return scores
     
     @staticmethod
-    def Diameter(graph):
+    def Diameter(graph, silent: bool = False):
         """
-        Returns the diameter of the input graph. See https://mathworld.wolfram.com/GraphDiameter.html.
+        Returns the diameter of the input (unweighted, undirected) graph.
+
+        The diameter is the maximum, over all pairs of vertices, of the length of a
+        shortest path between them. If the graph is disconnected, this returns the
+        maximum finite eccentricity across connected components and prints a warning
+        unless `silent=True`.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         int
-            The diameter of the input graph.
-
+            The diameter of the input graph, or None if the graph is empty.
         """
+        from collections import deque
         from topologicpy.Topology import Topology
 
+        # Basic checks
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.Diameter - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.Diameter - Error: The input graph is not a valid graph. Returning None.")
             return None
-        
-        def dfs(node, visited):
-            visited.add(node)
-            max_depth = 0
-            farthest_node = node
-            for neighbor in adj_dict[node]:
-                if neighbor not in visited:
-                    depth, end_node = dfs(neighbor, visited)
-                    if depth + 1 > max_depth:
-                        max_depth = depth + 1
-                        farthest_node = end_node
-            return max_depth, farthest_node
 
-        adj_dict = Graph.AdjacencyDictionary(graph, includeWeights=False)
+        # Build adjacency dictionary (as sets) and force undirected symmetry
+        adj_raw = Graph.AdjacencyDictionary(graph, includeWeights=False)
+        if not adj_raw:  # empty graph
+            if not silent:
+                print("Graph.Diameter - Warning: The graph has no vertices. Returning None.")
+            return None
 
-        # Step 1: Pick an arbitrary starting node (first node in the graph)
-        start_node = next(iter(adj_dict))
-        
-        # Step 2: Run DFS to find the farthest node from the start_node
-        visited = set()
-        _, farthest_node = dfs(start_node, visited)
+        adj = {u: set(neighbors) for u, neighbors in adj_raw.items()}
+        # Ensure symmetry (in case the underlying graph stored directed edges)
+        for u, nbrs in list(adj.items()):
+            for v in nbrs:
+                adj.setdefault(v, set()).add(u)
+                adj[u].add(v)
 
-        # Step 3: Run DFS from the farthest node found to get the maximum depth
-        visited.clear()
-        diameter, _ = dfs(farthest_node, visited)
+        def bfs_eccentricity(start):
+            """Return distances map from start and its eccentricity."""
+            dist = {start: 0}
+            q = deque([start])
+            while q:
+                u = q.popleft()
+                for v in adj.get(u, ()):
+                    if v not in dist:
+                        dist[v] = dist[u] + 1
+                        q.append(v)
+            ecc = max(dist.values()) if dist else 0
+            return dist, ecc
+
+        diameter = 0
+        n = len(adj)
+        disconnected = False
+
+        for s in adj:
+            dist, ecc = bfs_eccentricity(s)
+            if len(dist) < n:
+                disconnected = True
+            if ecc > diameter:
+                diameter = ecc
+
+        if disconnected and not silent:
+            print("Graph.Diameter - Warning: The graph is disconnected. Returning the maximum finite diameter across connected components.")
 
         return diameter
+
     
     @staticmethod
     def Dictionary(graph):
@@ -13454,7 +13480,85 @@ class Graph:
                     queue.append((neighbor, distance + 1))
         
         return None  # Target not reachable
-    
+
+    @staticmethod
+    def Tietze(radius: float = 0.5, height: float = 1):
+        """
+        Creates a Tietze's graph mapped on a mobius strip of the same input radius and height. See https://en.wikipedia.org/wiki/Tietze%27s_graph
+
+        Parameters
+        ----------
+        radius : float , optional
+            The desired radius of the mobius strip on which the graph is mapped. Default is 0.5.
+        height : float , optional
+            The desired height of the mobius strip on which the graph is mapped. Default is 1.
+
+        Returns
+        -------
+        topologicpy.Graph
+            The created Tietze's graph.
+
+        """
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Edge import Edge
+        from topologicpy.Shell import Shell
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+
+        m = Shell.MobiusStrip(radius=radius, height=height, uSides=12, vSides=3)
+        eb = Shell.ExternalBoundary(m)
+        verts = Topology.Vertices(eb)
+        new_verts = []
+        for i in range(0, len(verts), 2): #The mobius strip has 24 edges, we need half of that (12).
+            new_verts.append(verts[i])
+
+        graph_edges = []
+        for r in range(0,6):
+            s = (r + 6)
+            e = Edge.ByVertices(new_verts[r], new_verts[s])
+            if r == 0:
+                v1 = Edge.VertexByParameter(e, 2/3)
+                v2 = Edge.EndVertex(e)
+                e = Edge.ByVertices(v1, v2)
+            elif r == 1:
+                v3 = Edge.VertexByParameter(e, 1/3)
+                v4 = Edge.VertexByParameter(e, 2/3)
+                e = Edge.ByVertices(v3, v4)
+            elif r == 2:
+                v5 = Edge.StartVertex(e)
+                v6 = Edge.VertexByParameter(e, 1/3)
+                e = Edge.ByVertices(v5, v6)
+            elif r == 3:
+                v7 = Edge.VertexByParameter(e, 1/3)
+                v8 = Edge.VertexByParameter(e, 2/3)
+                e = Edge.ByVertices(v7, v8)
+            elif r == 4:
+                v9 = Edge.VertexByParameter(e, 2/3)
+                v10 = Edge.EndVertex(e)
+                e = Edge.ByVertices(v9, v10)
+            elif r == 5:
+                v11 = Edge.VertexByParameter(e, 1/3)
+                v12 = Edge.VertexByParameter(e, 2/3)
+                e = Edge.ByVertices(v11, v12)
+            graph_edges.append(e)
+
+        graph_vertices= [v1, v2, v3, v4, v5, v6, v7, v8, v9, v10, v11, v12]
+        graph_edges.append(Edge.ByVertices(v10, v2))
+        graph_edges.append(Edge.ByVertices(v5, v10))
+        graph_edges.append(Edge.ByVertices(v2, v5))
+        graph_edges.append(Edge.ByVertices(v1, v4))
+        graph_edges.append(Edge.ByVertices(v4, v8))
+        graph_edges.append(Edge.ByVertices(v8, v9))
+        graph_edges.append(Edge.ByVertices(v9, v12))
+        graph_edges.append(Edge.ByVertices(v12, v3))
+        graph_edges.append(Edge.ByVertices(v3, v6))
+        graph_edges.append(Edge.ByVertices(v6, v7))
+        graph_edges.append(Edge.ByVertices(v7, v11))
+        graph_edges.append(Edge.ByVertices(v11, v1))
+        graph_edges = [Edge.Reverse(e) for e in graph_edges] #This makes them look better when sagitta is applied.
+        graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        return graph
+
     @staticmethod
     def TopologicalDistance(graph, vertexA, vertexB, tolerance=0.0001):
         """
