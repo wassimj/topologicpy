@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.50 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.51 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.50
+                0.8.51
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -314,8 +314,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.DepthMap" title="topologicpy.Graph.Graph.DepthMap"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DepthMap</span></code></a>(graph[, vertices, key, type, ...])</p></td>
 <td><p>Return the depth map of the input list of vertices within the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph)</p></td>
-<td><p>Returns the diameter of the input graph.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Diameter" title="topologicpy.Graph.Graph.Diameter"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Diameter</span></code></a>(graph[, silent])</p></td>
+<td><p>Returns the diameter of the input (unweighted, undirected) graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Dictionary" title="topologicpy.Graph.Graph.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(graph)</p></td>
 <td><p>Returns the dictionary of the input graph.</p></td>
@@ -545,37 +545,40 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SymmetricDifference" title="topologicpy.Graph.Graph.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(graphA, graphB, vertexKeys)</p></td>
 <td><p>Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.TopologicalDistance" title="topologicpy.Graph.Graph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tietze" title="topologicpy.Graph.Graph.Tietze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tietze</span></code></a>([radius, height])</p></td>
+<td><p>Creates a Tietze's graph mapped on a mobius strip of the same input radius and height.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.TopologicalDistance" title="topologicpy.Graph.Graph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
 <td><p>Returns the topological distance between the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Topology" title="topologicpy.Graph.Graph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Topology" title="topologicpy.Graph.Graph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph)</p></td>
 <td><p>Returns the topology (cluster) of the input graph</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tree" title="topologicpy.Graph.Graph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tree" title="topologicpy.Graph.Graph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, tolerance])</p></td>
 <td><p>Creates a tree graph version of the input graph rooted at the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Union" title="topologicpy.Graph.Graph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Union" title="topologicpy.Graph.Graph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
 <td><p>Union the two input graphs based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VertexDegree" title="topologicpy.Graph.Graph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, weightKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VertexDegree" title="topologicpy.Graph.Graph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, weightKey, ...])</p></td>
 <td><p>Returns the degree of the input vertex.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Vertices" title="topologicpy.Graph.Graph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, vertexKey, reverse])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Vertices" title="topologicpy.Graph.Graph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, vertexKey, reverse])</p></td>
 <td><p>Returns the list of vertices in the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VisibilityGraph" title="topologicpy.Graph.Graph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, viewpointsA, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VisibilityGraph" title="topologicpy.Graph.Graph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, viewpointsA, ...])</p></td>
 <td><p>Creates a 2D visibility graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLFeatures" title="topologicpy.Graph.Graph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLFeatures" title="topologicpy.Graph.Graph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, silent])</p></td>
 <td><p>Returns a Weisfeiler-Lehman subtree features for a Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLKernel" title="topologicpy.Graph.Graph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLKernel" title="topologicpy.Graph.Graph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
 <td><p>Returns a cosine-normalized Weisfeiler-Lehman kernel between two graphs.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="topologicpy.Graph.Graph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA, graphB, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="topologicpy.Graph.Graph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA, graphB, ...)</p></td>
 <td><p>Computes the weighted Jaccard similarity between two vertices based on their neighbors and edge weights.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.XOR" title="topologicpy.Graph.Graph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.XOR" title="topologicpy.Graph.Graph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
 <td><p>Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on an input vertex key.</p></td>
 </tr>
 </tbody>
@@ -2468,18 +2471,24 @@ In addition to these, three color-blind friendly scales are included. These are 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Diameter">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Diameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Diameter" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the diameter of the input graph. See <a class="reference external" href="https://mathworld.wolfram.com/GraphDiameter.html">https://mathworld.wolfram.com/GraphDiameter.html</a>.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Diameter</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Diameter" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the diameter of the input (unweighted, undirected) graph.</p>
+<p>The diameter is the maximum, over all pairs of vertices, of the length of a
+shortest path between them. If the graph is disconnected, this returns the
+maximum finite eccentricity across connected components and prints a warning
+unless <cite>silent=True</cite>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>int</dt><dd><p>The diameter of the input graph.</p>
+<dt>int</dt><dd><p>The diameter of the input graph, or None if the graph is empty.</p>
 </dd>
 </dl>
 </dd>
@@ -5310,6 +5319,28 @@ vertices (within the tolerance) will be used to determine sameness. Default is N
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Graph</dt><dd><p>the resultant graph. Vertex and edge dictionaries are not merged.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.Tietze">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Tietze</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">radius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Tietze" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a Tietze’s graph mapped on a mobius strip of the same input radius and height. See <a class="reference external" href="https://en.wikipedia.org/wiki/Tietze%27s_graph">https://en.wikipedia.org/wiki/Tietze%27s_graph</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the mobius strip on which the graph is mapped. Default is 0.5.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">float , optional</span></dt><dd><p>The desired height of the mobius strip on which the graph is mapped. Default is 1.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologicpy.Graph</dt><dd><p>The created Tietze’s graph.</p>
 </dd>
 </dl>
 </dd>
