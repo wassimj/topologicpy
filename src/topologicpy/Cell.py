@@ -1567,6 +1567,8 @@ class Cell():
         vertices = Topology.Vertices(dodecahedron)
         d = Vertex.Distance(Vertex.Origin(), vertices[0])
         dodecahedron = Topology.Scale(dodecahedron, origin=Vertex.Origin(), x=radius/d, y=radius/d, z=radius/d)
+        verts = Topology.Vertices(dodecahedron)
+        print("Dodec: Distance", Vertex.Distance(Vertex.Origin(), verts[0]))
         if placement == "bottom":
             dodecahedron = Topology.Translate(dodecahedron, 0, 0, radius)
         elif placement == "lowerleft":
@@ -3091,9 +3093,9 @@ class Cell():
     
     @staticmethod
     def Sphere(origin= None, radius: float = 0.5, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001):
+                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
-        Creates a sphere.
+        Creates an approximation of a sphere using a UV grid of triangular faces.
 
         Parameters
         ----------
@@ -3111,6 +3113,9 @@ class Cell():
             The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, suppresses warning and error messages. Default is False.
+        
 
         Returns
         -------
@@ -3118,24 +3123,89 @@ class Cell():
             The created sphere.
 
         """
-
+    
+        import math
         from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Sphere - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+        # Validate inputs
+        if radius <= 0 or uSides < 3 or vSides < 2:
+            if not silent:
+                print("Sphere - Error: radius must be > 0, uSides >= 3, vSides >= 2. Returning None.")
             return None
-        c = Wire.Circle(origin=Vertex.Origin(), radius=radius, sides=vSides, fromAngle=0, toAngle=180, close=False, direction=[0, 0, 1], placement="center")
-        c = Topology.Rotate(c, origin=Vertex.Origin(), axis=[1, 0, 0], angle=90)
-        sphere = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if Topology.Type(sphere) == Topology.TypeID("CellComplex"):
-            sphere = CellComplex.ExternalBoundary(sphere)
-        if Topology.Type(sphere) == Topology.TypeID("Shell"):
-            sphere = Cell.ByShell(sphere)
+
+        # Center
+        if origin is None:
+            origin = Vertex.ByCoordinates(0, 0, 0)
+        ox = Vertex.X(origin)
+        oy = Vertex.Y(origin)
+        oz = Vertex.Z(origin)
+
+        # Poles
+        top_pole = Vertex.ByCoordinates(ox, oy, oz + radius)
+        bottom_pole = Vertex.ByCoordinates(ox, oy, oz - radius)
+
+        # Latitude rings (exclude poles)
+        rings = []  # list of list[Vertex]
+        for vi in range(1, vSides):
+            phi = math.pi * vi / vSides  # 0..pi
+            sin_phi = math.sin(phi)
+            cos_phi = math.cos(phi)
+            ring = []
+            for ui in range(uSides):
+                theta = 2.0 * math.pi * ui / uSides
+                x = ox + radius * sin_phi * math.cos(theta)
+                y = oy + radius * sin_phi * math.sin(theta)
+                z = oz + radius * cos_phi
+                ring.append(Vertex.ByCoordinates(x, y, z))
+            rings.append(ring)
+
+        faces = []
+
+        # Top cap: triangles from top pole to first ring
+        first_ring = rings[0]
+        for u in range(uSides):
+            v1 = first_ring[u]
+            v2 = first_ring[(u + 1) % uSides]
+            f = Face.ByVertices([top_pole, v1, v2], tolerance=tolerance)
+            if f:
+                faces.append(f)
+
+        # Middle bands: split quads into two triangles
+        for i in range(len(rings) - 1):
+            curr = rings[i]
+            nxt = rings[i + 1]
+            for u in range(uSides):
+                a = curr[u]
+                b = nxt[u]
+                c = nxt[(u + 1) % uSides]
+                d = curr[(u + 1) % uSides]
+                f1 = Face.ByVertices([a, b, c], tolerance=tolerance)
+                if f1:
+                    faces.append(f1)
+                f2 = Face.ByVertices([a, c, d], tolerance=tolerance)
+                if f2:
+                    faces.append(f2)
+
+        # Bottom cap: triangles from last ring to bottom pole
+        last_ring = rings[-1]
+        for u in range(uSides):
+            v1 = last_ring[(u + 1) % uSides]
+            v2 = last_ring[u]
+            f = Face.ByVertices([bottom_pole, v1, v2], tolerance=tolerance)
+            if f:
+                faces.append(f)
+
+        # Sew faces into a shell
+        sphere = None
+        try:
+            sphere = Cell.ByFaces(faces, tolerance=tolerance)
+        except Exception:
+            if not silent:
+                print("Cell.Sphere - Error: could not create a sphere. Returning None.")
+            return None
         if placement.lower() == "bottom":
             sphere = Topology.Translate(sphere, 0, 0, radius)
         elif placement.lower() == "lowerleft":

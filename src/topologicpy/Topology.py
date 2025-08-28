@@ -8320,6 +8320,8 @@ class Topology():
              absolute=False,
              sides=8,
              angle=0,
+
+             showFigure=True,
              mantissa=6,
              tolerance=0.0001,
              silent=False):
@@ -8507,6 +8509,8 @@ class Topology():
             The units used in the colorbar. Default is ""
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+        showFigure : bool , optional
+            If set to True, the figure will be shown and a None is returned. If not, the figure will be returned, but not shown. Default is True.
         mantissa : int , optional
             The desired length of the mantissa for the values listed on the colorbar. Default is 6.
         tolerance : float , optional
@@ -8516,7 +8520,8 @@ class Topology():
 
         Returns
         -------
-        None
+        Plotly figure
+            The created plotly figure.
 
         """
 
@@ -8691,7 +8696,10 @@ class Topology():
                                      tolerance=tolerance)
         if showScale:
             figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
-        Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
+        if showFigure:
+            Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
+            return None
+        return figure
 
     @staticmethod
     def SmallestFaces(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
