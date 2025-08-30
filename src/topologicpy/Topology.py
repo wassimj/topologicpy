@@ -8699,6 +8699,23 @@ class Topology():
         if showFigure:
             Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
             return None
+        if "ortho" in projection.lower():
+            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                                center=dict(x=center[0], y=center[1], z=center[2]),
+                                up=dict(x=up[0], y=up[1], z=up[2]),
+                                projection=dict(type="orthographic"))
+        else:
+            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                                center=dict(x=center[0], y=center[1], z=center[2]),
+                                up=dict(x=up[0], y=up[1], z=up[2]),
+                                projection=dict(type="perspective"))
+
+        figure.update_layout(
+            scene_camera = camera_settings,
+            scene=dict(aspectmode="data"),
+            autosize=True,
+            margin=dict(l=40, r=40, t=40, b=40)
+            )
         return figure
 
     @staticmethod

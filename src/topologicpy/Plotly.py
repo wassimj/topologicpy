@@ -1447,8 +1447,10 @@ class Plotly:
         ----------
         matrix : list or numpy.array
             The matrix to display.
-        categories : list
-            The list of categories to use on the X and Y axes.
+        xCategories : list
+            The list of categories to use on the X axis.
+        yCategories : list
+            The list of categories to use on the Y axis.
         minValue : float , optional
             The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.
         maxValue : float , optional

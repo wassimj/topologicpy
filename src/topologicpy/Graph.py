@@ -784,7 +784,291 @@ class Graph:
             return csv_buffer.getvalue()
         except Exception as e:
             return ""
-        
+
+    @staticmethod
+    def AdjacencyMatrixFigure(graph,
+                            vertexKey: str = None,
+                            showZero: bool = False,
+                            zeroChar: str = "·",
+                            zeroColor: str = 'rgba(0,0,0,0)',
+                            valueColor: str = 'rgba(0,0,0,0.05)',
+                            diagonalHighlight: bool = True,
+                            diagonalColor: str = 'rgba(0,0,0,0)',
+                            title: str = None,
+                            cellSize: int = 24,
+                            fontFamily: str = "Arial",
+                            fontSize: int = 12,
+                            fontColor: str = 'rgba(0,0,0,0)',
+                            backgroundColor: str = 'rgba(0,0,0,0)',
+                            headerColor: str = 'rgba(0,0,0,0)',
+                            reverse=False,
+                            edgeKeyFwd=None,
+                            edgeKeyBwd=None,
+                            bidirKey=None,
+                            bidirectional=True,
+                            useEdgeIndex=False,
+                            useEdgeLength=False,
+                            mantissa: int = 6,
+                            tolerance=0.0001,
+                            silent: bool = False):
+        """
+        Returns a Plotly table figure visualizing the adjacency matrix of a Graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexKey : str , optional
+            If set, the returned list of vertices is sorted according to the dictionary values stored under this key. Default is None.
+        showZero : bool, optional
+            If True, show zeros as "0"; if False, show a subtle glyph (zero_char) or blank. Default is False.
+        zeroChar : str, optional
+            Character to display for zero entries when show_zero is False. Default is "·".
+        zeroColor : list or str , optional
+            The desired color to display for zero-valued cells. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        valueColor : list or str , optional
+            The desired color to display for non-zero-valued cells. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0.35)' (slight highlight).
+        diagonalHighlight : bool, optional
+            If True, lightly highlight diagonal cells. Default is True.
+        diagonalColor : list or str , optional
+            The desired diagonal highlight color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        title : str, optional
+            Optional figure title.
+        cellSize : int, optional
+            Approximate pixel height of each table row. Default is 24.
+        fontFamily : str, optional
+            Font family for table text. Default is "Arial".
+        fontSize : int, optional
+            Font size for table text. Default is 12.
+        fontColor : list or str , optional
+            The desired font color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        backgroundColor : list or str , optional
+            The desired background color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        headerColor : list or str , optional
+            The desired header color. This can be any color list or plotly color string and may be specified as:
+            - An rgb list (e.g. [255,0,0])
+            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+            - A hex string (e.g. '#ff0000')
+            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
+            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
+            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
+            - A named CSS color.
+            The default is 'rgba(0,0,0,0)' (transparent).
+        reverse : bool , optional
+            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
+        edgeKeyFwd : str , optional
+            If set, the value at this key in the connecting edge from start vertex to end vertex (forward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
+        edgeKeyBwd : str , optional
+            If set, the value at this key in the connecting edge from end vertex to start vertex (backward) will be used instead of the value 1. Default is None. useEdgeIndex and useEdgeLength override this setting.
+        bidirKey : bool , optional
+            If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None
+        bidirectional : bool , optional
+            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
+        useEdgeIndex : bool , optional
+            If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        useEdgeLength : bool , optional
+            If set to True, the adjacency matrix values will the length of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If True, suppresses warning messages. Default is False.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure
+            A Plotly table figure containing the adjacency matrix table.
+        """
+
+        from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
+        from topologicpy.Dictionary import Dictionary
+        import plotly.graph_objects as go
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Plotly.AdjacencyMatrixTable - Error: The input is not a valid Graph. Returning None.")
+            return None
+
+        # Build adjacency matrix
+        adj = Graph.AdjacencyMatrix(graph,
+                                    vertexKey=vertexKey,
+                                    reverse=reverse,
+                                    edgeKeyFwd=edgeKeyFwd,
+                                    edgeKeyBwd=edgeKeyBwd,
+                                    bidirKey=bidirKey,
+                                    bidirectional=bidirectional,
+                                    useEdgeIndex=useEdgeIndex,
+                                    useEdgeLength=useEdgeLength,
+                                    mantissa=mantissa,
+                                    tolerance=tolerance)
+
+        if adj is None or not isinstance(adj, list) or len(adj) == 0:
+            if not silent:
+                print("Plotly.AdjacencyMatrixTable - Warning: Empty adjacency matrix. Returning None.")
+            return None
+
+        n = len(adj)
+        # Validate squareness
+        if any((not isinstance(row, list) or len(row) != n) for row in adj):
+            if not silent:
+                print("Plotly.AdjacencyMatrixTable - Error: Adjacency matrix must be square. Returning None.")
+            return None
+
+        # Derive labels
+        verts = Graph.Vertices(graph)
+        labels = [Dictionary.ValueAtKey(Topology.Dictionary(v), vertexKey, str(i)) for i, v in enumerate(verts)]
+        if len(labels) > 0 and not vertexKey == None:
+            labels.sort()
+            if reverse == True:
+                labels.reverse()
+        # Build display matrix (strings) while keeping a parallel style mask for diagonal
+        display_matrix = []
+        diag_mask = []
+        for r in range(n):
+            row_vals = []
+            row_diag = []
+            for c in range(n):
+                v = adj[r][c]
+                if v == 0:
+                    row_vals.append("0" if showZero else (zeroChar if zeroChar else ""))
+                else:
+                    # Keep integers unpadded for clarity; cast others nicely
+                    row_vals.append(str(int(v)) if isinstance(v, (int, float)) and float(v).is_integer() else str(v))
+                row_diag.append(r == c)
+            display_matrix.append(row_vals)
+            diag_mask.append(row_diag)
+
+        # Construct header and cells for Plotly Table
+        # Header: blank corner + column labels
+        header_values = [""] + labels
+
+        # Body: first column is row labels, then matrix cells as strings
+        # Plotly Table expects columns as lists; we need to transpose
+        columns = []
+        # Column 0: row labels
+        columns.append(labels)
+        # Subsequent columns: for each c, collect display_matrix[r][c]
+        for c in range(n):
+            columns.append([display_matrix[r][c] for r in range(n)])
+
+        # Flatten cell fill_colors to highlight diagonal subtly.
+        # Plotly Table allows per-cell fillcolor via a 2D list matching the table shape for 'cells'.
+        # Our cells shape is n rows x (n+1) cols (including row label column).
+
+        fill_colors = []
+        # Column 0: row labels (no highlight)
+        fill_colors.append([headerColor] * n)
+
+        # Columns 1..n: highlight diagonal where row index r == (column_index-1)
+        for c in range(1, n + 1):
+            col_colors = []
+            for r in range(n):
+                if diagonalHighlight and r == (c - 1):
+                    col_colors.append(diagonalColor)
+                elif columns[c][r] == "0" or columns[c][r] == zeroChar:
+                    col_colors.append(zeroColor)
+                else:
+                    col_colors.append(valueColor)
+            fill_colors.append(col_colors)
+
+        # Minimal line style
+        line_color = "rgba(0,0,0,0.12)"
+        # --- Sizing to prevent cropped text ---
+        # Heuristic widths (pixels)
+        max_label_len = max(len(str(x)) for x in labels) if labels else 1
+        row_label_px = max(120, min(320, 8 * max_label_len))  # scale with label length
+        cell_px = 36 if n <= 30 else (30 if n <= 50 else 24)   # narrower cells for very wide matrices
+
+        # Adaptive cell font size for many columns
+        fontSize = max(fontSize, 3)
+        cell_font_size = fontSize if n <= 35 else (fontSize-1 if n <= 60 else fontSize-2)
+
+        # Figure width: row label column + all matrix columns
+        fig_width = row_label_px + n * cell_px
+        fig_width = max(600, min(2400, fig_width))  # clamp to reasonable bounds
+
+        # Increase row height a bit for readability
+        cellSize = max(cellSize, 26)
+
+        # Column widths in px (Plotly Table accepts pixel widths)
+        columnwidth = [row_label_px] + [cell_px] * n
+        fig = go.Figure(
+            data=[
+                go.Table(
+                    header=dict(
+                        values=header_values,
+                        align="center",
+                        font=dict(family=fontFamily, size=cell_font_size, color=fontColor),
+                        fill_color=headerColor,
+                        line_color=line_color,
+                        height=cellSize + 4  # a touch taller for the header
+                    ),
+                    cells=dict(
+                        values=columns,
+                        align=["right"] + ["center"] * n,
+                        font=dict(family=fontFamily, size=cell_font_size, color=fontColor),
+                        fill_color=fill_colors,
+                        line_color=line_color,
+                        height=cellSize
+                    ),
+                    columnorder=list(range(n + 1)),
+                    columnwidth=columnwidth
+                )
+            ]
+        )
+
+        # Layout: generous margins, white background, optional title
+        fig.update_layout(
+            title=dict(text=title, x=0.5, xanchor="center") if title else None,
+            paper_bgcolor="white",
+            plot_bgcolor=backgroundColor,
+            margin=dict(l=20, r=20, t=40 if title else 10, b=20)
+        )
+
+        return fig
+
     @staticmethod
     def AdjacencyList(graph, vertexKey=None, reverse=True, tolerance=0.0001):
         """

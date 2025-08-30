@@ -1552,7 +1552,6 @@ class Cell():
         cluster = Cluster.ByTopologies(pentagons)
         
         cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), axis=[1, 0, 0], angle=180)
-        #cluster2 = Topology.Rotate(cluster2, origin=Vertex.Origin(), axis=[0, 0, 1], angle=36)
         vertices = Topology.Vertices(cluster)
         zList = [Vertex.Z(v) for v in vertices]
         zList = list(set(zList))
@@ -1566,9 +1565,8 @@ class Cell():
         dodecahedron = Topology.Translate(dodecahedron, -Vertex.X(centroid), -Vertex.Y(centroid), -Vertex.Z(centroid))
         vertices = Topology.Vertices(dodecahedron)
         d = Vertex.Distance(Vertex.Origin(), vertices[0])
+        # Make sure the distance from the origin to the vertices is equal to the radius.
         dodecahedron = Topology.Scale(dodecahedron, origin=Vertex.Origin(), x=radius/d, y=radius/d, z=radius/d)
-        verts = Topology.Vertices(dodecahedron)
-        print("Dodec: Distance", Vertex.Distance(Vertex.Origin(), verts[0]))
         if placement == "bottom":
             dodecahedron = Topology.Translate(dodecahedron, 0, 0, radius)
         elif placement == "lowerleft":
