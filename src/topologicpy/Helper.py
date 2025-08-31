@@ -90,6 +90,53 @@ class Helper:
 
         return sorted(bin_averages)
     
+    def CheckVersion(library: str = None, version: str = None, silent: bool = False):
+        """
+        Compare an input version with the latest version of a Python library on PyPI.
+
+        Parameters
+        ----------
+        library : str
+            The input software library name. Default is None.
+        version : str
+            The input software version number to compare. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns:
+            str: A message indicating whether the input version is less than,
+                equal to, or greater than the latest version on PyPI.
+        """
+        import requests
+        from packaging import version as ver
+
+        try:
+            # Fetch library data from PyPI
+            url = f"https://pypi.org/pypi/{library}/json"
+            response = requests.get(url)
+            response.raise_for_status()
+
+            # Extract the latest version from the JSON response
+            data = response.json()
+            latest_version = data['info']['version']
+
+            # Compare versions using the packaging library
+            if ver.parse(version) < ver.parse(latest_version):
+                return (f"The version that you are using ({version}) is OLDER than the latest version ({latest_version}) from PyPI. Please consider upgrading to the latest version.")
+            elif ver.parse(version) == ver.parse(latest_version):
+                return (f"The version that you are using ({version}) is EQUAL TO the latest version available on PyPI.")
+            else:
+                return (f"The version that you are using ({version}) is NEWER than the latest version ({latest_version}) available from PyPI.")
+
+        except requests.exceptions.RequestException as e:
+            if not silent:
+                print("Helper.CheckVersion - Error: Could not fetch data from PyPI. Returning None")
+            return None
+        except KeyError:
+            if not silent:
+                print("Helper.CheckVersion - Error: Could not fetch data from PyPI. Returning None")
+            return None
+    
     @staticmethod
     def ClosestMatch(item, listA):
         """
@@ -788,58 +835,25 @@ class Helper:
         return returnList
     
     @staticmethod
-    def Version():
+    def Version(check: bool = True, silent: bool = False):
         """
         Returns the current version of the software.
 
         Parameters
         ----------
-
+        check : bool , optional
+            if set to True, the version number is checked with the latest version on PyPi. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
         Returns
         -------
         str
-            The current version of the software.
+            The current version of the software. Optionally, includes a check with PyPi.
 
         """
         
-        import requests
-        from packaging import version
-
-        def compare_version_with_pypi(library_name, input_version):
-            """
-            Compare an input version with the latest version of a Python library on PyPI.
-
-            Args:
-                library_name (str): The name of the Python library on PyPI.
-                input_version (str): The version number to compare (e.g., "0.7.58").
-
-            Returns:
-                str: A message indicating whether the input version is less than,
-                    equal to, or greater than the latest version on PyPI.
-            """
-            try:
-                # Fetch library data from PyPI
-                url = f"https://pypi.org/pypi/{library_name}/json"
-                response = requests.get(url)
-                response.raise_for_status()
-
-                # Extract the latest version from the JSON response
-                data = response.json()
-                latest_version = data['info']['version']
-
-                # Compare versions using the packaging library
-                if version.parse(input_version) < version.parse(latest_version):
-                    return (f"The version that you are using ({input_version}) is OLDER than the latest version {latest_version} from PyPI. Please consider upgrading to the latest version.")
-                elif version.parse(input_version) == version.parse(latest_version):
-                    return (f"The version that you are using ({input_version}) is the latest version available on PyPI.")
-                else:
-                    return (f"The version that you are using ({input_version}) is NEWER than the latest version ({latest_version}) available from PyPI.")
-
-            except requests.exceptions.RequestException as e:
-                return f"Error fetching data from PyPI: {e}"
-            except KeyError:
-                return "Error: Unable to find the latest version in the PyPI response."
-        
-        current_version = topologicpy.__version__
-        result = compare_version_with_pypi("topologicpy", current_version)
+        result = topologicpy.__version__
+        if check == True:
+            result = Helper.CheckVersion("topologicpy", result, silent=silent)
         return result

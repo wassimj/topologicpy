@@ -201,6 +201,51 @@ class EnergyModel:
                 warnings.warn("EnergyModel.ByTopology - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
                 return None
 
+
+        def load_openstudio_model(osm_path: str, allow_newer: bool = True):
+            """
+            Load an OpenStudio .osm file and return an openstudio.model.Model.
+            Uses loadModelFromString to avoid SWIG path overload issues.
+            """
+            import os
+
+            if not os.path.exists(osm_path):
+                raise FileNotFoundError(osm_path)
+
+            vt = openstudio.osversion.VersionTranslator()
+            if allow_newer:
+                vt.setAllowNewerVersions(True)
+
+            # 1) Robust path-agnostic route: read text and load from string
+            with open(osm_path, "r", encoding="utf-8") as f:
+                txt = f.read()
+            model_opt = vt.loadModelFromString(txt)  # <- avoids path type mismatches
+
+            # 2) Fallback: try the filesystem-path overloads if needed
+            if (not model_opt) or (not model_opt.is_initialized()):
+                os_path = None
+                for maker in (
+                    lambda s: getattr(openstudio, "path")(s),
+                    lambda s: getattr(openstudio, "toPath")(s),
+                    lambda s: getattr(openstudio.openstudioutilitiescore, "toPath")(s),
+                ):
+                    try:
+                        os_path = maker(osm_path)
+                        break
+                    except Exception:
+                        pass
+                if os_path is not None:
+                    try:
+                        model_opt = vt.loadModel(os_path)
+                    except TypeError:
+                        model_opt = openstudio.model.Model.load(os_path)
+
+            if (not model_opt) or (not model_opt.is_initialized()):
+                raise RuntimeError(f"Failed to load OpenStudio model from: {osm_path}")
+
+            model = model_opt.get()
+            return model
+    
         def getKeyName(d, keyName):
             keys = d.Keys()
             for key in keys:
@@ -243,21 +288,23 @@ class EnergyModel:
         
         if not osModelPath:
             import os
-            osModelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "OSMTemplate-OfficeBuilding-3.5.0.osm")
+            osModelPath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "OSMTemplate-OfficeBuilding-3.10.0.osm")
         if not weatherFilePath or not designDayFilePath:
             import os
             weatherFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.epw")
             designDayFilePath = os.path.join(os.path.dirname(os.path.realpath(__file__)), "assets", "EnergyModel", "GBR_London.Gatwick.037760_IWEC.ddy")
-        translator = openstudio.osversion.VersionTranslator()
+
+        #translator = openstudio.osversion.VersionTranslator()
         # DEBUGGING
         #osmFile = openstudio.openstudioutilitiescore.toPath(osModelPath)
         #osModel = translator.loadModel(osmFile)
-        osModel = translator.loadModel(osModelPath)
-        if osModel.isNull():
-            print("EnergyModel.ByTopology - Error: The openstudio model is null. Returning None.")
-            return None
-        else:
-            osModel = osModel.get()
+        #osModel = translator.loadModel(osModelPath)
+        osModel = load_openstudio_model(osModelPath, allow_newer=True)
+        # if osModel.isNull():
+        #     print("EnergyModel.ByTopology - Error: The openstudio model is null. Returning None.")
+        #     return None
+        # else:
+        #     osModel = osModel.get()
         # DEBUGGING
         #osEPWFile = openstudio.openstudioutilitiesfiletypes.EpwFile.load(openstudio.toPath(weatherFilePath))
         osEPWFile = openstudio.openstudioutilitiesfiletypes.EpwFile.load(weatherFilePath)
@@ -265,8 +312,8 @@ class EnergyModel:
             osEPWFile = osEPWFile.get()
             openstudio.model.WeatherFile.setWeatherFile(osModel, osEPWFile)
         # DEBUGGING
-        #ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(openstudio.toPath(designDayFilePath))
-        ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(designDayFilePath)
+        ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(openstudio.toPath(designDayFilePath))
+        #ddyModel = openstudio.openstudioenergyplus.loadAndTranslateIdf(designDayFilePath)
         if ddyModel.is_initialized():
             ddyModel = ddyModel.get()
             for ddy in ddyModel.getObjectsByType(openstudio.IddObjectType("OS:SizingPeriod:DesignDay")):
@@ -1195,3 +1242,57 @@ class EnergyModel:
             return None
         return units
     
+    @staticmethod
+    def Version(check: bool = True, silent: bool = False):
+        """
+        Returns the OpenStudio SDK version number.
+
+        Parameters
+        ----------
+        check : bool , optional
+            if set to True, the version number is checked with the latest version on PyPi. Default is True.
+        
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        str
+            The OpenStudio SDK version number.
+
+        """
+        from topologicpy.Helper import Helper
+        try:
+            import openstudio
+            openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+        except:
+            if not silent:
+                print("EnergyModel.Version - Information: Installing required openstudio library.")
+            try:
+                os.system("pip install openstudio")
+            except:
+                os.system("pip install openstudio --user")
+            try:
+                import openstudio
+                openstudio.Logger.instance().standardOutLogger().setLogLevel(openstudio.Fatal)
+                if not silent:
+                    print("EnergyModel.Version - Information: openstudio library installed correctly.")
+            except:
+                if not silent:
+                    print("EnergyModel.Version - Error: Could not import openstudio.Please try to install openstudio manually. Returning None.")
+                return None
+        import requests
+        from packaging import version
+
+        result = getattr(openstudio, "openStudioVersion", None)
+        if callable(result):
+            result = result()
+        else:
+            if not silent:
+                print("EnergyModel.Version - Error: Could not retrieve the openstudio SDK version number. Returning None.")
+            return None
+        if check == True:
+            result = Helper.CheckVersion("openstudio", result, silent=silent)
+        return result
+        
+        
