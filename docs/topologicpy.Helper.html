@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.8.52 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.8.54 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.52
+                0.8.54
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -155,58 +155,61 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.BinAndAverage" title="topologicpy.Helper.Helper.BinAndAverage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinAndAverage</span></code></a>(listA[, mantissa, tolerance, ...])</p></td>
 <td><p>Groups numbers within a specified tolerance into bins, calculates the average of each bin, and returns a sorted list of these averages.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClosestMatch" title="topologicpy.Helper.Helper.ClosestMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosestMatch</span></code></a>(item, listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.CheckVersion" title="topologicpy.Helper.Helper.CheckVersion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CheckVersion</span></code></a>([version, silent])</p></td>
+<td><p>Compare an input version with the latest version of a Python library on PyPI.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClosestMatch" title="topologicpy.Helper.Helper.ClosestMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosestMatch</span></code></a>(item, listA)</p></td>
 <td><p>Returns the index of the closest match in the input list to the input item.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClusterByKeys" title="topologicpy.Helper.Helper.ClusterByKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByKeys</span></code></a>(elements, dictionaries, *keys)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClusterByKeys" title="topologicpy.Helper.Helper.ClusterByKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByKeys</span></code></a>(elements, dictionaries, *keys)</p></td>
 <td><p>Clusters the input list of elements and dictionaries based on the input key or keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Flatten" title="topologicpy.Helper.Helper.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Flatten" title="topologicpy.Helper.Helper.Flatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Flatten</span></code></a>(listA)</p></td>
 <td><p>Flattens the input nested list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Grow" title="topologicpy.Helper.Helper.Grow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Grow</span></code></a>(seed_idx, group_size, adjacency, ...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Grow" title="topologicpy.Helper.Helper.Grow"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Grow</span></code></a>(seed_idx, group_size, adjacency, ...)</p></td>
 <td><p>Attempts to grow a spatially connected group of a specified size starting from a given seed index.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Iterate" title="topologicpy.Helper.Helper.Iterate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iterate</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Iterate" title="topologicpy.Helper.Helper.Iterate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Iterate</span></code></a>(listA)</p></td>
 <td><p>Iterates the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MakeUnique" title="topologicpy.Helper.Helper.MakeUnique"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MakeUnique</span></code></a>(listA)</p></td>
 <td><p>Forces the strings in the input list to be unique if they have duplicates.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MaximumIndices" title="topologicpy.Helper.Helper.MaximumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumIndices</span></code></a>(listA[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MaximumIndices" title="topologicpy.Helper.Helper.MaximumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaximumIndices</span></code></a>(listA[, silent])</p></td>
 <td><p>Returns a list of indices of the maximum value in the input list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MergeByThreshold" title="topologicpy.Helper.Helper.MergeByThreshold"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeByThreshold</span></code></a>(listA[, threshold])</p></td>
 <td><p>Merges the numbers in the input list so that numbers within the input threshold are averaged into one number.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MinimumIndices" title="topologicpy.Helper.Helper.MinimumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumIndices</span></code></a>(listA[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.MinimumIndices" title="topologicpy.Helper.Helper.MinimumIndices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MinimumIndices</span></code></a>(listA[, silent])</p></td>
 <td><p>Returns a list of indices of the minimum value in the input list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Normalize" title="topologicpy.Helper.Helper.Normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Normalize</span></code></a>(listA[, mantissa])</p></td>
 <td><p>Normalizes the input list so that it is in the range 0 to 1</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Position" title="topologicpy.Helper.Helper.Position"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Position</span></code></a>(item, listA)</p></td>
 <td><p>Returns the position of the item in the list or the position it would have been inserts.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveEven" title="topologicpy.Helper.Helper.RemoveEven"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEven</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveEven" title="topologicpy.Helper.Helper.RemoveEven"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEven</span></code></a>(listA)</p></td>
 <td><p>Removes the even indexed members of the input list.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveOdd" title="topologicpy.Helper.Helper.RemoveOdd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveOdd</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.RemoveOdd" title="topologicpy.Helper.Helper.RemoveOdd"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveOdd</span></code></a>(listA)</p></td>
 <td><p>Removes the odd indexed members of the input list.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
 <td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
 <td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
 <td><p>Transposes the input list (swaps rows and columns).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Trim" title="topologicpy.Helper.Helper.Trim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Trim</span></code></a>(listA)</p></td>
 <td><p>Trims the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Version" title="topologicpy.Helper.Helper.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
 <td><p>Returns the current version of the software.</p></td>
 </tr>
 </tbody>
@@ -232,6 +235,29 @@ of each bin, and returns a sorted list of these averages.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The sorted list of bin averages.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Helper.Helper.CheckVersion">
+<span class="sig-name descname"><span class="pre">CheckVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.CheckVersion" title="Permalink to this definition"></a></dt>
+<dd><p>Compare an input version with the latest version of a Python library on PyPI.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>library</strong><span class="classifier">str</span></dt><dd><p>The input software library name. Default is None.</p>
+</dd>
+<dt><strong>version</strong><span class="classifier">str</span></dt><dd><p>The input software version number to compare. Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+<dt><strong>Returns:</strong></dt><dd><dl class="simple">
+<dt>str: A message indicating whether the input version is less than,</dt><dd><p>equal to, or greater than the latest version on PyPI.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -639,16 +665,20 @@ For example Trim([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,’
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.Version">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Version</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Version" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">check</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Version" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the current version of the software.</p>
-<dl class="field-list">
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><blockquote>
-<div></div></blockquote>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>check</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the version number is checked with the latest version on PyPi. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The current version of the software.</p>
+<dt>str</dt><dd><p>The current version of the software. Optionally, includes a check with PyPi.</p>
 </dd>
 </dl>
 </dd>

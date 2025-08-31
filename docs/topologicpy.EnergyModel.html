@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.8.52 documentation</title>
+  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.8.54 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.52
+                0.8.54
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -252,6 +252,9 @@ return None</p>
 <dd class="field-odd"><p></p></dd>
 </dl>
 </p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.EnergyModel.EnergyModel.Version" title="topologicpy.EnergyModel.EnergyModel.Version"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Version</span></code></a>([check, silent])</p></td>
+<td><p>Returns the OpenStudio SDK version number.</p></td>
 </tr>
 </tbody>
 </table>
@@ -766,6 +769,28 @@ find the floor levels from the horizontal faces of the input topology</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>str</dt><dd><p>The units string found in the input OSM model, report name, table name, and column name.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.EnergyModel.EnergyModel.Version">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Version</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">check</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.EnergyModel.EnergyModel.Version" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the OpenStudio SDK version number.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>check</strong><span class="classifier">bool , optional</span></dt><dd><p>if set to True, the version number is checked with the latest version on PyPi. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The OpenStudio SDK version number.</p>
 </dd>
 </dl>
 </dd>
