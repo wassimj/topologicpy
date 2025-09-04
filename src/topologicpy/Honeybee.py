@@ -14,6 +14,7 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
 import os
 import warnings
 
@@ -113,6 +114,530 @@ import topologic_core as topologic
 
 class Honeybee:
     @staticmethod
+    def ByHBJSONDictionary(
+        dictionary,
+        includeRooms: bool = True,
+        includeFaces: bool = True,
+        includeShades: bool = True,
+        includeApertures: bool = True,
+        includeDoors: bool = True,
+        includeOrphanedRooms: bool = True,
+        includeOrphanedFaces: bool = True,
+        includeOrphanedShades: bool = True,
+        includeOrphanedApertures: bool = True,
+        includeOrphanedDoors: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False):
+        """
+        Import an HBJSON model from a python dictionary and return a python dictionary. See: https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema
+        
+        Parameters
+        ----------
+        dictionary : dict
+            The HBJSON model as a Python dictionary (e.g., loaded via ``json.load``).
+        includeRooms : bool, optional
+            If True, parse rooms and attempt to create one ``Cell`` per room. Default is True.
+        includeFaces : bool, optional
+            If True, include top-level planar faces found outside rooms (e.g., at root "faces"). Default is True.
+        includeShades : bool, optional
+            If True, include context/standalone shades (e.g., ``context_geometry.shades``). Default is True.
+        includeApertures : bool, optional
+            If True, include **room** apertures (e.g., windows) as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeDoors : bool, optional
+            If True, include **room** doors as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeOrphanedRooms : bool, optional
+            If True, include the topology of the room when a room fails to close as a ``Cell``. This may be a ``Shell`` or a ``Cluster``. Default is True.
+        includeOrphanedFaces : bool, optional
+            If True, include planar faces listed at the HBJSON root (e.g., "faces"). Default is True.
+        includeOrphanedShades : bool, optional
+            If True, include shades listed at the HBJSON root (e.g., "orphaned_shades"). Default is True.
+        includeOrphanedApertures : bool, optional
+            If True, include apertures listed at the HBJSON root (e.g., "orphaned_apertures"). Default is True.
+        includeOrphanedDoors : bool, optional
+            If True, include doors listed at the HBJSON root (e.g., "orphaned_doors"). Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        dict
+            The created cluster of vertices, edges, faces, and cells.
+            - 'rooms': list of Cells (one per successfully closed room)
+            - 'faces': list of Faces (all faces that make up the rooms)
+            - 'shades': list of Faces (all shade faces)
+            - 'apertures': list of Faces (all apertures, never cut from hosts)
+            - 'doors': list of Faces (all doors, never cut from hosts)
+            - 'orphanedRooms': list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+            - 'orphanedFaces': list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+            - 'orphanedShades': list of Faces (context/top-level shade faces that failed to have a parent cell)
+            - 'orphanedApertures': list of Faces (apertures that failed to have a parent face)
+            - 'orphanedDoors': list of Faces (doors that failed to have a parent face)
+            - 'properties': hierarchical dict copied verbatim from HBJSON['properties']
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        from typing import Any, Dict, List, Optional, Tuple
+
+        if not isinstance(dictionary, dict):
+            if not silent:
+                print("Honeybee.ByHBJSONDictionary - Error: The input dictionary parameter is not a valid python dictionary. Returning None.")
+            return None
+
+        # ---------------------- helpers ----------------------
+        def _close(points: List[List[float]]) -> List[List[float]]:
+            if not points:
+                return points
+            p0, pN = points[0], points[-1]
+            if (abs(p0[0]-pN[0]) > tolerance or
+                abs(p0[1]-pN[1]) > tolerance or
+                abs(p0[2]-pN[2]) > tolerance):
+                return points + [p0]
+            return points
+
+        def _V(p: List[float]) -> Vertex:
+            return Vertex.ByCoordinates(float(p[0]), float(p[1]), float(p[2]))
+
+        # Tolerance-filtered wire (your spec)
+        def _wire(points: List[List[float]], tolerance: float = 1e-6) -> Wire:
+            pts = _close(points)
+            verts = [_V(x) for x in pts]
+            edges = [
+                Edge.ByVertices(verts[i], verts[i+1], tolerance=tolerance, silent=True)
+                for i in range(len(verts)-1)
+                if Vertex.Distance(verts[i], verts[i+1]) > tolerance
+            ]
+            w = None
+            try:
+                w = Wire.ByEdges(edges, tolerance=tolerance, silent=True)
+            except:
+                w = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+            if w == None:
+                if not silent:
+                    print("Honeybee.ByHBSJONDictionary - Error: Could not build wire. Returning None.")
+            return w
+
+        def _face_from_boundary(boundary: List[List[float]]) -> Face:
+            w = _wire(boundary, tolerance)
+            if w:
+                f = Face.ByWire(w, tolerance=tolerance, silent=True)
+                if not f:
+                    if not silent:
+                        print("Honeybee.ByHBSJONDictionary - Error: Could not build face. Returning the wire")
+                    return w
+                return f
+            if not silent:
+                print("Honeybee.ByHBSJONDictionary - Error: Could not build face. Returning None")
+            return None
+
+        def _attach_all(top: Topology, full_py_dict: Dict[str, Any]) -> Topology:
+            # Attach the entire available dict (no filtering)
+            try:
+                keys = list(full_py_dict.keys())
+                values = [full_py_dict[k] for k in keys]
+                d = Dictionary.ByKeysValues(keys, values)
+                return Topology.SetDictionary(top, d)
+            except Exception:
+                return top  # be robust to non-serializable values
+
+        def _build_host_face_cut_holes(fobj: Dict[str, Any]) -> Optional[Face]:
+            """
+            Build host face from outer boundary and cut ONLY explicit 'holes' (NOT apertures/doors).
+            Attach the full fobj dict.
+            """
+            geom = fobj.get("geometry") or {}
+            boundary = geom.get("boundary") or fobj.get("boundary")
+            holes = geom.get("holes") or fobj.get("holes") or []
+
+            if not boundary or len(boundary) < 3:
+                return None
+
+            hosts = _face_from_boundary(boundary)
+            if Topology.IsInstance(hosts, "face") or Topology.IsInstance(hosts, "wire"):
+                hosts = [hosts]
+
+            for host in hosts:
+                # Subtract explicit hole loops (if any)
+                hole_faces: List[Face] = []
+                for h in holes:
+                    if h and len(h) >= 3:
+                        hole_faces.append(_face_from_boundary(h))
+
+                if hole_faces:
+                    hole_cluster = Cluster.ByTopologies(hole_faces)
+                    try:
+                        host = Topology.Difference(host, hole_cluster)
+                    except Exception as e:
+                        if not silent:
+                            name = fobj.get("identifier") or fobj.get("name") or "unnamed"
+                            print(f"HBJSON Import: Hole cutting failed on face '{name}'. Keeping uncut. Error: {e}")
+                _attach_all(host, fobj)
+            return hosts
+
+        def _aperture_faces_from(fobj: Dict[str, Any], kind: str) -> List[Face]:
+            """
+            Build separate faces for apertures/doors on a host (DO NOT cut from host).
+            'kind' ∈ {'apertures','doors'}. Attach full dict for each.
+            """
+            out: List[Face] = []
+            ap_list = fobj.get(kind) or []
+            for ap in ap_list:
+                g = ap.get("geometry") or {}
+                boundary = g.get("boundary") or ap.get("boundary")
+                if not boundary or len(boundary) < 3:
+                    continue
+                f = _face_from_boundary(boundary)
+                out.append(_attach_all(f, ap))
+            return out
+
+        def _orphaned_aperture_faces(ap_list: List[Dict[str, Any]]) -> List[Face]:
+            out: List[Face] = []
+            for ap in ap_list or []:
+                g = ap.get("geometry") or {}
+                boundary = g.get("boundary") or ap.get("boundary")
+                if not boundary or len(boundary) < 3:
+                    continue
+                f = _face_from_boundary(boundary)
+                out.append(_attach_all(f, ap))
+            return out
+
+        def _room_to_cell_and_apertures(room: Dict[str, Any]) -> Tuple[Optional[Cell], List[Face], List[Face]]:
+            """
+            Build host faces (cut 'holes' only) and aperture faces for a room.
+            Return (cell_or_none, host_faces, aperture_faces).
+            """
+            hb_faces = room.get("faces") or room.get("Faces") or []
+            rm_faces: List[Face] = []
+            sh_faces = room.get("shades") or room.get("Shades") or []
+            ap_faces: List[Face] = []
+            dr_faces: List[Face] = []
+
+
+            for fobj in hb_faces:
+                hosts = _build_host_face_cut_holes(fobj)
+                if hosts:
+                    rm_faces.extend(hosts)
+                ap_faces.extend(_aperture_faces_from(fobj, "apertures"))
+                dr_faces.extend(_aperture_faces_from(fobj, "doors"))
+            
+            # Room Shades
+            for sh in sh_faces:
+                shades = _build_host_face_cut_holes(sh)
+                if shades:
+                    sh_faces.extend(shades)
+            # Try to make a Cell. If it fails, we DO NOT return a Shell/Cluster in rooms;
+            # instead we will salvage host faces into the 'faces' bucket.
+            if rm_faces:
+                selectors = []
+                for rm_face in rm_faces:
+                    s = Topology.InternalVertex(rm_face)
+                    face_d = Topology.Dictionary(rm_face)
+                    s = Topology.SetDictionary(s, face_d)
+                    selectors.append(s)
+                cell = Cell.ByFaces(Helper.Flatten(rm_faces), tolerance=0.001, silent=True)
+                if Topology.IsInstance(cell, "cell"):
+                    cell = _attach_all(cell, room)  # attach full room dict
+                else:
+                    cell = Shell.ByFaces(Helper.Flatten(rm_faces), tolerance=0.001, silent=True)
+                    if not cell:
+                        cell = Cluster.ByTopologies(Helper.Flatten(rm_faces), silent=True)
+                if Topology.IsInstance(cell, "topology"):
+                    cell = _attach_all(cell, room)  # attach full room dict
+                
+                if Topology.IsInstance(cell, "Topology"):
+                    cell = Topology.TransferDictionariesBySelectors(cell, selectors,tranFaces=True, numWorkers=1)
+                return cell, rm_faces, sh_faces, ap_faces, dr_faces
+            # No host faces -> no cell
+            return None, [], sh_faces, ap_faces, dr_faces
+
+        rooms: List[Cell] = []
+        faces: List[Face] = []
+        shades: List[Face] = []
+        apertures: List[Face] = []
+        doors: List[Face] = []
+        orphaned_rooms: List[Cell] = []
+        orphaned_faces: List[Face] = []
+        orphaned_shades: List[Face] = []
+        orphaned_apertures: List[Face] = []
+        orphaned_doors: List[Face] = []
+
+        # Rooms → Cells (when possible) + collect apertures. If a Cell cannot be made,
+        # the room goes to the orphaned_rooms list.
+        for room in (dictionary.get("rooms") or dictionary.get("Rooms") or []):
+            cell, host_faces, sh_faces, ap_faces, dr_faces = _room_to_cell_and_apertures(room)
+
+            if includeRooms and Topology.IsInstance(cell, "cell"):
+                rooms.append(cell)
+            elif includeOrphanedRooms and Topology.IsInstance(cell, "topology"):
+                orphaned_rooms.append(cell)
+            if cell:
+                if includeFaces and host_faces:
+                    faces.extend(host_faces)
+                if includeShades and sh_faces:
+                    shades.extend(sh_faces)
+                if includeApertures and ap_faces:
+                    apertures.extend(ap_faces)
+                if includeDoors and dr_faces:
+                    doors.extend(dr_faces)
+
+        # Explicit orphaned faces → 'orphaned_faces'
+        if includeOrphanedFaces:
+            explicit_orphaned_faces = dictionary.get("orphaned_faces") or dictionary.get("OrphanedFaces") or []
+            for f in explicit_orphaned_faces:
+                hf = _build_host_face_cut_holes(f)
+                if hf:
+                    orphaned_faces.extend(hf)
+            # Some files also place planar surfaces at top-level 'faces'
+            for fobj in (dictionary.get("faces") or dictionary.get("Faces") or []):
+                hf = _build_host_face_cut_holes(fobj)
+                if hf:
+                    orphaned_faces.extend(hf)
+        
+        # Explicit orphaned shades (and/or context shades)
+        if includeOrphanedShades:
+            explicit_orphaned_shades = dictionary.get("orphaned_shades") or dictionary.get("OrphanedShades") or []
+            for s in explicit_orphaned_shades:
+                hf = _build_host_face_cut_holes(s)
+                if hf:
+                    orphaned_shades.extend(hf)
+
+            ctx = dictionary.get("context_geometry") or dictionary.get("Context") or {}
+            shade_list = []
+            if isinstance(ctx, dict):
+                shade_list = ctx.get("shades") or ctx.get("Shades") or []
+            elif isinstance(ctx, list):
+                shade_list = ctx
+            for s in shade_list:
+                hf = _build_host_face_cut_holes(s)
+                if hf:
+                    orphaned_shades.extend(hf)
+            # Some files might also place planar shade surfaces at top-level 'shades'
+            for fobj in (dictionary.get("shades") or dictionary.get("Shades") or []):
+                hf = _build_host_face_cut_holes(fobj)
+                if hf:
+                    orphaned_shades.extend(hf)
+
+        # Explicit orphaned apertures → 'orphaned_apertures'
+        if includeOrphanedApertures:
+            orphaned_ap_list = dictionary.get("orphaned_apertures") or dictionary.get("OrphanedApertures") or []
+            if orphaned_ap_list:
+                orphaned_apertures.extend(_orphaned_aperture_faces(orphaned_ap_list))
+        
+         # Explicit orphaned doors → 'orphaned_doors'
+        if includeOrphanedDoors:
+            orphaned_dr_list = dictionary.get("orphaned_doors") or dictionary.get("OrphanedDoors") or []
+            if orphaned_dr_list:
+                orphaned_doors.extend(_orphaned_aperture_faces(orphaned_dr_list)) #You can use the same function as apertures.
+
+        # Properties → hierarchical dict verbatim
+        props_root = dictionary.get("properties") or dictionary.get("Properties") or {}
+        properties = {
+            "radiance": props_root.get("radiance") or props_root.get("Radiance") or {},
+            "energy": props_root.get("energy") or props_root.get("Energy") or {},
+        }
+
+        return {
+            "rooms": rooms,
+            "faces": faces,
+            "shades": shades,
+            "apertures": apertures,
+            "doors": doors,
+            "orphanedRooms": orphaned_rooms,
+            "orphanedFaces": orphaned_faces,
+            "orphanedShades": orphaned_shades,
+            "orphanedApertures": orphaned_apertures,
+            "orphanedDoors": orphaned_doors,
+            "properties": properties
+        }
+    
+    @staticmethod
+    def ByHBJSONPath(
+        path: str,
+        includeRooms: bool = True,
+        includeFaces: bool = True,
+        includeShades: bool = True,
+        includeApertures: bool = True,
+        includeDoors: bool = True,
+        includeOrphanedRooms: bool = True,
+        includeOrphanedFaces: bool = True,
+        includeOrphanedShades: bool = True,
+        includeOrphanedApertures: bool = True,
+        includeOrphanedDoors: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False):
+        """
+        Import an HBJSON model from a file path and return a python dictionary. See: https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema
+        
+        Parameters
+        ----------
+        dictionary : dict
+            The HBJSON model as a Python dictionary (e.g., loaded via ``json.load``).
+        includeRooms : bool, optional
+            If True, parse rooms and attempt to create one ``Cell`` per room. Default is True.
+        includeFaces : bool, optional
+            If True, include top-level planar faces found outside rooms (e.g., at root "faces"). Default is True.
+        includeShades : bool, optional
+            If True, include context/standalone shades (e.g., ``context_geometry.shades``). Default is True.
+        includeApertures : bool, optional
+            If True, include **room** apertures (e.g., windows) as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeDoors : bool, optional
+            If True, include **room** doors as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeOrphanedRooms : bool, optional
+            If True, include the topology of the room when a room fails to close as a ``Cell``. This may be a ``Shell`` or a ``Cluster``. Default is True.
+        includeOrphanedFaces : bool, optional
+            If True, include planar faces listed at the HBJSON root (e.g., "faces"). Default is True.
+        includeOrphanedShades : bool, optional
+            If True, include shades listed at the HBJSON root (e.g., "orphaned_shades"). Default is True.
+        includeOrphanedApertures : bool, optional
+            If True, include apertures listed at the HBJSON root (e.g., "orphaned_apertures"). Default is True.
+        includeOrphanedDoors : bool, optional
+            If True, include doors listed at the HBJSON root (e.g., "orphaned_doors"). Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        dict
+            The created cluster of vertices, edges, faces, and cells.
+            - 'rooms': list of Cells (one per successfully closed room)
+            - 'faces': list of Faces (all faces that make up the rooms)
+            - 'shades': list of Faces (all shade faces)
+            - 'apertures': list of Faces (all apertures, never cut from hosts)
+            - 'doors': list of Faces (all doors, never cut from hosts)
+            - 'orphanedRooms': list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+            - 'orphanedFaces': list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+            - 'orphanedShades': list of Faces (context/top-level shade faces that failed to have a parent cell)
+            - 'orphanedApertures': list of Faces (apertures that failed to have a parent face)
+            - 'orphanedDoors': list of Faces (doors that failed to have a parent face)
+            - 'properties': hierarchical dict copied verbatim from HBJSON['properties']
+        """
+
+        import json
+        if not path:
+            if not silent:
+                print("Honeybee.ByHBJSONPath - Error: the input path parameter is not a valid path. Returning None.")
+            return None
+        with open(path) as file:
+            try:
+                hbjson_dict = json.load(file)
+            except:
+                if not silent:
+                    print("Honeybee.ByHBJSONPath - Error: Could not open the HBJSON file. Returning None.")
+                    return None
+        return Honeybee.ByHBJSONDictionary(hbjson_dict,
+                                             includeRooms = includeRooms,
+                                             includeFaces = includeFaces,
+                                             includeShades = includeShades,
+                                             includeApertures = includeApertures,
+                                             includeDoors = includeDoors,
+                                             includeOrphanedRooms = includeOrphanedRooms,
+                                             includeOrphanedFaces = includeOrphanedFaces,
+                                             includeOrphanedShades = includeOrphanedShades,
+                                             includeOrphanedApertures = includeOrphanedApertures,
+                                             includeOrphanedDoors = includeOrphanedDoors,
+                                             tolerance = tolerance,
+                                             silent = silent)
+    
+    @staticmethod
+    def ByHBJSONString(
+        string,
+        includeRooms: bool = True,
+        includeFaces: bool = True,
+        includeShades: bool = True,
+        includeApertures: bool = True,
+        includeDoors: bool = True,
+        includeOrphanedRooms: bool = True,
+        includeOrphanedFaces: bool = True,
+        includeOrphanedShades: bool = True,
+        includeOrphanedApertures: bool = True,
+        includeOrphanedDoors: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False):
+        """
+        Import an HBJSON model from a file path and return a python dictionary. See: https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema
+        
+        Parameters
+        ----------
+        string : str
+            The HBJSON model as a string.
+        includeRooms : bool, optional
+            If True, parse rooms and attempt to create one ``Cell`` per room. Default is True.
+        includeFaces : bool, optional
+            If True, include top-level planar faces found outside rooms (e.g., at root "faces"). Default is True.
+        includeShades : bool, optional
+            If True, include context/standalone shades (e.g., ``context_geometry.shades``). Default is True.
+        includeApertures : bool, optional
+            If True, include **room** apertures (e.g., windows) as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeDoors : bool, optional
+            If True, include **room** doors as separate ``Face`` objects (not cut from hosts). Default is True.
+        includeOrphanedRooms : bool, optional
+            If True, include the topology of the room when a room fails to close as a ``Cell``. This may be a ``Shell`` or a ``Cluster``. Default is True.
+        includeOrphanedFaces : bool, optional
+            If True, include planar faces listed at the HBJSON root (e.g., "faces"). Default is True.
+        includeOrphanedShades : bool, optional
+            If True, include shades listed at the HBJSON root (e.g., "orphaned_shades"). Default is True.
+        includeOrphanedApertures : bool, optional
+            If True, include apertures listed at the HBJSON root (e.g., "orphaned_apertures"). Default is True.
+        includeOrphanedDoors : bool, optional
+            If True, include doors listed at the HBJSON root (e.g., "orphaned_doors"). Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        dict
+            The created cluster of vertices, edges, faces, and cells.
+            - 'rooms': list of Cells (one per successfully closed room)
+            - 'faces': list of Faces (all faces that make up the rooms)
+            - 'shades': list of Faces (all shade faces)
+            - 'apertures': list of Faces (all apertures, never cut from hosts)
+            - 'doors': list of Faces (all doors, never cut from hosts)
+            - 'orphanedRooms': list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+            - 'orphanedFaces': list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+            - 'orphanedShades': list of Faces (context/top-level shade faces that failed to have a parent cell)
+            - 'orphanedApertures': list of Faces (apertures that failed to have a parent face)
+            - 'orphanedDoors': list of Faces (doors that failed to have a parent face)
+            - 'properties': hierarchical dict copied verbatim from HBJSON['properties']
+        """
+
+        if not isinstance(string, str):
+            if not silent:
+                print("Honeybee.ByHBJSONString - Error: The input string parameter is not a valid string. Returning None.")
+            return None
+        hbjson_dict = json.loads(string)
+        if not isinstance(hbjson_dict, dict):
+            if not silent:
+                print("Honeybee.ByHBJSONString - Error: Could not convert the input string into a valid HBJSON dictionary. Returning None.")
+            return None
+        return Honeybee.ByHBJSONDictionary(hbjson_dict,
+                                           includeRooms = includeRooms,
+                                           includeFaces = includeFaces,
+                                           includeShades = includeShades,
+                                           includeApertures = includeApertures,
+                                           includeDoors = includeDoors,
+                                           includeOrphanedRooms = includeOrphanedRooms,
+                                           includeOrphanedFaces = includeOrphanedFaces,
+                                           includeOrphanedShades = includeOrphanedShades,
+                                           includeOrphanedApertures = includeOrphanedApertures,
+                                           includeOrphanedDoors = includeOrphanedDoors,
+                                           tolerance = tolerance,
+                                           silent = silent)
+    
+    @staticmethod
     def ConstructionSetByIdentifier(id):
         """
         Returns the built-in construction set by the input identifying string.
@@ -175,7 +700,7 @@ class Honeybee:
             path = path+".hbjson"
         
         if not overwrite and exists(path):
-            print("DGL.ExportToHBJSON - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            print("Honeybee.ExportToHBJSON - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         f = None
         try:
@@ -184,7 +709,7 @@ class Honeybee:
             else:
                 f = open(path, "x") # Try to create a new File
         except:
-            print("DGL.ExportToHBJSON - Error: Could not create a new file at the following location: "+path+". Returning None.")
+            print("Honeybee.ExportToHBJSON - Error: Could not create a new file at the following location: "+path+". Returning None.")
             return None
         if (f):
             json.dump(model.to_dict(), f, indent=4)
