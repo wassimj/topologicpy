@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Honeybee module &mdash; topologicpy 0.8.54 documentation</title>
+  <title>topologicpy.Honeybee module &mdash; topologicpy 0.8.55 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.54
+                0.8.55
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -152,29 +152,203 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier" title="topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstructionSetByIdentifier</span></code></a>(id)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ByHBJSONDictionary" title="topologicpy.Honeybee.Honeybee.ByHBJSONDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByHBJSONDictionary</span></code></a>(dictionary[, ...])</p></td>
+<td><p>Import an HBJSON model from a python dictionary and return a python dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ByHBJSONPath" title="topologicpy.Honeybee.Honeybee.ByHBJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByHBJSONPath</span></code></a>(path[, includeRooms, ...])</p></td>
+<td><p>Import an HBJSON model from a file path and return a python dictionary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ByHBJSONString" title="topologicpy.Honeybee.Honeybee.ByHBJSONString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByHBJSONString</span></code></a>(string[, includeRooms, ...])</p></td>
+<td><p>Import an HBJSON model from a file path and return a python dictionary.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier" title="topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstructionSetByIdentifier</span></code></a>(id)</p></td>
 <td><p>Returns the built-in construction set by the input identifying string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ConstructionSets" title="topologicpy.Honeybee.Honeybee.ConstructionSets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstructionSets</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ConstructionSets" title="topologicpy.Honeybee.Honeybee.ConstructionSets"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConstructionSets</span></code></a>()</p></td>
 <td><p>Returns the list of built-in construction sets</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ExportToHBJSON" title="topologicpy.Honeybee.Honeybee.ExportToHBJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToHBJSON</span></code></a>(model, path[, overwrite])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ExportToHBJSON" title="topologicpy.Honeybee.Honeybee.ExportToHBJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToHBJSON</span></code></a>(model, path[, overwrite])</p></td>
 <td><p>Exports the input HB Model to a file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ModelByTopology" title="topologicpy.Honeybee.Honeybee.ModelByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelByTopology</span></code></a>(tpBuilding[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ModelByTopology" title="topologicpy.Honeybee.Honeybee.ModelByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelByTopology</span></code></a>(tpBuilding[, ...])</p></td>
 <td><p>Creates an HB Model from the input Topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ProgramTypeByIdentifier" title="topologicpy.Honeybee.Honeybee.ProgramTypeByIdentifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProgramTypeByIdentifier</span></code></a>(id)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ProgramTypeByIdentifier" title="topologicpy.Honeybee.Honeybee.ProgramTypeByIdentifier"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProgramTypeByIdentifier</span></code></a>(id)</p></td>
 <td><p>Returns the program type by the input identifying string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ProgramTypes" title="topologicpy.Honeybee.Honeybee.ProgramTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProgramTypes</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.ProgramTypes" title="topologicpy.Honeybee.Honeybee.ProgramTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ProgramTypes</span></code></a>()</p></td>
 <td><p>Returns the list of available built-in program types.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.String" title="topologicpy.Honeybee.Honeybee.String"><code class="xref py py-obj docutils literal notranslate"><span class="pre">String</span></code></a>(model)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Honeybee.Honeybee.String" title="topologicpy.Honeybee.Honeybee.String"><code class="xref py py-obj docutils literal notranslate"><span class="pre">String</span></code></a>(model)</p></td>
 <td><p>Returns the string representation of the input model.</p></td>
 </tr>
 </tbody>
 </table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Honeybee.Honeybee.ByHBJSONDictionary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByHBJSONDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Honeybee.Honeybee.ByHBJSONDictionary" title="Permalink to this definition"></a></dt>
+<dd><p>Import an HBJSON model from a python dictionary and return a python dictionary. See: <a class="reference external" href="https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema">https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dictionary</strong><span class="classifier">dict</span></dt><dd><p>The HBJSON model as a Python dictionary (e.g., loaded via <code class="docutils literal notranslate"><span class="pre">json.load</span></code>).</p>
+</dd>
+<dt><strong>includeRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, parse rooms and attempt to create one <code class="docutils literal notranslate"><span class="pre">Cell</span></code> per room. Default is True.</p>
+</dd>
+<dt><strong>includeFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include top-level planar faces found outside rooms (e.g., at root “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include context/standalone shades (e.g., <code class="docutils literal notranslate"><span class="pre">context_geometry.shades</span></code>). Default is True.</p>
+</dd>
+<dt><strong>includeApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> apertures (e.g., windows) as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> doors as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include the topology of the room when a room fails to close as a <code class="docutils literal notranslate"><span class="pre">Cell</span></code>. This may be a <code class="docutils literal notranslate"><span class="pre">Shell</span></code> or a <code class="docutils literal notranslate"><span class="pre">Cluster</span></code>. Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include planar faces listed at the HBJSON root (e.g., “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include shades listed at the HBJSON root (e.g., “orphaned_shades”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include apertures listed at the HBJSON root (e.g., “orphaned_apertures”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include doors listed at the HBJSON root (e.g., “orphaned_doors”). Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The created cluster of vertices, edges, faces, and cells.
+- ‘rooms’: list of Cells (one per successfully closed room)
+- ‘faces’: list of Faces (all faces that make up the rooms)
+- ‘shades’: list of Faces (all shade faces)
+- ‘apertures’: list of Faces (all apertures, never cut from hosts)
+- ‘doors’: list of Faces (all doors, never cut from hosts)
+- ‘orphanedRooms’: list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+- ‘orphanedFaces’: list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+- ‘orphanedShades’: list of Faces (context/top-level shade faces that failed to have a parent cell)
+- ‘orphanedApertures’: list of Faces (apertures that failed to have a parent face)
+- ‘orphanedDoors’: list of Faces (doors that failed to have a parent face)
+- ‘properties’: hierarchical dict copied verbatim from HBJSON[‘properties’]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Honeybee.Honeybee.ByHBJSONPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByHBJSONPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Honeybee.Honeybee.ByHBJSONPath" title="Permalink to this definition"></a></dt>
+<dd><p>Import an HBJSON model from a file path and return a python dictionary. See: <a class="reference external" href="https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema">https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>dictionary</strong><span class="classifier">dict</span></dt><dd><p>The HBJSON model as a Python dictionary (e.g., loaded via <code class="docutils literal notranslate"><span class="pre">json.load</span></code>).</p>
+</dd>
+<dt><strong>includeRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, parse rooms and attempt to create one <code class="docutils literal notranslate"><span class="pre">Cell</span></code> per room. Default is True.</p>
+</dd>
+<dt><strong>includeFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include top-level planar faces found outside rooms (e.g., at root “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include context/standalone shades (e.g., <code class="docutils literal notranslate"><span class="pre">context_geometry.shades</span></code>). Default is True.</p>
+</dd>
+<dt><strong>includeApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> apertures (e.g., windows) as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> doors as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include the topology of the room when a room fails to close as a <code class="docutils literal notranslate"><span class="pre">Cell</span></code>. This may be a <code class="docutils literal notranslate"><span class="pre">Shell</span></code> or a <code class="docutils literal notranslate"><span class="pre">Cluster</span></code>. Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include planar faces listed at the HBJSON root (e.g., “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include shades listed at the HBJSON root (e.g., “orphaned_shades”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include apertures listed at the HBJSON root (e.g., “orphaned_apertures”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include doors listed at the HBJSON root (e.g., “orphaned_doors”). Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The created cluster of vertices, edges, faces, and cells.
+- ‘rooms’: list of Cells (one per successfully closed room)
+- ‘faces’: list of Faces (all faces that make up the rooms)
+- ‘shades’: list of Faces (all shade faces)
+- ‘apertures’: list of Faces (all apertures, never cut from hosts)
+- ‘doors’: list of Faces (all doors, never cut from hosts)
+- ‘orphanedRooms’: list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+- ‘orphanedFaces’: list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+- ‘orphanedShades’: list of Faces (context/top-level shade faces that failed to have a parent cell)
+- ‘orphanedApertures’: list of Faces (apertures that failed to have a parent face)
+- ‘orphanedDoors’: list of Faces (doors that failed to have a parent face)
+- ‘properties’: hierarchical dict copied verbatim from HBJSON[‘properties’]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Honeybee.Honeybee.ByHBJSONString">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByHBJSONString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">string</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedRooms</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedShades</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeOrphanedDoors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Honeybee.Honeybee.ByHBJSONString" title="Permalink to this definition"></a></dt>
+<dd><p>Import an HBJSON model from a file path and return a python dictionary. See: <a class="reference external" href="https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema">https://github.com/ladybug-tools/honeybee-schema/wiki/1.1-Model-Schema</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>string</strong><span class="classifier">str</span></dt><dd><p>The HBJSON model as a string.</p>
+</dd>
+<dt><strong>includeRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, parse rooms and attempt to create one <code class="docutils literal notranslate"><span class="pre">Cell</span></code> per room. Default is True.</p>
+</dd>
+<dt><strong>includeFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include top-level planar faces found outside rooms (e.g., at root “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include context/standalone shades (e.g., <code class="docutils literal notranslate"><span class="pre">context_geometry.shades</span></code>). Default is True.</p>
+</dd>
+<dt><strong>includeApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> apertures (e.g., windows) as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include <strong>room</strong> doors as separate <code class="docutils literal notranslate"><span class="pre">Face</span></code> objects (not cut from hosts). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedRooms</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include the topology of the room when a room fails to close as a <code class="docutils literal notranslate"><span class="pre">Cell</span></code>. This may be a <code class="docutils literal notranslate"><span class="pre">Shell</span></code> or a <code class="docutils literal notranslate"><span class="pre">Cluster</span></code>. Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include planar faces listed at the HBJSON root (e.g., “faces”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedShades</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include shades listed at the HBJSON root (e.g., “orphaned_shades”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedApertures</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include apertures listed at the HBJSON root (e.g., “orphaned_apertures”). Default is True.</p>
+</dd>
+<dt><strong>includeOrphanedDoors</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, include doors listed at the HBJSON root (e.g., “orphaned_doors”). Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The created cluster of vertices, edges, faces, and cells.
+- ‘rooms’: list of Cells (one per successfully closed room)
+- ‘faces’: list of Faces (all faces that make up the rooms)
+- ‘shades’: list of Faces (all shade faces)
+- ‘apertures’: list of Faces (all apertures, never cut from hosts)
+- ‘doors’: list of Faces (all doors, never cut from hosts)
+- ‘orphanedRooms’: list of Topologies (context/top-level topologies (e.g. Shells or Clustser) that failed to form a Cell)
+- ‘orphanedFaces’: list of Faces (context/top-level faces + host faces of rooms that failed to form a Cell)
+- ‘orphanedShades’: list of Faces (context/top-level shade faces that failed to have a parent cell)
+- ‘orphanedApertures’: list of Faces (apertures that failed to have a parent face)
+- ‘orphanedDoors’: list of Faces (doors that failed to have a parent face)
+- ‘properties’: hierarchical dict copied verbatim from HBJSON[‘properties’]</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ConstructionSetByIdentifier</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">id</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Honeybee.Honeybee.ConstructionSetByIdentifier" title="Permalink to this definition"></a></dt>
