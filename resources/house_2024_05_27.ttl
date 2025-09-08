@@ -1,0 +1,1536 @@
+@prefix bot: <https://w3id.org/bot#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix top: <http://github.com/wassimj/topologicpy/resources> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<Site_0001> a bot:Site ;
+    rdfs:label "Site_0001" ;
+    top:lat "-31.8265"^^xsd:float ;
+    top:lon "51.48657"^^xsd:float ;
+    bot:hasBuilding <Building_0001> .
+
+top:0935db08-f4e9-5267-a80e-2b8b92cd47e2 a bot:Slab ;
+    rdfs:label "0935db08-f4e9-5267-a80e-2b8b92cd47e2" ;
+    top:hasArea "15.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "2.4"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528,
+        top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:09b63d33-5ecf-5c12-9b39-d179e0b3a4db a bot:Wall ;
+    rdfs:label "09b63d33-5ecf-5c12-9b39-d179e0b3a4db" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "0.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_15 ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:0ac4f3d4-ef43-57e6-8387-6e84f0001ac8 a bot:Wall ;
+    rdfs:label "0ac4f3d4-ef43-57e6-8387-6e84f0001ac8" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "8.5"^^xsd:float ;
+    top:hasY "4.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:164c00eb-ef66-5f68-98c3-14c3fccd8152 a bot:Slab ;
+    rdfs:label "164c00eb-ef66-5f68-98c3-14c3fccd8152" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7 .
+
+top:193acbee-456f-521a-9e32-bc111299db0c a bot:Wall ;
+    rdfs:label "193acbee-456f-521a-9e32-bc111299db0c" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "3.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:381977ac-4b50-5660-99b2-0ae8743adb3b ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09,
+        top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:19bab79c-acf9-5e6e-9210-31815da514e0 a bot:Wall ;
+    rdfs:label "19bab79c-acf9-5e6e-9210-31815da514e0" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "3.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:292cf550-0025-54c7-a4b6-f95cadd94b06 ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:22a7c2a2-3244-553d-941c-589402014528 .
+
+top:1f8c4447-054c-5205-b0f4-3f41eba91976 a bot:Wall ;
+    rdfs:label "1f8c4447-054c-5205-b0f4-3f41eba91976" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "3.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:2f7ae36d-fc6a-5c74-82f3-3319290c9f33_1 ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09,
+        top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:1f9fd54d-e892-584c-814f-72e149b95d93 a bot:Wall ;
+    rdfs:label "1f9fd54d-e892-584c-814f-72e149b95d93" ;
+    top:hasArea "9.6"^^xsd:float ;
+    top:hasX "3.2"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_23 ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:25547d82-b5d1-5626-88b9-b237da1ce99e a bot:Wall ;
+    rdfs:label "25547d82-b5d1-5626-88b9-b237da1ce99e" ;
+    top:hasArea "9.6"^^xsd:float ;
+    top:hasX "4.8"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_21 ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:26a701d1-91b3-5567-8bf4-b52cd6b57702 a bot:Slab ;
+    rdfs:label "26a701d1-91b3-5567-8bf4-b52cd6b57702" ;
+    top:hasArea "16.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "2.333333"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:2e7472d8-920a-50ba-911e-31d1b0633cda a bot:Wall ;
+    rdfs:label "2e7472d8-920a-50ba-911e-31d1b0633cda" ;
+    top:hasArea "4.8"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "11.2"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:5b392ab5-eb84-50d0-bbe6-bc3462936b54 ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:2f924f84-ab51-5829-a82a-c6c4bf8064e9 a bot:Slab ;
+    rdfs:label "2f924f84-ab51-5829-a82a-c6c4bf8064e9" ;
+    top:hasArea "5.12"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:323ed505-f9f6-5c40-b861-1fc9b725974b a bot:Wall ;
+    rdfs:label "323ed505-f9f6-5c40-b861-1fc9b725974b" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "0.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_12 ;
+    bot:interfaceOf top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:336c1bf3-435f-53da-a3ab-8470e22f89a7 a bot:Wall ;
+    rdfs:label "336c1bf3-435f-53da-a3ab-8470e22f89a7" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "6.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:37d0d199-089e-5e69-948c-a3a9590faa7e a bot:Wall ;
+    rdfs:label "37d0d199-089e-5e69-948c-a3a9590faa7e" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:388d5eac-d125-5fc2-a626-200f176ecfb6 a bot:Wall ;
+    rdfs:label "388d5eac-d125-5fc2-a626-200f176ecfb6" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:eb4b3fad-a280-5622-b878-70f33fc0fa22_1 ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:3a47aecb-cd60-5ceb-8dd4-2f8942311566 a bot:Wall ;
+    rdfs:label "3a47aecb-cd60-5ceb-8dd4-2f8942311566" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "6.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:ba20c625-037c-5e60-a33b-5b57b6079c57_1 ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:3d7fd075-a54f-5a40-94d0-2ce625403154 a bot:Wall ;
+    rdfs:label "3d7fd075-a54f-5a40-94d0-2ce625403154" ;
+    top:hasArea "4.8"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09,
+        top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:3e880d7f-bfd1-51aa-9590-befda1dc0c99 a bot:Wall ;
+    rdfs:label "3e880d7f-bfd1-51aa-9590-befda1dc0c99" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "1.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_17 ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:4116a1f8-1329-5659-9566-e93ad509ef25 a bot:Wall ;
+    rdfs:label "4116a1f8-1329-5659-9566-e93ad509ef25" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca_1 ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:45632889-e965-58c1-996b-f2863eee1641 a bot:Slab ;
+    rdfs:label "45632889-e965-58c1-996b-f2863eee1641" ;
+    top:hasArea "16.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "2.333333"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:45fe65de-9e19-5bf8-a83d-08d1c43b8cd5 a bot:Wall ;
+    rdfs:label "45fe65de-9e19-5bf8-a83d-08d1c43b8cd5" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "8.5"^^xsd:float ;
+    top:hasY "4.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:4a2ef7f2-7c7e-542f-866b-95e1f66cafb4 a bot:Slab ;
+    rdfs:label "4a2ef7f2-7c7e-542f-866b-95e1f66cafb4" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "7.2"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53 .
+
+top:4a4b7f54-01b3-5bb9-b04a-60cdebc4d57c a bot:Slab ;
+    rdfs:label "4a4b7f54-01b3-5bb9-b04a-60cdebc4d57c" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "7.2"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:4c01de3a-15a2-5ea7-9590-6bb01094ecc7 a bot:Wall ;
+    rdfs:label "4c01de3a-15a2-5ea7-9590-6bb01094ecc7" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "8.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:5696b68f-3fdf-5869-848b-34e96bd141e8 a bot:Slab ;
+    rdfs:label "5696b68f-3fdf-5869-848b-34e96bd141e8" ;
+    top:hasArea "15.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "2.4"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528 .
+
+top:5c65d55b-fe90-5b41-85aa-369de826fc4a a bot:Wall ;
+    rdfs:label "5c65d55b-fe90-5b41-85aa-369de826fc4a" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "9.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_25 ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:5fdfdbe5-daf6-533f-bdd1-d0163b3aeb55 a bot:Wall ;
+    rdfs:label "5fdfdbe5-daf6-533f-bdd1-d0163b3aeb55" ;
+    top:hasArea "9.6"^^xsd:float ;
+    top:hasX "3.2"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_22 ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:60b22c8f-044f-5e1c-b72b-6e85ac1afb8f a bot:Wall ;
+    rdfs:label "60b22c8f-044f-5e1c-b72b-6e85ac1afb8f" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "8.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53 .
+
+top:61ac2899-7410-5a5e-877d-d4f5dd13ab99 a bot:Wall ;
+    rdfs:label "61ac2899-7410-5a5e-877d-d4f5dd13ab99" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "6.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:26dd4e99-d019-5d79-b1d0-5d201fbe1787,
+        top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:648a62b3-b24d-5c3f-9642-f6bf23be07eb a bot:Wall ;
+    rdfs:label "648a62b3-b24d-5c3f-9642-f6bf23be07eb" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "8.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:65577413-0f98-5206-98da-441e17ef61ff a bot:Wall ;
+    rdfs:label "65577413-0f98-5206-98da-441e17ef61ff" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "1.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_10 ;
+    bot:interfaceOf top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:67d5e617-a9ce-52a2-8536-b2c17a8a4b43 a bot:Wall ;
+    rdfs:label "67d5e617-a9ce-52a2-8536-b2c17a8a4b43" ;
+    top:hasArea "4.8"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:6a487a36-2dcb-542d-bd42-660923ac2716 a bot:Wall ;
+    rdfs:label "6a487a36-2dcb-542d-bd42-660923ac2716" ;
+    top:hasArea "0.6"^^xsd:float ;
+    top:hasX "4.9"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a .
+
+top:7345fb22-718b-5a98-82b8-cac42fce8570 a bot:Slab ;
+    rdfs:label "7345fb22-718b-5a98-82b8-cac42fce8570" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "4.111111"^^xsd:float ;
+    top:hasY "5.666667"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:7754f359-d9fc-51f8-8ecd-9b19d0de5f8c a bot:Wall ;
+    rdfs:label "7754f359-d9fc-51f8-8ecd-9b19d0de5f8c" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "3.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:584823e0-2883-5615-8810-2ff2b59462d3 ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:781f6fa3-7ecb-55ae-8579-c24766cbbb18 a bot:Slab ;
+    rdfs:label "781f6fa3-7ecb-55ae-8579-c24766cbbb18" ;
+    top:hasArea "16.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "2.333333"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1,
+        top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:7b3c6b51-6e97-5720-842f-42105a706926 a bot:Wall ;
+    rdfs:label "7b3c6b51-6e97-5720-842f-42105a706926" ;
+    top:hasArea "15.0"^^xsd:float ;
+    top:hasX "0.0"^^xsd:float ;
+    top:hasY "2.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_14 ;
+    bot:interfaceOf top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:7d9baaea-e975-577c-aa92-4d57428757d8 a bot:Slab ;
+    rdfs:label "7d9baaea-e975-577c-aa92-4d57428757d8" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:26dd4e99-d019-5d79-b1d0-5d201fbe1787 .
+
+top:83c8789f-87ed-5c29-b240-aece16305dfb a bot:Wall ;
+    rdfs:label "83c8789f-87ed-5c29-b240-aece16305dfb" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "6.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:428edf2c-87a4-5654-b4e1-c28c71548781 ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:89863410-b324-51c7-94cf-a49178343a99 a bot:Wall ;
+    rdfs:label "89863410-b324-51c7-94cf-a49178343a99" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:ba570032-4c8d-52fc-ba3c-39c21e25f289 ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:26dd4e99-d019-5d79-b1d0-5d201fbe1787 .
+
+top:8abb58a2-22c5-5c5f-9266-cd64e3491b9f a bot:Wall ;
+    rdfs:label "8abb58a2-22c5-5c5f-9266-cd64e3491b9f" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "9.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_9 ;
+    bot:interfaceOf top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:8beefaf9-77ac-5672-88b2-34c4837371e3 a bot:Wall ;
+    rdfs:label "8beefaf9-77ac-5672-88b2-34c4837371e3" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "9.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_6 ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53 .
+
+top:908b4238-2727-59d4-a901-44cf598e404d a bot:Wall ;
+    rdfs:label "908b4238-2727-59d4-a901-44cf598e404d" ;
+    top:hasArea "4.8"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "11.2"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:925cd907-a0cf-53b4-a5d7-fb632ee4784a a bot:Wall ;
+    rdfs:label "925cd907-a0cf-53b4-a5d7-fb632ee4784a" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "1.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_13 ;
+    bot:interfaceOf top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:9796849a-35b7-5da9-879e-8f93011bfe55 a bot:Wall ;
+    rdfs:label "9796849a-35b7-5da9-879e-8f93011bfe55" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "4.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:26dd4e99-d019-5d79-b1d0-5d201fbe1787,
+        top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:9d00b82e-dcff-5403-be73-20ee90c22f16 a bot:Slab ;
+    rdfs:label "9d00b82e-dcff-5403-be73-20ee90c22f16" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "7.2"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:a0cd8fd3-233b-58c0-80b9-9b76ff371df4 a bot:Wall ;
+    rdfs:label "a0cd8fd3-233b-58c0-80b9-9b76ff371df4" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "9.0"^^xsd:float ;
+    top:hasY "7.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_20 ;
+    bot:interfaceOf top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:a1ad6a21-f0ff-50ac-bb90-2d294aa343c6 a bot:Wall ;
+    rdfs:label "a1ad6a21-f0ff-50ac-bb90-2d294aa343c6" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_5 ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:a2f29a34-acf5-5485-bbc3-de252130421d a bot:Wall ;
+    rdfs:label "a2f29a34-acf5-5485-bbc3-de252130421d" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "9.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46 ;
+    bot:interfaceOf top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:a7c25f4e-92ac-5326-94b3-9203693295f2 a bot:Slab ;
+    rdfs:label "a7c25f4e-92ac-5326-94b3-9203693295f2" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "7.333333"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72,
+        top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:a9006d7d-e2a7-5992-89cb-048e9d4670a3 a bot:Slab ;
+    rdfs:label "a9006d7d-e2a7-5992-89cb-048e9d4670a3" ;
+    top:hasArea "5.12"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:aad5d8e8-be1c-5f5e-9f68-9a666911d009 a bot:Slab ;
+    rdfs:label "aad5d8e8-be1c-5f5e-9f68-9a666911d009" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "4.111111"^^xsd:float ;
+    top:hasY "5.666667"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a .
+
+top:af651408-3e73-5212-9da2-bebb59ef4ab7 a bot:Wall ;
+    rdfs:label "af651408-3e73-5212-9da2-bebb59ef4ab7" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "1.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_2 ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528 .
+
+top:b89a7716-346b-54e6-bda0-b49fbc63e25d a bot:Wall ;
+    rdfs:label "b89a7716-346b-54e6-bda0-b49fbc63e25d" ;
+    top:hasArea "15.0"^^xsd:float ;
+    top:hasX "0.0"^^xsd:float ;
+    top:hasY "2.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_3 ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528 .
+
+top:bf4010eb-418b-52b5-8a9a-f3564b9c22de a bot:Wall ;
+    rdfs:label "bf4010eb-418b-52b5-8a9a-f3564b9c22de" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "8.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_18 ;
+    bot:interfaceOf top:26dd4e99-d019-5d79-b1d0-5d201fbe1787 .
+
+top:c31bee63-a625-5f26-8feb-d310013d099e a bot:Wall ;
+    rdfs:label "c31bee63-a625-5f26-8feb-d310013d099e" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "9.0"^^xsd:float ;
+    top:hasY "7.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_26 ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:c59e9e4e-b02b-58fa-b316-0754d0984a14 a bot:Wall ;
+    rdfs:label "c59e9e4e-b02b-58fa-b316-0754d0984a14" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:73e9260a-05a6-56f5-a2d4-cd1cea777c5c ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a .
+
+top:c60e228c-a8d8-5b64-88e6-04bb59827143 a bot:Wall ;
+    rdfs:label "c60e228c-a8d8-5b64-88e6-04bb59827143" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "0.0"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_7 ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53 .
+
+top:c6209e50-322b-599f-a7e5-4131fd131297 a bot:Wall ;
+    rdfs:label "c6209e50-322b-599f-a7e5-4131fd131297" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "8.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_4 ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7 .
+
+top:c7188c4c-50f9-5bec-b555-be55cfba13d9 a bot:Slab ;
+    rdfs:label "c7188c4c-50f9-5bec-b555-be55cfba13d9" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "7.333333"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:c76b81d5-18a4-5cd4-b2d6-6689053291fa a bot:Wall ;
+    rdfs:label "c76b81d5-18a4-5cd4-b2d6-6689053291fa" ;
+    top:hasArea "9.6"^^xsd:float ;
+    top:hasX "4.8"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_24 ;
+    bot:interfaceOf top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f .
+
+top:ca0266aa-c2a1-55d9-a285-1d3b61f15265 a bot:Slab ;
+    rdfs:label "ca0266aa-c2a1-55d9-a285-1d3b61f15265" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "4.111111"^^xsd:float ;
+    top:hasY "5.666667"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:ca784cb4-6fb3-55cc-84b1-7e62f87a16df a bot:Wall ;
+    rdfs:label "ca784cb4-6fb3-55cc-84b1-7e62f87a16df" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "9.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_19 ;
+    bot:interfaceOf top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:cce5303f-30da-50ae-9534-cc483d742a0b a bot:Wall ;
+    rdfs:label "cce5303f-30da-50ae-9534-cc483d742a0b" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "0.0"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_11 ;
+    bot:interfaceOf top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+top:cd409ad6-81e7-562a-8b06-bbfee51bf700 a bot:Slab ;
+    rdfs:label "cd409ad6-81e7-562a-8b06-bbfee51bf700" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "6.833333"^^xsd:float ;
+    top:hasY "7.333333"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:d105ac60-bb67-51ec-bc0e-859db443085f a bot:Wall ;
+    rdfs:label "d105ac60-bb67-51ec-bc0e-859db443085f" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "9.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_16 ;
+    bot:interfaceOf top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 .
+
+top:d10bc420-64d7-5cda-89cc-d63c46c410e4 a bot:Wall ;
+    rdfs:label "d10bc420-64d7-5cda-89cc-d63c46c410e4" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "8.5"^^xsd:float ;
+    top:hasY "6.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:32201248-48c1-5b1b-aa7d-f2233b7bba72 .
+
+top:d19b37ed-7f7b-58e3-8dee-5f1309325497 a bot:Wall ;
+    rdfs:label "d19b37ed-7f7b-58e3-8dee-5f1309325497" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "8.5"^^xsd:float ;
+    top:hasY "6.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:d4c3d977-ff05-565b-a097-49e3c4fa98af a bot:Wall ;
+    rdfs:label "d4c3d977-ff05-565b-a097-49e3c4fa98af" ;
+    top:hasArea "0.6"^^xsd:float ;
+    top:hasX "3.1"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a .
+
+top:d915ebea-399e-5608-87e4-afe44b62fd6a a bot:Wall ;
+    rdfs:label "d915ebea-399e-5608-87e4-afe44b62fd6a" ;
+    top:hasArea "3.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "8.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:interfaceOf top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:ded93a35-7470-5a7f-87fd-a562cb962366 a bot:Wall ;
+    rdfs:label "ded93a35-7470-5a7f-87fd-a562cb962366" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:94994589-72ef-5567-9f0f-f4f67520fcf8 ;
+    bot:interfaceOf top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:a93c8b15-e595-5b74-890c-5ec79140bc99 .
+
+top:e01f0bd6-626a-5a50-8991-38f6976df7c9 a bot:Wall ;
+    rdfs:label "e01f0bd6-626a-5a50-8991-38f6976df7c9" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "4.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:e692c29d-3507-5e45-b091-e870ed6bd66c a bot:Slab ;
+    rdfs:label "e692c29d-3507-5e45-b091-e870ed6bd66c" ;
+    top:hasArea "6.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "0.0"^^xsd:float ;
+    bot:interfaceOf top:26dd4e99-d019-5d79-b1d0-5d201fbe1787 .
+
+top:e7fac8f1-4c65-5d6b-b5ed-4a652377bc8d a bot:Wall ;
+    rdfs:label "e7fac8f1-4c65-5d6b-b5ed-4a652377bc8d" ;
+    top:hasArea "0.6"^^xsd:float ;
+    top:hasX "4.9"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:e96b02bd-0e6f-5653-902d-33bf54045eae a bot:Wall ;
+    rdfs:label "e96b02bd-0e6f-5653-902d-33bf54045eae" ;
+    top:hasArea "0.6"^^xsd:float ;
+    top:hasX "3.1"^^xsd:float ;
+    top:hasY "8.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:interfaceOf top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 .
+
+top:f3464c4e-00ac-509c-93b9-dc3e926c5557 a bot:Wall ;
+    rdfs:label "f3464c4e-00ac-509c-93b9-dc3e926c5557" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b ;
+    bot:interfaceOf top:114c6075-946b-508a-8c37-d646241aab53,
+        top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:f4866d33-62a9-57a5-a387-3906bc887cc3 a bot:Slab ;
+    rdfs:label "f4866d33-62a9-57a5-a387-3906bc887cc3" ;
+    top:hasArea "15.0"^^xsd:float ;
+    top:hasX "1.8"^^xsd:float ;
+    top:hasY "2.4"^^xsd:float ;
+    top:hasZ "6.0"^^xsd:float ;
+    bot:interfaceOf top:8f3397f7-927a-58c9-9d63-b9a929432bf6 .
+
+top:f9f861eb-e29a-5b7a-ad88-07a374b60981 a bot:Wall ;
+    rdfs:label "f9f861eb-e29a-5b7a-ad88-07a374b60981" ;
+    top:hasArea "12.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "0.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_8 ;
+    bot:interfaceOf top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:fb9d0cdd-f675-528f-8a52-981cc0fefd14 a bot:Wall ;
+    rdfs:label "fb9d0cdd-f675-528f-8a52-981cc0fefd14" ;
+    top:hasArea "9.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "0.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_1 ;
+    bot:interfaceOf top:22a7c2a2-3244-553d-941c-589402014528 .
+
+<Building_0001> a bot:Building ;
+    rdfs:label "Building_0001" ;
+    bot:hasStorey <Storey_0001>,
+        <Storey_0002> .
+
+<Storey_0001> a bot:Storey ;
+    rdfs:label "Storey_0001" ;
+    bot:hasSpace top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:22a7c2a2-3244-553d-941c-589402014528,
+        top:26dd4e99-d019-5d79-b1d0-5d201fbe1787,
+        top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1,
+        top:a93c8b15-e595-5b74-890c-5ec79140bc99,
+        top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 .
+
+<Storey_0002> a bot:Storey ;
+    rdfs:label "Storey_0002" ;
+    bot:hasSpace top:114c6075-946b-508a-8c37-d646241aab53,
+        top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:32201248-48c1-5b1b-aa7d-f2233b7bba72,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09,
+        top:8f3397f7-927a-58c9-9d63-b9a929432bf6,
+        top:eba94237-7647-5499-b059-84ce95bf2162 .
+
+top:13d1980d-db26-54a1-bde7-1c3f04a7151a a bot:Element ;
+    rdfs:label "13d1980d-db26-54a1-bde7-1c3f04a7151a" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "6.51"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Kitchen Island"^^xsd:string .
+
+top:15e76f0f-7f99-5217-9ecf-abd5c8586d67 a bot:Element ;
+    rdfs:label "15e76f0f-7f99-5217-9ecf-abd5c8586d67" ;
+    top:hasX "6.01"^^xsd:float ;
+    top:hasY "8.41"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Desk"^^xsd:string .
+
+top:1ece9ce4-f770-5b92-b332-233a8684e281 a bot:Element ;
+    rdfs:label "1ece9ce4-f770-5b92-b332-233a8684e281" ;
+    top:hasX "0.61"^^xsd:float ;
+    top:hasY "1.26"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Sofa"^^xsd:string .
+
+top:206e2aad-6f13-5139-a9dd-166a584e99c7 a bot:Element ;
+    rdfs:label "206e2aad-6f13-5139-a9dd-166a584e99c7" ;
+    top:hasX "0.71"^^xsd:float ;
+    top:hasY "2.66"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:256c52a6-8731-5982-957b-e1b9d1b4d1bc a bot:Element ;
+    rdfs:label "256c52a6-8731-5982-957b-e1b9d1b4d1bc" ;
+    top:hasX "7.46"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Tub"^^xsd:string .
+
+top:292cf550-0025-54c7-a4b6-f95cadd94b06 a bot:Door ;
+    rdfs:label "292cf550-0025-54c7-a4b6-f95cadd94b06" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "3.9"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:2f7ae36d-fc6a-5c74-82f3-3319290c9f33_1 a bot:Door ;
+    rdfs:label "2f7ae36d-fc6a-5c74-82f3-3319290c9f33" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "3.9"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:2fd4fb32-b1ee-56e0-b12e-626d054bd12b a bot:Element ;
+    rdfs:label "2fd4fb32-b1ee-56e0-b12e-626d054bd12b" ;
+    top:hasX "0.61"^^xsd:float ;
+    top:hasY "1.26"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Sofa"^^xsd:string .
+
+top:321b084b-c8cd-5a4b-b41e-7c673263ffe4 a bot:Element ;
+    rdfs:label "321b084b-c8cd-5a4b-b41e-7c673263ffe4" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "8.61"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Kitchen Cabinets"^^xsd:string .
+
+top:37707f29-05bd-5194-bf5d-2aa80a5d1ebe a bot:Element ;
+    rdfs:label "37707f29-05bd-5194-bf5d-2aa80a5d1ebe" ;
+    top:hasX "5.61"^^xsd:float ;
+    top:hasY "5.61"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Sink"^^xsd:string .
+
+top:37707f29-05bd-5194-bf5d-2aa80a5d1ebe_1 a bot:Element ;
+    rdfs:label "37707f29-05bd-5194-bf5d-2aa80a5d1ebe" ;
+    top:hasX "6.51"^^xsd:float ;
+    top:hasY "5.51"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Toilet"^^xsd:string .
+
+top:381977ac-4b50-5660-99b2-0ae8743adb3b a bot:Door ;
+    rdfs:label "381977ac-4b50-5660-99b2-0ae8743adb3b" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "3.3"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:428edf2c-87a4-5654-b4e1-c28c71548781 a bot:Door ;
+    rdfs:label "428edf2c-87a4-5654-b4e1-c28c71548781" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "5.7"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:4bae015e-3cd6-5147-b38e-0f573057c4bf a bot:Element ;
+    rdfs:label "4bae015e-3cd6-5147-b38e-0f573057c4bf" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "6.51"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Kitchen Island"^^xsd:string .
+
+top:55b3ddb6-5c6a-5ce9-a679-7d317c5339bb a bot:Element ;
+    rdfs:label "55b3ddb6-5c6a-5ce9-a679-7d317c5339bb" ;
+    top:hasX "7.81"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Bed"^^xsd:string .
+
+top:584823e0-2883-5615-8810-2ff2b59462d3 a bot:Door ;
+    rdfs:label "584823e0-2883-5615-8810-2ff2b59462d3" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "3.3"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:60d579dc-00a6-5755-923a-81d4a99a77c8 a bot:Element ;
+    rdfs:label "60d579dc-00a6-5755-923a-81d4a99a77c8" ;
+    top:hasX "0.71"^^xsd:float ;
+    top:hasY "2.66"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:614b2890-7888-57ea-b0c6-f8a57ee0865f a bot:Element ;
+    rdfs:label "614b2890-7888-57ea-b0c6-f8a57ee0865f" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "2.81"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Sofa"^^xsd:string .
+
+top:64e1773e-0477-57f2-a6cf-6523c4939882 a bot:Element ;
+    rdfs:label "64e1773e-0477-57f2-a6cf-6523c4939882" ;
+    top:hasX "2.61"^^xsd:float ;
+    top:hasY "1.26"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "TV"^^xsd:string .
+
+top:681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf a bot:Door ;
+    rdfs:label "681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf" ;
+    top:hasArea "5.46"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:6aa9f5cf-3a34-5cef-8e18-2947d82d896f a bot:Element ;
+    rdfs:label "6aa9f5cf-3a34-5cef-8e18-2947d82d896f" ;
+    top:hasX "6.51"^^xsd:float ;
+    top:hasY "5.51"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Toilet"^^xsd:string .
+
+top:6b9c19ad-eca7-5b56-af62-961f4f4d0c0a a bot:Element ;
+    rdfs:label "6b9c19ad-eca7-5b56-af62-961f4f4d0c0a" ;
+    top:hasX "7.46"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Tub"^^xsd:string .
+
+top:6f8202d4-d3f2-5be9-b5b9-fc0f16ee42b2 a bot:Element ;
+    rdfs:label "6f8202d4-d3f2-5be9-b5b9-fc0f16ee42b2" ;
+    top:hasX "5.61"^^xsd:float ;
+    top:hasY "5.61"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Sink"^^xsd:string .
+
+top:7ab9e0a7-6a8f-53b0-8687-1ec51b0b6f32 a bot:Element ;
+    rdfs:label "7ab9e0a7-6a8f-53b0-8687-1ec51b0b6f32" ;
+    top:hasX "8.41"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Desk"^^xsd:string .
+
+top:90239c3f-005c-546e-b1a0-c546e5cd7a84 a bot:Element ;
+    rdfs:label "90239c3f-005c-546e-b1a0-c546e5cd7a84" ;
+    top:hasX "7.71"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Chair"^^xsd:string .
+
+top:91e906fd-0f62-5a80-9407-5edb830923d5 a bot:Element ;
+    rdfs:label "91e906fd-0f62-5a80-9407-5edb830923d5" ;
+    top:hasX "8.56"^^xsd:float ;
+    top:hasY "3.11"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:94994589-72ef-5567-9f0f-f4f67520fcf8 a bot:Door ;
+    rdfs:label "94994589-72ef-5567-9f0f-f4f67520fcf8" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "6.7"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:afddbfd4-bb6c-50f3-9ef2-9544062bcd49 a bot:Element ;
+    rdfs:label "afddbfd4-bb6c-50f3-9ef2-9544062bcd49" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "2.81"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Sofa"^^xsd:string .
+
+top:b2b48aee-9065-5a68-8ada-22dab532b15d a bot:Element ;
+    rdfs:label "b2b48aee-9065-5a68-8ada-22dab532b15d" ;
+    top:hasX "8.56"^^xsd:float ;
+    top:hasY "0.91"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:b9633069-56d7-5e14-ab2e-102e5eb7561e a bot:Element ;
+    rdfs:label "b9633069-56d7-5e14-ab2e-102e5eb7561e" ;
+    top:hasX "7.81"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Bed"^^xsd:string .
+
+top:ba20c625-037c-5e60-a33b-5b57b6079c57_1 a bot:Door ;
+    rdfs:label "ba20c625-037c-5e60-a33b-5b57b6079c57" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.0"^^xsd:float ;
+    top:hasY "5.7"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:ba31cacf-5ed8-5380-81b7-d681a4e93a29 a bot:Element ;
+    rdfs:label "ba31cacf-5ed8-5380-81b7-d681a4e93a29" ;
+    top:hasX "8.56"^^xsd:float ;
+    top:hasY "3.11"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:ba570032-4c8d-52fc-ba3c-39c21e25f289 a bot:Door ;
+    rdfs:label "ba570032-4c8d-52fc-ba3c-39c21e25f289" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "4.7"^^xsd:float ;
+    top:hasZ "1.1"^^xsd:float .
+
+top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca_1 a bot:Door ;
+    rdfs:label "bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "4.7"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:bde65cbc-a201-5ca8-8644-f8968eb93134 a bot:Element ;
+    rdfs:label "bde65cbc-a201-5ca8-8644-f8968eb93134" ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "8.61"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Kitchen Cabinets"^^xsd:string .
+
+top:c27ca79a-2cbd-5ae5-985c-a45d0cfb11af a bot:Element ;
+    rdfs:label "c27ca79a-2cbd-5ae5-985c-a45d0cfb11af" ;
+    top:hasX "8.41"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Desk"^^xsd:string .
+
+top:c3713027-2816-59bd-80d9-00ff2548d729 a bot:Element ;
+    rdfs:label "c3713027-2816-59bd-80d9-00ff2548d729" ;
+    top:hasX "2.61"^^xsd:float ;
+    top:hasY "1.26"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "TV"^^xsd:string .
+
+top:ccb3d4f1-012d-5cae-8182-26766bfb8397 a bot:Element ;
+    rdfs:label "ccb3d4f1-012d-5cae-8182-26766bfb8397" ;
+    top:hasX "8.56"^^xsd:float ;
+    top:hasY "0.91"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Side Table"^^xsd:string .
+
+top:eb4b3fad-a280-5622-b878-70f33fc0fa22_1 a bot:Door ;
+    rdfs:label "eb4b3fad-a280-5622-b878-70f33fc0fa22" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.0"^^xsd:float ;
+    top:hasY "6.7"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:ec66a653-9ee7-50e4-b5e4-b02d637f907a a bot:Element ;
+    rdfs:label "ec66a653-9ee7-50e4-b5e4-b02d637f907a" ;
+    top:hasX "6.01"^^xsd:float ;
+    top:hasY "8.41"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Desk"^^xsd:string .
+
+top:f67dcc75-dd32-5f14-b19e-a0b33ef20d33 a bot:Element ;
+    rdfs:label "f67dcc75-dd32-5f14-b19e-a0b33ef20d33" ;
+    top:hasX "5.96"^^xsd:float ;
+    top:hasY "7.71"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Chair"^^xsd:string .
+
+top:f71845e7-dd1d-54c1-beb9-2feb7b593d41 a bot:Element ;
+    rdfs:label "f71845e7-dd1d-54c1-beb9-2feb7b593d41" ;
+    top:hasX "5.96"^^xsd:float ;
+    top:hasY "7.71"^^xsd:float ;
+    top:hasZ "0.31"^^xsd:float ;
+    top:name "Chair"^^xsd:string .
+
+top:fc5a3634-ff48-5eeb-960e-490186ccef5f a bot:Element ;
+    rdfs:label "fc5a3634-ff48-5eeb-960e-490186ccef5f" ;
+    top:hasX "7.71"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "3.31"^^xsd:float ;
+    top:name "Chair"^^xsd:string .
+
+top:fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b a bot:Door ;
+    rdfs:label "fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b" ;
+    top:hasArea "5.46"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.1"^^xsd:float .
+
+top:292cf550-0025-54c7-a4b6-f95cadd94b06_1 a bot:Door ;
+    rdfs:label "292cf550-0025-54c7-a4b6-f95cadd94b06" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "3.91"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:2f7ae36d-fc6a-5c74-82f3-3319290c9f33 a bot:Door ;
+    rdfs:label "2f7ae36d-fc6a-5c74-82f3-3319290c9f33" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "3.91"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:381977ac-4b50-5660-99b2-0ae8743adb3b_1 a bot:Door ;
+    rdfs:label "381977ac-4b50-5660-99b2-0ae8743adb3b" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "3.31"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:428edf2c-87a4-5654-b4e1-c28c71548781_1 a bot:Door ;
+    rdfs:label "428edf2c-87a4-5654-b4e1-c28c71548781" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "5.71"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:584823e0-2883-5615-8810-2ff2b59462d3_1 a bot:Door ;
+    rdfs:label "584823e0-2883-5615-8810-2ff2b59462d3" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "3.31"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:5b392ab5-eb84-50d0-bbe6-bc3462936b54 a bot:Door ;
+    rdfs:label "5b392ab5-eb84-50d0-bbe6-bc3462936b54" ;
+    top:hasArea "2.94"^^xsd:float ;
+    top:hasX "4.01"^^xsd:float ;
+    top:hasY "11.21"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf_1 a bot:Door ;
+    rdfs:label "681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf" ;
+    top:hasArea "5.46"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:73e9260a-05a6-56f5-a2d4-cd1cea777c5c a bot:Door ;
+    rdfs:label "73e9260a-05a6-56f5-a2d4-cd1cea777c5c" ;
+    top:hasArea "2.94"^^xsd:float ;
+    top:hasX "4.01"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:94994589-72ef-5567-9f0f-f4f67520fcf8_1 a bot:Door ;
+    rdfs:label "94994589-72ef-5567-9f0f-f4f67520fcf8" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "6.71"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:ba20c625-037c-5e60-a33b-5b57b6079c57 a bot:Door ;
+    rdfs:label "ba20c625-037c-5e60-a33b-5b57b6079c57" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "5.71"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:ba570032-4c8d-52fc-ba3c-39c21e25f289_1 a bot:Door ;
+    rdfs:label "ba570032-4c8d-52fc-ba3c-39c21e25f289" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "4.71"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca a bot:Door ;
+    rdfs:label "bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "4.71"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "9.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_1 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "0.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_10 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "1.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_11 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "0.01"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_12 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "0.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_13 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "1.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_14 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.35"^^xsd:float ;
+    top:hasX "0.01"^^xsd:float ;
+    top:hasY "2.51"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_15 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "7.01"^^xsd:float ;
+    top:hasY "0.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_16 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "9.01"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_17 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "1.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_18 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "8.01"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_19 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "7.01"^^xsd:float ;
+    top:hasY "9.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_2 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "3.01"^^xsd:float ;
+    top:hasY "1.01"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_20 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "9.01"^^xsd:float ;
+    top:hasY "7.51"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_21 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.864"^^xsd:float ;
+    top:hasX "4.81"^^xsd:float ;
+    top:hasY "9.61"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_22 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.864"^^xsd:float ;
+    top:hasX "3.21"^^xsd:float ;
+    top:hasY "9.61"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_23 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.864"^^xsd:float ;
+    top:hasX "3.21"^^xsd:float ;
+    top:hasY "9.61"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_24 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.864"^^xsd:float ;
+    top:hasX "4.81"^^xsd:float ;
+    top:hasY "9.61"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_25 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "7.01"^^xsd:float ;
+    top:hasY "9.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_26 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "9.01"^^xsd:float ;
+    top:hasY "7.51"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_3 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.35"^^xsd:float ;
+    top:hasX "0.01"^^xsd:float ;
+    top:hasY "2.51"^^xsd:float ;
+    top:hasZ "1.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_4 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "8.01"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_5 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.54"^^xsd:float ;
+    top:hasX "4.01"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_6 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "0.81"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "9.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_7 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "0.01"^^xsd:float ;
+    top:hasY "7.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_8 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "7.01"^^xsd:float ;
+    top:hasY "0.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:cbae882a-6b8b-590c-a838-4eab306a8a46_9 a bot:Window ;
+    rdfs:label "cbae882a-6b8b-590c-a838-4eab306a8a46" ;
+    top:hasArea "1.08"^^xsd:float ;
+    top:hasX "9.01"^^xsd:float ;
+    top:hasY "2.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:eb4b3fad-a280-5622-b878-70f33fc0fa22 a bot:Door ;
+    rdfs:label "eb4b3fad-a280-5622-b878-70f33fc0fa22" ;
+    top:hasArea "2.1"^^xsd:float ;
+    top:hasX "5.01"^^xsd:float ;
+    top:hasY "6.71"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b_1 a bot:Door ;
+    rdfs:label "fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b" ;
+    top:hasArea "5.46"^^xsd:float ;
+    top:hasX "1.51"^^xsd:float ;
+    top:hasY "5.01"^^xsd:float ;
+    top:hasZ "4.11"^^xsd:float .
+
+top:1edf15de-85be-5120-9ac7-187656f4f0f7 a bot:Space ;
+    rdfs:label "1edf15de-85be-5120-9ac7-187656f4f0f7" ;
+    top:hasVolume "18.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Bathroom"^^xsd:string ;
+    bot:connectsTo top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_4 ;
+    bot:containsElement top:6aa9f5cf-3a34-5cef-8e18-2947d82d896f,
+        top:6b9c19ad-eca7-5b56-af62-961f4f4d0c0a,
+        top:6f8202d4-d3f2-5be9-b5b9-fc0f16ee42b2 .
+
+top:22a7c2a2-3244-553d-941c-589402014528 a bot:Space ;
+    rdfs:label "22a7c2a2-3244-553d-941c-589402014528" ;
+    top:hasVolume "45.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "2.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Living Room"^^xsd:string ;
+    bot:adjacentTo top:21195572-03a6-5c18-bb82-5899662be86a,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 ;
+    bot:connectsTo top:292cf550-0025-54c7-a4b6-f95cadd94b06_1,
+        top:681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_2,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_3 ;
+    bot:containsElement top:1ece9ce4-f770-5b92-b332-233a8684e281,
+        top:206e2aad-6f13-5139-a9dd-166a584e99c7,
+        top:614b2890-7888-57ea-b0c6-f8a57ee0865f,
+        top:c3713027-2816-59bd-80d9-00ff2548d729 .
+
+top:26dd4e99-d019-5d79-b1d0-5d201fbe1787 a bot:Space ;
+    rdfs:label "26dd4e99-d019-5d79-b1d0-5d201fbe1787" ;
+    top:hasVolume "18.0"^^xsd:float ;
+    top:hasX "6.5"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Bathroom"^^xsd:string ;
+    bot:connectsTo top:ba570032-4c8d-52fc-ba3c-39c21e25f289_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_18 ;
+    bot:containsElement top:256c52a6-8731-5982-957b-e1b9d1b4d1bc,
+        top:37707f29-05bd-5194-bf5d-2aa80a5d1ebe,
+        top:37707f29-05bd-5194-bf5d-2aa80a5d1ebe_1 .
+
+top:8f3397f7-927a-58c9-9d63-b9a929432bf6 a bot:Space ;
+    rdfs:label "8f3397f7-927a-58c9-9d63-b9a929432bf6" ;
+    top:hasVolume "45.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "2.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Living Room"^^xsd:string ;
+    bot:adjacentTo top:114c6075-946b-508a-8c37-d646241aab53,
+        top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 ;
+    bot:connectsTo top:2f7ae36d-fc6a-5c74-82f3-3319290c9f33,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_12,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_13,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_14,
+        top:fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b_1 ;
+    bot:containsElement top:2fd4fb32-b1ee-56e0-b12e-626d054bd12b,
+        top:60d579dc-00a6-5755-923a-81d4a99a77c8,
+        top:64e1773e-0477-57f2-a6cf-6523c4939882,
+        top:afddbfd4-bb6c-50f3-9ef2-9544062bcd49 .
+
+top:114c6075-946b-508a-8c37-d646241aab53 a bot:Space ;
+    rdfs:label "114c6075-946b-508a-8c37-d646241aab53" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Kitchen"^^xsd:string ;
+    bot:connectsTo top:ba20c625-037c-5e60-a33b-5b57b6079c57,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_6,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_7,
+        top:fcceb6b4-08ff-57c9-9e9e-e99dd4080e6b_1 ;
+    bot:containsElement top:321b084b-c8cd-5a4b-b41e-7c673263ffe4,
+        top:4bae015e-3cd6-5147-b38e-0f573057c4bf .
+
+top:32201248-48c1-5b1b-aa7d-f2233b7bba72 a bot:Space ;
+    rdfs:label "32201248-48c1-5b1b-aa7d-f2233b7bba72" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "7.5"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Home Office"^^xsd:string ;
+    bot:connectsTo top:cbae882a-6b8b-590c-a838-4eab306a8a46_25,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_26,
+        top:eb4b3fad-a280-5622-b878-70f33fc0fa22 ;
+    bot:containsElement top:15e76f0f-7f99-5217-9ecf-abd5c8586d67,
+        top:c27ca79a-2cbd-5ae5-985c-a45d0cfb11af,
+        top:f67dcc75-dd32-5f14-b19e-a0b33ef20d33,
+        top:fc5a3634-ff48-5eeb-960e-490186ccef5f .
+
+top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1 a bot:Space ;
+    rdfs:label "a6a9f788-ecfd-509e-ba5a-b93913a7cfb1" ;
+    top:hasVolume "48.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Bedroom"^^xsd:string ;
+    bot:connectsTo top:584823e0-2883-5615-8810-2ff2b59462d3_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_15,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_16,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_17 ;
+    bot:containsElement top:91e906fd-0f62-5a80-9407-5edb830923d5,
+        top:b9633069-56d7-5e14-ab2e-102e5eb7561e,
+        top:ccb3d4f1-012d-5cae-8182-26766bfb8397 .
+
+top:a93c8b15-e595-5b74-890c-5ec79140bc99 a bot:Space ;
+    rdfs:label "a93c8b15-e595-5b74-890c-5ec79140bc99" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "7.5"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Home Office"^^xsd:string ;
+    bot:connectsTo top:94994589-72ef-5567-9f0f-f4f67520fcf8_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_19,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_20 ;
+    bot:containsElement top:7ab9e0a7-6a8f-53b0-8687-1ec51b0b6f32,
+        top:90239c3f-005c-546e-b1a0-c546e5cd7a84,
+        top:ec66a653-9ee7-50e4-b5e4-b02d637f907a,
+        top:f71845e7-dd1d-54c1-beb9-2feb7b593d41 .
+
+top:c944be19-3c5b-54ad-be12-ef082fb453c8 a bot:Space ;
+    rdfs:label "c944be19-3c5b-54ad-be12-ef082fb453c8" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "1.5"^^xsd:float ;
+    top:hasY "7.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Kitchen"^^xsd:string ;
+    bot:connectsTo top:428edf2c-87a4-5654-b4e1-c28c71548781_1,
+        top:681cf9c9-9e7b-5ade-97dd-f09d6b3da6cf_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_11 ;
+    bot:containsElement top:13d1980d-db26-54a1-bde7-1c3f04a7151a,
+        top:bde65cbc-a201-5ca8-8644-f8968eb93134 .
+
+top:eba94237-7647-5499-b059-84ce95bf2162 a bot:Space ;
+    rdfs:label "eba94237-7647-5499-b059-84ce95bf2162" ;
+    top:hasVolume "48.0"^^xsd:float ;
+    top:hasX "7.0"^^xsd:float ;
+    top:hasY "2.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Bedroom"^^xsd:string ;
+    bot:connectsTo top:381977ac-4b50-5660-99b2-0ae8743adb3b_1,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_10,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_8,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_9 ;
+    bot:containsElement top:55b3ddb6-5c6a-5ce9-a679-7d317c5339bb,
+        top:b2b48aee-9065-5a68-8ada-22dab532b15d,
+        top:ba31cacf-5ed8-5380-81b7-d681a4e93a29 .
+
+top:ab9bd77f-5517-546e-ba63-0ba9caa3c44f a bot:Space ;
+    rdfs:label "ab9bd77f-5517-546e-ba63-0ba9caa3c44f" ;
+    top:hasVolume "30.72"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "9.6"^^xsd:float ;
+    top:hasZ "3.0"^^xsd:float ;
+    top:name "Stairwell"^^xsd:string ;
+    bot:connectsTo top:5b392ab5-eb84-50d0-bbe6-bc3462936b54,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_21,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_22,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_23,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_24 .
+
+top:21195572-03a6-5c18-bb82-5899662be86a a bot:Space ;
+    rdfs:label "21195572-03a6-5c18-bb82-5899662be86a" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "1.5"^^xsd:float ;
+    top:name "Corridor"^^xsd:string ;
+    bot:adjacentTo top:26dd4e99-d019-5d79-b1d0-5d201fbe1787,
+        top:a6a9f788-ecfd-509e-ba5a-b93913a7cfb1,
+        top:a93c8b15-e595-5b74-890c-5ec79140bc99,
+        top:c944be19-3c5b-54ad-be12-ef082fb453c8 ;
+    bot:connectsTo top:292cf550-0025-54c7-a4b6-f95cadd94b06_1,
+        top:428edf2c-87a4-5654-b4e1-c28c71548781_1,
+        top:584823e0-2883-5615-8810-2ff2b59462d3_1,
+        top:73e9260a-05a6-56f5-a2d4-cd1cea777c5c,
+        top:94994589-72ef-5567-9f0f-f4f67520fcf8_1,
+        top:ba570032-4c8d-52fc-ba3c-39c21e25f289_1 .
+
+top:6b8e00a1-764e-57d8-8cf7-19bf67a37f09 a bot:Space ;
+    rdfs:label "6b8e00a1-764e-57d8-8cf7-19bf67a37f09" ;
+    top:hasVolume "36.0"^^xsd:float ;
+    top:hasX "4.0"^^xsd:float ;
+    top:hasY "5.0"^^xsd:float ;
+    top:hasZ "4.5"^^xsd:float ;
+    top:name "Corridor"^^xsd:string ;
+    bot:adjacentTo top:114c6075-946b-508a-8c37-d646241aab53,
+        top:1edf15de-85be-5120-9ac7-187656f4f0f7,
+        top:32201248-48c1-5b1b-aa7d-f2233b7bba72,
+        top:eba94237-7647-5499-b059-84ce95bf2162 ;
+    bot:connectsTo top:2f7ae36d-fc6a-5c74-82f3-3319290c9f33,
+        top:381977ac-4b50-5660-99b2-0ae8743adb3b_1,
+        top:ba20c625-037c-5e60-a33b-5b57b6079c57,
+        top:bdbaf36b-df6b-56ff-8ece-3fccd38fb7ca,
+        top:cbae882a-6b8b-590c-a838-4eab306a8a46_5,
+        top:eb4b3fad-a280-5622-b878-70f33fc0fa22 .
+

@@ -2,7 +2,7 @@
 
 <img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1">
 
-# An Advanced Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction
+# An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction
 
 ## Introduction
 Welcome to topologicpy (rhymes with apple pie). topologicpy is an open-source python 3 implementation of [Topologic](https://topologic.app) which is a powerful spatial modelling and analysis software library that revolutionizes the way you design architectural spaces, buildings, and artefacts. Topologic's advanced features enable you to create hierarchical and topological information-rich 3D representations that offer unprecedented flexibility and control in your design process. With the integration of geometry, topology, information, and artificial intelligence, Topologic enriches Building Information Models with Building *Intelligence* Models.
@@ -39,6 +39,7 @@ topologicpy depends on the following python libraries which will be installed au
 * [ipfshttpclient](https://pypi.org/project/ipfshttpclient/) >= 0.7.0
 * [web3](https://web3py.readthedocs.io/en/stable/) >=5.30.0
 * [openstudio](https://openstudio.net/) >= 3.4.0
+* [topologic_core](https://pypi.org/project/topologic_core/) >= 6.0.6
 * [lbt-ladybug](https://pypi.org/project/lbt-ladybug/) >= 0.25.161
 * [lbt-honeybee](https://pypi.org/project/lbt-honeybee/) >= 0.6.12
 * [honeybee-energy](https://pypi.org/project/honeybee-energy/) >= 1.91.49
@@ -58,8 +59,44 @@ topologicpy depends on the following python libraries which will be installed au
 1. Start using the API
 
 ## API Documentation
-API documentation can be found at [https://topologic.app/topologicpy_doc/](https://topologic.app/topologicpy_doc/)
+API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)
 
-topologicpy: &copy; 2023 Wassim Jabi
+## How to cite topologicpy
+If you wish to cite the actual software, you can use:
 
-Topologic: &copy; 2023 Cardiff University and UCL
+**Jabi, W. (2024). topologicpy. pypi.org. http://doi.org/10.5281/zenodo.11555172**
+
+To cite one of the main papers that defines topologicpy, you can use:
+
+**Jabi, W., & Chatzivasileiadi, A. (2021). Topologic: Exploring Spatial Reasoning Through Geometry, Topology, and Semantics. In S. Eloy, D. Leite Viana, F. Morais, & J. Vieira Vaz (Eds.), Formal Methods in Architecture (pp. 277–285). Springer International Publishing. https://doi.org/10.1007/978-3-030-57509-0_25**
+
+Or you can import the following .bib formatted references into your favourite reference manager
+```
+@misc{Jabi2025,
+   author = {Wassim Jabi},
+   doi = {https://doi.org/10.5281/zenodo.11555173},
+   title = {topologicpy},
+   url = {http://pypi.org/projects/topologicpy},
+   year = {2025},
+}
+```
+```
+  @inbook{Jabi2021,
+   abstract = {Topologic is a software modelling library that supports a comprehensive conceptual framework for the hierarchical spatial representation of buildings based on the data structures and concepts of non-manifold topology (NMT). Topologic supports conceptual design and spatial reasoning through the integration of geometry, topology, and semantics. This enables architects and designers to reflect on their design decisions before the complexities of building information modelling (BIM) set in. We summarize below related work on NMT starting in the late 1980s, describe Topologic’s software architecture, methods, and classes, and discuss how Topologic’s features support conceptual design and spatial reasoning. We also report on a software usability workshop that was conducted to validate a software evaluation methodology and reports on the collected qualitative data. A reflection on Topologic’s features and software architecture illustrates how it enables a fundamental shift from pursuing fidelity of design form to pursuing fidelity of design intent.},
+   author = {Wassim Jabi and Aikaterini Chatzivasileiadi},
+   city = {Cham},
+   doi = {10.1007/978-3-030-57509-0_25},
+   editor = {Sara Eloy and David Leite Viana and Franklim Morais and Jorge Vieira Vaz},
+   isbn = {978-3-030-57509-0},
+   journal = {Formal Methods in Architecture},
+   pages = {277-285},
+   publisher = {Springer International Publishing},
+   title = {Topologic: Exploring Spatial Reasoning Through Geometry, Topology, and Semantics},
+   url = {https://link.springer.com/10.1007/978-3-030-57509-0_25},
+   year = {2021},
+}
+```
+
+topologicpy: © 2025 Wassim Jabi
+
+Topologic: © 2025 Cardiff University and UCL
