@@ -1818,6 +1818,7 @@ class Vertex():
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
+
     @staticmethod
     def Separate(*vertices, minDistance: float = 0.0001, iterations: int = 100, strength: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -1846,67 +1847,96 @@ class Vertex():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
         import math
+        from collections import defaultdict
 
+        # --- Gather & validate inputs ---
         if len(vertices) == 0:
             if not silent:
                 print("Vertex.Separate - Error: The input vertices parameter is an empty list. Returning None.")
             return None
-        if len(vertices) == 1:
-            vertices = vertices[0]
-            if isinstance(vertices, list):
-                if len(vertices) == 0:
-                    if not silent:
-                        print("Vertex.Separate - Error: The input vertices parameter is an empty list. Returning None.")
-                    return None
-                else:
-                    vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
-                    if len(vertexList) == 0:
-                        if not silent:
-                            print("Vertex.Separate - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
-                        return None
-            else:
-                if not silent:
-                    print("Vertex.Separate - Warning: The input vertices parameter contains only one vertex. Returning the same vertex.")
-                return vertices
+
+        # Allow either a single list or varargs
+        if len(vertices) == 1 and isinstance(vertices[0], list):
+            raw_list = vertices[0]
         else:
-            vertexList = Helper.Flatten(list(vertices))
-            vertexList = [x for x in vertexList if Topology.IsInstance(x, "Vertex")]
+            raw_list = Helper.Flatten(list(vertices))
+
+        vertexList = [v for v in raw_list if Topology.IsInstance(v, "Vertex")]
         if len(vertexList) == 0:
             if not silent:
                 print("Vertex.Separate - Error: The input parameters do not contain any valid vertices. Returning None.")
             return None
+        if len(vertexList) == 1:
+            if not silent:
+                print("Vertex.Separate - Warning: Only one vertex supplied. Returning it unchanged.")
+            return vertexList
 
-        minDistance = minDistance + tolerance # Add a bit of a safety factor
+        minDistance = float(minDistance) + float(tolerance)  # safety margin
+        n = len(vertexList)
 
-        # Convert to mutable coordinates
-        coords = [[v.X(), v.Y(), v.Z()] for v in vertices]
-        
-        for _ in range(iterations):
-            for i in range(len(coords)):
-                for j in range(i + 1, len(coords)):
-                    dx = coords[j][0] - coords[i][0]
-                    dy = coords[j][1] - coords[i][1]
-                    dz = coords[j][2] - coords[i][2]
-                    dist = math.sqrt(dx*dx + dy*dy + dz*dz)
-                    
-                    if dist < minDistance and dist > 1e-9:
-                        # Calculate repulsion vector
-                        repel = (minDistance - dist) / dist * strength
-                        shift = [dx * repel * 0.5, dy * repel * 0.5, dz * repel * 0.5]
-                        coords[i][0] -= shift[0]
-                        coords[i][1] -= shift[1]
-                        coords[i][2] -= shift[2]
-                        coords[j][0] += shift[0]
-                        coords[j][1] += shift[1]
-                        coords[j][2] += shift[2]
-        
-        # Reconstruct TopologicPy Vertex objects
-        new_vertices = [Vertex.ByCoordinates(x, y, z) for x, y, z in coords]
-        # Transfer the dictionaries
-        for i, v in enumerate(new_vertices):
-            v = Topology.SetDictionary(v, Topology.Dictionary(vertices[i]))
+        # Mutable coordinates
+        coords = [[vertexList[i].X(), vertexList[i].Y(), vertexList[i].Z()] for i in range(n)]
+        dicts  = [Topology.Dictionary(v) for v in vertexList]
+
+        # --- Pre-seed coincident vertices so they can start moving ---
+        # Cluster indices by quantized coordinate to catch exact (or near-exact) duplicates
+        key_scale = max(tolerance, 1e-12)
+        clusters = defaultdict(list)
+        for idx, (x, y, z) in enumerate(coords):
+            key = (round(x / key_scale), round(y / key_scale), round(z / key_scale))
+            clusters[key].append(idx)
+
+        # For any cluster with >1 vertex, spread them on a small circle in XY
+        for idxs in clusters.values():
+            k = len(idxs)
+            if k > 1:
+                r = minDistance * 0.5  # small initial spread; repulsion will take it from here
+                for m, idx in enumerate(idxs):
+                    ang = (2.0 * math.pi * m) / k
+                    coords[idx][0] += r * math.cos(ang)
+                    coords[idx][1] += r * math.sin(ang)
+                    # leave Z unchanged to avoid unintended vertical drift
+
+        # --- Repulsion simulation ---
+        eps = 1e-12
+        for _ in range(int(iterations)):
+            all_ok = True
+            for i in range(n):
+                xi, yi, zi = coords[i]
+                for j in range(i + 1, n):
+                    xj, yj, zj = coords[j]
+                    dx = xj - xi
+                    dy = yj - yi
+                    dz = zj - zi
+                    dist_sq = dx*dx + dy*dy + dz*dz
+                    if dist_sq <= 0.0:
+                        # still coincident: nudge with a tiny deterministic push along x
+                        dx, dy, dz = (eps, 0.0, 0.0)
+                        dist_sq = eps*eps
+                    dist = math.sqrt(dist_sq)
+
+                    if dist < minDistance:
+                        all_ok = False
+                        # Repulsion magnitude; clamp denominator to avoid blow-ups
+                        repel = (minDistance - dist) / max(dist, eps) * float(strength)
+                        # Split the move equally
+                        sx = 0.5 * dx * repel
+                        sy = 0.5 * dy * repel
+                        sz = 0.5 * dz * repel
+                        coords[i][0] -= sx; coords[i][1] -= sy; coords[i][2] -= sz
+                        coords[j][0] += sx; coords[j][1] += sy; coords[j][2] += sz
+            if all_ok:
+                break  # everything already at least minDistance apart
+
+        # --- Rebuild vertices & restore dictionaries ---
+        new_vertices = [Vertex.ByCoordinates(x, y, z) for (x, y, z) in coords]
+        for i in range(n):
+            new_vertices[i] = Topology.SetDictionary(new_vertices[i], dicts[i])
+
         return new_vertices
+
 
     @staticmethod
     def Transform(vertex, matrix, mantissa: int = 6, silent: bool = False):

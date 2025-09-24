@@ -449,6 +449,67 @@ class Graph:
         return new_graph
     
     @staticmethod
+    def AddEdgeByIndex(graph, index: list = None, dictionary = None, silent: bool = False):
+        """
+        Creates an edge in the input Graph by connecting the two vertices specified by their indices (e.g., [5, 6] connects the 4th and 6th vertices).
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        index : list or tuple
+            The input list of vertex indices (e.g. [4, 6]).
+        dictionary : topologic_core.Dictionary , optional
+            The input edge dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input edge added to it.
+
+        """
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AddEdgeIndex - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        if dictionary:
+            if not Topology.IsInstance(dictionary, "Dictionary"):
+                if not silent:
+                    print("Graph.AddEdgeIndex - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
+                return None
+        if not isinstance(index, list):
+            if not silent:
+                print("Graph.AddEdgeIndex - Error: The input index parameter is not a valid list. Returning None.")
+            return None
+        index = [x for x in index if isinstance(x, int)]
+        if not len(index) == 2:
+            if not silent:
+                print("Graph.AddEdgeIndex - Error: The input index parameter should only contain two integer numbers. Returning None.")
+            return None
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if index[0] < 0 or index[0] > n-1:
+            if not silent:
+                print("Graph.AddEdgeIndex - Error: The first integer in the input index parameter does not exist in the input graph. Returning None.")
+            return None
+        if index[1] < 0 or index[1] > n-1:
+            if not silent:
+                print("Graph.AddEdgeIndex - Error: The second integer in the input index parameter does not exist in the input graph. Returning None.")
+            return None
+        sv = vertices[index[0]]
+        ev = vertices[index[1]]
+        edge = Edge.ByVertices(sv, ev)
+        if dictionary:
+            edge = Topology.SetDictionary(edge, dictionary)
+        graph = Graph.AddEdge(graph,edge)
+        return graph
+
+    @staticmethod
     def AddVertex(graph, vertex, tolerance: float = 0.0001, silent: bool = False):
         """
         Adds the input vertex to the input graph.
@@ -2834,6 +2895,158 @@ class Graph:
             index+=n_nodes
             graphs.append(Graph.ByVerticesEdges(vertices, edges))
         return {'graphs':graphs, 'labels':labels}
+
+    @staticmethod
+    def ByDictionaries(graphDictionary, vertexDictionaries, edgeDictionaries, vertexKey: str = None, edgeKey: str = None, silent: bool = False, tolerance: float = 0.0001):
+        """
+        Creates a graph from input python dictionaries.
+
+        Rules:
+        All vertex dictionaries must contain at least the vertexKey.
+        All edge dictionaries must contain at least the edgeKey.
+        The edgeKey must be a tuple or list of two str values.
+        x,y,z coordinates are optional. However, if a vertex dictionary contains x,y,z coordinates then all vertex dictionaries must contain x,y,z coordinates.
+        If vertex dictionaries contain x,y,z coordinates they must not overlap and be separated by a distance greater than tolerance.
+        Keys and values are case sensitive.
+        x,y,z keys, if present  must be lowercase.
+
+        Example:
+        graphDictionary = {"name": "Small Apartment", "location": "123 Main Street"}
+        vertexDictionaries = [
+            {"name":"Entry", "type":"Circulation", "x":1, "y":4, "z":0, "area":5},
+            {"name":"Living Room", "type":"Living Room", "x":3,  "y":4 , "z":0, "area":24},
+            {"name":"Dining Room", "type":"Dining Room", "x":5,  "y":2, "z":0,  "area":18},
+            {"name":"Kitchen", "type":"Kitchen", "x":1, "y":2, "z":0,  "area":15},
+            {"name":"Bathroom", "type":"Bathroom", "x":3, "y":6, "z":0, "area":9},
+            {"name":"Bedroom", "type":"Bedroom", "x":5, "y":4, "z":0, "area":16}
+        ]
+        edgeDictionaries = [
+            {"connects": ("Entry","Living Room"), "relationship": "adjacent_to"},
+            {"connects": ("Living Room","Kitchen"), "relationship": "adjacent_to"},
+            {"connects": ("Dining Room","Kitchen"), "relationship": "adjacent_to"},
+            {"connects": ("Living Room","Dining Room"), "relationship": "adjacent_to"},
+            {"connects": ("Living Room","Bedroom"), "relationship": "adjacent_to"},
+            {"connects": ("Living Room","Bathroom"), "relationship": "adjacent_to"}
+        ]
+        vertexKey = "name"
+        edgeKey = "connects"
+
+        Parameters
+        ----------
+        graphDictionary : dict
+            The python dictionary to associate with the resulting graph
+        vertexDictionaries : list
+            The input list of vertex dictionaries. These must contain the vertexKey. X,Y,Z coordinates are optional.
+        edgeDictionaries : list
+            The input list of edge dictionaries. These must have the edgeKey to specify the two vertices they connect (by using the vertexKey)
+        vertexKey: str
+            The vertex key used to identify which vertices and edge connects.
+        edgeKey: str
+            The edge key under which the pair of vertex keys are listed as a tuple or list.
+        tolerance: float , optional
+            The desired tolerance. The default is 0.0001
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The resulting graph
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def _set_dict(obj, kv: dict):
+            keys = list(kv.keys())
+            vals = list(kv.values())
+            d = Dictionary.ByKeysValues(keys, vals)
+            Topology.SetDictionary(obj, d)
+            return obj
+
+        def _vertex(vertexDictionary, vertices, vertexKey, tolerance=0.0001, silent=False):
+            x = vertexDictionary.get("x", 0)
+            y = vertexDictionary.get("y", 0)
+            z = vertexDictionary.get("z", 0)
+            v = Vertex.ByCoordinates(x, y, z)
+            v = _set_dict(v, vertexDictionary)
+            if "x" in vertexDictionary.keys(): # Check for overlap only if coords are given.
+                if len(vertices) > 0:
+                    nv = Vertex.NearestVertex(v, Cluster.ByTopologies(vertices))
+                    d = Topology.Dictionary(nv)
+                    nv_name = Dictionary.ValueAtKey(d, vertexKey, "Unknown")
+                    if Vertex.Distance(v, nv) < tolerance:
+                        if not silent:
+                            v_name = vertexDictionary[vertexKey]
+                            print(f"Graph.ByDictionaries - Warning: Vertices {v_name} and {nv_name} overlap.")
+            return v
+
+
+        if graphDictionary:
+            if not isinstance(graphDictionary, dict):
+                if not silent:
+                    print("Graph.ByDictionaries - Error: The input graphDictionary parameter is not a valid python dictionary. Returning None.")
+                return None
+        
+        if not isinstance(vertexDictionaries, list):
+            if not silent:    
+                print("Graph.ByDictionaries - Error: The input vertexDictionaries parameter is not a valid list. Returning None.")
+            return None
+        
+        if not isinstance(edgeDictionaries, list):
+            if not silent:    
+                print("Graph.ByDictionaries - Error: The input edgeDictionaries parameter is not a valid list. Returning None.")
+            return None
+        
+        name_to_vertex = {}
+        vertices = []
+        for vd in vertexDictionaries:
+            v = _vertex(vd, vertices, vertexKey=vertexKey, tolerance=tolerance, silent=silent)
+            if v:
+                vertices.append(v)
+
+        # If coordinates are not present, make sure you separate the vertices to allow edges to be created.
+        if "x" not in vertexDictionaries[0].keys():
+            vertices = Vertex.Separate(vertices, minDistance=max(1, tolerance))
+
+        for i, v in enumerate(vertices):
+            vd = vertexDictionaries[i]
+            name_to_vertex[vd[vertexKey]] = v
+
+        # Create adjacency edges (undirected: one edge per pair)
+        edges = []
+        for d in edgeDictionaries:
+            a, b = d[edgeKey]
+            va = name_to_vertex.get(a, None)
+            vb = name_to_vertex.get(b, None)
+            if not va and not vb:
+                if not silent:
+                    print(f"Graph.ByDictionaries - Warning: vertices '{a}' and '{b}' are missing. Could not create an edge between them.")
+                continue
+            if not va:
+                if not silent:
+                    print(f"Graph.ByDictionaries - Warning: vertex '{a}' is missing. Could not create an edge between '{a}' and '{b}'.")
+                continue
+            if not vb:
+                if not silent:
+                    print(f"Graph.ByDictionaries - Warning: vertex '{b}' is missing. Could not create an edge between '{a}' and '{b}'.")
+                continue
+            e = Edge.ByStartVertexEndVertex(va, vb, silent=True)
+            if not e:
+                if not silent:
+                    print(f"Graph.ByDictionaries - Warning: Could not create an edge between '{a}' and '{b}'. Check if the distance betwen '{a}' and '{b}' is kess than the input tolerance.")
+                continue
+            edges.append(e)
+        # Build graph
+        g = Graph.ByVerticesEdges(vertices, edges)
+
+        # Attach graph-level metadata
+        if graphDictionary:
+            _set_dict(g, graphDictionary)
+        return g
 
     @staticmethod
     def ByIFCFile(file,
@@ -9117,8 +9330,6 @@ class Graph:
 
             return pos
 
-        
-
         def radial_layout_2d(edge_list, root_index=0):
             import numpy as np
             from collections import deque
@@ -9270,8 +9481,14 @@ class Graph:
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
-                print("Graph.Flatten - Error: The input graph is not a valid topologic graph. Returning None.")
+                print("Graph.Reshape - Error: The input graph is not a valid topologic graph. Returning None.")
             return None
+        
+        vertices = Graph.Vertices(graph)
+        if len(vertices) < 2:
+            if not silent:
+                print("Graph.Reshape - Warning: The graph has less than two vertices. It cannot be rehsaped. Returning the original input graph.")
+            return graph
         
         if 'circ' in shape.lower():
             return circle_layout_2d(graph, radius=size/2, sides=sides)
