@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.55 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.57 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.55
+                0.8.57
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -65,6 +65,7 @@
 <li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Graph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
@@ -158,77 +159,83 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddEdge" title="topologicpy.Graph.Graph.AddEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddEdge</span></code></a>(graph, edge[, ...])</p></td>
 <td><p>Adds the input edge to the input Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertex" title="topologicpy.Graph.Graph.AddVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertex</span></code></a>(graph, vertex[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddEdgeByIndex" title="topologicpy.Graph.Graph.AddEdgeByIndex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddEdgeByIndex</span></code></a>(graph[, index, dictionary, ...])</p></td>
+<td><p>Creates an edge in the input Graph by connecting the two vertices specified by their indices (e.g., [5, 6] connects the 4th and 6th vertices).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertex" title="topologicpy.Graph.Graph.AddVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertex</span></code></a>(graph, vertex[, tolerance, silent])</p></td>
 <td><p>Adds the input vertex to the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertices" title="topologicpy.Graph.Graph.AddVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertices</span></code></a>(graph, vertices[, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AddVertices" title="topologicpy.Graph.Graph.AddVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddVertices</span></code></a>(graph, vertices[, tolerance, silent])</p></td>
 <td><p>Adds the input vertex to the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyDictionary" title="topologicpy.Graph.Graph.AdjacencyDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyDictionary</span></code></a>([vertexLabelKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyDictionary" title="topologicpy.Graph.Graph.AdjacencyDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyDictionary</span></code></a>([vertexLabelKey, ...])</p></td>
 <td><p>Returns the adjacency dictionary of the input Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyList" title="topologicpy.Graph.Graph.AdjacencyList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyList</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyList" title="topologicpy.Graph.Graph.AdjacencyList"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyList</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
 <td><p>Returns the adjacency list of the input Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrix" title="topologicpy.Graph.Graph.AdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrix</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrix" title="topologicpy.Graph.Graph.AdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrix</span></code></a>(graph[, vertexKey, reverse, ...])</p></td>
 <td><p>Returns the adjacency matrix of the input Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="topologicpy.Graph.Graph.AdjacencyMatrixCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixCSVString</span></code></a>(graph[, vertexKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixCSVString" title="topologicpy.Graph.Graph.AdjacencyMatrixCSVString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixCSVString</span></code></a>(graph[, vertexKey, ...])</p></td>
 <td><p>Returns the adjacency matrix CSV string of the input Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixFigure" title="topologicpy.Graph.Graph.AdjacencyMatrixFigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixFigure</span></code></a>(graph[, vertexKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacencyMatrixFigure" title="topologicpy.Graph.Graph.AdjacencyMatrixFigure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyMatrixFigure</span></code></a>(graph[, vertexKey, ...])</p></td>
 <td><p>Returns a Plotly table figure visualizing the adjacency matrix of a Graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentEdges" title="topologicpy.Graph.Graph.AdjacentEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentEdges</span></code></a>(graph, edge[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentEdges" title="topologicpy.Graph.Graph.AdjacentEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentEdges</span></code></a>(graph, edge[, silent])</p></td>
 <td><p>Returns the list of edges connected to the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVertices" title="topologicpy.Graph.Graph.AdjacentVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVertices</span></code></a>(graph, vertex[, silent])</p></td>
 <td><p>Returns the list of vertices connected to the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection" title="topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByCompassDirection</span></code></a>(graph, vertex)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection" title="topologicpy.Graph.Graph.AdjacentVerticesByCompassDirection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByCompassDirection</span></code></a>(graph, vertex)</p></td>
 <td><p>Returns the list of vertices connected to the input vertex that are in the input compass direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByVector" title="topologicpy.Graph.Graph.AdjacentVerticesByVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByVector</span></code></a>(graph, vertex[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AdjacentVerticesByVector" title="topologicpy.Graph.Graph.AdjacentVerticesByVector"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacentVerticesByVector</span></code></a>(graph, vertex[, ...])</p></td>
 <td><p>Returns the list of vertices connected to the input vertex that are in the input vector direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AllPaths" title="topologicpy.Graph.Graph.AllPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AllPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns all the paths that connect the input vertices within the allowed time limit in seconds.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.AverageClusteringCoefficient" title="topologicpy.Graph.Graph.AverageClusteringCoefficient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AverageClusteringCoefficient</span></code></a>(graph[, ...])</p></td>
 <td><p>Returns the average clustering coefficient of the input graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTGraph" title="topologicpy.Graph.Graph.BOTGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTGraph</span></code></a>(graph[, bidirectional, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTGraph" title="topologicpy.Graph.Graph.BOTGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTGraph</span></code></a>(graph[, bidirectional, ...])</p></td>
 <td><p>Creates an RDF graph according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTString" title="topologicpy.Graph.Graph.BOTString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTString</span></code></a>(graph[, format, bidirectional, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BOTString" title="topologicpy.Graph.Graph.BOTString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BOTString</span></code></a>(graph[, format, bidirectional, ...])</p></td>
 <td><p>Returns an RDF graph serialized string according to the BOT ontology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessCentrality" title="topologicpy.Graph.Graph.BetweennessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessCentrality</span></code></a>(graph[, method, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessCentrality" title="topologicpy.Graph.Graph.BetweennessCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessCentrality</span></code></a>(graph[, method, ...])</p></td>
 <td><p>Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See <a class="reference external" href="https://en.wikipedia.org/wiki/Betweenness_centrality">https://en.wikipedia.org/wiki/Betweenness_centrality</a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessPartition" title="topologicpy.Graph.Graph.BetweennessPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessPartition</span></code></a>(graph[, n, m, key, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.BetweennessPartition" title="topologicpy.Graph.Graph.BetweennessPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BetweennessPartition</span></code></a>(graph[, n, m, key, ...])</p></td>
 <td><p>Computes a partition of the input graph based on the edge betweenness method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Bridges" title="topologicpy.Graph.Graph.Bridges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bridges</span></code></a>(graph[, key, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Bridges" title="topologicpy.Graph.Graph.Bridges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Bridges</span></code></a>(graph[, key, silent])</p></td>
 <td><p>Returns the list of bridge edges in the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrix" title="topologicpy.Graph.Graph.ByAdjacencyMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrix</span></code></a>(adjacencyMatrix[, ...])</p></td>
 <td><p>Returns graphs according to the input folder path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath" title="topologicpy.Graph.Graph.ByAdjacencyMatrixCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByAdjacencyMatrixCSVPath</span></code></a>(path[, ...])</p></td>
 <td><p>Returns graphs according to the input path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByCSVPath" title="topologicpy.Graph.Graph.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, graphIDHeader, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByCSVPath" title="topologicpy.Graph.Graph.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, graphIDHeader, ...])</p></td>
 <td><p>Returns graphs according to the input folder path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNFile" title="topologicpy.Graph.Graph.ByDGCNNFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNFile</span></code></a>(file[, key, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNFile" title="topologicpy.Graph.Graph.ByDGCNNFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNFile</span></code></a>(file[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN File.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNPath" title="topologicpy.Graph.Graph.ByDGCNNPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNPath</span></code></a>(path[, key, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNPath" title="topologicpy.Graph.Graph.ByDGCNNPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNPath</span></code></a>(path[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNString" title="topologicpy.Graph.Graph.ByDGCNNString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNString</span></code></a>(string[, key, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDGCNNString" title="topologicpy.Graph.Graph.ByDGCNNString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDGCNNString</span></code></a>(string[, key, tolerance])</p></td>
 <td><p>Creates a graph from a DGCNN string.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByDictionaries" title="topologicpy.Graph.Graph.ByDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByDictionaries</span></code></a>(graphDictionary, ...[, ...])</p></td>
+<td><p>Creates a graph from input python dictionaries.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByIFCFile" title="topologicpy.Graph.Graph.ByIFCFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByIFCFile</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Create a Graph from an IFC file.</p></td>
@@ -652,6 +659,32 @@
 <dt><strong>transferEdgeDictionaries</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the dictionaries of the edges are transferred to the graph.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph</dt><dd><p>The input graph with the input edge added to it.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.AddEdgeByIndex">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddEdgeByIndex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionary</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddEdgeByIndex" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an edge in the input Graph by connecting the two vertices specified by their indices (e.g., [5, 6] connects the 4th and 6th vertices).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">list or tuple</span></dt><dd><p>The input list of vertex indices (e.g. [4, 6]).</p>
+</dd>
+<dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary , optional</span></dt><dd><p>The input edge dictionary.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -1602,6 +1635,70 @@ the same order and of the same length as the rows in the adjacency matrix.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>dict</dt><dd><p>A dictionary with the graphs and labels. The keys are ‘graphs’ and ‘labels’.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.ByDictionaries">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByDictionaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphDictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexDictionaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDictionaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByDictionaries" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a graph from input python dictionaries.</p>
+<p>Rules:
+All vertex dictionaries must contain at least the vertexKey.
+All edge dictionaries must contain at least the edgeKey.
+The edgeKey must be a tuple or list of two str values.
+x,y,z coordinates are optional. However, if a vertex dictionary contains x,y,z coordinates then all vertex dictionaries must contain x,y,z coordinates.
+If vertex dictionaries contain x,y,z coordinates they must not overlap and be separated by a distance greater than tolerance.
+Keys and values are case sensitive.
+x,y,z keys, if present  must be lowercase.</p>
+<p>Example:
+graphDictionary = {“name”: “Small Apartment”, “location”: “123 Main Street”}
+vertexDictionaries = [</p>
+<blockquote>
+<div><p>{“name”:”Entry”, “type”:”Circulation”, “x”:1, “y”:4, “z”:0, “area”:5},
+{“name”:”Living Room”, “type”:”Living Room”, “x”:3,  “y”:4 , “z”:0, “area”:24},
+{“name”:”Dining Room”, “type”:”Dining Room”, “x”:5,  “y”:2, “z”:0,  “area”:18},
+{“name”:”Kitchen”, “type”:”Kitchen”, “x”:1, “y”:2, “z”:0,  “area”:15},
+{“name”:”Bathroom”, “type”:”Bathroom”, “x”:3, “y”:6, “z”:0, “area”:9},
+{“name”:”Bedroom”, “type”:”Bedroom”, “x”:5, “y”:4, “z”:0, “area”:16}</p>
+</div></blockquote>
+<p>]
+edgeDictionaries = [</p>
+<blockquote>
+<div><p>{“connects”: (“Entry”,”Living Room”), “relationship”: “adjacent_to”},
+{“connects”: (“Living Room”,”Kitchen”), “relationship”: “adjacent_to”},
+{“connects”: (“Dining Room”,”Kitchen”), “relationship”: “adjacent_to”},
+{“connects”: (“Living Room”,”Dining Room”), “relationship”: “adjacent_to”},
+{“connects”: (“Living Room”,”Bedroom”), “relationship”: “adjacent_to”},
+{“connects”: (“Living Room”,”Bathroom”), “relationship”: “adjacent_to”}</p>
+</div></blockquote>
+<p>]
+vertexKey = “name”
+edgeKey = “connects”</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphDictionary</strong><span class="classifier">dict</span></dt><dd><p>The python dictionary to associate with the resulting graph</p>
+</dd>
+<dt><strong>vertexDictionaries</strong><span class="classifier">list</span></dt><dd><p>The input list of vertex dictionaries. These must contain the vertexKey. X,Y,Z coordinates are optional.</p>
+</dd>
+<dt><strong>edgeDictionaries</strong><span class="classifier">list</span></dt><dd><p>The input list of edge dictionaries. These must have the edgeKey to specify the two vertices they connect (by using the vertexKey)</p>
+</dd>
+<dt><strong>vertexKey: str</strong></dt><dd><p>The vertex key used to identify which vertices and edge connects.</p>
+</dd>
+<dt><strong>edgeKey: str</strong></dt><dd><p>The edge key under which the pair of vertex keys are listed as a tuple or list.</p>
+</dd>
+<dt><strong>tolerance: float , optional</strong></dt><dd><p>The desired tolerance. The default is 0.0001</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph</dt><dd><p>The resulting graph</p>
 </dd>
 </dl>
 </dd>

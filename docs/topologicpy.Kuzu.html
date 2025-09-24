@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.Kuzu module &mdash; topologicpy 0.8.57 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Honeybee module" href="topologicpy.Honeybee.html" />
+    <link rel="prev" title="topologicpy.Helper module" href="topologicpy.Helper.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.8.57
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.Kuzu module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.Kuzu.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.Kuzu">
+<span id="topologicpy-kuzu-module"></span><h1>topologicpy.Kuzu module<a class="headerlink" href="#module-topologicpy.Kuzu" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Kuzu.</span></span><span class="sig-name descname"><span class="pre">Kuzu</span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>TopologicPy-style class of static methods for Kùzu integration.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>All methods are <em>static</em> to match TopologicPy’s style.</p></li>
+<li><dl class="simple">
+<dt>Graph persistence:</dt><dd><ul>
+<li><p>Vertices: stored in <cite>Vertex</cite> with (id, graph_id, label, props JSON)</p></li>
+<li><p>Edges: stored as <cite>CONNECT</cite> relations a-&gt;b with label + props JSON</p></li>
+<li><p>We assume undirected design intent; only one CONNECT is stored (a-&gt;b),
+but TopologicPy Graph treats edges as undirected by default.</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+</ul>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.Connection" title="topologicpy.Kuzu.Kuzu.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(db_path)</p></td>
+<td><p>Returns a <cite>kuzu.Connection</cite> bound to the database at <cite>db_path</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.Database" title="topologicpy.Kuzu.Kuzu.Database"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Database</span></code></a>(db_path)</p></td>
+<td><p>Returns the underlying <cite>kuzu.Database</cite> instance for <cite>db_path</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.DeleteGraph" title="topologicpy.Kuzu.Kuzu.DeleteGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeleteGraph</span></code></a>(db_path, graph_id[, silent])</p></td>
+<td><p>Deletes a graph (vertices/edges) and its GraphCard by id.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.EmptyDatabase" title="topologicpy.Kuzu.Kuzu.EmptyDatabase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EmptyDatabase</span></code></a>(db_path[, drop_schema, ...])</p></td>
+<td><p>Empties the Kùzu database at <cite>db_path</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.EnsureSchema" title="topologicpy.Kuzu.Kuzu.EnsureSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsureSchema</span></code></a>(db_path[, silent])</p></td>
+<td><p>Ensures the required Kùzu schema exists in the database at <cite>db_path</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.GraphByID" title="topologicpy.Kuzu.Kuzu.GraphByID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphByID</span></code></a>(db_path, graphID[, silent])</p></td>
+<td><p>Reads a graph with id <cite>graph_id</cite> from Kùzu and constructs a TopologicPy graph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="topologicpy.Kuzu.Kuzu.GraphsByQuery"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphsByQuery</span></code></a>(db_path, query[, params, ...])</p></td>
+<td><p>Executes a Kùzu Cypher query and returns a list of TopologicPy Graphs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="topologicpy.Kuzu.Kuzu.UpsertGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpsertGraph</span></code></a>(db_path, graph[, graphIDKey, ...])</p></td>
+<td><p>Upserts (deletes prior + inserts new) a TopologicPy graph and its GraphCard.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Connection">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Connection" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a <cite>kuzu.Connection</cite> bound to the database at <cite>db_path</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Database">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Database" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the underlying <cite>kuzu.Database</cite> instance for <cite>db_path</cite>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.DeleteGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeleteGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph_id</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.DeleteGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Deletes a graph (vertices/edges) and its GraphCard by id.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.EmptyDatabase">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EmptyDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">drop_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recreate_schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.EmptyDatabase" title="Permalink to this definition"></a></dt>
+<dd><p>Empties the Kùzu database at <cite>db_path</cite>.</p>
+<p>Two modes:
+- Soft clear (default): delete ALL relationships, then ALL nodes across all tables.
+- Hard reset (drop_schema=True): drop known node/rel tables, optionally recreate schema.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>db_path</strong><span class="classifier">str</span></dt><dd><p>Path to the Kùzu database directory.</p>
+</dd>
+<dt><strong>drop_schema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, DROP the known tables instead of deleting rows. Default False.</p>
+</dd>
+<dt><strong>recreate_schema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and drop_schema=True, re-create the minimal schema after dropping. Default True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>Suppress errors if True. Default False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True on success, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.EnsureSchema">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EnsureSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.EnsureSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Ensures the required Kùzu schema exists in the database at <cite>db_path</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>db_path</strong><span class="classifier">str</span></dt><dd><p>Path to the Kùzu database directory. It will be created if it does not exist.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses error messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if successful, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.GraphByID">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.GraphByID" title="Permalink to this definition"></a></dt>
+<dd><p>Reads a graph with id <cite>graph_id</cite> from Kùzu and constructs a TopologicPy graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>topologicpy.Graph</dt><dd><p>A new TopologicPy Graph, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.GraphsByQuery">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphsByQuery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a Kùzu Cypher query and returns a list of TopologicPy Graphs.
+The query should return at least one column identifying each graph.
+By default this column is expected to be named ‘graph_id’, but you can
+override that via <cite>graph_id_field</cite>.</p>
+<p>The method will:
+1) run the query,
+2) extract distinct graph IDs from the result set (using <cite>graph_id_field</cite></p>
+<blockquote>
+<div><p>if present; otherwise it attempts to infer IDs from common fields like
+‘a_id’, ‘b_id’, or ‘id’ that look like ‘&lt;graph_id&gt;:&lt;vertex_index&gt;’),</p>
+</div></blockquote>
+<ol class="arabic simple" start="3">
+<li><p>reconstruct each graph via Kuzu.ReadTopologicGraph(…).</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>db_path</strong><span class="classifier">str</span></dt><dd><p>Path to the Kùzu database directory.</p>
+</dd>
+<dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>A valid Kùzu Cypher query.</p>
+</dd>
+<dt><strong>params</strong><span class="classifier">dict , optional</span></dt><dd><p>Parameters to pass with the query.</p>
+</dd>
+<dt><strong>graph_id_field</strong><span class="classifier">str , optional</span></dt><dd><p>The field name in the query result that contains the graph ID(s).
+Default is “graph_id”.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses errors and returns an empty list on failure.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list[topologicpy.Graph]</dt><dd><p>A list of reconstructed TopologicPy graphs.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.UpsertGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpsertGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">db_path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Upserts (deletes prior + inserts new) a TopologicPy graph and its GraphCard.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>db_path</strong><span class="classifier">str</span></dt><dd><p>Kùzu database path.</p>
+</dd>
+<dt><strong>graph</strong><span class="classifier">topologicpy.Graph</span></dt><dd><p>The input TopologicPy graph.</p>
+</dd>
+<dt><strong>graphIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The graph dictionary key under which the graph ID is stored. If None, a UUID is generated.</p>
+</dd>
+<dt><strong>title, domain, geo, time_start, time_end, summary</strong><span class="classifier">str , optional</span></dt><dd><p>Optional metadata for GraphCard.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses error messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The graph_id used.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Helper.html" class="btn btn-neutral float-left" title="topologicpy.Helper module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Honeybee.html" class="btn btn-neutral float-right" title="topologicpy.Honeybee module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

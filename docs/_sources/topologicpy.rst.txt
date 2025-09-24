@@ -24,6 +24,7 @@ Submodules
    topologicpy.Graph
    topologicpy.Grid
    topologicpy.Helper
+   topologicpy.Kuzu
    topologicpy.Honeybee
    topologicpy.Matrix
    topologicpy.Neo4j

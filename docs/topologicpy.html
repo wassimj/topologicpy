@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.8.55 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.8.57 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.55
+                0.8.57
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -65,6 +65,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
@@ -515,6 +516,7 @@
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph"><code class="docutils literal notranslate"><span class="pre">Graph</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AccessibilityCentrality"><code class="docutils literal notranslate"><span class="pre">Graph.AccessibilityCentrality()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddEdge"><code class="docutils literal notranslate"><span class="pre">Graph.AddEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddEdgeByIndex"><code class="docutils literal notranslate"><span class="pre">Graph.AddEdgeByIndex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddVertex"><code class="docutils literal notranslate"><span class="pre">Graph.AddVertex()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AddVertices"><code class="docutils literal notranslate"><span class="pre">Graph.AddVertices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.AdjacencyDictionary"><code class="docutils literal notranslate"><span class="pre">Graph.AdjacencyDictionary()</span></code></a></li>
@@ -541,6 +543,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNFile"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNFile()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNPath()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDGCNNString"><code class="docutils literal notranslate"><span class="pre">Graph.ByDGCNNString()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByDictionaries"><code class="docutils literal notranslate"><span class="pre">Graph.ByDictionaries()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCFile"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCFile()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCFile_old"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCFile_old()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.ByIFCPath"><code class="docutils literal notranslate"><span class="pre">Graph.ByIFCPath()</span></code></a></li>
@@ -713,6 +716,20 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Transpose"><code class="docutils literal notranslate"><span class="pre">Helper.Transpose()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Trim"><code class="docutils literal notranslate"><span class="pre">Helper.Trim()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Helper.html#topologicpy.Helper.Helper.Version"><code class="docutils literal notranslate"><span class="pre">Helper.Version()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu"><code class="docutils literal notranslate"><span class="pre">Kuzu</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.Connection"><code class="docutils literal notranslate"><span class="pre">Kuzu.Connection()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.Database"><code class="docutils literal notranslate"><span class="pre">Kuzu.Database()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.DeleteGraph"><code class="docutils literal notranslate"><span class="pre">Kuzu.DeleteGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.EmptyDatabase"><code class="docutils literal notranslate"><span class="pre">Kuzu.EmptyDatabase()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.EnsureSchema"><code class="docutils literal notranslate"><span class="pre">Kuzu.EnsureSchema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.GraphByID"><code class="docutils literal notranslate"><span class="pre">Kuzu.GraphByID()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.GraphsByQuery"><code class="docutils literal notranslate"><span class="pre">Kuzu.GraphsByQuery()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Kuzu.html#topologicpy.Kuzu.Kuzu.UpsertGraph"><code class="docutils literal notranslate"><span class="pre">Kuzu.UpsertGraph()</span></code></a></li>
 </ul>
 </li>
 </ul>
