@@ -6929,44 +6929,146 @@ class Graph:
         return graph.Edge(vertexA, vertexB, tolerance) # Hook to Core
     
     @staticmethod
-    def Edges(graph, vertices=None, tolerance=0.0001):
+    def Edges(
+        graph,
+        vertices: list = None,
+        strict: bool = False,
+        sortBy: str = None,
+        reverse: bool = False,
+        silent: bool = False,
+        tolerance: float = 0.0001
+    ) -> list:  # list[topologic_core.Edge]
         """
-        Returns the edges found in the input graph. If the input list of vertices is specified, this method returns the edges connected to this list of vertices. Otherwise, it returns all graph edges.
+        Returns the list of edges from `graph` whose endpoints match the given `vertices`
+        according to the `strict` rule.
+
+        If `strict` is True, both endpoints of an edge must be in `vertices`.
+        If `strict` is False, at least one endpoint must be in `vertices`.
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : topologicpy.Graph
             The input graph.
-        vertices : list , optional
-            An optional list of vertices to restrict the returned list of edges only to those connected to this list.
+        vertices : list[topologicpy.Vertex]
+            The list of vertices to test membership against.
+        strict : bool, optional
+            If set to True, require both endpoints to be in `vertices`. Otherwise,
+            require at least one endpoint to be in `vertices`. Default is False.
+        sortBy : str , optional
+            The dictionary key to use for sorting the returned edges. Special strings include "length" and "distance" to sort by the length of the edge. Default is None.
+        reverse : bool , optional
+            If set to True, the sorted list is reversed. This has no effect if the sortBy parameter is not set. Default is False.
+        silent : bool, optional
+            Isilent : bool, optional
+            If set to True, all errors and warnings are suppressed. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
-        list
-            The list of edges in the graph.
+        list[topologic_core.Edge]
+            The list of matching edges from the original graph (not recreated).
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+        from topologicpy.Helper import Helper
+        from topologicpy.Dictionary import Dictionary
+
+        def sort_edges(edges, sortBy, reverse):
+            if not sortBy is None:
+                if "length" in sortBy.lower() or "dist" in sortBy.lower():
+                    edge_values = [Edge.Length(e) for e in edges]
+                else:
+                    edge_values = [Dictionary.ValueAtKey(Topology.Dictionary(e), sortBy, "0") for e in edges]
+                edges = Helper.Sort(edges, edge_values)
+            if reverse:
+                edges.reverse()
+            return edges
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.Edges - Error: The input graph is not a valid graph. Returning None.")
-            return None
+            if not silent:
+                print("Graph.InducedEdges - Error: The input 'graph' is not a valid Graph. Returning [].")
+            return []
+
+        graph_edges = []
+        _ = graph.Edges(graph_edges, tolerance) # Hook to Core
+        graph_edges = list(dict.fromkeys(graph_edges)) # remove duplicates
+
+        if not graph_edges:
+            return []
         if not vertices:
-            edges = []
-            _ = graph.Edges(edges, tolerance) # Hook to Core
-            if not edges:
-                return []
-            return list(dict.fromkeys(edges)) # remove duplicates
-        else:
-            vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) < 1:
-            print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
-            return None
-        edges = []
-        _ = graph.Edges(vertices, tolerance, edges) # Hook to Core
-        return list(dict.fromkeys(edges)) # remove duplicates
+            graph_edges = sort_edges(graph_edges, sortBy, reverse)
+            return graph_edges
+        
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Graph.Edges - Error: The input 'vertices' is not a list. Returning [].")
+            return []
+
+        valid_vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if not valid_vertices:
+            if not silent:
+                print("Graph.Edges - Warning: No valid vertices provided. Returning [].")
+            return []
+
+        return_edges = []
+        for e in graph_edges:
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
+
+            in_start = not Vertex.Index(sv, valid_vertices) is None
+            in_end   = not Vertex.Index(ev, valid_vertices) is None
+            if strict:
+                if in_start and in_end:
+                    return_edges.append(e)
+            else:
+                if in_start or in_end:
+                    return_edges.append(e)
+
+        return_edges = sort_edges(return_edges, sortBy, reverse)
+        return return_edges
+
+    # @staticmethod
+    # def Edges(graph, vertices=None, tolerance=0.0001):
+    #     """
+    #     Returns the edges found in the input graph. If the input list of vertices is specified, this method returns the edges connected to this list of vertices. Otherwise, it returns all graph edges.
+
+    #     Parameters
+    #     ----------
+    #     graph : topologic_core.Graph
+    #         The input graph.
+    #     vertices : list , optional
+    #         An optional list of vertices to restrict the returned list of edges only to those connected to this list.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The list of edges in the graph.
+
+    #     """
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(graph, "Graph"):
+    #         print("Graph.Edges - Error: The input graph is not a valid graph. Returning None.")
+    #         return None
+    #     if not vertices:
+    #         edges = []
+    #         _ = graph.Edges(edges, tolerance) # Hook to Core
+    #         if not edges:
+    #             return []
+    #         return list(dict.fromkeys(edges)) # remove duplicates
+    #     else:
+    #         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+    #     if len(vertices) < 1:
+    #         print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
+    #         return None
+    #     edges = []
+    #     _ = graph.Edges(vertices, tolerance, edges) # Hook to Core
+    #     return list(dict.fromkeys(edges)) # remove duplicates
     
     @staticmethod
     def EigenVectorCentrality(graph, normalize: bool = False, key: str = "eigen_vector_centrality", colorKey: str = "evc_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -8411,6 +8513,57 @@ class Graph:
                 d = Dictionary.SetValueAtKey(d, key, partition)
                 edge = Topology.SetDictionary(edge, d)
         return graph
+
+
+    @staticmethod
+    def InducedSubgraph(graph, vertices: list = None, strict: bool = False, silent: bool = False, tolerance: float = 0.0001):
+        """
+        Returns the subgraph whose edges are connected to the given `vertices`
+        according to the `strict` rule. Isolated vertices are included as-is.
+
+        If `strict` is True, both endpoints of an edge must be in `vertices`.
+        If `strict` is False, at least one endpoint must be in `vertices`.
+
+        Parameters
+        ----------
+        graph : topologicpy.Graph
+            The input graph.
+        vertices : list[topologicpy.Vertex]
+            The list of vertices to test membership against.
+        strict : bool, optional
+            If set to True, require both endpoints to be in `vertices`. Otherwise,
+            require at least one endpoint to be in `vertices`. Default is False.
+        silent : bool, optional
+            Isilent : bool, optional
+            If set to True, all errors and warnings are suppressed. Default is False
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        list[topologic_core.Edge]
+            The list of matching edges from the original graph (not recreated).
+
+        """
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.InducedSubgraph - Error: The input graph parameter is not a valid graph. Returning None.")
+        
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Graph.InducedSubgraph - Error: The input 'vertices' is not a list. Returning None.")
+            return None
+
+        valid_vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if not valid_vertices:
+            if not silent:
+                print("Graph.InducedSubgraph - Warning: No valid vertices provided. Returning None.")
+            return None
+        connected_vertices = [v for v in valid_vertices if Graph.VertexDegree(graph, v) > 0]
+        edges = Graph.Edges(graph, connected_vertices, strict=strict, tolerance=tolerance)
+        return Graph.ByVerticesEdges(valid_vertices, edges)
 
     @staticmethod
     def IsEmpty(graph, silent: bool = False):
@@ -11215,7 +11368,166 @@ class Graph:
                 print(f'Graph.Kernel - Error: Unsupported method "{method}". '
                     f'Supported methods are "WL" and "Hopper". Returning None.')
             return None
-    
+
+    @staticmethod
+    def KHopsSubgraph(
+        graph,
+        vertices: list,
+        k: int = 1,
+        direction: str = "both",
+        silent: bool = False,
+    ):
+        """
+        Returns a subgraph consisting of the k-hop neighborhood around the input list of seed vertices.
+
+        Parameters
+        ----------
+        graph : topologicpy.Graph
+            The input graph.
+        vertices : list
+            The input list of seed vertices.
+        k : int, optional
+            Number of hops. Default is 1.
+        direction : str, optional
+            'both', 'out', or 'in'. Default 'both'.
+        silent : bool, optional
+            Suppress warnings/errors. Default False.
+
+        Returns
+        -------
+        topologicpy.Graph or None
+            The resulting subgraph, or None on error.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        # ---- validate inputs ----
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.KHopsSubgraph - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Graph.KHopsSubgraph - Error: The input vertices parameter is not a valid list. Returning None.")
+            return None
+
+        graph_vertices = Graph.Vertices(graph)
+        if not graph_vertices:
+            if not silent:
+                print("Graph.KHopsSubgraph - Error: The input graph does not contain any vertices. Returning None.")
+            return None
+
+        # Keep only valid vertex objects
+        seed_vertices = [v for v in vertices if Topology.IsInstance(v, "vertex")]
+        if not seed_vertices:
+            if not silent:
+                print("Graph.KHopsSubgraph - Error: The input vertices list does not contain any valid vertices. Returning None.")
+            return None
+
+        # ---- map seeds to vertex indices (prefer identity; fallback to list.index) ----
+        id_to_index = {Topology.UUID(v): i for i, v in enumerate(graph_vertices)}
+        seed_indices = []
+        for sv in seed_vertices:
+            idx = id_to_index.get(Topology.UUID(sv))
+            if idx is None:
+                try:
+                    idx = graph_vertices.index(sv)  # fallback if same object not used
+                except ValueError:
+                    idx = None
+            if idx is not None:
+                seed_indices.append(idx)
+
+        if not seed_indices:
+            if not silent:
+                print("Graph.KHopsSubgraph - Error: None of the seed vertices are found in the graph. Returning None.")
+            return None
+
+        # ---- get mesh data (index-based edge list) ----
+        # Expect: mesh_data["vertices"] (list), mesh_data["edges"] (list of [a, b] indices)
+        mesh_data = Graph.MeshData(graph)
+        edges_idx = mesh_data.get("edges") or []
+        # Compute number of vertices robustly
+        n_verts = len(mesh_data.get("vertices") or graph_vertices)
+
+        # ---- build adjacency (directed; BFS respects 'direction') ----
+        adj_out = {i: set() for i in range(n_verts)}
+        adj_in  = {i: set() for i in range(n_verts)}
+        for (a, b) in edges_idx:
+            if 0 <= a < n_verts and 0 <= b < n_verts:
+                adj_out[a].add(b)
+                adj_in[b].add(a)
+
+        # ---- BFS up to k hops ----
+        dir_norm = (direction or "both").lower()
+        if dir_norm not in ("both", "out", "in"):
+            dir_norm = "both"
+
+        visited = set(seed_indices)
+        frontier = set(seed_indices)
+        for _ in range(max(0, int(k))):
+            nxt = set()
+            for v in frontier:
+                if dir_norm in ("both", "out"):
+                    nxt |= adj_out.get(v, set())
+                if dir_norm in ("both", "in"):
+                    nxt |= adj_in.get(v, set())
+            nxt -= visited
+            if not nxt:
+                break
+            visited |= nxt
+            frontier = nxt
+
+        if not visited:
+            if not silent:
+                print("Graph.KHopsSubgraph - Warning: No vertices found within the specified k hops. Returning None.")
+            return None
+
+        # ---- assemble subgraph ----
+        # Vertices: actual TopologicPy Vertex objects
+        sub_vertex_indices = sorted(visited)
+        sub_vertices = [graph_vertices[i] for i in sub_vertex_indices]
+
+        # Edges: include only those whose endpoints are both in the subgraph
+        sub_index_set = set(sub_vertex_indices)
+        # Map from global index -> actual Vertex object for edge reconstruction
+        idx_to_vertex = {i: graph_vertices[i] for i in sub_vertex_indices}
+
+        sub_edges = []
+        for (a, b) in edges_idx:
+            if a in sub_index_set and b in sub_index_set:
+                # Recreate edge to ensure it references the subgraph vertices
+                ea = idx_to_vertex[a]
+                eb = idx_to_vertex[b]
+                try:
+                    e = Edge.ByStartVertexEndVertex(ea, eb)
+                except Exception:
+                    # If creation fails, skip this edge
+                    continue
+                # Preserve edge label if present
+                try:
+                    # Find original edge and copy its dictionary if possible
+                    # (best-effort; safe if Graph.Edges aligns with edges_idx order)
+                    # Otherwise, leave edge as-is.
+                    pass
+                except Exception:
+                    pass
+                sub_edges.append(e)
+
+        try:
+            return Graph.ByVerticesEdges(sub_vertices, sub_edges)
+        except Exception:
+            # As a fallback, some environments accept edges alone
+            try:
+                return Graph.ByEdges(sub_edges)
+            except Exception:
+                if not silent:
+                    print("Graph.KHopsSubgraph - Error: Failed to construct the subgraph. Returning None.")
+                return None
+
     @staticmethod
     def Laplacian(graph, silent: bool = False, normalized: bool = False):
         """
@@ -14267,7 +14579,7 @@ class Graph:
         return round(degree, mantissa)
     
     @staticmethod
-    def Vertices(graph, vertexKey=None, reverse=False):
+    def Vertices(graph, sortBy=None, reverse=False):
         """
         Returns the list of vertices in the input graph.
 
@@ -14275,11 +14587,14 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        vertexKey : str , optional
-            If set, the returned list of vertices is sorted according to the dicitonary values stored under this key. Default is None.
+        sortBy : str , optional
+            The dictionary key to use for sorting the returned edges. Special strings include "length" and "distance" to sort by the length of the edge. Default is None.
         reverse : bool , optional
-            If set to True, the vertices are sorted in reverse order (only if vertexKey is set). Otherwise, they are not. Default is False.
-        
+            If set to True, the sorted list is reversed. This has no effect if the sortBy parameter is not set. Default is False.
+        silent : bool, optional
+            Isilent : bool, optional
+            If set to True, all errors and warnings are suppressed. Default is False.
+                    
         Returns
         -------
         list
@@ -14299,13 +14614,13 @@ class Graph:
                 _ = graph.Vertices(vertices) # Hook to Core
             except:
                 vertices = []
-        if not vertexKey == None:
-            sorting_values = []
+        if not sortBy == None:
+            vertex_values = []
             for v in vertices:
                 d = Topology.Dictionary(v)
-                value = Dictionary.ValueAtKey(d, vertexKey)
-                sorting_values.append(value)
-            vertices = Helper.Sort(vertices, sorting_values)
+                value = str(Dictionary.ValueAtKey(d, sortBy, "0"))
+                vertex_values.append(value)
+            vertices = Helper.Sort(vertices, vertex_values)
             if reverse == True:
                 vertices.reverse()
         return vertices
