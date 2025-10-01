@@ -1901,11 +1901,28 @@ class Graph:
                                    mantissa= mantissa)
         return bot_graph.serialize(format=format)
 
-    @staticmethod
-    def BetweennessCentrality(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "betweenness_centrality", colorKey="bc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
-        """
-            Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
 
+    @staticmethod
+    def BetweennessCentrality(
+        graph,
+        method: str = "vertex",
+        weightKey: str = "length",
+        normalize: bool = False,
+        nxCompatible: bool = False,
+        key: str = "betweenness_centrality",
+        colorKey: str = "bc_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 0.001,
+        silent: bool = False
+    ):
+        """
+        Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+        Optimized betweenness centrality (undirected) using Brandes:
+        - Unweighted: O(VE) BFS per source
+        - Weighted: Dijkstra-Brandes with binary heap
+        - Vertex or Edge mode
+        - Optional NetworkX-compatible normalization or 0..1 rescale
         Parameters
         ----------
         graph : topologic_core.Graph
@@ -1936,60 +1953,337 @@ class Graph:
         -------
         list
             The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
-
         """
-        import warnings
+        from collections import deque
+        import math
 
-        try:
-            import networkx as nx
-        except:
-            print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
-            try:
-                os.system("pip install networkx")
-            except:
-                os.system("pip install networkx --user")
-            try:
-                import networkx as nx
-                print("Graph.BetwennessCentrality - Infromation: networkx library installed correctly.")
-            except:
-                warnings.warn("Graph.BetwennessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
-                return None
-        
+        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
-        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        # We are inside Graph.* context; Graph.<...> methods available.
 
-        if weightKey:
-            if "len" in weightKey.lower() or "dis" in weightKey.lower():
+        # ---------- validate ----------
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.BetweennessCentrality - Error: The input is not a valid Graph. Returning None.")
+            return None
+
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if n == 0:
+            if not silent:
+                print("Graph.BetweennessCentrality - Warning: Graph has no vertices. Returning [].")
+            return []
+
+        method_l = (method or "vertex").lower()
+        compute_edges = "edge" in method_l
+
+        # ---------- stable vertex indexing ----------
+        def vkey(v, r=9):
+            d = Topology.Dictionary(v)
+            vid = Dictionary.ValueAtKey(d, "id")
+            if vid is not None:
+                return ("id", vid)
+            return ("xyz", round(Vertex.X(v), r), round(Vertex.Y(v), r), round(Vertex.Z(v), r))
+
+        idx_of = {vkey(v): i for i, v in enumerate(vertices)}
+
+        # ---------- weight handling ----------
+        dist_attr = None
+        if isinstance(weightKey, str) and weightKey:
+            wl = weightKey.lower()
+            if ("len" in wl) or ("dis" in wl):
                 weightKey = "length"
-        nx_graph = Graph.NetworkXGraph(graph)
-        if "vert" in method.lower():
-            elements = Graph.Vertices(graph)
-            elements_dict = nx.betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
-            values = [round(value, mantissa) for value in list(elements_dict.values())]
-        else:
-            elements = Graph.Edges(graph)
-            elements_dict = nx.edge_betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
-            values = [round(value, mantissa) for value in list(elements_dict.values())]
-        if nxCompatible == False:
-            if mantissa > 0: # We cannot have values in the range 0 to 1 with a mantissa < 1
-                values = [round(v, mantissa) for v in Helper.Normalize(values)]
+            dist_attr = weightKey
+
+        def edge_weight(e):
+            if dist_attr == "length":
+                try:
+                    return float(Edge.Length(e))
+                except Exception:
+                    return 1.0
+            elif dist_attr:
+                try:
+                    d = Topology.Dictionary(e)
+                    w = Dictionary.ValueAtKey(d, dist_attr)
+                    return float(w) if (w is not None) else 1.0
+                except Exception:
+                    return 1.0
             else:
-                values = Helper.Normalize(values)
-            min_value = 0
-            max_value = 1
+                return 1.0
+
+        # ---------- build undirected adjacency (min weight on multi-edges) ----------
+        edges = Graph.Edges(graph)
+        # For per-edge outputs in input order:
+        edge_end_idx = []  # [(iu, iv)] aligned with edges list (undirected as sorted pair)
+        tmp_adj = [dict() for _ in range(n)]  # temporary: dedup by neighbor with min weight
+
+        for e in edges:
+            try:
+                u = Edge.StartVertex(e)
+                v = Edge.EndVertex(e)
+            except Exception:
+                continue
+            iu = idx_of.get(vkey(u))
+            iv = idx_of.get(vkey(v))
+            if iu is None or iv is None or iu == iv:
+                # still store mapping for return list to avoid index error
+                pair = None
+            else:
+                w = edge_weight(e)
+                # keep minimal weight for duplicates
+                pu = tmp_adj[iu].get(iv)
+                if (pu is None) or (w < pu):
+                    tmp_adj[iu][iv] = w
+                    tmp_adj[iv][iu] = w
+                pair = (iu, iv) if iu < iv else (iv, iu)
+            edge_end_idx.append(pair)
+
+        # finalize adjacency as list-of-tuples for fast loops
+        adj = [list(neigh.items()) for neigh in tmp_adj]  # adj[i] = [(j, w), ...]
+        del tmp_adj
+
+        # detect weightedness
+        weighted = False
+        for i in range(n):
+            if any(abs(w - 1.0) > 1e-12 for _, w in adj[i]):
+                weighted = True
+                break
+
+        # ---------- Brandes ----------
+        CB_v = [0.0] * n
+        CB_e = {}  # key: (min_i, max_j) -> score (only if compute_edges)
+
+        if n > 1:
+            if not weighted:
+                # Unweighted BFS Brandes
+                for s in range(n):
+                    S = []
+                    P = [[] for _ in range(n)]
+                    sigma = [0.0] * n
+                    sigma[s] = 1.0
+                    dist = [-1] * n
+                    dist[s] = 0
+                    Q = deque([s])
+                    pushQ, popQ = Q.append, Q.popleft
+
+                    while Q:
+                        v = popQ()
+                        S.append(v)
+                        dv = dist[v]
+                        sv = sigma[v]
+                        for w, _ in adj[v]:
+                            if dist[w] < 0:
+                                dist[w] = dv + 1
+                                pushQ(w)
+                            if dist[w] == dv + 1:
+                                sigma[w] += sv
+                                P[w].append(v)
+
+                    delta = [0.0] * n
+                    while S:
+                        w = S.pop()
+                        sw = sigma[w]
+                        dw = 1.0 + delta[w]
+                        for v in P[w]:
+                            c = (sigma[v] / sw) * dw
+                            delta[v] += c
+                            if compute_edges:
+                                a, b = (v, w) if v < w else (w, v)
+                                CB_e[a, b] = CB_e.get((a, b), 0.0) + c
+                        if w != s:
+                            CB_v[w] += delta[w]
+            else:
+                # Weighted Dijkstra-Brandes
+                import heapq
+                EPS = 1e-12
+                for s in range(n):
+                    S = []
+                    P = [[] for _ in range(n)]
+                    sigma = [0.0] * n
+                    sigma[s] = 1.0
+                    dist = [math.inf] * n
+                    dist[s] = 0.0
+                    H = [(0.0, s)]
+                    pushH, popH = heapq.heappush, heapq.heappop
+
+                    while H:
+                        dv, v = popH(H)
+                        if dv > dist[v] + EPS:
+                            continue
+                        S.append(v)
+                        sv = sigma[v]
+                        for w, wgt in adj[v]:
+                            nd = dv + wgt
+                            dw = dist[w]
+                            if nd + EPS < dw:
+                                dist[w] = nd
+                                sigma[w] = sv
+                                P[w] = [v]
+                                pushH(H, (nd, w))
+                            elif abs(nd - dw) <= EPS:
+                                sigma[w] += sv
+                                P[w].append(v)
+
+                    delta = [0.0] * n
+                    while S:
+                        w = S.pop()
+                        sw = sigma[w]
+                        if sw == 0.0:
+                            continue
+                        dw = 1.0 + delta[w]
+                        for v in P[w]:
+                            c = (sigma[v] / sw) * dw
+                            delta[v] += c
+                            if compute_edges:
+                                a, b = (v, w) if v < w else (w, v)
+                                CB_e[a, b] = CB_e.get((a, b), 0.0) + c
+                        if w != s:
+                            CB_v[w] += delta[w]
+
+        # ---------- normalization ----------
+        # NetworkX-compatible normalization (undirected):
+        # vertices/edges factor = 2/((n-1)(n-2)) for n > 2 when normalized=True
+        if nxCompatible:
+            if normalize and n > 2:
+                scale = 2.0 / ((n - 1) * (n - 2))
+                CB_v = [v * scale for v in CB_v]
+                if compute_edges:
+                    for k in list(CB_e.keys()):
+                        CB_e[k] *= scale
+            # else: leave raw Brandes scores (normalized=False behavior)
+            values_raw = CB_v if not compute_edges else [
+                CB_e.get(tuple(sorted(pair)) if pair else None, 0.0) if pair else 0.0
+                for pair in edge_end_idx
+            ]
+            values_for_return = values_raw
         else:
-            min_value = min(values)
-            max_value = max(values)
+            # Rescale to [0,1] regardless of theoretical normalization
+            values_raw = CB_v if not compute_edges else [
+                CB_e.get(tuple(sorted(pair)) if pair else None, 0.0) if pair else 0.0
+                for pair in edge_end_idx
+            ]
+            values_for_return = Helper.Normalize(values_raw)
 
-        for i, value in enumerate(values):
-            d = Topology.Dictionary(elements[i])
-            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
-            elements[i] = Topology.SetDictionary(elements[i], d)
+        # rounding once
+        if mantissa is not None and mantissa >= 0:
+            values_for_return = [round(v, mantissa) for v in values_for_return]
 
-        return values
+        # ---------- color mapping ----------
+        if values_for_return:
+            min_v, max_v = min(values_for_return), max(values_for_return)
+        else:
+            min_v, max_v = 0.0, 1.0
+        if abs(max_v - min_v) < tolerance:
+            max_v = min_v + tolerance
+
+        # annotate (vertices or edges) in input order
+        if compute_edges:
+            elems = edges
+        else:
+            elems = vertices
+        for i, value in enumerate(values_for_return):
+            d = Topology.Dictionary(elems[i])
+            color_hex = Color.AnyToHex(
+                Color.ByValueInRange(value, minValue=min_v, maxValue=max_v, colorScale=colorScale)
+            )
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color_hex])
+            elems[i] = Topology.SetDictionary(elems[i], d)
+
+        return values_for_return
+
+    # @staticmethod
+    # def BetweennessCentrality_old(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "betweenness_centrality", colorKey="bc_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
+    #     """
+    #     Returns the betweenness centrality of the input graph. The order of the returned list is the same as the order of vertices/edges. See https://en.wikipedia.org/wiki/Betweenness_centrality.
+
+    #     Parameters
+    #     ----------
+    #     graph : topologic_core.Graph
+    #         The input graph.
+    #     method : str , optional
+    #         The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
+    #     weightKey : str , optional
+    #         If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
+    #         the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
+    #         This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
+    #     normalize : bool , optional
+    #         If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
+    #     nxCompatible : bool , optional
+    #         If set to True, and normalize input parameter is also set to True, the values are set to be identical to NetworkX values. Otherwise, they are normalized between 0 and 1. Default is False.
+    #     key : str , optional
+    #         The desired dictionary key under which to store the betweenness centrality score. Default is "betweenness_centrality".
+    #     colorKey : str , optional
+    #         The desired dictionary key under which to store the betweenness centrality color. Default is "betweenness_centrality".
+    #     colorScale : str , optional
+    #         The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+    #         In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+    #     mantissa : int , optional
+    #         The number of decimal places to round the result to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The betweenness centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+
+    #     """
+    #     import warnings
+
+    #     try:
+    #         import networkx as nx
+    #     except:
+    #         print("Graph.BetwennessCentrality - Information: Installing required networkx library.")
+    #         try:
+    #             os.system("pip install networkx")
+    #         except:
+    #             os.system("pip install networkx --user")
+    #         try:
+    #             import networkx as nx
+    #             print("Graph.BetwennessCentrality - Infromation: networkx library installed correctly.")
+    #         except:
+    #             warnings.warn("Graph.BetwennessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
+    #             return None
+        
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Color import Color
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Helper import Helper
+
+    #     if weightKey:
+    #         if "len" in weightKey.lower() or "dis" in weightKey.lower():
+    #             weightKey = "length"
+    #     nx_graph = Graph.NetworkXGraph(graph)
+    #     if "vert" in method.lower():
+    #         elements = Graph.Vertices(graph)
+    #         elements_dict = nx.betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
+    #         values = [round(value, mantissa) for value in list(elements_dict.values())]
+    #     else:
+    #         elements = Graph.Edges(graph)
+    #         elements_dict = nx.edge_betweenness_centrality(nx_graph, normalized=normalize, weight=weightKey)
+    #         values = [round(value, mantissa) for value in list(elements_dict.values())]
+    #     if nxCompatible == False:
+    #         if mantissa > 0: # We cannot have values in the range 0 to 1 with a mantissa < 1
+    #             values = [round(v, mantissa) for v in Helper.Normalize(values)]
+    #         else:
+    #             values = Helper.Normalize(values)
+    #         min_value = 0
+    #         max_value = 1
+    #     else:
+    #         min_value = min(values)
+    #         max_value = max(values)
+
+    #     for i, value in enumerate(values):
+    #         d = Topology.Dictionary(elements[i])
+    #         color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+    #         d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+    #         elements[i] = Topology.SetDictionary(elements[i], d)
+
+    #     return values
 
     @staticmethod
     def BetweennessPartition(graph, n=2, m=10, key="partition", tolerance=0.0001, silent=False):
@@ -3246,432 +3540,432 @@ class Graph:
         edges = get_edges(relationships, vertices)
         return Graph.ByVerticesEdges(vertices, edges)
         
-    @staticmethod
-    def ByIFCFile_old(file,
-                  includeTypes: list = [],
-                  excludeTypes: list = [],
-                  includeRels: list = [],
-                  excludeRels: list = [],
-                  transferDictionaries: bool = False,
-                  useInternalVertex: bool = False,
-                  storeBREP: bool = False,
-                  removeCoplanarFaces: bool = False,
-                  xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
-                  xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
-                  tolerance: float = 0.0001):
-        """
-        Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.
+    # @staticmethod
+    # def ByIFCFile_old(file,
+    #               includeTypes: list = [],
+    #               excludeTypes: list = [],
+    #               includeRels: list = [],
+    #               excludeRels: list = [],
+    #               transferDictionaries: bool = False,
+    #               useInternalVertex: bool = False,
+    #               storeBREP: bool = False,
+    #               removeCoplanarFaces: bool = False,
+    #               xMin: float = -0.5, yMin: float = -0.5, zMin: float = -0.5,
+    #               xMax: float = 0.5, yMax: float = 0.5, zMax: float = 0.5,
+    #               tolerance: float = 0.0001):
+    #     """
+    #     Create a Graph from an IFC file. This code is partially based on code from Bruno Postle.
 
-        Parameters
-        ----------
-        file : file
-            The input IFC file
-        includeTypes : list , optional
-            A list of IFC object types to include in the graph. Default is [] which means all object types are included.
-        excludeTypes : list , optional
-            A list of IFC object types to exclude from the graph. Default is [] which mean no object type is excluded.
-        includeRels : list , optional
-            A list of IFC relationship types to include in the graph. Default is [] which means all relationship types are included.
-        excludeRels : list , optional
-            A list of IFC relationship types to exclude from the graph. Default is [] which mean no relationship type is excluded.
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
-        useInternalVertex : bool , optional
-            If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
-        storeBREP : bool , optional
-            If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
-        removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
-        xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
-        yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
-        zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
-        xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
-        yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
-        zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+    #     Parameters
+    #     ----------
+    #     file : file
+    #         The input IFC file
+    #     includeTypes : list , optional
+    #         A list of IFC object types to include in the graph. Default is [] which means all object types are included.
+    #     excludeTypes : list , optional
+    #         A list of IFC object types to exclude from the graph. Default is [] which mean no object type is excluded.
+    #     includeRels : list , optional
+    #         A list of IFC relationship types to include in the graph. Default is [] which means all relationship types are included.
+    #     excludeRels : list , optional
+    #         A list of IFC relationship types to exclude from the graph. Default is [] which mean no relationship type is excluded.
+    #     transferDictionaries : bool , optional
+    #         If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
+    #     useInternalVertex : bool , optional
+    #         If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
+    #     storeBREP : bool , optional
+    #         If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
+    #     removeCoplanarFaces : bool , optional
+    #         If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
+    #     xMin : float, optional
+    #         The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
+    #     yMin : float, optional
+    #         The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
+    #     zMin : float, optional
+    #         The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
+    #     xMax : float, optional
+    #         The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
+    #     yMax : float, optional
+    #         The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
+    #     zMax : float, optional
+    #         The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
         
-        Returns
-        -------
-        topologic_core.Graph
-            The created graph.
+    #     Returns
+    #     -------
+    #     topologic_core.Graph
+    #         The created graph.
         
-        """
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
-        try:
-            import ifcopenshell
-            import ifcopenshell.util.placement
-            import ifcopenshell.util.element
-            import ifcopenshell.util.shape
-            import ifcopenshell.geom
-        except:
-            print("Graph.ByIFCFile - Warning: Installing required ifcopenshell library.")
-            try:
-                os.system("pip install ifcopenshell")
-            except:
-                os.system("pip install ifcopenshell --user")
-            try:
-                import ifcopenshell
-                import ifcopenshell.util.placement
-                import ifcopenshell.util.element
-                import ifcopenshell.util.shape
-                import ifcopenshell.geom
-                print("Graph.ByIFCFile - Warning: ifcopenshell library installed correctly.")
-            except:
-                warnings.warn("Graph.ByIFCFile - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
-                return None
+    #     """
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Graph import Graph
+    #     from topologicpy.Dictionary import Dictionary
+    #     try:
+    #         import ifcopenshell
+    #         import ifcopenshell.util.placement
+    #         import ifcopenshell.util.element
+    #         import ifcopenshell.util.shape
+    #         import ifcopenshell.geom
+    #     except:
+    #         print("Graph.ByIFCFile - Warning: Installing required ifcopenshell library.")
+    #         try:
+    #             os.system("pip install ifcopenshell")
+    #         except:
+    #             os.system("pip install ifcopenshell --user")
+    #         try:
+    #             import ifcopenshell
+    #             import ifcopenshell.util.placement
+    #             import ifcopenshell.util.element
+    #             import ifcopenshell.util.shape
+    #             import ifcopenshell.geom
+    #             print("Graph.ByIFCFile - Warning: ifcopenshell library installed correctly.")
+    #         except:
+    #             warnings.warn("Graph.ByIFCFile - Error: Could not import ifcopenshell. Please try to install ifcopenshell manually. Returning None.")
+    #             return None
         
-        import random
+    #     import random
 
-        def vertexAtKeyValue(vertices, key, value):
-            for v in vertices:
-                d = Topology.Dictionary(v)
-                d_value = Dictionary.ValueAtKey(d, key)
-                if value == d_value:
-                    return v
-            return None
+    #     def vertexAtKeyValue(vertices, key, value):
+    #         for v in vertices:
+    #             d = Topology.Dictionary(v)
+    #             d_value = Dictionary.ValueAtKey(d, key)
+    #             if value == d_value:
+    #                 return v
+    #         return None
 
-        def IFCObjects(ifc_file, include=[], exclude=[]):
-            include = [s.lower() for s in include]
-            exclude = [s.lower() for s in exclude]
-            all_objects = ifc_file.by_type('IfcProduct')
-            return_objects = []
-            for obj in all_objects:
-                is_a = obj.is_a().lower()
-                if is_a in exclude:
-                    continue
-                if is_a in include or len(include) == 0:
-                    return_objects.append(obj)
-            return return_objects
+    #     def IFCObjects(ifc_file, include=[], exclude=[]):
+    #         include = [s.lower() for s in include]
+    #         exclude = [s.lower() for s in exclude]
+    #         all_objects = ifc_file.by_type('IfcProduct')
+    #         return_objects = []
+    #         for obj in all_objects:
+    #             is_a = obj.is_a().lower()
+    #             if is_a in exclude:
+    #                 continue
+    #             if is_a in include or len(include) == 0:
+    #                 return_objects.append(obj)
+    #         return return_objects
 
-        def IFCObjectTypes(ifc_file):
-            products = IFCObjects(ifc_file)
-            obj_types = []
-            for product in products:
-                obj_types.append(product.is_a())  
-            obj_types = list(set(obj_types))
-            obj_types.sort()
-            return obj_types
+    #     def IFCObjectTypes(ifc_file):
+    #         products = IFCObjects(ifc_file)
+    #         obj_types = []
+    #         for product in products:
+    #             obj_types.append(product.is_a())  
+    #         obj_types = list(set(obj_types))
+    #         obj_types.sort()
+    #         return obj_types
 
-        def IFCRelationshipTypes(ifc_file):
-            rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
-            rel_types = list(set(rel_types))
-            rel_types.sort()
-            return rel_types
+    #     def IFCRelationshipTypes(ifc_file):
+    #         rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
+    #         rel_types = list(set(rel_types))
+    #         rel_types.sort()
+    #         return rel_types
 
-        def IFCRelationships(ifc_file, include=[], exclude=[]):
-            include = [s.lower() for s in include]
-            exclude = [s.lower() for s in exclude]
-            rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
-            rel_types = list(set(rel_types))
-            relationships = []
-            for ifc_rel in ifc_file.by_type("IfcRelationship"):
-                rel_type = ifc_rel.is_a().lower()
-                if rel_type in exclude:
-                    continue
-                if rel_type in include or len(include) == 0:
-                    relationships.append(ifc_rel)
-            return relationships
+    #     def IFCRelationships(ifc_file, include=[], exclude=[]):
+    #         include = [s.lower() for s in include]
+    #         exclude = [s.lower() for s in exclude]
+    #         rel_types = [ifc_rel.is_a() for ifc_rel in ifc_file.by_type("IfcRelationship")]
+    #         rel_types = list(set(rel_types))
+    #         relationships = []
+    #         for ifc_rel in ifc_file.by_type("IfcRelationship"):
+    #             rel_type = ifc_rel.is_a().lower()
+    #             if rel_type in exclude:
+    #                 continue
+    #             if rel_type in include or len(include) == 0:
+    #                 relationships.append(ifc_rel)
+    #         return relationships
 
-        def get_psets(entity):
-            # Initialize the PSET dictionary for this entity
-            psets = {}
+    #     def get_psets(entity):
+    #         # Initialize the PSET dictionary for this entity
+    #         psets = {}
             
-            # Check if the entity has a GlobalId
-            if not hasattr(entity, 'GlobalId'):
-                raise ValueError("The provided entity does not have a GlobalId.")
+    #         # Check if the entity has a GlobalId
+    #         if not hasattr(entity, 'GlobalId'):
+    #             raise ValueError("The provided entity does not have a GlobalId.")
             
-            # Get the property sets related to this entity
-            for definition in entity.IsDefinedBy:
-                if definition.is_a('IfcRelDefinesByProperties'):
-                    property_set = definition.RelatingPropertyDefinition
+    #         # Get the property sets related to this entity
+    #         for definition in entity.IsDefinedBy:
+    #             if definition.is_a('IfcRelDefinesByProperties'):
+    #                 property_set = definition.RelatingPropertyDefinition
                     
-                    # Check if it is a property set
-                    if not property_set == None:
-                        if property_set.is_a('IfcPropertySet'):
-                            pset_name = "IFC_"+property_set.Name
+    #                 # Check if it is a property set
+    #                 if not property_set == None:
+    #                     if property_set.is_a('IfcPropertySet'):
+    #                         pset_name = "IFC_"+property_set.Name
                             
-                            # Dictionary to hold individual properties
-                            properties = {}
+    #                         # Dictionary to hold individual properties
+    #                         properties = {}
                             
-                            # Iterate over the properties in the PSET
-                            for prop in property_set.HasProperties:
-                                if prop.is_a('IfcPropertySingleValue'):
-                                    # Get the property name and value
-                                    prop_name = "IFC_"+prop.Name
-                                    prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
-                                    properties[prop_name] = prop_value
+    #                         # Iterate over the properties in the PSET
+    #                         for prop in property_set.HasProperties:
+    #                             if prop.is_a('IfcPropertySingleValue'):
+    #                                 # Get the property name and value
+    #                                 prop_name = "IFC_"+prop.Name
+    #                                 prop_value = prop.NominalValue.wrappedValue if prop.NominalValue else None
+    #                                 properties[prop_name] = prop_value
                             
-                            # Add this PSET to the dictionary for this entity
-                            psets[pset_name] = properties
-            return psets
+    #                         # Add this PSET to the dictionary for this entity
+    #                         psets[pset_name] = properties
+    #         return psets
         
-        def get_color_transparency_material(entity):
-            import random
+    #     def get_color_transparency_material(entity):
+    #         import random
 
-            # Set default Material Name and ID
-            material_list = []
-            # Set default transparency based on entity type or material
-            default_transparency = 0.0
+    #         # Set default Material Name and ID
+    #         material_list = []
+    #         # Set default transparency based on entity type or material
+    #         default_transparency = 0.0
             
-            # Check if the entity is an opening or made of glass
-            is_a = entity.is_a().lower()
-            if "opening" in is_a or "window" in is_a or "door" in is_a or "space" in is_a:
-                default_transparency = 0.7
-            elif "space" in is_a:
-                default_transparency = 0.8
+    #         # Check if the entity is an opening or made of glass
+    #         is_a = entity.is_a().lower()
+    #         if "opening" in is_a or "window" in is_a or "door" in is_a or "space" in is_a:
+    #             default_transparency = 0.7
+    #         elif "space" in is_a:
+    #             default_transparency = 0.8
             
-            # Check if the entity has constituent materials (e.g., glass)
-            else:
-                # Check for associated materials (ConstituentMaterial or direct material assignment)
-                materials_checked = False
-                if hasattr(entity, 'HasAssociations'):
-                    for rel in entity.HasAssociations:
-                        if rel.is_a('IfcRelAssociatesMaterial'):
-                            material = rel.RelatingMaterial
-                            if material.is_a('IfcMaterial') and 'glass' in material.Name.lower():
-                                default_transparency = 0.5
-                                materials_checked = True
-                            elif material.is_a('IfcMaterialLayerSetUsage'):
-                                material_layers = material.ForLayerSet.MaterialLayers
-                                for layer in material_layers:
-                                    material_list.append(layer.Material.Name)
-                                    if 'glass' in layer.Material.Name.lower():
-                                        default_transparency = 0.5
-                                        materials_checked = True
+    #         # Check if the entity has constituent materials (e.g., glass)
+    #         else:
+    #             # Check for associated materials (ConstituentMaterial or direct material assignment)
+    #             materials_checked = False
+    #             if hasattr(entity, 'HasAssociations'):
+    #                 for rel in entity.HasAssociations:
+    #                     if rel.is_a('IfcRelAssociatesMaterial'):
+    #                         material = rel.RelatingMaterial
+    #                         if material.is_a('IfcMaterial') and 'glass' in material.Name.lower():
+    #                             default_transparency = 0.5
+    #                             materials_checked = True
+    #                         elif material.is_a('IfcMaterialLayerSetUsage'):
+    #                             material_layers = material.ForLayerSet.MaterialLayers
+    #                             for layer in material_layers:
+    #                                 material_list.append(layer.Material.Name)
+    #                                 if 'glass' in layer.Material.Name.lower():
+    #                                     default_transparency = 0.5
+    #                                     materials_checked = True
                                         
-                # Check for ConstituentMaterial if available
-                if hasattr(entity, 'HasAssociations') and not materials_checked:
-                    for rel in entity.HasAssociations:
-                        if rel.is_a('IfcRelAssociatesMaterial'):
-                            material = rel.RelatingMaterial
-                            if material.is_a('IfcMaterialConstituentSet'):
-                                for constituent in material.MaterialConstituents:
-                                    material_list.append(constituent.Material.Name)
-                                    if 'glass' in constituent.Material.Name.lower():
-                                        default_transparency = 0.5
-                                        materials_checked = True
+    #             # Check for ConstituentMaterial if available
+    #             if hasattr(entity, 'HasAssociations') and not materials_checked:
+    #                 for rel in entity.HasAssociations:
+    #                     if rel.is_a('IfcRelAssociatesMaterial'):
+    #                         material = rel.RelatingMaterial
+    #                         if material.is_a('IfcMaterialConstituentSet'):
+    #                             for constituent in material.MaterialConstituents:
+    #                                 material_list.append(constituent.Material.Name)
+    #                                 if 'glass' in constituent.Material.Name.lower():
+    #                                     default_transparency = 0.5
+    #                                     materials_checked = True
 
-                # Check if the entity has ShapeAspects with associated materials or styles
-                if hasattr(entity, 'HasShapeAspects') and not materials_checked:
-                    for shape_aspect in entity.HasShapeAspects:
-                        if hasattr(shape_aspect, 'StyledByItem') and shape_aspect.StyledByItem:
-                            for styled_item in shape_aspect.StyledByItem:
-                                for style in styled_item.Styles:
-                                    if style.is_a('IfcSurfaceStyle'):
-                                        for surface_style in style.Styles:
-                                            if surface_style.is_a('IfcSurfaceStyleRendering'):
-                                                transparency = getattr(surface_style, 'Transparency', default_transparency)
-                                                if transparency > 0:
-                                                    default_transparency = transparency
+    #             # Check if the entity has ShapeAspects with associated materials or styles
+    #             if hasattr(entity, 'HasShapeAspects') and not materials_checked:
+    #                 for shape_aspect in entity.HasShapeAspects:
+    #                     if hasattr(shape_aspect, 'StyledByItem') and shape_aspect.StyledByItem:
+    #                         for styled_item in shape_aspect.StyledByItem:
+    #                             for style in styled_item.Styles:
+    #                                 if style.is_a('IfcSurfaceStyle'):
+    #                                     for surface_style in style.Styles:
+    #                                         if surface_style.is_a('IfcSurfaceStyleRendering'):
+    #                                             transparency = getattr(surface_style, 'Transparency', default_transparency)
+    #                                             if transparency > 0:
+    #                                                 default_transparency = transparency
 
-            # Try to get the actual color and transparency if defined
-            if hasattr(entity, 'Representation') and entity.Representation:
-                for rep in entity.Representation.Representations:
-                    for item in rep.Items:
-                        if hasattr(item, 'StyledByItem') and item.StyledByItem:
-                            for styled_item in item.StyledByItem:
-                                if hasattr(styled_item, 'Styles'):
-                                    for style in styled_item.Styles:
-                                        if style.is_a('IfcSurfaceStyle'):
-                                            for surface_style in style.Styles:
-                                                if surface_style.is_a('IfcSurfaceStyleRendering'):
-                                                    color = surface_style.SurfaceColour
-                                                    transparency = getattr(surface_style, 'Transparency', default_transparency)
-                                                    return (color.Red*255, color.Green*255, color.Blue*255), transparency, material_list
+    #         # Try to get the actual color and transparency if defined
+    #         if hasattr(entity, 'Representation') and entity.Representation:
+    #             for rep in entity.Representation.Representations:
+    #                 for item in rep.Items:
+    #                     if hasattr(item, 'StyledByItem') and item.StyledByItem:
+    #                         for styled_item in item.StyledByItem:
+    #                             if hasattr(styled_item, 'Styles'):
+    #                                 for style in styled_item.Styles:
+    #                                     if style.is_a('IfcSurfaceStyle'):
+    #                                         for surface_style in style.Styles:
+    #                                             if surface_style.is_a('IfcSurfaceStyleRendering'):
+    #                                                 color = surface_style.SurfaceColour
+    #                                                 transparency = getattr(surface_style, 'Transparency', default_transparency)
+    #                                                 return (color.Red*255, color.Green*255, color.Blue*255), transparency, material_list
             
-            # If no color is defined, return a consistent random color based on the entity type
-            if "wall" in is_a:
-                color = (175, 175, 175)
-            elif "slab" in is_a:
-                color = (200, 200, 200)
-            elif "space" in is_a:
-                color = (250, 250, 250)
-            else:
-                random.seed(hash(is_a))
-                color = (random.random(), random.random(), random.random())
+    #         # If no color is defined, return a consistent random color based on the entity type
+    #         if "wall" in is_a:
+    #             color = (175, 175, 175)
+    #         elif "slab" in is_a:
+    #             color = (200, 200, 200)
+    #         elif "space" in is_a:
+    #             color = (250, 250, 250)
+    #         else:
+    #             random.seed(hash(is_a))
+    #             color = (random.random(), random.random(), random.random())
             
-            return color, default_transparency, material_list
+    #         return color, default_transparency, material_list
 
-        def vertexByIFCObject(ifc_object, object_types, restrict=False):
-            settings = ifcopenshell.geom.settings()
-            settings.set(settings.USE_WORLD_COORDS,True)
-            try:
-                shape = ifcopenshell.geom.create_shape(settings, ifc_object)
-            except:
-                shape = None
-            if shape or restrict == False: #Only add vertices of entities that have 3D geometries.
-                obj_id = ifc_object.id()
-                psets = ifcopenshell.util.element.get_psets(ifc_object)
-                obj_type = ifc_object.is_a()
-                obj_type_id = object_types.index(obj_type)
-                name = "Untitled"
-                LongName = "Untitled"
-                try:
-                    name = ifc_object.Name
-                except:
-                    name = "Untitled"
-                try:
-                    LongName = ifc_object.LongName
-                except:
-                    LongName = name
+    #     def vertexByIFCObject(ifc_object, object_types, restrict=False):
+    #         settings = ifcopenshell.geom.settings()
+    #         settings.set(settings.USE_WORLD_COORDS,True)
+    #         try:
+    #             shape = ifcopenshell.geom.create_shape(settings, ifc_object)
+    #         except:
+    #             shape = None
+    #         if shape or restrict == False: #Only add vertices of entities that have 3D geometries.
+    #             obj_id = ifc_object.id()
+    #             psets = ifcopenshell.util.element.get_psets(ifc_object)
+    #             obj_type = ifc_object.is_a()
+    #             obj_type_id = object_types.index(obj_type)
+    #             name = "Untitled"
+    #             LongName = "Untitled"
+    #             try:
+    #                 name = ifc_object.Name
+    #             except:
+    #                 name = "Untitled"
+    #             try:
+    #                 LongName = ifc_object.LongName
+    #             except:
+    #                 LongName = name
 
-                if name == None:
-                    name = "Untitled"
-                if LongName == None:
-                    LongName = "Untitled"
-                label = str(obj_id)+" "+LongName+" ("+obj_type+" "+str(obj_type_id)+")"
-                try:
-                    grouped_verts = ifcopenshell.util.shape.get_vertices(shape.geometry)
-                    vertices = [Vertex.ByCoordinates(list(coords)) for coords in grouped_verts]
-                    centroid = Vertex.Centroid(vertices)
-                except:
-                    x = random.uniform(xMin,xMax)
-                    y = random.uniform(yMin,yMax)
-                    z = random.uniform(zMin,zMax)
-                    centroid = Vertex.ByCoordinates(x, y, z)
+    #             if name == None:
+    #                 name = "Untitled"
+    #             if LongName == None:
+    #                 LongName = "Untitled"
+    #             label = str(obj_id)+" "+LongName+" ("+obj_type+" "+str(obj_type_id)+")"
+    #             try:
+    #                 grouped_verts = ifcopenshell.util.shape.get_vertices(shape.geometry)
+    #                 vertices = [Vertex.ByCoordinates(list(coords)) for coords in grouped_verts]
+    #                 centroid = Vertex.Centroid(vertices)
+    #             except:
+    #                 x = random.uniform(xMin,xMax)
+    #                 y = random.uniform(yMin,yMax)
+    #                 z = random.uniform(zMin,zMax)
+    #                 centroid = Vertex.ByCoordinates(x, y, z)
                 
-                # Store relevant information
-                if transferDictionaries == True:
-                    color, transparency, material_list = get_color_transparency_material(ifc_object)
-                    if color == None:
-                        color = "white"
-                    if transparency == None:
-                        transparency = 0
-                    entity_dict = {
-                        "TOPOLOGIC_id": str(Topology.UUID(centroid)),
-                        "TOPOLOGIC_name": getattr(ifc_object, 'Name', "Untitled"),
-                        "TOPOLOGIC_type": Topology.TypeAsString(centroid),
-                        "TOPOLOGIC_color": color,
-                        "TOPOLOGIC_opacity": 1.0 - transparency,
-                        "IFC_global_id": getattr(ifc_object, 'GlobalId', 0),
-                        "IFC_name": getattr(ifc_object, 'Name', "Untitled"),
-                        "IFC_type": ifc_object.is_a(),
-                        "IFC_material_list": material_list,
-                    }
-                    topology_dict = Dictionary.ByPythonDictionary(entity_dict)
-                    # Get PSETs dictionary
-                    pset_python_dict = get_psets(ifc_object)
-                    pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
-                    topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
-                    if storeBREP == True or useInternalVertex == True:
-                        shape_topology = None
-                        if hasattr(ifc_object, "Representation") and ifc_object.Representation:
-                            for rep in ifc_object.Representation.Representations:
-                                if rep.is_a("IfcShapeRepresentation"):
-                                    try:
-                                        # Generate the geometry for this entity
-                                        shape = ifcopenshell.geom.create_shape(settings, ifc_object)
-                                        # Get grouped vertices and grouped faces     
-                                        grouped_verts = shape.geometry.verts
-                                        verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
-                                        grouped_edges = shape.geometry.edges
-                                        edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
-                                        grouped_faces = shape.geometry.faces
-                                        faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
-                                        shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
-                                        if not shape_topology == None:
-                                            if removeCoplanarFaces == True:
-                                                shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
-                                    except:
-                                        pass
-                        if not shape_topology == None and storeBREP:
-                            topology_dict = Dictionary.SetValuesAtKeys(topology_dict, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(shape_topology), Topology.Type(shape_topology), Topology.TypeAsString(shape_topology)])
-                        if not shape_topology == None and useInternalVertex == True:
-                            centroid = Topology.InternalVertex(shape_topology)
-                    centroid = Topology.SetDictionary(centroid, topology_dict)
-                return centroid
-            return None
+    #             # Store relevant information
+    #             if transferDictionaries == True:
+    #                 color, transparency, material_list = get_color_transparency_material(ifc_object)
+    #                 if color == None:
+    #                     color = "white"
+    #                 if transparency == None:
+    #                     transparency = 0
+    #                 entity_dict = {
+    #                     "TOPOLOGIC_id": str(Topology.UUID(centroid)),
+    #                     "TOPOLOGIC_name": getattr(ifc_object, 'Name', "Untitled"),
+    #                     "TOPOLOGIC_type": Topology.TypeAsString(centroid),
+    #                     "TOPOLOGIC_color": color,
+    #                     "TOPOLOGIC_opacity": 1.0 - transparency,
+    #                     "IFC_global_id": getattr(ifc_object, 'GlobalId', 0),
+    #                     "IFC_name": getattr(ifc_object, 'Name', "Untitled"),
+    #                     "IFC_type": ifc_object.is_a(),
+    #                     "IFC_material_list": material_list,
+    #                 }
+    #                 topology_dict = Dictionary.ByPythonDictionary(entity_dict)
+    #                 # Get PSETs dictionary
+    #                 pset_python_dict = get_psets(ifc_object)
+    #                 pset_dict = Dictionary.ByPythonDictionary(pset_python_dict)
+    #                 topology_dict = Dictionary.ByMergedDictionaries([topology_dict, pset_dict])
+    #                 if storeBREP == True or useInternalVertex == True:
+    #                     shape_topology = None
+    #                     if hasattr(ifc_object, "Representation") and ifc_object.Representation:
+    #                         for rep in ifc_object.Representation.Representations:
+    #                             if rep.is_a("IfcShapeRepresentation"):
+    #                                 try:
+    #                                     # Generate the geometry for this entity
+    #                                     shape = ifcopenshell.geom.create_shape(settings, ifc_object)
+    #                                     # Get grouped vertices and grouped faces     
+    #                                     grouped_verts = shape.geometry.verts
+    #                                     verts = [ [grouped_verts[i], grouped_verts[i + 1], grouped_verts[i + 2]] for i in range(0, len(grouped_verts), 3)]
+    #                                     grouped_edges = shape.geometry.edges
+    #                                     edges = [[grouped_edges[i], grouped_edges[i + 1]] for i in range(0, len(grouped_edges), 2)]
+    #                                     grouped_faces = shape.geometry.faces
+    #                                     faces = [ [grouped_faces[i], grouped_faces[i + 1], grouped_faces[i + 2]] for i in range(0, len(grouped_faces), 3)]
+    #                                     shape_topology = Topology.ByGeometry(verts, edges, faces, silent=True)
+    #                                     if not shape_topology == None:
+    #                                         if removeCoplanarFaces == True:
+    #                                             shape_topology = Topology.RemoveCoplanarFaces(shape_topology, epsilon=0.0001)
+    #                                 except:
+    #                                     pass
+    #                     if not shape_topology == None and storeBREP:
+    #                         topology_dict = Dictionary.SetValuesAtKeys(topology_dict, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(shape_topology), Topology.Type(shape_topology), Topology.TypeAsString(shape_topology)])
+    #                     if not shape_topology == None and useInternalVertex == True:
+    #                         centroid = Topology.InternalVertex(shape_topology)
+    #                 centroid = Topology.SetDictionary(centroid, topology_dict)
+    #             return centroid
+    #         return None
 
-        def edgesByIFCRelationships(ifc_relationships, ifc_types, vertices):
-            tuples = []
-            edges = []
+    #     def edgesByIFCRelationships(ifc_relationships, ifc_types, vertices):
+    #         tuples = []
+    #         edges = []
 
-            for ifc_rel in ifc_relationships:
-                source = None
-                destinations = []
-                if ifc_rel.is_a("IfcRelConnectsPorts"):
-                    source = ifc_rel.RelatingPort
-                    destinations = ifc_rel.RelatedPorts
-                elif ifc_rel.is_a("IfcRelConnectsPortToElement"):
-                    source = ifc_rel.RelatingPort
-                    destinations = [ifc_rel.RelatedElement]
-                elif ifc_rel.is_a("IfcRelAggregates"):
-                    source = ifc_rel.RelatingObject
-                    destinations = ifc_rel.RelatedObjects
-                elif ifc_rel.is_a("IfcRelNests"):
-                    source = ifc_rel.RelatingObject
-                    destinations = ifc_rel.RelatedObjects
-                elif ifc_rel.is_a("IfcRelAssignsToGroup"):
-                    source = ifc_rel.RelatingGroup
-                    destinations = ifc_rel.RelatedObjects
-                elif ifc_rel.is_a("IfcRelConnectsPathElements"):
-                    source = ifc_rel.RelatingElement
-                    destinations = [ifc_rel.RelatedElement]
-                elif ifc_rel.is_a("IfcRelConnectsStructuralMember"):
-                    source = ifc_rel.RelatingStructuralMember
-                    destinations = [ifc_rel.RelatedStructuralConnection]
-                elif ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
-                    source = ifc_rel.RelatingStructure
-                    destinations = ifc_rel.RelatedElements
-                elif ifc_rel.is_a("IfcRelFillsElement"):
-                    source = ifc_rel.RelatingOpeningElement
-                    destinations = [ifc_rel.RelatedBuildingElement]
-                elif ifc_rel.is_a("IfcRelSpaceBoundary"):
-                    source = ifc_rel.RelatingSpace
-                    destinations = [ifc_rel.RelatedBuildingElement]
-                elif ifc_rel.is_a("IfcRelVoidsElement"):
-                    source = ifc_rel.RelatingBuildingElement
-                    destinations = [ifc_rel.RelatedOpeningElement]
-                elif ifc_rel.is_a("IfcRelDefinesByProperties") or ifc_rel.is_a("IfcRelAssociatesMaterial") or ifc_rel.is_a("IfcRelDefinesByType"):
-                    source = None
-                    destinations = None
-                else:
-                    print("Graph.ByIFCFile - Warning: The relationship", ifc_rel, "is not supported. Skipping.")
-                if source:
-                    sv = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(source, 'GlobalId', 0))
-                    if sv:
-                        si = Vertex.Index(sv, vertices, tolerance=tolerance)
-                        if not si == None:
-                            for destination in destinations:
-                                if destination == None:
-                                    continue
-                                ev = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(destination, 'GlobalId', 0),)
-                                if ev:
-                                    ei = Vertex.Index(ev, vertices, tolerance=tolerance)
-                                    if not ei == None:
-                                        if not([si,ei] in tuples or [ei,si] in tuples):
-                                            tuples.append([si,ei])
-                                            e = Edge.ByVertices([sv,ev])
-                                            d = Dictionary.ByKeysValues(["IFC_global_id", "IFC_name", "IFC_type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
-                                            e = Topology.SetDictionary(e, d)
-                                            edges.append(e)
-            return edges
+    #         for ifc_rel in ifc_relationships:
+    #             source = None
+    #             destinations = []
+    #             if ifc_rel.is_a("IfcRelConnectsPorts"):
+    #                 source = ifc_rel.RelatingPort
+    #                 destinations = ifc_rel.RelatedPorts
+    #             elif ifc_rel.is_a("IfcRelConnectsPortToElement"):
+    #                 source = ifc_rel.RelatingPort
+    #                 destinations = [ifc_rel.RelatedElement]
+    #             elif ifc_rel.is_a("IfcRelAggregates"):
+    #                 source = ifc_rel.RelatingObject
+    #                 destinations = ifc_rel.RelatedObjects
+    #             elif ifc_rel.is_a("IfcRelNests"):
+    #                 source = ifc_rel.RelatingObject
+    #                 destinations = ifc_rel.RelatedObjects
+    #             elif ifc_rel.is_a("IfcRelAssignsToGroup"):
+    #                 source = ifc_rel.RelatingGroup
+    #                 destinations = ifc_rel.RelatedObjects
+    #             elif ifc_rel.is_a("IfcRelConnectsPathElements"):
+    #                 source = ifc_rel.RelatingElement
+    #                 destinations = [ifc_rel.RelatedElement]
+    #             elif ifc_rel.is_a("IfcRelConnectsStructuralMember"):
+    #                 source = ifc_rel.RelatingStructuralMember
+    #                 destinations = [ifc_rel.RelatedStructuralConnection]
+    #             elif ifc_rel.is_a("IfcRelContainedInSpatialStructure"):
+    #                 source = ifc_rel.RelatingStructure
+    #                 destinations = ifc_rel.RelatedElements
+    #             elif ifc_rel.is_a("IfcRelFillsElement"):
+    #                 source = ifc_rel.RelatingOpeningElement
+    #                 destinations = [ifc_rel.RelatedBuildingElement]
+    #             elif ifc_rel.is_a("IfcRelSpaceBoundary"):
+    #                 source = ifc_rel.RelatingSpace
+    #                 destinations = [ifc_rel.RelatedBuildingElement]
+    #             elif ifc_rel.is_a("IfcRelVoidsElement"):
+    #                 source = ifc_rel.RelatingBuildingElement
+    #                 destinations = [ifc_rel.RelatedOpeningElement]
+    #             elif ifc_rel.is_a("IfcRelDefinesByProperties") or ifc_rel.is_a("IfcRelAssociatesMaterial") or ifc_rel.is_a("IfcRelDefinesByType"):
+    #                 source = None
+    #                 destinations = None
+    #             else:
+    #                 print("Graph.ByIFCFile - Warning: The relationship", ifc_rel, "is not supported. Skipping.")
+    #             if source:
+    #                 sv = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(source, 'GlobalId', 0))
+    #                 if sv:
+    #                     si = Vertex.Index(sv, vertices, tolerance=tolerance)
+    #                     if not si == None:
+    #                         for destination in destinations:
+    #                             if destination == None:
+    #                                 continue
+    #                             ev = vertexAtKeyValue(vertices, key="IFC_global_id", value=getattr(destination, 'GlobalId', 0),)
+    #                             if ev:
+    #                                 ei = Vertex.Index(ev, vertices, tolerance=tolerance)
+    #                                 if not ei == None:
+    #                                     if not([si,ei] in tuples or [ei,si] in tuples):
+    #                                         tuples.append([si,ei])
+    #                                         e = Edge.ByVertices([sv,ev])
+    #                                         d = Dictionary.ByKeysValues(["IFC_global_id", "IFC_name", "IFC_type"], [ifc_rel.id(), ifc_rel.Name, ifc_rel.is_a()])
+    #                                         e = Topology.SetDictionary(e, d)
+    #                                         edges.append(e)
+    #         return edges
         
-        ifc_types = IFCObjectTypes(file)
-        ifc_objects = IFCObjects(file, include=includeTypes, exclude=excludeTypes)
-        vertices = []
-        for ifc_object in ifc_objects:
-            v = vertexByIFCObject(ifc_object, ifc_types)
-            if v:
-                vertices.append(v)
-        if len(vertices) > 0:
-            ifc_relationships = IFCRelationships(file, include=includeRels, exclude=excludeRels)
-            edges = edgesByIFCRelationships(ifc_relationships, ifc_types, vertices)
-            g = Graph.ByVerticesEdges(vertices, edges)
-        else:
-            g = None
-        return g
+    #     ifc_types = IFCObjectTypes(file)
+    #     ifc_objects = IFCObjects(file, include=includeTypes, exclude=excludeTypes)
+    #     vertices = []
+    #     for ifc_object in ifc_objects:
+    #         v = vertexByIFCObject(ifc_object, ifc_types)
+    #         if v:
+    #             vertices.append(v)
+    #     if len(vertices) > 0:
+    #         ifc_relationships = IFCRelationships(file, include=includeRels, exclude=excludeRels)
+    #         edges = edgesByIFCRelationships(ifc_relationships, ifc_types, vertices)
+    #         g = Graph.ByVerticesEdges(vertices, edges)
+    #     else:
+    #         g = None
+    #     return g
 
     @staticmethod
     def ByIFCPath(path,
@@ -6007,6 +6301,8 @@ class Graph:
         return graph
     
 
+
+
     @staticmethod
     def ClosenessCentrality(
         graph,
@@ -6021,144 +6317,396 @@ class Graph:
         silent: bool = False
     ):
         """
-        Returns the closeness centrality of the input graph. The order of the returned
-        list matches the order of Graph.Vertices(graph).
-        See: https://en.wikipedia.org/wiki/Closeness_centrality
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        weightKey : str , optional
-            If specified, this edge attribute will be used as the distance weight when
-            computing shortest paths. If set to a name containing "Length" or "Distance",
-            it will be mapped to "length".
-            Note: Graph.NetworkXGraph automatically provides a "length" attribute on all edges.
-        normalize : bool , optional
-            If True, the returned values are rescaled to [0, 1]. Otherwise raw values
-            from NetworkX (optionally using the improved formula) are returned.
-        nxCompatible : bool , optional
-            If True, use NetworkX's wf_improved scaling (Wasserman and Faust).
-            For single-component graphs it matches the original formula.
-        key : str , optional
-            The dictionary key under which to store the closeness centrality score.
-        colorKey : str , optional
-            The dictionary key under which to store a color derived from the score.
-        colorScale : str , optional
-            Plotly color scale name (e.g., "viridis", "plasma").
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list[float]
-            Closeness centrality values for vertices in the same order as Graph.Vertices(graph).
+        Optimized closeness centrality:
+        - Avoids NetworkX and costly per-vertex Topologic calls.
+        - Builds integer-index adjacency once from edges (undirected).
+        - Unweighted: multi-source BFS (one per node).
+        - Weighted: Dijkstra per node (heapq), or SciPy csgraph if available.
+        - Supports 'wf_improved' scaling (nxCompatible) and optional normalization.
         """
-        import warnings
-        try:
-            import networkx as nx
-        except Exception as e:
-            warnings.warn(
-                f"Graph.ClosenessCentrality - Error: networkx is required but not installed ({e}). Returning None."
-            )
-            return None
+        from collections import deque
+        import math
 
+        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
-        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        # NOTE: We are inside Graph.*, so Graph.<...> methods are available.
 
-        # Topology.IsInstance is case-insensitive, so a single call is sufficient.
+        # Validate graph
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.ClosenessCentrality - Error: The input is not a valid Graph. Returning None.")
             return None
+
         vertices = Graph.Vertices(graph)
-        if len(vertices) == 0:
+        n = len(vertices)
+        if n == 0:
             if not silent:
                 print("Graph.ClosenessCentrality - Warning: Graph has no vertices. Returning [].")
             return []
 
-        # Normalize the weight key semantics
+        # Stable vertex key (prefer an 'id' in the vertex dictionary; else rounded coords)
+        def vkey(v, r=9):
+            d = Topology.Dictionary(v)
+            vid = Dictionary.ValueAtKey(d, "id")
+            if vid is not None:
+                return ("id", vid)
+            return ("xyz", round(Vertex.X(v), r), round(Vertex.Y(v), r), round(Vertex.Z(v), r))
+
+        idx_of = {vkey(v): i for i, v in enumerate(vertices)}
+
+        # Normalize weight key
         distance_attr = None
         if isinstance(weightKey, str) and weightKey:
-            if ("len" in weightKey.lower()) or ("dis" in weightKey.lower()):
+            wl = weightKey.lower()
+            if ("len" in wl) or ("dis" in wl):
                 weightKey = "length"
-            distance_attr = weightKey
+            distance_attr = weightKey  # may be "length" or a custom key
 
-        # Build the NX graph
-        nx_graph = Graph.NetworkXGraph(graph)
+        # Build undirected adjacency with minimal weights per edge
+        # Use dict-of-dict to collapse multi-edges to minimal weight
+        adj = [dict() for _ in range(n)]  # adj[i][j] = weight
+        edges = Graph.Edges(graph)
 
-        # Graph.NetworkXGraph automatically adds "length" to all edges.
-        # So if distance_attr == "length", we trust it and skip per-edge checks.
-        if distance_attr and distance_attr != "length":
-            # For any non-"length" custom attribute, verify presence; else fall back unweighted.
-            attr_missing = any(
-                (distance_attr not in data) or (data[distance_attr] is None)
-                for _, _, data in nx_graph.edges(data=True)
-            )
-            if attr_missing:
-                if not silent:
-                    print("Graph.ClosenessCentrality - Warning: The specified edge attribute was not found on all edges. Falling back to unweighted closeness.")
-                distance_arg = None
+        def edge_weight(e):
+            if distance_attr == "length":
+                try:
+                    return float(Edge.Length(e))
+                except Exception:
+                    return 1.0
+            elif distance_attr:
+                try:
+                    d = Topology.Dictionary(e)
+                    w = Dictionary.ValueAtKey(d, distance_attr)
+                    return float(w) if (w is not None) else 1.0
+                except Exception:
+                    return 1.0
             else:
-                distance_arg = distance_attr
-        else:
-            # Use "length" directly or unweighted if distance_attr is falsy.
-            distance_arg = distance_attr if distance_attr else None
+                return 1.0
 
-        # Compute centrality (dict keyed by NetworkX nodes)
-        try:
-            cc_dict = nx.closeness_centrality(nx_graph, distance=distance_arg, wf_improved=nxCompatible)
-        except Exception as e:
-            if not silent:
-                print(f"Graph.ClosenessCentrality - Error: NetworkX failed to compute centrality ({e}). Returning None.")
-            return None
-
-        # NetworkX vertex ids are in the same numerice order as the list of vertices starting from 0.
-        raw_values = []
-        for i, v in enumerate(vertices):
+        for e in edges:
             try:
-                raw_values.append(float(cc_dict.get(i, 0.0)))
+                u = Edge.StartVertex(e)
+                v = Edge.EndVertex(e)
             except Exception:
-                if not silent:
-                    print(f,"Graph.ClosenessCentrality - Warning: Could not retrieve score for vertex {i}. Assigning a Zero (0).")
-                raw_values.append(0.0)
+                # Fallback in odd cases
+                continue
+            iu = idx_of.get(vkey(u))
+            iv = idx_of.get(vkey(v))
+            if iu is None or iv is None or iu == iv:
+                continue
+            w = edge_weight(e)
+            # Keep minimal weight if duplicates
+            prev = adj[iu].get(iv)
+            if (prev is None) or (w < prev):
+                adj[iu][iv] = w
+                adj[iv][iu] = w
 
-        # Optional normalization ONLY once, then rounding once at the end
-        values_for_return = Helper.Normalize(raw_values) if normalize else raw_values
+        # Detect weighted vs unweighted
+        weighted = False
+        for i in range(n):
+            if any(abs(w - 1.0) > 1e-12 for w in adj[i].values()):
+                weighted = True
+                break
 
-        # Values for color scaling should reflect the displayed numbers
-        color_values = values_for_return
+        INF = float("inf")
 
-        # Single rounding at the end for return values
-        if mantissa is not None and mantissa >= 0:
-            values_for_return = [round(v, mantissa) for v in values_for_return]
+        # ---- shortest paths helpers ----
+        def bfs_sum(i):
+            """Sum of unweighted shortest path distances from i; returns (tot, reachable)."""
+            dist = [-1] * n
+            q = deque([i])
+            dist[i] = 0
+            reachable = 1
+            tot = 0
+            pop = q.popleft; push = q.append
+            while q:
+                u = pop()
+                du = dist[u]
+                for v in adj[u].keys():
+                    if dist[v] == -1:
+                        dist[v] = du + 1
+                        reachable += 1
+                        tot += dist[v]
+                        push(v)
+            return float(tot), reachable
 
-        # Prepare color mapping range, guarding equal-range case
-        if color_values:
-            min_value = min(color_values)
-            max_value = max(color_values)
+        def dijkstra_sum(i):
+            """Sum of weighted shortest path distances from i; returns (tot, reachable)."""
+            import heapq
+            dist = [INF] * n
+            dist[i] = 0.0
+            hq = [(0.0, i)]
+            push = heapq.heappush; pop = heapq.heappop
+            while hq:
+                du, u = pop(hq)
+                if du > dist[u]:
+                    continue
+                for v, w in adj[u].items():
+                    nd = du + w
+                    if nd < dist[v]:
+                        dist[v] = nd
+                        push(hq, (nd, v))
+            # Exclude self (0.0) and unreachable (INF)
+            reachable = 0
+            tot = 0.0
+            for d in dist:
+                if d < INF:
+                    reachable += 1
+                    tot += d
+            # subtract self-distance
+            tot -= 0.0
+            return float(tot), reachable
+
+        # SciPy acceleration if weighted and available
+        use_scipy = False
+        if weighted:
+            try:
+                import numpy as np
+                from scipy.sparse import csr_matrix
+                from scipy.sparse.csgraph import dijkstra as sp_dijkstra
+                use_scipy = True
+                # Build CSR once
+                rows, cols, data = [], [], []
+                for i in range(n):
+                    for j, w in adj[i].items():
+                        rows.append(i); cols.append(j); data.append(float(w))
+                if len(data) == 0:
+                    use_scipy = False  # empty graph; fall back
+                else:
+                    A = csr_matrix((np.array(data), (np.array(rows), np.array(cols))), shape=(n, n))
+            except Exception:
+                use_scipy = False
+
+        # ---- centrality computation ----
+        values = [0.0] * n
+        if n == 1:
+            values[0] = 0.0
         else:
-            min_value, max_value = 0.0, 1.0
+            if not weighted:
+                for i in range(n):
+                    tot, reachable = bfs_sum(i)
+                    s = max(reachable - 1, 0)
+                    if tot > 0.0:
+                        if nxCompatible:
+                            # Wasserman–Faust improved scaling for disconnected graphs
+                            values[i] = (s / (n - 1)) * (s / tot)
+                        else:
+                            values[i] = s / tot
+                    else:
+                        values[i] = 0.0
+            else:
+                if use_scipy:
+                    # All-pairs from SciPy (fast)
+                    import numpy as np
+                    D = sp_dijkstra(A, directed=False, return_predecessors=False)
+                    for i in range(n):
+                        di = D[i]
+                        finite = di[np.isfinite(di)]
+                        # di includes self at 0; reachable count is len(finite)
+                        reachable = int(finite.size)
+                        s = max(reachable - 1, 0)
+                        tot = float(finite.sum())  # includes self=0
+                        if s > 0:
+                            if nxCompatible:
+                                values[i] = (s / (n - 1)) * (s / tot)
+                            else:
+                                values[i] = s / tot
+                        else:
+                            values[i] = 0.0
+                else:
+                    # Per-source Dijkstra
+                    for i in range(n):
+                        tot, reachable = dijkstra_sum(i)
+                        s = max(reachable - 1, 0)
+                        if tot > 0.0:
+                            if nxCompatible:
+                                values[i] = (s / (n - 1)) * (s / tot)
+                            else:
+                                values[i] = s / tot
+                        else:
+                            values[i] = 0.0
 
-        if abs(max_value - min_value) < tolerance:
-            max_value = min_value + tolerance
+        # Optional normalization, round once
+        out_vals = Helper.Normalize(values) if normalize else values
+        if mantissa is not None and mantissa >= 0:
+            out_vals = [round(v, mantissa) for v in out_vals]
 
-        # Annotate vertices with score and color
-        for i, value in enumerate(color_values):
+        # Color mapping range (use displayed numbers)
+        if out_vals:
+            min_v, max_v = min(out_vals), max(out_vals)
+        else:
+            min_v, max_v = 0.0, 1.0
+        if abs(max_v - min_v) < tolerance:
+            max_v = min_v + tolerance
+
+        # Annotate vertices
+        for i, value in enumerate(out_vals):
             d = Topology.Dictionary(vertices[i])
             color_hex = Color.AnyToHex(
-                Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale)
+                Color.ByValueInRange(value, minValue=min_v, maxValue=max_v, colorScale=colorScale)
             )
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [values_for_return[i], color_hex])
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color_hex])
             vertices[i] = Topology.SetDictionary(vertices[i], d)
 
-        return values_for_return
+        return out_vals
+
+
+    # @staticmethod
+    # def ClosenessCentrality_old(
+    #     graph,
+    #     weightKey: str = "length",
+    #     normalize: bool = False,
+    #     nxCompatible: bool = True,
+    #     key: str = "closeness_centrality",
+    #     colorKey: str = "cc_color",
+    #     colorScale: str = "viridis",
+    #     mantissa: int = 6,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    # ):
+    #     """
+    #     Returns the closeness centrality of the input graph. The order of the returned
+    #     list matches the order of Graph.Vertices(graph).
+    #     See: https://en.wikipedia.org/wiki/Closeness_centrality
+
+    #     Parameters
+    #     ----------
+    #     graph : topologic_core.Graph
+    #         The input graph.
+    #     weightKey : str , optional
+    #         If specified, this edge attribute will be used as the distance weight when
+    #         computing shortest paths. If set to a name containing "Length" or "Distance",
+    #         it will be mapped to "length".
+    #         Note: Graph.NetworkXGraph automatically provides a "length" attribute on all edges.
+    #     normalize : bool , optional
+    #         If True, the returned values are rescaled to [0, 1]. Otherwise raw values
+    #         from NetworkX (optionally using the improved formula) are returned.
+    #     nxCompatible : bool , optional
+    #         If True, use NetworkX's wf_improved scaling (Wasserman and Faust).
+    #         For single-component graphs it matches the original formula.
+    #     key : str , optional
+    #         The dictionary key under which to store the closeness centrality score.
+    #     colorKey : str , optional
+    #         The dictionary key under which to store a color derived from the score.
+    #     colorScale : str , optional
+    #         Plotly color scale name (e.g., "viridis", "plasma").
+    #     mantissa : int , optional
+    #         The number of decimal places to round the result to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     list[float]
+    #         Closeness centrality values for vertices in the same order as Graph.Vertices(graph).
+    #     """
+    #     import warnings
+    #     try:
+    #         import networkx as nx
+    #     except Exception as e:
+    #         warnings.warn(
+    #             f"Graph.ClosenessCentrality - Error: networkx is required but not installed ({e}). Returning None."
+    #         )
+    #         return None
+
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Color import Color
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Helper import Helper
+
+    #     # Topology.IsInstance is case-insensitive, so a single call is sufficient.
+    #     if not Topology.IsInstance(graph, "graph"):
+    #         if not silent:
+    #             print("Graph.ClosenessCentrality - Error: The input is not a valid Graph. Returning None.")
+    #         return None
+    #     vertices = Graph.Vertices(graph)
+    #     if len(vertices) == 0:
+    #         if not silent:
+    #             print("Graph.ClosenessCentrality - Warning: Graph has no vertices. Returning [].")
+    #         return []
+
+    #     # Normalize the weight key semantics
+    #     distance_attr = None
+    #     if isinstance(weightKey, str) and weightKey:
+    #         if ("len" in weightKey.lower()) or ("dis" in weightKey.lower()):
+    #             weightKey = "length"
+    #         distance_attr = weightKey
+
+    #     # Build the NX graph
+    #     nx_graph = Graph.NetworkXGraph(graph)
+
+    #     # Graph.NetworkXGraph automatically adds "length" to all edges.
+    #     # So if distance_attr == "length", we trust it and skip per-edge checks.
+    #     if distance_attr and distance_attr != "length":
+    #         # For any non-"length" custom attribute, verify presence; else fall back unweighted.
+    #         attr_missing = any(
+    #             (distance_attr not in data) or (data[distance_attr] is None)
+    #             for _, _, data in nx_graph.edges(data=True)
+    #         )
+    #         if attr_missing:
+    #             if not silent:
+    #                 print("Graph.ClosenessCentrality - Warning: The specified edge attribute was not found on all edges. Falling back to unweighted closeness.")
+    #             distance_arg = None
+    #         else:
+    #             distance_arg = distance_attr
+    #     else:
+    #         # Use "length" directly or unweighted if distance_attr is falsy.
+    #         distance_arg = distance_attr if distance_attr else None
+
+    #     # Compute centrality (dict keyed by NetworkX nodes)
+    #     try:
+    #         cc_dict = nx.closeness_centrality(nx_graph, distance=distance_arg, wf_improved=nxCompatible)
+    #     except Exception as e:
+    #         if not silent:
+    #             print(f"Graph.ClosenessCentrality - Error: NetworkX failed to compute centrality ({e}). Returning None.")
+    #         return None
+
+    #     # NetworkX vertex ids are in the same numerice order as the list of vertices starting from 0.
+    #     raw_values = []
+    #     for i, v in enumerate(vertices):
+    #         try:
+    #             raw_values.append(float(cc_dict.get(i, 0.0)))
+    #         except Exception:
+    #             if not silent:
+    #                 print(f,"Graph.ClosenessCentrality - Warning: Could not retrieve score for vertex {i}. Assigning a Zero (0).")
+    #             raw_values.append(0.0)
+
+    #     # Optional normalization ONLY once, then rounding once at the end
+    #     values_for_return = Helper.Normalize(raw_values) if normalize else raw_values
+
+    #     # Values for color scaling should reflect the displayed numbers
+    #     color_values = values_for_return
+
+    #     # Single rounding at the end for return values
+    #     if mantissa is not None and mantissa >= 0:
+    #         values_for_return = [round(v, mantissa) for v in values_for_return]
+
+    #     # Prepare color mapping range, guarding equal-range case
+    #     if color_values:
+    #         min_value = min(color_values)
+    #         max_value = max(color_values)
+    #     else:
+    #         min_value, max_value = 0.0, 1.0
+
+    #     if abs(max_value - min_value) < tolerance:
+    #         max_value = min_value + tolerance
+
+    #     # Annotate vertices with score and color
+    #     for i, value in enumerate(color_values):
+    #         d = Topology.Dictionary(vertices[i])
+    #         color_hex = Color.AnyToHex(
+    #             Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale)
+    #         )
+    #         d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [values_for_return[i], color_hex])
+    #         vertices[i] = Topology.SetDictionary(vertices[i], d)
+
+    #     return values_for_return
 
     @staticmethod
     def Community(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -12962,90 +13510,201 @@ class Graph:
         return outgoing_vertices
     
     @staticmethod
-    def PageRank(graph, alpha: float = 0.85, maxIterations: int = 100, normalize: bool = True, directed: bool = False, key: str = "page_rank", colorKey="pr_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.0001):
+    def PageRank(
+        graph,
+        alpha: float = 0.85,
+        maxIterations: int = 100,
+        normalize: bool = True,
+        directed: bool = False,
+        key: str = "page_rank",
+        colorKey: str = "pr_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 1e-4
+    ):
         """
-        Calculates PageRank scores for vertices in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        alpha : float , optional
-            The damping (dampening) factor. Default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
-        maxIterations : int , optional
-            The maximum number of iterations to calculate the page rank. Default is 100.
-        normalize : bool , optional
-            If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. Default is True.
-        directed : bool , optional
-            If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. Default is False.
-        key : str , optional
-            The dictionary key under which to store the page_rank score. Default is "page_rank"
-        colorKey : str , optional
-            The desired dictionary key under which to store the pagerank color. Default is "pr_color".
-        colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
-        mantissa : int , optional
-            The desired length of the mantissa.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        list
-            The list of page ranks for the vertices in the graph.
+        PageRank with stable vertex mapping (by coordinates) so neighbors resolve correctly.
+        Handles dangling nodes; uses cached neighbor lists and L1 convergence.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         from topologicpy.Color import Color
+        from topologicpy.Graph import Graph
 
         vertices = Graph.Vertices(graph)
-        num_vertices = len(vertices)
-        if num_vertices < 1:
+        n = len(vertices)
+        if n < 1:
             print("Graph.PageRank - Error: The input graph parameter has no vertices. Returning None")
             return None
-        initial_score = 1.0 / num_vertices
-        values = [initial_score for vertex in vertices]
-        for _ in range(maxIterations):
-            new_scores = [0 for vertex in vertices]
-            for i, vertex in enumerate(vertices):
-                incoming_score = 0
-                for incoming_vertex in Graph.IncomingVertices(graph, vertex, directed=directed):
-                    if len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed)) > 0:
-                        vi = Vertex.Index(incoming_vertex, vertices, tolerance=tolerance)
-                        if not vi == None:
-                            incoming_score += values[vi] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
-                new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
 
-            # Check for convergence
-            if all(abs(new_scores[i] - values[i]) <= tolerance for i in range(len(vertices))):
-                break
+        # ---- stable vertex key (coord-based) ----
+        # Use a modest rounding to be robust to tiny numerical noise.
+        # If your graphs can have distinct vertices at the exact same coords,
+        # switch to a stronger key (e.g., include a unique ID from the vertex dictionary).
+        def vkey(v, r=9):
+            return (round(Vertex.X(v), r), round(Vertex.Y(v), r), round(Vertex.Z(v), r))
 
-            values = new_scores
-        if normalize == True:
-            if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
-                values = [round(v, mantissa) for v in Helper.Normalize(values)]
-            else:
-                values = Helper.Normalize(values)
-            min_value = 0
-            max_value = 1
+        idx_of = {vkey(v): i for i, v in enumerate(vertices)}
+
+        # Helper that resolves an arbitrary Topologic vertex to our index
+        def to_idx(u):
+            return idx_of.get(vkey(u), None)
+
+        # ---- build neighbor lists ONCE (by indices) ----
+        if directed:
+            in_neighbors = [[] for _ in range(n)]
+            out_neighbors = [[] for _ in range(n)]
+
+            for i, v in enumerate(vertices):
+                inv = Graph.IncomingVertices(graph, v, directed=True)
+                onv = Graph.OutgoingVertices(graph, v, directed=True)
+                # map to indices, drop misses
+                in_neighbors[i] = [j for u in inv if (j := to_idx(u)) is not None]
+                out_neighbors[i] = [j for u in onv if (j := to_idx(u)) is not None]
         else:
-            min_value = min(values)
-            max_value = max(values)
+            in_neighbors = [[] for _ in range(n)]
+            out_neighbors = in_neighbors  # same list objects is fine; we set both below
+            for i, v in enumerate(vertices):
+                nbrs = Graph.AdjacentVertices(graph, v)
+                idxs = [j for u in nbrs if (j := to_idx(u)) is not None]
+                in_neighbors[i] = idxs
+            out_neighbors = in_neighbors  # undirected: in == out
 
-        for i, value in enumerate(values):
+        out_degree = [len(out_neighbors[i]) for i in range(n)]
+        dangling = [i for i in range(n) if out_degree[i] == 0]
+
+        # ---- power iteration ----
+        pr = [1.0 / n] * n
+        base = (1.0 - alpha) / n
+
+        for _ in range(maxIterations):
+            # Distribute dangling mass uniformly
+            dangling_mass = alpha * (sum(pr[i] for i in dangling) / n) if dangling else 0.0
+
+            new_pr = [base + dangling_mass] * n
+
+            # Sum contributions from incoming neighbors j: alpha * pr[j] / out_degree[j]
+            for i in range(n):
+                acc = 0.0
+                for j in in_neighbors[i]:
+                    deg = out_degree[j]
+                    if deg > 0:
+                        acc += pr[j] / deg
+                new_pr[i] += alpha * acc
+
+            # L1 convergence
+            if sum(abs(new_pr[i] - pr[i]) for i in range(n)) <= tolerance:
+                pr = new_pr
+                break
+            pr = new_pr
+
+        # ---- normalize & write dictionaries ----
+        if normalize:
+            pr = Helper.Normalize(pr)
+            if mantissa > 0:
+                pr = [round(v, mantissa) for v in pr]
+            min_v, max_v = 0.0, 1.0
+        else:
+            min_v, max_v = (min(pr), max(pr)) if n > 0 else (0.0, 0.0)
+
+        for i, value in enumerate(pr):
             d = Topology.Dictionary(vertices[i])
-            color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            color = Color.AnyToHex(
+                Color.ByValueInRange(value, minValue=min_v, maxValue=max_v, colorScale=colorScale)
+            )
             d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
             vertices[i] = Topology.SetDictionary(vertices[i], d)
+
+        return pr
+
+
+    # @staticmethod
+    # def PageRank_old(graph, alpha: float = 0.85, maxIterations: int = 100, normalize: bool = True, directed: bool = False, key: str = "page_rank", colorKey="pr_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.0001):
+    #     """
+    #     Calculates PageRank scores for vertices in a directed graph. see https://en.wikipedia.org/wiki/PageRank.
+
+    #     Parameters
+    #     ----------
+    #     graph : topologic_core.Graph
+    #         The input graph.
+    #     alpha : float , optional
+    #         The damping (dampening) factor. Default is 0.85. See https://en.wikipedia.org/wiki/PageRank.
+    #     maxIterations : int , optional
+    #         The maximum number of iterations to calculate the page rank. Default is 100.
+    #     normalize : bool , optional
+    #         If set to True, the results will be normalized from 0 to 1. Otherwise, they won't be. Default is True.
+    #     directed : bool , optional
+    #         If set to True, the graph is considered as a directed graph. Otherwise, it will be considered as an undirected graph. Default is False.
+    #     key : str , optional
+    #         The dictionary key under which to store the page_rank score. Default is "page_rank"
+    #     colorKey : str , optional
+    #         The desired dictionary key under which to store the pagerank color. Default is "pr_color".
+    #     colorScale : str , optional
+    #         The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+    #         In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+    #     mantissa : int , optional
+    #         The desired length of the mantissa.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The list of page ranks for the vertices in the graph.
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Helper import Helper
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Color import Color
+
+    #     vertices = Graph.Vertices(graph)
+    #     num_vertices = len(vertices)
+    #     if num_vertices < 1:
+    #         print("Graph.PageRank - Error: The input graph parameter has no vertices. Returning None")
+    #         return None
+    #     initial_score = 1.0 / num_vertices
+    #     values = [initial_score for vertex in vertices]
+    #     for _ in range(maxIterations):
+    #         new_scores = [0 for vertex in vertices]
+    #         for i, vertex in enumerate(vertices):
+    #             incoming_score = 0
+    #             for incoming_vertex in Graph.IncomingVertices(graph, vertex, directed=directed):
+    #                 if len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed)) > 0:
+    #                     vi = Vertex.Index(incoming_vertex, vertices, tolerance=tolerance)
+    #                     if not vi == None:
+    #                         incoming_score += values[vi] / len(Graph.IncomingVertices(graph, incoming_vertex, directed=directed))
+    #             new_scores[i] = alpha * incoming_score + (1 - alpha) / num_vertices
+
+    #         # Check for convergence
+    #         if all(abs(new_scores[i] - values[i]) <= tolerance for i in range(len(vertices))):
+    #             break
+
+    #         values = new_scores
+    #     if normalize == True:
+    #         if mantissa > 0: # We cannot round numbers from 0 to 1 with a mantissa = 0.
+    #             values = [round(v, mantissa) for v in Helper.Normalize(values)]
+    #         else:
+    #             values = Helper.Normalize(values)
+    #         min_value = 0
+    #         max_value = 1
+    #     else:
+    #         min_value = min(values)
+    #         max_value = max(values)
+
+    #     for i, value in enumerate(values):
+    #         d = Topology.Dictionary(vertices[i])
+    #         color = Color.AnyToHex(Color.ByValueInRange(value, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+    #         d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
+    #         vertices[i] = Topology.SetDictionary(vertices[i], d)
         
-        for i, v in enumerate(vertices):
-            d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, values[i])
-            v = Topology.SetDictionary(v, d)
-        return values
+    #     for i, v in enumerate(vertices):
+    #         d = Topology.Dictionary(v)
+    #         d = Dictionary.SetValueAtKey(d, key, values[i])
+    #         v = Topology.SetDictionary(v, d)
+    #     return values
 
     @staticmethod
     def Partition(graph, method: str = "Betweenness", n: int = 2, m: int = 10, key: str ="partition",

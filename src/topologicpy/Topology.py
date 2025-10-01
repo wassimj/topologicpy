@@ -1994,6 +1994,7 @@ class Topology():
             return 
 
         def convert_entity(entity, file, sides=36):
+            e = None
             entity_type = entity.dxftype()
             python_dict = entity.dxf.all_existing_dxf_attribs()
             keys = python_dict.keys()

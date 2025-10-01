@@ -286,7 +286,7 @@ class Plotly:
                     vertexSizeKey: str = None,
                     vertexLabelKey: str = None,
                     vertexBorderColor: str = "black",
-                    vertexBorderWidth: float = 1,
+                    vertexBorderWidth: float = 0,
                     vertexBorderColorKey: str = None,
                     vertexBorderWidthKey: float = None,
                     vertexGroupKey: str = None,
@@ -570,7 +570,7 @@ class Plotly:
                             if not temp_color == None:
                                 borderColors[m] = Color.AnyToHex(temp_color)
                         if not borderWidthKey == None:
-                            temp_width = Dictionary.ValueAtKey(d, key=borderWidthKey)
+                            temp_width = Dictionary.ValueAtKey(d, key=borderWidthKey, defaultValue=borderWidth)
                             if temp_width == None or temp_width <= 0:
                                borderSizes[m] = 0
                             else:
@@ -615,8 +615,9 @@ class Plotly:
                             showlegend=showLegend,
                             marker=dict(color=colors,
                                         size=sizes,
-                                        symbol="circle", 
+                                        symbol="circle",
                                         opacity=1,
+                                        line=dict(width=0),
                                         sizemode="diameter"),
                             mode=mode,
                             customdata = labels,
@@ -637,6 +638,7 @@ class Plotly:
                                             size=borderSizes,
                                             symbol="circle", 
                                             opacity=1,
+                                            line=dict(width=0),
                                             sizemode="diameter"),
                                 mode=mode
                                 )
@@ -748,11 +750,11 @@ class Plotly:
                 d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
-                        d_color = Color.AnyToHex(Dictionary.ValueAtKey(d, key=colorKey, default=color))
+                        d_color = Color.AnyToHex(Dictionary.ValueAtKey(d, key=colorKey, defaultValue=color))
                     if not dashKey == None:
-                        d_dash = Dictionary.ValueAtKey(d, key=dashKey, default=dash)
+                        d_dash = Dictionary.ValueAtKey(d, key=dashKey, defaultValue=dash)
                     if not arrowSizeKey == None:
-                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey, default=arrowSize)
+                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey, defaultValue=arrowSize)
                     if not labelKey == None:
                         labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
                     if not widthKey == None:
@@ -927,7 +929,7 @@ class Plotly:
         vertexColorKey : str , optional
             The dictionary key under which to find the vertex color.The default is None.
         vertexBorderWidth : float , optional
-            The desired width of the border of the output vertices. Default is 1.
+            The desired width of the border of the output vertices. Default is 0.
         vertexBorderColor : str , optional
             The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
