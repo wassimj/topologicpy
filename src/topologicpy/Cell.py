@@ -226,7 +226,7 @@ class Cell():
         return new_cell
     
     @staticmethod
-    def ByShell(shell, planarize: bool = False, tolerance: float = 0.0001):
+    def ByShell(shell, planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cell from the input shell.
 
@@ -238,6 +238,8 @@ class Cell():
             If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -248,7 +250,8 @@ class Cell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(shell, "Shell"):
-            print("Cell.ByShell - Error: The input shell parameter is not a valid topologic shell. Returning None.")
+            if not silent:
+                print("Cell.ByShell - Error: The input shell parameter is not a valid topologic shell. Returning None.")
             return None
         faces = Topology.SubTopologies(shell, subTopologyType="face")
         return Cell.ByFaces(faces, planarize=planarize, tolerance=tolerance)

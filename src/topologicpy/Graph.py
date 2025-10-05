@@ -64,20 +64,6 @@ except:
         print("Graph - tqdm library installed correctly.")
     except:
         warnings.warn("Graph - Error: Could not import tqdm.")
-
-try:
-    from graphviz import Digraph
-except:
-    print("Graph - Installing required graphviz library.")
-    try:
-        os.system("pip install graphviz")
-    except:
-        os.system("pip install graphviz --user")
-    try:
-        from graphviz import Digraph
-        print("Graph - graphviz library installed correctly.")
-    except:
-        warnings.warn("Graph - Error: Could not import graphviz.")
     
 GraphQueueItem = namedtuple('GraphQueueItem', ['edges'])
 
@@ -4061,6 +4047,380 @@ class Graph:
                                xMin=xMin, yMin=yMin, zMin=zMin, xMax=xMax, yMax=yMax, zMax=zMax)
 
     @staticmethod
+    def ByJSONDictionary(
+        jsonDictionary: dict,
+        xKey: str = "x",
+        yKey: str = "y",
+        zKey: str = "z",
+        vertexIDKey: str | None = None,
+        edgeSourceKey: str = "source",
+        edgeTargetKey: str = "target",
+        edgeIDKey: str | None = None,
+        graphPropsKey: str = "properties",
+        verticesKey: str = "vertices",
+        edgesKey: str = "edges",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Loads a Graph from a JSON file and attaches graph-, vertex-, and edge-level dictionaries.
+
+        Parameters
+        ----------
+        path : str
+            Path to a JSON file containing:
+            - graph-level properties under `graphPropsKey` (default "properties"),
+            - a vertex dict under `verticesKey` (default "vertices") keyed by vertex IDs,
+            - an edge dict under `edgesKey` (default "edges") keyed by edge IDs.
+        xKey: str , optional
+            JSON key used to read vertex's x coordinate. Default is "x".
+        yKey: str , optional
+            JSON key used to read vertex's y coordinate. Default is "y".
+        zKey: str , optional
+            JSON key used to read vertex's z coordinate. Default is "z".
+        vertexIDKey : str , optional
+            If not None, the vertex dictionary key under which to store the JSON vertex id. Default is "id".
+        edgeSourceKey: str , optional
+            JSON key used to read edge's start vertex. Default is "source".
+        edgeTargetKey: str , optional
+            JSON key used to read edge's end vertex. Default is "target".
+        edgeIDKey : str , optional
+            If not None, the edge dictionary key under which to store the JSON edge id. Default is "id".
+        graphPropsKey: str , optional
+            JSON key for the graph properties section. Default is "properties".
+        verticesKey: str , optional
+            JSON key for the vertices section. Default is "vertices".
+        edgesKey: str , optional
+            JSON key for the edges section. Default is "edges".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, no warnings or error messages are displayed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+        """
+        # --- Imports kept local by request ---
+        import json
+        import math
+        from typing import Any, Iterable
+
+        # TopologicPy imports
+        from topologicpy.Graph import Graph
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        # --- Helper functions kept local by request ---
+        def _to_plain(value: Any) -> Any:
+            "Convert numpy/pandas-ish scalars/arrays and nested containers to plain Python."
+            try:
+                import numpy as _np  # optional
+                if isinstance(value, _np.generic):
+                    return value.item()
+                if isinstance(value, _np.ndarray):
+                    return [_to_plain(v) for v in value.tolist()]
+            except Exception:
+                pass
+            if isinstance(value, (list, tuple)):
+                return [_to_plain(v) for v in value]
+            if isinstance(value, dict):
+                return {str(k): _to_plain(v) for k, v in value.items()}
+            if isinstance(value, float):
+                if not math.isfinite(value):
+                    return 0.0
+                # normalize -0.0
+                return 0.0 if abs(value) < tolerance else float(value)
+            return value
+
+        def _round_num(x: Any, m: int) -> float:
+            "Safe float conversion + rounding + tolerance clamp."
+            try:
+                xf = float(x)
+            except Exception:
+                return 0.0
+            if not math.isfinite(xf):
+                return 0.0
+            # clamp tiny values to zero to avoid -0.0 drift and floating trash
+            if abs(xf) < tolerance:
+                xf = 0.0
+            return round(xf, max(0, int(m)))
+
+        def _dict_from(obj: dict, drop_keys: Iterable[str] = ()):
+            "Create a Topologic Dictionary from a Python dict (optionally dropping some keys)."
+            data = {k: _to_plain(v) for k, v in obj.items() if k not in drop_keys}
+            if not data:
+                return None
+            keys = list(map(str, data.keys()))
+            vals = list(data.values())
+            try:
+                return Dictionary.ByKeysValues(keys, vals)
+            except Exception:
+                # As a last resort, stringify nested types
+                import json as _json
+                vals2 = [_json.dumps(v) if isinstance(v, (list, dict)) else v for v in vals]
+                return Dictionary.ByKeysValues(keys, vals2)
+
+        # --- Load JSON ---
+        if not isinstance(jsonDictionary, dict):
+            if not silent:
+                print(f"Graph.ByJSONDictionary - Error: The input JSON Dictionary parameter is not a valid python dictionary. Returning None.")
+            return None
+
+        gprops = jsonDictionary.get(graphPropsKey, {}) or {}
+        verts = jsonDictionary.get(verticesKey, {}) or {}
+        edges = jsonDictionary.get(edgesKey, {}) or {}
+
+        # --- Build vertices ---
+        id_to_vertex = {}
+        vertex_list = []
+        for v_id, v_rec in verts.items():
+            x = _round_num(v_rec.get(xKey, 0.0), mantissa)
+            y = _round_num(v_rec.get(yKey, 0.0), mantissa)
+            z = _round_num(v_rec.get(zKey, 0.0), mantissa)
+            try:
+                v = Vertex.ByCoordinates(x, y, z)
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ByJSONDictionary - Warning: failed to create Vertex {v_id} at ({x},{y},{z}): {e}")
+                continue
+
+            # Attach vertex dictionary with all attributes except raw coords
+            v_dict_py = dict(v_rec)
+            if vertexIDKey:
+                v_dict_py[vertexIDKey] = v_id
+            v_dict = _dict_from(v_dict_py, drop_keys={xKey, yKey, zKey})
+            if v_dict:
+                v = Topology.SetDictionary(v, v_dict)
+
+            id_to_vertex[str(v_id)] = v
+            vertex_list.append(v)
+
+        # --- Build edges ---
+        edge_list = []
+        for e_id, e_rec in edges.items():
+            s_id = e_rec.get(edgeSourceKey)
+            t_id = e_rec.get(edgeTargetKey)
+            if s_id is None or t_id is None:
+                if not silent:
+                    print(f"Graph.ByJSONDictionary - Warning: skipping Edge {e_id}: missing '{edgeSourceKey}' or '{edgeTargetKey}'.")
+                continue
+            s_id = str(s_id)
+            t_id = str(t_id)
+            if s_id not in id_to_vertex or t_id not in id_to_vertex:
+                if not silent:
+                    print(f"Graph.ByJSONDictionary - Warning: skipping Edge {e_id}: unknown endpoint(s) {s_id}->{t_id}.")
+                continue
+            u = id_to_vertex[s_id]
+            v = id_to_vertex[t_id]
+            try:
+                e = Edge.ByVertices(u, v)
+            except Exception as ee:
+                if not silent:
+                    print(f"Graph.ByJSONDictionary - Warning: failed to create Edge {e_id}: {ee}")
+                continue
+
+            # Attach full edge record as dictionary (including source/target keys)
+            e_dict = _dict_from(dict(e_rec), drop_keys=())
+            if edgeIDKey:
+                Dictionary.SetValueAtKey(e_dict, edgeIDKey, e_id)
+            if e_dict:
+                e = Topology.SetDictionary(e, e_dict)
+            edge_list.append(e)
+
+        # --- Assemble graph ---
+        try:
+            g = Graph.ByVerticesEdges(vertex_list, edge_list)
+        except Exception:
+            # Fallback: create empty, then add
+            g = Graph.ByVerticesEdges([], [])
+            for v in vertex_list:
+                try:
+                    g = Graph.AddVertex(g, v)
+                except Exception:
+                    pass
+            for e in edge_list:
+                try:
+                    g = Graph.AddEdge(g, e)
+                except Exception:
+                    pass
+
+        # --- Graph-level dictionary ---
+        g_dict = _dict_from(dict(gprops), drop_keys=())
+        if g_dict:
+            g = Topology.SetDictionary(g, g_dict)
+
+        return g
+
+    @staticmethod
+    def ByJSONFile(file,
+                   xKey: str = "x",
+                   yKey: str = "y",
+                   zKey: str = "z",
+                   vertexIDKey: str = "id",
+                   edgeSourceKey: str = "source",
+                   edgeTargetKey: str = "target",
+                   edgeIDKey: str = "id",
+                   graphPropsKey: str = "properties",
+                   verticesKey: str = "vertices",
+                   edgesKey: str = "edges",
+                   mantissa: int = 6,
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
+        """
+        Imports the graph from a JSON file.
+
+        Parameters
+        ----------
+        file : file object
+            The input JSON file.
+        xKey: str , optional
+            JSON key used to read vertex's x coordinate. Default is "x".
+        yKey: str , optional
+            JSON key used to read vertex's y coordinate. Default is "y".
+        zKey: str , optional
+            JSON key used to read vertex's z coordinate. Default is "z".
+        vertexIDKey : str , optional
+            If not None, the vertex dictionary key under which to store the JSON vertex id. Default is "id".
+        edgeSourceKey: str , optional
+            JSON key used to read edge's start vertex. Default is "source".
+        edgeTargetKey: str , optional
+            JSON key used to read edge's end vertex. Default is "target".
+        edgeIDKey : str , optional
+            If not None, the edge dictionary key under which to store the JSON edge id. Default is "id".
+        graphPropsKey: str , optional
+            JSON key for the graph properties section. Default is "properties".
+        verticesKey: str , optional
+            JSON key for the vertices section. Default is "vertices".
+        edgesKey: str , optional
+            JSON key for the edges section. Default is "edges".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, no warnings or error messages are displayed. Default is False.
+
+        Returns
+        -------
+        topologic_graph
+            the imported graph.
+
+        """
+        import json
+        if not file:
+            if not silent:
+                print("Topology.ByJSONFile - Error: the input file parameter is not a valid file. Returning None.")
+            return None
+        try:
+            json_dict = json.load(file)
+        except Exception as e:
+            if not silent:
+                print("Graph.ByJSONFile - Error: Could not load the JSON file: {e}. Returning None.")
+            return None
+        return Graph.ByJSONDictionary(json_dict,
+                                      xKey=xKey,
+                                      yKey=yKey,
+                                      zKey=zKey,
+                                      vertexIDKey=vertexIDKey,
+                                      edgeSourceKey=edgeSourceKey,
+                                      edgeTargetKey=edgeTargetKey,
+                                      edgeIDKey=edgeIDKey,
+                                      graphPropsKey=graphPropsKey,
+                                      verticesKey=verticesKey,
+                                      edgesKey=edgesKey,
+                                      mantissa=mantissa,
+                                      tolerance=tolerance,
+                                      silent=silent)
+    
+    @staticmethod
+    def ByJSONPath(path,
+                   xKey: str = "x",
+                   yKey: str = "y",
+                   zKey: str = "z",
+                   vertexIDKey: str = "id",
+                   edgeSourceKey: str = "source",
+                   edgeTargetKey: str = "target",
+                   edgeIDKey: str = "id",
+                   graphPropsKey: str = "properties",
+                   verticesKey: str = "vertices",
+                   edgesKey: str = "edges",
+                   mantissa: int = 6,
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
+        """
+        Imports the graph from a JSON file.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the json file.
+        xKey: str , optional
+            JSON key used to read vertex's x coordinate. Default is "x".
+        yKey: str , optional
+            JSON key used to read vertex's y coordinate. Default is "y".
+        zKey: str , optional
+            JSON key used to read vertex's z coordinate. Default is "z".
+        vertexIDKey : str , optional
+            If not None, the vertex dictionary key under which to store the JSON vertex id. Default is "id".
+        edgeSourceKey: str , optional
+            JSON key used to read edge's start vertex. Default is "source".
+        edgeTargetKey: str , optional
+            JSON key used to read edge's end vertex. Default is "target".
+        edgeIDKey : str , optional
+            If not None, the edge dictionary key under which to store the JSON edge id. Default is "id".
+        graphPropsKey: str , optional
+            JSON key for the graph properties section. Default is "properties".
+        verticesKey: str , optional
+            JSON key for the vertices section. Default is "vertices".
+        edgesKey: str , optional
+            JSON key for the edges section. Default is "edges".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, no warnings or error messages are displayed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported topologies.
+
+        """
+        import json
+        if not path:
+            if not silent:
+                print("Graph.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
+            return None
+        try:
+            with open(path) as file:
+                json_dict = json.load(file)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.ByJSONPath - Error: Could not load file: {e}. Returning None.")
+            return None
+        return Graph.ByJSONDictionary(json_dict,
+                                      xKey=xKey,
+                                      yKey=yKey,
+                                      zKey=zKey,
+                                      vertexIDKey=vertexIDKey,
+                                      edgeSourceKey=edgeSourceKey,
+                                      edgeTargetKey=edgeTargetKey,
+                                      edgeIDKey=edgeIDKey,
+                                      graphPropsKey=graphPropsKey,
+                                      verticesKey=verticesKey,
+                                      edgesKey=edgesKey,
+                                      mantissa=mantissa,
+                                      tolerance=tolerance,
+                                      silent=silent)
+
+    @staticmethod
     def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
         """
         Creates a graph from the input mesh data
@@ -4119,7 +4479,7 @@ class Graph:
         return Graph.ByVerticesEdges(g_vertices, g_edges)
 
     @staticmethod
-    def ByNetworkXGraph(nxGraph, xKey="x", yKey="y", zKey="z", range=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
+    def ByNetworkXGraph(nxGraph, xKey="x", yKey="y", zKey="z", coordsKey='coords', randomRange=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
         """
         Converts the input NetworkX graph into a topologic Graph. See http://networkx.org
 
@@ -4133,8 +4493,10 @@ class Graph:
             The dictionary key under which to find the Y-Coordinate of the vertex. Default is 'y'.
         zKey : str , optional
             The dictionary key under which to find the Z-Coordinate of the vertex. Default is 'z'.
-        range : tuple , optional
-            The range to use for position coordinates if no values are found in the dictionaries. Default is (-1,1)
+        coordsKey : str , optional
+            The dictionary key under which to find the list of the coordinates vertex. Default is 'coords'.
+        randomRange : tuple , optional
+            The range to use for random position coordinates if no values are found in the dictionaries. Default is (-1,1)
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
@@ -4153,38 +4515,221 @@ class Graph:
 
         import random
         import numpy as np
+        import math
+        import torch
+        from collections.abc import Mapping, Sequence
 
-        # Create a mapping from NetworkX nodes to TopologicPy vertices
-        nx_to_topologic_vertex = {}
+        def _is_iterable_but_not_str(x):
+            return isinstance(x, Sequence) and not isinstance(x, (str, bytes, bytearray))
+
+        def _to_python_scalar(x):
+            """Return a plain Python scalar if x is a numpy/pandas/Decimal/torch scalar; otherwise return x."""
+            # numpy scalar
+            if np is not None and isinstance(x, np.generic):
+                return x.item()
+            # pandas NA
+            if pd is not None and x is pd.NA:
+                return None
+            # pandas Timestamp/Timedelta
+            if pd is not None and isinstance(x, (pd.Timestamp, pd.Timedelta)):
+                return x.isoformat()
+            # torch scalar tensor
+            if torch is not None and isinstance(x, torch.Tensor) and x.dim() == 0:
+                return _to_python_scalar(x.item())
+            # decimal
+            try:
+                from decimal import Decimal
+                if isinstance(x, Decimal):
+                    return float(x)
+            except Exception:
+                pass
+            return x
+
+        def _to_python_list(x):
+            """Convert arrays/series/tensors/sets/tuples to Python lists (recursively)."""
+            if torch is not None and isinstance(x, torch.Tensor):
+                x = x.detach().cpu().tolist()
+            elif np is not None and isinstance(x, (np.ndarray,)):
+                x = x.tolist()
+            elif pd is not None and isinstance(x, (pd.Series, pd.Index)):
+                x = x.tolist()
+            elif isinstance(x, (set, tuple)):
+                x = list(x)
+            return x
+
+        def _round_number(x, mantissa):
+            """Round finite floats; keep ints; sanitize NaNs/Infs to None."""
+            if isinstance(x, bool):  # bool is int subclass; keep as bool
+                return x
+            if isinstance(x, int):
+                return x
+            # try float conversion
+            try:
+                xf = float(x)
+            except Exception:
+                return x  # not a number
+            if math.isfinite(xf):
+                return round(xf, mantissa)
+            return None  # NaN/Inf -> None
+
+        def clean_value(value, mantissa):
+            """
+            Recursively convert value into TopologicPy-friendly types:
+            - numbers rounded to mantissa
+            - sequences -> lists (cleaned)
+            - mappings -> dicts (cleaned)
+            - datetime -> isoformat
+            - other objects -> str(value)
+            """
+            # First, normalize common library wrappers
+            value = _to_python_scalar(value)
+
+            # Datetime from stdlib
+            import datetime
+            if isinstance(value, (datetime.datetime, datetime.date, datetime.time)):
+                try:
+                    return value.isoformat()
+                except Exception:
+                    return str(value)
+
+            # Mapping (dict-like)
+            if isinstance(value, Mapping):
+                return {str(k): clean_value(v, mantissa) for k, v in value.items()}
+
+            # Sequences / arrays / tensors -> list
+            if _is_iterable_but_not_str(value) or (
+                (np is not None and isinstance(value, (np.ndarray,))) or
+                (torch is not None and isinstance(value, torch.Tensor)) or
+                (pd is not None and isinstance(value, (pd.Series, pd.Index)))
+            ):
+                value = _to_python_list(value)
+                return [clean_value(v, mantissa) for v in value]
+
+            # Strings stay as-is
+            if isinstance(value, (str, bytes, bytearray)):
+                return value.decode() if isinstance(value, (bytes, bytearray)) else value
+
+            # Numbers (or things that can be safely treated as numbers)
+            out = _round_number(value, mantissa)
+            # If rounder didn't change type and it's still a weird object, stringify it
+            if out is value and not isinstance(out, (type(None), bool, int, float, str)):
+                return str(out)
+            return out
+
+        def coerce_xyz(val, mantissa, default=0.0):
+            """
+            Coerce a candidate XYZ value into a float:
+            - if mapping with 'x' or 'value' -> try those
+            - if sequence -> use first element
+            - if string -> try float
+            - arrays/tensors -> first element
+            - fallback to default
+            """
+            if val is None:
+                return round(float(default), mantissa)
+            # library scalars
+            val = _to_python_scalar(val)
+
+            # Mapping with common keys
+            if isinstance(val, Mapping):
+                for k in ("x", "value", "val", "coord", "0"):
+                    if k in val:
+                        return coerce_xyz(val[k], mantissa, default)
+                # otherwise try to take first value
+                try:
+                    first = next(iter(val.values()))
+                    return coerce_xyz(first, mantissa, default)
+                except Exception:
+                    return round(float(default), mantissa)
+
+            # Sequence / array / tensor
+            if _is_iterable_but_not_str(val) or \
+            (np is not None and isinstance(val, (np.ndarray,))) or \
+            (torch is not None and isinstance(val, torch.Tensor)) or \
+            (pd is not None and isinstance(val, (pd.Series, pd.Index))):
+                lst = _to_python_list(val)
+                if len(lst) == 0:
+                    return round(float(default), mantissa)
+                return coerce_xyz(lst[0], mantissa, default)
+
+            # String
+            if isinstance(val, str):
+                try:
+                    return round(float(val), mantissa)
+                except Exception:
+                    return round(float(default), mantissa)
+
+            # Numeric
+            try:
+                return _round_number(val, mantissa)
+            except Exception:
+                return round(float(default), mantissa)
+
+                # Create a mapping from NetworkX nodes to TopologicPy vertices
+                nx_to_topologic_vertex = {}
 
         # Create TopologicPy vertices for each node in the NetworkX graph
         vertices = []
         for node, data in nxGraph.nodes(data=True):
-            # Attempt to get X, Y, Z from the node data
-            x = round(data.get(xKey, random.uniform(*range)), mantissa)
-            y = round(data.get(yKey, random.uniform(*range)), mantissa)
-            z = round(data.get(zKey, 0), mantissa) # If there are no Z values, this is probably a flat graph.
-            # Create a TopologicPy vertex with the node data dictionary
-            vertex = Vertex.ByCoordinates(x,y,z)
+            # Clean the node dictionary
             cleaned_values = []
-            for value in data.values():
-                if isinstance(value, np.ndarray):
-                    value = list(value)
-                cleaned_values.append(value)
-                
-            node_dict = Dictionary.ByKeysValues(list(data.keys()), cleaned_values)
+            cleaned_keys = []
+            for k, v in data.items():
+                cleaned_keys.append(str(k))
+                cleaned_values.append(clean_value(v, mantissa))
+            data = dict(zip(cleaned_keys, cleaned_values))
+            # Defensive defaults for coordinates
+            x_raw = y_raw = z_raw = None
+            try:
+                x_raw = data.get(xKey, None)
+                y_raw = data.get(yKey, None)
+                z_raw = data.get(zKey, None)
+            except Exception:
+                x_raw = y_raw = z_raw = None
+            
+            if x_raw == None:
+                coords = data.get(coordsKey, None)
+                if coords:
+                    coords = clean_value(coords, mantissa)
+                    if isinstance(coords, list):
+                        if len(coords) == 2:
+                            x_raw = coords[0]
+                            y_raw = coords[1]
+                            z_raw = 0
+                        elif len(coords) == 3:
+                            x_raw = coords[0]
+                            y_raw = coords[1]
+                            z_raw = coords[2]
+
+            # Fall back to random only if missing / invalid
+            x = coerce_xyz(x_raw, mantissa, default=random.uniform(*randomRange))
+            y = coerce_xyz(y_raw, mantissa, default=random.uniform(*randomRange))
+            z = coerce_xyz(z_raw, mantissa, default=0.0)
+
+            # Create vertex
+            vertex = Vertex.ByCoordinates(x, y, z)
+
+            # Build and attach TopologicPy dictionary
+            node_dict = Dictionary.ByKeysValues(cleaned_keys, cleaned_values)
             vertex = Topology.SetDictionary(vertex, node_dict)
-            nx_to_topologic_vertex[node] = vertex
+
+            #nx_to_topologic_vertex[node] = vertex
             vertices.append(vertex)
 
         # Create TopologicPy edges for each edge in the NetworkX graph
         edges = []
         for u, v, data in nxGraph.edges(data=True):
-            start_vertex = nx_to_topologic_vertex[u]
-            end_vertex = nx_to_topologic_vertex[v]
+            start_vertex = vertices[u]
+            end_vertex = vertices[v]
 
             # Create a TopologicPy edge with the edge data dictionary
-            edge_dict = Dictionary.ByKeysValues(list(data.keys()), list(data.values()))
+             # Clean the node dictionary
+            cleaned_values = []
+            cleaned_keys = []
+            for k, v in data.items():
+                cleaned_keys.append(str(k))
+                cleaned_values.append(clean_value(v, mantissa))
+            edge_dict = Dictionary.ByKeysValues(cleaned_keys, cleaned_values)
             edge = Edge.ByVertices([start_vertex, end_vertex], tolerance=tolerance)
             edge = Topology.SetDictionary(edge, edge_dict)
             edges.append(edge)
@@ -8015,13 +8560,13 @@ class Graph:
             1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. Default is "mask".
         nodeTrainRatio : float , optional
             The desired ratio of the node data to use for training. The number must be between 0 and 1. Default is 0.8 which means 80% of the data will be used for training.
-            This value is ignored if an nodeMaskKey is foud.
+            This value is ignored if an nodeMaskKey is found.
         nodeValidateRatio : float , optional
             The desired ratio of the node data to use for validation. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for validation.
-            This value is ignored if an nodeMaskKey is foud.
+            This value is ignored if an nodeMaskKey is found.
         nodeTestRatio : float , optional
             The desired ratio of the node data to use for testing. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for testing.
-            This value is ignored if an nodeMaskKey is foud.
+            This value is ignored if an nodeMaskKey is found.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
@@ -8888,7 +9433,7 @@ class Graph:
             return False
 
     @staticmethod
-    def ExportToJSON(graph, path, verticesKey="vertices", edgesKey="edges", vertexLabelKey="", edgeLabelKey="", xKey="x", yKey="y", zKey="z", indent=4, sortKeys=False, mantissa=6, overwrite=False):
+    def ExportToJSON(graph, path, propertiesKey="properties", verticesKey="vertices", edgesKey="edges", vertexLabelKey="", edgeLabelKey="", xKey="x", yKey="y", zKey="z", indent=4, sortKeys=False, mantissa=6, overwrite=False):
         """
         Exports the input graph to a JSON file.
 
@@ -8898,6 +9443,8 @@ class Graph:
             The input graph.
         path : str
             The path to the JSON file.
+        propertiesKey : str , optional
+            The desired key name to call graph properties. Default is "properties".
         verticesKey : str , optional
             The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
@@ -8947,7 +9494,7 @@ class Graph:
         except:
             raise Exception("Graph.ExportToJSON - Error: Could not create a new file at the following location: "+path)
         if (f):
-            jsondata = Graph.JSONData(graph, verticesKey=verticesKey, edgesKey=edgesKey, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, xKey=xKey, yKey=yKey, zKey=zKey, mantissa=mantissa)
+            jsondata = Graph.JSONData(graph, propertiesKey=propertiesKey, verticesKey=verticesKey, edgesKey=edgesKey, vertexLabelKey=vertexLabelKey, edgeLabelKey=edgeLabelKey, xKey=xKey, yKey=yKey, zKey=zKey, mantissa=mantissa)
             if jsondata != None:
                 json.dump(jsondata, f, indent=indent, sort_keys=sortKeys)
                 f.close()
@@ -10467,8 +11014,26 @@ class Graph:
             The created GraphViz graph.
         """
 
-        from graphviz import Digraph
-        from graphviz import Graph as Udgraph
+        import os
+        import warnings
+
+        try:
+            from graphviz import Digraph
+            from graphviz import Graph as Udgraph
+
+        except:
+            print("Graph - Installing required graphviz library.")
+            try:
+                os.system("pip install graphviz")
+            except:
+                os.system("pip install graphviz --user")
+            try:
+                from graphviz import Digraph
+                from graphviz import Graph as Udgraph
+                print("Graph - graphviz library installed correctly.")
+            except:
+                warnings.warn("Graph - Error: Could not import graphviz.")
+
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -11662,6 +12227,7 @@ class Graph:
 
     @staticmethod
     def JSONData(graph,
+                 propertiesKey: str = "properties",
                  verticesKey: str = "vertices",
                  edgesKey: str = "edges",
                  vertexLabelKey: str = "",
@@ -11681,6 +12247,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        propertiesKey : str , optional
+            The desired key name to call the graph properties. Default is "properties".
         verticesKey : str , optional
             The desired key name to call vertices. Default is "vertices".
         edgesKey : str , optional
@@ -11720,8 +12288,10 @@ class Graph:
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
 
+        graph_d = Dictionary.PythonDictionary(Topology.Dictionary(graph))
         vertices = Graph.Vertices(graph)
         j_data = {}
+        j_data[propertiesKey] = graph_d
         j_data[verticesKey] = {}
         j_data[edgesKey] = {}
         n = max(len(str(len(vertices))), 4)
@@ -14266,6 +14836,54 @@ class Graph:
         _ = graph.RemoveEdges([edge], tolerance) # Hook to Core
         return graph
     
+    @staticmethod
+    def RemoveIsolatedEdges(graph, removeVertices: bool = True, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Removes all isolated edges from the input graph.
+        Isolated edges are those whose vertices are not connected to any other edges.
+        That is, they have a degree of 1.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        removeVertices : bool , optional
+            If set to True, the end vertices of the edges are also removed. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with all isolated vertices removed.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Edge import Edge
+
+        
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.RemoveIsolatedEdges - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+        
+        edges = Graph.Edges(graph)
+        if removeVertices == True:
+            for edge in edges:
+                va, vb = Edge.Vertices(edge)
+                if Graph.VertexDegree(graph, va, tolerance=tolerance, silent=silent) == 1 and Graph.VertexDegree(graph, vb, tolerance=tolerance, silent=silent) == 1:
+                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+                    graph = Graph.RemoveVertex(graph, va, tolerance=tolerance)
+                    graph = Graph.RemoveVertex(graph, vb, tolerance=tolerance)
+        else:
+            for edge in edges:
+                va, vb = Edge.Vertices(edge)
+                if Graph.VertexDegree(graph, va, tolerance=tolerance, silent=silent) == 1 and Graph.VertexDegree(graph, vb, tolerance=tolerance, silent=silent) == 1:
+                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+        return graph
+
     @staticmethod
     def RemoveIsolatedVertices(graph, tolerance=0.0001):
         """

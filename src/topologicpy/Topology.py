@@ -2390,7 +2390,7 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByJSONFile(file, tolerance=0.0001):
+    def ByJSONFile(file, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -2400,6 +2400,8 @@ class Topology():
             The input JSON file.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2407,14 +2409,21 @@ class Topology():
             The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
 
         """
+        import json
         if not file:
-            print("Topology.ByJSONFile - Error: the input file parameter is not a valid file. Returning None.")
+            if not silent:
+                print("Topology.ByJSONFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
-        json_dict = json.load(file)
-        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
+        try:
+            json_dict = json.load(file)
+        except Exception as e:
+            if not silent:
+                print("Topology.ByJSONFile - Error: Could not load the JSON file: {e}. Returning None.")
+            return None
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ByJSONPath(path, tolerance=0.0001):
+    def ByJSONPath(path, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -2424,6 +2433,8 @@ class Topology():
             The file path to the json file.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2433,15 +2444,20 @@ class Topology():
         """
         import json
         if not path:
-            print("Topology.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
+            if not silent:
+                print("Topology.ByJSONPath - Error: the input path parameter is not a valid path. Returning None.")
             return None
-        with open(path) as file:
-            json_dict = json.load(file)
-        entities = Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
-        return entities
+        try:
+            with open(path) as file:
+                json_dict = json.load(file)
+        except Exception as e:
+            if not silent:
+                print("Topology.ByJSONPath - Error: Could not load file: {e}. Returning None.")
+            return None
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ByJSONDictionary(jsonDictionary, tolerance=0.0001):
+    def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON dictionary.
 
@@ -2451,6 +2467,8 @@ class Topology():
             The input JSON dictionary.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2489,41 +2507,41 @@ class Topology():
             # Create basic topological entities
             if entity_type == 'Vertex':
                 parent_entity = Vertex.ByCoordinates(*entity['coordinates'])
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
                 vertices[entity['uuid']] = parent_entity
 
             elif entity_type == 'Edge':
                 vertex1 = vertices[entity['vertices'][0]]
                 vertex2 = vertices[entity['vertices'][1]]
-                parent_entity = Edge.ByVertices([vertex1, vertex2])
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                parent_entity = Edge.ByVertices([vertex1, vertex2], tolerance=tolerance, silent=silent)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
                 edges[entity['uuid']] = parent_entity
 
             elif entity_type == 'Wire':
                 wire_edges = [edges[uuid] for uuid in entity['edges']]
-                parent_entity = Wire.ByEdges(wire_edges)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                parent_entity = Wire.ByEdges(wire_edges, tolerance=tolerance, silent=silent)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
                 wires[entity['uuid']] = parent_entity
 
             elif entity_type == 'Face':
                 face_wires = [wires[uuid] for uuid in entity['wires']]
                 if len(face_wires) > 1:
-                    parent_entity = Face.ByWires(face_wires[0], face_wires[1:])
+                    parent_entity = Face.ByWires(face_wires[0], face_wires[1:], tolerance=tolerance, silent=silent)
                 else:
-                    parent_entity = Face.ByWire(face_wires[0])
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                    parent_entity = Face.ByWire(face_wires[0], tolerance=tolerance, silent=silent)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
                 faces[entity['uuid']] = parent_entity
 
             elif entity_type == 'Shell':
                 shell_faces = [faces[uuid] for uuid in entity['faces']]
-                parent_entity = Shell.ByFaces(shell_faces)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+                parent_entity = Shell.ByFaces(shell_faces, tolerance=tolerance, silent=silent)
+                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
                 shells[entity['uuid']] = parent_entity
 
             elif entity_type == 'Cell':
                 cell_shells = [shells[uuid] for uuid in entity['shells']]
                 if len(cell_shells) > 1:
-                    parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:])
+                    parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:], tolerance=tolerance, silent=silent)
                 else:
                     parent_entity = Cell.ByShell(cell_shells[0])
                 parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
@@ -2649,7 +2667,7 @@ class Topology():
         return top_level_list
     
     @staticmethod
-    def ByJSONString(string, tolerance=0.0001):
+    def ByJSONString(string: str, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON string.
 
@@ -2659,6 +2677,8 @@ class Topology():
             The input JSON string.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2666,9 +2686,13 @@ class Topology():
             The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
 
         """
-
-        json_dict = json.loads(string)
-        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance)
+        try:
+            json_dict = json.loads(string)
+        except Exception as e:
+            if not silent:
+                print(f"Topology.ByJSONString - Error: Could not read the input string: {e}. Returning None.")
+            return None 
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ByMeshData(dictionary, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
