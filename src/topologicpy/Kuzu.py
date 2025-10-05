@@ -476,7 +476,7 @@ class Kuzu:
     def GraphsByQuery(
         manager,
         query: str,
-        params: dict | None = None,
+        params: dict = None,
         silent: bool = False,
     ):
         """
