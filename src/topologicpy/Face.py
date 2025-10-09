@@ -1863,7 +1863,7 @@ class Face():
         return list(wires)
 
     @staticmethod
-    def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
+    def InternalVertex_old(face, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a vertex guaranteed to be inside the input face.
 
@@ -1929,6 +1929,27 @@ class Face():
         vert = Topology.Vertices(face)[0]
         #v = topologic.FaceUtility.InternalVertex(face, tolerance) # Hook to Core
         return vert
+    
+    @staticmethod 
+    def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Vector import Vector
+        from topologicpy.Edge import Edge
+        from topologicpy.Cluster import Cluster
+
+        if not Topology.IsInstance(face, "Face"):
+            return None
+        
+        v = Topology.Centroid(face)
+        
+        if Vertex.IsInternal(v, face):
+            return v
+        
+        #print("centroid is not internal")
+        V = Cluster.ByTopologies([Topology.Centroid(f) for f in Face.Triangulate(face)])
+        na = Vertex.NearestVertex(v, V)
+        return na
 
     @staticmethod
     def Invert(face, tolerance: float = 0.0001, silent: bool = False):

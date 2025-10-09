@@ -33,6 +33,7 @@ except:
     except:
         warnings.warn("Vertex - Error: Could not import numpy.")
 
+
 class Vertex():
     @staticmethod
     def AlignCoordinates(vertex, xList: list = None, yList: list = None, zList: list = None, xEpsilon: float = 0.0001, yEpsilon: float = 0.0001, zEpsilon: float = 0.0001, transferDictionary: bool = False, mantissa: int = 6, silent: bool = False):
@@ -1200,20 +1201,17 @@ class Vertex():
                     return True
             return False
         elif Topology.IsInstance(topology, "Face"):
-            # Test the distance first
-            if Vertex.PerpendicularDistance(vertex, topology) > tolerance:
-                return False
-            if Vertex.IsPeripheral(vertex, topology):
-                return False
-            normal = Face.Normal(topology)
-            proj_v = Vertex.Project(vertex, topology)
-            v1 = Topology.TranslateByDirectionDistance(proj_v, normal, 1)
-            v2 = Topology.TranslateByDirectionDistance(proj_v, normal, -1)
-            edge = Edge.ByVertices(v1, v2)
-            intersect = edge.Intersect(topology)
-            if intersect == None:
-                return False
-            return True
+            t = Topology.Copy(topology)
+            intersects = not bool(Topology.Boolean(vertex, t, 'difference', tolerance=tolerance)) # could use intersects but negated difference seems to be faster
+            if intersects:
+                # A vertex is internal to a face if it is not peripheral to any of its edges
+                # Implementing this here instead of calling Vertex.IsPeripheral to avoid redundant checks
+                # Here we already know that the topology is a face and entire edge is the periphery
+                periphery = Topology.Edges(topology)
+                peripheral = any([bool(Topology.Boolean(vertex, t, 'intersect', tolerance=tolerance)) for t in periphery])
+                return not peripheral
+            return False
+        
         elif Topology.IsInstance(topology, "Shell"):
             if Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent):
                 return False

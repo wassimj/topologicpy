@@ -9761,8 +9761,8 @@ class Topology():
                 faces = Topology.Faces(object)
                 for face in faces:
                     for selector in selectors:
-                        d = Vertex.Distance(selector, face)
-                        if d <= tolerance:
+                        s = Vertex.IsInternal(selector, face, tolerance)
+                        if s == True:
                             face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
                             break
             if tranCells == True:
