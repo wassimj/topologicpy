@@ -225,6 +225,7 @@ class Topology():
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.BVH import BVH
         
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AddApertures - Error: The input topology parameter is not a valid topology. Returning None.")
@@ -246,9 +247,23 @@ class Topology():
         for aperture in apertures:
             d = Topology.Dictionary(aperture)
             d = Dictionary.SetValueAtKey(d, "type", "Aperture")
-            aperture = Topology.SetDictionary(aperture, d)
         
-        topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
+        if subTopologyType == "self":
+            topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
+            return topology
+        else:
+            bvh = BVH.ByTopologies(Topology.SubTopologies(topology, subTopologyType=subTopologyType))
+            used = []
+            for aperture in apertures:
+                d = Topology.Dictionary(aperture)
+                d = Dictionary.SetValueAtKey(d, "type", "Aperture")
+                aperture = Topology.SetDictionary(aperture, d)
+                subTopology = BVH.Clashes(bvh, aperture)[0]
+                used.append(subTopology)
+                if exclusive == True:
+                    if subTopology in used:
+                        continue
+                subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
         return topology
     
     @staticmethod
