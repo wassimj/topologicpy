@@ -148,10 +148,10 @@ def test_main():
     # case 6 - ApertureTopologies
     print("Case 6")
     # test 1
-    aperT1 = Topology.ApertureTopologies(addA1)
+    aperT1 = Topology.Apertures(addA1)
     assert isinstance(aperT1, list), "Topology.ApertureTopologies. Should be list"
     # test 2
-    aperT2 = Topology.ApertureTopologies(addA2)
+    aperT2 = Topology.Apertures(addA2)
     assert isinstance(aperT2, list), "Topology.ApertureTopologies. Should be list"
 
     # case 7 - Apertures
