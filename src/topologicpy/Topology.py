@@ -315,6 +315,7 @@ class Topology():
             context = Context.ByTopologyParameters(topology)
             for content in contents:
                 content.AddContext(context) # Hook to Core
+                topology.AddContent(content) # Hook to Core
         else:
             t = Topology.TypeID(subTopologyType)
             topology.AddContents(contents, t) # Hook to Core
@@ -4018,7 +4019,7 @@ class Topology():
             print("Topology.Contents - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         contents = []
-        _ = topology.Contents(contents)
+        _ = topology.Contents(contents) # Hook to Core
         return contents
     
     @staticmethod
@@ -4041,7 +4042,7 @@ class Topology():
             print("Topology.Contexts - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         contexts = []
-        _ = topology.Contexts(contexts)
+        _ = topology.Contexts(contexts) # Hook to Core
         return contexts
 
     @staticmethod
