@@ -318,7 +318,7 @@ class Topology():
         else:
             t = Topology.TypeID(subTopologyType)
             topology.AddContents(contents, t) # Hook to Core
-        return 
+        return topology
     
     @staticmethod
     def AddDictionary(topology, dictionary):
