@@ -909,7 +909,7 @@ class Topology():
                     for i, eb in enumerate(eb_list):
                         v = Topology.Vertices(eb)[0]
                         if found == False:
-                            if Vertex.IsInternal(v, topologyA_wire) or Vertex.IsInternal(v, topologyB_wire):
+                            if Vertex.IsInternal(v, topologyA_wire, tolerance=tolerance) or Vertex.IsInternal(v, topologyB_wire, tolerance=tolerance):
                                 external_boundary = eb
                                 found = True
                         else:

@@ -1395,43 +1395,49 @@ class Vertex():
         # Collect primitives
         # --------------------------
         def collect_cells(topo):
-            try:
-                if isinstance(topo, Cell):
-                    return [topo]
-                if isinstance(topo, CellComplex):
-                    cs = CellComplex.Cells(topo);  return cs if cs else []
-                if isinstance(topo, Shell):
-                    try:
-                        cs = Shell.Cells(topo);     return cs if cs else []
-                    except Exception:
-                        pass
-                if isinstance(topo, Cluster):
-                    return [t for t in Cluster.Topologies(topo) if isinstance(t, Cell)]
-                return [t for t in Topology.SubTopologies(topo, "Cell")]
-            except Exception:
-                return []
+            if Topology.IsInstance(topo, "cell"):
+                return [topo]
+            else:
+                return Topology.Cells(topo)
 
         def collect_faces(topo):
-            try:
-                if isinstance(topo, Face):
-                    return [topo]
-                if isinstance(topo, Shell):
-                    fs = Shell.Faces(topo);         return fs if fs else []
-                if isinstance(topo, Cluster):
-                    return [t for t in Cluster.Topologies(topo) if isinstance(t, Face)]
-                return [t for t in Topology.SubTopologies(topo, "Face")]
-            except Exception:
-                return []
+            if Topology.IsInstance(topo, "face"):
+                return [topo]
+            else:
+                return Topology.Faces(topo)
 
-        cells = collect_cells(topology)
-        faces = [] if cells else collect_faces(topology)
-        if not cells and not faces:
+        def collect_edges(topo):
+            if Topology.IsInstance(topo, "edge"):
+                return [topo]
+            else:
+                return Topology.Edges(topo)
+        def collect_vertices(topo):
+            if Topology.IsInstance(topo, "vertex"):
+                return [topo]
+            else:
+                return Topology.Vertices(topo)
+
+        if Topology.IsInstance(topology, "cluster"):
+            cells = collect_cells(topology)
+            faces = collect_faces(topology)
+            edges = collect_edges(topology)
+            vertices = collect_vertices(topology)
+        else:
+            cells = collect_cells(topology)
+            faces = [] if cells else collect_faces(topology)
+            edges = [] if faces else collect_edges(topology)
+            vertices = [] if edges else collect_vertices(topology)
+        if not cells and not faces and not edges and not vertices:
             return False
 
         # --------------------------
         # Build BVH and fetch candidates
         # --------------------------
-        primitives = cells if cells else faces
+        primitives = []
+        primitives.extend(cells)
+        primitives.extend(faces)
+        primitives.extend(edges)
+        primitives.extend(vertices)
         bvh = BVH.ByTopologies(primitives, maxLeafSize=maxLeafSize, tolerance=tolerance, silent=True)
         try:
             candidates = BVH.Clashes(bvh, vertex) or []
