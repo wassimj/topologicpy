@@ -247,6 +247,7 @@ class Topology():
         for aperture in apertures:
             d = Topology.Dictionary(aperture)
             d = Dictionary.SetValueAtKey(d, "type", "Aperture")
+            aperture = Topology.SetDictionary(aperture, d)
         
         if subTopologyType == "self":
             topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
@@ -255,15 +256,16 @@ class Topology():
             bvh = BVH.ByTopologies(Topology.SubTopologies(topology, subTopologyType=subTopologyType))
             used = []
             for aperture in apertures:
-                d = Topology.Dictionary(aperture)
-                d = Dictionary.SetValueAtKey(d, "type", "Aperture")
-                aperture = Topology.SetDictionary(aperture, d)
-                subTopology = BVH.Clashes(bvh, aperture)[0]
-                used.append(subTopology)
-                if exclusive == True:
-                    if subTopology in used:
-                        continue
-                subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
+                result = BVH.Clashes(bvh, aperture)
+                if isinstance(result, list):
+                    if len(result) > 0:
+                        subTopology = result[0]
+                        if Topology.IsInstance(subTopology, "topology"):
+                            used.append(subTopology)
+                            if exclusive == True:
+                                if subTopology in used:
+                                    continue
+                            subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
         return topology
     
     @staticmethod
