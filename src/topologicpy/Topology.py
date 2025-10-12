@@ -273,6 +273,9 @@ class Topology():
             The input topology with the contents added to it.
 
         """
+
+        from topologicpy.Context import Context
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AddContent - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
@@ -292,10 +295,13 @@ class Topology():
             print("Topology.AddContent - Error: the input subtopology type parameter is not a recognized type. Returning None.")
             return None
         if subTopologyType.lower() == "self":
-            t = 0
+            context = Context.ByTopologyParameters(topology)
+            for content in contents:
+                content.AddContext(context) # Hook to Core
         else:
             t = Topology.TypeID(subTopologyType)
-        return topology.AddContents(contents, t)
+            topology.AddContents(contents, t) # Hook to Core
+        return 
     
     @staticmethod
     def AddDictionary(topology, dictionary):

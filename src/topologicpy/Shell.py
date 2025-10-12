@@ -1013,12 +1013,15 @@ class Shell():
     @staticmethod
     def InternalBoundaries(shell, tolerance=0.0001):
         """
-        Returns the internal boundaries (closed wires) of the input shell. Internal boundaries are considered holes.
+        Returns the internal boundaries of the input shell.
 
         Parameters
         ----------
         shell : topologic_core.Shell
             The input shell.
+        groupKey : str , optional
+            The edge dictionary key under which to save the edge group number. The default is "group".
+            Edges that separate the same faces belong to the same group.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -1028,19 +1031,54 @@ class Shell():
             The list of internal boundaries
 
         """
+        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        edges = []
-        _ = shell.Edges(None, edges)
+        from topologicpy.Dictionary import Dictionary
+        faces = Shell.Faces(shell)
+        for i, f in enumerate(faces):
+            d = Topology.Dictionary(f)
+            d = Dictionary.SetValueAtKey(d, "__id__", i)
+            f = Topology.SetDictionary(f, d)
+
+        edges = Topology.Edges(shell)
         ibEdges = []
+        groups = []
         for anEdge in edges:
-            faces = []
-            _ = anEdge.Faces(shell, faces)
+            faces = Topology.SuperTopologies(anEdge, shell, topologyType="face")
             if len(faces) > 1:
+                d = Topology.Dictionary(anEdge)
+                ids = []
+                for aFace in faces:
+                    face_d = Topology.Dictionary(aFace)
+                    ids.append(Dictionary.ValueAtKey(face_d, "__id__", -1))
+                ids.sort()
+                ids = str(ids)
+                groups.append(ids)
+                d = Dictionary.SetValueAtKey(d, "__group__", ids)
+                anEdge = Topology.SetDictionary(anEdge, d)
                 ibEdges.append(anEdge)
-        returnTopology = Topology.SelfMerge(Cluster.ByTopologies(ibEdges), tolerance=tolerance)
-        wires = Topology.Wires(returnTopology)
-        return wires
+                for aFace in faces:
+                    face_d = Topology.Dictionary(aFace)
+                    face_d = Dictionary.RemoveKey(face_d, "__id__")
+
+        groups = list(set(groups))
+        for edge in ibEdges:
+            d = Topology.Dictionary(edge)
+            id = groups.index(Dictionary.ValueAtKey(d, "__group__"))
+            d = Dictionary.SetValueAtKey(d, "__group__", id)
+        edge_groups = []
+        for group in groups:
+            edge_group = Topology.Filter(ibEdges, searchType="equal to", key="__group__", value=group)['filtered']
+            edge_groups.append(edge_group)
+        final_groups = []
+        for edge_group in edge_groups:
+            final_groups.append(Topology.SelfMerge(Cluster.ByTopologies(edge_group, silent=True), tolerance=tolerance))
+        for edge in ibEdges:
+            d = Topology.Dictionary(edge)
+            d = Dictionary.RemoveKey(d, "__group__")
+            edge = Topology.SetDictionary(edge, d)
+        return final_groups
 
     
     @staticmethod
@@ -1750,8 +1788,7 @@ class Shell():
             else:
                 return f
         elif Topology.IsInstance(ext_boundary, "Cluster"):
-            wires = []
-            _ = ext_boundary.Wires(None, wires)
+            wires = Topology.Wires(ext_boundary)
             faces = []
             areas = []
             for aWire in wires:
@@ -1770,8 +1807,7 @@ class Shell():
                 temp_wires = []
                 _ = int_boundary.Wires(None, temp_wires)
                 int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
-            temp_wires = []
-            _ = ext_boundary.Wires(None, temp_wires)
+            temp_wires = Topology.Wire(ext_boundary)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
             try:
                 return Face.ByWires(ext_wire, int_wires, tolerance=tolerance)
@@ -2067,7 +2103,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         vertices = []
-        _ = shell.Vertices(None, vertices)
+        _ = shell.Vertices(None, vertices) # Hook to core
         return vertices
 
     @staticmethod
@@ -2205,7 +2241,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         wires = []
-        _ = shell.Wires(None, wires)
+        _ = shell.Wires(None, wires) # Hook to core
         return wires
 
     

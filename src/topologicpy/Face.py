@@ -870,12 +870,14 @@ class Face():
                 print('caller name:', calframe[1][3])
             return None
         if not Wire.IsClosed(wire):
-            if not silent:
-                print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
-            return None
+            wire = Wire.Close(wire, tolerance=tolerance)
+            if not Wire.IsClosed(wire):
+                if not silent:
+                    print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                return None
         
         edges = Wire.Edges(wire)
         wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
@@ -1882,53 +1884,24 @@ class Face():
             The created vertex.
 
         """
-        def get_uv_radially():
-            """
-            Generate the points of a grid with a given size n, sorted radially from the center to the periphery.
-            n should be an odd number, ensuring that there's a center point (0, 0).
-            
-            Args:
-                n (int): The size of the grid. It should be odd for a clear center point.
-                
-            Returns:
-                list: A list of tuples (x, y) sorted by radial distance from the center (0, 0).
-            """
-            import math
-
-            points = []
-            n = 100
-            # Iterate over the grid, ranging from -n//2 to n//2
-            for x in range(-n//2, n//2 + 1):
-                for y in range(-n//2, n//2 + 1):
-                    points.append((x, y))
-            
-            # Sort points by their Euclidean distance from the center (0, 0)
-            points.sort(key=lambda point: math.sqrt(point[0]**2 + point[1]**2))
-            return_points = []
-            for p in points:
-                new_p = ((p[0]+50)*0.01, (p[1]+50)*0.01)
-                return_points.append(new_p)
-            return return_points
-        
         from topologicpy.Vertex import Vertex
+        from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
+        from topologicpy.BVH import BVH
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(face, "Face"):
-            return None
-        vert = Topology.Centroid(face)
-        if Vertex.IsInternal(vert, face, tolerance=tolerance):
-            return vert
-        uv_list = get_uv_radially()
-        for uv in uv_list:
-            u, v = uv
-            vert = Face.VertexByParameters(face, u, v)
-            if Vertex.IsInternal(vert, face, tolerance=tolerance):
-                return vert
-        if not silent:
-            print("Face.InternalVertex - Warning: Could not find an internal vertex. Returning the first vertex of the face.")
-        vert = Topology.Vertices(face)[0]
-        #v = topologic.FaceUtility.InternalVertex(face, tolerance) # Hook to Core
-        return vert
+        centroid = Topology.Centroid(face)
+        if Vertex.IsInternal(centroid, face):
+            return centroid
+
+        shell = Topology.Triangulate(face)
+        ib = Shell.InternalBoundaries(shell)
+        cluster = Cluster.ByTopologies(ib)
+        edges = Topology.Edges(cluster)
+        bvh = BVH.ByTopologies(edges, tolerance=tolerance, silent=True)
+        nearest_edge = BVH.Nearest(bvh, centroid)
+        return Topology.Centroid(nearest_edge)
+
 
     @staticmethod
     def Invert(face, tolerance: float = 0.0001, silent: bool = False):
