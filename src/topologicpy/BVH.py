@@ -296,7 +296,7 @@ class BVH:
         return out
     
     @staticmethod
-    def Clashes(bvh, *topologies, pad: float = 0.0, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Clashes(bvh, *topologies, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns candidate primitives (topologies) overlapping the BVH (AABB-level) of the input topologies list.
         You can follow up with precise TopologicPy geometry intersection if needed.
@@ -343,7 +343,6 @@ class BVH:
             if Topology.IsInstance(topology, "vertex"):
                 x,y,z = Vertex.Coordinates(topology, mantissa=mantissa)
                 points = [[x-tolerance, y-tolerance, z-tolerance], [x+tolerance, y+tolerance, z+tolerance]]
-                #topology = Cell.Prism(origin=topology, width=tolerance*2, length=tolerance*2, height=tolerance*2)
             else:
                 points = [Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(topology)]
             aabb_box = AABB.from_points(points, pad = tolerance)

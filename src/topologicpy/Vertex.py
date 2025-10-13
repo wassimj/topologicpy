@@ -750,17 +750,8 @@ class Vertex():
 
         """
         from topologicpy.Topology import Topology
-        
-        def boundingBox(cell):
-            vertices = Topology.Vertices(cell)
-            x = []
-            y = []
-            z = []
-            for aVertex in vertices:
-                x.append(Vertex.X(aVertex, mantissa=mantissa))
-                y.append(Vertex.Y(aVertex, mantissa=mantissa))
-                z.append(Vertex.Z(aVertex, mantissa=mantissa))
-            return ([min(x), min(y), min(z), max(x), max(y), max(z)])
+        from topologicpy.Cell import Cell
+        from topologicpy.BVH import BVH
         
         if Topology.IsInstance(topology, "Cell"):
             cells = [topology]
@@ -770,15 +761,17 @@ class Vertex():
             return None
         if len(cells) < 1:
             return None
+        
+        bvh = BVH.ByTopologies(cells, tolerance=tolerance, silent=True)
+        candidates = BVH.Clashes(bvh, vertex, tolerance=tolerance)
+        print("Vertex.EnclosingCells - candidates:", candidates)
         enclosingCells = []
-        for i in range(len(cells)):
-            bbox = boundingBox(cells[i])
-            if ((Vertex.X(vertex, mantissa=mantissa) < bbox[0]) or (Vertex.Y(vertex, mantissa=mantissa) < bbox[1]) or (Vertex.Z(vertex, mantissa=mantissa) < bbox[2]) or (Vertex.X(vertex, mantissa=mantissa) > bbox[3]) or (Vertex.Y(vertex, mantissa=mantissa) > bbox[4]) or (Vertex.Z(vertex, mantissa=mantissa) > bbox[5])) == False:
-                if Vertex.IsInternal(vertex, cells[i], tolerance=tolerance):
-                    if exclusive:
-                        return([cells[i]])
-                    else:
-                        enclosingCells.append(cells[i])
+        for i in range(len(candidates)):
+            if Vertex.IsInternal(vertex, candidates[i], tolerance=tolerance):
+                if exclusive:
+                    return([candidates[i]])
+                else:
+                    enclosingCells.append(candidates[i])
         return enclosingCells
 
     @staticmethod
@@ -1360,47 +1353,8 @@ class Vertex():
 
         # 3D containment in a Cell via ray casting (+X direction)
         def point_in_cell(vtx, cell, tol):
-            status = Cell.ContainmentStatus(cell, vertex, tolerance = tol) == 2
-            return status
-            # Boundary snap to cell (if available)
-            # try:
-            #     if Vertex.Distance(vtx, cell) <= tol:
-            #         return True
-            # except Exception:
-            #     pass
-
-            # # Ray origin (slightly nudged to avoid degeneracy when sitting on a face/edge)
-            # p = list(v_coords(vtx))
-            # p[0] = p[0] + 1e-12  # tiny nudge along +X
-            # p = (p[0], p[1], p[2])
-            # dirv = (1.0, 0.0, 0.0)
-
-            # # Intersect with faces
-            # try:
-            #     faces = Cell.Faces(cell) or []
-            # except Exception:
-            #     faces = [t for t in Topology.SubTopologies(cell, "Face")]
-            # if not faces:
-            #     return False
-
-            # hits = 0
-            # for f in faces:
-            #     # Quick boundary snap
-            #     try:
-            #         if Vertex.Distance(vtx, f) <= tol:
-            #             return True
-            #     except Exception:
-            #         pass
-            #     ip = ray_hits_face(p, dirv, f)
-            #     if ip is None:
-            #         continue
-            #     # Exclude intersections strictly behind the original (shouldn't happen with +X and t>=0 check)
-            #     if ip[0] + 1e-15 < p[0]:
-            #         continue
-            #     hits += 1
-
-            # # Odd-even rule
-            # return (hits % 2) == 1
+            status = Cell.ContainmentStatus(cell, vtx, tolerance = tol)
+            return status == 0
 
         # --------------------------
         # Check if inside AABB
