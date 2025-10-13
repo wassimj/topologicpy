@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.BVH module &mdash; topologicpy 0.8.61 documentation</title>
+  <title>topologicpy.BVH module &mdash; topologicpy 0.8.71 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.61
+                0.8.71
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -143,9 +143,10 @@
 <section id="module-topologicpy.BVH">
 <span id="topologicpy-bvh-module"></span><h1>topologicpy.BVH module<a class="headerlink" href="#module-topologicpy.BVH" title="Permalink to this heading"></a></h1>
 <dl class="py class">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.BVH.</span></span><span class="sig-name descname"><span class="pre">BVH</span></span><a class="headerlink" href="#topologicpy.BVH.BVH" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.BVH.</span></span><span class="sig-name descname"><span class="pre">AABB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">minx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">miny</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxx</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxz</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.AABB" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Axis-aligned bounding box: [minx,miny,minz]..[maxx,maxy,maxz].</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -153,75 +154,172 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.AABB" title="topologicpy.BVH.BVH.AABB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AABB</span></code></a>(min_point, max_point)</p></td>
-<td><p><p class="rubric">Methods</p>
-</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.BVHNode" title="topologicpy.BVH.BVH.BVHNode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BVHNode</span></code></a>(aabb[, left, right, objects])</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.ByTopologies" title="topologicpy.BVH.BVH.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, silent])</p></td>
-<td><p>Creates a BVH Tree from the input list of topologies.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Clashes" title="topologicpy.BVH.BVH.Clashes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clashes</span></code></a>(query)</p></td>
-<td><p>Returns a list of topologies in the input bvh tree that clashes (broad phase) with the list of topologies in the input query.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Graph" title="topologicpy.BVH.BVH.Graph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Graph</span></code></a>([tolerance, silent])</p></td>
-<td><p>Creates a graph from the input bvh tree.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.MeshObject" title="topologicpy.BVH.BVH.MeshObject"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshObject</span></code></a>(vertices, topologic_object)</p></td>
-<td><p></p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.QueryByTopologies" title="topologicpy.BVH.BVH.QueryByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryByTopologies</span></code></a>(*topologies[, silent])</p></td>
-<td><p>Creates a BVH Query from the input list of topologies.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.AABB.ray_intersect" title="topologicpy.BVH.AABB.ray_intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ray_intersect</span></code></a>(ro, rd)</p></td>
+<td><p>Ray-box intersection using the 'slab' method.</p></td>
 </tr>
 </tbody>
 </table>
-<dl class="py class">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.AABB">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AABB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_point</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.AABB" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p class="rubric">Methods</p>
 <table class="docutils align-default">
 <colgroup>
-<col style="width: 58%" />
-<col style="width: 42%" />
+<col style="width: 64%" />
+<col style="width: 36%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><strong>contains</strong></p></td>
+<tr class="row-odd"><td><p><strong>center</strong></p></td>
 <td></td>
 </tr>
-<tr class="row-even"><td><p><strong>intersects</strong></p></td>
+<tr class="row-even"><td><p><strong>contains_point</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>extent</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>from_points</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>overlaps</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>union</strong></p></td>
 <td></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.AABB.contains">
-<span class="sig-name descname"><span class="pre">contains</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.AABB.contains" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.center">
+<span class="sig-name descname"><span class="pre">center</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.center" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.AABB.intersects">
-<span class="sig-name descname"><span class="pre">intersects</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.AABB.intersects" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.contains_point">
+<span class="sig-name descname"><span class="pre">contains_point</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.contains_point" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.extent">
+<span class="sig-name descname"><span class="pre">extent</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.extent" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.from_points">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">from_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pad</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.from_points" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.maxx">
+<span class="sig-name descname"><span class="pre">maxx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.maxx" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.maxy">
+<span class="sig-name descname"><span class="pre">maxy</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.maxy" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.maxz">
+<span class="sig-name descname"><span class="pre">maxz</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.maxz" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.minx">
+<span class="sig-name descname"><span class="pre">minx</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.minx" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.miny">
+<span class="sig-name descname"><span class="pre">miny</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.miny" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.minz">
+<span class="sig-name descname"><span class="pre">minz</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">float</span></em><a class="headerlink" href="#topologicpy.BVH.AABB.minz" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.overlaps">
+<span class="sig-name descname"><span class="pre">overlaps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.overlaps" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.ray_intersect">
+<span class="sig-name descname"><span class="pre">ray_intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ro</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.ray_intersect" title="Permalink to this definition"></a></dt>
+<dd><p>Ray-box intersection using the ‘slab’ method.
+Returns (hit, tmin, tmax) in ray param t, where point = ro + t*rd.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.AABB.union">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></span><a class="headerlink" href="#topologicpy.BVH.AABB.union" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="py class">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.BVHNode">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BVHNode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">aabb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objects</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.BVHNode" title="Permalink to this definition"></a></dt>
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.BVH.</span></span><span class="sig-name descname"><span class="pre">BVH</span></span><a class="headerlink" href="#topologicpy.BVH.BVH" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-</dd></dl>
-
+<p>Basic Bounding Volume Hierarchy over TopologicPy topologies.</p>
+<dl>
+<dt>Usage:</dt><dd><p># 1) Prepare your primitives (Faces, Edges, Cells, etc.)
+faces = Topology.Faces(some_topology)  # or any list of topologies</p>
+<p># 2) Build the BVH
+bvh = BVH.FromTopologies(faces, max_leaf_size=4, pad=0.0, silent=False)</p>
+<p># 3) AABB query
+hits = bvh.QueryAABB(AABB(minx, miny, minz, maxx, maxy, maxz))</p>
+<p># 4) Raycast (rough): returns candidate primitive indices
+cand = bvh.Raycast((ox,oy,oz), (dx,dy,dz))</p>
+<p># 5) Nearest by centroid (coarse)
+idx, dist = bvh.Nearest((x,y,z))
+primitive = bvh.items[idx]</p>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.ByTopologies" title="topologicpy.BVH.BVH.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, maxLeafSize, ...])</p></td>
+<td><p>Creates a BVH Tree from the input list of topologies.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Clashes" title="topologicpy.BVH.BVH.Clashes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Clashes</span></code></a>(bvh, *topologies[, mantissa, ...])</p></td>
+<td><p>Returns candidate primitives (topologies) overlapping the BVH (AABB-level) of the input topologies list.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Depth" title="topologicpy.BVH.BVH.Depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Depth</span></code></a>(bvh)</p></td>
+<td><p>Returns an approximate depth of the BVH.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Nearest" title="topologicpy.BVH.BVH.Nearest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Nearest</span></code></a>(bvh, vertex[, mantissa, silent])</p></td>
+<td><p>Returns the topology with centroid nearest to the input vertex. Uses AABB distance lower-bounds to prune search. Parameters ---------- bvh : BVH     The bvh tree. vertex : topologic_core.Vertex     The input vertex. mantissa : int , optional     The desired length of the mantissa. Default is 6. silent : bool , optional     If set to True, error and warning messages are suppressed. Default is False.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.QueryAABB" title="topologicpy.BVH.BVH.QueryAABB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryAABB</span></code></a>(bvh, query_box)</p></td>
+<td><p>Return indices of items whose AABBs overlap query_box.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Raycast" title="topologicpy.BVH.BVH.Raycast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Raycast</span></code></a>(bvh, origin, direction[, mantissa, ...])</p></td>
+<td><p>Returns candidate primitives intersecting the BVH (AABB-level).</p></td>
+</tr>
+</tbody>
+</table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.BVH.BVH.ByTopologies">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.ByTopologies" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxLeafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><a class="reference internal" href="#topologicpy.BVH.BVH" title="topologicpy.BVH.BVH"><span class="pre">BVH</span></a></span></span><a class="headerlink" href="#topologicpy.BVH.BVH.ByTopologies" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a BVH Tree from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The list of topologies.</p>
+<dt><strong>*topologies: (tuple of Topologic topologies)</strong></dt><dd><p>One or more TopologicPy topologies to include in the BVH.
+Each topology is automatically analyzed to extract its vertices and compute an axis-aligned bounding box (AABB)
+for hierarchical spatial indexing.</p>
+</dd>
+<dt><strong>maxLeafSize: int , optional</strong></dt><dd><p>The maximum number of primitives (topologies) that can be stored in a single leaf node of the BVH.
+Smaller values result in deeper trees with finer spatial subdivision (potentially faster queries but slower build times),
+while larger values produce shallower trees with coarser spatial grouping (faster builds but less precise queries).
+Default is 4.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Tolerance is used for an optional margin added to all sides of each topology’s axis-aligned bounding box (AABB).
+This helps account for numerical precision errors or slight geometric inaccuracies.
+A small positive value ensures that closely adjacent or nearly touching primitives are
+properly enclosed within their bounding boxes. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -238,12 +336,24 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.BVH.BVH.Clashes">
-<span class="sig-name descname"><span class="pre">Clashes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">query</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Clashes" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a list of topologies in the input bvh tree that clashes (broad phase) with the list of topologies in the input query.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Clashes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Clashes" title="Permalink to this definition"></a></dt>
+<dd><p>Returns candidate primitives (topologies) overlapping the BVH (AABB-level) of the input topologies list.
+You can follow up with precise TopologicPy geometry intersection if needed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The list of topologies.</p>
+<dt><strong>bvh</strong><span class="classifier">BVH</span></dt><dd><p>The bvh tree.</p>
+</dd>
+<dt><strong>*topologies: (tuple of Topologic topologies)</strong></dt><dd><p>One or more TopologicPy topologies to include in the BVH.
+Each topology is automatically analyzed to extract its vertices and compute an axis-aligned bounding box (AABB)
+for hierarchical spatial indexing.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001. Tolerance is used for an optional margin added to all sides of each topology’s axis-aligned bounding box (AABB).
+This helps account for numerical precision errors or slight geometric inaccuracies.
+A small positive value ensures that closely adjacent or nearly touching primitives are
+properly enclosed within their bounding boxes. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -251,7 +361,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of clashing topologies (based on their axis-aligned bounding box (AABB))</p>
+<dt>list</dt><dd><p>The list of topologies that broadly interest the input list of topologies.</p>
 </dd>
 </dl>
 </dd>
@@ -259,43 +369,75 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.Graph">
-<span class="sig-name descname"><span class="pre">Graph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Graph" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a graph from the input bvh tree.</p>
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.Depth">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Depth</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#topologicpy.BVH.BVH.Depth" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an approximate depth of the BVH.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>bvh</strong><span class="classifier">BVH Tree</span></dt><dd><p>The input BVH Tree.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>bvh</strong><span class="classifier">BVH</span></dt><dd><p>The bvh tree.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The created graph.</p>
+<dt>int</dt><dd><p>The approximate depth of the input bvh tree.</p>
 </dd>
 </dl>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="py class">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.MeshObject">
-<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshObject</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologic_object</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.MeshObject" title="Permalink to this definition"></a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.BVH.BVH.QueryByTopologies">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QueryByTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.QueryByTopologies" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a BVH Query from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.</p>
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.Nearest">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Nearest" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the topology with centroid nearest to the input vertex.
+Uses AABB distance lower-bounds to prune search.
+Parameters
+———-
+bvh : BVH</p>
+<blockquote>
+<div><p>The bvh tree.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>vertex<span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+</dd>
+<dt>mantissa<span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
+</dd>
+<dt>silent<span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The topology with centroid nearest to the input vertex.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.QueryAABB">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">QueryAABB</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query_box</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.BVH.AABB" title="topologicpy.BVH.AABB"><span class="pre">AABB</span></a></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.QueryAABB" title="Permalink to this definition"></a></dt>
+<dd><p>Return indices of items whose AABBs overlap query_box.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.BVH.BVH.Raycast">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Raycast</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.BVH.BVH.Raycast" title="Permalink to this definition"></a></dt>
+<dd><p>Returns candidate primitives intersecting the BVH (AABB-level).
+You can follow up with precise TopologicPy geometry intersection if needed.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The list of topologies.</p>
+<dt><strong>bvh</strong><span class="classifier">BVH</span></dt><dd><p>The bvh tree.</p>
+</dd>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The origin of the ray vector</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">topologic_core.Vector</span></dt><dd><p>The direction of the raycast vector.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -303,7 +445,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>BVH query</dt><dd><p>The created BVH query.</p>
+<dt>list</dt><dd><p>The list of the indices of the possible candidates interesecting the input ray vector.</p>
 </dd>
 </dl>
 </dd>
