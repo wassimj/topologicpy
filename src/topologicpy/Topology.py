@@ -224,9 +224,17 @@ class Topology():
             The input topology with the apertures added to it.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
         from topologicpy.BVH import BVH
         
+        def best_candidate(aperture, candidates, tolerance=0.0001):
+            ap_iv = Topology.InternalVertex(aperture)
+            for candidate in candidates:
+                if Vertex.IsInternal(ap_iv, candidate, tolerance=tolerance):
+                    return candidate
+            return None
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AddApertures - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
@@ -256,16 +264,20 @@ class Topology():
             bvh = BVH.ByTopologies(Topology.SubTopologies(topology, subTopologyType=subTopologyType), silent=True)
             used = []
             for aperture in apertures:
-                result = BVH.Clashes(bvh, aperture)
-                if isinstance(result, list):
-                    if len(result) > 0:
-                        subTopology = result[0]
-                        if Topology.IsInstance(subTopology, "topology"):
-                            used.append(subTopology)
-                            if exclusive == True:
-                                if subTopology in used:
-                                    continue
-                            subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
+                candidates = BVH.Clashes(bvh, aperture)
+                if isinstance(candidates, list):
+                    if len(candidates) == 0:
+                        return topology
+                    elif len(candidates) == 1:
+                        subTopology = candidates[0]
+                    if len(candidates) > 0:
+                        subTopology = best_candidate(aperture, candidates, tolerance=tolerance)
+                    if Topology.IsInstance(subTopology, "topology"):
+                        used.append(subTopology)
+                        if exclusive == True:
+                            if subTopology in used:
+                                continue
+                        subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
         return topology
     
     @staticmethod
@@ -292,6 +304,8 @@ class Topology():
         """
 
         from topologicpy.Context import Context
+        from topologicpy.Dictionary import Dictionary
+
 
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AddContent - Error: the input topology parameter is not a valid topology. Returning None.")
@@ -311,14 +325,20 @@ class Topology():
         if not subTopologyType.lower() in ["self", "cellcomplex", "cell", "shell", "face", "wire", "edge", "vertex"]:
             print("Topology.AddContent - Error: the input subtopology type parameter is not a recognized type. Returning None.")
             return None
+        
+        copy_contents = [Topology.Copy(x) for x in contents]
+        for i, content in enumerate(contents):
+            d = Topology.Dictionary(content)
+            copy_contents[i] = Topology.SetDictionary(copy_contents[i], d)
+
         if subTopologyType.lower() == "self":
             context = Context.ByTopologyParameters(topology)
-            for content in contents:
+            for content in copy_contents:
                 content.AddContext(context) # Hook to Core
                 topology.AddContent(content) # Hook to Core
         else:
             t = Topology.TypeID(subTopologyType)
-            topology.AddContents(contents, t) # Hook to Core
+            topology.AddContents(copy_contents, t) # Hook to Core
         return topology
     
     @staticmethod
