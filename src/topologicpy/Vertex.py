@@ -1141,6 +1141,7 @@ class Vertex():
         vertex,
         topology,
         maxLeafSize: int = 4,
+        identify: bool = False,
         tolerance: float = 0.0006,
         silent: bool = True,
     ) -> bool:
@@ -1169,6 +1170,8 @@ class Vertex():
             Smaller values result in deeper trees with finer spatial subdivision (potentially faster queries but slower build times),
             while larger values produce shallower trees with coarser spatial grouping (faster builds but less precise queries).
             Default is 4.
+        identify: bool, optional
+            If set to True, a tuple is returned where the identified subTopology is returned (e.g. (True, edge)). Default is False.
         tolerance : float, optional
             Distance and numeric tolerance. Default 1e-7.
         silent : bool, optional
@@ -1189,6 +1192,8 @@ class Vertex():
         from topologicpy.Wire import Wire
         from topologicpy.Edge import Edge
         from topologicpy.BVH import BVH
+        from topologicpy.BVH import AABB
+        from topologicpy.Helper import Helper
 
         # --------------------------
         # Utilities
@@ -1334,62 +1339,76 @@ class Vertex():
                 return ip
             return None
 
+        # 2D containment in an Edge
+        def point_in_vertex(vtx, vertex, tol):
+            # Boundary snap first
+            if Vertex.Distance(vtx, vertex) <= tol:
+                return True
+            return False
+        
+        # 2D containment in an Edge
+        def point_in_edge(vtx, edge, tol):
+            # Boundary snap first
+            if Vertex.Distance(vtx, edge) <= tol:
+                return True
+            return False
+        
         # 2D containment in a Face (vertex assumed coplanar or nearly so)
         def point_in_face(vtx, face, tol):
-            # Boundary snap first
-            try:
-                if Vertex.Distance(vtx, face) <= tol:
-                    return True
-            except Exception:
-                pass
-            # Project test: use face normal to decide projection plane
-            n, d = face_plane(face)
-            ax = dominant_axis(n)
-            outer2d, holes2d = face_loops_2d(face, ax)
-            p2d = project_point(v_coords(vtx), ax)
-            return polygon_with_holes_contains_2d(p2d, outer2d, holes2d)
+            status = topologic.FaceUtility.IsInside(face, vtx, tol)
+            return status
 
         # 3D containment in a Cell via ray casting (+X direction)
         def point_in_cell(vtx, cell, tol):
+            status = Cell.ContainmentStatus(cell, vertex, tolerance = tol) == 2
+            return status
             # Boundary snap to cell (if available)
-            try:
-                if Vertex.Distance(vtx, cell) <= tol:
-                    return True
-            except Exception:
-                pass
+            # try:
+            #     if Vertex.Distance(vtx, cell) <= tol:
+            #         return True
+            # except Exception:
+            #     pass
 
-            # Ray origin (slightly nudged to avoid degeneracy when sitting on a face/edge)
-            p = list(v_coords(vtx))
-            p[0] = p[0] + 1e-12  # tiny nudge along +X
-            p = (p[0], p[1], p[2])
-            dirv = (1.0, 0.0, 0.0)
+            # # Ray origin (slightly nudged to avoid degeneracy when sitting on a face/edge)
+            # p = list(v_coords(vtx))
+            # p[0] = p[0] + 1e-12  # tiny nudge along +X
+            # p = (p[0], p[1], p[2])
+            # dirv = (1.0, 0.0, 0.0)
 
-            # Intersect with faces
-            try:
-                faces = Cell.Faces(cell) or []
-            except Exception:
-                faces = [t for t in Topology.SubTopologies(cell, "Face")]
-            if not faces:
-                return False
+            # # Intersect with faces
+            # try:
+            #     faces = Cell.Faces(cell) or []
+            # except Exception:
+            #     faces = [t for t in Topology.SubTopologies(cell, "Face")]
+            # if not faces:
+            #     return False
 
-            hits = 0
-            for f in faces:
-                # Quick boundary snap
-                try:
-                    if Vertex.Distance(vtx, f) <= tol:
-                        return True
-                except Exception:
-                    pass
-                ip = ray_hits_face(p, dirv, f)
-                if ip is None:
-                    continue
-                # Exclude intersections strictly behind the original (shouldn't happen with +X and t>=0 check)
-                if ip[0] + 1e-15 < p[0]:
-                    continue
-                hits += 1
+            # hits = 0
+            # for f in faces:
+            #     # Quick boundary snap
+            #     try:
+            #         if Vertex.Distance(vtx, f) <= tol:
+            #             return True
+            #     except Exception:
+            #         pass
+            #     ip = ray_hits_face(p, dirv, f)
+            #     if ip is None:
+            #         continue
+            #     # Exclude intersections strictly behind the original (shouldn't happen with +X and t>=0 check)
+            #     if ip[0] + 1e-15 < p[0]:
+            #         continue
+            #     hits += 1
 
-            # Odd-even rule
-            return (hits % 2) == 1
+            # # Odd-even rule
+            # return (hits % 2) == 1
+
+        # --------------------------
+        # Check if inside AABB
+        # --------------------------
+        points = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
+        aabb = AABB.from_points(points)
+        if not aabb.contains_point(Vertex.Coordinates(vertex)):
+            return False
 
         # --------------------------
         # Collect primitives
@@ -1434,13 +1453,13 @@ class Vertex():
         # Build BVH and fetch candidates
         # --------------------------
         primitives = []
-        primitives.extend(cells)
-        primitives.extend(faces)
-        primitives.extend(edges)
         primitives.extend(vertices)
+        primitives.extend(edges)
+        primitives.extend(faces)
+        primitives.extend(cells)
         bvh = BVH.ByTopologies(primitives, maxLeafSize=maxLeafSize, tolerance=tolerance, silent=True)
         try:
-            candidates = BVH.Clashes(bvh, vertex) or []
+            candidates = BVH.Clashes(bvh, vertex, tolernace=tolerance) or []
         except Exception:
             # Fallback if your BVH needs a non-degenerate query
             candidates = primitives
@@ -1448,28 +1467,58 @@ class Vertex():
         if not candidates:
             return False
 
+        # sort by types so that priority is given to lower dimensional types (e.g. vertices, then edges, then faces, then cells)
+        types = [Topology.Type(c) for c in candidates]
+        candidates = Helper.Sort(candidates, types)
         # --------------------------
         # Narrow phase
         # --------------------------
-        if cells:
-            for c in candidates:
+        for c in candidates:
+            if Topology.IsInstance(c, "cell"):
                 # Exact geometric test
                 try:
                     if point_in_cell(vertex, c, tolerance):
-                        return True
+                        if identify:
+                            return (True, c)
+                        else:
+                            return True
                 except Exception:
                     if not silent:
                         print("Warning: point_in_cell failed on a candidate.")
-            return False
-        else:
-            for f in candidates:
+            elif Topology.IsInstance(c, "face"):
                 try:
-                    if point_in_face(vertex, f, tolerance):
+                    if point_in_face(vertex, c, tolerance):
+                        if identify:
+                            return (True, c)
+                        else:
+                            return True
                         return True
                 except Exception:
                     if not silent:
                         print("Warning: point_in_face failed on a candidate.")
-            return False
+            elif Topology.IsInstance(c, "edge"):
+                try:
+                    if point_in_edge(vertex, c, tolerance):
+                        if identify:
+                            return (True, c)
+                        else:
+                            return True
+                except Exception:
+                    if not silent:
+                        print("Warning: point_in_edge failed on a candidate.")
+            elif Topology.IsInstance(c, "vertex"):
+                try:
+                    if point_in_vertex(vertex, c, tolerance):
+                        if identify:
+                            return (True, c)
+                        else:
+                            return True
+                except Exception:
+                    if not silent:
+                        print("Warning: point_in_vertex failed on a candidate.")
+        if identify:
+            return (False, None)
+        return False
     
     @staticmethod
     def IsPeripheral(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:

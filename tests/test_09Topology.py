@@ -1,8 +1,6 @@
 # Topology Classes unit test
 
 #Importing libraries
-import sys
-
 import topologicpy 
 import topologic_core as topologic
 from topologicpy.Aperture import Aperture
@@ -94,13 +92,15 @@ def test_main():
 
     # case 2 - AddContent
     print("Case 2")
-    contents1 = [box2, prism2]                                            # create content
-    contents2 = [box1, box3]                                              # create content
+    contents1 = [Topology.Copy(box2), Topology.Copy(prism2)]                                            # create content
+    contents2 = [Topology.Copy(box1), Topology.Copy(box3)]                                              # create content
     # test 1
-    addC1 = Topology.AddContent(box1, contents1)
+    addC1 = Topology.AddContent(Topology.Copy(box1), contents1)
+    t = Topology.Contents(addC1)
+    print("contents:", t)
     assert Topology.IsInstance(addC1, "Topology"), "Topology.AddContent. Should be topologic.Topologic"
     # test 2
-    addC2 = Topology.AddContent(box2, contents2)
+    addC2 = Topology.AddContent(Topology.Copy(box2), contents2)
     assert Topology.IsInstance(addC2, "Topology"), "Topology.AddContent. Should be topologic.Topologic"
     # plot geometry
     # geo1 = Plotly.DataByTopology(addC1)                       # create plotly data

@@ -885,7 +885,10 @@ class Dictionary():
             temp_value = attr.StringValue()
             topologies = None
             try:
-                topologies = Topology.ByJSONString(temp_value)
+                if is_json_string(temp_value):
+                    topologies = Topology.ByJSONString(temp_value)
+                else:
+                    topologies = None
             except:
                 topologies = None
             if isinstance(topologies, list):
@@ -910,13 +913,21 @@ class Dictionary():
         elif isinstance(attr, float) or isinstance(attr, int):
             return attr
         elif isinstance(attr, str):
-            topologies = Topology.ByJSONString(attr)
             if attr == "__NONE__":
                 return None
-            elif len(topologies) > 1:
-                return topologies
-            elif len(topologies) == 1:
-                return topologies[0]
+            topologies = None
+            try:
+                if is_json_string(attr):
+                    topologies = Topology.ByJSONString(attr)
+                else:
+                    topologies = None
+            except:
+                topologies = None
+            if isinstance(topologies, list):
+                if len(topologies) > 1:
+                    return topologies
+                elif len(topologies) == 1:
+                    return topologies[0]
             elif is_json_string(attr):
                 return json_to_dict(attr)
             else:

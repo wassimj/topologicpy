@@ -253,7 +253,7 @@ class Topology():
             topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
             return topology
         else:
-            bvh = BVH.ByTopologies(Topology.SubTopologies(topology, subTopologyType=subTopologyType))
+            bvh = BVH.ByTopologies(Topology.SubTopologies(topology, subTopologyType=subTopologyType), silent=True)
             used = []
             for aperture in apertures:
                 result = BVH.Clashes(bvh, aperture)
@@ -2710,11 +2710,15 @@ class Topology():
             The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
 
         """
+        import inspect
         try:
             json_dict = json.loads(string)
         except Exception as e:
             if not silent:
                 print(f"Topology.ByJSONString - Error: Could not read the input string: {e}. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None 
         return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
 
@@ -9758,45 +9762,9 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Cluster import Cluster
-        from topologicpy.Plotly import Plotly
-
-
-        def transfer_dictionaries_by_selectors(object, selectors, tranVertices=False, tranEdges=False, tranFaces=False, tranCells=False, tolerance=0.0001):
-            if tranVertices == True:
-                vertices = Topology.Vertices(object)
-                for vertex in vertices:
-                    for selector in selectors:
-                        d = Vertex.Distance(selector, vertex)
-                        if d <= tolerance:
-                            vertex = Topology.SetDictionary(vertex, Topology.Dictionary(selector), silent=True)
-                            break
-            if tranEdges == True:
-                edges = Topology.Edges(object)
-                for selector in selectors:
-                    for edge in edges:
-                        d = Vertex.Distance(selector, edge)
-                        if d <= tolerance:
-
-                            edge = Topology.SetDictionary(edge, Topology.Dictionary(selector), silent=True)
-                            break
-            if tranFaces == True:
-                faces = Topology.Faces(object)
-                for face in faces:
-                    for selector in selectors:
-                        d = Vertex.Distance(selector, face)
-                        if d <= tolerance:
-                            face = Topology.SetDictionary(face, Topology.Dictionary(selector), silent=True)
-                            break
-            if tranCells == True:
-                cells = Topology.Cells(object)
-                for cell in cells:
-                    for selector in selectors:
-                        if Vertex.IsInternal(selector, cell):
-                            cell = Topology.SetDictionary(cell, Topology.Dictionary(selector), silent=True)
-                            break
-            return object
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.BVH import BVH
         
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.TransferDictionariesBySelectors - Error: The input topology parameter is not a valid topology. Returning None.")
@@ -9804,51 +9772,65 @@ class Topology():
         if not isinstance(selectors, list):
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors parameter is not a valid list. Returning None.")
             return None
-        if numWorkers == None:
-            import multiprocessing
-            numWorkers = multiprocessing.cpu_count()*2
         selectors_tmp = [x for x in selectors if Topology.IsInstance(x, "Vertex")]
         if len(selectors_tmp) < 1:
             print("Topology.TransferDictionariesBySelectors - Error: The input selectors do not contain any valid topologies. Returning None.")
             return None
         
-        if numWorkers == 1:
-            return transfer_dictionaries_by_selectors(topology, selectors, tranVertices=tranVertices, tranEdges=tranEdges, tranFaces=tranFaces, tranCells=tranCells, tolerance=tolerance)
-        sinkEdges = []
-        sinkFaces = []
-        sinkCells = []
-        hidimSink = Topology.HighestType(topology)
-        if tranVertices == True:
-            sinkVertices = []
-            if Topology.Type(topology) == Topology.TypeID("Vertex"):
-                sinkVertices.append(topology)
-            elif hidimSink >= Topology.TypeID("Vertex"):
-                sinkVertices = Topology.Vertices(topology)
-            _ = Topology.TransferDictionaries(selectors, sinkVertices, tolerance=tolerance, numWorkers=numWorkers)
-        if tranEdges == True:
-            sinkEdges = []
-            if Topology.Type(topology) == Topology.TypeID("Edge"):
-                sinkEdges.append(topology)
-            elif hidimSink >= Topology.TypeID("Edge"):
-                topology.Edges(None, sinkEdges)
-                _ = Topology.TransferDictionaries(selectors, sinkEdges, tolerance=tolerance, numWorkers=numWorkers)
-        if tranFaces == True:
-            sinkFaces = []
-            if Topology.Type(topology) == Topology.TypeID("Face"):
-                sinkFaces.append(topology)
-            elif hidimSink >= Topology.TypeID("Face"):
-                topology.Faces(None, sinkFaces)
-            _ = Topology.TransferDictionaries(selectors, sinkFaces, tolerance=tolerance, numWorkers=numWorkers)
-        if tranCells == True:
-            sinkCells = []
-            if Topology.IsInstance(topology, "Cell"):
-                sinkCells = [topology]
-            elif hidimSink >= Topology.TypeID("Cell"):
-                sinkCells = Topology.Cells(topology)
-            _ = Topology.TransferDictionaries(selectors, sinkCells, tolerance=tolerance, numWorkers=numWorkers)
+        
+        # --------------------------
+        # Collect primitives
+        # --------------------------
+        def collect_cells(topo):
+            if Topology.IsInstance(topo, "cell"):
+                return [topo]
+            else:
+                return Topology.Cells(topo)
+
+        def collect_faces(topo):
+            if Topology.IsInstance(topo, "face"):
+                return [topo]
+            else:
+                return Topology.Faces(topo)
+
+        def collect_edges(topo):
+            if Topology.IsInstance(topo, "edge"):
+                return [topo]
+            else:
+                return Topology.Edges(topo)
+        def collect_vertices(topo):
+            if Topology.IsInstance(topo, "vertex"):
+                return [topo]
+            else:
+                return Topology.Vertices(topo)
+
+        vertices = []
+        edges = []
+        faces = []
+        cells = []
+        if tranVertices:
+            vertices = collect_vertices(topology)
+        if tranEdges:
+            edges = collect_edges(topology)
+        if tranFaces:
+            faces = collect_faces(topology)
+        if tranCells:
+            cells = collect_cells(topology)
+        primitives = []
+        primitives.extend(cells)
+        primitives.extend(faces)
+        primitives.extend(edges)
+        primitives.extend(vertices)
+        cluster = Cluster.ByTopologies(primitives)
+        for s in selectors:
+            status, element = Vertex.IsInternal(s, cluster, identify=True, tolerance=tolerance)
+            if status:
+                d1 = Topology.Dictionary(s)
+                d2 = Topology.Dictionary(element)
+                d3 = Dictionary.ByMergedDictionaries(d1, d2)
+                element = Topology.SetDictionary(element, d3)
         return topology
 
-    
     @staticmethod
     def Transform(topology, matrix: list, silent: bool = False):
         """
