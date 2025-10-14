@@ -913,6 +913,7 @@ class Cell():
 
         """
         from topologicpy.Topology import Topology
+        import math
 
         if not Topology.IsInstance(cell, "Cell"):
             print("Cell.ContainmentStatus - Error: The input cell parameter is not a valid topologic cell. Returning None.")
@@ -920,14 +921,28 @@ class Cell():
         if not Topology.IsInstance(vertex, "Vertex"):
             print("Cell.ContainmentStatus - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
+        
+        # topologic.CellUtility.Contains does not seem to respect the input tolerance. Thus we need to send eight additional vertices
+        # to check if any are contained and take the average result.
+        
+        test_vertices = [vertex]
+        if tolerance > 0:
+            test_cell = Cell.Prism(origin=vertex, width=tolerance*2, length=tolerance*2, height=tolerance*2, tolerance=tolerance)
+            test_vertices.extend(Topology.Vertices(test_cell))
         try:
-            status = topologic.CellUtility.Contains(cell, vertex, tolerance) # Hook to Core
-            if status == 0:
-                return 0
-            elif status == 1:
-                return 1
-            else:
-                return 2
+            av_results = []
+            for v in test_vertices:
+                
+                result  = topologic.CellUtility.Contains(cell, v, tolerance) # Hook to Core
+                if result == 0:
+                    status = 0
+                elif result == 1:
+                    status = 1
+                else:
+                    status = 2
+                av_results.append(status)
+            return min(av_results)
+            
         except:
             print("Cell.ContainmentStatus - Error: Could not determine containment status. Returning None.")
             return None

@@ -1325,8 +1325,8 @@ class Vertex():
         else:
             cells = collect_cells(topology)
             faces = [] if cells else collect_faces(topology)
-            edges = [] if faces else collect_edges(topology)
-            vertices = [] if edges else collect_vertices(topology)
+            edges = [] if faces or cells else collect_edges(topology)
+            vertices = [] if edges or faces or cells else collect_vertices(topology)
         if not cells and not faces and not edges and not vertices:
             return False
 
