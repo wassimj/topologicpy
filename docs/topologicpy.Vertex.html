@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.72 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.73 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.72
+                0.8.73
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -220,7 +220,7 @@
 <td><p>Returns True if the input vertex is external to the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsInternal" title="topologicpy.Vertex.Vertex.IsInternal"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsInternal</span></code></a>(vertex, topology[, maxLeafSize, ...])</p></td>
-<td><p>Returns True if <cite>vertex</cite> lies inside (or on the boundary of) <cite>topology</cite>.</p></td>
+<td><p>Returns True if the input vertex lies inside the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsPeripheral" title="topologicpy.Vertex.Vertex.IsPeripheral"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPeripheral</span></code></a>(vertex, topology[, tolerance, ...])</p></td>
 <td><p>Returns True if the input vertex is peripheral to the input topology.</p></td>
@@ -814,21 +814,8 @@ coincident with the input vertex.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.IsInternal">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsInternal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxLeafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identify</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0006</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Vertex.Vertex.IsInternal" title="Permalink to this definition"></a></dt>
-<dd><p>Returns True if <cite>vertex</cite> lies inside (or on the boundary of) <cite>topology</cite>.</p>
-<p>Broad-phase:
-- Build a BVH over Cells (3D) or Faces (2D) using BVH.ByTopologies.
-- Query via BVH.Clashes(bvh, vertex) to get only nearby primitives.</p>
-<p>Narrow-phase (geometric, no Topology.IsInternal):
-- Boundary snap: if Vertex.Distance(vertex, primitive) &lt;= tolerance -&gt; inside.
-- 3D: Cast a ray (+X direction). For each candidate Cell, intersect the ray with its Faces.</p>
-<blockquote>
-<div><p>For each intersected Face: project face polygon(s) to 2D (dominant-axis drop) and
-test point-in-polygon (outer minus holes). Odd number of valid intersections =&gt; inside.</p>
-</div></blockquote>
-<ul class="simple">
-<li><p>2D: Project the Face loops to 2D and do point-in-polygon (outer minus holes).</p></li>
-</ul>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsInternal</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxLeafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">identify</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.IsInternal" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the input vertex lies inside the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -843,9 +830,9 @@ Default is 4.</p>
 </dd>
 <dt><strong>identify: bool, optional</strong></dt><dd><p>If set to True, a tuple is returned where the identified subTopology is returned (e.g. (True, edge)). Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>Distance and numeric tolerance. Default 1e-7.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>Suppress non-critical prints.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
