@@ -1135,22 +1135,11 @@ class Vertex():
         topology,
         maxLeafSize: int = 4,
         identify: bool = False,
-        tolerance: float = 0.0006,
-        silent: bool = True,
-    ) -> bool:
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns True if `vertex` lies inside (or on the boundary of) `topology`.
-
-        Broad-phase:
-        - Build a BVH over Cells (3D) or Faces (2D) using BVH.ByTopologies.
-        - Query via BVH.Clashes(bvh, vertex) to get only nearby primitives.
-
-        Narrow-phase (geometric, no Topology.IsInternal):
-        - Boundary snap: if Vertex.Distance(vertex, primitive) <= tolerance -> inside.
-        - 3D: Cast a ray (+X direction). For each candidate Cell, intersect the ray with its Faces.
-                For each intersected Face: project face polygon(s) to 2D (dominant-axis drop) and
-                test point-in-polygon (outer minus holes). Odd number of valid intersections => inside.
-        - 2D: Project the Face loops to 2D and do point-in-polygon (outer minus holes).
+        Returns True if the input vertex lies inside the input topology.
 
         Parameters
         ----------
@@ -1166,9 +1155,9 @@ class Vertex():
         identify: bool, optional
             If set to True, a tuple is returned where the identified subTopology is returned (e.g. (True, edge)). Default is False.
         tolerance : float, optional
-            Distance and numeric tolerance. Default 1e-7.
-        silent : bool, optional
-            Suppress non-critical prints.
+            The desired tolerance. Default 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1191,11 +1180,6 @@ class Vertex():
         # --------------------------
         # Utilities
         # --------------------------
-        def v_coords(v):
-            return Vertex.X(v), Vertex.Y(v), Vertex.Z(v)
-
-        def vec_sub(a, b):
-            return (a[0]-b[0], a[1]-b[1], a[2]-b[2])
 
         def vec_dot(a, b):
             return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
@@ -1211,29 +1195,6 @@ class Vertex():
             if l == 0:
                 return (0.0, 0.0, 0.0)
             return (a[0]/l, a[1]/l, a[2]/l)
-
-        # Plane from 3 points
-        def face_plane(face):
-            # Returns (n, d) where plane: n·X + d = 0; n is unit normal.
-            # Use first 3 distinct points of the external boundary.
-            w_ext = Face.ExternalBoundary(face)
-            verts = Wire.Vertices(w_ext)
-            pts = [v_coords(v) for v in verts]
-            # Find non-collinear triplet
-            p0 = pts[0]
-            n = None
-            for i in range(1, len(pts)-1):
-                v1 = vec_sub(pts[i], p0)
-                v2 = vec_sub(pts[i+1], p0)
-                n_try = vec_cross(v1, v2)
-                if vec_len(n_try) > 1e-15:
-                    n = vec_norm(n_try)
-                    break
-            if n is None:
-                # Degenerate face; assign arbitrary normal
-                n = (1.0, 0.0, 0.0)
-            d = -vec_dot(n, p0)
-            return n, d
 
         def dominant_axis(n):
             # Return axis to drop when projecting to 2D (index 0=x,1=y,2=z)
@@ -1252,13 +1213,6 @@ class Vertex():
             else:
                 return (p[0], p[1])
 
-        def ray_plane_intersection(orig, dirv, n, d):
-            # Solve n·(orig + t*dir) + d = 0  -> t = -(n·orig + d) / (n·dir)
-            ndotdir = vec_dot(n, dirv)
-            if abs(ndotdir) < 1e-15:
-                return None  # parallel
-            t = -(vec_dot(n, orig) + d) / ndotdir
-            return t
 
         # 2D point-in-polygon (ray crossing). Polygon is list of 2D points (closed or open).
         def pip_ray_cross_2d(pt, poly):
@@ -1300,38 +1254,6 @@ class Vertex():
                     return False
             return True
 
-        def face_loops_2d(face, drop_axis):
-            # Returns (outer2d, [hole2d,...])
-            w_ext = Face.ExternalBoundary(face)
-            outer_vs = Wire.Vertices(w_ext)
-            outer = [project_point(v_coords(v), drop_axis) for v in outer_vs]
-
-            holes_2d = []
-            try:
-                inner_wires = Face.InternalBoundaries(face) or []
-            except Exception:
-                inner_wires = []
-            for w in inner_wires:
-                vs = Wire.Vertices(w)
-                holes_2d.append([project_point(v_coords(v), drop_axis) for v in vs])
-            return outer, holes_2d
-
-        # Ray casting against one face; returns hit-point (3D) if the ray hits inside the face.
-        def ray_hits_face(orig, dirv, face, tol=1e-12):
-            n, d = face_plane(face)
-            t = ray_plane_intersection(orig, dirv, n, d)
-            if t is None or t < -tol:
-                return None  # behind or parallel
-            # Intersection point
-            ip = (orig[0] + t*dirv[0], orig[1] + t*dirv[1], orig[2] + t*dirv[2])
-            # Project to 2D in face's dominant plane and do PIP against loops
-            ax = dominant_axis(n)
-            outer2d, holes2d = face_loops_2d(face, ax)
-            ip2d = project_point(ip, ax)
-            if polygon_with_holes_contains_2d(ip2d, outer2d, holes2d):
-                return ip
-            return None
-
         # 2D containment in an Edge
         def point_in_vertex(vtx, vertex, tol):
             # Boundary snap first
@@ -1348,7 +1270,12 @@ class Vertex():
         
         # 2D containment in a Face (vertex assumed coplanar or nearly so)
         def point_in_face(vtx, face, tol):
-            status = topologic.FaceUtility.IsInside(face, vtx, tol)
+            dist = Vertex.PerpendicularDistance(vtx, face)
+            if dist <= tol:
+                vtx2 = Vertex.Project(vtx, face)
+                status = topologic.FaceUtility.IsInside(face, vtx2, tol)
+            else:
+                status = False
             return status
 
         # 3D containment in a Cell via ray casting (+X direction)
@@ -1360,7 +1287,7 @@ class Vertex():
         # Check if inside AABB
         # --------------------------
         points = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
-        aabb = AABB.from_points(points)
+        aabb = AABB.from_points(points, pad=tolerance)
         if not aabb.contains_point(Vertex.Coordinates(vertex)):
             return False
 
