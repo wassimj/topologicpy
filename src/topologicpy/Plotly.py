@@ -1182,7 +1182,7 @@ class Plotly:
         if Topology.Type(topology) == Topology.TypeID("Vertex"):
             tp_vertices = [topology]
         else:
-            tp_vertices = Topology.Vertices(topology)
+            tp_vertices = Topology.Vertices(topology, silent=True)
         
         if isinstance(intensities, list):
             if len(intensities) == 0:

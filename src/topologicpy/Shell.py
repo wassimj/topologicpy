@@ -182,7 +182,7 @@ class Shell():
 
             shell = Topology.Slice(internalBoundary, skeleton_cluster, tolerance=tolerance)
             if mergeJunctions == True:
-                vertices = Topology.Vertices(shell)
+                vertices = Topology.Vertices(shell, silent=True)
                 centers = []
                 used = []
                 for v in vertices:
@@ -204,7 +204,7 @@ class Shell():
                     new_edges.append(Edge.ByVertices([sv,ev], tolerance=tolerance))
                 cluster = Cluster.ByTopologies(new_edges)
 
-                vertices = Topology.Vertices(cluster)
+                vertices = Topology.Vertices(cluster, silent=True)
                 edges = Topology.Edges(shell)
 
                 xList = list(set([Vertex.X(v, mantissa=mantissa) for v in vertices]))
@@ -618,7 +618,7 @@ class Shell():
             origin = Topology.Centroid(face)
             normal = Face.Normal(face, mantissa=mantissa)
             flatFace = Topology.Flatten(face, origin=origin, direction=normal)
-            faceVertices = Topology.Vertices(face)
+            faceVertices = Topology.Vertices(face, silent=True)
             vertices += faceVertices
 
             # Create a cluster of the input vertices
@@ -627,7 +627,7 @@ class Shell():
             # Flatten the cluster using the same transformations
             verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
 
-            vertices = Topology.Vertices(verticesCluster)
+            vertices = Topology.Vertices(verticesCluster, silent=True)
         points = []
         for v in vertices:
             points.append([Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa)])
@@ -975,8 +975,7 @@ class Shell():
         returnTopology = Shell.ByFaces(faces, tolerance=tolerance)
         if not returnTopology:
             returnTopology = Cluster.ByTopologies(faces)
-        vertices = []
-        _ = returnTopology.Vertices(None, vertices)
+        vertices = Topology.Vertices(returnTopology, silent=True)
         xList = []
         yList = []
         zList = []
@@ -1238,7 +1237,7 @@ class Shell():
         
         total_angle = 180*twists
         cir = Wire.Circle(origin=origin, radius=radius, sides=uSides)
-        c_verts = Topology.Vertices(cir)
+        c_verts = Topology.Vertices(cir, silent=True)
         wires = []
         for i, v in enumerate(c_verts):
             vb = Vertex.ByCoordinates(Vertex.X(v), Vertex.Y(v), -height*0.5)
@@ -1538,8 +1537,7 @@ class Shell():
             print("Shell.Planarize - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         
-        vertices = Topology.Vertices(shell)
-        faces = Topology.Faces(shell)
+        vertices = Topology.Vertices(shell, silent=True)
         plane_equation = Vertex.PlaneEquation(vertices, mantissa=mantissa)
         rect = Face.RectangleByPlaneEquation(origin=origin , equation=plane_equation, tolerance=tolerance)
         new_vertices = [Vertex.Project(v, rect, mantissa=mantissa) for v in vertices]
@@ -1706,19 +1704,19 @@ class Shell():
         for face in faces:
             internalBoundaries = Face.InternalBoundaries(face)
             if len(internalBoundaries) == 0:
-                if len(Topology.Vertices(face)) > 3:
+                if len(Topology.Vertices(face, silent=True)) > 3:
                     triangles += Face.Triangulate(face, tolerance=tolerance)
                 else:
                     triangles += [face]
 
-        roof_vertices = Topology.Vertices(roof)
+        roof_vertices = Topology.Vertices(roof, silent=True)
         flat_vertices = []
         for rv in roof_vertices:
             flat_vertices.append(Vertex.ByCoordinates(Vertex.X(rv, mantissa=mantissa), Vertex.Y(rv, mantissa=mantissa), 0))
 
         final_triangles = []
         for triangle in triangles:
-            if len(Topology.Vertices(triangle)) > 3:
+            if len(Topology.Vertices(triangle, silent=True)) > 3:
                 triangles = Face.Triangulate(triangle, tolerance=tolerance)
             else:
                 triangles = [triangle]
@@ -1726,7 +1724,7 @@ class Shell():
 
         final_faces = []
         for triangle in final_triangles:
-            face_vertices = Topology.Vertices(triangle)
+            face_vertices = Topology.Vertices(triangle, silent=True)
             top_vertices = []
             for sv in face_vertices:
                 temp = nearest_vertex_2d(sv, roof_vertices, tolerance=tolerance)
@@ -1865,7 +1863,7 @@ class Shell():
             if isinstance(wire, list):
                 points = wire
             else:
-                points = Topology.Vertices(wire)
+                points = Topology.Vertices(wire, silent=True)
                 # points.insert(0, points.pop())
             if len(points) <= 2:
                 return points
@@ -2152,12 +2150,12 @@ class Shell():
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
         eb = Face.ExternalBoundary(flatFace)
         ibList = Face.InternalBoundaries(flatFace)
-        temp_verts = Topology.Vertices(eb)
+        temp_verts = Topology.Vertices(eb, silent=True)
         new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
         eb = Wire.ByVertices(new_verts, close=True)
         new_ibList = []
         for ib in ibList:
-            temp_verts = Topology.Vertices(ib)
+            temp_verts = Topology.Vertices(ib, silent=True)
             new_verts = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in temp_verts]
             new_ibList.append(Wire.ByVertices(new_verts, close=True))
         flatFace = Face.ByWires(eb, new_ibList)
@@ -2167,14 +2165,14 @@ class Shell():
 
         # Flatten the cluster using the same transformations
         verticesCluster = Topology.Flatten(verticesCluster, origin=origin, direction=normal)
-        flatVertices = Topology.Vertices(verticesCluster)
+        flatVertices = Topology.Vertices(verticesCluster, silent=True)
         flatVertices = [Vertex.ByCoordinates(Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), 0) for v in flatVertices]
         points = []
         for flatVertex in flatVertices:
             points.append([Vertex.X(flatVertex, mantissa=mantissa), Vertex.Y(flatVertex, mantissa=mantissa)])
 
         br = Wire.BoundingRectangle(flatFace)
-        br_vertices = Topology.Vertices(br)
+        br_vertices = Topology.Vertices(br, silent=True)
         br_x = []
         br_y = []
         for br_v in br_vertices:

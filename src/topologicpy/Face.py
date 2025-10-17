@@ -388,8 +388,8 @@ class Face():
                                     tolerance=tolerance,
                                     silent=silent,
                                     numWorkers=numWorkers)
-            all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib) for ib in offset_internal_boundaries]
-            all_edges += Topology.Edges(face)
+            all_edges = Topology.Edges(offset_external_boundary)+[Topology.Edges(ib, silent=True) for ib in offset_internal_boundaries]
+            all_edges += Topology.Edges(face, silent=True)
             all_edges = Helper.Flatten(all_edges)
             all_edges_cluster = Cluster.ByTopologies(all_edges)
             if reverse == True:
@@ -3038,7 +3038,7 @@ class Face():
         
         return_normal = None
         try:
-            return_normal = list(topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5))
+            return_normal = list(topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)) # Hook to Core
         except:
             vertices = Topology.Vertices(face)+Topology.Centroid(face)
             #v1 = Face.VertexByParameters(face, u=0, v=0)

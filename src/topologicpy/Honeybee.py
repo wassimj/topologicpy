@@ -888,7 +888,7 @@ class Honeybee:
                                 tpFaceApertureType = Dictionary.ValueAtKey(tpFaceApertureDictionary,apertureKeyName, silent=True)
                             hbFaceAperturePoints = []
                             tpFaceApertureVertices = []
-                            tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology))
+                            tpFaceApertureVertices = Topology.Vertices(Face.ExternalBoundary(apertureTopology), silent=True)
                             for tpFaceApertureVertex in tpFaceApertureVertices:
                                 hbFaceAperturePoints.append(Point3D(Vertex.X(tpFaceApertureVertex, mantissa=mantissa), Vertex.Y(tpFaceApertureVertex, mantissa=mantissa), Vertex.Z(tpFaceApertureVertex, mantissa=mantissa)))
                             if(tpFaceApertureType):
@@ -936,7 +936,7 @@ class Honeybee:
             tpShadingFaces = Topology.SubTopologies(tpShadingFacesCluster, subTopologyType="face")
             for faceIndex, tpShadingFace in enumerate(tpShadingFaces):
                 faceVertices = []
-                faceVertices = Topology.Vertices(Face.ExternalBoundary(tpShadingFace))
+                faceVertices = Topology.Vertices(Face.ExternalBoundary(tpShadingFace), silent=True)
                 facePoints = []
                 for aVertex in faceVertices:
                     facePoints.append(Point3D(Vertex.X(aVertex, mantissa=mantissa), Vertex.Y(aVertex, mantissa=mantissa), Vertex.Z(aVertex, mantissa=mantissa)))

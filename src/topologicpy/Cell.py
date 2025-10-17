@@ -160,7 +160,12 @@ class Cell():
             for f in faceList:
                 centroid = Topology.Centroid(f)
                 n = Face.Normal(f)
-                v = Topology.Translate(centroid, n[0]*0.01, n[1]*0.01, n[2]*0.01)
+                v = Topology.Translate(centroid,
+                                       x = n[0]*0.01,
+                                       y = n[1]*0.01,
+                                       z = n[2]*0.01,
+                                       transferDictionaries = False,
+                                       silent=True)
                 if not Vertex.IsInternal(v, cell):
                     finalFaces.append(f)
             finalFinalFaces = []
@@ -332,6 +337,7 @@ class Cell():
 
         """
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
@@ -343,20 +349,43 @@ class Cell():
             thickness = -thickness
         faceNormal = Face.Normal(face)
         if bothSides:
-            bottomFace = Topology.Translate(face, -faceNormal[0]*0.5*thickness, -faceNormal[1]*0.5*thickness, -faceNormal[2]*0.5*thickness)
-            topFace = Topology.Translate(face, faceNormal[0]*0.5*thickness, faceNormal[1]*0.5*thickness, faceNormal[2]*0.5*thickness)
+            bottomFace = Topology.Translate(face,
+                                            x=-faceNormal[0]*0.5*thickness,
+                                            y=-faceNormal[1]*0.5*thickness,
+                                            z=-faceNormal[2]*0.5*thickness,
+                                            transferDictionaries=False,
+                                            silent=True)
+            topFace = Topology.Translate(face,
+                                         x=faceNormal[0]*0.5*thickness,
+                                         y=faceNormal[1]*0.5*thickness,
+                                         z=faceNormal[2]*0.5*thickness,
+                                         transferDictionaries=False,
+                                         silent=True)
         else:
             bottomFace = face
-            topFace = Topology.Translate(face, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
+            topFace = Topology.Translate(face,
+                                         x=faceNormal[0]*thickness,
+                                         y=faceNormal[1]*thickness,
+                                         z=faceNormal[2]*thickness,
+                                         transferDictionaries=False,
+                                         silent=True)
 
         cellFaces = [Face.Invert(bottomFace), topFace]
-        bottomEdges = Topology.Edges(bottomFace)
+        bottomEdges = Topology.Edges(bottomFace, silent=True)
+
         for bottomEdge in bottomEdges:
-            topEdge = Topology.Translate(bottomEdge, faceNormal[0]*thickness, faceNormal[1]*thickness, faceNormal[2]*thickness)
+            topEdge = Topology.Translate(bottomEdge,
+                                         x=faceNormal[0]*thickness,
+                                         y=faceNormal[1]*thickness,
+                                         z=faceNormal[2]*thickness,
+                                         transferDictionaries=False,
+                                         silent=True)
             sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=silent)
             sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=silent)
             cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
-            cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
+            if Topology.IsInstance(cellWire, "wire"):
+                if Wire.IsClosed(cellWire):
+                    cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
         return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
 
     @staticmethod

@@ -853,20 +853,20 @@ class Topology():
                     if "aperture" in type.lower():
                         apertures.append(content)
         elif subTopologyType.lower() == "vertex":
-            subTopologies = Topology.Vertices(topology)
+            subTopologies = Topology.Vertices(topology, silent=True)
         elif subTopologyType.lower() == "edge":
-            subTopologies = Topology.Edges(topology)
+            subTopologies = Topology.Edges(topology, silent=True)
         elif subTopologyType.lower() == "face":
-            subTopologies = Topology.Faces(topology)
+            subTopologies = Topology.Faces(topology, silent=True)
         elif subTopologyType.lower() == "cell":
-            subTopologies = Topology.Cells(topology)
+            subTopologies = Topology.Cells(topology, silent=True)
         elif subTopologyType.lower() == "all":
             _ = topology.Apertures(apertures)
             apertures = [x.Topology() for x in apertures]
-            subTopologies = Topology.Vertices(topology)
-            subTopologies += Topology.Edges(topology)
-            subTopologies += Topology.Faces(topology)
-            subTopologies += Topology.Cells(topology)
+            subTopologies = Topology.Vertices(topology, silent=True)
+            subTopologies += Topology.Edges(topology, silent=True)
+            subTopologies += Topology.Faces(topology, silent=True)
+            subTopologies += Topology.Cells(topology, silent=True)
         else:
             print("Topology.Apertures - Error: the input subtopologyType parameter is not a recognized type. Returning None.")
             return None
@@ -5767,7 +5767,7 @@ class Topology():
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
     @staticmethod
-    def Flatten(topology, origin=None, direction: list = [0, 0, 1], mantissa: int = 6):
+    def Flatten(topology, origin=None, direction: list = [0, 0, 1], transferDictionaries=True, mantissa: int = 6, silent: bool = False):
         """
         Flattens the input topology such that the input origin is located at the world origin and the input topology is rotated such that the input vector is pointed in the Up direction (see Vector.Up()).
 
@@ -5781,6 +5781,10 @@ class Topology():
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5792,28 +5796,23 @@ class Topology():
         from topologicpy.Vector import Vector
         
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Flatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
         up = Vector.Up()
-        flat_topology = Topology.Translate(topology, -Vertex.X(origin, mantissa=mantissa), -Vertex.Y(origin, mantissa=mantissa), -Vertex.Z(origin, mantissa=mantissa))
+        flat_topology = Topology.Translate(topology,
+                                           x = -Vertex.X(origin, mantissa=mantissa),
+                                           y = -Vertex.Y(origin, mantissa=mantissa),
+                                           z = -Vertex.Z(origin, mantissa=mantissa),
+                                           transferDictionaries = False,
+                                           silent=True)
         tran_mat = Vector.TransformationMatrix(direction, up)
-        flat_topology = Topology.Transform(flat_topology, tran_mat)
-        flat_topology = Topology.SetDictionary(flat_topology, Topology.Dictionary(topology), silent=True)
-        flat_vertices = Topology.Vertices(flat_topology)
-        vertices = Topology.Vertices(topology)
-        flat_edges = Topology.Edges(flat_topology)
-        edges = Topology.Edges(topology)
-        faces = []
-        flat_faces = []
-        if Topology.IsInstance(topology, "Face"):
-            flat_faces = Topology.Faces(flat_topology)
-            faces = Topology.Faces(topology)
-        elements = vertices+edges+faces
-        flat_elements = flat_vertices+flat_edges+flat_faces
-        for i, f, in enumerate(flat_elements):
-            f = Topology.SetDictionary(f, Topology.Dictionary(elements[i]), silent=True)
+        flat_topology = Topology.Transform(flat_topology,
+                                           tran_mat,
+                                           transferDictionaries = transferDictionaries,
+                                           silent=True)
         return flat_topology
     
     @staticmethod
@@ -6101,31 +6100,31 @@ class Topology():
         """
 
         if "vertex" in type.lower():
-            return isinstance(topology, topologic.Vertex)
+            return isinstance(topology, topologic.Vertex) # Hook to Core
         elif "edge" in type.lower():
-            return isinstance(topology, topologic.Edge)
+            return isinstance(topology, topologic.Edge) # Hook to Core
         elif "wire" in type.lower():
-            return isinstance(topology, topologic.Wire)
+            return isinstance(topology, topologic.Wire) # Hook to Core
         elif "face" in type.lower():
-            return isinstance(topology, topologic.Face)
+            return isinstance(topology, topologic.Face) # Hook to Core
         elif "shell" in type.lower():
-            return isinstance(topology, topologic.Shell)
+            return isinstance(topology, topologic.Shell) # Hook to Core
         elif "cellcomplex" in type.lower(): #Hack to test for cellcomplex before cell as they share the same prefix.
-            return isinstance(topology, topologic.CellComplex)
+            return isinstance(topology, topologic.CellComplex) # Hook to Core
         elif "cell" in type.lower():
-            return isinstance(topology, topologic.Cell)
+            return isinstance(topology, topologic.Cell) # Hook to Core
         elif "cluster" in type.lower():
-            return isinstance(topology, topologic.Cluster)
+            return isinstance(topology, topologic.Cluster) # Hook to Core
         elif "topology" in type.lower():
-            return isinstance(topology, topologic.Topology)
+            return isinstance(topology, topologic.Topology) # Hook to Core
         elif "graph" in type.lower():
-            return isinstance(topology, topologic.Graph)
+            return isinstance(topology, topologic.Graph) # Hook to Core
         elif "aperture" in type.lower():
-            return isinstance(topology, topologic.Aperture)
+            return isinstance(topology, topologic.Aperture) # Hook to Core
         elif "dictionary" in type.lower():
-            return isinstance(topology, topologic.Dictionary)
+            return isinstance(topology, topologic.Dictionary) # Hook to Core
         elif "context" in type.lower():
-            return isinstance(topology, topologic.Context)
+            return isinstance(topology, topologic.Context) # Hook to Core
         else:
             print("Topology.IsInstance - Error: The type input string is not a known topology type. Returning None.")
             return None
@@ -6212,7 +6211,7 @@ class Topology():
         if not Topology.IsInstance(topologyB, "Topology"):
             print("Topology.IsSame - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
-        return topologic.Topology.IsSame(topologyA, topologyB)
+        return topologic.Topology.IsSame(topologyA, topologyB) # Hook to Core
     
     @staticmethod
     def IsSimilar(topologyA, topologyB, removeCoplanarFaces: bool = False, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
@@ -6587,16 +6586,18 @@ class Topology():
         return max_edges
 
     @staticmethod
-    def MergeAll(topologies, tolerance=0.0001):
+    def MergeAll(*topologies, tolerance: float = 0.0001, silent: bool = False):
         """
         Merge all the input topologies.
 
         Parameters
         ----------
-        topologies : list
+        *topologies : list
             The list of input topologies.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6605,16 +6606,28 @@ class Topology():
 
         """
         from topologicpy.Cluster import Cluster
+        from topologicpy.Helper import Helper
 
-        if not isinstance(topologies, list):
-            print("Topology.MergeAll - Error: the input topologies parameter is not a valid list. Returning None.")
-            return None
+        # if not isinstance(topologies, list):
+        #     print("Topology.MergeAll - Error: the input topologies parameter is not a valid list. Returning None.")
+        #     return None
         
-        topologyList = [t for t in topologies if Topology.IsInstance(t, "Topology")]
+        topologyList = Helper.Flatten(list(topologies))
+        
+        topologyList = [t for t in topologyList if Topology.IsInstance(t, "Topology")]
+
         if len(topologyList) < 1:
-            print("Topology.MergeAll - Error: the input topologyList does not contain any valid topologies. Returning None.")
+            if not silent:
+                print("Topology.MergeAll - Error: the input topologyList does not contain any valid topologies. Returning None.")
             return None
-        return Topology.SelfMerge(Cluster.ByTopologies(topologyList), tolerance=tolerance)
+        if len(topologyList) == 1:
+            if not silent:
+                print("Topology.MergeAll - Warning: The input list of topologies does not contains only one valid topology. Returning that topology.")
+            return topologyList[0]
+        result = topologyList[0]
+        for t in topologyList[1:]:
+            result = Topology.Merge(result, t, tolerance=tolerance)
+        return result
     
     @staticmethod
     def MeshData(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
@@ -7538,7 +7551,7 @@ class Topology():
             if not Topology.IsInstance(topology, "Topology"):
                 print("Topology.Cleanup - Error: The input topology parameter is not a valid topology. Returning None.")
                 return None
-        topologic.Topology.Cleanup(topology)
+        topologic.Topology.Cleanup(topology) # Hook to Core
         return topology
 
     @staticmethod
@@ -7584,7 +7597,7 @@ class Topology():
         return new_topology
 
     @staticmethod
-    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float = 0.001, tolerance: float = 0.0001):
+    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float = 0.001, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Rotates the input topology
 
@@ -7600,8 +7613,13 @@ class Topology():
             The angle of rotation in degrees. Default is 0.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
 
         Returns
         -------
@@ -7645,13 +7663,14 @@ class Topology():
             print("Topology.Rotate - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         return_topology = topology
-        d = Topology.Dictionary(topology)
+        
         if abs(angle) >= angTolerance:
             try:
                 x, y, z = axis
-                return_topology = topologic.TopologyUtility.Rotate(topology, origin, x, y, z, angle)
+                return_topology = topologic.TopologyUtility.Rotate(topology, origin, x, y, z, angle) # Hook to Core
             except:
-                print("Topology.Rotate - Warning: (topologic.TopologyUtility.Rotate) operation failed. Trying a workaround.")
+                if not silent:
+                    print("Topology.Rotate - Warning: Core rotation operation failed. Trying a workaround.")
                 vertices = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
                 origin = Vertex.Coordinates(origin)
                 rot_vertices = []
@@ -7660,44 +7679,53 @@ class Topology():
                 rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
                 return_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
                 return_topology = Topology.SelfMerge(return_topology, tolerance=tolerance)
-        if len(Dictionary.Keys(d)) > 0:
-                    return_topology = Topology.SetDictionary(return_topology, d)
+        if transferDictionaries == True:
+            d = Topology.Dictionary(topology)
+            if len(Dictionary.Keys(d)) > 0:
+                return_topology = Topology.SetDictionary(return_topology, d)
+            vertices = Topology.Vertices(topology, silent=True)
+            edges = Topology.Edges(topology, silent=True)
+            wires = Topology.Wires(topology, silent=True)
+            faces = Topology.Faces(topology, silent=True)
+            shells = Topology.Shells(topology, silent=True)
+            cells = Topology.Cells(topology, silent=True)
+            cellComplexes = Topology.CellComplexes(topology, silent=True)
+            
+            r_vertices = Topology.Vertices(return_topology, silent=True)
+            r_edges = Topology.Edges(return_topology, silent=True)
+            r_wires = Topology.Wires(return_topology, silent=True)
+            r_faces = Topology.Faces(return_topology, silent=True)
+            r_shells = Topology.Shells(return_topology, silent=True)
+            r_cells = Topology.Cells(return_topology, silent=True)
+            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
 
-        vertices = Topology.Vertices(topology)
-        edges = Topology.Edges(topology)
-        wires = Topology.Wires(topology)
-        faces = Topology.Faces(topology)
-        shells = Topology.Shells(topology)
-        cells = Topology.Cells(topology)
-        cellComplexes = Topology.CellComplexes(topology)
-        
-        r_vertices = Topology.Vertices(return_topology)
-        r_edges = Topology.Edges(return_topology)
-        r_wires = Topology.Wires(return_topology)
-        r_faces = Topology.Faces(return_topology)
-        r_shells = Topology.Shells(return_topology)
-        r_cells = Topology.Cells(return_topology)
-        r_cellComplexes = Topology.CellComplexes(return_topology)
-
-        for i, t in enumerate(r_vertices):
-            t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-        for i, t in enumerate(r_edges):
-            t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-        for i, t in enumerate(r_wires):
-            t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-        for i, t in enumerate(r_faces):
-            t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-        for i, t in enumerate(r_shells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-        for i, t in enumerate(r_cells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-        for i, t in enumerate(r_cellComplexes):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
+            for i, t in enumerate(r_vertices):
+                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
+            for i, t in enumerate(r_edges):
+                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
+            for i, t in enumerate(r_wires):
+                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
+            for i, t in enumerate(r_faces):
+                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
+            for i, t in enumerate(r_shells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
+            for i, t in enumerate(r_cells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
+            for i, t in enumerate(r_cellComplexes):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
         
         return return_topology
     
     @staticmethod
-    def RotateByEulerAngles(topology, origin = None, roll: float = 0, pitch: float = 0, yaw: float = 0,  angTolerance: float = 0.001, tolerance: float = 0.0001):
+    def RotateByEulerAngles(topology,
+                            origin = None,
+                            roll: float = 0,
+                            pitch: float = 0,
+                            yaw: float = 0,
+                            transferDictionaries: bool = True,
+                            angTolerance: float = 0.001,
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
         """
         Rotates the input topology using Euler angles (roll, pitch, yaw). See https://en.wikipedia.org/wiki/Aircraft_principal_axes
 
@@ -7713,10 +7741,14 @@ class Topology():
             The rotation angle in degrees around the Y-axis. Default is 0.
         yaw = float , optional
             The rotation angle in degrees around the Z-axis. Default is 0.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7728,24 +7760,29 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.RotateByEulerAngles - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            if not silent:
+                print("Topology.RotateByEulerAngles - Error: The input topology parameter is not a valid topologic topology. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Topology.RotateByEulerAngles - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Topology.RotateByEulerAngles - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
-        d = Topology.Dictionary(topology)
         return_topology = Topology.Copy(topology)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[1,0,0], angle=roll, angTolerance=angTolerance, tolerance=tolerance)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,1,0], angle=pitch, angTolerance=angTolerance, tolerance=tolerance)
-        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,0,1], angle=yaw, angTolerance=angTolerance, tolerance=tolerance)
-        if len(Dictionary.Keys(d)) > 0:
-            return_topology = Topology.SetDictionary(return_topology, d)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[1,0,0], angle=roll, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,1,0], angle=pitch, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+        return_topology = Topology.Rotate(return_topology, origin=origin, axis=[0,0,1], angle=yaw, transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         return return_topology
     
     @staticmethod
-    def RotateByQuaternion(topology, origin=None, quaternion: list = [0,0,0,1], angTolerance: float = 0.001, tolerance: float = 0.0001):
+    def RotateByQuaternion(topology,
+                           origin=None,
+                           quaternion: list = [0,0,0,1],
+                           transferDictionaries: bool = False,
+                           angTolerance: float = 0.001,
+                           tolerance: float = 0.0001,
+                           silent: bool = False):
         """
         Rotates the input topology using Quaternion rotations. See https://en.wikipedia.org/wiki/Quaternion
         
@@ -7757,10 +7794,14 @@ class Topology():
             The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
         quaternion : list or numpy array of size 4
             The input Quaternion list. It should be in the form [x, y, z, w].
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
         angTolerance : float , optional
             The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7810,22 +7851,21 @@ class Topology():
             return [roll, pitch, yaw]
         
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.RotateByQuaternion - Error: The input topology parameter is not a valid topologic topology. Returning None.", topology)
+            if not silent:
+                print("Topology.RotateByQuaternion - Error: The input topology parameter is not a valid topologic topology. Returning None.", topology)
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Topology.RotateByQuaternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Topology.RotateByQuaternion - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
         roll, pitch, yaw = quaternion_to_euler(quaternion)
-        d = Topology.Dictionary(topology)
-        return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  angTolerance=angTolerance, tolerance=tolerance)
-        if len(Dictionary.Keys(d)) > 0:
-            return_topology = Topology.SetDictionary(return_topology, d)
+        return_topology = Topology.RotateByEulerAngles(topology=topology, origin=origin, roll=roll, pitch=pitch, yaw=yaw,  transferDictionaries=transferDictionaries, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
         return return_topology
     
     @staticmethod
-    def Scale(topology, origin=None, x=1, y=1, z=1):
+    def Scale(topology, origin=None, x=1, y=1, z=1, transferDictionaries: bool = True, silent: bool = False):
         """
         Scales the input topology
 
@@ -7852,49 +7892,55 @@ class Topology():
         from topologicpy.Vertex import Vertex
 
         if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Scale - Error: The input topology parameter is not a valid Topology. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
+            if not silent:
+                print("Topology.Scale - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
         return_topology = None
         try:
-            return_topology = topologic.TopologyUtility.Scale(topology, origin, x, y, z)
+            return_topology = topologic.TopologyUtility.Scale(topology, origin, x, y, z) # Hook to Core
         except:
-            print("Topology.Scale - ERROR: (Topologic>TopologyUtility.Scale) operation failed. Returning None.")
+            if not silent:
+                print("Topology.Scale - Error: Core scale operation failed. Returning None.")
             return_topology = None
         
-        vertices = Topology.Vertices(topology)
-        edges = Topology.Edges(topology)
-        wires = Topology.Wires(topology)
-        faces = Topology.Faces(topology)
-        shells = Topology.Shells(topology)
-        cells = Topology.Cells(topology)
-        cellComplexes = Topology.CellComplexes(topology)
-        
-        r_vertices = Topology.Vertices(return_topology)
-        r_edges = Topology.Edges(return_topology)
-        r_wires = Topology.Wires(return_topology)
-        r_faces = Topology.Faces(return_topology)
-        r_shells = Topology.Shells(return_topology)
-        r_cells = Topology.Cells(return_topology)
-        r_cellComplexes = Topology.CellComplexes(return_topology)
+        if transferDictionaries == True:
+            vertices = Topology.Vertices(topology, silent=True)
+            edges = Topology.Edges(topology, silent=True)
+            wires = Topology.Wires(topology, silent=True)
+            faces = Topology.Faces(topology, silent=True)
+            shells = Topology.Shells(topology, silent=True)
+            cells = Topology.Cells(topology, silent=True)
+            cellComplexes = Topology.CellComplexes(topology, silent=True)
+            
+            r_vertices = Topology.Vertices(return_topology, silent=True)
+            r_edges = Topology.Edges(return_topology, silent=True)
+            r_wires = Topology.Wires(return_topology, silent=True)
+            r_faces = Topology.Faces(return_topology, silent=True)
+            r_shells = Topology.Shells(return_topology, silent=True)
+            r_cells = Topology.Cells(return_topology, silent=True)
+            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
 
-        for i, t in enumerate(r_vertices):
-            t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-        for i, t in enumerate(r_edges):
-            t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-        for i, t in enumerate(r_wires):
-            t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-        for i, t in enumerate(r_faces):
-            t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-        for i, t in enumerate(r_shells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-        for i, t in enumerate(r_cells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-        for i, t in enumerate(r_cellComplexes):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
-        return return_topology
+            for i, t in enumerate(r_vertices):
+                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
+            for i, t in enumerate(r_edges):
+                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
+            for i, t in enumerate(r_wires):
+                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
+            for i, t in enumerate(r_faces):
+                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
+            for i, t in enumerate(r_shells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
+            for i, t in enumerate(r_cells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
+            for i, t in enumerate(r_cellComplexes):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
+            return return_topology
 
     
     @staticmethod
@@ -9039,7 +9085,7 @@ class Topology():
         elif Topology.IsInstance(topology, "Face"):
             external_wires = []
             for t in topologies:
-                external_wires.append(topologic.Face.ExternalBoundary(t))
+                external_wires.append(topologic.Face.ExternalBoundary(t)) # Hook to Core
             try:
                 returnTopology = CellComplex.ByWires(external_wires, tolerance=tolerance)
             except:
@@ -9342,7 +9388,7 @@ class Topology():
         return return_topology
     
     @staticmethod
-    def Unflatten(topology, origin=None, direction=[0, 0, 1]):
+    def Unflatten(topology, origin=None, direction=[0, 0, 1], transferDictionaries: bool = True, silent: bool = False):
         """
         Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.
 
@@ -9354,6 +9400,10 @@ class Topology():
             The input origin. If set to None, The object's centroid will be used to translate the world origin. Default is None.
         vector : list , optional
             The input direction vector. The input topology will be rotated such that this vector is pointed in the positive Z axis.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9365,33 +9415,26 @@ class Topology():
         from topologicpy.Vector import Vector
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Unflatten - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Unflatten - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.Origin()
         up = Vector.Up()
         tran_mat = Vector.TransformationMatrix(up, direction)
-        unflat_topology = Topology.Transform(topology, tran_mat)
-        unflat_topology = Topology.Translate(unflat_topology, Vertex.X(origin), Vertex.Y(origin), Vertex.Z(origin))
-
-        unflat_topology = Topology.SetDictionary(unflat_topology, Topology.Dictionary(topology), silent=True)
-        unflat_vertices = Topology.Vertices(unflat_topology)
-        vertices = Topology.Vertices(topology)
-        unflat_edges = Topology.Edges(unflat_topology)
-        edges = Topology.Edges(topology)
-        faces = []
-        unflat_faces = []
-        if Topology.IsInstance(topology, "Face"):
-            unflat_faces = Topology.Faces(unflat_topology)
-            faces = Topology.Faces(topology)
-        elements = vertices+edges+faces
-        unflat_elements = unflat_vertices+unflat_edges+unflat_faces
-        for i, f, in enumerate(unflat_elements):
-            f = Topology.SetDictionary(f, Topology.Dictionary(elements[i]), silent=True)
+        unflat_topology = Topology.Transform(topology, tran_mat,
+                                             transferDictionaries=transferDictionaries,
+                                             silent=True)
+        unflat_topology = Topology.Translate(unflat_topology,
+                                             x = Vertex.X(origin),
+                                             y = Vertex.Y(origin),
+                                             z = Vertex.Z(origin),
+                                             transferDictionaries=transferDictionaries,
+                                             silent = True)
         return unflat_topology
     
     @staticmethod
-    def Vertices(topology):
+    def Vertices(topology, silent: bool = False):
         """
         Returns the vertices of the input topology.
 
@@ -9399,6 +9442,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9408,17 +9453,23 @@ class Topology():
         """
         from topologicpy.Graph import Graph
         
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Vertices - Error: The input is not a valid topology. Returning None")
+            return None
         
         if Topology.IsInstance(topology, "Vertex"):
-            return []
+            if not silent:
+                print("Topology.Vertices - Warning: The input is a Vertex. Returning the same vertex embedded in a list.")
+            return [topology]
+        
         if Topology.IsInstance(topology, "Graph"):
             return Graph.Vertices(topology)
-        if topology == None:
-            return None
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
     
     @staticmethod
-    def Edges(topology):
+    def Edges(topology, silent: bool = False):
         """
         Returns the edges of the input topology.
 
@@ -9426,6 +9477,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9433,15 +9486,31 @@ class Topology():
             The list of edges.
 
         """
+        
         from topologicpy.Graph import Graph
-        if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Edges - Error: The input is not a valid topology. Returning None")
+            return None
+
+        if Topology.IsInstance(topology, "Edge"):
+            if not silent:
+                print("Topology.Edges - Warning: The input is an Edge. Returning the same edge embedded in a list.")
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Wires - Warning: The input is a lower dimension than an edge. Returning an empty list.")
             return []
+        
         if Topology.IsInstance(topology, "Graph"):
             return Graph.Edges(topology)
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="edge")
     
     @staticmethod
-    def Wires(topology):
+    def Wires(topology, silent: bool = False):
         """
         Returns the wires of the input topology.
 
@@ -9449,6 +9518,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9456,12 +9527,26 @@ class Topology():
             The list of wires.
 
         """
-        if Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Wires - Error: The input is not a valid topology. Returning None")
+            return None
+        
+        if Topology.IsInstance(topology, "Wire"):
+            if not silent:
+                print("Topology.Wires - Warning: The input is a Wire. Returning the same wire embedded in a list.")
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Wires - Warning: The input is a lower dimension than a wire. Returning an empty list.")
             return []
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="wire")
     
     @staticmethod
-    def Faces(topology):
+    def Faces(topology, silent: bool = False):
         """
         Returns the faces of the input topology.
 
@@ -9469,6 +9554,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9476,12 +9563,37 @@ class Topology():
             The list of faces.
 
         """
-        if Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+
+        import inspect
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Faces - Error: The input is not a valid topology. Returning None")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        if Topology.IsInstance(topology, "Face"):
+            if not silent:
+                print("Topology.Faces - Warning: The input is a Face. Returning the same face embedded in a list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Faces - Warning: The input is a lower dimension than a face. Returning an empty list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return []
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="face")
     
     @staticmethod
-    def Shells(topology):
+    def Shells(topology, silent: bool = False):
         """
         Returns the shells of the input topology.
 
@@ -9489,6 +9601,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9496,12 +9610,26 @@ class Topology():
             The list of shells.
 
         """
-        if Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Shells - Error: The input is not a valid topology. Returning None")
+            return None
+        
+        if Topology.IsInstance(topology, "Shell"):
+            if not silent:
+                print("Topology.Shells - Warning: The input is a Shell. Returning the same shell embedded in a list.")
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Shells - Warning: The input is a lower dimension than a shell. Returning an empty list.")
             return []
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="shell")
     
     @staticmethod
-    def Cells(topology):
+    def Cells(topology, silent: bool = False):
         """
         Returns the cells of the input topology.
 
@@ -9509,19 +9637,45 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
-
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
         Returns
         -------
         list
             The list of cells.
 
         """
-        if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+        import inspect
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Cells - Error: The input is not a valid topology. Returning None")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        if Topology.IsInstance(topology, "Cell"):
+            if not silent:
+                print("Topology.Cells - Warning: The input is a Cell. Returning the same cell embedded in a list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Cells - Warning: The input is a lower dimension than a cell. Returning an empty list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return []
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="cell")
     
     @staticmethod
-    def CellComplexes(topology):
+    def CellComplexes(topology, silent: bool = False):
         """
         Returns the cellcomplexes of the input topology.
 
@@ -9529,6 +9683,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9536,12 +9692,37 @@ class Topology():
             The list of cellcomplexes.
 
         """
-        if Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+        
+        import inspect
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.CellComplexes - Error: The input is not a valid topology. Returning None")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        if Topology.IsInstance(topology, "CellComplex"):
+            if not silent:
+                print("Topology.CellComplexes - Warning: The input is a CellComplex. Returning the same cell embedded in a list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return [topology]
+        
+        if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.CellComplexes - Warning: The input is a lower dimension than a cellComplex. Returning an empty list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return []
+        
         return Topology.SubTopologies(topology=topology, subTopologyType="cellcomplex")
     
     @staticmethod
-    def Clusters(topology):
+    def Clusters(topology, silent: bool = False):
         """
         Returns the clusters of the input topology.
 
@@ -9549,6 +9730,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -9556,8 +9739,24 @@ class Topology():
             The list of clusters.
 
         """
-        if not Topology.IsInstance(topology, "Cluster"):
+        import inspect
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.Clusters - Error: The input is not a valid topology. Returning None")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        
+        if Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Wire") or Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Vertex"):
+            if not silent:
+                print("Topology.Clusters - Warning: The input is a lower dimension than a cluster. Returning an empty list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return []
+
         return Topology.SubTopologies(topology=topology, subTopologyType="cluster")
     
     @staticmethod
@@ -9852,7 +10051,7 @@ class Topology():
         return topology
 
     @staticmethod
-    def Transform(topology, matrix: list, silent: bool = False):
+    def Transform(topology, matrix: list, angTolerance: float = 0.001, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Transforms the input topology by the input 4X4 transformation matrix.
 
@@ -9862,6 +10061,12 @@ class Topology():
             The input topology.
         matrix : list
             The input 4x4 transformation matrix.
+        angTolerance : float , optional
+            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the transformed object. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -9908,9 +10113,9 @@ class Topology():
             return None
         
         try:
-            return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33)
+            return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33) # Hook to Core
         except:
-            print("topologic.TopologyUtility.Transform failed. Attempting a workaround.")
+            print("Topology.Transoform - Warning: Core transform operation failed. Attempting a workaround.")
             
             # Extract translation (last column of the matrix)
             translation = [m[3] for m in matrix[:3]]
@@ -9925,7 +10130,13 @@ class Topology():
             
             # Step 1: Apply Scaling
             # Here, origin is assumed to be (0,0,0) for simplicity
-            return_topology = Topology.Scale(topology, origin=Vertex.ByCoordinates(0, 0, 0), x=x_scale, y=y_scale, z=z_scale)
+            return_topology = Topology.Scale(topology,
+                                             origin=Vertex.ByCoordinates(0, 0, 0),
+                                             x=x_scale,
+                                             y=y_scale,
+                                             z=z_scale,
+                                             transferDictionaries=False,
+                                             silent=silent)
             
             # Step 2: Apply Rotation
             # The rotation axis and angle need to be derived from the rotation matrix
@@ -9942,47 +10153,60 @@ class Topology():
             angle_deg = np.degrees(angle_rad)
             
             # Apply rotation
-            return_topology = Topology.Rotate(return_topology, origin=Vertex.ByCoordinates(0, 0, 0), axis=axis, angle=angle_deg)
+            return_topology = Topology.Rotate(return_topology,
+                                              origin=Vertex.ByCoordinates(0, 0, 0),
+                                              axis=axis,
+                                              angle=angle_deg,
+                                              angTolerance=angTolerance,
+                                              transferDictionaries=False,
+                                              tolerance=tolerance,
+                                              silent=silent)
             
             # Step 3: Apply Translation
-            return_topology = Topology.Translate(return_topology, x=x_translate, y=y_translate, z=z_translate)
+            return_topology = Topology.Translate(return_topology,
+                                                 x=x_translate,
+                                                 y=y_translate,
+                                                 z=z_translate,
+                                                 transferDictionaries=False,
+                                                 silent=silent)
         
-        vertices = Topology.Vertices(topology)
-        edges = Topology.Edges(topology)
-        wires = Topology.Wires(topology)
-        faces = Topology.Faces(topology)
-        shells = Topology.Shells(topology)
-        cells = Topology.Cells(topology)
-        cellComplexes = Topology.CellComplexes(topology)
+        if transferDictionaries == True:
+            vertices = Topology.Vertices(topology)
+            edges = Topology.Edges(topology, silent=True)
+            wires = Topology.Wires(topology, silent=True)
+            faces = Topology.Faces(topology, silent=True)
+            shells = Topology.Shells(topology, silent=True)
+            cells = Topology.Cells(topology, silent=True)
+            cellComplexes = Topology.CellComplexes(topology, silent=True)
 
-        r_vertices = Topology.Vertices(return_topology)
-        r_edges = Topology.Edges(return_topology)
-        r_wires = Topology.Wires(return_topology)
-        r_faces = Topology.Faces(return_topology)
-        r_shells = Topology.Shells(return_topology)
-        r_cells = Topology.Cells(return_topology)
-        r_cellComplexes = Topology.CellComplexes(return_topology)
+            r_vertices = Topology.Vertices(return_topology, silent=True)
+            r_edges = Topology.Edges(return_topology, silent=True)
+            r_wires = Topology.Wires(return_topology, silent=True)
+            r_faces = Topology.Faces(return_topology, silent=True)
+            r_shells = Topology.Shells(return_topology, silent=True)
+            r_cells = Topology.Cells(return_topology, silent=True)
+            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
 
-        for i, t in enumerate(r_vertices):
-            t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-        for i, t in enumerate(r_edges):
-            t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-        for i, t in enumerate(r_wires):
-            t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-        for i, t in enumerate(r_faces):
-            t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-        for i, t in enumerate(r_shells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-        for i, t in enumerate(r_cells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-        for i, t in enumerate(r_cellComplexes):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
+            for i, t in enumerate(r_vertices):
+                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
+            for i, t in enumerate(r_edges):
+                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
+            for i, t in enumerate(r_wires):
+                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
+            for i, t in enumerate(r_faces):
+                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
+            for i, t in enumerate(r_shells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
+            for i, t in enumerate(r_cells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
+            for i, t in enumerate(r_cellComplexes):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
         
-        return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
+            return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
         return return_topology
     
     @staticmethod
-    def Translate(topology, x=0, y=0, z=0, silent: bool = False):
+    def Translate(topology, x=0, y=0, z=0, transferDictionaries: bool = True, silent: bool = False):
         """
         Translates (moves) the input topology.
 
@@ -9996,6 +10220,8 @@ class Topology():
             The y translation value. Default is 0.
         z : float , optional
             The z translation value. Default is 0.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -10016,50 +10242,53 @@ class Topology():
         if Topology.IsInstance(topology, "vertex"):
             old_x, old_y, old_z = Vertex.Coordinates(topology)
             return_topology = Vertex.ByCoordinates(old_x+x, old_y+y, old_z+z)
-            return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
+            if transferDictionaries == True:
+                return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
             return return_topology
-        vertices = Topology.Vertices(topology)
-        edges = Topology.Edges(topology)
-        wires = Topology.Wires(topology)
-        faces = Topology.Faces(topology)
-        shells = Topology.Shells(topology)
-        cells = Topology.Cells(topology)
-        cellComplexes = Topology.CellComplexes(topology)        
+        if transferDictionaries == True:
+            vertices = Topology.Vertices(topology, silent=True)
+            edges = Topology.Edges(topology, silent=True)
+            wires = Topology.Wires(topology, silent=True)
+            faces = Topology.Faces(topology, silent=True)
+            shells = Topology.Shells(topology, silent=True)
+            cells = Topology.Cells(topology, silent=True)
+            cellComplexes = Topology.CellComplexes(topology, silent=True)
 
         try:
-            return_topology = topologic.TopologyUtility.Translate(topology, x, y, z)
+            return_topology = topologic.TopologyUtility.Translate(topology, x, y, z) # Hook to Core
         except:
             if not silent:
-                print("Topology.Translate - Error: The operation failed. Returning the original input.")
+                print("Topology.Translate - Error: The core translate operation failed. Returning the original input.")
             return topology
         
-        r_vertices = Topology.Vertices(return_topology)
-        r_edges = Topology.Edges(return_topology)
-        r_wires = Topology.Wires(return_topology)
-        r_faces = Topology.Faces(return_topology)
-        r_shells = Topology.Shells(return_topology)
-        r_cells = Topology.Cells(return_topology)
-        r_cellComplexes = Topology.CellComplexes(return_topology)
-        for i, t in enumerate(r_vertices):
-            t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-        for i, t in enumerate(r_edges):
-            t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-        for i, t in enumerate(r_wires):
-            t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-        for i, t in enumerate(r_faces):
-            t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-        for i, t in enumerate(r_shells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-        for i, t in enumerate(r_cells):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-        for i, t in enumerate(r_cellComplexes):
-            t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
-        
-        return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
+        if transferDictionaries == True:
+            r_vertices = Topology.Vertices(return_topology, silent=True)
+            r_edges = Topology.Edges(return_topology, silent=True)
+            r_wires = Topology.Wires(return_topology, silent=True)
+            r_faces = Topology.Faces(return_topology, silent=True)
+            r_shells = Topology.Shells(return_topology, silent=True)
+            r_cells = Topology.Cells(return_topology, silent=True)
+            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
+            for i, t in enumerate(r_vertices):
+                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
+            for i, t in enumerate(r_edges):
+                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
+            for i, t in enumerate(r_wires):
+                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
+            for i, t in enumerate(r_faces):
+                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
+            for i, t in enumerate(r_shells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
+            for i, t in enumerate(r_cells):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
+            for i, t in enumerate(r_cellComplexes):
+                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
+            
+            return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
         return return_topology
     
     @staticmethod
-    def TranslateByDirectionDistance(topology, direction: list = [0, 0, 0], distance: float = 0):
+    def TranslateByDirectionDistance(topology, direction: list = [0, 0, 0], distance: float = 0, transferDictionaries: bool =True, silent: bool = False):
         """
         Translates (moves) the input topology along the input direction by the specified distance.
 
@@ -10071,6 +10300,10 @@ class Topology():
             The direction vector in which the topology should be moved. Default is [0, 0, 0]
         distance : float , optional
             The distance by which the toplogy should be moved. Default is 0.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -10079,11 +10312,13 @@ class Topology():
 
         """
         from topologicpy.Vector import Vector
+
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.TranslateByDirectionDistance - Error: The input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.TranslateByDirectionDistance - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         v = Vector.SetMagnitude(direction, distance)
-        return Topology.Translate(topology, v[0], v[1], v[2])
+        return Topology.Translate(topology, x=v[0], y=v[1], z=v[2], transferDictionaries=transferDictionaries, silent=silent)
 
     
     @staticmethod

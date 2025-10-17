@@ -1273,7 +1273,7 @@ class Vertex():
             dist = Vertex.PerpendicularDistance(vtx, face)
             if dist <= tol:
                 vtx2 = Vertex.Project(vtx, face)
-                status = topologic.FaceUtility.IsInside(face, vtx2, tol)
+                status = topologic.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
             else:
                 status = False
             return status

@@ -279,7 +279,7 @@ class ShapeGrammar:
             )
         
         def bb(topology):
-            vertices = Topology.Vertices(topology)
+            vertices = Topology.Vertices(topology, silent=True)
             x = []
             y = []
             z = []

@@ -1142,7 +1142,7 @@ class EnergyModel:
                     rotation31 = osMatrix[2, 0]
                     rotation32 = osMatrix[2, 1]
                     rotation33 = osMatrix[2, 2]
-                    shadingFace = topologic.TopologyUtility.Transform(shadingFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
+                    shadingFace = topologic.TopologyUtility.Transform(shadingFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
             shadingFaces.append(shadingFace)
         
         for count, aSpace in enumerate(spaces):
@@ -1163,11 +1163,11 @@ class EnergyModel:
 
             for aSurface in surfaces:
                 aFace = surfaceToFace(aSurface)
-                aFace = topologic.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
+                aFace = topologic.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
                 subSurfaces = aSurface.subSurfaces()
                 for aSubSurface in subSurfaces:
                     aperture = surfaceToFace(aSubSurface)
-                    aperture = topologic.TopologyUtility.Transform(aperture, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33)
+                    aperture = topologic.TopologyUtility.Transform(aperture, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
                     apertures.append(aperture)
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)

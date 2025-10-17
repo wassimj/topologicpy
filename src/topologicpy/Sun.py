@@ -419,7 +419,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -431,7 +431,7 @@ class Sun():
         
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The sun represented as a vertex.
         """
         from topologicpy.Vertex import Vertex
@@ -451,7 +451,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -460,7 +460,7 @@ class Sun():
 
         Returns
         -------
-        topologic.Vertex
+        topologic_core.Vertex
             The sun represented as a vertex.
         """
         from topologicpy.Vertex import Vertex
@@ -486,7 +486,7 @@ class Sun():
             The input longitude. See https://en.wikipedia.org/wiki/Longitude.
         date : datetime
             The input datetime.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -495,7 +495,7 @@ class Sun():
 
         Returns
         -------
-        topologic.Edge
+        topologic_core.Edge
             The sun represented as an edge pointing from the location of the sun towards the origin.
         """
         from topologicpy.Vertex import Vertex
@@ -529,7 +529,7 @@ class Sun():
             The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.
         interval : int , optional
             The interval in minutes to compute the sun location. Default is 60.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -573,7 +573,7 @@ class Sun():
             The desired end time to compute the sun location. If set to None, Sun.Sunset is used. Default is None.
         interval : int , optional
             The interval in minutes to compute the sun location. Default is 60.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -585,7 +585,7 @@ class Sun():
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The sun path represented as a wire.
         """
         from topologicpy.Vertex import Vertex
@@ -635,7 +635,7 @@ class Sun():
             The desired end day to compute the sun location. Default is 365.
         interval : int , optional
             The interval in days to compute the sun location. Default is 5.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -686,7 +686,7 @@ class Sun():
             The desired end day of the year to compute the sun location. Default is 365.
         interval : int , optional
             The interval in days to compute the sun location. Default is 5.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
@@ -698,7 +698,7 @@ class Sun():
 
         Returns
         -------
-        topologic.Wire
+        topologic_core.Wire
             The sun path represented as a topologic wire.
         """
 
@@ -741,7 +741,7 @@ class Sun():
             The interval in minutes to compute the sun location for the date path. Default is 30.
         dayInterval : int , optional
             The interval in days for the hourly path to compute the sun location. Default is 15.
-        origin : topologic.Vertex , optional
+        origin : topologic_core.Vertex , optional
             The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.
         radius : float , optional
             The desired radius of the sun orbit. Default is 0.5.
