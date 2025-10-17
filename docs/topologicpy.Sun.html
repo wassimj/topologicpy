@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Sun module &mdash; topologicpy 0.8.74 documentation</title>
+  <title>topologicpy.Sun module &mdash; topologicpy 0.8.75 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.74
+                0.8.75
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -291,7 +291,7 @@
 </dd>
 <dt><strong>dayInterval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days for the hourly path to compute the sun location. Default is 15.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -335,7 +335,7 @@
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -345,7 +345,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic.Edge</dt><dd><p>The sun represented as an edge pointing from the location of the sun towards the origin.</p>
+<dt>topologic_core.Edge</dt><dd><p>The sun represented as an edge pointing from the location of the sun towards the origin.</p>
 </dd>
 </dl>
 </dd>
@@ -371,7 +371,7 @@
 </dd>
 <dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -384,7 +384,7 @@ The default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic.Wire</dt><dd><p>The sun path represented as a wire.</p>
+<dt>topologic_core.Wire</dt><dd><p>The sun path represented as a wire.</p>
 </dd>
 </dl>
 </dd>
@@ -410,7 +410,7 @@ The default is None.</p>
 </dd>
 <dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -423,7 +423,7 @@ The default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic.Wire</dt><dd><p>The sun path represented as a topologic wire.</p>
+<dt>topologic_core.Wire</dt><dd><p>The sun path represented as a topologic wire.</p>
 </dd>
 </dl>
 </dd>
@@ -443,7 +443,7 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -455,7 +455,7 @@ The default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic.Vertex</dt><dd><p>The sun represented as a vertex.</p>
+<dt>topologic_core.Vertex</dt><dd><p>The sun represented as a vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -593,7 +593,7 @@ The default is None.</p>
 </dd>
 <dt><strong>date</strong><span class="classifier">datetime</span></dt><dd><p>The input datetime.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -603,7 +603,7 @@ The default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic.Vertex</dt><dd><p>The sun represented as a vertex.</p>
+<dt>topologic_core.Vertex</dt><dd><p>The sun represented as a vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -629,7 +629,7 @@ The default is None.</p>
 </dd>
 <dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in minutes to compute the sun location. Default is 60.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
@@ -665,7 +665,7 @@ The default is None.</p>
 </dd>
 <dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The interval in days to compute the sun location. Default is 5.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin of the world. If set to None, the origin will be set to (0,0,0). Default is None.</p>
 </dd>
 <dt><strong>radius</strong><span class="classifier">float , optional</span></dt><dd><p>The desired radius of the sun orbit. Default is 0.5.</p>
 </dd>
