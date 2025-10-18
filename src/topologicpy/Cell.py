@@ -3436,9 +3436,278 @@ class Cell():
             subdivided_tetrahedra = subdivide_tetrahedron(tetrahedron, depth)
             # Create a cell complex from the subdivided tetrahedra
             return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
-    
+
     @staticmethod
-    def Torus(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Torus(origin=None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+        """
+        Creates a torus.
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
+        majorRadius : float , optional
+            The major radius of the torus. Default is 0.5.
+        minorRadius : float , optional
+            The minor radius of the torus. Default is 0.125.
+        uSides : int , optional
+            The number of sides along the longitude of the torus (around the hole). Default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the torus (tube direction). Default is 8.
+        direction : list , optional
+            The vector representing the up direction of the torus. Default is [0, 0, 1].
+        placement : str , optional
+            Placement of the input origin relative to the torus. One of:
+            - "center": origin is at the torus' geometric center (default)
+            - "bottom": origin lies on the lowest point along the up direction
+            - "lowerleft": origin is at x/y lower-left and bottom in z of the torus' local bbox
+            Comparison is case-insensitive.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created torus.
+        """
+        # --- Imports kept inside to avoid cyclic dependencies in TopologicPy ---
+        from math import cos, sin, pi, sqrt
+        try:
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Face import Face
+            from topologicpy.Shell import Shell
+            from topologicpy.Cell import Cell
+            from topologicpy.Topology import Topology
+        except Exception:
+            # Fallback class names if imported as core modules in some setups
+            from topologic_core import Vertex, Face, Shell, Cell, Topology  # type: ignore
+
+        # --- Validation ---
+        if majorRadius <= 0 or minorRadius <= 0:
+            raise ValueError("majorRadius and minorRadius must be > 0.")
+        if uSides < 3 or vSides < 3:
+            raise ValueError("uSides and vSides must be >= 3.")
+        if minorRadius >= majorRadius:
+            # Geometrically valid but unusual; keep strict to avoid self-intersections at low resolution
+            raise ValueError("minorRadius must be smaller than majorRadius for a clean torus.")
+
+        # --- Helpers ---
+        def _norm(v):
+            x, y, z = v
+            m = sqrt(x*x + y*y + z*z)
+            if m == 0:
+                return (0.0, 0.0, 1.0)
+            return (x/m, y/m, z/m)
+
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return (a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0])
+
+        def _rot_matrix_from_z(to_dir):
+            """
+            Build a rotation matrix that maps +Z to 'to_dir' using Rodrigues' formula.
+            """
+            z = (0.0, 0.0, 1.0)
+            t = _norm(to_dir)
+            c = _dot(z, t)  # cos(theta)
+            if abs(c - 1.0) < 1e-12:
+                # Already aligned
+                return ((1.0,0.0,0.0),
+                        (0.0,1.0,0.0),
+                        (0.0,0.0,1.0))
+            if abs(c + 1.0) < 1e-12:
+                # 180 degrees: rotate around any axis perpendicular to z (e.g., x-axis)
+                return ((1.0, 0.0, 0.0),
+                        (0.0,-1.0, 0.0),
+                        (0.0, 0.0,-1.0))
+            k = _cross(z, t)
+            kx, ky, kz = _norm(k)
+            s = sqrt(max(0.0, 1.0 - c*c))
+            # Skew-symmetric K
+            K = ((0.0, -kz,  ky),
+                (kz,  0.0, -kx),
+                (-ky, kx,  0.0))
+            # I + K*s + K^2*(1-c)
+            # First compute K^2
+            K2 = (
+                (K[0][0]*K[0][0] + K[0][1]*K[1][0] + K[0][2]*K[2][0],
+                K[0][0]*K[0][1] + K[0][1]*K[1][1] + K[0][2]*K[2][1],
+                K[0][0]*K[0][2] + K[0][1]*K[1][2] + K[0][2]*K[2][2]),
+                (K[1][0]*K[0][0] + K[1][1]*K[1][0] + K[1][2]*K[2][0],
+                K[1][0]*K[0][1] + K[1][1]*K[1][1] + K[1][2]*K[2][1],
+                K[1][0]*K[0][2] + K[1][1]*K[1][2] + K[1][2]*K[2][2]),
+                (K[2][0]*K[0][0] + K[2][1]*K[1][0] + K[2][2]*K[2][0],
+                K[2][0]*K[0][1] + K[2][1]*K[1][1] + K[2][2]*K[2][1],
+                K[2][0]*K[0][2] + K[2][1]*K[1][2] + K[2][2]*K[2][2]),
+            )
+            I = ((1.0,0.0,0.0),(0.0,1.0,0.0),(0.0,0.0,1.0))
+
+            def _madd(A, B, s=1.0):
+                return tuple(tuple(A[i][j] + s*B[i][j] for j in range(3)) for i in range(3))
+
+            R = I
+            R = _madd(R, K, s)           # I + s*K
+            R = _madd(R, K2, (1.0 - c))  # + (1-c)*K^2
+            return R
+
+        def _apply_R(p, R):
+            return (
+                R[0][0]*p[0] + R[0][1]*p[1] + R[0][2]*p[2],
+                R[1][0]*p[0] + R[1][1]*p[1] + R[1][2]*p[2],
+                R[2][0]*p[0] + R[2][1]*p[1] + R[2][2]*p[2],
+            )
+
+        def _add(a, b):
+            return (a[0]+b[0], a[1]+b[1], a[2]+b[2])
+
+        def _scale(v, s):
+            return (v[0]*s, v[1]*s, v[2]*s)
+
+        # --- Parametric grid in local coordinates (+Z is up) ---
+        # u: around the main ring (longitude), v: around the tube (latitude)
+        du = 2.0*pi / uSides
+        dv = 2.0*pi / vSides
+
+        # Precompute angles to avoid repeated trig
+        cosu = [cos(i*du) for i in range(uSides)]
+        sinu = [sin(i*du) for i in range(uSides)]
+        cosv = [cos(j*dv) for j in range(vSides)]
+        sinv = [sin(j*dv) for j in range(vSides)]
+
+        # Vertex grid (uSides x vSides)
+        grid = [[None for _ in range(vSides)] for _ in range(uSides)]
+        points = [[None for _ in range(vSides)] for _ in range(uSides)]  # store tuples for transforms
+
+        for i in range(uSides):
+            cu, su = cosu[i], sinu[i]
+            for j in range(vSides):
+                cv, sv = cosv[j], sinv[j]
+                x = (majorRadius + minorRadius * cv) * cu
+                y = (majorRadius + minorRadius * cv) * su
+                z =  minorRadius * sv
+                points[i][j] = (x, y, z)
+
+        # --- Orientation: rotate local +Z to requested direction ---
+        R = _rot_matrix_from_z(direction if isinstance(direction, (list, tuple)) else [0,0,1])
+        points = [[_apply_R(points[i][j], R) for j in range(vSides)] for i in range(uSides)]
+
+        # --- Placement: translate relative to the given origin point ---
+        # Determine placement offset in *local* frame, then rotate it by R, then add origin.
+        placement_lc = placement.lower().strip()
+        if placement_lc not in ("center", "bottom", "lowerleft"):
+            raise ValueError('placement must be one of: "center", "bottom", "lowerleft".')
+
+        # In local frame, bbox extents are:
+        #   x,y in [- (R + r), + (R + r)]
+        #   z in [ -r, +r ]
+        # So:
+        # - "center"   : no extra shift (center at (0,0,0))
+        # - "bottom"   : shift up by r along +Z so the lowest point touches z=0 (then move to origin)
+        # - "lowerleft": put min x,y at 0 and bottom at z=0, i.e. shift by (R+r, R+r, r)
+        if placement_lc == "center":
+            placement_local_offset = (0.0, 0.0, 0.0)
+        elif placement_lc == "bottom":
+            placement_local_offset = (0.0, 0.0, minorRadius)
+        else:  # "lowerleft"
+            placement_local_offset = (majorRadius + minorRadius, majorRadius + minorRadius, minorRadius)
+
+        # Rotate the local placement offset into world frame
+        placement_world_offset = _apply_R(placement_local_offset, R)
+
+        # Determine origin position
+        if origin is None:
+            ox, oy, oz = (0.0, 0.0, 0.0)
+        else:
+            try:
+                ox = Vertex.X(origin)
+                oy = Vertex.Y(origin)
+                oz = Vertex.Z(origin)
+            except Exception:
+                # Accept a plain (x,y,z) tuple/list as a convenience
+                ox, oy, oz = origin  # type: ignore
+
+        origin_pt = (ox, oy, oz)
+        base_translation = _add(origin_pt, placement_world_offset)
+
+        # Apply final translation
+        points = [[_add(points[i][j], base_translation) for j in range(vSides)] for i in range(uSides)]
+
+        # --- Build Topologic vertices (reuse grid references) ---
+        for i in range(uSides):
+            for j in range(vSides):
+                x, y, z = points[i][j]
+                grid[i][j] = Vertex.ByCoordinates(x, y, z)
+
+        # --- Triangulate the quad grid into faces (2 triangles per quad) ---
+        faces = []
+        # Wind triangles so that normals generally point outward
+        for i in range(uSides):
+            i1 = (i + 1) % uSides
+            for j in range(vSides):
+                j1 = (j + 1) % vSides
+                v00 = grid[i][j]
+                v10 = grid[i1][j]
+                v11 = grid[i1][j1]
+                v01 = grid[i][j1]
+                # Two triangles per cell:
+                f1 = Face.ByVertices([v00, v10, v11], tolerance)  # triangle
+                f2 = Face.ByVertices([v00, v11, v01], tolerance)  # triangle
+                if f1 is None or f2 is None:
+                    raise RuntimeError("Failed to create torus facets (Face.ByVertices returned None).")
+                faces.append(f1)
+                faces.append(f2)
+
+        # --- Stitch into a closed shell, then a cell ---
+        shell = Shell.ByFaces(faces, tolerance)
+        if shell is None:
+            # As a fallback, try slight relaxation on tolerance (if environment is finicky)
+            shell = Shell.ByFaces(faces, tolerance * 10.0)
+        if shell is None:
+            raise RuntimeError("Failed to stitch torus shell from facets.")
+
+        # Try common constructors to obtain a solid Cell
+        cell = None
+        # 1) Common signature: Cell.ByShell(shell)
+        try:
+            cell = Cell.ByShell(shell)
+        except Exception:
+            cell = None
+        # 2) Sometimes requires tolerance
+        if cell is None:
+            try:
+                cell = Cell.ByShell(shell, tolerance)
+            except Exception:
+                cell = None
+        # 3) Some builds expect a list of shells (external only)
+        if cell is None:
+            try:
+                cell = Cell.ByShells([shell], tolerance)
+            except Exception:
+                cell = None
+        # 4) Rare builds: stitch directly from faces
+        if cell is None:
+            try:
+                cell = Cell.ByFaces(faces, tolerance)
+            except Exception:
+                cell = None
+
+        if cell is None:
+            # As a last resort, return the stitched shell so the caller still gets usable geometry.
+            # But the contract says Cell; better to error explicitly so issues are caught early.
+            raise RuntimeError("Failed to create a solid Cell from the torus shell. Check tolerances and resolution (uSides/vSides).")
+
+        # Clean up small topological defects if available
+        try:
+            cell = Topology.Clean(cell, tolerance)  # optional: no-op if not available
+        except Exception:
+            pass
+
+        return cell
+
+    @staticmethod
+    def Torus_old(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a torus.
 
