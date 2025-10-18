@@ -1739,7 +1739,7 @@ class Cell():
         return egg
     
     @staticmethod
-    def ExternalBoundary(cell):
+    def ExternalBoundary(cell, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the external boundary of the input cell.
 
@@ -1747,6 +1747,10 @@ class Cell():
         ----------
         cell : topologic_core.Cell
             The input cell.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1755,15 +1759,19 @@ class Cell():
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(cell, "Cell"):
-            print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
+            if not silent:
+                print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
-        try:
-            return cell.ExternalBoundary() # Hook to Core
-        except:
-            print("Cell.ExternalBoundary - Error: Could not compute the external boundary. Returning None.")
-            return None
+        shells = Topology.Shells(cell)
+        if len(shells) == 1:
+            return shells[0]
+        temp_cells = [Cell.ByShell(s) for s in shells]
+        volumes = [Cell.Volume(c) for c in temp_cells]
+        shells = Helper.Sort(shells, volumes, silent=silent)
+        return shells[-1]
     
     @staticmethod
     def Faces(cell) -> list:

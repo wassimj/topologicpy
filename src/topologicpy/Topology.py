@@ -947,7 +947,7 @@ class Topology():
         return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ExternalBoundary(topology):
+    def ExternalBoundary(topology, silent: bool = False):
         """
         Returns the external boundary of the input topology.
 
@@ -955,6 +955,8 @@ class Topology():
         ----------
         topology : topologic_core.Topology
             The input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -973,23 +975,24 @@ class Topology():
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.ExternalBoundary - Error: The input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.ExternalBoundary - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         
         if Topology.IsInstance(topology, "Vertex"):
-            return Vertex.ExternalBoundary(topology)
+            return Vertex.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Edge"):
-            return Edge.ExternalBoundary(topology)
+            return Edge.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Wire"):
-            return Wire.ExternalBoundary(topology)
+            return Wire.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Face"):
-            return Face.ExternalBoundary(topology)
+            return Face.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Shell"):
-            return Shell.ExternalBoundary(topology)
+            return Shell.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Cell"):
-            return Cell.ExternalBoundary(topology)
+            return Cell.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "CellComplex"):
-            return CellComplex.ExternalBoundary(topology)
+            return CellComplex.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Cluster"):
             eb_list = Cluster.CellComplexes(topology) + Cluster.FreeCells(topology) + Cluster.FreeShells(topology) + Cluster.FreeFaces(topology) + Cluster.FreeWires(topology) + Cluster.FreeEdges(topology) + Cluster.FreeVertices(topology)
             return_list = []
@@ -1061,16 +1064,20 @@ class Topology():
         return targets
 
     @staticmethod
-    def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001):
+    def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001, silent: bool = False):
         """
         See Topology.Boolean().
 
         """
         from topologicpy.Cluster import Cluster
 
-        if topologyA == None:
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Reteruning None.")
             return None
-        if topologyB == None:
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Reteruning None.")
             return None
         
         from topologicpy.Vertex import Vertex
@@ -1083,12 +1090,16 @@ class Topology():
         results = []
         if Topology.IsInstance(topologyA, "CellComplex"):
            cellsA = Topology.Cells(topologyA)
+        if Topology.IsInstance(topologyA, "Wire"):
+            cellsA = Topology.Edges(topologyA)
         elif Topology.IsInstance(topologyA, "Cluster"):
             cellsA = Cluster.FreeTopologies(topologyA)
         else:
             cellsA = [topologyA]
         if Topology.IsInstance(topologyB, "CellComplex"):
-                cellsB = Topology.Cells(topologyB)
+            cellsB = Topology.Cells(topologyB)
+        elif Topology.IsInstance(topologyB, "Wire"):
+            cellsB = Topology.Edges(topologyB)
         elif Topology.IsInstance(topologyB, "Cluster"):
             cellsB = Cluster.FreeTopologies(topologyB)
         else:
@@ -1100,6 +1111,8 @@ class Topology():
                 cellsA_2 += Topology.Cells(cellA)
             elif Topology.IsInstance(cellA, "Shell"):
                 cellsA_2 += Topology.Faces(cellA)
+            elif Topology.IsInstance(cellA, "Wire"):
+                cellsA_2 += Topology.Edges(cellA)
             else:
                 cellsA_2.append(cellA)
             
@@ -1108,12 +1121,14 @@ class Topology():
                 cellsB_2 += Topology.Cells(cellB)
             elif Topology.IsInstance(cellB, "Shell"):
                 cellsB_2 += Topology.Faces(cellB)
+            elif Topology.IsInstance(cellB, "Wire"):
+                cellsB_2 += Topology.Edges(cellB)
             else:
                 cellsB_2.append(cellB)
         
         for cellA in cellsA_2:
             for cellB in cellsB_2:
-                cellC = cellA.Intersect(cellB)
+                cellC = cellA.Intersect(cellB) # Hook to Core
                 results.append(cellC)
         results = [x for x in results if x is not None]
         if len(results) == 0:
@@ -8984,6 +8999,197 @@ class Topology():
                 if start <= timestamp <= end:
                     snapshots.append(content)
         return snapshots
+
+    @staticmethod
+    def SpatialRelationship(topologyA,
+                            topologyB,
+                            include: list = ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"],
+                            mantissa: int = 6,
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
+        """
+        Returns the spatial relationship string between the two input topologies according to OGC / ISO 19107 / DE-9IM / RCC-8
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology
+        topologyB : topologic_core. Topology
+            The second input topology.
+        include : list , optional
+            The type(s) of spatial relationships to search for. Default is ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"]
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        str
+            The found spatial relationship. One of ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"] or "unknown"
+
+        """
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.SpatialRelationship - Error: The topologyA input parameter is not a valid Topology. Returning None.")
+            return None
+        
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.SpatialRelationship - Error: The topologyB input parameter is not a valid Topology. Returning None.")
+            return None
+
+        
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.SpatialRelationship - Error: The topologyA input parameter is not a valid Topology. Returning None.")
+            return None
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.SpatialRelationship - Error: The topologyB input parameter is not a valid Topology. Returning None.")
+            return None
+
+        # ---------- helpers ----------
+        def _ext_boundary_or_self(t):
+            if Topology.IsInstance(t, "CellComplex") or Topology.IsInstance(t, "Cell") or Topology.IsInstance(t, "Face"):
+                return Topology.ExternalBoundary(t, silent=True)
+            if Topology.IsInstance(t, "Shell"):
+                eb = Topology.ExternalBoundary(t, silent=True)
+                if not eb is None:
+                    return eb
+            return t
+
+        def _boundary(t):
+            # External boundary as the object on which boundary-vs-boundary tests run
+            return _ext_boundary_or_self(t)
+
+        def _intersects(a, b):
+            return Topology.Intersect(a, b, tolerance=tolerance, silent=silent) is not None
+
+        def _symdiff_is_none(a, b):
+            return Topology.SymmetricDifference(a, b, tolerance=tolerance, silent=silent) is None
+
+        # ---------- predicates ----------
+        def disjoint(a, b):
+            # Fast AABB gate first, then exact
+            try:
+                from topologicpy.BVH import AABB
+                aabb_a = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(a)], pad=tolerance)
+                aabb_b = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(b)], pad=tolerance)
+                if not aabb_a.overlaps(aabb_b):
+                    return True
+            except Exception:
+                pass
+            return not _intersects(a, b)
+
+        def equals(a, b):
+            #a = _ext_boundary_or_self(a)
+            #b = _ext_boundary_or_self(b)
+            return _symdiff_is_none(a, b)
+
+        def touches(a, b):
+            # boundary-boundary intersect AND no interior-interior intersection
+            eb_a = _ext_boundary_or_self(a)
+            eb_b = _ext_boundary_or_self(b)
+            inter = Topology.Intersect(eb_a, eb_b, tolerance=tolerance, silent=silent)
+            if inter is None:
+                return False
+            # Interior Should not intersect. Remove external boundaries
+            inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
+            inter = Topology.Difference(inter, eb_a, tolerance=tolerance, silent=silent)
+            if inter == None:
+                return True
+            inter = Topology.Difference(inter, eb_b, tolerance=tolerance, silent=silent)
+            if inter == None:
+                return True
+            return False
+
+        def overlaps(a, b):
+            a = _ext_boundary_or_self(a)
+            b = _ext_boundary_or_self(b)
+            if equals(a, b):
+                return False
+            inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
+            if inter is None:
+                return False
+            # If either contains the other, it's not overlap (it's contains/within/covers/coveredBy).
+            if contains(a, b) or contains(b, a) or covers(a, b) or covers(b, a):
+                return False
+            # There is intersection and neither contains/covers the other -> overlap
+            symDif = Topology.SymmetricDifference(a, b, tolerance=tolerance, silent=silent)
+            return (symDif is not None)
+
+        def covers(a, b):
+            """
+            A covers B  <=>  B ⊆ A  (boundary contact allowed)
+            Implemented as: Difference(B, A) is None
+            """
+            if equals(a, b):
+                return False
+            if Topology.Difference(b, a) is None:
+                eb_a = _ext_boundary_or_self(a)
+                eb_b = _ext_boundary_or_self(b)
+                result = Topology.Intersect(eb_a, eb_b, tolerance=tolerance, silent=silent)
+                if result is not None:
+                    return True
+            return False
+
+        def coveredBy(a, b):
+            # inverse of covers
+            return covers(b, a)
+
+        def contains(a, b):
+            """
+            A contains B  <=>  B ⊂ A and Boundary(A) ∩ Boundary(B) = ∅  (strict interior inclusion)
+            Implemented as: covers(a, b) AND NOT boundary-touch
+            """
+            if equals(a,b):
+                return False
+            if covers(a, b):
+                return False
+            return Topology.Difference(b, a, tolerance=tolerance, silent=silent) is None
+
+        def within(a, b):
+            # inverse of contains
+            return contains(b, a)
+
+        # ---------- evaluation (first-true wins) ----------
+        inc = [x.lower() for x in include]
+
+        if "disjoint" in inc and disjoint(topologyA, topologyB):
+            return "disjoint"
+
+        if "equals" in inc and equals(topologyA, topologyB):
+            return "equals"
+
+        if "touches" in inc and touches(topologyA, topologyB):
+            return "touches"
+
+        if "overlaps" in inc and overlaps(topologyA, topologyB):
+            return "overlaps"
+        
+        # covers/coveredBy are broader (non-strict). Test after contains/within so strict wins.
+        if "covers" in inc and covers(topologyA, topologyB):
+            return "covers"
+
+        if "contains" in inc and contains(topologyA, topologyB):
+            return "contains"
+
+        if "within" in inc and within(topologyA, topologyB):
+            return "within"
+
+        # Note: include lowercasing converts "coveredBy" -> "coveredby"
+        if ("coveredby" in inc or "coveredBy" in include) and coveredBy(topologyA, topologyB):
+            return "coveredBy"
+
+        return "unknown"
 
     @staticmethod
     def Spin(topology, origin=None, triangulate: bool = True, direction: list = [0, 0, 1], angle: float = 360, sides: int = 16,

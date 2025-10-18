@@ -2242,7 +2242,7 @@ class Wire():
         return exterior_angles
     
     @staticmethod
-    def ExternalBoundary(wire):
+    def ExternalBoundary(wire, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the external boundary (cluster of vertices where degree == 1) of the input wire.
 
@@ -2250,6 +2250,10 @@ class Wire():
         ----------
         wire : topologic_core.Wire
             The input wire.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2257,14 +2261,11 @@ class Wire():
             The external boundary of the input wire. This is a cluster of vertices of degree == 1.
 
         """
-        from topologicpy.Topology import Topology
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Cluster import Cluster
-
-        if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.ExternalBoundary - Error: The input wire parameter is not a valid wire. Returning None.")
+        if not Topology.IsInstance(wire, "wire"):
+            if not silent:
+                print("Wire.ExternalBoundary - Error: The input wire parameter is not a valid Wire. Returning None.")
             return None
-        return Cluster.ByTopologies([v for v in Topology.Vertices(wire) if (Vertex.Degree(v, wire, topologyType="edge") == 1)])
+        return wire
     
     @staticmethod
     def Fillet(wire, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):

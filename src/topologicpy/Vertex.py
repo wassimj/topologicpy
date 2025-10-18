@@ -775,7 +775,7 @@ class Vertex():
         return enclosingCells
 
     @staticmethod
-    def ExternalBoundary(vertex):
+    def ExternalBoundary(vertex, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the external boundary (self) of the input vertex. This method is trivial, but included for completeness.
 
@@ -783,6 +783,10 @@ class Vertex():
         ----------
         vertex : topologic_core.Vertex
             The input vertex.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -793,7 +797,8 @@ class Vertex():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(vertex, "Vertex"):
-            print("Vertex.ExternalBoundary - Error: The input vertex parameter is not a valid vertex. Returning None.")
+            if not silent:
+                print("Vertex.ExternalBoundary - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         return vertex
     

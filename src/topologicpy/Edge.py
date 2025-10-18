@@ -798,7 +798,7 @@ class Edge():
         return Edge.ConnectToEdge(edgeA, edgeB, tolerance=tolerance)
     
     @staticmethod
-    def ExternalBoundary(edge):
+    def ExternalBoundary(edge, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the external boundary (cluster of end vertices) of the input edge.
 
@@ -806,6 +806,10 @@ class Edge():
         ----------
         edge : topologic_core.Edge
             The input edge.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -817,7 +821,8 @@ class Edge():
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.ExternalBoundary - Error: The input edge parameter is not a valid edge. Returning None.")
+            if not silent:
+                print("Edge.ExternalBoundary - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
         return Cluster.ByTopologies([Edge.StartVertex(edge), Edge.EndVertex(edge)])
     

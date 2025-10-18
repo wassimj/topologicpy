@@ -684,7 +684,7 @@ class Graph:
         bidirKey : bool , optional
             If set to True or False, this key in the connecting edge will be used to determine is the edge is supposed to be bidirectional or not. If set to None, the input variable bidrectional will be used instead. Default is None
         bidirectional : bool , optional
-            If set to True, the edges in the graph that do not have a bidireKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
+            If set to True, the edges in the graph that do not have a bidirKey in their dictionaries will be treated as being bidirectional. Otherwise, the start vertex and end vertex of the connecting edge will determine the direction. Default is True.
         useEdgeIndex : bool , optional
             If set to True, the adjacency matrix values will the index of the edge in Graph.Edges(graph). Default is False. Both useEdgeIndex, useEdgeLength should not be True at the same time. If they are, useEdgeLength will be used.
         useEdgeLength : bool , optional
@@ -4737,6 +4737,207 @@ class Graph:
         # Create and return the TopologicPy graph
         topologic_graph = Graph.ByVerticesEdges(vertices, edges)
         return topologic_graph
+
+    @staticmethod
+    def BySpatialRelationships(
+        *topologies,
+        include: list = ["contains", "coveredBy", "covers", "disjoint", "equals", "overlaps", "touches", "within"],
+        useInternalVertex = False,
+        vertexIDKey = "id",
+        edgeKeyFwd = "relFwd",
+        edgeKeyBwd = "relBwd",
+        connectsKey = "connects",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+        ):
+        """
+        Creates a graph of the spatial relationships of the input topologies according to OGC / ISO 19107 / DE-9IM / RCC-8
+
+        Parameters
+        ----------
+        *topologies : list
+            The list of input topologies
+        include : list , optional
+            The type(s) of spatial relationships to build. Default is ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"]
+        useInternalVertex: bool , optional
+            If set to True, an internal vertex of the represented topology will be used as a graph node.
+            Otherwise, its centroid will be used. Default is False.
+        vertexIDKey: str, optional
+            The vertex ID key under which to store a unique numerical and sequential id. Default is "id".
+        edgeKeyFwd: str , optional
+            The edge key under which to store the forward relationship (from start vertex to end vertex). Default is "relFwd".
+        edgeKeyBwd: str , optional
+            The edge key under which to store the backward relationship (from end vertex to start vertex). Default is "relBwd".
+        connectsKey: str , optional
+            The edge key under which to store the indices of the vertices connected by each edge. Default is "connects".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.graph
+            The created graph.
+
+        """
+        from topologicpy.Graph import Graph
+        from topologicpy.BVH import BVH
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+
+        # ---------- normalize + filter ----------
+        inc = [s.lower() for s in include]  # enable case-insensitive membership
+        want_disjoint = "disjoint" in inc
+        want_rel = set(inc)  # membership checks
+
+        topologyList = Helper.Flatten(list(topologies))
+        topologyList = [t for t in topologyList if Topology.IsInstance(t, "Topology")]
+        n = len(topologyList)
+
+        if n == 0:
+            if not silent:
+                print("Graph.BySpatialRelationships - Error: No valid topologies. Returning None")
+            return None
+
+        if n == 1:
+            v = Topology.InternalVertex(topologyList[0]) if useInternalVertex else Topology.Centroid(topologyList[0])
+            v = Topology.SetDictionary(v, Topology.Dictionary(topologyList[0]))
+            return Graph.ByVerticesEdges([v], [])
+
+        # ---------- BVH once ----------
+        bvh = BVH.ByTopologies(topologyList, silent=True)
+
+        # ---------- O(1) index for objects ----------
+        index_of = {id(t): i for i, t in enumerate(topologyList)}
+
+        # ---------- precompute per-topology data once ----------
+        vertices_objs = [None] * n
+        vertex_dicts = [None] * n
+        coords = [None] * n
+        for i, t in enumerate(topologyList):
+            d = Topology.Dictionary(t)
+            d = Dictionary.SetValueAtKey(d, vertexIDKey, i)
+            vertex_dicts[i] = d
+            v = Topology.InternalVertex(t) if useInternalVertex else Topology.Centroid(t)
+            vertices_objs[i] = v
+            coords[i] = Vertex.Coordinates(v, mantissa=mantissa)
+
+        # ---------- optional: build AABBs once for ultra-fast disjoint path ----------
+        try:
+            from topologicpy.BVH import AABB
+            have_aabb = True
+            aabbs = []
+            for t in topologyList:
+                verts = Topology.Vertices(t) or []
+                pts = [Vertex.Coordinates(v, mantissa=mantissa) for v in verts]
+                # If topology has no vertices (degenerate), fall back to centroid to avoid errors
+                if not pts:
+                    c = Vertex.Coordinates(Topology.Centroid(t), mantissa=mantissa)
+                    pts = [c]
+                aabbs.append(AABB.from_points(pts, pad=tolerance))
+        except Exception:
+            have_aabb = False
+            aabbs = None
+
+        # ---------- edges ----------
+        edges = []
+        edge_dicts = []
+
+        def _add_edge(ai, bj, rel):
+            # Map forward/backward labels (no index swapping; keep ai < bj)
+            r = rel
+            r_lc = r.lower()
+            if r_lc == "contains":
+                fwd, bwd = "contains", "within"
+            elif r_lc == "within":
+                fwd, bwd = "within", "contains"
+            elif r_lc == "covers":
+                fwd, bwd = "covers", "coveredBy"
+            elif r_lc == "coveredby":  # tolerate lowercased include
+                fwd, bwd = "coveredBy", "covers"
+            else:
+                # symmetric (disjoint/equals/overlaps/touches) or already directional tag returned
+                # keep same tag both ways for symmetric predicates
+                fwd = rel
+                bwd = rel
+            edges.append([ai, bj])
+            edge_dicts.append(
+                Dictionary.ByKeysValues(
+                    [edgeKeyFwd, edgeKeyBwd, connectsKey],
+                    [fwd, bwd, [ai, bj]],
+                )
+            )
+
+        # ---------- main loops (each unordered pair once) ----------
+        for i, a in enumerate(topologyList):
+            ai = i
+            candidates = BVH.Clashes(bvh, a) or []
+            if not candidates:
+                # If you want to connect "disjoint" to *all* non-candidates, that would be O(n) per i.
+                # We intentionally skip that to keep algorithmic cost bounded by BVH outputs.
+                continue
+
+            for b in candidates:
+                bj = index_of.get(id(b))
+                if bj is None or bj <= ai:
+                    continue  # skip self and already-processed pairs
+
+                # Ultra-fast "disjoint" emit via AABB if requested and boxes do not overlap
+                if have_aabb and not aabbs[ai].overlaps(aabbs[bj]):
+                    if want_disjoint:
+                        _add_edge(ai, bj, "disjoint")
+                    continue  # done with this pair
+
+                # Otherwise evaluate exact relation (short-circuit inside)
+                rel = Topology.SpatialRelationship(
+                    a,
+                    b,
+                    include=include,  # honor user's include filter inside the predicate
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+
+                # If the predicate returns a relation in the allowed set, emit the edge
+                # Note: include could contain "coveredBy" while we normalized to lower
+                rel_ok = (rel is not None) and (
+                    rel.lower() in want_rel or rel in include  # accept either case
+                )
+                if rel_ok:
+                    _add_edge(ai, bj, rel)
+
+                # Optional optimization: if disjoint was requested and rel == "disjoint",
+                # it will be added by the block above already.
+
+        # ---------- avoid expensive Vertex.Separate unless duplicates exist ----------
+        seen = set()
+        has_dups = False
+        for c in coords:
+            key = (round(c[0], mantissa), round(c[1], mantissa), round(c[2], mantissa))
+            if key in seen:
+                has_dups = True
+                break
+            seen.add(key)
+
+        if has_dups:
+            # Rare, but if present, resolve once
+            vertices_objs = Vertex.Separate(vertices_objs, minDistance=tolerance * 10)
+            coords = [Vertex.Coordinates(v, mantissa=mantissa) for v in vertices_objs]
+
+        # ---------- build graph ----------
+        graph = Graph.ByMeshData(
+            vertices=coords,
+            edges=edges,
+            vertexDictionaries=vertex_dicts,
+            edgeDictionaries=edge_dicts,
+        )
+        return graph
 
     @staticmethod
     def ByTopology(topology,

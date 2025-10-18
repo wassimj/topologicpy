@@ -685,7 +685,7 @@ class Shell():
         return edges
 
     @staticmethod
-    def ExternalBoundary(shell, tolerance: float = 0.0001):
+    def ExternalBoundary(shell, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns the external boundary of the input shell.
 
@@ -695,6 +695,8 @@ class Shell():
             The input shell.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -706,14 +708,20 @@ class Shell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(shell, "Shell"):
+            if not silent:
+                print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
         edges = Topology.Edges(shell)
-        obEdges = []
+        ebEdges = []
         for anEdge in edges:
             faces = Topology.SuperTopologies(anEdge, shell, topologyType="face")
             if len(faces) == 1:
-                obEdges.append(anEdge)
-        return Topology.SelfMerge(Cluster.ByTopologies(obEdges), tolerance=tolerance)
+                ebEdges.append(anEdge)
+        if len(ebEdges) > 0:
+            return Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance)
+        if not silent:
+            print("Shell.ExternalBoundary - Warning: The input shell parameter is closed and thus has no external boundary. Returning None.")
+        return None
 
     @staticmethod
     def Faces(shell) -> list:

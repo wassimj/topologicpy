@@ -1627,7 +1627,7 @@ class Face():
         return return_list
 
     @staticmethod
-    def ExternalBoundary(face, silent=False):
+    def ExternalBoundary(face, tolerance: float = 0.0001, silent=False):
         """
         Returns the external boundary (closed wire) of the input face.
 
@@ -1635,6 +1635,8 @@ class Face():
         ----------
         face : topologic_core.Face
             The input face.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 

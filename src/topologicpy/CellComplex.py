@@ -866,7 +866,7 @@ class CellComplex():
         return edges
 
     @staticmethod
-    def ExternalBoundary(cellComplex):
+    def ExternalBoundary(cellComplex, silent: bool = False):
         """
         Returns the external boundary (cell) of the input cellComplex.
 
@@ -874,6 +874,8 @@ class CellComplex():
         ----------
         cellComplex : topologic_core.CellComplex
             The input cellComplex.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -884,7 +886,8 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            if not silent:
+                print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
             return None
         return cellComplex.ExternalBoundary() # Hook to Core
     

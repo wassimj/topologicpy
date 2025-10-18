@@ -1276,6 +1276,7 @@ class Plotly:
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             if not faceColorKey == None:
                 d = Topology.Dictionary(topology)
+                fc_d = Dictionary.ValueAtKey(d, key=faceColorKey)
                 faceColor = Dictionary.ValueAtKey(d, key=faceColorKey) or faceColor
             if not faceOpacityKey == None:
                 d = Topology.Dictionary(topology)
