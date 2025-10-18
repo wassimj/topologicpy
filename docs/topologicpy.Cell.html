@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cell module &mdash; topologicpy 0.8.75 documentation</title>
+  <title>topologicpy.Cell module &mdash; topologicpy 0.8.77 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.75
+                0.8.77
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -222,7 +222,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Egg" title="topologicpy.Cell.Cell.Egg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Egg</span></code></a>([origin, height, uSides, vSides, ...])</p></td>
 <td><p>Creates an egg-shaped cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.ExternalBoundary" title="topologicpy.Cell.Cell.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cell[, tolerance, silent])</p></td>
 <td><p>Returns the external boundary of the input cell.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Faces" title="topologicpy.Cell.Cell.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cell)</p></td>
@@ -294,19 +294,22 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus" title="topologicpy.Cell.Cell.Torus"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus</span></code></a>([origin, majorRadius, minorRadius, ...])</p></td>
 <td><p>Creates a torus.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tube" title="topologicpy.Cell.Cell.Tube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tube</span></code></a>([origin, radius, height, thickness, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Torus_old" title="topologicpy.Cell.Cell.Torus_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Torus_old</span></code></a>([origin, majorRadius, ...])</p></td>
+<td><p>Creates a torus.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Tube" title="topologicpy.Cell.Cell.Tube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tube</span></code></a>([origin, radius, height, thickness, ...])</p></td>
 <td><p>Creates a Tube.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Vertices" title="topologicpy.Cell.Cell.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cell)</p></td>
 <td><p>Returns the vertices of the input cell.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Volume" title="topologicpy.Cell.Cell.Volume"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Volume</span></code></a>(cell[, mantissa])</p></td>
 <td><p>Returns the volume of the input cell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wedge" title="topologicpy.Cell.Cell.Wedge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wedge</span></code></a>([origin, width, length, height, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wedge" title="topologicpy.Cell.Cell.Wedge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wedge</span></code></a>([origin, width, length, height, ...])</p></td>
 <td><p>Creates a Wedge.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cell.Cell.Wires" title="topologicpy.Cell.Cell.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cell)</p></td>
 <td><p>Returns the wires of the input cell.</p></td>
 </tr>
 </tbody>
@@ -1039,12 +1042,16 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.ExternalBoundary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.ExternalBoundary" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the external boundary of the input cell.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cell</strong><span class="classifier">topologic_core.Cell</span></dt><dd><p>The input cell.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -1776,6 +1783,44 @@ This algorithm depends on the polyskel code which is included in the library. Po
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cell.Cell.Torus">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Torus</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorRadius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorRadius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.125</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Torus" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a torus.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).</p>
+</dd>
+<dt><strong>majorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The major radius of the torus. Default is 0.5.</p>
+</dd>
+<dt><strong>minorRadius</strong><span class="classifier">float , optional</span></dt><dd><p>The minor radius of the torus. Default is 0.125.</p>
+</dd>
+<dt><strong>uSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the longitude of the torus (around the hole). Default is 16.</p>
+</dd>
+<dt><strong>vSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides along the latitude of the torus (tube direction). Default is 8.</p>
+</dd>
+<dt><strong>direction</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the up direction of the torus. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>placement</strong><span class="classifier">str , optional</span></dt><dd><p>Placement of the input origin relative to the torus. One of:
+- “center”: origin is at the torus’ geometric center (default)
+- “bottom”: origin lies on the lowest point along the up direction
+- “lowerleft”: origin is at x/y lower-left and bottom in z of the torus’ local bbox
+Comparison is case-insensitive.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cell</dt><dd><p>The created torus.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cell.Cell.Torus_old">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Torus_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">majorRadius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minorRadius</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.125</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placement</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cell.Cell.Torus_old" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a torus.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

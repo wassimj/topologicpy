@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Wire module &mdash; topologicpy 0.8.75 documentation</title>
+  <title>topologicpy.Wire module &mdash; topologicpy 0.8.77 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.75
+                0.8.77
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -219,7 +219,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExteriorAngles" title="topologicpy.Wire.Wire.ExteriorAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExteriorAngles</span></code></a>(wire[, tolerance, mantissa])</p></td>
 <td><p>Returns the exterior angles of the input wire in degrees.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExternalBoundary" title="topologicpy.Wire.Wire.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(wire)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.ExternalBoundary" title="topologicpy.Wire.Wire.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(wire[, tolerance, silent])</p></td>
 <td><p>Returns the external boundary (cluster of vertices where degree == 1) of the input wire.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Wire.Wire.Fillet" title="topologicpy.Wire.Wire.Fillet"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fillet</span></code></a>(wire[, radius, sides, radiusKey, ...])</p></td>
@@ -1025,12 +1025,16 @@ Based on the inputMode value, only the following inputs will be considered. The 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Wire.Wire.ExternalBoundary">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">wire</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Wire.Wire.ExternalBoundary" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the external boundary (cluster of vertices where degree == 1) of the input wire.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>wire</strong><span class="classifier">topologic_core.Wire</span></dt><dd><p>The input wire.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
