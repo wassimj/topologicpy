@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.77 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.80 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.77
+                0.8.80
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -171,55 +171,58 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Edges" title="topologicpy.Cluster.Cluster.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cluster)</p></td>
 <td><p>Returns the edges of the input cluster.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Faces" title="topologicpy.Cluster.Cluster.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ExternalBoundary" title="topologicpy.Cluster.Cluster.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cluster[, silent])</p></td>
+<td><p>Returns the external boundary of the input cluster.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Faces" title="topologicpy.Cluster.Cluster.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cluster)</p></td>
 <td><p>Returns the faces of the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeCells" title="topologicpy.Cluster.Cluster.FreeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeCells</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeCells" title="topologicpy.Cluster.Cluster.FreeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeCells</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free cells of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeEdges" title="topologicpy.Cluster.Cluster.FreeEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeEdges</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeEdges" title="topologicpy.Cluster.Cluster.FreeEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeEdges</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free edges of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeFaces" title="topologicpy.Cluster.Cluster.FreeFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFaces</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeFaces" title="topologicpy.Cluster.Cluster.FreeFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFaces</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free faces of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeShells" title="topologicpy.Cluster.Cluster.FreeShells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeShells</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeShells" title="topologicpy.Cluster.Cluster.FreeShells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeShells</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free shells of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeTopologies" title="topologicpy.Cluster.Cluster.FreeTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeTopologies</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeTopologies" title="topologicpy.Cluster.Cluster.FreeTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeTopologies</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free topologies of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeVertices" title="topologicpy.Cluster.Cluster.FreeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeVertices</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeVertices" title="topologicpy.Cluster.Cluster.FreeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeVertices</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free vertices of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeWires" title="topologicpy.Cluster.Cluster.FreeWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeWires</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeWires" title="topologicpy.Cluster.Cluster.FreeWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeWires</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free wires of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.HighestType" title="topologicpy.Cluster.Cluster.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(cluster)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.HighestType" title="topologicpy.Cluster.Cluster.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(cluster)</p></td>
 <td><p>Returns the type of the highest dimension subtopology found in the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.K_Means" title="topologicpy.Cluster.Cluster.K_Means"><code class="xref py py-obj docutils literal notranslate"><span class="pre">K_Means</span></code></a>(topologies[, selectors, keys, k, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.K_Means" title="topologicpy.Cluster.Cluster.K_Means"><code class="xref py py-obj docutils literal notranslate"><span class="pre">K_Means</span></code></a>(topologies[, selectors, keys, k, ...])</p></td>
 <td><p>Clusters the input topologies using K-Means clustering.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.MergeCells" title="topologicpy.Cluster.Cluster.MergeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeCells</span></code></a>(cells[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.MergeCells" title="topologicpy.Cluster.Cluster.MergeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeCells</span></code></a>(cells[, tolerance])</p></td>
 <td><p>Creates a cluster that contains cellComplexes where it can create them plus any additional free cells.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.MysticRose" title="topologicpy.Cluster.Cluster.MysticRose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MysticRose</span></code></a>([wire, origin, radius, sides, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.MysticRose" title="topologicpy.Cluster.Cluster.MysticRose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MysticRose</span></code></a>([wire, origin, radius, sides, ...])</p></td>
 <td><p>Creates a mystic rose.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Shells" title="topologicpy.Cluster.Cluster.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cluster)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Shells" title="topologicpy.Cluster.Cluster.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(cluster)</p></td>
 <td><p>Returns the shells of the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Simplify" title="topologicpy.Cluster.Cluster.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Simplify" title="topologicpy.Cluster.Cluster.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(cluster)</p></td>
 <td><p>Simplifies the input cluster if possible.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Tripod" title="topologicpy.Cluster.Cluster.Tripod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tripod</span></code></a>([size, radius, sides, faceColorKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Tripod" title="topologicpy.Cluster.Cluster.Tripod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tripod</span></code></a>([size, radius, sides, faceColorKey, ...])</p></td>
 <td><p>Creates a color-coded Axes tripod for X, Y, and Z axes.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
 <td><p>Returns the vertices of the input cluster.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
 <td><p>Returns the wires of the input cluster.</p></td>
 </tr>
 </tbody>
@@ -378,6 +381,28 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of edges.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.ExternalBoundary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.ExternalBoundary" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the external boundary of the input cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cluster</strong><span class="classifier">topologic_core.Clusterx</span></dt><dd><p>The input cluster.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Cluster</dt><dd><p>The external boundary of the input cluster.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.8.77 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.8.80 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.77
+                0.8.80
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -201,7 +201,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Repeat" title="topologicpy.Helper.Helper.Repeat"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Repeat</span></code></a>(listA)</p></td>
 <td><p>Repeats the input nested list so that each sublist has the same number of members.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Sort" title="topologicpy.Helper.Helper.Sort"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Sort</span></code></a>(listA, *otherLists[, reverseFlags, silent])</p></td>
 <td><p>Sorts the first input list according to the values in the subsequent input lists in order.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.Transpose" title="topologicpy.Helper.Helper.Transpose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Transpose</span></code></a>(listA)</p></td>
@@ -592,7 +592,7 @@ For example Iterate([[1,2,3],[‘m’,’n’,’o’,’p’],[‘a’,’b’,
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.Sort">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">otherLists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverseFlags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Sort" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Sort</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">listA</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">otherLists</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverseFlags</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.Sort" title="Permalink to this definition"></a></dt>
 <dd><p>Sorts the first input list according to the values in the subsequent input lists in order. For example,
 your first list can be a list of topologies and the next set of lists can be their volume, surface area, and z level.
 The list of topologies will then be sorted first by volume, then by surface, and lastly by z level. You can choose
@@ -611,6 +611,8 @@ parameters determines the order of sorting (from left to right). If no lists are
 The length of the reverseFlags list should match the number of the lists in the input otherLists parameter. If set to None,
 a default list of FALSE values is created to match the number of the lists in the input otherLists parameter. The default
 is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
