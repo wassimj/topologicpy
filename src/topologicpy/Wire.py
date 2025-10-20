@@ -2261,11 +2261,18 @@ class Wire():
             The external boundary of the input wire. This is a cluster of vertices of degree == 1.
 
         """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+
         if not Topology.IsInstance(wire, "wire"):
             if not silent:
                 print("Wire.ExternalBoundary - Error: The input wire parameter is not a valid Wire. Returning None.")
             return None
-        return wire
+        vertices = [v for v in Topology.Vertices(wire) if Vertex.Degree(v, hostTopology=wire) == 1]
+        if len(vertices) > 1:
+            return Cluster.ByTopologies(vertices)
+        return None
     
     @staticmethod
     def Fillet(wire, radius: float = 0, sides: int = 16, radiusKey: str = None, tolerance: float = 0.0001, silent: bool = False):

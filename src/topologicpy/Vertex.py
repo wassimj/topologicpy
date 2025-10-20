@@ -800,7 +800,7 @@ class Vertex():
             if not silent:
                 print("Vertex.ExternalBoundary - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
-        return vertex
+        return None
     
     @staticmethod
     def Fuse(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
@@ -1303,24 +1303,24 @@ class Vertex():
             if Topology.IsInstance(topo, "cell"):
                 return [topo]
             else:
-                return Topology.Cells(topo)
+                return Topology.Cells(topo, silent=True)
 
         def collect_faces(topo):
             if Topology.IsInstance(topo, "face"):
                 return [topo]
             else:
-                return Topology.Faces(topo)
+                return Topology.Faces(topo, silent=True)
 
         def collect_edges(topo):
             if Topology.IsInstance(topo, "edge"):
                 return [topo]
             else:
-                return Topology.Edges(topo)
+                return Topology.Edges(topo, silent=True)
         def collect_vertices(topo):
             if Topology.IsInstance(topo, "vertex"):
                 return [topo]
             else:
-                return Topology.Vertices(topo)
+                return Topology.Vertices(topo, silent=True)
 
         if Topology.IsInstance(topology, "cluster"):
             cells = collect_cells(topology)

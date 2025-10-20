@@ -720,7 +720,7 @@ class Helper:
         return repeated_list
 
     @staticmethod
-    def Sort(listA, *otherLists, reverseFlags=None):
+    def Sort(listA, *otherLists, reverseFlags=None, silent: bool = False):
         """
         Sorts the first input list according to the values in the subsequent input lists in order. For example,
         your first list can be a list of topologies and the next set of lists can be their volume, surface area, and z level.
@@ -741,6 +741,8 @@ class Helper:
             The length of the reverseFlags list should match the number of the lists in the input otherLists parameter. If set to None,
             a default list of FALSE values is created to match the number of the lists in the input otherLists parameter. The default
             is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -753,13 +755,16 @@ class Helper:
         if reverseFlags is None:
             reverseFlags = [False] * len(otherLists)
         if not isinstance(otherLists, tuple):
-            print("Helper.Sort - Error: No other lists to use for sorting have been provided. Returning None.")
+            if not silent:
+                print("Helper.Sort - Error: No other lists to use for sorting have been provided. Returning None.")
             return None
         if len(otherLists) < 1:
-            print("Helper.Sort - Error: The otherLists input parameter does not contain any valid lists. Returning None.")
+            if not silent:
+                print("Helper.Sort - Error: The otherLists input parameter does not contain any valid lists. Returning None.")
             return None
         if not len(reverseFlags) == len(otherLists):
-            print("Helper.Sort - Error: The length of the reverseFlags input parameter is not equal to the number of input lists. Returning None.")
+            if not silent:
+                print("Helper.Sort - Error: The length of the reverseFlags input parameter is not equal to the number of input lists. Returning None.")
             return None
         # Convert other_lists to numeric and reverse if needed.
         sorting_lists = []

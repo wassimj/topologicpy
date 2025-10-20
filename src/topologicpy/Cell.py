@@ -117,7 +117,7 @@ class Cell():
                 print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
                 return None
         faceList = [x for x in faces if Topology.IsInstance(x, "Face")]
-        if len(faceList) < 1:
+        if len(faceList) < 3:
             if not silent:
                 print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
                 return None
@@ -126,14 +126,38 @@ class Cell():
         if Topology.IsInstance(cell, "Cell"):
             return cell
         
+        # Cleanup any non-manifold edges in faces
+        clean_faces = []
+        for face in faceList:
+            eb = Face.ExternalBoundary(face)
+            if not Wire.IsClosed(eb):
+                continue
+            ibList = Face.InternalBoundaries(face)
+            closed_ibList = []
+            for ib in ibList:
+                if Wire.IsClosed(ib):
+                    closed_ibList.append(ib)
+                else:
+                    print("Found an open wire!")
+            clean_face = Face.ByWires(eb, closed_ibList)
+            if Topology.IsInstance(clean_face, "face"):
+                clean_faces.append(clean_face)
+        # Try the default method again
+        cell = topologic.Cell.ByFaces(clean_faces, tolerance) # Hook to Core
+        if Topology.IsInstance(cell, "Cell"):
+            return cell
+        else:
+            print("Something went wrong")
+            Topology.Show(clean_faces)
         # Fuse all the vertices first and rebuild the faces
         all_vertices = []
         wires = []
         for f in faceList:
             w = Face.Wire(f)
-            wires.append(w)
-            all_vertices += Topology.Vertices(w)
-        all_vertices = Vertex.Fuse(all_vertices, tolerance=tolerance)
+            if Wire.IsClosed(w):
+                wires.append(w)
+                all_vertices += Topology.Vertices(w)
+            all_vertices = Vertex.Fuse(all_vertices, tolerance=tolerance)
         new_faces = []
         for w in wires:
             face_vertices = []
@@ -180,7 +204,7 @@ class Cell():
             cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
-                    print("Cell.ByFaces - Error: The operation failed. Returning None.")
+                    print("Cell.ByFaces 1 - Error: The operation failed. Returning None.")
                     return None
             else:
                 return cell
@@ -188,7 +212,7 @@ class Cell():
             cell = topologic.Cell.ByFaces(faces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
-                    print("Cell.ByFaces - Error: The operation failed. Returning None.")
+                    print("Cell.ByFaces 2 - Error: The operation failed. Returning None.")
                     return None
             else:
                 return cell
@@ -1760,18 +1784,27 @@ class Cell():
         """
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        from topologicpy.Shell import Shell
 
         if not Topology.IsInstance(cell, "Cell"):
             if not silent:
                 print("Cell.ExternalBoundary - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
+        
         shells = Topology.Shells(cell)
-        if len(shells) == 1:
-            return shells[0]
-        temp_cells = [Cell.ByShell(s) for s in shells]
+        closed_shells = []
+        temp_cells = []
+        for shell in shells:
+            try:
+                temp_cell = Cell.ByShell(shell, silent=True)
+                if Topology.IsInstance(temp_cell, "cell"):
+                    closed_shells.append(shell)
+                    temp_cells.append(temp_cell)
+            except:
+                pass
         volumes = [Cell.Volume(c) for c in temp_cells]
-        shells = Helper.Sort(shells, volumes, silent=silent)
-        return shells[-1]
+        closed_shells = Helper.Sort(closed_shells, volumes, silent=silent)
+        return closed_shells[-1]
     
     @staticmethod
     def Faces(cell) -> list:

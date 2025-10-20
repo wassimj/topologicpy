@@ -820,6 +820,7 @@ class Edge():
         from topologicpy.Topology import Topology
         from topologicpy.Cluster import Cluster
 
+
         if not Topology.IsInstance(edge, "Edge"):
             if not silent:
                 print("Edge.ExternalBoundary - Error: The input edge parameter is not a valid edge. Returning None.")

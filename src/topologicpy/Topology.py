@@ -905,16 +905,36 @@ class Topology():
     @staticmethod
     def Union(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean()
+        Unions the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
+        from topologicpy.Cluster import Cluster
 
         if Topology.IsInstance(topologyA, "Face") and Topology.IsInstance(topologyB, "Face"):
             if Face.IsCoplanar(topologyA, topologyB):
-                topologyC = Topology.Boolean(topologyA, topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
+                topologyC = Topology._Boolean(topologyA, topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
                 if Topology.IsInstance(topologyC, "Cluster"):
                     return topologyC
                 elif Topology.IsInstance(topologyC, "Shell"):
@@ -936,15 +956,45 @@ class Topology():
                         else:
                             internal_boundaries.append(eb)
                     return Face.ByWires(external_boundary, internal_boundaries)
-        return Topology.Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        
+        elif (Topology.TypeAsString(topologyA).lower() in ["edge", "wire"]) and (Topology.TypeAsString(topologyB).lower() in ["edge", "wire"]):
+            union = Topology.Merge(topologyA, topologyB)
+            if Topology.IsInstance(union, "wire"):
+                union = Wire.RemoveCollinearEdges(union)
+                return union
+            elif Topology.IsInstance(union, "cluster"):
+                wires = Cluster.Wires(union)
+                final_topologies = Cluster.FreeEdges(union)
+                for wire in wires:
+                    final_topologies.append(Wire.RemoveCollinearEdges(wire))
+            return Cluster.ByTopologies(final_topologies)
+        return Topology._Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Difference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Subtracts topologyB from topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="difference", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def ExternalBoundary(topology, silent: bool = False):
@@ -994,11 +1044,12 @@ class Topology():
         elif Topology.IsInstance(topology, "CellComplex"):
             return CellComplex.ExternalBoundary(topology, silent=silent)
         elif Topology.IsInstance(topology, "Cluster"):
-            eb_list = Cluster.CellComplexes(topology) + Cluster.FreeCells(topology) + Cluster.FreeShells(topology) + Cluster.FreeFaces(topology) + Cluster.FreeWires(topology) + Cluster.FreeEdges(topology) + Cluster.FreeVertices(topology)
-            return_list = []
-            for item in eb_list:
-                return_list.append(Topology.ExternalBoundary(item))
-            return Cluster.ByTopologies(return_list)
+            # eb_list = Cluster.CellComplexes(topology) + Cluster.FreeCells(topology) + Cluster.FreeShells(topology) + Cluster.FreeFaces(topology) + Cluster.FreeWires(topology) + Cluster.FreeEdges(topology) + Cluster.FreeVertices(topology)
+            # return_list = []
+            # for item in eb_list:
+            #     return_list.append(Topology.ExternalBoundary(item))
+            # return Cluster.ByTopologies(return_list)
+            return Cluster.ExternalBoundary(topology, silent=silent)
         else:
             return None
 
@@ -1066,7 +1117,25 @@ class Topology():
     @staticmethod
     def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Finds the intersection between the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
         from topologicpy.Cluster import Cluster
@@ -1141,63 +1210,189 @@ class Topology():
     @staticmethod
     def SymmetricDifference(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def SymDif(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def XOR(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Returns the symmetric difference (XOR) of the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Merge(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Merges the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Slices topologyA using topologyB. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="slice", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Impose(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Imposes topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="impose", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Imprint(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        See Topology.Boolean().
+        Imprints topologyB on topologyA. See https://en.wikipedia.org/wiki/Boolean_operation.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tranDict : bool , optional
+            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            the resultant topology.
 
         """
-        return Topology.Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
+        return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Execute the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Do NOT Use this method directly. Executes the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -1221,6 +1416,27 @@ class Topology():
 
         """
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+
+        def special_case(topologyA, topologyB, operation):
+            if operation == "union":
+                merge_result = Topology.Merge(topologyA, topologyB)
+                eb = Topology.ExternalBoundary(merge_result)
+                if Topology.IsInstance(eb, "vertex") or Topology.IsInstance(eb, "edge") or Topology.IsInstance(eb, "face"):
+                    return eb
+                if Topology.IsInstance(eb, "wire"):
+                    if Wire.IsClosed(eb):
+                        return Face.ByWire(eb)
+                    return eb
+                if Topology.IsInstance(eb, "shell"):
+                    if Shell.IsClosed(eb):
+                        return Cell.ByShell(eb)
+                    return eb
+            return None
+
         if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
                 print("Topology.Boolean - Error: the input topologyA parameter is not a valid topology. Returning None.")
@@ -1244,6 +1460,8 @@ class Topology():
         topologyC = None
         if operation.lower() == "union":
             topologyC = topologyA.Union(topologyB, False)
+            if topologyC == None:
+                return special_case(topologyA, topologyB, "union")
         elif operation.lower() == "difference":
             topologyC = topologyA.Difference(topologyB, False)
         elif operation.lower() == "intersect": #Intersect in Topologic (Core) is faulty. This is a workaround.
@@ -9003,7 +9221,7 @@ class Topology():
     @staticmethod
     def SpatialRelationship(topologyA,
                             topologyB,
-                            include: list = ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"],
+                            include: list = ["contains", "disjoint", "equals", "overlaps", "crosses", "touches", "within", "covers", "coveredBy"],
                             mantissa: int = 6,
                             tolerance: float = 0.0001,
                             silent: bool = False):
@@ -9018,6 +9236,16 @@ class Topology():
             The second input topology.
         include : list , optional
             The type(s) of spatial relationships to search for. Default is ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"]
+            - Equals: The two geometries are exactly the same, representing the same set of points.
+            - Disjoint: The boundary and interior of the two geometries do not intersect at all.
+            - Intersects: The geometries have at least one point in common. Intersects is the most general relationship, and if any other relationship (except disjoint) is true, then Intersects() is also true.
+            - Touches: The geometries share at least one point on their boundaries but their interiors do not intersect.
+            - Crosses: The geometries have some interior points in common, but not all of the interior of one is contained in the interior of the other. This often describes a line crossing a polygon or another line.
+            - Within: The interior and boundary of geometry A are completely contained within the interior of geometry B.
+            - Contains: The inverse of "within," where geometry A contains geometry B. The interior and boundary of B are completely contained within the interior of A.
+            - Overlaps: The intersection of the two geometries results in a new, distinct geometry of the same dimension. For example, two overlapping polygons produce a new polygon.
+            - Covers: Geometry B lies entirely on the surface of geometry A. This is a weaker version of Contains() as it allows for B to touch A's boundary.
+            - CoveredBy: The inverse of "covers." Geometry A is covered by geometry B, with A's surface lying entirely on B's surface. 
         mantissa : int , optional
             The desired length of the mantissa. Default is 6.
         tolerance : float , optional
@@ -9058,17 +9286,25 @@ class Topology():
 
         # ---------- helpers ----------
         def _ext_boundary_or_self(t):
-            if Topology.IsInstance(t, "CellComplex") or Topology.IsInstance(t, "Cell") or Topology.IsInstance(t, "Face"):
-                return Topology.ExternalBoundary(t, silent=True)
-            if Topology.IsInstance(t, "Shell"):
-                eb = Topology.ExternalBoundary(t, silent=True)
-                if not eb is None:
-                    return eb
-            return t
+            if Topology.IsInstance(t, "Face"):
+                return t
+            return Topology.ExternalBoundary(t, silent=True) or t
 
-        def _boundary(t):
-            # External boundary as the object on which boundary-vs-boundary tests run
-            return _ext_boundary_or_self(t)
+        def _interior_intersection_exists(a, b):
+            """
+            True if Intersection(a,b) has any part NOT lying on the external boundary of a or b.
+            This is the robust way to detect interior-interior contact for any dimensions.
+            """
+            inter = Topology.Intersect(a, b, tolerance=0.0001, silent=True)
+            if inter is None:
+                return False
+            eb_a = _ext_boundary_or_self(a)
+            eb_b = _ext_boundary_or_self(b)
+            exterior_int = Topology.Intersect(eb_a, eb_b)
+            exterior_int = _ext_boundary_or_self(exterior_int)
+            inter = _ext_boundary_or_self(inter)
+            interior_part = Topology.Difference(inter, exterior_int, tolerance=0.0001, silent=True)
+            return interior_part is not None
 
         def _intersects(a, b):
             return Topology.Intersect(a, b, tolerance=tolerance, silent=silent) is not None
@@ -9081,8 +9317,8 @@ class Topology():
             # Fast AABB gate first, then exact
             try:
                 from topologicpy.BVH import AABB
-                aabb_a = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(a)], pad=tolerance)
-                aabb_b = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(b)], pad=tolerance)
+                aabb_a = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(a, silent=True)], pad=tolerance)
+                aabb_b = AABB.from_points([Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(b, silent=True)], pad=tolerance)
                 if not aabb_a.overlaps(aabb_b):
                     return True
             except Exception:
@@ -9095,36 +9331,54 @@ class Topology():
             return _symdiff_is_none(a, b)
 
         def touches(a, b):
-            # boundary-boundary intersect AND no interior-interior intersection
+            # boundary contact AND no interior–interior contact
+            # Important: test interior–interior against the actual inputs (don’t convert a Cell to its boundary here)
+            if _interior_intersection_exists(a, b):
+                return False
+            # exclude containment variants
+            if covers(a, b) or covers(b, a):
+                return False
+            # now check boundary-vs-boundary contact
             eb_a = _ext_boundary_or_self(a)
             eb_b = _ext_boundary_or_self(b)
-            inter = Topology.Intersect(eb_a, eb_b, tolerance=tolerance, silent=silent)
-            if inter is None:
+            return Topology.Intersect(eb_a, eb_b, tolerance=tolerance, silent=silent) is not None
+
+        def crosses(a, b):
+            """
+            Mixed-dimension interior intersection:
+            True when dim(a) != dim(b), there is interior–interior contact,
+            and neither is within/contains the other.
+            """
+            da, db = Topology.Type(a), Topology.Type(b)
+            if da == db:
+                return False  # crosses is only for mixed dimensions
+            if not _interior_intersection_exists(a, b):
                 return False
-            # Interior Should not intersect. Remove external boundaries
-            inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
-            inter = Topology.Difference(inter, eb_a, tolerance=tolerance, silent=silent)
-            if inter == None:
-                return True
-            inter = Topology.Difference(inter, eb_b, tolerance=tolerance, silent=silent)
-            if inter == None:
-                return True
-            return False
+            # exclude containment variants
+            if covers(a, b) or covers(b, a):
+                return False
+            return True
 
         def overlaps(a, b):
-            a = _ext_boundary_or_self(a)
-            b = _ext_boundary_or_self(b)
-            if equals(a, b):
+            if Topology.Type(a) != Topology.Type(b):
                 return False
-            inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
-            if inter is None:
-                return False
-            # If either contains the other, it's not overlap (it's contains/within/covers/coveredBy).
-            if contains(a, b) or contains(b, a) or covers(a, b) or covers(b, a):
-                return False
+            diff1 = Topology.Difference(a, b)
+            diff2 = Topology.Difference(b, a)
+            if diff1 and diff2:
+                return True
+            # a = _ext_boundary_or_self(a)
+            # b = _ext_boundary_or_self(b)
+            # if equals(a, b):
+            #     return False
+            # inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
+            # if inter is None:
+            #     return False
+            # # If either contains the other, it's not overlap (it's contains/within/covers/coveredBy).
+            # if contains(a, b) or contains(b, a) or covers(a, b) or covers(b, a):
+            #     return False
             # There is intersection and neither contains/covers the other -> overlap
-            symDif = Topology.SymmetricDifference(a, b, tolerance=tolerance, silent=silent)
-            return (symDif is not None)
+            # symDif = Topology.SymmetricDifference(a, b, tolerance=tolerance, silent=silent)
+            # return (symDif is not None)
 
         def covers(a, b):
             """
@@ -9171,6 +9425,9 @@ class Topology():
 
         if "touches" in inc and touches(topologyA, topologyB):
             return "touches"
+        
+        if "crosses" in inc and crosses(topologyA, topologyB):
+            return "crosses"
 
         if "overlaps" in inc and overlaps(topologyA, topologyB):
             return "overlaps"
@@ -9658,15 +9915,22 @@ class Topology():
 
         """
         from topologicpy.Graph import Graph
+        import inspect
         
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Vertices - Error: The input is not a valid topology. Returning None")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         
         if Topology.IsInstance(topology, "Vertex"):
             if not silent:
                 print("Topology.Vertices - Warning: The input is a Vertex. Returning the same vertex embedded in a list.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return [topology]
         
         if Topology.IsInstance(topology, "Graph"):
@@ -10210,24 +10474,24 @@ class Topology():
             if Topology.IsInstance(topo, "cell"):
                 return [topo]
             else:
-                return Topology.Cells(topo)
+                return Topology.Cells(topo, silent=True)
 
         def collect_faces(topo):
             if Topology.IsInstance(topo, "face"):
                 return [topo]
             else:
-                return Topology.Faces(topo)
+                return Topology.Faces(topo, silent=True)
 
         def collect_edges(topo):
             if Topology.IsInstance(topo, "edge"):
                 return [topo]
             else:
-                return Topology.Edges(topo)
+                return Topology.Edges(topo, silent=True)
         def collect_vertices(topo):
             if Topology.IsInstance(topo, "vertex"):
                 return [topo]
             else:
-                return Topology.Vertices(topo)
+                return Topology.Vertices(topo, silent=True)
 
         vertices = []
         edges = []

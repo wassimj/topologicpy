@@ -704,23 +704,21 @@ class Shell():
             The external boundary of the input shell. If the shell has holes, the return value will be a cluster of wires.
 
         """
+        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(shell, "Shell"):
             if not silent:
                 print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        edges = Topology.Edges(shell)
-        ebEdges = []
-        for anEdge in edges:
-            faces = Topology.SuperTopologies(anEdge, shell, topologyType="face")
-            if len(faces) == 1:
-                ebEdges.append(anEdge)
-        if len(ebEdges) > 0:
-            return Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance)
-        if not silent:
-            print("Shell.ExternalBoundary - Warning: The input shell parameter is closed and thus has no external boundary. Returning None.")
+        ebEdges = [ebEdge for ebEdge in Topology.Edges(shell) if len(Topology.SuperTopologies(ebEdge, shell, topologyType="face")) == 1]
+        if len(ebEdges) > 1:
+            wires = Topology.Wires(Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance))
+            lengths = [Wire.Length(w) for w in wires if Topology.IsInstance(w, "wire")]
+            wire = Helper.Sort(wires, lengths)
+            return wires[-1]
         return None
 
     @staticmethod
@@ -1018,9 +1016,9 @@ class Shell():
         return returnTopology
     
     @staticmethod
-    def InternalBoundaries(shell, tolerance=0.0001):
+    def InternalEdges(shell, tolerance=0.0001):
         """
-        Returns the internal boundaries of the input shell.
+        Returns the internal edges of the input shell.
 
         Parameters
         ----------
@@ -2008,7 +2006,7 @@ class Shell():
         if not Topology.IsInstance(bf, "Face"):
             print("Shell.Skeleton - Error: Could not create a bounding rectangle face. Returning None.")
             return None
-        large_shell = Topology.Boolean(bf, roof, operation="slice", tolerance=tolerance)
+        large_shell = Topology.Slice(bf, roof, tolerance=tolerance)
         if not large_shell:
             return None
         faces = Topology.Faces(large_shell)

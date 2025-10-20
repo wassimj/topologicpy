@@ -482,6 +482,65 @@ class Cluster():
         _ = cluster.Edges(None, edges) # Hook to Core
         return edges
 
+
+    @staticmethod
+    def ExternalBoundary(cluster, silent: bool = False):
+        """
+        Returns the external boundary of the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Clusterx
+            The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Cluster
+            The external boundary of the input cluster.
+
+        """
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cluster.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+            return None
+        
+        cellComplexes = Cluster.CellComplexes(cluster)
+        cells = Cluster.FreeCells(cluster)
+        shells = Cluster.FreeShells(cluster)
+        faces = Cluster.FreeFaces(cluster)
+        wires = Cluster.FreeWires(cluster)
+        edges = Cluster.FreeEdges(cluster)
+        vertices = Cluster.FreeVertices(cluster)
+
+        eb_list = []
+        for cc in cellComplexes:
+            eb_list.append(CellComplex.ExternalBoundary(cc))
+        for c in cells:
+            eb = Cell.ExternalBoundary(c)
+            c2 = Cell.ByShell(eb)
+            if Topology.IsInstance(c2, "cell"):
+                eb_list.append(c2)
+        for f in faces:
+            eb = Face.ExternalBoundary(f)
+            ibList = Face.InternalBoundaries(f)
+            f2 = Face.ByWires(eb, ibList)
+            if Topology.IsInstance(f2, "face"):
+                eb_list.append(CellComplex.ExternalBoundary(f2))
+        eb_list.extend(shells)
+        eb_list.extend(wires)
+        eb_list.extend(edges)
+        eb_list.extend(vertices)
+        if len(eb_list) > 0:
+            return Cluster.ByTopologies(eb_list)
+        return cluster
+
     @staticmethod
     def Faces(cluster) -> list:
         """
@@ -544,7 +603,7 @@ class Cluster():
         if len(cellComplexesCells) == 0:
             return allCells
         cellComplexesCluster = Cluster.ByTopologies(cellComplexesCells)
-        resultingCluster = Topology.Boolean(allCellsCluster, cellComplexesCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allCellsCluster, cellComplexesCluster, tolerance=tolerance)
         if resultingCluster == None:
             return []
         if Topology.IsInstance(resultingCluster, "Cell"):
@@ -590,7 +649,7 @@ class Cluster():
         if len(cellsShells) == 0:
             return allShells
         cellsCluster = Cluster.ByTopologies(cellsShells)
-        resultingCluster = Topology.Boolean(allShellsCluster, cellsCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allShellsCluster, cellsCluster, tolerance=tolerance)
         if resultingCluster == None:
             return []
         if Topology.IsInstance(resultingCluster, "Shell"):
@@ -636,7 +695,7 @@ class Cluster():
         if len(shellFaces) == 0:
             return allFaces
         shellCluster = Cluster.ByTopologies(shellFaces)
-        resultingCluster = Topology.Boolean(allFacesCluster, shellCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allFacesCluster, shellCluster, tolerance=tolerance)
         if resultingCluster == None:
             return []
         if Topology.IsInstance(resultingCluster, "Face"):
@@ -682,7 +741,7 @@ class Cluster():
         if len(facesWires) == 0:
             return allWires
         facesCluster = Cluster.ByTopologies(facesWires)
-        resultingCluster = Topology.Boolean(allWiresCluster, facesCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allWiresCluster, facesCluster, tolerance=tolerance)
         if resultingCluster == None:
             return []
         if Topology.IsInstance(resultingCluster, "Wire"):
@@ -728,7 +787,7 @@ class Cluster():
         if len(wireEdges) == 0:
             return allEdges
         wireCluster = Cluster.ByTopologies(wireEdges)
-        resultingCluster = Topology.Boolean(allEdgesCluster, wireCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allEdgesCluster, wireCluster, tolerance=tolerance)
         if resultingCluster == None:
             return []
         if Topology.IsInstance(resultingCluster, "Edge"):
@@ -774,7 +833,7 @@ class Cluster():
         if len(edgesVertices) == 0:
             return allVertices
         edgesCluster = Cluster.ByTopologies(edgesVertices)
-        resultingCluster = Topology.Boolean(allVerticesCluster, edgesCluster, operation="difference", tolerance=tolerance)
+        resultingCluster = Topology.Difference(allVerticesCluster, edgesCluster, tolerance=tolerance)
         if Topology.IsInstance(resultingCluster, "Vertex"):
             return [resultingCluster]
         if resultingCluster == None:
