@@ -50,7 +50,7 @@ def test_main():
     prism3 = CellComplex.Prism(v2, .5, .5, 2, direction = [90, 90, 90])             # create prism
 
     # test 4.2 - symdif
-    symdif2 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
+    symdif2 = Topology._Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)
 
     # case 1 - AddApertures
@@ -166,82 +166,82 @@ def test_main():
     # case 8 - Boolean
     print("Case 8")
     # test 1 - Union
-    union1 = Topology.Boolean(box1, box4)                                                      # without optional inputs                                         
+    union1 = Topology._Boolean(box1, box4)                                                      # without optional inputs                                         
     assert Topology.IsInstance(union1, "Cell"), "Topology.Union. Should be topologic_core.Cell"
     # test 2 - Union
-    union2 = Topology.Boolean(prism1, prism3, operation= 'union',                 # with optional inputs
+    union2 = Topology._Boolean(prism1, prism3, operation= 'union',                 # with optional inputs
                                                   tranDict=False, tolerance= 0.0005)
-    assert Topology.IsInstance(union2, "Cell"), "Topology.Boolean. Should be topologic_core.Cell"
+    assert Topology.IsInstance(union2, "Cell"), "Topology._Boolean. Should be topologic_core.Cell"
     # test 3 - Difference
-    diff1 = Topology.Boolean(box1, box4, operation= 'difference')
-    assert Topology.IsInstance(diff1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    diff1 = Topology._Boolean(box1, box4, operation= 'difference')
+    assert Topology.IsInstance(diff1, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
     # test 4 -Difference
-    diff2 = Topology.Boolean(prism1, prism3, operation= 'difference',                 # with optional inputs     
+    diff2 = Topology._Boolean(prism1, prism3, operation= 'difference',                 # with optional inputs     
                                                   tranDict=False, tolerance= 0.0005)
-    assert Topology.IsInstance(diff2, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(diff2, "Cluster"), "Topology._Boolean. Should be topologic.Cluster"
 
     # test 5 - Intersect
-    intrsct1 = Topology.Boolean(box1, box4, operation= 'intersect')
-    assert Topology.IsInstance(intrsct1, "Cell"), "Topology.Boolean. Should be topologic.Cell"
+    intrsct1 = Topology._Boolean(box1, box4, operation= 'intersect')
+    assert Topology.IsInstance(intrsct1, "Cell"), "Topology._Boolean. Should be topologic.Cell"
 
     # test 6 - Intersect
-    intrsct2 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
+    intrsct2 = Topology._Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)   
-    assert Topology.IsInstance(intrsct2, "Cell"), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(intrsct2, "Cell"), "Topology._Boolean. Should be topologic.Cell"
 
     # test 7 - Intersect
-    intrsct3 = Topology.Boolean(box1, box4, operation= 'intersect',              # with optional inputs
+    intrsct3 = Topology._Boolean(box1, box4, operation= 'intersect',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)   
-    assert Topology.IsInstance(intrsct3, "Cell"), "Topology.Boolean. Should be topologic.Cell"
+    assert Topology.IsInstance(intrsct3, "Cell"), "Topology._Boolean. Should be topologic.Cell"
 
     # test 8 - SymDif
-    symdif1 = Topology.Boolean(box1, box4, operation= 'symdif')
-    assert Topology.IsInstance(symdif1, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
+    symdif1 = Topology._Boolean(box1, box4, operation= 'symdif')
+    assert Topology.IsInstance(symdif1, "Cluster"), "Topology._Boolean. Should be topologic.Cluster"
 
     # test 9 - symdif
-    symdif2 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
+    symdif2 = Topology._Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)
-    assert Topology.IsInstance(symdif2, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(symdif2, "Cluster"), "Topology._Boolean. Should be topologic.Cluster"
 
     # test 10 - SymDif
-    symdif3 = Topology.Boolean(box1, box4, operation= 'symdif',              # with optional inputs
+    symdif3 = Topology._Boolean(box1, box4, operation= 'symdif',              # with optional inputs
                                                    tranDict=False, tolerance= 0.0001)
-    assert Topology.IsInstance(symdif3, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
+    assert Topology.IsInstance(symdif3, "Cluster"), "Topology._Boolean. Should be topologic.Cluster"
 
     # test 11 - Merge
-    merge1 = Topology.Boolean(box1, box4,  operation= 'merge')
-    assert Topology.IsInstance(merge1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    merge1 = Topology._Boolean(box1, box4,  operation= 'merge')
+    assert Topology.IsInstance(merge1, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 12 - Merge
-    merge2 = Topology.Boolean(prism1, prism3, operation= 'merge', 
+    merge2 = Topology._Boolean(prism1, prism3, operation= 'merge', 
                                                    tranDict=False, tolerance=0.0005)
-    assert Topology.IsInstance(merge2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(merge2, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 13 - Slice
-    slice1 = Topology.Boolean(box2, box1, operation= 'slice')
-    assert Topology.IsInstance(slice1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    slice1 = Topology._Boolean(box2, box1, operation= 'slice')
+    assert Topology.IsInstance(slice1, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 14 - Slice
-    slice2 = Topology.Boolean(prism1, prism3, operation= 'slice',
+    slice2 = Topology._Boolean(prism1, prism3, operation= 'slice',
                                                 tranDict=False, tolerance=0.0005)
-    assert Topology.IsInstance(slice2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(slice2, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 15 - Impose
-    impo1 = Topology.Boolean(box2, box1, operation= 'impose')
-    assert Topology.IsInstance(impo1, "Cluster"), "Topology.Boolean. Should be topologic.Cluster"
+    impo1 = Topology._Boolean(box2, box1, operation= 'impose')
+    assert Topology.IsInstance(impo1, "Cluster"), "Topology._Boolean. Should be topologic.Cluster"
     # test 16 - impose
-    impo2 = Topology.Boolean(prism1, prism3, operation= 'impose',
+    impo2 = Topology._Boolean(prism1, prism3, operation= 'impose',
                                                 tranDict=False, tolerance=0.0005)
-    assert Topology.IsInstance(impo2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(impo2, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 17 - Imprint
-    impr1 = Topology.Boolean(box2, box1, operation= 'imprint')
-    assert Topology.IsInstance(impr1, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    impr1 = Topology._Boolean(box2, box1, operation= 'imprint')
+    assert Topology.IsInstance(impr1, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # test 18 - Imprint
-    impr2 = Topology.Boolean(prism1, prism3, operation= 'imprint',
+    impr2 = Topology._Boolean(prism1, prism3, operation= 'imprint',
                                                 tranDict=False, tolerance=0.0005)
-    assert Topology.IsInstance(impr2, "CellComplex"), "Topology.Boolean. Should be topologic.CellComplex"
+    assert Topology.IsInstance(impr2, "CellComplex"), "Topology._Boolean. Should be topologic.CellComplex"
 
     # case 9 - BoundingBox
     print("Case 9")
