@@ -701,7 +701,7 @@ class Shell():
         Returns
         -------
         topologic_core.Wire or topologic_core.Cluster
-            The external boundary of the input shell. If the shell has holes, the return value will be a cluster of wires.
+            The external boundary of the input shell.
 
         """
         from topologicpy.Wire import Wire
@@ -717,7 +717,7 @@ class Shell():
         if len(ebEdges) > 1:
             wires = Topology.Wires(Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance))
             lengths = [Wire.Length(w) for w in wires if Topology.IsInstance(w, "wire")]
-            wire = Helper.Sort(wires, lengths)
+            wires = Helper.Sort(wires, lengths)
             return wires[-1]
         return None
 
@@ -1014,9 +1014,47 @@ class Shell():
         returnTopology = Topology.Place(returnTopology, originA=Vertex.Origin(), originB=origin)
         returnTopology = Topology.Orient(returnTopology, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return returnTopology
+
+
+    @staticmethod
+    def InternalBoundaries(shell, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the internal boundaries (holes) of the input shell.
+
+        Parameters
+        ----------
+        shell : topologic_core.Shell
+            The input shell.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of internal boundaries (holes) of the input shell.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(shell, "Shell"):
+            if not silent:
+                print("Shell.InternalBoundaries - Error: The input shell parameter is not a valid Shell. Returning None.")
+            return None
+        ebEdges = [ebEdge for ebEdge in Topology.Edges(shell) if len(Topology.SuperTopologies(ebEdge, shell, topologyType="face")) == 1]
+        if len(ebEdges) > 1:
+            wires = Topology.Wires(Topology.SelfMerge(Cluster.ByTopologies(ebEdges), tolerance=tolerance))
+            lengths = [Wire.Length(w) for w in wires if Topology.IsInstance(w, "wire")]
+            wires = Helper.Sort(wires, lengths)
+            return wires[:-1]
+        return None
     
     @staticmethod
-    def InternalEdges(shell, tolerance=0.0001):
+    def InternalEdges(shell, tolerance=0.0001, silent: bool = False):
         """
         Returns the internal edges of the input shell.
 
@@ -1029,6 +1067,8 @@ class Shell():
             Edges that separate the same faces belong to the same group.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1036,10 +1076,14 @@ class Shell():
             The list of internal boundaries
 
         """
-        from topologicpy.Wire import Wire
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(shell, "Shell"):
+            if not silent:
+                print("Shell.InternalEdges - Error: The input shell parameter is not a valid Shell. Returning None.")
+            return None
         faces = Shell.Faces(shell)
         for i, f in enumerate(faces):
             d = Topology.Dictionary(f)
