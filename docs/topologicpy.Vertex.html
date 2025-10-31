@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.80 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.8.85 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.80
+                0.8.85
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -199,7 +199,7 @@
 <td><p>Returns the list of Cells found in the input topology that enclose the input vertex.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.ExternalBoundary" title="topologicpy.Vertex.Vertex.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(vertex[, tolerance, silent])</p></td>
-<td><p>Returns the external boundary (self) of the input vertex.</p></td>
+<td><p>Returns the external boundary of the input vertex (None according OGC / ISO / DE-9IM).</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Fuse" title="topologicpy.Vertex.Vertex.Fuse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Fuse</span></code></a>(vertices[, mantissa, tolerance])</p></td>
 <td><p>Returns a list of vertices where vertices within a specified tolerance distance are fused while retaining duplicates, ensuring that vertices with nearly identical coordinates are replaced by a single shared coordinate.</p></td>
@@ -639,7 +639,7 @@ v = Vertex.ByCoordinates(x=3.4, y=5.7, z=2.8)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.ExternalBoundary">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExternalBoundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.ExternalBoundary" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the external boundary (self) of the input vertex. This method is trivial, but included for completeness.</p>
+<dd><p>Returns the external boundary of the input vertex (None according OGC / ISO / DE-9IM). This method is trivial, but included for completeness.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
