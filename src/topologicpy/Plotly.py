@@ -428,36 +428,6 @@ class Plotly:
             return None
         data = []
         
-        if showVertices:
-            vertices = Graph.Vertices(graph)
-            v_dictionaries = [Topology.Dictionary(v) for v in vertices]
-            e_cluster = Cluster.ByTopologies(vertices)
-            geo = Topology.Geometry(e_cluster, mantissa=mantissa)
-            vertices = geo['vertices']
-            if len(vertices) > 0:
-                v_data = Plotly.vertexData(vertices,
-                                   dictionaries=v_dictionaries,
-                                   color=vertexColor,
-                                   colorKey=vertexColorKey,
-                                   size=vertexSize,
-                                   sizeKey=vertexSizeKey,
-                                   borderColor=vertexBorderColor,
-                                   borderWidth=vertexBorderWidth,
-                                   borderColorKey=vertexBorderColorKey,
-                                   borderWidthKey=vertexBorderWidthKey,
-                                   labelKey=vertexLabelKey,
-                                   showVertexLabel=showVertexLabel,
-                                   groupKey=vertexGroupKey,
-                                   minGroup=vertexMinGroup,
-                                   maxGroup=vertexMaxGroup,
-                                   groups=vertexGroups,
-                                   legendLabel=vertexLegendLabel,
-                                   legendGroup=vertexLegendGroup,
-                                   legendRank=vertexLegendRank,
-                                   showLegend=showVertexLegend,
-                                   colorScale=colorScale)
-                data += v_data
-        
         if showEdges:
             e_dictionaries = []
             edges = Graph.Edges(graph)
@@ -489,6 +459,36 @@ class Plotly:
                 vertices = geo['vertices']
                 edges = geo['edges']
                 data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))        
+        
+        if showVertices:
+            vertices = Graph.Vertices(graph)
+            v_dictionaries = [Topology.Dictionary(v) for v in vertices]
+            e_cluster = Cluster.ByTopologies(vertices)
+            geo = Topology.Geometry(e_cluster, mantissa=mantissa)
+            vertices = geo['vertices']
+            if len(vertices) > 0:
+                v_data = Plotly.vertexData(vertices,
+                                   dictionaries=v_dictionaries,
+                                   color=vertexColor,
+                                   colorKey=vertexColorKey,
+                                   size=vertexSize,
+                                   sizeKey=vertexSizeKey,
+                                   borderColor=vertexBorderColor,
+                                   borderWidth=vertexBorderWidth,
+                                   borderColorKey=vertexBorderColorKey,
+                                   borderWidthKey=vertexBorderWidthKey,
+                                   labelKey=vertexLabelKey,
+                                   showVertexLabel=showVertexLabel,
+                                   groupKey=vertexGroupKey,
+                                   minGroup=vertexMinGroup,
+                                   maxGroup=vertexMaxGroup,
+                                   groups=vertexGroups,
+                                   legendLabel=vertexLegendLabel,
+                                   legendGroup=vertexLegendGroup,
+                                   legendRank=vertexLegendRank,
+                                   showLegend=showVertexLegend,
+                                   colorScale=colorScale)
+                data += v_data
         return data
     
     @staticmethod

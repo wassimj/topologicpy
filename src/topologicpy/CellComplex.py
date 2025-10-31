@@ -868,7 +868,7 @@ class CellComplex():
     @staticmethod
     def ExternalBoundary(cellComplex, silent: bool = False):
         """
-        Returns the external boundary (cell) of the input cellComplex.
+        Returns the external boundary (shell) of the input cellComplex.
 
         Parameters
         ----------
@@ -889,7 +889,8 @@ class CellComplex():
             if not silent:
                 print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
             return None
-        return cellComplex.ExternalBoundary() # Hook to Core
+        cell = cellComplex.ExternalBoundary() # Hook to Core
+        return Topology.Shells(cell)[0]
     
     @staticmethod
     def ExternalFaces(cellComplex) -> list:

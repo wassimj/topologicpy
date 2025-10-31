@@ -369,11 +369,11 @@ class Topology():
             return None
         tDict = Topology.Dictionary(topology)
         if len(tDict.Keys()) < 1:
-            _ = topology.SetDictionary(dictionary)
+            _ = topology.SetDictionary(dictionary) # Hook to Core
         else:
             newDict = Dictionary.ByMergedDictionaries([tDict, dictionary])
             if newDict:
-                _ = topology.SetDictionary(newDict)
+                _ = topology.SetDictionary(newDict) # Hook to Core
         return topology
     
     @staticmethod
@@ -843,7 +843,7 @@ class Topology():
         apertures = []
         subTopologies = []
         if not subTopologyType:
-            _ = topology.Apertures(apertures)
+            _ = topology.Apertures(apertures) # Hook to Core
             apertures = [x.Topology() for x in apertures]
             contents = Topology.Contents(topology)
             for content in contents:
@@ -861,7 +861,7 @@ class Topology():
         elif subTopologyType.lower() == "cell":
             subTopologies = Topology.Cells(topology, silent=True)
         elif subTopologyType.lower() == "all":
-            _ = topology.Apertures(apertures)
+            _ = topology.Apertures(apertures) # Hook to Core
             apertures = [x.Topology() for x in apertures]
             subTopologies = Topology.Vertices(topology, silent=True)
             subTopologies += Topology.Edges(topology, silent=True)
@@ -1439,23 +1439,23 @@ class Topology():
 
         if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
-                print("Topology.Boolean - Error: the input topologyA parameter is not a valid topology. Returning None.")
+                print(f"Topology.{operation.capitalize()} - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
         if not Topology.IsInstance(topologyB, "Topology"):
             if not silent:
-                print("Topology.Boolean - Error: the input topologyB parameter is not a valid topology. Returning None.")
+                print(f"Topology.{operation.capitalize()} - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
         if not isinstance(operation, str):
             if not silent:
-                print("Topology.Boolean - Error: the input operation parameter is not a valid string. Returning None.")
+                print(f"Topology.{operation.capitalize()} - Error: the input operation parameter is not a valid string. Returning None.")
             return None
         if not operation.lower() in ["union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint"]:
             if not silent:
-                print("Topology.Boolean - Error: the input operation parameter is not a recognized operation. Returning None.")
+                print(f"Topology.{operation.capitalize()} - Error: the input operation parameter is not a recognized operation. Returning None.")
             return None
         if not isinstance(tranDict, bool):
             if not silent:
-                print("Topology.Boolean - Error: the input tranDict parameter is not a valid boolean. Returning None.")
+                print(f"Topology.{operation.capitalize()} - Error: the input tranDict parameter is not a valid boolean. Returning None.")
             return None
         topologyC = None
         if operation.lower() == "union":
@@ -1479,11 +1479,8 @@ class Topology():
         elif operation.lower() == "imprint":
             topologyC = topologyA.Imprint(topologyB, False)
         else:
-            print("1. Topology.Boolean - Error: the boolean operation failed. Returning None.")
+            print(f"Topology.{operation.capitalize()} - Error: the boolean operation failed. Returning None.")
             return None
-        #except:
-            #print("2. Topology.Boolean - Error: the boolean operation failed. Returning None.")
-            #return None
         if tranDict == True:
             sourceVertices = []
             sourceEdges = []
@@ -3357,7 +3354,7 @@ class Topology():
             'materials': materials,
             'groups': groups
         }
-        groups = obj_data['groups']
+        print(obj_data.keys())
         vertices = obj_data['vertices']
         groups = obj_data['groups']
         materials = obj_data['materials']
@@ -3368,6 +3365,7 @@ class Topology():
             face_selectors = []
             object_name = names[i]
             faces = groups[object_name]
+            print("Number of faces:", len(faces))
             f = faces[0] # Get object material from first face. Assume it is the material of the group
             object_color = defaultColor
             object_opacity = defaultOpacity
@@ -3395,21 +3393,22 @@ class Topology():
                         d = Dictionary.ByKeysValues(['color', 'opacity'], [face_color, face_opacity])
                         selector = Topology.SetDictionary(selector, d)
                         face_selectors.append(selector)
-
-            topology = Cluster.ByTopologies(object_faces)
-            if Topology.IsInstance(topology, "Topology"):
-                if selfMerge:
-                    topology = Topology.SelfMerge(topology)
-                if Topology.IsInstance(topology, "Topology"):
-                    if removeCoplanarFaces:
-                        topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
-                    if Topology.IsInstance(topology, "Topology"):
-                        d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
-                        topology = Topology.SetDictionary(topology, d)
-                        if len(face_selectors) > 0:
-                            topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
-                        return_topologies.append(topology)
-        return return_topologies
+              
+            #topology = Cluster.ByTopologies(object_faces)
+        return object_faces
+        #     if Topology.IsInstance(topology, "Topology"):
+        #         if selfMerge:
+        #             topology = Topology.SelfMerge(topology)
+        #         if Topology.IsInstance(topology, "Topology"):
+        #             if removeCoplanarFaces:
+        #                 topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
+        #             if Topology.IsInstance(topology, "Topology"):
+        #                 d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
+        #                 topology = Topology.SetDictionary(topology, d)
+        #                 if len(face_selectors) > 0:
+        #                     topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
+        #                 return_topologies.append(topology)
+        # return return_topologies
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -4565,11 +4564,31 @@ class Topology():
             The dimensionality of the input topology.
 
         """
+        from topologicpy.Graph import Graph
+        from topologicpy.Cluster import Cluster
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Dimensionality - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        return topology.Dimensionality()
+        if Topology.IsInstance(topology, "Vertex"): return 0
+        if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Wire"): return 1
+        if Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Shell"): return 2
+        if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex"): return 3
+        if Topology.IsInstance(topology, "Graph"):
+            edges = Graph.Edges(topology)
+            if len(edges) > 0:
+                return 1
+            else:
+                return 0
+        if Topology.IsInstance(topology, "Cluster"):
+            if len(Cluster.CellComplexes(topology)) > 0 or len(Cluster.Cells(topology)) > 0:
+                return 3
+            if len(Cluster.Shells(topology)) > 0 or len(Cluster.Faces(topology)) > 0:
+                return 2
+            if len(Cluster.Wires(topology)) > 0 or len(Cluster.Edges(topology)) > 0:
+                return 1
+            return 0
+        return 3
     
     @staticmethod
     def Divide(topologyA, topologyB, transferDictionary=False, addNestingDepth=False, silent: bool = False):
@@ -10337,19 +10356,19 @@ class Topology():
             print("Topology.SuperTopologies - Error: The input topologyType parameter is not a valid type for a super topology of the input topology. Returning None.")
             return None #The user has asked for a topology type lower than the input topology
         elif typeID == Topology.TypeID("Edge"):
-            topology.Edges(hostTopology, superTopologies)
+            topology.Edges(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Wire"):
-            topology.Wires(hostTopology, superTopologies)
+            topology.Wires(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Face"):
-            topology.Faces(hostTopology, superTopologies)
+            topology.Faces(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Shell"):
-            topology.Shells(hostTopology, superTopologies)
+            topology.Shells(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Cell"):
-            topology.Cells(hostTopology, superTopologies)
+            topology.Cells(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("CellComplex"):
-            topology.CellComplexes(hostTopology, superTopologies)
+            topology.CellComplexes(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Cluster"):
-            topology.Cluster(hostTopology, superTopologies)
+            topology.Cluster(hostTopology, superTopologies) # Hook to Core
         else:
             print("Topology.SuperTopologies - Error: The input topologyType parameter is not a valid type for a super topology of the input topology. Returning None.")
             return None
@@ -10864,7 +10883,7 @@ class Topology():
                     print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
                 return topology
         topologyFaces = []
-        _ = topology.Faces(None, topologyFaces)
+        _ = topology.Faces(None, topologyFaces) # Hook to Core
         faceTriangles = []
         selectors = []
         for aFace in topologyFaces:
@@ -10914,7 +10933,7 @@ class Topology():
             The type of the input topology.
 
         """
-        return topology.Type()
+        return topology.Type() # Hook to Core
     
     @staticmethod
     def TypeAsString(topology, silent: bool = False):

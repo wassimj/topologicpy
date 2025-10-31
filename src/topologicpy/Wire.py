@@ -2199,11 +2199,35 @@ class Wire():
         return d
 
     @staticmethod
-    def EndVertex(wire):
+    def EndVertex(wire, silent: bool = False):
         """
         Returns the end vertex of the input wire. The wire must be manifold and open.
 
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.Vertex
+            The end vertex of the input wire.
+
         """
+        if not Topology.IsInstance(wire, "wire"):
+            if not silent:
+                print("Wire.EndVertex - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            if not silent:
+                print("Wire.EndVertex - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        if Wire.IsClosed(wire):
+            if not silent:
+                print("Wire.EndVertex - Error: The input wire parameter is not an open wire. Returning None.")
+            return None
         sv, ev = Wire.StartEndVertices(wire)
         return ev
     
@@ -4593,18 +4617,41 @@ class Wire():
         return baseWire
 
     @staticmethod
-    def StartEndVertices(wire) -> list:
+    def StartEndVertices(wire, silent: bool = False) -> list:
         """
         Returns the start and end vertices of the input wire. The wire must be manifold and open.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        list
+            The list of start and end vertices of the input wire
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
-        if not Wire.IsManifold(wire):
-            print("Wire.StartEndVertices - Error: The input wire parameter is non-manifold. Returning None.")
+        if not Topology.IsInstance(wire, "wire"):
+            if not silent:
+                print("Wire.StartEndVertices - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
+        if not Wire.IsManifold(wire):
+            if not silent:
+                print("Wire.StartEndVertices - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        
+        if Wire.IsClosed(wire):
+            if not silent:
+                print("Wire.StartEndVertices - Error: The input wire parameter is not an open wire. Returning None.")
+            return None
+        
         vertices = Topology.Vertices(wire)
         if Wire.IsClosed(wire):
             return [vertices[0], vertices[0]] # If the wire is closed, the start and end vertices are the same vertex
@@ -4623,12 +4670,39 @@ class Wire():
         return [wireStartVertex, wireEndVertex]
     
     @staticmethod
-    def StartVertex(wire):
+    def StartVertex(wire, silent: bool = False):
         """
         Returns the start vertex of the input wire. The wire must be manifold and open.
 
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input wire
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.Vertex
+            The start vertex of the input wire.
+
         """
-        sv, ev = Wire.StartEndVertices(wire)
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(wire, "wire"):
+            if not silent:
+                print("Wire.StartVertex - Error: The input wire parameter is not a valid wire. Returning None.")
+            return None
+        if not Wire.IsManifold(wire):
+            if not silent:
+                print("Wire.StartVertex - Error: The input wire parameter is not a manifold wire. Returning None.")
+            return None
+        
+        if Wire.IsClosed(wire):
+            if not silent:
+                print("Wire.StartVertex - Error: The input wire parameter is not an open wire. Returning None.")
+            return None
+        sv, ev = Wire.StartEndVertices(wire, silent=silent)
         return sv
 
     @staticmethod

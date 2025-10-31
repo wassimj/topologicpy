@@ -4479,7 +4479,7 @@ class Graph:
         return Graph.ByVerticesEdges(g_vertices, g_edges)
 
     @staticmethod
-    def ByNetworkXGraph(nxGraph, xKey="x", yKey="y", zKey="z", coordsKey='coords', randomRange=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
+    def ByNetworkXGraph(nxGraph, vertexID="id", xKey="x", yKey="y", zKey="z", coordsKey='coords', randomRange=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
         """
         Converts the input NetworkX graph into a topologic Graph. See http://networkx.org
 
@@ -4487,6 +4487,8 @@ class Graph:
         ----------
         nxGraph : NetworkX graph
             The input NetworkX graph.
+        vertexID : str , optional
+            The dictionary key under which the node id should be stored. The default is "id".
         xKey : str , optional
             The dictionary key under which to find the X-Coordinate of the vertex. Default is 'x'.
         yKey : str , optional
@@ -4670,7 +4672,13 @@ class Graph:
 
         # Create TopologicPy vertices for each node in the NetworkX graph
         vertices = []
+
+        # Create a node to index dictionary
+        node_to_index = {}
+        i = 0
         for node, data in nxGraph.nodes(data=True):
+            # Create a mapping of node -> index based on enumeration
+            node_to_index[node] = i
             # Clean the node dictionary
             cleaned_values = []
             cleaned_keys = []
@@ -4711,19 +4719,22 @@ class Graph:
 
             # Build and attach TopologicPy dictionary
             node_dict = Dictionary.ByKeysValues(cleaned_keys, cleaned_values)
+            node_dict = Dictionary.SetValueAtKey(node_dict, vertexID, node)
             vertex = Topology.SetDictionary(vertex, node_dict)
 
             #nx_to_topologic_vertex[node] = vertex
             vertices.append(vertex)
-
+            i += 1
+        
         # Create TopologicPy edges for each edge in the NetworkX graph
         edges = []
         for u, v, data in nxGraph.edges(data=True):
-            start_vertex = vertices[u]
-            end_vertex = vertices[v]
-
+            u_index = node_to_index[u]
+            v_index = node_to_index[v]
+            start_vertex = vertices[u_index]
+            end_vertex = vertices[v_index]
             # Create a TopologicPy edge with the edge data dictionary
-             # Clean the node dictionary
+            # Clean the node dictionary
             cleaned_values = []
             cleaned_keys = []
             for k, v in data.items():
@@ -4741,7 +4752,7 @@ class Graph:
     @staticmethod
     def BySpatialRelationships(
         *topologies,
-        include: list = ["contains", "coveredBy", "covers", "disjoint", "equals", "overlaps", "touches", "within"],
+        include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within"],,
         useInternalVertex = False,
         vertexIDKey = "id",
         edgeKeyFwd = "relFwd",
@@ -4901,7 +4912,7 @@ class Graph:
                     include=include,  # honor user's include filter inside the predicate
                     mantissa=mantissa,
                     tolerance=tolerance,
-                    silent=True,
+                    silent=True
                 )
 
                 # If the predicate returns a relation in the allowed set, emit the edge

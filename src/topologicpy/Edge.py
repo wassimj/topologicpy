@@ -595,7 +595,7 @@ class Edge():
         return [x, y, z]
     
     @staticmethod
-    def EndVertex(edge):
+    def EndVertex(edge, silent: bool = False):
         """
         Returns the end vertex of the input edge.
 
@@ -603,6 +603,8 @@ class Edge():
         ----------
         edge : topologic_core.Edge
             The input edge.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -611,9 +613,14 @@ class Edge():
 
         """
         from topologicpy.Topology import Topology
+        import inspect
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.EndVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print(f"Edge.EndVertex - Error: The input edge parameter {edge} is not a valid topologic edge. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         vert = None
         try:
@@ -1523,7 +1530,7 @@ class Edge():
         return Edge.Trim(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
 
     @staticmethod
-    def StartVertex(edge):
+    def StartVertex(edge, silent: bool = False):
         """
         Returns the start vertex of the input edge.
 
@@ -1531,6 +1538,8 @@ class Edge():
         ----------
         edge : topologic_core.Edge
             The input edge.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1539,9 +1548,14 @@ class Edge():
 
         """
         from topologicpy.Topology import Topology
+        import inspect
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.StartVertex - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print(f"Edge.StartVertex - Error: The input edge parameter {edge} is not a valid topologic edge. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         vert = None
         try:
@@ -1755,7 +1769,7 @@ class Edge():
         return vertex
 
     @staticmethod
-    def Vertices(edge) -> list:
+    def Vertices(edge, silent: bool = False) -> list:
         """
         Returns the list of vertices of the input edge.
 
@@ -1763,6 +1777,8 @@ class Edge():
         ----------
         edge : topologic_core.Edge
             The input edge.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1771,9 +1787,14 @@ class Edge():
 
         """
         from topologicpy.Topology import Topology
+        import inspect
 
         if not Topology.IsInstance(edge, "Edge"):
-            print("Edge.Vertices - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            if not silent:
+                print(f"Edge.Vertices - Error: The input edge parameter {edge} is not a valid topologic edge. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         vertices = []
         _ = edge.Vertices(None, vertices) # Hook to Core

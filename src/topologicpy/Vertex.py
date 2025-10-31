@@ -777,7 +777,7 @@ class Vertex():
     @staticmethod
     def ExternalBoundary(vertex, tolerance: float = 0.0001, silent: bool = False):
         """
-        Returns the external boundary (self) of the input vertex. This method is trivial, but included for completeness.
+        Returns the external boundary of the input vertex (None according OGC / ISO / DE-9IM). This method is trivial, but included for completeness.
 
         Parameters
         ----------
