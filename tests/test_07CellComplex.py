@@ -225,11 +225,11 @@ def test_main():
     # test 1
 
     bEB1 = CellComplex.ExternalBoundary(box1)
-    assert Topology.IsInstance(bEB1, "Cell"), "CellComplex.ExternalBoundary. Should be topologic.Cell"
+    assert Topology.IsInstance(bEB1, "Shell"), "CellComplex.ExternalBoundary. Should be topologic.Shell"
     # test 2
 
     bEB2 = CellComplex.ExternalBoundary(box2)
-    assert Topology.IsInstance(bEB2, "Cell"), "CellComplex.ExternalBoundary. Should be topologic.Cell"
+    assert Topology.IsInstance(bEB2, "Shell"), "CellComplex.ExternalBoundary. Should be topologic.Shell"
 
     # Case 12 -ExternalFaces
     print("Case 12")
