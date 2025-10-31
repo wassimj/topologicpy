@@ -4752,7 +4752,7 @@ class Graph:
     @staticmethod
     def BySpatialRelationships(
         *topologies,
-        include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within"],,
+        include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within"],
         useInternalVertex = False,
         vertexIDKey = "id",
         edgeKeyFwd = "relFwd",
