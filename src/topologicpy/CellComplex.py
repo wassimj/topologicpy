@@ -908,9 +908,9 @@ class CellComplex():
             The list of external faces.
 
         """
-        from topologicpy.Cell import Cell
-        cell = CellComplex.ExternalBoundary(cellComplex)
-        return Cell.Faces(cell)
+        from topologicpy.Topology import Topology
+        shell = CellComplex.ExternalBoundary(cellComplex)
+        return Topology.Faces(shell)
 
     @staticmethod
     def Faces(cellComplex) -> list:
