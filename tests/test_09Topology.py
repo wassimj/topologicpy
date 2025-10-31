@@ -55,7 +55,7 @@ def test_main():
 
     # case 1 - AddApertures
     print("Case 1")
-    extF1 = CellComplex.Faces(box5)                                                                                  # extract faces
+    extF1 = Topology.Faces(box5)                                                                                  # extract faces
     extF2 = CellComplex.ExternalFaces(prism1)                                                                  # extract faces
     offF1 = []                                                                                                                       # create empty list for offset face
     for face1 in extF1:
@@ -122,8 +122,8 @@ def test_main():
     print("Case 4")
     box6 = Cell.Box(v0, 5, 10, 5)                           # create box
     box7 = Cell.Box(v1, 4, 8, 2)                             # create box
-    boxE1 = Cell.Edges(box6)                             # extract box edges
-    boxF1 = Cell.Faces(box7)                              # extract box faces
+    boxE1 = Topology.Edges(box6)                             # extract box edges
+    boxF1 = Topology.Faces(box7)                              # extract box faces
     # test 1
     adT1 = Topology.AdjacentTopologies(box6, boxE1[0])
     assert isinstance(adT1, list), "Topology.AdjacentTopologies. Should be list"
@@ -610,9 +610,9 @@ def test_main():
     # test 2 
     cell_box5 = Cell.Box(uSides= 5, vSides = 5)
     topology_rcf = Topology.RemoveCoplanarFaces(cell_box5)
-    cell_f = Cell.Faces(cell_box5)
-    cell_f2 = Cell.Faces(topology_rcf)
-    assert len(cell_f) == 70, "Cell.Faces. List length should be 70"
+    cell_f = Topology.Faces(cell_box5)
+    cell_f2 = Topology.Faces(topology_rcf)
+    assert len(cell_f) == 70, "Topology.Faces. List length should be 70"
     assert Topology.IsInstance(topology_rcf, "Topology"), "Topology.RemoveCoplanarFaces. Should be topologic.Topology"
     assert len(cell_f2) == 6, "Topology.RemoveCoplanarFaces. List length should be 6"
 
