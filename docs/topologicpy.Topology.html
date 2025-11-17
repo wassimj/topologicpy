@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.8.86 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.8.87 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.86
+                0.8.87
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -665,6 +665,12 @@
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Shells" title="topologicpy.Topology.Topology.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the shells of the input topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestDistance" title="topologicpy.Topology.Topology.ShortestDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestDistance</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<td><p>Returns the shortest Euclidean distance between two topologies.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdge" title="topologicpy.Topology.Topology.ShortestEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdge</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<td><p>Returns the shortest connecting Edge between two topologies.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdges" title="topologicpy.Topology.Topology.ShortestEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdges</span></code></a>(topology[, ...])</p></td>
 <td><p>Returns the list of the shortest edges found in the input topology.</p></td>
@@ -3969,6 +3975,96 @@ Also, please note that there is no guarantee that three returned vectors match y
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ShortestDistance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestDistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ShortestDistance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the shortest Euclidean distance between two topologies.</p>
+<p>This is a thin wrapper around Topology.ShortestEdge. It computes the
+shortest connecting Edge between the two input topologies and returns
+its length.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The first input topology.</p>
+</dd>
+<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Number of decimal places to which the distance is rounded.
+Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Numerical tolerance used when computing the shortest edge.
+Default is 1e-6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the method will not print warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float or None</dt><dd><p>The shortest distance between topologyA and topologyB, rounded to
+the specified mantissa. Returns None if the distance cannot be
+computed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.ShortestEdge">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ShortestEdge" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the shortest connecting Edge between two topologies.</p>
+<p>This method deterministically finds the pair of closest points between
+topologyA and topologyB by examining their sub-topologies (vertices,
+edges, and faces). It then returns a new Edge whose endpoints lie at
+these two closest points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The first input topology.</p>
+</dd>
+<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Numerical tolerance for detecting near-zero distances and
+degeneracies. Default is 1e-6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the method will not print warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Edge or None</dt><dd><p>A new Edge whose start and end vertices represent the closest points
+on topologyA and topologyB, respectively. Returns None if a valid
+distance cannot be computed.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><dl class="simple">
+<dt>Sub-topologies are collected using:</dt><dd><ul>
+<li><p>Topology.Vertices(topology)</p></li>
+<li><p>Topology.Edges(topology)</p></li>
+<li><p>Topology.Faces(topology)</p></li>
+</ul>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>The returned Edge is not required to belong to either original</dt><dd><p>topology; it is a geometric representation of the shortest segment.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="simple">
+<dt>If the shortest distance is (numerically) zero, the start and end</dt><dd><p>vertices of the returned Edge will coincide (or be extremely close).</p>
+</dd>
+</dl>
+</li>
+</ul>
 </dd></dl>
 
 <dl class="py method">
