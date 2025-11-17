@@ -147,8 +147,8 @@ class Cell():
         if Topology.IsInstance(cell, "Cell"):
             return cell
         else:
-            print("Something went wrong")
-            Topology.Show(clean_faces)
+            if not silent:
+                print("Cell.ByFaces - Error: Could not construct cell. Trying other methods.")
         # Fuse all the vertices first and rebuild the faces
         all_vertices = []
         wires = []
@@ -2438,6 +2438,144 @@ class Cell():
         return return_cell
     
     @staticmethod
+    def Noperthedron(origin= None, radius: float = 0.5, direction: list = [0, 0, 1],
+                   placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a Noperthedron. A noperthedron is a convex polyhedron without Rupert's property. See: https://arxiv.org/pdf/2508.18475
+
+        Parameters
+        ----------
+        origin : topologic_core.Vertex , optional
+            The origin location of the sphere. Default is None which results in the sphere being placed at (0, 0, 0).
+        radius : float , optional
+            The radius of the sphere. Default is 0.5.
+        uSides : int , optional
+            The number of sides along the longitude of the sphere. Default is 16.
+        vSides : int , optional
+            The number of sides along the latitude of the sphere. Default is 8.
+        direction : list , optional
+            The vector representing the up direction of the sphere. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the sphere. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, suppresses warning and error messages. Default is False.
+        
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created Noperthedron polyhedron.
+
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
+        from math import cos, sin, pi
+
+        # Validate inputs
+        if radius <= 0:
+            if not silent:
+                print("Cell.Polyhedron - Error: radius must be > 0. Returning None.")
+            return None
+
+        # Center
+        if origin is None:
+            origin = Vertex.ByCoordinates(0, 0, 0)
+        
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Cell.Noperthedron - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+        
+
+    # defaults:
+        scale = 1.0
+        rotateZ_radians = 0.0
+        dedup_dp = 14
+
+        # Correct seeds per paper:
+        C1 = (152024884/259375205, 0.0, 210152163/259375205)
+        DEN = 10_000_000_000  # 10^10
+        C2 = (6632738028/DEN, 6106948881/DEN, 3980949609/DEN)
+        C3 = (8193990033/DEN, 5298215096/DEN, 1230614493/DEN)
+        seeds = [C1, C2, C3]
+
+        def rotz(p, a):
+            x, y, z = p
+            ca, sa = cos(a), sin(a)
+            return (ca*x - sa*y, sa*x + ca*y, z)
+
+        # Generate 30-element orbit for each seed: (-I)^ℓ · Rz(2πk/15)
+        pts = []
+        for (x, y, z) in seeds:
+            x, y, z = rotz((x, y, z), rotateZ_radians)
+            for k in range(15):
+                th = 2*pi*k/15
+                X, Y, Z = rotz((x, y, z), th)
+                pts.append(( X,  Y,  Z))
+                pts.append((-X, -Y, -Z))
+
+        # Deduplicate robustly (should keep all 90)
+        seen, verts = set(), []
+        for p in pts:
+            key = (round(p[0], dedup_dp), round(p[1], dedup_dp), round(p[2], dedup_dp))
+            if key in seen: 
+                continue
+            seen.add(key)
+            verts.append(Vertex.ByCoordinates(p[0]*scale, p[1]*scale, p[2]*scale))
+
+        hull = Topology.ConvexHull(Cluster.ByTopologies(verts))
+        if not Topology.IsInstance(hull, "cell"):
+            if not silent:
+                print("Cell.Noperthedron - Error: could not create the cell. Returning None.")
+            return None
+
+        # Cleanup top and bottom
+        cell_dict = Cell.Decompose(hull)
+        h_faces = Helper.Flatten([cell_dict['topHorizontalFaces'] + cell_dict['bottomHorizontalFaces']])
+        other_faces = [cell_dict['verticalFaces']+ cell_dict['inclinedFaces']]
+        caps_cluster = Topology.SelfMerge(Cluster.ByTopologies(h_faces))
+        caps_cluster = Topology.RemoveCoplanarFaces(caps_cluster)
+        all_faces = other_faces + Topology.Faces(caps_cluster)
+        all_faces = Helper.Flatten(all_faces)
+        
+        # Sew faces into a cell
+        try:
+            tol = tolerance
+            for i in range(3):
+                hull = Cell.ByFaces(all_faces, tolerance=tol)
+                if Topology.IsInstance(hull, "Cell"):
+                    break
+                tol = tol*10
+            hull = Topology.Scale(hull, origin=Topology.Centroid(hull), x=1/1.949062, y=1/1.949062, z=1/1.949062)
+            # Scale by the radius amount:
+            hull = Topology.Scale(hull, origin=Topology.Centroid(hull), x=radius*2, y=radius*2, z=radius*2)
+        except Exception:
+            if not silent:
+                print("Cell.Noperthedron - Error: could not create the cell. Returning None.")
+            return None
+        if placement.lower() != "center":
+            bb = Topology.BoundingBox(hull)
+            d = Topology.Dictionary(bb)
+            width = Dictionary.ValueAtKey(d, "width")
+            length = Dictionary.ValueAtKey(d, "length")
+            height = Dictionary.ValueAtKey(d, "height")
+        if placement.lower() == "bottom":
+            hull = Topology.Translate(hull, 0, 0, height*0.5)
+        elif placement.lower() == "lowerleft":
+            hull = Topology.Translate(hull, width*0.5, length*0.5, height*0.5)
+        if direction != [0,0,1]:
+            hull = Topology.Orient(hull, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
+        if Vertex.Coordinates(origin) != [0,0,0]:
+            hull = Topology.Place(hull, originA=Vertex.Origin(), originB=origin)
+        return hull
+
+    @staticmethod
     def Octahedron(origin= None, radius: float = 0.5,
                   direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
         """
@@ -3219,7 +3357,7 @@ class Cell():
         # Validate inputs
         if radius <= 0 or uSides < 3 or vSides < 2:
             if not silent:
-                print("Sphere - Error: radius must be > 0, uSides >= 3, vSides >= 2. Returning None.")
+                print("Cell.Sphere - Error: radius must be > 0, uSides >= 3, vSides >= 2. Returning None.")
             return None
 
         # Center

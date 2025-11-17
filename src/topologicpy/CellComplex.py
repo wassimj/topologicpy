@@ -883,11 +883,16 @@ class CellComplex():
             The external boundary of the input cellComplex.
 
         """
+        import inspect
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cellComplex, "CellComplex"):
             if not silent:
                 print("CellComplex.ExternalBoundary - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+                print("Incoming Topology:", cellComplex)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         cell = cellComplex.ExternalBoundary() # Hook to Core
         return Topology.Shells(cell)[0]

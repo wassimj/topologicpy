@@ -425,7 +425,7 @@ class Edge():
         return edge
 
     @staticmethod
-    def ByVertices(*args, tolerance: float = 0.0001, silent: bool = False):
+    def ByVertices(*vertices, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a straight edge that connects the input list of vertices.
 
@@ -448,33 +448,22 @@ class Edge():
         from topologicpy.Topology import Topology
         import inspect
 
-        if len(args) == 0:
+        vertexList = list(vertices)
+        vertexList = Helper.Flatten(vertexList)
+        vertexList = [v for v in vertexList if Topology.IsInstance(v, "vertex")]
+        if len(vertexList) == 0:
             if not silent:
-                print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
+                print("Edge.ByVertices - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
-        if len(args) == 1:
-            vertices = args[0]
-            if isinstance(vertices, list):
-                if len(vertices) == 0:
-                    if not silent:
-                        print("Edge.ByVertices - Error: The input vertices parameter is an empty list. Returning None.")
-                    return None
-                else:
-                    vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
-                    if len(vertexList) == 0:
-                        if not silent:
-                            print("Edge.ByVertices - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
-                        return None
-            else:
-                if not silent:
-                    print("Edge.ByVertices - Warning: The input vertices parameter contains only one vertex. Returning None.")
-                return None
-        else:
-            vertexList = Helper.Flatten(list(args))
-            vertexList = [x for x in vertexList if Topology.IsInstance(x, "Vertex")]
-        if len(vertexList) < 2:
+        if len(vertexList) == 1:
             if not silent:
-                print("Edge.ByVertices - Error: The input vertices parameter has less than two vertices. Returning None.")
+                print("Edge.ByVertices - Warning: The input vertices parameter contains only one vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         edge = Edge.ByStartVertexEndVertex(vertexList[0], vertexList[-1], tolerance=tolerance, silent=silent)
         if not edge:

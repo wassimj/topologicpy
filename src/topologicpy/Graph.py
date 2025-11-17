@@ -527,6 +527,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
             return graph
+
         _ = graph.AddVertices([vertex], tolerance) # Hook to Core
         return graph
 
@@ -2328,7 +2329,7 @@ class Graph:
                 d = Dictionary.SetValueAtKey(d, key, 0) # 0 indicates a cut edge
                 edge = Topology.SetDictionary(edge, d)
                 cut_edges.append(edge)
-                graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+                graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance, silent=silent)
                 graph_edges = graph_edges[1:]
                 components = len(Graph.ConnectedComponents(graph, key=key, tolerance=tolerance, silent=silent))
             tries += 1
@@ -4758,6 +4759,7 @@ class Graph:
         edgeKeyFwd = "relFwd",
         edgeKeyBwd = "relBwd",
         connectsKey = "connects",
+        storeBREP = False,
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False
@@ -4782,6 +4784,8 @@ class Graph:
             The edge key under which to store the backward relationship (from end vertex to start vertex). Default is "relBwd".
         connectsKey: str , optional
             The edge key under which to store the indices of the vertices connected by each edge. Default is "connects".
+        storeBREP : bool , optional
+            If set to True, store the BRep of the topology in its representative vertex. Default is False.
         mantissa : int , optional
             The desired length of the mantissa. Default is 6.
         tolerance : float , optional
@@ -4834,6 +4838,7 @@ class Graph:
         for i, t in enumerate(topologyList):
             d = Topology.Dictionary(t)
             d = Dictionary.SetValueAtKey(d, vertexIDKey, i)
+            d = Dictionary.SetValuesAtKeys(d, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(t), Topology.Type(t), Topology.TypeAsString(t)])
             vertex_dicts[i] = d
             v = Topology.InternalVertex(t) if useInternalVertex else Topology.Centroid(t)
             vertices_objs[i] = v
@@ -6066,13 +6071,13 @@ class Graph:
         if not Topology.IsInstance(topology, "Topology"):
             print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
             return None
-        c_cellComplexes = Topology.CellComplexes(topology)
-        c_cells = Topology.Cells(topology)
-        c_shells = Topology.Shells(topology)
-        c_faces = Topology.Faces(topology)
-        c_wires = Topology.Wires(topology)
-        c_edges = Topology.Edges(topology)
-        c_vertices = Topology.Vertices(topology)
+        c_cellComplexes = Topology.CellComplexes(topology, silent=True)
+        c_cells = Topology.Cells(topology, silent=True)
+        c_shells = Topology.Shells(topology, silent=True)
+        c_faces = Topology.Faces(topology, silent=True)
+        c_wires = Topology.Wires(topology, silent=True)
+        c_edges = Topology.Edges(topology, silent=True)
+        c_vertices = Topology.Vertices(topology, silent=True)
         others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
         item = [topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance]
         vertices = []
@@ -6956,7 +6961,7 @@ class Graph:
         return return_components
 
     @staticmethod
-    def ContractEdge(graph, edge, vertex=None, tolerance=0.0001):
+    def ContractEdge(graph, edge, vertex=None, tolerance: float = 0.0001, silent: bool = False):
         """
         Contracts the input edge in the input graph into a single vertex. Please note that the dictionary of the edge is transferred to the
         vertex that replaces it. See https://en.wikipedia.org/wiki/Edge_contraction
@@ -6971,6 +6976,8 @@ class Graph:
             The vertex to replace the contracted edge. If set to None, the centroid of the edge is chosen. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -6992,10 +6999,12 @@ class Graph:
                 return [ev, 1]
             return [sv, 0]
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.ContractEdge - Error: The input graph parameter is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.ContractEdge - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(edge, "Edge"):
-            print("Graph.ContractEdge - Error: The input edge parameter is not a valid edge. Returning None.")
+            if not silent:
+                print("Graph.ContractEdge - Error: The input edge parameter is not a valid edge. Returning None.")
             return None
         if vertex == None:
             vertex = Topology.Centroid(edge)
@@ -7022,8 +7031,8 @@ class Graph:
         elif len(dictionaries) > 1:
             cd = Dictionary.ByMergedDictionaries(dictionaries)
             vertex = Topology.SetDictionary(vertex, cd)
-        graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
-        graph = Graph.AddVertex(graph, vertex, tolerance=tolerance)
+        graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance, silent=silent)
+        graph = Graph.AddVertex(graph, vertex, tolerance=tolerance, silent=silent)
         adj_edges_sv = Graph.Edges(graph, [sv])
         adj_edges_ev = Graph.Edges(graph, [ev])
         new_edges = []
@@ -7053,8 +7062,8 @@ class Graph:
             new_edges.append(new_edge)
         for new_edge in new_edges:
             graph = Graph.AddEdge(graph, new_edge, transferVertexDictionaries=True, transferEdgeDictionaries=True, tolerance=tolerance)
-        graph = Graph.RemoveVertex(graph,sv, tolerance=tolerance)
-        graph = Graph.RemoveVertex(graph,ev, tolerance=tolerance)
+        graph = Graph.RemoveVertex(graph,sv)
+        graph = Graph.RemoveVertex(graph,ev)
         return graph
     
 
@@ -7944,7 +7953,7 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Density - Error: The input graph is not a valid graph. Returning None.")
             return None
-        return graph.Density()
+        return graph.Density() # Hook to Core
     
     @staticmethod
     def Depth(graph, vertex = None, tolerance: float = 0.0001, silent: bool = False):
@@ -8055,7 +8064,47 @@ class Graph:
             va = Topology.SetDictionary(va, d)
             scores.append(depth)
         return scores
-    
+
+    @staticmethod
+    def DetachVertex(graph, *vertices, silent: bool = False):
+        """
+        Detaches the input vertex from its neigboring vertices.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertices : *topologic_core.Vertex
+            The input vertex or list of vertices.
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input vertex removed.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Helper import Helper
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.DetachVertex - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        vertexList = list(vertices)
+        vertexList = Helper.Flatten(vertexList)
+        vertexList = [v for v in vertexList if Topology.IsInstance(v, "vertex")]
+        if len(vertexList) == 0:
+            if not silent:
+                print("Graph.DetachVertex - Error: The input vertice parameter does not contain any valid vertices. Returning None.")
+            return None
+        vertexList = [Graph.NearestVertex(graph, v) for v in vertexList]
+        edges = Graph.Edges(graph, vertexList)
+        for edge in edges:
+            graph = Graph.RemoveEdge(graph, edge)
+        return graph
+
     @staticmethod
     def Diameter(graph, silent: bool = False):
         """
@@ -15018,7 +15067,7 @@ class Graph:
         return Graph.ByVerticesEdges(group_vertices, edges)
 
     @staticmethod
-    def RemoveEdge(graph, edge, tolerance=0.0001):
+    def RemoveEdge(graph, *edges, tolerance=0.0001, silent: bool = False):
         """
         Removes the input edge from the input graph.
 
@@ -15026,10 +15075,12 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        edge : topologic_core.Edge
+        edges : topologic_core.Edge or list of edges
             The input edge.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -15040,12 +15091,16 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.RemoveEdge - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.RemoveEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not Topology.IsInstance(edge, "Edge"):
-            print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
+        edgeList = list(edges)
+        edgeList = [e for e in edgeList if Topology.IsInstance(e, "edge")]
+        if len(edgeList) == 0:
+            if not silent:
+                print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        _ = graph.RemoveEdges([edge], tolerance) # Hook to Core
+        _ = graph.RemoveEdges(edgeList, tolerance) # Hook to Core
         return graph
     
     @staticmethod
@@ -15086,18 +15141,18 @@ class Graph:
             for edge in edges:
                 va, vb = Edge.Vertices(edge)
                 if Graph.VertexDegree(graph, va, tolerance=tolerance, silent=silent) == 1 and Graph.VertexDegree(graph, vb, tolerance=tolerance, silent=silent) == 1:
-                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
-                    graph = Graph.RemoveVertex(graph, va, tolerance=tolerance)
-                    graph = Graph.RemoveVertex(graph, vb, tolerance=tolerance)
+                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance, silent=silent)
+                    graph = Graph.RemoveVertex(graph, va, silent=silent)
+                    graph = Graph.RemoveVertex(graph, vb, silent=silent)
         else:
             for edge in edges:
                 va, vb = Edge.Vertices(edge)
                 if Graph.VertexDegree(graph, va, tolerance=tolerance, silent=silent) == 1 and Graph.VertexDegree(graph, vb, tolerance=tolerance, silent=silent) == 1:
-                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance)
+                    graph = Graph.RemoveEdge(graph, edge, tolerance=tolerance, silent=silent)
         return graph
 
     @staticmethod
-    def RemoveIsolatedVertices(graph, tolerance=0.0001):
+    def RemoveIsolatedVertices(graph, silent: bool = True):
         """
         Removes all isolated vertices from the input graph.
 
@@ -15105,8 +15160,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -15116,13 +15171,19 @@ class Graph:
         """
         from topologicpy.Topology import Topology
 
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.RemoveIsolatedVertices - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
         vertices = Graph.Vertices(graph)
-        edges = Graph.Edges(graph)
-        vertices = [v for v in vertices if Graph.VertexDegree(graph, v) > 0]
-        return Graph.ByVerticesEdges(vertices, edges)
+        isolated_vertices = [v for v in vertices if Graph.VertexDegree(graph, v) == 0]
+        if len(isolated_vertices) > 0:
+            _ = graph.RemoveVertices(isolated_vertices) # Hook to Core
+        return graph
 
     @staticmethod
-    def RemoveVertex(graph, vertex, tolerance=0.0001):
+    def RemoveVertex(graph, *vertices, silent: bool = False):
         """
         Removes the input vertex from the input graph.
 
@@ -15130,7 +15191,7 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        vertex : topologic_core.Vertex
+        *vertices : topologic_core.Vertex or list of vertices
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -15146,11 +15207,15 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.RemoveVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if not Topology.IsInstance(vertex, "Vertex"):
-            print("Graph.RemoveVertex - Error: The input vertex is not a valid vertex. Returning None.")
+        
+        vertexList = list(vertices)
+        vertexList = [v for v in vertexList if Topology.IsInstance(v, "vertex")]
+        if len(vertexList) == 0:
+            if not silent:
+                print("Graph.RemoveVertex - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
             return None
-        graphVertex = Graph.NearestVertex(graph, vertex)
-        _ = graph.RemoveVertices([graphVertex]) # Hook to Core
+        vertexList = [Graph.NearestVertex(graph, v) for v in vertexList]
+        _ = graph.RemoveVertices(vertexList) # Hook to Core
         return graph
 
     @staticmethod

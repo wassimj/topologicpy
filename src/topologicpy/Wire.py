@@ -1033,7 +1033,7 @@ class Wire():
         return baseWire
     
     @staticmethod
-    def Close(wire, mantissa=6, tolerance=0.0001):
+    def Close(wire, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Closes the input wire
 
@@ -1045,6 +1045,8 @@ class Wire():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
                 
         Returns
         -------
@@ -1055,6 +1057,7 @@ class Wire():
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
+        import inspect
         
         def nearest_vertex(vertex, vertices):
             distances = []
@@ -1064,14 +1067,19 @@ class Wire():
             return new_vertices[1] #The first item is the same vertex, so return the next nearest vertex.
         
         if not Topology.IsInstance(wire, "Wire"):
-            print("Wire.Close - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            if not silent:
+                print("Wire.Close - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         if Wire.IsClosed(wire):
             return wire
         vertices = Topology.Vertices(wire)
         ends = [v for v in vertices if Vertex.Degree(v, wire) == 1]
         if len(ends) < 2:
-            print("Wire.Close - Error: The input wire parameter contains less than two open end vertices. Returning None.")
+            if not silent:
+                print("Wire.Close - Error: The input wire parameter contains less than two open end vertices. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         geometry = Topology.Geometry(wire, mantissa=mantissa)
         g_vertices = geometry['vertices']

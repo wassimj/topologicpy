@@ -870,8 +870,8 @@ class Face():
                 print('caller name:', calframe[1][3])
             return None
         if not Wire.IsClosed(wire):
-            wire = Wire.Close(wire, tolerance=tolerance)
-            if not Wire.IsClosed(wire):
+            wire = Wire.Close(wire, tolerance=tolerance, silent=silent)
+            if wire is None or Wire.IsClosed(wire) == False:
                 if not silent:
                     print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
                     curframe = inspect.currentframe()
