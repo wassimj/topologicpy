@@ -8910,7 +8910,507 @@ class Topology():
             return []
         
         return Topology.SubTopologies(topology=topology, subTopologyType="shell")
-    
+
+    @staticmethod
+    def ShortestEdge(topologyA,
+                        topologyB,
+                        tolerance: float = 0.0001,
+                        silent: bool = False):
+        """
+        Returns the shortest connecting Edge between two topologies.
+
+        This method deterministically finds the pair of closest points between
+        topologyA and topologyB by examining their sub-topologies (vertices,
+        edges, and faces). It then returns a new Edge whose endpoints lie at
+        these two closest points.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        tolerance : float , optional
+            Numerical tolerance for detecting near-zero distances and
+            degeneracies. Default is 1e-6.
+        silent : bool , optional
+            If True, the method will not print warnings. Default is False.
+
+        Returns
+        -------
+        topologic_core.Edge or None
+            A new Edge whose start and end vertices represent the closest points
+            on topologyA and topologyB, respectively. Returns None if a valid
+            distance cannot be computed.
+
+        Notes
+        -----
+        - Sub-topologies are collected using:
+            * Topology.Vertices(topology)
+            * Topology.Edges(topology)
+            * Topology.Faces(topology)
+        - The returned Edge is not required to belong to either original
+            topology; it is a geometric representation of the shortest segment.
+        - If the shortest distance is (numerically) zero, the start and end
+            vertices of the returned Edge will coincide (or be extremely close).
+        """
+
+        if not Topology.IsInstance(topologyA, "topology"):
+            if not silent:
+                print("Topology.ShortestEdge - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(topologyB, "topology"):
+            if not silent:
+                print("Topology.ShortestEdge - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        import math
+        from math import sqrt, isfinite
+
+
+        # ------------------------------------------------------------------
+        # Helper functions – pure geometry (no Topologic dependencies)
+        # ------------------------------------------------------------------
+        def _coords(vertex):
+            return Vertex.Coordinates(vertex)  # [x, y, z]
+
+        def _sub(a, b):
+            return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
+        def _add(a, b):
+            return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]
+            ]
+
+        def _scale(a, s):
+            return [a[0]*s, a[1]*s, a[2]*s]
+
+        def _length2(a):
+            return _dot(a, a)
+
+        def _length(a):
+            return math.sqrt(_length2(a))
+
+        def _normalize(a):
+            l2 = _length2(a)
+            if l2 <= tolerance*tolerance:
+                return [0.0, 0.0, 0.0]
+            inv = 1.0 / math.sqrt(l2)
+            return [a[0]*inv, a[1]*inv, a[2]*inv]
+
+        # Closest point on segment AB to point P
+        def _closest_point_on_segment(P, A, B):
+            AB = _sub(B, A)
+            AB2 = _length2(AB)
+            if AB2 <= tolerance*tolerance:
+                return A, 0.0
+            t = _dot(_sub(P, A), AB) / AB2
+            if t < 0.0:
+                t = 0.0
+            elif t > 1.0:
+                t = 1.0
+            Q = _add(A, _scale(AB, t))
+            return Q, t
+
+        # Point–segment distance^2
+        def _point_segment_distance2(P, A, B):
+            Q, _t = _closest_point_on_segment(P, A, B)
+            return _length2(_sub(P, Q)), Q
+
+        # Segment–segment distance^2
+        def _segment_segment_distance2(A0, A1, B0, B1):
+            SMALL_NUM = tolerance
+
+            u = _sub(A1, A0)
+            v = _sub(B1, B0)
+            w0 = _sub(A0, B0)
+
+            a = _dot(u, u)
+            b = _dot(u, v)
+            c = _dot(v, v)
+            d = _dot(u, w0)
+            e = _dot(v, w0)
+
+            denom = a*c - b*b
+
+            if denom < SMALL_NUM:
+                # Lines almost parallel
+                s = 0.0
+                t = e / c if c > SMALL_NUM else 0.0
+                t = max(0.0, min(1.0, t))
+            else:
+                s = (b*e - c*d) / denom
+                s = max(0.0, min(1.0, s))
+                t = (a*e - b*d) / denom
+                if t < 0.0:
+                    t = 0.0
+                    s = max(0.0, min(1.0, -d / a if a > SMALL_NUM else 0.0))
+                elif t > 1.0:
+                    t = 1.0
+                    s = max(0.0, min(1.0, (b - d) / a if a > SMALL_NUM else 0.0))
+
+            P_closest = _add(A0, _scale(u, s))
+            Q_closest = _add(B0, _scale(v, t))
+            diff = _sub(P_closest, Q_closest)
+            return _length2(diff), P_closest, Q_closest
+
+        # Build local frame for a face
+        def _face_frame(face):
+            wire = Face.ExternalBoundary(face)
+            verts = Wire.Vertices(wire)
+            if len(verts) < 3:
+                return None, None, None, None
+
+            p0 = _coords(verts[0])
+            p1 = _coords(verts[1])
+            p2 = None
+            for v in verts[2:]:
+                cand = _coords(v)
+                if _length(_cross(_sub(p1, p0), _sub(cand, p0))) > tolerance:
+                    p2 = cand
+                    break
+            if p2 is None:
+                return None, None, None, None
+
+            u = _normalize(_sub(p1, p0))
+            n = _normalize(_cross(_sub(p1, p0), _sub(p2, p0)))
+            v = _cross(n, u)
+            return p0, u, v, n
+
+        def _project_to_face_2d(P, origin, u, v):
+            PO = _sub(P, origin)
+            return [_dot(PO, u), _dot(PO, v)]
+
+        # 2D point-in-polygon
+        def _point_in_polygon_2d(pt, poly2d):
+            x, y = pt
+            inside = False
+            n = len(poly2d)
+            if n < 3:
+                return False
+            j = n - 1
+            for i in range(n):
+                xi, yi = poly2d[i]
+                xj, yj = poly2d[j]
+                denom = (yj - yi) if (yj - yi) != 0 else 1e-16
+                intersect = ((yi > y) != (yj > y)) and \
+                            (x < (xj - xi) * (y - yi) / denom + xi)
+                if intersect:
+                    inside = not inside
+                j = i
+            return inside
+
+        # Point–face distance^2
+        def _point_face_distance2(P, face):
+            origin, u, v, n = _face_frame(face)
+            if origin is None:
+                # Degenerate – fallback to vertices only
+                wire = Face.ExternalBoundary(face)
+                verts = Wire.Vertices(wire)
+                min_d2_local = float("inf")
+                best_q = None
+                for vv in verts:
+                    Q = _coords(vv)
+                    d2 = _length2(_sub(P, Q))
+                    if d2 < min_d2_local:
+                        min_d2_local = d2
+                        best_q = Q
+                return min_d2_local, best_q
+
+            wire = Face.ExternalBoundary(face)
+            verts = Wire.Vertices(wire)
+            poly2d = []
+            for vtx in verts:
+                poly2d.append(_project_to_face_2d(_coords(vtx), origin, u, v))
+
+            PO = _sub(P, origin)
+            dist_n = _dot(PO, n)
+            P_plane = _sub(P, _scale(n, dist_n))
+            P2d = _project_to_face_2d(P_plane, origin, u, v)
+
+            if _point_in_polygon_2d(P2d, poly2d):
+                return dist_n*dist_n, P_plane
+
+            # Else min over polygon edges
+            min_d2 = float("inf")
+            best_q = None
+            nverts = len(verts)
+            for i in range(nverts):
+                A = _coords(verts[i])
+                B = _coords(verts[(i+1) % nverts])
+                d2, Q = _point_segment_distance2(P, A, B)
+                if d2 < min_d2:
+                    min_d2 = d2
+                    best_q = Q
+            return min_d2, best_q
+
+        # ------------------------------------------------------------------
+        # Collect primitives
+        # ------------------------------------------------------------------
+        try:
+            verticesA = Topology.Vertices(topologyA, silent=True) or []
+        except Exception:
+            verticesA = []
+
+        try:
+            verticesB = Topology.Vertices(topologyB, silent=True) or []
+        except Exception:
+            verticesB = []
+
+        try:
+            edgesA = Topology.Edges(topologyA, silent=True) or []
+        except Exception:
+            edgesA = []
+
+        try:
+            edgesB = Topology.Edges(topologyB, silent=True) or []
+        except Exception:
+            edgesB = []
+
+        try:
+            facesA = Topology.Faces(topologyA, silent=True) or []
+        except Exception:
+            facesA = []
+
+        try:
+            facesB = Topology.Faces(topologyB, silent=True) or []
+        except Exception:
+            facesB = []
+
+        if (not verticesA and not edgesA and not facesA) or \
+            (not verticesB and not edgesB and not facesB):
+            if not silent:
+                print("[Topology.ShortestEdge] One of the topologies has no "
+                        "vertices, edges, or faces – returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Main search
+        # ------------------------------------------------------------------
+        min_d2 = float("inf")
+        bestP = None
+        bestQ = None
+
+        # 1. Vertex–vertex (full, usually cheap)
+        for va in verticesA:
+            pa = _coords(va)
+            for vb in verticesB:
+                pb = _coords(vb)
+                d2 = _length2(_sub(pa, pb))
+                if d2 < min_d2:
+                    min_d2 = d2
+                    bestP = pa
+                    bestQ = pb
+                    if min_d2 <= tolerance*tolerance:
+                        break
+            if min_d2 <= tolerance*tolerance:
+                break
+
+        if min_d2 <= tolerance*tolerance:
+            vA = Vertex.ByCoordinates(bestP[0], bestP[1], bestP[2])
+            vB = Vertex.ByCoordinates(bestQ[0], bestQ[1], bestQ[2])
+            if Vertex.Distance(vA, vB) <= tolerance:
+                if not silent:
+                    print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
+                return None
+            return Edge.ByStartVertexEndVertex(vA, vB)
+
+        # 2. Vertex–edge (both directions), exhaustive
+        def _vertex_edge_pass(vertices, edges, reverse=False):
+            nonlocal min_d2, bestP, bestQ
+            for v in vertices:
+                pv = _coords(v)
+                for e in edges:
+                    s = Edge.StartVertex(e)
+                    t = Edge.EndVertex(e)
+                    ps = _coords(s)
+                    pt = _coords(t)
+                    d2, Q = _point_segment_distance2(pv, ps, pt)
+                    if d2 < min_d2:
+                        min_d2 = d2
+                        if reverse:
+                            bestP = Q
+                            bestQ = pv
+                        else:
+                            bestP = pv
+                            bestQ = Q
+                        if min_d2 <= tolerance*tolerance:
+                            return
+
+        _vertex_edge_pass(verticesA, edgesB, reverse=False)
+        if min_d2 > tolerance*tolerance:
+            _vertex_edge_pass(verticesB, edgesA, reverse=True)
+
+        if min_d2 <= tolerance*tolerance:
+            vA = Vertex.ByCoordinates(bestP[0], bestP[1], bestP[2])
+            vB = Vertex.ByCoordinates(bestQ[0], bestQ[1], bestQ[2])
+            if Vertex.Distance(vA, vB) <= tolerance:
+                if not silent:
+                    print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
+                return None
+            return Edge.ByStartVertexEndVertex(vA, vB)
+
+        # 3. Edge–edge
+        #    If BVHs are available and you want, you can use them here to
+        #    restrict candidate pairs. For now, we do exhaustive search; you
+        #    can replace 'edgesB' with BVH.Clashes(bvhB, ea) if your BVH
+        #    returns nearby topologies (not just intersecting ones).
+        for ea in edgesA:
+            sa = _coords(Edge.StartVertex(ea))
+            ta = _coords(Edge.EndVertex(ea))
+
+            candidate_edgesB = edgesB
+            # Example hook (uncomment if BVH.Clashes returns nearby edges):
+            # if bvhB is not None:
+            #     candidate_edgesB = BVH.Clashes(bvhB, ea) or []
+
+            for eb in candidate_edgesB:
+                sb = _coords(Edge.StartVertex(eb))
+                tb = _coords(Edge.EndVertex(eb))
+                d2, P_closest, Q_closest = _segment_segment_distance2(sa, ta, sb, tb)
+                if d2 < min_d2:
+                    min_d2 = d2
+                    bestP = P_closest
+                    bestQ = Q_closest
+                    if min_d2 <= tolerance*tolerance:
+                        break
+            if min_d2 <= tolerance*tolerance:
+                break
+
+        if min_d2 <= tolerance*tolerance:
+            vA = Vertex.ByCoordinates(bestP[0], bestP[1], bestP[2])
+            vB = Vertex.ByCoordinates(bestQ[0], bestQ[1], bestQ[2])
+            if Vertex.Distance(vA, vB) <= tolerance:
+                if not silent:
+                    print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
+                return None
+            return Edge.ByStartVertexEndVertex(vA, vB)
+
+        # 4. Vertex–face (both directions), optionally BVH-accelerated
+        def _vertex_face_pass(vertices, faces, reverse=False):
+            nonlocal min_d2, bestP, bestQ
+            for v in vertices:
+                pv = _coords(v)
+
+                candidate_faces = faces
+
+                for f in candidate_faces:
+                    d2, Q = _point_face_distance2(pv, f)
+                    if d2 < min_d2:
+                        min_d2 = d2
+                        if reverse:
+                            bestP = Q
+                            bestQ = pv
+                        else:
+                            bestP = pv
+                            bestQ = Q
+                        if min_d2 <= tolerance*tolerance:
+                            return
+
+        _vertex_face_pass(verticesA, facesB, reverse=False)
+        if min_d2 > tolerance*tolerance:
+            _vertex_face_pass(verticesB, facesA, reverse=True)
+
+        if not isfinite(min_d2):
+            if not silent:
+                print("[Topology.ShortestEdge] Failed to compute a finite distance.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Construct resulting Edge
+        # ------------------------------------------------------------------
+        dist = math.sqrt(max(min_d2, 0.0))
+        if dist <= tolerance:
+            # Treat as touching; still create an Edge (possibly degenerate)
+            pass
+
+        if bestP is None or bestQ is None:
+            if not silent:
+                print("[Topology.ShortestEdge] No closest points recorded; returning None.")
+            return None
+
+        vA = Vertex.ByCoordinates(bestP[0], bestP[1], bestP[2])
+        vB = Vertex.ByCoordinates(bestQ[0], bestQ[1], bestQ[2])
+        if Vertex.Distance(vA, vB) <= tolerance:
+            if not silent:
+                print("Topology.ShortestEdge - Error: The input topologies touch. Therefore the shortest edge degenerated into a vertex. Returning None.")
+            return None
+        return Edge.ByStartVertexEndVertex(vA, vB)
+
+    @staticmethod
+    def ShortestDistance(topologyA,
+                            topologyB,
+                            mantissa: int = 6,
+                            tolerance: float = 0.0001,
+                            silent: bool = False
+                            ):
+        """
+        Returns the shortest Euclidean distance between two topologies.
+
+        This is a thin wrapper around Topology.ShortestEdge. It computes the
+        shortest connecting Edge between the two input topologies and returns
+        its length.
+
+        Parameters
+        ----------
+        topologyA : topologic_core.Topology
+            The first input topology.
+        topologyB : topologic_core.Topology
+            The second input topology.
+        mantissa : int , optional
+            Number of decimal places to which the distance is rounded.
+            Default is 6.
+        tolerance : float , optional
+            Numerical tolerance used when computing the shortest edge.
+            Default is 1e-6.
+        silent : bool , optional
+            If True, the method will not print warnings. Default is False.
+
+
+        Returns
+        -------
+        float or None
+            The shortest distance between topologyA and topologyB, rounded to
+            the specified mantissa. Returns None if the distance cannot be
+            computed.
+        """
+        from topologicpy.Edge import Edge
+        
+        # If the two topologies intersect, then the shortest distance is 0
+        if Topology.IsInstance(Topology.Intersect(topologyA, topologyB), "topology"):
+            return 0
+        
+        edge = Topology.ShortestEdge(topologyA,
+                                        topologyB,
+                                        tolerance=tolerance,
+                                        silent=silent
+                                        )
+        if edge is None:
+            if not silent:
+                print("Topology.ShortestDistance - Error: Could not compute the shortest distance. Returning None.")
+            return None
+
+        d = Edge.Length(edge)
+        if d is None:
+            if not silent:
+                print("Topology.ShortestDistance - Error: Could not compute the shortest distance. Returning None.")
+            return None
+
+        d = 0.0 if abs(d) <= tolerance else d
+        return round(d, mantissa)
+
     @staticmethod
     def ShortestEdges(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
         """
