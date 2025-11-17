@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.85 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.8.86 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.85
+                0.8.86
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -159,10 +159,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.ByTopologies" title="topologicpy.Cluster.Cluster.ByTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopologies</span></code></a>(*topologies[, ...])</p></td>
 <td><p>Creates a topologic Cluster from the input list of topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.CellComplexes" title="topologicpy.Cluster.Cluster.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.CellComplexes" title="topologicpy.Cluster.Cluster.CellComplexes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CellComplexes</span></code></a>(cluster[, silent])</p></td>
 <td><p>Returns the cellComplexes of the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Cells" title="topologicpy.Cluster.Cluster.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(cluster)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Cells" title="topologicpy.Cluster.Cluster.Cells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cells</span></code></a>(cluster[, silent])</p></td>
 <td><p>Returns the cells of the input cluster.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.DBSCAN" title="topologicpy.Cluster.Cluster.DBSCAN"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DBSCAN</span></code></a>(topologies[, selectors, keys, ...])</p></td>
@@ -177,25 +177,25 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Faces" title="topologicpy.Cluster.Cluster.Faces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Faces</span></code></a>(cluster)</p></td>
 <td><p>Returns the faces of the input cluster.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeCells" title="topologicpy.Cluster.Cluster.FreeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeCells</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeCells" title="topologicpy.Cluster.Cluster.FreeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeCells</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free cells of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeEdges" title="topologicpy.Cluster.Cluster.FreeEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeEdges</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeEdges" title="topologicpy.Cluster.Cluster.FreeEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeEdges</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free edges of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeFaces" title="topologicpy.Cluster.Cluster.FreeFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFaces</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeFaces" title="topologicpy.Cluster.Cluster.FreeFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeFaces</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free faces of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeShells" title="topologicpy.Cluster.Cluster.FreeShells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeShells</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeShells" title="topologicpy.Cluster.Cluster.FreeShells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeShells</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free shells of the input cluster that are not part of a higher topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeTopologies" title="topologicpy.Cluster.Cluster.FreeTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeTopologies</span></code></a>(cluster[, tolerance])</p></td>
 <td><p>Returns the free topologies of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeVertices" title="topologicpy.Cluster.Cluster.FreeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeVertices</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeVertices" title="topologicpy.Cluster.Cluster.FreeVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeVertices</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free vertices of the input cluster that are not part of a higher topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeWires" title="topologicpy.Cluster.Cluster.FreeWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeWires</span></code></a>(cluster[, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.FreeWires" title="topologicpy.Cluster.Cluster.FreeWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FreeWires</span></code></a>(cluster[, tolerance, silent])</p></td>
 <td><p>Returns the free wires of the input cluster that are not part of a higher topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.HighestType" title="topologicpy.Cluster.Cluster.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(cluster)</p></td>
@@ -216,13 +216,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Simplify" title="topologicpy.Cluster.Cluster.Simplify"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Simplify</span></code></a>(cluster)</p></td>
 <td><p>Simplifies the input cluster if possible.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Tripod" title="topologicpy.Cluster.Cluster.Tripod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tripod</span></code></a>([size, radius, sides, faceColorKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Topologies" title="topologicpy.Cluster.Cluster.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(cluster[, tolerance, silent])</p></td>
+<td><p>Returns the topologies of the input cluster.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Tripod" title="topologicpy.Cluster.Cluster.Tripod"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tripod</span></code></a>([size, radius, sides, faceColorKey, ...])</p></td>
 <td><p>Creates a color-coded Axes tripod for X, Y, and Z axes.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Vertices" title="topologicpy.Cluster.Cluster.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(cluster)</p></td>
 <td><p>Returns the vertices of the input cluster.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.Wires" title="topologicpy.Cluster.Cluster.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(cluster)</p></td>
 <td><p>Returns the wires of the input cluster.</p></td>
 </tr>
 </tbody>
@@ -299,12 +302,14 @@ xRange and yRange CANNOT be None or unspecified at the same time. One or the oth
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.CellComplexes">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CellComplexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.CellComplexes" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CellComplexes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.CellComplexes" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the cellComplexes of the input cluster.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -319,12 +324,14 @@ xRange and yRange CANNOT be None or unspecified at the same time. One or the oth
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.Cells">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.Cells" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Cells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.Cells" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the cells of the input cluster.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -431,7 +438,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeCells">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeCells" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeCells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeCells" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free cells of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -439,6 +446,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -453,7 +462,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeEdges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeEdges" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeEdges" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free edges of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -461,6 +470,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -475,7 +486,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeFaces">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeFaces" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeFaces" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free faces of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -483,6 +494,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -497,7 +510,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeShells">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeShells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeShells" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeShells</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeShells" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free shells of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -505,6 +518,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -541,7 +556,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeVertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeVertices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free vertices of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -549,6 +564,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -563,7 +580,7 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.FreeWires">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeWires" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FreeWires</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.FreeWires" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the free wires of the input cluster that are not part of a higher topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -571,6 +588,8 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -727,6 +746,30 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Topology or list</dt><dd><p>The simplification of the cluster.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.Topologies">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cluster</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.Cluster.Cluster.Topologies" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the topologies of the input cluster.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>cluster</strong><span class="classifier">topologic_core.Cluster</span></dt><dd><p>The input cluster.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of cellComplexes.</p>
 </dd>
 </dl>
 </dd>
