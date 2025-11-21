@@ -179,8 +179,7 @@ class Shell():
             #return Cluster.ByTopologies(skEdges)
         #print("ShellByDisjointFaces - Error: Could not derive central skeleton of interior walls. Returning None.")
         #return None
-
-            shell = Topology.Slice(internalBoundary, skeleton_cluster, tolerance=tolerance)
+            shell = Topology.Slice(Topology.Copy(internalBoundary), skeleton_cluster, tolerance=tolerance)
             if mergeJunctions == True:
                 vertices = Topology.Vertices(shell, silent=True)
                 centers = []

@@ -4753,7 +4753,9 @@ class Graph:
     @staticmethod
     def BySpatialRelationships(
         *topologies,
-        include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within"],
+        include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within", "proximity"],
+        proximityValues = [1, 5, 10],
+        proximityLabels = ["near", "intermediate", "far"],
         useInternalVertex = False,
         vertexIDKey = "id",
         edgeKeyFwd = "relFwd",
@@ -4773,6 +4775,17 @@ class Graph:
             The list of input topologies
         include : list , optional
             The type(s) of spatial relationships to build. Default is ["contains", "disjoint", "equals", "overlaps", "touches", "within", "covers", "coveredBy"]
+        proximityValues: list , optional
+            The list of maximum distance values that specify the desired proximityLabel.
+            This list must be sorted in ascending order and have the same number of elements as the proximityLabels list.
+            Objects that are further than the largest specified distance are not classified and not included.
+            An object is considered to fall within the range if it is less than or equal to the value in this list.
+            If you wish ALL objects to be classified specifiy the last number in this list to be larger than the
+            largest distance that can exist between any two objects in the list. Default is [1, 5, 10]
+        proximityLabels: list , optional
+            The list of range labels (e.g. "near", "intermediate", "far") that correspond to the proximityValues list.
+            The list must have the same number of elements as the proximityValues list. Default is ["near", "intermediate", "far"]
+
         useInternalVertex: bool , optional
             If set to True, an internal vertex of the represented topology will be used as a graph node.
             Otherwise, its centroid will be used. Default is False.
@@ -4819,6 +4832,18 @@ class Graph:
             if not silent:
                 print("Graph.BySpatialRelationships - Error: No valid topologies. Returning None")
             return None
+        
+        if len(proximityValues) != len(proximityLabels):
+            if not silent:
+                print("Graph.BySpatialRelationships - Error: the proximityValues and proximityLabels input parameters are not of the same length. Returning None")
+            return None
+        
+        include = [t.lower() for t in include if t.lower() in ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within", "proximity"]]
+        
+        if len(include) == 0:
+            if not silent:
+                print("Graph.BySpatialRelationships - Error: The include input parameter does not contain any valid spatial relationship types. Returning None")
+            return None
 
         if n == 1:
             v = Topology.InternalVertex(topologyList[0]) if useInternalVertex else Topology.Centroid(topologyList[0])
@@ -4838,7 +4863,8 @@ class Graph:
         for i, t in enumerate(topologyList):
             d = Topology.Dictionary(t)
             d = Dictionary.SetValueAtKey(d, vertexIDKey, i)
-            d = Dictionary.SetValuesAtKeys(d, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(t), Topology.Type(t), Topology.TypeAsString(t)])
+            if storeBREP == True:
+                d = Dictionary.SetValuesAtKeys(d, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(t), Topology.Type(t), Topology.TypeAsString(t)])
             vertex_dicts[i] = d
             v = Topology.InternalVertex(t) if useInternalVertex else Topology.Centroid(t)
             vertices_objs[i] = v
@@ -4882,17 +4908,47 @@ class Graph:
                 # keep same tag both ways for symmetric predicates
                 fwd = rel
                 bwd = rel
-            edges.append([ai, bj])
-            edge_dicts.append(
-                Dictionary.ByKeysValues(
+            if [ai, bj] in edges:
+                i = edges.index([ai, bj])
+                edge_dict = Dictionary.ByKeysValues(
                     [edgeKeyFwd, edgeKeyBwd, connectsKey],
-                    [fwd, bwd, [ai, bj]],
-                )
-            )
+                    [fwd, bwd, [ai, bj]])
+                edge_dicts[i] = edge_dict
+            else:
+
+                edges.append([ai, bj])
+                edge_dicts.append(
+                    Dictionary.ByKeysValues(
+                        [edgeKeyFwd, edgeKeyBwd, connectsKey],
+                        [fwd, bwd, [ai, bj]],
+                    ))
 
         # ---------- main loops (each unordered pair once) ----------
+        used = []
+        proximity_edges = []
         for i, a in enumerate(topologyList):
+            candidates = []
             ai = i
+            if "proximity" in include:
+                for j, b in enumerate(topologyList):
+                    bj = index_of.get(id(b))
+                    if i == bj or (i,bj) in used or (bj,i) in used:
+                        continue
+                    else:
+                        used.append((i,bj))
+                        used.append((bj,i))
+                        rel = Topology.SpatialRelationship( a,
+                                                        b,
+                                                        include=["proximity"],
+                                                        proximityValues = proximityValues,
+                                                        proximityLabels = proximityLabels,
+                                                        mantissa=mantissa,
+                                                        tolerance=tolerance,
+                                                        silent=True
+                                                        )
+                        rel_ok = (rel in proximityLabels)
+                        if rel_ok:
+                            _add_edge(ai, bj, rel)
             candidates = BVH.Clashes(bvh, a) or []
             if not candidates:
                 # If you want to connect "disjoint" to *all* non-candidates, that would be O(n) per i.
@@ -4901,7 +4957,7 @@ class Graph:
 
             for b in candidates:
                 bj = index_of.get(id(b))
-                if bj is None or bj <= ai:
+                if bj is None or bj <= ai: 
                     continue  # skip self and already-processed pairs
 
                 # Ultra-fast "disjoint" emit via AABB if requested and boxes do not overlap
@@ -4909,7 +4965,7 @@ class Graph:
                     if want_disjoint:
                         _add_edge(ai, bj, "disjoint")
                     continue  # done with this pair
-
+                
                 # Otherwise evaluate exact relation (short-circuit inside)
                 rel = Topology.SpatialRelationship(
                     a,

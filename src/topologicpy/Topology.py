@@ -10098,7 +10098,9 @@ class Topology():
     @staticmethod
     def SpatialRelationship(topologyA,
                             topologyB,
-                            include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within"],
+                            include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within", "proximity"],
+                            proximityValues = [1, 5, 10],
+                            proximityLabels = ["near", "intermediate", "far"],
                             mantissa: int = 6,
                             tolerance: float = 0.0001,
                             silent: bool = False):
@@ -10123,6 +10125,17 @@ class Topology():
             - Overlaps: The intersection of the two geometries results in a new, distinct geometry of the same dimension. For example, two overlapping polygons produce a new polygon.
             - Touches: The geometries share at least one point on their boundaries but their interiors do not intersect.
             - Within: The interior and boundary of geometry A are completely contained within the interior of geometry B.
+            - Proximity: Classifies the shortest distance between the objects according to proximityValues and proximityLabels.
+        proximityValues: list , optional
+            The list of maximum distance values that specify the desired proximityLabel.
+            This list must be sorted in ascending order and have the same number of elements as the proximityLabels list.
+            Objects that are further than the largest specified distance are not classified and not included.
+            An object is considered to fall within the range if it is less than or equal to the value in this list.
+            If you wish ALL objects to be classified specifiy the last number in this list to be larger than the
+            largest distance that can exist between any two objects in the list. Default is [1, 5, 10]
+        proximityLabels: list , optional
+            The list of range labels (e.g. "near", "intermediate", "far") that correspond to the proximityValues list.
+            The list must have the same number of elements as the proximityValues list. Default is ["near", "intermediate", "far"]
         mantissa : int , optional
             The desired length of the mantissa. Default is 6.
         tolerance : float , optional
@@ -10146,6 +10159,11 @@ class Topology():
         if not Topology.IsInstance(topologyB, "topology"):
             if not silent:
                 print("Topology.SpatialRelationship - Error: The topologyB input parameter is not a valid Topology. Returning None.")
+            return None
+        
+        if len(proximityValues) != len(proximityLabels):
+            if not silent:
+                print("Topology.SpatialRelationship - Error: the proximityValues and proximityLabels input parameters are not of the same length. Returning None")
             return None
 
         from topologicpy.Vertex import Vertex
@@ -10262,6 +10280,13 @@ class Topology():
             return False
 
         # ---------- predicates ----------
+
+        def proximity(a, b, proximityValues, proximityLabels):
+            sd = Topology.ShortestDistance(a,b, tolerance=tolerance, silent=silent)
+            for i, pv in enumerate(proximityValues):
+                if sd <= pv:
+                    return proximityLabels[i]
+            return None
 
         def contains(a, b):
             # The inverse of "within," where geometry A contains geometry B.
@@ -10439,8 +10464,11 @@ class Topology():
         # 7) touches (incl. vertex-at-endpoint)
         if "touches" in inc and touches(topologyA, topologyB):
             return "touches"
+        # 8) proximity
+        if "proximity" in inc:
+            return proximity(topologyA, topologyB, proximityValues, proximityLabels)
         
-        return "unknown"
+        return None
 
     @staticmethod
     def Spin(topology, origin=None, triangulate: bool = True, direction: list = [0, 0, 1], angle: float = 360, sides: int = 16,

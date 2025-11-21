@@ -799,7 +799,7 @@ class Plotly:
                                     z=z,
                                     name=legendLabel,
                                     showlegend=showLegend,
-                                    marker=dict(symbol="circle", size=marker_width, color=color),
+                                    marker=dict(symbol="circle", size=marker_width, color=d_color),
                                     mode=mode,
                                     line=dict(color=d_color, width=width, dash=dot),
                                     legendgroup=legendGroup,
