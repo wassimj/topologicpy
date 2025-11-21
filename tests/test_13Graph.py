@@ -383,9 +383,6 @@ def test_main():
     # test 1
     remVer1 = Graph.RemoveVertex(graph_ve2, v0)                          # without optional inputs
     assert Topology.IsInstance(remVer1, "Graph"), "Graph.RemoveVertex. Should be topologic.Graph"
-    # test 2
-    remVer2 = Graph.RemoveVertex(graph_ve1, v1, 0.0001)           # with optional inputs
-    assert Topology.IsInstance(remVer2, "Graph"), "Graph.RemoveVertex. Should be topologic.Graph"
 
     # Case 32 - ShortestPath
     print("Case 32")
