@@ -331,16 +331,19 @@ class Wire():
                         
         else:
             best_br = boundingRectangle
-        x_min, y_min, maxX, maxY = best_br
+        x_min, y_min, x_max, y_max = best_br
         vb1 = Vertex.ByCoordinates(x_min, y_min, 0)
-        vb2 = Vertex.ByCoordinates(maxX, y_min, 0)
-        vb3 = Vertex.ByCoordinates(maxX, maxY, 0)
-        vb4 = Vertex.ByCoordinates(x_min, maxY, 0)
+        vb2 = Vertex.ByCoordinates(x_max, y_min, 0)
+        vb3 = Vertex.ByCoordinates(x_max, y_max, 0)
+        vb4 = Vertex.ByCoordinates(x_min, y_max, 0)
 
         boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance, silent=silent)
         boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, axis=[0, 0, 1], angle=-best_z)
         boundingRectangle = Topology.Unflatten(boundingRectangle, origin=f_origin, direction=normal)
-        dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
+        dictionary = Dictionary.ByKeysValues(["zrot", "xmin", "ymin", "xmax", "ymax", "width", "length"],
+                                             [best_z, x_min, y_min, x_max, y_max, (x_max - x_min), (y_max - y_min)])
+
+        #dictionary = Dictionary.ByKeysValues(["zrot"], [best_z])
         boundingRectangle = Topology.SetDictionary(boundingRectangle, dictionary)
         return boundingRectangle
 
@@ -2426,7 +2429,254 @@ class Wire():
         # Unflatten the wire
         return_wire = Topology.Unflatten(flat_wire, origin=Vertex.Origin(), direction=normal)
         return return_wire
-    
+
+    @staticmethod
+    def Funnel(face,
+                vertexA,
+                vertexB,
+                portals,
+                tolerance: float = 0.0001,
+                silent: float = False):
+        """
+        Returns a Wire representing a smoothed path inside the given face using
+        the funnel (string-pulling) algorithm.
+
+        The algorithm assumes that a corridor has already been computed, and is
+        provided as an ordered list of "portals" (pairs of vertices) that lie
+        on the face between the start and end locations.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The planar face on which navigation occurs. All vertices must lie
+            on this face.
+        vertexA : topologic_core.Vertex
+            The start point of the path.
+        vertexB : topologic_core.Vertex
+            The end point of the path.
+        portals : list of tuple(Vertex, Vertex)
+            Ordered list of corridor edges. Each item is (leftVertex, rightVertex)
+            describing the visible "portal" between two consecutive regions along
+            the navmesh path.
+        tolerance : float , optional
+            Numerical tolerance used when comparing orientations and distances.
+            Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        wire : topologic_core.Wire
+            A Wire representing the smoothed path from startVertex to endVertex
+            that stays inside the navigation corridor on the face.
+        """
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "face"):
+            if not silent:
+                print("Wire.Funnel - Error: The input face parameter is not a topologic face. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexA, "vertex"):
+            if not silent:
+                print("Wire.Funnel - Error: The input vertexA parameter is not a topologic vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexB, "vertex"):
+            if not silent:
+                print("Wire.Funnel - Error: The input vertexB parameter is not a topologic vertex. Returning None.")
+            return None
+
+        # ------------------------------------------------------------
+        # 1. Basic helpers
+        # ------------------------------------------------------------
+        def _norm(v):
+            return math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2])
+
+        def _normalize(v):
+            n = _norm(v)
+            if n < tolerance:
+                return (0.0, 0.0, 0.0)
+            return (v[0] / n, v[1] / n, v[2] / n)
+
+        def _dot(a, b):
+            return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+
+        def _cross(a, b):
+            return (
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            )
+
+        def _sub(a, b):
+            return (a[0] - b[0], a[1] - b[1], a[2] - b[2])
+
+        def _tri_area2(a2, b2, c2):
+            """
+            Twice the signed area of triangle (a, b, c) in 2D.
+            Positive => c is to the left of ab
+            Negative => c is to the right of ab
+            """
+            return (b2[0] - a2[0]) * (c2[1] - a2[1]) - (b2[1] - a2[1]) * (c2[0] - a2[0])
+
+        def _coords3d(v):
+            x, y, z = Vertex.Coordinates(v)
+            return (x, y, z)
+
+        # ------------------------------------------------------------
+        # 2. Build a local 2D coordinate system on the face
+        # ------------------------------------------------------------
+        # Face normal
+        n_vec = Face.Normal(face)  # [nx, ny, nz]
+        n = _normalize((n_vec[0], n_vec[1], n_vec[2]))
+
+        # Choose an arbitrary vector not parallel to n
+        if abs(n[0]) < 0.9:
+            arbitrary = (1.0, 0.0, 0.0)
+        else:
+            arbitrary = (0.0, 1.0, 0.0)
+
+        u = _normalize(_cross(n, arbitrary))  # tangent
+        v = _cross(n, u)                      # bitangent, already orthogonal and normalized
+
+        def _project_to_2d(vertex):
+            p = _coords3d(vertex)
+            # project onto basis (u, v)
+            return (_dot(p, u), _dot(p, v))
+
+        # Precompute 2D coords for start, end and all portal vertices
+        start2d = _project_to_2d(vertexA)
+        end2d = _project_to_2d(vertexB)
+
+        portal2d = []
+        for l_v, r_v in portals:
+            portal2d.append((_project_to_2d(l_v), _project_to_2d(r_v)))
+
+        # ------------------------------------------------------------
+        # 3. Funnel algorithm in 2D
+        #   (based on classic Recast / string-pulling implementation)
+        # ------------------------------------------------------------
+        path_vertices = [vertexA]
+
+        apex2d = start2d
+        apexVertex = vertexA
+        apexIndex = -1
+
+        left2d = start2d
+        right2d = start2d
+        leftVertex = vertexA
+        rightVertex = vertexB
+        leftIndex = -1
+        rightIndex = -1
+
+        n_portals = len(portals)
+        i = 0
+
+        # We will process all portals, and then a final "portal" at the goal (end, end)
+        while i <= n_portals:
+            if i < n_portals:
+                newLeft2d, newRight2d = portal2d[i]
+                newLeftVertex, newRightVertex = portals[i]
+            else:
+                # last "portal" is the goal point itself
+                newLeft2d = end2d
+                newRight2d = end2d
+                newLeftVertex = vertexB
+                newRightVertex = vertexB
+
+            # --------------------------------------------------------
+            # Update right side of funnel
+            # --------------------------------------------------------
+            area_apex_right_newRight = _tri_area2(apex2d, right2d, newRight2d)
+            if area_apex_right_newRight <= tolerance:
+                # New right vertex is "inside" or tightening the funnel
+                area_apex_left_newRight = _tri_area2(apex2d, left2d, newRight2d)
+                if (apexVertex == rightVertex) or (area_apex_left_newRight > tolerance):
+                    # Tighten the funnel on the right side
+                    right2d = newRight2d
+                    rightVertex = newRightVertex
+                    rightIndex = i
+                else:
+                    # Right over left, so left becomes the new apex
+                    path_vertices.append(leftVertex)
+                    apex2d = _project_to_2d(leftVertex)
+                    apexVertex = leftVertex
+                    apexIndex = leftIndex
+
+                    # Reset funnel
+                    left2d = apex2d
+                    right2d = apex2d
+                    leftVertex = apexVertex
+                    rightVertex = apexVertex
+                    leftIndex = apexIndex
+                    rightIndex = apexIndex
+
+                    # Restart from the new apex
+                    i = apexIndex + 1
+                    continue
+
+            # --------------------------------------------------------
+            # Update left side of funnel
+            # --------------------------------------------------------
+            area_apex_left_newLeft = _tri_area2(apex2d, left2d, newLeft2d)
+            if area_apex_left_newLeft >= -tolerance:
+                # New left vertex is "inside" or tightening the funnel
+                area_apex_right_newLeft = _tri_area2(apex2d, right2d, newLeft2d)
+                if (apexVertex == leftVertex) or (area_apex_right_newLeft < -tolerance):
+                    # Tighten funnel on the left side
+                    left2d = newLeft2d
+                    leftVertex = newLeftVertex
+                    leftIndex = i
+                else:
+                    # Left over right, so right becomes the new apex
+                    path_vertices.append(rightVertex)
+                    apex2d = _project_to_2d(rightVertex)
+                    apexVertex = rightVertex
+                    apexIndex = rightIndex
+
+                    # Reset funnel
+                    left2d = apex2d
+                    right2d = apex2d
+                    leftVertex = apexVertex
+                    rightVertex = apexVertex
+                    leftIndex = apexIndex
+                    rightIndex = apexIndex
+
+                    # Restart from the new apex
+                    i = apexIndex + 1
+                    continue
+
+            i += 1
+
+        # Finally, add the end point if it is not already in the path
+        if path_vertices[-1] is not vertexB:
+            path_vertices.append(vertexB)
+
+        # ------------------------------------------------------------
+        # 4. Build and return the Topologic wire
+        # ------------------------------------------------------------
+        return_wire = Wire.ByVertices(path_vertices, close=False, silent=True)
+        bb = Wire.BoundingRectangle(face)
+        d = Topology.Dictionary(bb)
+        width = Dictionary.ValueAtKey(d, "width")
+        length = Dictionary.ValueAtKey(d, "length")
+        size = max(width, length)
+        percentage = 0.25 # Start with 25% of the total size
+        is_ok = False
+        while is_ok == False and percentage > 0:
+            new_wire = Wire.Simplify(return_wire, tolerance=size*percentage, silent=True)
+            test_wire = Topology.Scale(new_wire, Topology.Centroid(new_wire), 0.95, 0.95, 1)
+            result = Topology.Difference(test_wire, face, tolerance=tolerance, silent=True)
+            if result is None:
+                is_ok = True
+                return_wire = new_wire
+            percentage -= 0.01
+        print("Wire.Funnel - Result:", result)
+        print("Wire.Funnel - Percentage:", percentage)
+        return new_wire
+
     @staticmethod
     def InteriorAngles(wire, tolerance: float = 0.0001, mantissa: int = 6) -> list:
         """
@@ -4188,7 +4438,7 @@ class Wire():
             if not silent:
                 print("Wire.Simplify - Warning: Could not generate enough vertices for a simplified wire. Returning the original wire.")
             wire
-        new_wire = Wire.ByVertices(new_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
+        new_wire = Wire.ByVertices(new_vertices, close=Wire.IsClosed(wire), tolerance=tolerance, silent=True)
         if not Topology.IsInstance(new_wire, "wire"):
             if not silent:
                 print("Wire.Simplify - Warning: Could not generate a simplified wire. Returning the original wire.")
@@ -4712,6 +4962,124 @@ class Wire():
             return None
         sv, ev = Wire.StartEndVertices(wire, silent=silent)
         return sv
+
+    @staticmethod
+    def StraightenInFace(wire, face, tolerance: float = 0.0001):
+        """
+        Returns a new Wire obtained by recursively replacing segments of the
+        input wire with the longest possible straight edge that is fully
+        embedded in the given face.
+
+        For each starting vertex v_i along the wire, this method searches for
+        the furthest vertex v_j (j > i) such that the straight Edge between
+        v_i and v_j satisfies:
+
+            Topology.Difference(edge, face) == None
+
+        i.e. the edge lies completely within (or on the boundary of) the face.
+        All edges of the original wire between vertex indices i and j are then
+        replaced by this straight edge, and the process is repeated recursively
+        from index j.
+
+        Parameters
+        ----------
+        wire : topologic_core.Wire
+            The input path wire whose vertices define the route to be
+            straightened.
+        face : topologic_core.Face
+            The face within which the straightened edges must lie.
+        tolerance : float , optional
+            Numerical tolerance used for internal robustness checks. The
+            Topology.Difference call itself is left with its default tolerance.
+            Default is 1e-6.
+
+        Returns
+        -------
+        wire : topologic_core.Wire
+            A new Wire whose vertices define the recursively straightened path.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        # Get ordered vertices of the wire
+        vertices = Topology.Vertices(wire)
+        n = len(vertices)
+
+        if n <= 2:
+            # Nothing to straighten
+            return wire
+
+        def _edge_inside_face(v_start, v_end):
+            """
+            Returns True if the straight edge between v_start and v_end is
+            fully embedded in the face, i.e. Topology.Difference(edge, face)
+            returns None.
+            """
+            if v_start is v_end:
+                return True
+            edge = Edge.ByStartVertexEndVertex(v_start, v_end)
+            diff = Topology.Difference(edge, face)
+            return diff is None
+
+        def _find_longest_valid_index(start_idx):
+            """
+            For a fixed start_idx, search for the largest index j >= start_idx+1
+            such that the direct edge (vertices[start_idx], vertices[j]) is
+            fully inside the face.
+
+            If for any reason no such j exists (which should not happen if the
+            original wire lies in the face), it falls back to start_idx + 1.
+            """
+            v_start = vertices[start_idx]
+            best_j = None
+
+            for j in range(start_idx + 1, n):
+                v_end = vertices[j]
+                if _edge_inside_face(v_start, v_end):
+                    best_j = j
+                # Do NOT break on failure: a further vertex might still
+                # be reachable by a straight edge that stays in the face.
+
+            if best_j is None:
+                # Fallback: use the immediate next vertex to avoid stalling
+                best_j = min(start_idx + 1, n - 1)
+
+            return best_j
+
+        def _straighten_recursive(start_idx, out_vertices):
+            """
+            Recursive helper.
+
+            Appends the chosen vertices to out_vertices. At each step, it
+            decides how far it can jump from start_idx with a single straight
+            edge inside the face, then recurses from that new index.
+            """
+            # Base case: we are at the last vertex
+            if start_idx == n - 1:
+                out_vertices.append(vertices[start_idx])
+                return
+
+            # Find furthest valid index reachable from start_idx
+            next_idx = _find_longest_valid_index(start_idx)
+
+            # Add the starting vertex for this segment
+            out_vertices.append(vertices[start_idx])
+
+            # Recurse from the chosen furthest index
+            _straighten_recursive(next_idx, out_vertices)
+
+        # Run the recursion
+        new_vertices = []
+        _straighten_recursive(0, new_vertices)
+
+        # In case of any numerical quirks, ensure the last original vertex is present
+        if new_vertices[-1] is not vertices[-1]:
+            new_vertices.append(vertices[-1])
+
+        # Build the new straightened wire
+        return Wire.ByVertices(new_vertices, close=False)
 
     @staticmethod
     def Trapezoid(origin= None, widthA: float = 1.0, widthB: float = 0.75, offsetA: float = 0.0, offsetB: float = 0.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):

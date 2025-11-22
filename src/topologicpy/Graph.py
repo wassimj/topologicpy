@@ -5251,7 +5251,8 @@ class Graph:
                    useInternalVertex: bool = False,
                    storeBREP: bool =False,
                    mantissa: int = 6,
-                   tolerance: float = 0.0001):
+                   tolerance: float = 0.0001,
+                   silent: float = False):
         """
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
 
@@ -5305,6 +5306,8 @@ class Graph:
             If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5319,6 +5322,10 @@ class Graph:
         from topologicpy.Topology import Topology
         from topologicpy.Aperture import Aperture
         
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Graph.ByTopology - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
         def _viaSharedTopologies(vt, sharedTops):
             verts = []
             eds = []
@@ -15577,7 +15584,7 @@ class Graph:
         try:
             gsv = Graph.NearestVertex(graph, vertexA)
             gev = Graph.NearestVertex(graph, vertexB)
-            shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey)
+            shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey) # Hook to Core
             if not shortest_path == None:
                 if Topology.IsInstance(shortest_path, "Edge"):
                         shortest_path = Wire.ByEdges([shortest_path])
@@ -15589,6 +15596,70 @@ class Graph:
             return shortest_path
         except:
             return None
+
+    @staticmethod
+    def shortestPathInFace(graph, face, vertexA, vertexB, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the shortest path that connects the input vertices.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            The input face. This is assumed to be planar and resting on the XY plane (z = 0)
+        vertexA : topologic_core.Vertex
+            The first input vertex.
+        vertexB : topologic_core.Vertex
+            The second input vertex.
+        mode : int , optional
+                The desired mode of meshing algorithm. Several options are available:
+                0: Classic
+                1: MeshAdapt
+                3: Initial Mesh Only
+                5: Delaunay
+                6: Frontal-Delaunay
+                7: BAMG
+                8: Fontal-Delaunay for Quads
+                9: Packing of Parallelograms
+                All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+                WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+                If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.Wire
+            The shortest path between the input vertices.
+
+        """
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(face, "face"):
+            if not silent:
+                print("Face.ShortestPath - Error: The input face parameter is not a topologic face. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexA, "vertex"):
+            if not silent:
+                print("Face.ShortestPath - Error: The input vertexA parameter is not a topologic vertex. Returning None.")
+            return None
+        if not Topology.IsInstance(vertexB, "vertex"):
+            if not silent:
+                print("Face.ShortestPath - Error: The input vertexB parameter is not a topologic vertex. Returning None.")
+            return None
+
+        sp = Graph.ShortestPath(graph, vertexA, vertexB)
+        if sp == None:
+            if not silent:
+                print("Face.ShortestPath - Error: Could not find the shortest path. Returning None.")
+            return None
+
+        new_path = Wire.StraightenInFace(sp, face, tolerance = tolerance)
+        return new_path
 
     @staticmethod
     def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,
