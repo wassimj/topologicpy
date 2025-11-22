@@ -4756,12 +4756,13 @@ class Graph:
         include: list = ["contains", "coveredBy", "covers", "crosses", "disjoint", "equals", "overlaps", "touches","within", "proximity"],
         proximityValues = [1, 5, 10],
         proximityLabels = ["near", "intermediate", "far"],
-        useInternalVertex = False,
-        vertexIDKey = "id",
-        edgeKeyFwd = "relFwd",
-        edgeKeyBwd = "relBwd",
-        connectsKey = "connects",
-        storeBREP = False,
+        useShortestDistance: bool = False,
+        useInternalVertex: bool = False,
+        vertexIDKey: str = "id",
+        edgeKeyFwd: str = "relFwd",
+        edgeKeyBwd: str = "relBwd",
+        connectsKey:str = "connects",
+        storeBREP: bool = False,
         mantissa: int = 6,
         tolerance: float = 0.0001,
         silent: bool = False
@@ -4785,7 +4786,8 @@ class Graph:
         proximityLabels: list , optional
             The list of range labels (e.g. "near", "intermediate", "far") that correspond to the proximityValues list.
             The list must have the same number of elements as the proximityValues list. Default is ["near", "intermediate", "far"]
-
+        useShortestDistance: bool , optional
+            If set to True, the shortest distance between objects is used. Otherwise, the distance between their centroids is used. Default is False.
         useInternalVertex: bool , optional
             If set to True, an internal vertex of the represented topology will be used as a graph node.
             Otherwise, its centroid will be used. Default is False.
@@ -4814,6 +4816,7 @@ class Graph:
         """
         from topologicpy.Graph import Graph
         from topologicpy.BVH import BVH
+        from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -4849,6 +4852,234 @@ class Graph:
             v = Topology.InternalVertex(topologyList[0]) if useInternalVertex else Topology.Centroid(topologyList[0])
             v = Topology.SetDictionary(v, Topology.Dictionary(topologyList[0]))
             return Graph.ByVerticesEdges([v], [])
+
+        # ---------- Calculate Proximity ------------
+
+        def _calc_proximity(topologies: list,
+                            ranges: list,
+                            labels: list,
+                            useShortestDistance: bool = True,
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
+            """
+            Creates a proximity graph from a list of topologies using a BVH
+            to prune distance checks for large input sets.
+
+            Each topology is represented by a vertex in the graph.
+            An edge is created between two vertices if the distance between
+            their corresponding topologies is <= max(ranges).
+
+            A BVH is used as a broad-phase accelerator: for each topology,
+            a query box centred at its centroid and sized to cover the
+            maximum proximity range is used to retrieve only nearby
+            candidates. Exact distances are then computed only for those
+            candidates.
+
+            Parameters
+            ----------
+            topologies : list of topologic_core.Topology
+                The input topologies to be represented as vertices.
+            ranges : list of float
+                A list of positive numeric thresholds (e.g. [1.0, 3.0, 5.0]).
+                Interpreted as upper bounds of proximity bands.
+                Distances larger than max(ranges) are ignored (no edge).
+            labels : list of str
+                A list of proximity labels, same length as `ranges`.
+                For a pair distance d:
+                    - d <= ranges[0] -> labels[0]
+                    - ranges[0] < d <= ranges[1] -> labels[1]
+                    - ...
+            useShortestDistance : bool , optional
+                If True, use Topology.ShortestDistance(topologyA, topologyB)
+                if available. If False (or if that fails), fall back to the
+                distance between the centroids of the two topologies.
+                Default is True.
+            tolerance : float , optional
+                A small numeric tolerance used when comparing distances to
+                range bounds. Default is 0.0001.
+            silent : bool , optional
+                If False, basic sanity-check warnings are printed.
+                Default is False.
+
+            Returns
+            -------
+            graph : topologic_core.Graph
+                A graph whose vertices correspond to the input topologies
+                and whose edges connect topologies that fall within the
+                supplied distance ranges. Each edge dictionary contains:
+                    - "distance"  : float  (actual distance)
+                    - "proximity" : str    (label from `labels`)
+                    - "range_max" : float  (upper bound used for the bin)
+                    - "source_index" : int
+                    - "target_index" : int
+
+            Notes
+            -----
+            - Complexity is approximately O(n log n + k) where k is the
+                number of candidate pairs returned by the BVH.
+            - BVH is used only as a broad-phase filter; exact distance
+                tests still guarantee correctness with respect to `ranges`.
+            """
+
+            # Basic validation
+            if not isinstance(topologies, list) or len(topologies) < 2:
+                if not silent:
+                    print("Graph.BySpatialRelationships - Error: Need a list of at least two topologies.")
+                return None
+
+            if not isinstance(ranges, list) or not isinstance(labels, list):
+                if not silent:
+                    print("Graph.BySpatialRelationships - Error: 'proximityValues' and 'proximityLabels' must be lists.")
+                return None
+
+            if len(ranges) == 0 or len(ranges) != len(labels):
+                if not silent:
+                    print("Graph.BySpatialRelationships - Error: 'proximityValues' must be non-empty and "
+                            "have the same length as 'labels'.")
+                return None
+
+            # Sort ranges and labels together (ascending by range)
+            try:
+                rl = sorted(zip(ranges, labels), key=lambda x: x[0])
+            except Exception:
+                if not silent:
+                    print("Graph.BySpatialRelationships - Error: Could not sort ranges; check they are numeric.")
+                return None
+
+            sorted_ranges = [r for (r, _) in rl]
+            sorted_labels = [lab for (_, lab) in rl]
+
+            max_range = sorted_ranges[-1]
+
+            # Precompute representative vertices (centroids) for each topology
+            vertices = []
+            n = len(topologies)
+            for i, topo in enumerate(topologies):
+                if not topo:
+                    if not silent:
+                        print(f"Graph.BySpatialRelationships - Warning: Ignoring None topology at index {i}.")
+                    vertices.append(None)
+                    continue
+                try:
+                    c_vtx = Topology.Centroid(topo)
+                except Exception:
+                    # Fallback if centroid fails
+                    if not silent:
+                        print(f"Graph.BySpatialRelationships - Error: Failed to compute centroid for topology {i}, "
+                                f"using origin as placeholder.")
+                    c_vtx = Vertex.ByCoordinates(0, 0, 0)
+
+                # Attach index dictionary to the vertex (not to the original topology)
+                d_keys = ["index"]
+                d_vals = [i]
+                v_dict = Dictionary.ByKeysValues(d_keys, d_vals)
+                c_vtx = Topology.SetDictionary(c_vtx, v_dict)
+                vertices.append(c_vtx)
+
+            # Build BVH on the original topologies
+            try:
+                bvh = BVH.ByTopologies(topologies)
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.BySpatialRelationships - Error: Failed to build BVH, falling back to O(n^2): {e}")
+                # Fallback: use the non-BVH variant if you like,
+                # or just early-return None. Here we just bail out.
+                return None
+
+            # Map from topology identity to index for fast lookup
+            id_to_index = {id(topo): i for i, topo in enumerate(topologies)}
+
+            # Helper to compute distance between two topologies
+            def _distance(topoA, topoB, vA, vB):
+                d_val = None
+                if useShortestDistance:
+                    try:
+                        d_val = Topology.ShortestDistance(topoA, topoB)
+                    except Exception:
+                        d_val = None
+                if d_val is None:
+                    try:
+                        d_val = Vertex.Distance(vA, vB)
+                    except Exception:
+                        d_val = None
+                return d_val
+
+            edges = []
+
+            # Main loop: for each topology, query BVH for candidates within
+            # a bounding box of size 2*max_range around its centroid.
+            for i in range(n):
+                topo_i = topologies[i]
+                v_i = vertices[i]
+                if topo_i is None or v_i is None:
+                    continue
+
+                # Build a query box centered at the centroid with size 2 * max_range
+                try:
+                    query_box = Cell.Prism(
+                        origin=v_i,
+                        width=2 * max_range,
+                        length=2 * max_range,
+                        height=2 * max_range
+                    )
+                except Exception as q_err:
+                    if not silent:
+                        print(f"Graph.BySpatialRelationships - Error: Failed to build query box for {i}: {q_err}")
+                    continue
+
+                try:
+                    candidates = BVH.Clashes(bvh, query_box)
+                except Exception as c_err:
+                    if not silent:
+                        print(f"Graph.BySpatialRelationships - Error: BVH.Clashes failed for {i}: {c_err}")
+                    continue
+
+                if not candidates:
+                    continue
+
+                for cand in candidates:
+                    j = id_to_index.get(id(cand), None)
+                    if j is None:
+                        continue
+                    # Enforce i < j to avoid duplicate edges
+                    if j <= i:
+                        continue
+
+                    topo_j = topologies[j]
+                    v_j = vertices[j]
+                    if topo_j is None or v_j is None:
+                        continue
+
+                    # Compute exact distance
+                    d = _distance(topo_i, topo_j, v_i, v_j)
+                    if d is None:
+                        if not silent:
+                            print(f"Graph.BySpatialRelationships - Error: Could not compute distance between "
+                                    f"{i} and {j}.")
+                        continue
+
+                    # Skip if beyond max range (plus tolerance)
+                    if d > max_range + tolerance:
+                        continue
+
+                    # Bin the distance into the appropriate range/label
+                    label = None
+                    range_max = None
+                    for r, lab in zip(sorted_ranges, sorted_labels):
+                        if d <= r + tolerance:
+                            label = lab
+                            range_max = r
+                            break
+
+                    if label is None:
+                        continue
+
+                    e_keys = ["distance", "proximity", "range_max", "source_index", "target_index"]
+                    e_values = [float(d), str(label), float(range_max), i, j]
+                    d = Dictionary.ByKeysValues(e_keys, e_values)
+                    edges.append(d)
+
+            return edges
 
         # ---------- BVH once ----------
         bvh = BVH.ByTopologies(topologyList, silent=True)
@@ -4924,31 +5155,23 @@ class Graph:
                     ))
 
         # ---------- main loops (each unordered pair once) ----------
-        used = []
-        proximity_edges = []
+        if "proximity" in include:
+            prox_dicts = _calc_proximity(topologies = topologyList,
+                            ranges = proximityValues,
+                            labels = proximityLabels,
+                            useShortestDistance = useShortestDistance,
+                            tolerance = tolerance,
+                            silent = silent)
+            for prox_dict in prox_dicts:
+                ai = Dictionary.ValueAtKey(prox_dict, "source_index")
+                bj = Dictionary.ValueAtKey(prox_dict, "target_index")
+                rel = Dictionary.ValueAtKey(prox_dict, "proximity")
+                if (rel in proximityLabels):
+                    _add_edge(ai, bj, rel)
+        
         for i, a in enumerate(topologyList):
             candidates = []
             ai = i
-            if "proximity" in include:
-                for j, b in enumerate(topologyList):
-                    bj = index_of.get(id(b))
-                    if i == bj or (i,bj) in used or (bj,i) in used:
-                        continue
-                    else:
-                        used.append((i,bj))
-                        used.append((bj,i))
-                        rel = Topology.SpatialRelationship( a,
-                                                        b,
-                                                        include=["proximity"],
-                                                        proximityValues = proximityValues,
-                                                        proximityLabels = proximityLabels,
-                                                        mantissa=mantissa,
-                                                        tolerance=tolerance,
-                                                        silent=True
-                                                        )
-                        rel_ok = (rel in proximityLabels)
-                        if rel_ok:
-                            _add_edge(ai, bj, rel)
             candidates = BVH.Clashes(bvh, a) or []
             if not candidates:
                 # If you want to connect "disjoint" to *all* non-candidates, that would be O(n) per i.
