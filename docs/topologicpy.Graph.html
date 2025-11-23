@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.90 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.91 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.90
+                0.8.91
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -556,7 +556,7 @@
 <td><p>Sets the input graph's dictionary to the input dictionary</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPath" title="topologicpy.Graph.Graph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
-<td><p>Returns the shortest path that connects the input vertices.</p></td>
+<td><p>Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total &quot;cost&quot; of the path. Otherwise, it will take into consideration only whatever key is specified.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPaths" title="topologicpy.Graph.Graph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the shortest path that connects the input vertices.</p></td>
@@ -611,9 +611,6 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.XOR" title="topologicpy.Graph.Graph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
 <td><p>Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on an input vertex key.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.shortestPathInFace" title="topologicpy.Graph.Graph.shortestPathInFace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shortestPathInFace</span></code></a>(graph, face, vertexA, vertexB)</p></td>
-<td><p>Returns the shortest path that connects the input vertices.</p></td>
 </tr>
 </tbody>
 </table>
@@ -5476,22 +5473,43 @@ The default is ‘spring 2D’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ShortestPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ShortestPath" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total “cost” of the path. Otherwise, it will take into consideration only whatever key is specified.</p>
-<dl class="field-list simple">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">straighten</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ShortestPath" title="Permalink to this definition"></a></dt>
+<dd><blockquote>
+<div><p>Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total “cost” of the path. Otherwise, it will take into consideration only whatever key is specified.</p>
+</div></blockquote>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><blockquote>
+<div><p>The input graph.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>vertexA<span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
 </dd>
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
+<dt>vertexB<span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
+<dt>vertexKey<span class="classifier">string , optional</span></dt><dd><p>The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.</p>
 </dd>
-<dt><strong>vertexKey</strong><span class="classifier">string , optional</span></dt><dd><p>The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.</p>
+<dt>edgeKey<span class="classifier">string , optional</span></dt><dd><p>The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to “length” (case insensitive), the shortest path by length is computed. Default is “length”.</p>
 </dd>
-<dt><strong>edgeKey</strong><span class="classifier">string , optional</span></dt><dd><p>The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to “length” (case insensitive), the shortest path by length is computed. Default is “length”.</p>
+<dt>transferDictionaries<span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries from the graph vertices will be transferred to the vertices of the shortest path. Otherwise, they won’t. Default is False.
+Note: Edge dictionaries are not transferred (In straightened paths, the path edges are no longer the same as
+the original graph edges. Thus, you must implement your own logic to transfer edge dictionaries if needed).</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dl>
+</dd>
+<dt><strong>straighten</strong><span class="classifier">bool , optional</span></dt><dd><blockquote>
+<div><p>If set to True, the path will be straightened as much as possible while remaining inside the specified face.
+Thus, the face input must be a valid topologic Face that is planar and residing on the XY plane. Default is False.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>face<span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The face on which the path resides. This is used for straightening the path. Default is None.</p>
+</dd>
+<dt>tolerance<span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt>silent<span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </dd>
@@ -6117,49 +6135,6 @@ vertices (within the tolerance) will be used to determine sameness. Default is N
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Graph</dt><dd><p>the resultant graph. Vertex and edge dictionaries are not merged.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Graph.Graph.shortestPathInFace">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shortestPathInFace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.shortestPathInFace" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the shortest path that connects the input vertices.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face. This is assumed to be planar and resting on the XY plane (z = 0)</p>
-</dd>
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
-</dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
-</dd>
-<dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm. Several options are available:
-0: Classic
-1: MeshAdapt
-3: Initial Mesh Only
-5: Delaunay
-6: Frontal-Delaunay
-7: BAMG
-8: Fontal-Delaunay for Quads
-9: Packing of Parallelograms
-All options other than 0 (Classic) use the gmsh library. See <a class="reference external" href="https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options">https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options</a>
-WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
-</dd>
-<dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
-calculated automatically and set to 10% of the overall size of the face.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Wire</dt><dd><p>The shortest path between the input vertices.</p>
 </dd>
 </dl>
 </dd>
