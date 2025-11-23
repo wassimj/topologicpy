@@ -22,6 +22,7 @@ import warnings
 
 from collections import namedtuple
 from multiprocessing import Process, Queue
+from typing import Any
 
 try:
     import numpy as np
@@ -15540,7 +15541,16 @@ class Graph:
         return graph
 
     @staticmethod
-    def ShortestPath(graph, vertexA, vertexB, vertexKey="", edgeKey="Length", tolerance=0.0001):
+    def ShortestPath(graph,
+                     vertexA,
+                     vertexB,
+                     vertexKey: str = "",
+                     edgeKey: str = "Length",
+                     transferDictionaries: bool = False,
+                     straighten: bool = False,
+                     face: Any = None,
+                     tolerance: float = 0.0001,
+                     silent: bool = False):
         """
         Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total "cost" of the path. Otherwise, it will take into consideration only whatever key is specified.
 
@@ -15556,8 +15566,19 @@ class Graph:
             The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.
         edgeKey : string , optional
             The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. Default is "length".
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries from the graph vertices will be transferred to the vertices of the shortest path. Otherwise, they won't. Default is False.
+            Note: Edge dictionaries are not transferred (In straightened paths, the path edges are no longer the same as
+            the original graph edges. Thus, you must implement your own logic to transfer edge dictionaries if needed).
+       straighten : bool , optional
+            If set to True, the path will be straightened as much as possible while remaining inside the specified face.
+            Thus, the face input must be a valid topologic Face that is planar and residing on the XY plane. Default is False.
+        face : topologic_core.Face , optional
+            The face on which the path resides. This is used for straightening the path. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -15570,14 +15591,22 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
             return None
         if not Topology.IsInstance(vertexA, "Vertex"):
-            print("Graph.ShortestPath - Error: The input vertexA is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.ShortestPath - Error: The input vertexA is not a valid vertex. Returning None.")
             return None
         if not Topology.IsInstance(vertexB, "Vertex"):
-            print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
+            if not silent:
+                print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
+        if straighten == True:
+            if not Topology.IsInstance(face, "face"):
+                if not silent:
+                    print("Graph.ShortestPath - Error: Straighten is set to True, but the face parameter is not a valid toopologic face. Returning None.")
+                return None
         if edgeKey:
             if edgeKey.lower() == "length":
                 edgeKey = "Length"
@@ -15593,73 +15622,17 @@ class Graph:
                     if Topology.IsInstance(shortest_path, "Wire"):
                         shortest_path = Wire.Reverse(shortest_path)
                 shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
+            if Topology.IsInstance(shortest_path, "wire"):
+                if straighten == True and Topology.IsInstance(face, "face"):
+                    shortest_path = Wire.StraightenInFace(shortest_path, face)
+                if transferDictionaries == True:
+                    path_verts = Topology.Vertices(shortest_path)
+                    for p_v in path_verts:
+                        g_v = Graph.NearestVertex(graph, p_v)
+                        p_v = Topology.SetDictionary(p_v, Topology.Dictionary(g_v))
             return shortest_path
         except:
             return None
-
-    @staticmethod
-    def shortestPathInFace(graph, face, vertexA, vertexB, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
-        """
-        Returns the shortest path that connects the input vertices.
-
-        Parameters
-        ----------
-        face : topologic_core.Face
-            The input face. This is assumed to be planar and resting on the XY plane (z = 0)
-        vertexA : topologic_core.Vertex
-            The first input vertex.
-        vertexB : topologic_core.Vertex
-            The second input vertex.
-        mode : int , optional
-                The desired mode of meshing algorithm. Several options are available:
-                0: Classic
-                1: MeshAdapt
-                3: Initial Mesh Only
-                5: Delaunay
-                6: Frontal-Delaunay
-                7: BAMG
-                8: Fontal-Delaunay for Quads
-                9: Packing of Parallelograms
-                All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
-                WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
-        meshSize : float , optional
-            The desired size of the mesh when using the "mesh" option. If set to None, it will be
-            calculated automatically and set to 10% of the overall size of the face.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-                If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.Wire
-            The shortest path between the input vertices.
-
-        """
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(face, "face"):
-            if not silent:
-                print("Face.ShortestPath - Error: The input face parameter is not a topologic face. Returning None.")
-            return None
-        if not Topology.IsInstance(vertexA, "vertex"):
-            if not silent:
-                print("Face.ShortestPath - Error: The input vertexA parameter is not a topologic vertex. Returning None.")
-            return None
-        if not Topology.IsInstance(vertexB, "vertex"):
-            if not silent:
-                print("Face.ShortestPath - Error: The input vertexB parameter is not a topologic vertex. Returning None.")
-            return None
-
-        sp = Graph.ShortestPath(graph, vertexA, vertexB)
-        if sp == None:
-            if not silent:
-                print("Face.ShortestPath - Error: Could not find the shortest path. Returning None.")
-            return None
-
-        new_path = Wire.StraightenInFace(sp, face, tolerance = tolerance)
-        return new_path
 
     @staticmethod
     def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,
