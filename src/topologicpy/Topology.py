@@ -11935,13 +11935,13 @@ class Topology():
             final_str = verts_str+edges_str+dict_str
             uuid_str = uuid.uuid5(namespace_uuid, final_str)
         else:
-            cellComplexes = Topology.CellComplexes(topology)
-            cells = Topology.Cells(topology)
-            shells = Topology.Shells(topology)
-            faces = Topology.Faces(topology)
-            wires = Topology.Wires(topology)
-            edges = Topology.Edges(topology)
-            vertices = Topology.Vertices(topology)
+            cellComplexes = Topology.CellComplexes(topology, silent=True)
+            cells = Topology.Cells(topology, silent=True)
+            shells = Topology.Shells(topology, silent=True)
+            faces = Topology.Faces(topology, silent=True)
+            wires = Topology.Wires(topology, silent=True)
+            edges = Topology.Edges(topology, silent=True)
+            vertices = Topology.Vertices(topology, silent=True)
             apertures = Topology.Apertures(topology, subTopologyType="all")
             subTopologies = cellComplexes+cells+shells+faces+wires+edges+vertices+apertures
             dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]

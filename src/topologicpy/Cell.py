@@ -1753,7 +1753,7 @@ class Cell():
         if placement.lower() == "bottom":
             egg = Topology.Translate(egg, 0, 0, height/2)
         elif placement.lower() == "lowerleft":
-            bb = Cell.BoundingBox(egg)
+            bb = Topology.BoundingBox(egg)
             d = Topology.Dictionary(bb)
             width = Dictionary.ValueAtKey(d, 'width')
             length = Dictionary.ValueAtKey(d, 'length')
