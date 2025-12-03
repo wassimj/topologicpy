@@ -838,10 +838,15 @@ class Topology():
         """
 
         from topologicpy.Dictionary import Dictionary
+        import inspect
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Apertures - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology:", topology)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         
         apertures = []
@@ -2521,39 +2526,41 @@ class Topology():
                     f = Face.ByWires(eb, ib)
                     new_faces.append(f)
                 topology = Topology.SelfMerge(Cluster.ByTopologies(new_faces))
-                if removeCoplanarFaces:
-                    topology = Topology.RemoveCoplanarFaces(topology, epsilon=epsilon, tolerance=tolerance)
-                if transferDictionaries:
-                    element_dict = {
-                        "TOPOLOGIC_id": str(Topology.UUID(topology)),
-                        "TOPOLOGIC_name": getattr(element, 'Name', "Untitled"),
-                        "TOPOLOGIC_type": Topology.TypeAsString(topology),
-                        "IFC_global_id": getattr(element, 'GlobalId', 0),
-                        "IFC_name": getattr(element, 'Name', "Untitled"),
-                        "IFC_type": element_type
-                    }
+                if Topology.IsInstance(topology, "topology"):
+                    if removeCoplanarFaces:
+                        topology = Topology.RemoveCoplanarFaces(topology, epsilon=epsilon, tolerance=tolerance)
+                    if Topology.IsInstance(topology, "topology"):
+                        if transferDictionaries:
+                            element_dict = {
+                                "TOPOLOGIC_id": str(Topology.UUID(topology)),
+                                "TOPOLOGIC_name": getattr(element, 'Name', "Untitled"),
+                                "TOPOLOGIC_type": Topology.TypeAsString(topology),
+                                "IFC_global_id": getattr(element, 'GlobalId', 0),
+                                "IFC_name": getattr(element, 'Name', "Untitled"),
+                                "IFC_type": element_type
+                            }
 
-                    # Optionally add property sets
-                    psets = {}
-                    if hasattr(element, 'IsDefinedBy'):
-                        for rel in element.IsDefinedBy:
-                            if rel.is_a('IfcRelDefinesByProperties'):
-                                pdef = rel.RelatingPropertyDefinition
-                                if pdef and pdef.is_a('IfcPropertySet'):
-                                    key = f"IFC_{pdef.Name}"
-                                    props = {}
-                                    for prop in pdef.HasProperties:
-                                        if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
-                                            props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
-                                    psets[key] = props
+                            # Optionally add property sets
+                            psets = {}
+                            if hasattr(element, 'IsDefinedBy'):
+                                for rel in element.IsDefinedBy:
+                                    if rel.is_a('IfcRelDefinesByProperties'):
+                                        pdef = rel.RelatingPropertyDefinition
+                                        if pdef and pdef.is_a('IfcPropertySet'):
+                                            key = f"IFC_{pdef.Name}"
+                                            props = {}
+                                            for prop in pdef.HasProperties:
+                                                if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
+                                                    props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
+                                            psets[key] = props
 
-                    final_dict = Dictionary.ByPythonDictionary(element_dict)
-                    if psets:
-                        pset_dict = Dictionary.ByPythonDictionary(psets)
-                        final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
-                    
-                    topology = Topology.SetDictionary(topology, final_dict)
-                topologies.append(topology)
+                            final_dict = Dictionary.ByPythonDictionary(element_dict)
+                            if psets:
+                                pset_dict = Dictionary.ByPythonDictionary(psets)
+                                final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
+                            
+                            topology = Topology.SetDictionary(topology, final_dict)
+                        topologies.append(topology)
             if not it.next():
                 break
 
@@ -11904,7 +11911,7 @@ class Topology():
         return Topology._Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def UUID(topology, namespace="topologicpy"):
+    def UUID(topology, namespace="topologicpy", silent: bool = False):
         """
         Generate a UUID v5 based on the provided content and a fixed namespace.
         
@@ -11913,7 +11920,9 @@ class Topology():
         topology : topologic_core.Topology
             The input topology
         namespace : str , optional
-            The base namescape to use for generating the UUID
+            The base namescape to use for generating the UUID.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -11924,6 +11933,16 @@ class Topology():
         import uuid
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Graph import Graph
+        import inspect
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.UUID - Error: The input topology parameter is not a valid topology. Returning None.")
+                print("Topology:", topology)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
 
         predefined_namespace_dns = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
@@ -11935,14 +11954,14 @@ class Topology():
             final_str = verts_str+edges_str+dict_str
             uuid_str = uuid.uuid5(namespace_uuid, final_str)
         else:
-            cellComplexes = Topology.CellComplexes(topology, silent=True)
-            cells = Topology.Cells(topology, silent=True)
-            shells = Topology.Shells(topology, silent=True)
-            faces = Topology.Faces(topology, silent=True)
-            wires = Topology.Wires(topology, silent=True)
-            edges = Topology.Edges(topology, silent=True)
-            vertices = Topology.Vertices(topology, silent=True)
-            apertures = Topology.Apertures(topology, subTopologyType="all")
+            cellComplexes = Topology.CellComplexes(topology, silent=True) or []
+            cells = Topology.Cells(topology, silent=True) or []
+            shells = Topology.Shells(topology, silent=True) or []
+            faces = Topology.Faces(topology, silent=True) or []
+            wires = Topology.Wires(topology, silent=True) or []
+            edges = Topology.Edges(topology, silent=True) or []
+            vertices = Topology.Vertices(topology, silent=True) or []
+            apertures = Topology.Apertures(topology, subTopologyType="all") or []
             subTopologies = cellComplexes+cells+shells+faces+wires+edges+vertices+apertures
             dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
             dictionaries += [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in subTopologies]
