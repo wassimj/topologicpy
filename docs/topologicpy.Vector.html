@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vector module &mdash; topologicpy 0.8.93 documentation</title>
+  <title>topologicpy.Vector module &mdash; topologicpy 0.8.95 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.93
+                0.8.95
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -156,8 +156,8 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Add" title="topologicpy.Vector.Vector.Add"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Add</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Adds the two input vectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Angle" title="topologicpy.Vector.Vector.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(vectorA, vectorB[, mantissa])</p></td>
-<td><p>Returns the angle in degrees between the two input vectors</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Angle" title="topologicpy.Vector.Vector.Angle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Angle</span></code></a>(vectorA, vectorB[, mantissa, bracket])</p></td>
+<td><p>Returns the angle in degrees between the two input vectors.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Average" title="topologicpy.Vector.Vector.Average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Average</span></code></a>(vectors)</p></td>
 <td><p>Returns the average vector of the input vectors.</p></td>
@@ -234,20 +234,26 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.NorthWest" title="topologicpy.Vector.Vector.NorthWest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NorthWest</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>northwest</em> direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Reverse" title="topologicpy.Vector.Vector.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(vector)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Quadrance" title="topologicpy.Vector.Vector.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(vector[, mantissa])</p></td>
+<td><p>Returns the quadrance of the input vector.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Reverse" title="topologicpy.Vector.Vector.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(vector)</p></td>
 <td><p>Returns a reverse vector of the input vector.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SetMagnitude" title="topologicpy.Vector.Vector.SetMagnitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetMagnitude</span></code></a>(vector, magnitude)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SetMagnitude" title="topologicpy.Vector.Vector.SetMagnitude"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetMagnitude</span></code></a>(vector, magnitude)</p></td>
 <td><p>Sets the magnitude of the input vector to the input magnitude.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.South" title="topologicpy.Vector.Vector.South"><code class="xref py py-obj docutils literal notranslate"><span class="pre">South</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.South" title="topologicpy.Vector.Vector.South"><code class="xref py py-obj docutils literal notranslate"><span class="pre">South</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>south</em> direction.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SouthEast" title="topologicpy.Vector.Vector.SouthEast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SouthEast</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SouthEast" title="topologicpy.Vector.Vector.SouthEast"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SouthEast</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>southeast</em> direction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SouthWest" title="topologicpy.Vector.Vector.SouthWest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SouthWest</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.SouthWest" title="topologicpy.Vector.Vector.SouthWest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SouthWest</span></code></a>()</p></td>
 <td><p>Returns the vector representing the <em>southwest</em> direction.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Spread" title="topologicpy.Vector.Vector.Spread"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spread</span></code></a>(vectorA, vectorB[, mantissa, bracket])</p></td>
+<td><p>Returns the spread between the two input vectors.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vector.Vector.Subtract" title="topologicpy.Vector.Vector.Subtract"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subtract</span></code></a>(vectorA, vectorB)</p></td>
 <td><p>Subtracts the second input vector from the first input vector.</p></td>
@@ -332,16 +338,27 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Angle">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Angle" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the angle in degrees between the two input vectors</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Angle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bracket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Angle" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the angle in degrees between the two input vectors.</p>
+<dl class="simple">
+<dt>This implementation derives the angle from Rational Trigonometry’s Spread:</dt><dd><p>spread = sin^2(theta)</p>
+</dd>
+<dt>The acute angle is recovered as:</dt><dd><p>acute = asin(sqrt(spread)) in [0, 90]</p>
+</dd>
+</dl>
+<p>The obtuse/acute distinction is recovered using the sign of the dot product.
+If bracket=True, the angle is forced into the acute range [0, 90].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first vector.</p>
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first vector (length 2 or 3).</p>
 </dd>
-<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector.</p>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second vector (length 2 or 3).</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
+</dd>
+<dt><strong>bracket</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the returned angle is bracketed between 0 and 90.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -929,6 +946,30 @@ Returns False otherwise.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Quadrance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Quadrance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Quadrance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the quadrance of the input vector.</p>
+<p>Quadrance is the rational trigonometry equivalent of vector magnitude
+and is defined as the sum of squares of the vector components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vector</strong><span class="classifier">list</span></dt><dd><p>The input vector.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int</span></dt><dd><p>The length of the desired mantissa. Default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The quadrance of the input vector.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vector.Vector.Reverse">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Reverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vector</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vector.Vector.Reverse" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a reverse vector of the input vector. A reverse vector multiplies all components by -1.</p>
@@ -1006,6 +1047,37 @@ Returns False otherwise.</p>
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
 <dt>list</dt><dd><p>The vector representing the <em>southwest</em> direction.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Vector.Vector.Spread">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vectorA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vectorB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bracket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Vector.Vector.Spread" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the spread between the two input vectors.</p>
+<dl class="simple">
+<dt>Spread is the rational trigonometry equivalent of angle and is defined as:</dt><dd><p>spread = sin^2(theta)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vectorA</strong><span class="classifier">list</span></dt><dd><p>The first input vector (length 2 or 3).</p>
+</dd>
+<dt><strong>vectorB</strong><span class="classifier">list</span></dt><dd><p>The second input vector (length 2 or 3).</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+</dd>
+<dt><strong>bracket</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the spread is bracketed to represent the acute case
+(i.e. invariant under vector reversal). Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The spread between the two input vectors.</p>
 </dd>
 </dl>
 </dd>

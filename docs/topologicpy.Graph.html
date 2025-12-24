@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.8.93 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.8.95 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.93
+                0.8.95
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -556,60 +556,63 @@
 <td><p>Sets the input graph's dictionary to the input dictionary</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPath" title="topologicpy.Graph.Graph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<td><p>Returns the shortest path (as a Wire) between two vertices in a Graph using a pure-Python, feature-rich routing algorithm.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPath_old" title="topologicpy.Graph.Graph.ShortestPath_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath_old</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total &quot;cost&quot; of the path. Otherwise, it will take into consideration only whatever key is specified.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPaths" title="topologicpy.Graph.Graph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ShortestPaths" title="topologicpy.Graph.Graph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
 <td><p>Returns the shortest path that connects the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Show" title="topologicpy.Graph.Graph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Show" title="topologicpy.Graph.Graph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
 <td><p>Shows the graph using Plotly.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Size" title="topologicpy.Graph.Graph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Size" title="topologicpy.Graph.Graph.Size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Size</span></code></a>(graph)</p></td>
 <td><p>Returns the graph size of the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SubGraphMatches" title="topologicpy.Graph.Graph.SubGraphMatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphMatches</span></code></a>(subGraph, superGraph[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SubGraphMatches" title="topologicpy.Graph.Graph.SubGraphMatches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubGraphMatches</span></code></a>(subGraph, superGraph[, ...])</p></td>
 <td><p>Finds all subgraph matches from <cite>subgraph</cite> into <cite>supergraph</cite>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Subgraph" title="topologicpy.Graph.Graph.Subgraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subgraph</span></code></a>(graph, vertices[, vertexKey, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Subgraph" title="topologicpy.Graph.Graph.Subgraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Subgraph</span></code></a>(graph, vertices[, vertexKey, ...])</p></td>
 <td><p>Returns a subgraph of the input graph as defined by the input vertices.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SymmetricDifference" title="topologicpy.Graph.Graph.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(graphA, graphB, vertexKeys)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.SymmetricDifference" title="topologicpy.Graph.Graph.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(graphA, graphB, vertexKeys)</p></td>
 <td><p>Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tietze" title="topologicpy.Graph.Graph.Tietze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tietze</span></code></a>([radius, height])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tietze" title="topologicpy.Graph.Graph.Tietze"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tietze</span></code></a>([radius, height])</p></td>
 <td><p>Creates a Tietze's graph mapped on a mobius strip of the same input radius and height.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.TopologicalDistance" title="topologicpy.Graph.Graph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.TopologicalDistance" title="topologicpy.Graph.Graph.TopologicalDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicalDistance</span></code></a>(graph, vertexA, vertexB)</p></td>
 <td><p>Returns the topological distance between the input vertices.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Topology" title="topologicpy.Graph.Graph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Topology" title="topologicpy.Graph.Graph.Topology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topology</span></code></a>(graph)</p></td>
 <td><p>Returns the topology (cluster) of the input graph</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tree" title="topologicpy.Graph.Graph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, tolerance])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Tree" title="topologicpy.Graph.Graph.Tree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Tree</span></code></a>(graph[, vertex, tolerance])</p></td>
 <td><p>Creates a tree graph version of the input graph rooted at the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Union" title="topologicpy.Graph.Graph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Union" title="topologicpy.Graph.Graph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
 <td><p>Union the two input graphs based on the input vertex keys.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VertexDegree" title="topologicpy.Graph.Graph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, weightKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VertexDegree" title="topologicpy.Graph.Graph.VertexDegree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VertexDegree</span></code></a>(graph, vertex[, weightKey, ...])</p></td>
 <td><p>Returns the degree of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Vertices" title="topologicpy.Graph.Graph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, sortBy, reverse])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Vertices" title="topologicpy.Graph.Graph.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(graph[, sortBy, reverse, silent])</p></td>
 <td><p>Returns the list of vertices in the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VisibilityGraph" title="topologicpy.Graph.Graph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, viewpointsA, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.VisibilityGraph" title="topologicpy.Graph.Graph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, viewpointsA, ...])</p></td>
 <td><p>Creates a 2D visibility graph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLFeatures" title="topologicpy.Graph.Graph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLFeatures" title="topologicpy.Graph.Graph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, silent])</p></td>
 <td><p>Returns a Weisfeiler-Lehman subtree features for a Graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLKernel" title="topologicpy.Graph.Graph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WLKernel" title="topologicpy.Graph.Graph.WLKernel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLKernel</span></code></a>(graphA, graphB[, key, iterations, ...])</p></td>
 <td><p>Returns a cosine-normalized Weisfeiler-Lehman kernel between two graphs.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="topologicpy.Graph.Graph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA, graphB, ...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.WeightedJaccardSimilarity" title="topologicpy.Graph.Graph.WeightedJaccardSimilarity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedJaccardSimilarity</span></code></a>(graphA, graphB, ...)</p></td>
 <td><p>Computes the weighted Jaccard similarity between two vertices based on their neighbors and edge weights.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.XOR" title="topologicpy.Graph.Graph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.XOR" title="topologicpy.Graph.Graph.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(graphA, graphB, vertexKeys[, ...])</p></td>
 <td><p>Find the symmetric difference (exclusive OR / XOR) of the two input graphs based on an input vertex key.</p></td>
 </tr>
 </tbody>
@@ -5473,7 +5476,104 @@ The default is ‘spring 2D’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ShortestPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">straighten</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ShortestPath" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">straighten</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">host</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">object</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnWeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnPower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAStar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristicScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ShortestPath" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the shortest path (as a Wire) between two vertices in a Graph using a
+pure-Python, feature-rich routing algorithm.</p>
+<p>The path cost is computed as a weighted sum of:
+- edge traversal cost (edgeKey or geometric length),
+- optional vertex visitation cost (vertexKey),
+- optional turn/transition cost between consecutive edges (Spread-based).</p>
+<p>This method is backward compatible with the original TopologicPy API, but
+extends it with advanced routing features such as turn penalties, custom
+filters, and A* search, all without relying on the C++ core.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph on which routing is performed.</p>
+</dd>
+<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The start vertex. It is snapped to the nearest vertex in the graph.</p>
+</dd>
+<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The end vertex. It is snapped to the nearest vertex in the graph.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str, optional</span></dt><dd><p>Name of a numeric key in each vertex dictionary whose value is added
+to the path cost when that vertex is entered. Higher values make routes
+avoid those vertices. If empty, no vertex cost is applied.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str, optional</span></dt><dd><p>Name of a numeric key in each edge dictionary used as the edge traversal
+cost. If set to “Length” (case-insensitive), geometric edge length is used.
+This is the primary contributor to path length.</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, dictionaries from the graph vertices are copied onto the vertices
+of the returned path. This does not affect routing, only the output data.</p>
+</dd>
+<dt><strong>straighten</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, the resulting path is post-processed to remove unnecessary bends
+while remaining inside the specified face. This does not influence route
+selection, only the final geometry.</p>
+</dd>
+<dt><strong>host</strong><span class="classifier">topologic_core.Topology, optional</span></dt><dd><p>A host topology within which the path is
+straightened when straighten=True.</p>
+</dd>
+<dt><strong>obstacles</strong><span class="classifier">list, optional</span></dt><dd><p>The list of topologies with which the straightened edges must not intersect.</p>
+</dd>
+<dt><strong>portals</strong><span class="classifier">list, optional</span></dt><dd><p>The list of topologies with which the straightened edges must intersect.
+Portals with which the original wire does NOT intersect are ignored.</p>
+</dd>
+<dt><strong>turnWeight</strong><span class="classifier">float, optional</span></dt><dd><p>Controls how strongly turning is penalised relative to edge length.
+A value of 0 disables turn cost. Larger values favour straighter routes
+even if they are longer. Default is 1.</p>
+</dd>
+<dt><strong>turnPower</strong><span class="classifier">float, optional</span></dt><dd><p>Controls how sharply turn penalties increase with turn severity.
+Values greater than 1 strongly penalise right-angle turns while allowing
+gentle bends. Default is 2.</p>
+</dd>
+<dt><strong>turnKey</strong><span class="classifier">str, optional</span></dt><dd><p>Name of a numeric key in vertex dictionaries that scales turn cost locally.
+Useful for modelling junction complexity or restricted turning areas. Default is None.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, edges are traversed only from start to end vertex.
+If False, the graph is treated as undirected. Default is False.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable(edge) -&gt; bool, optional</span></dt><dd><p>A function that returns False for edges that must not be traversed.
+This enforces hard constraints such as blocked corridors. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable(vertex) -&gt; bool, optional</span></dt><dd><p>A function that returns False for vertices that must not be visited
+(except for start and end vertices). Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable(edge) -&gt; float, optional</span></dt><dd><p>Custom function overriding edgeKey and geometric length to compute
+edge traversal cost.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable(vertex) -&gt; float, optional</span></dt><dd><p>Custom function overriding vertexKey to compute vertex visitation cost.</p>
+</dd>
+<dt><strong>turnCostFunc</strong><span class="classifier">callable(prev, curr, next, inEdge, outEdge, spread) -&gt; float, optional</span></dt><dd><p>Fully custom function to compute turn cost between consecutive edges.
+Overrides turnWeight, turnPower, and turnKey.</p>
+</dd>
+<dt><strong>useAStar</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, uses A* search instead of Dijkstra when edge costs are geometric,
+improving performance on large graphs.</p>
+</dd>
+<dt><strong>heuristicScale</strong><span class="classifier">float, optional</span></dt><dd><p>Multiplier for the A* heuristic (must be ≤ 1 for admissibility).
+Lower values make the search more conservative.</p>
+</dd>
+<dt><strong>returnVertices</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, returns both the Wire and the ordered list of vertices forming
+the path. Useful for debugging or analysis.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, suppresses error and warning messages. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Wire</dt><dd><p>A wire representing the shortest path between the two input vertices,
+optionally straightened and with transferred dictionaries.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Graph.Graph.ShortestPath_old">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">straighten</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ShortestPath_old" title="Permalink to this definition"></a></dt>
 <dd><blockquote>
 <div><p>Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total “cost” of the path. Otherwise, it will take into consideration only whatever key is specified.</p>
 </div></blockquote>
@@ -5964,7 +6064,7 @@ This is used in weighted graphs. if weightKey is set to “Length” or “Dista
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Vertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortBy</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Vertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Vertices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the list of vertices in the input graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

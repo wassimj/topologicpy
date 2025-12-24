@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Edge module &mdash; topologicpy 0.8.93 documentation</title>
+  <title>topologicpy.Edge module &mdash; topologicpy 0.8.95 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.93
+                0.8.95
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -234,11 +234,17 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.ParameterAtVertex" title="topologicpy.Edge.Edge.ParameterAtVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ParameterAtVertex</span></code></a>(edge, vertex[, mantissa, ...])</p></td>
 <td><p>Returns the <em>u</em> parameter along the input edge based on the location of the input vertex.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Quadrance" title="topologicpy.Edge.Edge.Quadrance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Quadrance</span></code></a>(edge[, mantissa])</p></td>
+<td><p>Returns the quadrance of the input edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Reverse" title="topologicpy.Edge.Edge.Reverse"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Reverse</span></code></a>(edge[, tolerance, silent])</p></td>
 <td><p>Creates an edge that has the reverse direction of the input edge.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.SetLength" title="topologicpy.Edge.Edge.SetLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetLength</span></code></a>(edge[, length, bothSides, ...])</p></td>
 <td><p>Returns an edge with the new length in the same direction as the input edge.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.Spread" title="topologicpy.Edge.Edge.Spread"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spread</span></code></a>(edgeA, edgeB[, mantissa, bracket])</p></td>
+<td><p>Returns the spread between the two input edges.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Edge.Edge.StartVertex" title="topologicpy.Edge.Edge.StartVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StartVertex</span></code></a>(edge[, silent])</p></td>
 <td><p>Returns the start vertex of the input edge.</p></td>
@@ -697,7 +703,7 @@ The intersection vertex does not necessarily fall within the extents of either e
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.IsCollinear">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.IsCollinear" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsCollinear</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.IsCollinear" title="Permalink to this definition"></a></dt>
 <dd><p>Return True if the two input edges are collinear. Returns False otherwise.
 This code is based on a contribution by <a class="reference external" href="https://github.com/gaoxipeng">https://github.com/gaoxipeng</a></p>
 <dl class="field-list simple">
@@ -750,7 +756,7 @@ This code is based on a contribution by <a class="reference external" href="http
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.IsParallel">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.IsParallel" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsParallel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.IsParallel" title="Permalink to this definition"></a></dt>
 <dd><p>Return True if the two input edges are parallel. Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -936,6 +942,28 @@ by the angle value around the axis defined by the input edge. Default is 0.0.</p
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Quadrance">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Quadrance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.Quadrance" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the quadrance of the input edge. See: <a class="reference external" href="https://en.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance">https://en.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance</a></p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>edge</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The input edge.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The quadrance of the input edge.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Edge.Edge.Reverse">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Reverse</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Edge.Edge.Reverse" title="Permalink to this definition"></a></dt>
 <dd><p>Creates an edge that has the reverse direction of the input edge.</p>
@@ -981,6 +1009,37 @@ by the angle value around the axis defined by the input edge. Default is 0.0.</p
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Edge</dt><dd><p>The extended edge.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Edge.Edge.Spread">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Spread</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edgeA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bracket</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">float</span></span></span><a class="headerlink" href="#topologicpy.Edge.Edge.Spread" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the spread between the two input edges.</p>
+<dl class="simple">
+<dt>Spread is the rational trigonometry equivalent of angle and is defined as:</dt><dd><p>spread = sin^2(theta)</p>
+</dd>
+</dl>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>edgeA</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The first input edge.</p>
+</dd>
+<dt><strong>edgeB</strong><span class="classifier">topologic_core.Edge</span></dt><dd><p>The second input edge.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+</dd>
+<dt><strong>bracket</strong><span class="classifier">bool</span></dt><dd><p>If set to True, the spread is bracketed to represent the acute case
+(i.e. invariant under edge reversal). Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>float</dt><dd><p>The spread between the two input edges.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.8.93 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.8.95 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.93
+                0.8.95
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -570,8 +570,14 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MergeAll" title="topologicpy.Topology.Topology.MergeAll"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeAll</span></code></a>(*topologies[, tolerance, silent])</p></td>
 <td><p>Merge all the input topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MeshData" title="topologicpy.Topology.Topology.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(topology[, mode, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Mesh" title="topologicpy.Topology.Topology.Mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Mesh</span></code></a>(topology[, minSize, maxSize, ...])</p></td>
+<td><p>Use gmsh to create a variable-resolution mesh of a Topologic topology and return mesh data as:</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MeshData" title="topologicpy.Topology.Topology.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(topology[, mode, ...])</p></td>
 <td><p>Creates a mesh data python dictionary from the input topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.MeshToTopologies" title="topologicpy.Topology.Topology.MeshToTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshToTopologies</span></code></a>(vertices[, faces, tets, ...])</p></td>
+<td><p>Converts mesh data in the form of:</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Move" title="topologicpy.Topology.Topology.Move"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Move</span></code></a>(topology[, x, y, z])</p></td>
 <td><p>Moves the input topology.</p></td>
@@ -3139,6 +3145,80 @@ the algorithm will return True even if 10% of the vertices do not match. Default
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.Mesh">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm2D</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">algorithm3D</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refineEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">refineFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">meshDim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Mesh" title="Permalink to this definition"></a></dt>
+<dd><p>Use gmsh to create a variable-resolution mesh of a Topologic topology and
+return mesh data as:</p>
+<blockquote>
+<div><p>vertices: List[(x, y, z)]
+faces   : List[(i0, i1, i2)]      # unique triangular faces, 0-based
+tets    : List[(i0, i1, i2, i3)]  # tetrahedra (3D only; [] for 2D, 0-based)</p>
+</div></blockquote>
+<ul class="simple">
+<li><p>If the topology has cells (Cell / CellComplex), does a 3D mesh (tets)</p></li>
+</ul>
+<p>and derives unique triangle faces from tetrahedra.
+* Otherwise (Face / Shell / etc.), does a 2D surface mesh and returns
+triangular surface elements as faces; tets = [].</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>Input topology (Face, Shell, Cell, CellComplex, etc.).</p>
+</dd>
+<dt><strong>minSize</strong><span class="classifier">float, optional</span></dt><dd><p>Target smallest element size near boundaries.</p>
+</dd>
+<dt><strong>maxSize</strong><span class="classifier">float, optional</span></dt><dd><p>Target largest element size away from boundaries.</p>
+</dd>
+<dt><strong>algorithm2D</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of 2D meshing algorithm. Several options are available:
+1: MeshAdapt,
+2: Automatic,
+3: Initial mesh only,
+4: Delaunay,
+5: Frontal-Delaunay ,
+6: BAMG,
+7: Frontal-Delaunay for Quads,
+8: Packing of Parallelograms,
+9: Quasi-structured Quad
+Default is 1.
+WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
+</dd>
+<dt><strong>algorithm3D</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of 3D meshing algorithm. Several options are available:
+1: Delaunay
+2: Initial mesh only
+3: Frontal
+4: MMG3D
+5: R-tree
+6: HXT
+Default is 1
+WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
+</dd>
+<dt><strong>refineEdges</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, refine near model edges (gmsh 1D entities).</p>
+</dd>
+<dt><strong>refineFaces</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, refine near model faces (gmsh 2D entities).</p>
+</dd>
+<dt><strong>optimize</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, run gmsh mesh optimizer.</p>
+</dd>
+<dt><strong>meshDim</strong><span class="classifier">int or None, optional</span></dt><dd><p>If 3, force 3D mesh. If 2, force 2D surface mesh.
+If None, auto: 3 if Topology.Cells(topology) non-empty, else 2.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired size of the mantissa. Default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, warning and error messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>“verts”: List[(x, y, z)]
+“tris”: List[(i0, i1, i2)]      # triangles
+“tets”: List[(i0, i1, i2, i3)]  # tetrahedra (3D) or [] (2D)</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.MeshData">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.MeshData" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a mesh data python dictionary from the input topology.</p>
@@ -3175,6 +3255,43 @@ The default is 1.</p>
 ‘face_dicts’, list of dicts,
 ‘cell_dicts’, list of dicts
 }</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.MeshToTopologies">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshToTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.MeshToTopologies" title="Permalink to this definition"></a></dt>
+<dd><p>Converts mesh data in the form of:</p>
+<blockquote>
+<div><p>vertices: List[(x, y, z)]
+faces   : List[(i0, i1, i2)]      # unique triangular faces, 0-based
+tets    : List[(i0, i1, i2, i3)]  # tetrahedra (3D only; [] for 2D, 0-based)</p>
+</div></blockquote>
+<p>into a list of topologic vertices, faces, and cells.
+This method is designed to work in conjunction with the Topology.Mesh method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The list of vertices coordinates in the form: List[(x, y, z)].</p>
+</dd>
+<dt><strong>faces</strong><span class="classifier">list , optional</span></dt><dd><p>The list of unique triangular faces in the form: List[(i0, i1, i2)]</p>
+</dd>
+<dt><strong>tets</strong><span class="classifier">list , optional</span></dt><dd><p>The list of tetrahedral cells in the form: List[i0, i1, ,i2, i3, i4]</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, warning and error messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>“vertices”: List[topologic_core.Vertex]
+“faces”   : List[topologic_core.Face]      # triangles
+“cells”    : List[topologicy_core.Cell]  # tetrahedra (3D) or [] (2D)</p>
 </dd>
 </dl>
 </dd>
