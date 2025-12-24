@@ -17084,7 +17084,8 @@ class Graph:
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(graph, "Graph"):
-            print("Graph.Vertices - Error: The input graph is not a valid graph. Returning None.")
+            if not silent:
+                print("Graph.Vertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
         if graph:
