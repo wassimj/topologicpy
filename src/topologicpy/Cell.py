@@ -331,11 +331,18 @@ class Cell():
                 return None
         return cell
 
+
     @staticmethod
-    def ByThickenedFace(face, thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
-                            planarize: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def ByThickenedFace(face, thickness: float = 1.0, bothSides: bool = True, wSides: int = 1,
+                        reverse: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cell by thickening the input face.
+
+        Behaviour:
+        - Only the bottom and top faces are used as horizontal faces.
+        - wSides controls the number of vertical segments along the thickness.
+        Intermediate offset layers are used only to build side faces and are
+        not included as horizontal faces in Cell.ByFaces.
 
         Parameters
         ----------
@@ -344,11 +351,17 @@ class Cell():
         thickness : float , optional
             The desired thickness. Default is 1.0.
         bothSides : bool
-            If True, the cell will be lofted to each side of the face. Otherwise, it will be lofted in the direction of the normal to the input face. Default is True.
+            If True, the thickening is symmetric about the original face
+            (i.e. from -thickness/2 to +thickness/2).
+            If False, the thickening is from 0 to +thickness along the face normal.
+            Default is True.
         reverse : bool
-            If True, the cell will be lofted in the opposite direction of the normal to the face. Default is False.
-        planarize : bool, optional
-            If set to True, the input faces of the input shell are planarized before building the cell. Otherwise, they are not. Default is False.
+            If True, the extrusion direction is flipped (normal is negated).
+            Default is False.
+        wSides: int, optional
+            The number of segments along the thickness direction.
+            This is the same definition regardless of bothSides.
+            Default is 1.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -357,60 +370,161 @@ class Cell():
         Returns
         -------
         topologic_core.Cell
-            The created cell.
-
+            The created cell, or None on failure.
         """
+        import math
+        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
+        from topologicpy.Cell import Cell
 
+        # -----------------------------
+        # Validation
+        # -----------------------------
         if not Topology.IsInstance(face, "Face"):
-            print("Cell.ByThickenedFace - Error: The input face parameter is not a valid topologic face. Returning None.")
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Input is not a valid Face. Returning None.")
             return None
-        if reverse == True and bothSides == False:
-            thickness = -thickness
-        faceNormal = Face.Normal(face)
+
+        if thickness <= tolerance:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Thickness is less than or equal to the tolerance. Returning None.")
+            return None
+        
+        if wSides < 1:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: wSides is less than 1. Returning None.")
+            return None
+
+        if thickness/float(wSides) <= tolerance:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: The distance between layers is less than or equal to the tolerance. Returning None.")
+            return None
+
+        # -----------------------------
+        # Face normal (normalized)
+        # -----------------------------
+        normal = Face.Normal(face)
+        if not isinstance(normal, (list, tuple)) or len(normal) != 3:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Could not compute face normal.")
+            return None
+
+        nx, ny, nz = normal
+        L = math.sqrt(nx*nx + ny*ny + nz*nz)
+        if L <= tolerance:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Degenerate face normal.")
+            return None
+
+        nx, ny, nz = nx/L, ny/L, nz/L
+
+        if reverse:
+            nx, ny, nz = -nx, -ny, -nz
+
+        # -----------------------------
+        # Build offset layers
+        # NOTE: We will only keep the min/max offset faces as bottom/top.
+        # Intermediate layers are used only for building side faces.
+        # -----------------------------
+        step = thickness / float(wSides)
+        layers = []
+
         if bothSides:
-            bottomFace = Topology.Translate(face,
-                                            x=-faceNormal[0]*0.5*thickness,
-                                            y=-faceNormal[1]*0.5*thickness,
-                                            z=-faceNormal[2]*0.5*thickness,
-                                            transferDictionaries=False,
-                                            silent=True)
-            topFace = Topology.Translate(face,
-                                         x=faceNormal[0]*0.5*thickness,
-                                         y=faceNormal[1]*0.5*thickness,
-                                         z=faceNormal[2]*0.5*thickness,
-                                         transferDictionaries=False,
-                                         silent=True)
+            # Symmetric: [-thickness/2, ..., +thickness/2]
+            start = -0.5 * thickness
+            for i in range(wSides + 1):
+                offset = start + step * i
+                f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
+                layers.append((offset, f))
         else:
-            bottomFace = face
-            topFace = Topology.Translate(face,
-                                         x=faceNormal[0]*thickness,
-                                         y=faceNormal[1]*thickness,
-                                         z=faceNormal[2]*thickness,
-                                         transferDictionaries=False,
-                                         silent=True)
+            # One-sided: [0, ..., thickness]
+            for i in range(wSides + 1):
+                offset = step * i
+                f = Topology.Translate(face, nx*offset, ny*offset, nz*offset)
+                layers.append((offset, f))
 
-        cellFaces = [Face.Invert(bottomFace), topFace]
-        bottomEdges = Topology.Edges(bottomFace, silent=True)
+        if len(layers) < 2:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Not enough layers to form a volume.")
+            return None
 
-        for bottomEdge in bottomEdges:
-            topEdge = Topology.Translate(bottomEdge,
-                                         x=faceNormal[0]*thickness,
-                                         y=faceNormal[1]*thickness,
-                                         z=faceNormal[2]*thickness,
-                                         transferDictionaries=False,
-                                         silent=True)
-            sideEdge1 = Edge.ByVertices([Edge.StartVertex(bottomEdge), Edge.StartVertex(topEdge)], tolerance=tolerance, silent=silent)
-            sideEdge2 = Edge.ByVertices([Edge.EndVertex(bottomEdge), Edge.EndVertex(topEdge)], tolerance=tolerance, silent=silent)
-            cellWire = Topology.SelfMerge(Cluster.ByTopologies([bottomEdge, sideEdge1, topEdge, sideEdge2]), tolerance=tolerance)
-            if Topology.IsInstance(cellWire, "wire"):
-                if Wire.IsClosed(cellWire):
-                    cellFaces.append(Face.ByWire(cellWire, tolerance=tolerance))
-        return Cell.ByFaces(cellFaces, planarize=planarize, tolerance=tolerance)
+        layers.sort(key=lambda x: x[0])
+
+        # Bottom and top faces only
+        bottom_face = layers[0][1]
+        top_face = layers[-1][1]
+
+        faces_all = [bottom_face, top_face]
+
+        # -----------------------------
+        # Build side faces between each consecutive pair of layers
+        # These are the vertical segmentation faces controlled by wSides.
+        # -----------------------------
+        for i in range(len(layers) - 1):
+            _, faceA = layers[i]
+            _, faceB = layers[i + 1]
+
+            edgesA = Topology.Edges(faceA)
+            edgesB = Topology.Edges(faceB)
+
+            if not edgesA or not edgesB or len(edgesA) != len(edgesB):
+                if not silent:
+                    print("Cell.ByThickenedFace - Warning: Edge mismatch between layers. "
+                        "Side faces may be incomplete.")
+                # We try to continue with min length
+            count = min(len(edgesA), len(edgesB))
+
+            for j in range(count):
+                eA = edgesA[j]
+                eB = edgesB[j]
+
+                vA = Topology.Vertices(eA)
+                vB = Topology.Vertices(eB)
+
+                if not vA or not vB or len(vA) != 2 or len(vB) != 2:
+                    continue
+
+                vA1, vA2 = vA
+                vB1, vB2 = vB
+
+                try:
+                    e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
+                    e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
+                    e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
+                    e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
+
+                    if not (e1 and e2 and e3 and e4):
+                        continue
+
+                    side_wire = Wire.ByEdges([e1, e2, e3, e4])
+                    if not side_wire:
+                        continue
+
+                    side_face = Face.ByWire(side_wire)
+                    if side_face:
+                        faces_all.append(side_face)
+                except Exception:
+                    # Skip problematic quads but continue
+                    continue
+
+        # -----------------------------
+        # Build final cell
+        # -----------------------------
+        try:
+            cell = Cell.ByFaces(faces_all, tolerance=tolerance)
+        except Exception:
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Cell.ByFaces failed.")
+            return None
+
+        if not Topology.IsInstance(cell, "Cell"):
+            if not silent:
+                print("Cell.ByThickenedFace - Error: Cell.ByFaces did not return a valid Cell.")
+            return None
+
+        return cell
 
     @staticmethod
     def ByThickenedShell(shell, direction: list = [0, 0, 1], thickness: float = 1.0, bothSides: bool = True, reverse: bool = False,
@@ -1158,7 +1272,7 @@ class Cell():
                                    tolerance=tolerance,
                                    silent=silent)
         return_cell = Cell.ByThickenedFace(cross_shape_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+                            tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0
@@ -1456,7 +1570,7 @@ class Cell():
         
         baseWire = Wire.Circle(origin=circle_origin, radius=radius, sides=uSides, fromAngle=0, toAngle=360, close=True, direction=[0, 0, 1], placement="center", tolerance=tolerance)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
-        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, tolerance=tolerance)
+        cylinder = Cell.ByThickenedFace(face=baseFace, thickness=height, bothSides=False, reverse=False, tolerance=tolerance)
         if vSides > 1:
             cutting_planes = []
             baseX = Vertex.X(origin, mantissa=mantissa) + xOffset
@@ -2972,15 +3086,16 @@ class Cell():
         elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
-        vb1 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
-        vb2 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
-        vb3 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
-        vb4 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        
+        vb1 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb2 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)+length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb3 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
+        vb4 = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)-width*0.5+xOffset,Vertex.Y(origin, mantissa=mantissa)-length*0.5+yOffset,Vertex.Z(origin, mantissa=mantissa)+zOffset)
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True)
         baseFace = Face.ByWire(baseWire, tolerance=tolerance)
 
-        prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False)
+        prism = Cell.ByThickenedFace(baseFace, thickness=height, bothSides = False, reverse=True)
 
         if uSides > 1 or vSides > 1 or wSides > 1:
             prism = sliceCell(prism, width, length, height, uSides, vSides, wSides)
@@ -3092,7 +3207,7 @@ class Cell():
             origin = Vertex.Origin()
         bottom_face = Face.RHS(origin = Vertex.Origin(), width=width, length=length, thickness=thickness, outerFillet=outerFillet, innerFillet=innerFillet, sides=sides, direction=[0,0,1], placement="center", tolerance=tolerance, silent=silent)
         return_cell = Cell.ByThickenedFace(bottom_face, thickness=height, bothSides=True, reverse=False,
-                            planarize = False, tolerance=tolerance, silent=silent)
+                            tolerance=tolerance, silent=silent)
         xOffset = 0
         yOffset = 0
         zOffset = 0

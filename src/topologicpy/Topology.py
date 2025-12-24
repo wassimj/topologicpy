@@ -1702,7 +1702,7 @@ class Topology():
         if abs(z_max - z_min) <= tolerance:
             box = baseFace
         else:
-            box = Cell.ByThickenedFace(baseFace, planarize=False, thickness=abs(z_max - z_min), bothSides=False)
+            box = Cell.ByThickenedFace(baseFace, thickness=abs(z_max - z_min), bothSides=False, reverse=False)
         box = Topology.Rotate(box, origin=origin, axis=[1, 0, 0], angle=-best_x)
         box = Topology.Rotate(box, origin=origin, axis=[0, 1, 0], angle=-best_y)
         box = Topology.Rotate(box, origin=origin, axis=[0, 0, 1], angle=-best_z)
@@ -4938,6 +4938,9 @@ class Topology():
         
         from topologicpy.Graph import Graph
 
+        if Topology.IsInstance(topology, "Graph"):
+            return Graph.Edges(topology)
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Edges - Error: The input is not a valid topology. Returning None")
@@ -4952,9 +4955,6 @@ class Topology():
             if not silent:
                 print("Topology.Wires - Warning: The input is a lower dimension than an edge. Returning an empty list.")
             return []
-        
-        if Topology.IsInstance(topology, "Graph"):
-            return Graph.Edges(topology)
         
         return Topology.SubTopologies(topology=topology, subTopologyType="edge")
     
@@ -7153,7 +7153,421 @@ class Topology():
         for t in topologyList[1:]:
             result = Topology.Merge(result, t, tolerance=tolerance)
         return result
-    
+
+    @staticmethod
+    def Mesh(
+        topology,
+        minSize: float = 0.1,
+        maxSize: float = 1.0,
+        algorithm2D: int = 1,
+        algorithm3D: int = 1,
+        refineEdges: bool = True,
+        refineFaces: bool = True,
+        optimize: bool = True,
+        meshDim: int = None,  # None = auto (3 if has cells, else 2)
+        mantissa: int = 6,
+        silent: bool = False,
+    ):
+        """
+        Use gmsh to create a variable-resolution mesh of a Topologic topology and
+        return mesh data as:
+
+            vertices: List[(x, y, z)]
+            faces   : List[(i0, i1, i2)]      # unique triangular faces, 0-based
+            tets    : List[(i0, i1, i2, i3)]  # tetrahedra (3D only; [] for 2D, 0-based)
+
+        * If the topology has cells (Cell / CellComplex), does a 3D mesh (tets)
+        and derives unique triangle faces from tetrahedra.
+        * Otherwise (Face / Shell / etc.), does a 2D surface mesh and returns
+        triangular surface elements as faces; tets = [].
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            Input topology (Face, Shell, Cell, CellComplex, etc.).
+        minSize : float, optional
+            Target smallest element size near boundaries.
+        maxSize : float, optional
+            Target largest element size away from boundaries.
+        algorithm2D : int , optional
+            The desired mode of 2D meshing algorithm. Several options are available:
+            1: MeshAdapt,
+            2: Automatic,
+            3: Initial mesh only,
+            4: Delaunay,
+            5: Frontal-Delaunay ,
+            6: BAMG,
+            7: Frontal-Delaunay for Quads,
+            8: Packing of Parallelograms,
+            9: Quasi-structured Quad
+            Default is 1.
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+
+        algorithm3D : int , optional
+            The desired mode of 3D meshing algorithm. Several options are available:
+            1: Delaunay
+            2: Initial mesh only
+            3: Frontal
+            4: MMG3D
+            5: R-tree
+            6: HXT
+            Default is 1
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        refineEdges : bool, optional
+            If True, refine near model edges (gmsh 1D entities).
+        refineFaces : bool, optional
+            If True, refine near model faces (gmsh 2D entities).
+        optimize : bool, optional
+            If True, run gmsh mesh optimizer.
+        meshDim : int or None, optional
+            If 3, force 3D mesh. If 2, force 2D surface mesh.
+            If None, auto: 3 if Topology.Cells(topology) non-empty, else 2.
+        mantissa : int , optional
+            The desired size of the mantissa. Default is 6.
+        silent : bool, optional
+            If set to True, warning and error messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            "verts": List[(x, y, z)]
+            "tris": List[(i0, i1, i2)]      # triangles
+            "tets": List[(i0, i1, i2, i3)]  # tetrahedra (3D) or [] (2D)
+        """
+        import tempfile
+        import os
+        import uuid
+
+        try:
+            import gmsh
+        except:
+            if not silent:
+                print("Topology.Mesh - Information: Installing required gmsh library.")
+            try:
+                os.system("pip install gmsh")
+            except:
+                os.system("pip install gmsh --user")
+            try:
+                import gmsh
+                if not silent:
+                    print("Topology.Mesh - Information: gmsh library installed correctly.")
+            except:
+                if not silent:
+                    print("Topology.Mesh - Error: Could not import gmsh. Please try to install gmsh manually. Returning None.")
+                return None
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.Mesh - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+
+        if minSize <= 0 or maxSize <= 0 or minSize >= maxSize:
+            if not silent:
+                print("Topology.Mesh - Error: Bad minSize/maxSize values. Returning None.")
+            return None
+        
+        if not algorithm2D in [1,2,3,4,5,6,7,8,9]:
+            if not silent:
+                print("Topology.Mesh - Error: Bad algorithm2D number. Returning None.")
+            return None
+        
+        if not algorithm3D in [1,2,3,4,5,6]:
+            if not silent:
+                print("Topology.Mesh - Error: Bad algorithm3D number. Returning None.")
+            return None
+
+        # --- Meshing Algorithm mapping ------------------------------------------
+        algorithm_mapping_2d = {1:1,
+                                2:2,
+                                3:3,
+                                4:5,
+                                5:6,
+                                6:7,
+                                7:8,
+                                8:9,
+                                9:11
+                                }
+        algorithm_mapping_3d = {1:1,
+                                2:3,
+                                3:4,
+                                4:7,
+                                5:9,
+                                6:10
+                                }
+
+        # --- decide mesh dimension (2D vs 3D) -----------------------------------
+        if meshDim is None:
+            has_cells = False
+            try:
+                cells = Topology.Cells(topology, silent=True)
+                has_cells = bool(cells)
+            except Exception:
+                has_cells = False
+            meshDim = 3 if has_cells else 2
+
+        if meshDim not in (2, 3):
+            if not silent:
+                print("Topology.Mesh - Error: meshDim must be 2 or 3. Returning None.")
+            return None
+
+        # --- export Topologic topology to temp BREP ------------------------------
+        try:
+            brep_str = Topology.BREPString(topology)
+        except Exception as e:
+            if not silent:
+                print(f"Topology.Mesh - Error: Could not get BREPString: {e}. Returning None.")
+            return None
+
+        tmp_in = None
+        try:
+            with tempfile.NamedTemporaryFile(suffix=".brep", delete=False) as f:
+                f.write(brep_str.encode("utf-8"))
+                tmp_in = f.name
+        except Exception as e:
+            if not silent:
+                print(f"Topology.Mesh - Error: Could not write BREP: {e}. Returning None.")
+            return None
+
+        # --- gmsh: init + import -------------------------------------------------
+        try:
+            gmsh.initialize()
+        except Exception:
+            # already initialized
+            pass
+
+        model_name = f"topologic_mesh_{uuid.uuid4().hex}"
+        gmsh.model.add(model_name)
+        gmsh.option.setNumber("Mesh.Algorithm", algorithm_mapping_2d.get(algorithm2D, 1))
+        gmsh.option.setNumber("Mesh.Algorithm3D", algorithm_mapping_3d.get(algorithm3D, 1))
+
+        if not silent:
+            print(f"Topology.Mesh - Information: Importing BREP into gmsh (dim={meshDim})...")
+
+        occ = gmsh.model.occ
+        occ.importShapes(tmp_in)
+        occ.synchronize()
+
+        # --- define variable size field (Distance + Threshold) -------------------
+        if not silent:
+            print("Topology.Mesh - Information: Setting up size fields...")
+
+        field = gmsh.model.mesh.field
+        fid_dist = 1
+        field.add("Distance", fid_dist)
+
+        if refineEdges:
+            edges = gmsh.model.getEntities(1)
+            if edges:
+                field.setNumbers(fid_dist, "EdgesList", [e[1] for e in edges])
+
+        if refineFaces:
+            faces_ent = gmsh.model.getEntities(2)
+            if faces_ent:
+                field.setNumbers(fid_dist, "FacesList", [f[1] for f in faces_ent])
+
+        fid_thresh = 2
+        field.add("Threshold", fid_thresh)
+        field.setNumber(fid_thresh, "InField", fid_dist)
+        field.setNumber(fid_thresh, "SizeMin", minSize)
+        field.setNumber(fid_thresh, "SizeMax", maxSize)
+        field.setNumber(fid_thresh, "DistMin", minSize * 2.0)
+        field.setNumber(fid_thresh, "DistMax", maxSize * 2.0)
+
+        field.setAsBackgroundMesh(fid_thresh)
+
+        # --- generate mesh (2D or 3D) -------------------------------------------
+        if not silent:
+            print(f"Topology.Mesh - Information: Generating {meshDim}D mesh...")
+
+        gmsh.model.mesh.generate(meshDim)
+
+        if optimize:
+            gmsh.model.mesh.optimize("Netgen")
+
+        # --- extract nodes -------------------------------------------------------
+        node_tags, node_coords, _ = gmsh.model.mesh.getNodes()
+        if len(node_coords) == 0:
+            if not silent:
+                print("Topology.Mesh - Error: No mesh nodes. Returning None.")
+            gmsh.finalize()
+            if tmp_in and os.path.exists(tmp_in):
+                os.remove(tmp_in)
+            return None
+
+        # tag -> index and vertex list
+        tag_to_index = {}
+        vertices = []
+        for i, tag in enumerate(node_tags):
+            x = round(node_coords[3*i], mantissa)
+            y = round(node_coords[3*i + 1], mantissa)
+            z = round(node_coords[3*i + 2], mantissa)
+            tag_to_index[tag] = len(vertices)
+            vertices.append((x, y, z))
+
+        faces = []
+        tets = []
+
+        # --- extract elements & build faces/tets --------------------------------
+        if meshDim == 3:
+            # 3D: get tetrahedra, derive unique triangle faces
+            types, _, elem_data = gmsh.model.mesh.getElements(3)
+
+            raw_tets = []
+            for etype, conn in zip(types, elem_data):
+                if etype == 4:  # 4-node tets
+                    for i in range(0, len(conn), 4):
+                        t0 = conn[i]
+                        t1 = conn[i+1]
+                        t2 = conn[i+2]
+                        t3 = conn[i+3]
+                        try:
+                            a = tag_to_index[t0]
+                            b = tag_to_index[t1]
+                            c = tag_to_index[t2]
+                            d = tag_to_index[t3]
+                            raw_tets.append((a, b, c, d))
+                        except KeyError:
+                            continue
+
+            if not raw_tets:
+                if not silent:
+                    print("Topology.Mesh - Error: No tetra elements. Returning None.")
+                gmsh.finalize()
+                if tmp_in and os.path.exists(tmp_in):
+                    os.remove(tmp_in)
+                return None
+
+            tets = raw_tets
+
+            if not silent:
+                print(f"Topology.Mesh - Information: 3D mesh: {len(vertices)} vertices, {len(tets)} tets.")
+                print("Topology.Mesh - Information: Building unique faces from tets...")
+
+            face_set = set()
+            for (a, b, c, d) in tets:
+                faces_tet = [
+                    (a, b, c),
+                    (a, b, d),
+                    (a, c, d),
+                    (b, c, d),
+                ]
+                for f in faces_tet:
+                    key = tuple(sorted(f))  # orientation-insensitive
+                    face_set.add(key)
+
+            faces = list(face_set)
+
+        else:
+            # 2D: get triangular surface elements; tets = []
+            types, _, elem_data = gmsh.model.mesh.getElements(2)
+
+            face_set = set()
+            for etype, conn in zip(types, elem_data):
+                if etype == 2:  # 3-node triangles
+                    for i in range(0, len(conn), 3):
+                        t0 = conn[i]
+                        t1 = conn[i+1]
+                        t2 = conn[i+2]
+                        try:
+                            a = tag_to_index[t0]
+                            b = tag_to_index[t1]
+                            c = tag_to_index[t2]
+                            key = tuple(sorted((a, b, c)))
+                            face_set.add(key)
+                        except KeyError:
+                            continue
+
+            if not face_set:
+                if not silent:
+                    print("Topology.Mesh - Error: No triangular surface elements. Returning None.")
+                gmsh.finalize()
+                if tmp_in and os.path.exists(tmp_in):
+                    os.remove(tmp_in)
+                return None
+
+            faces = list(face_set)
+            tets = []
+
+            if not silent:
+                print(f"Topology.Mesh - Information: 2D mesh: {len(vertices)} vertices, {len(faces)} triangles.")
+
+        if not silent:
+            print("Topology.Mesh - Information: Done.")
+
+        # --- cleanup -------------------------------------------------------------
+        gmsh.finalize()
+        if tmp_in and os.path.exists(tmp_in):
+            try:
+                os.remove(tmp_in)
+            except OSError:
+                pass
+        
+        d = {
+            "verts": vertices,
+            "tris": faces,
+            "tets": tets
+        }
+        return d
+
+    @staticmethod
+    def MeshToTopologies(vertices: list, faces: list = [], tets: list = [], tolerance: float = 0.0001, silent: bool = False):
+        """
+        Converts mesh data in the form of:
+
+            vertices: List[(x, y, z)]
+            faces   : List[(i0, i1, i2)]      # unique triangular faces, 0-based
+            tets    : List[(i0, i1, i2, i3)]  # tetrahedra (3D only; [] for 2D, 0-based)
+        
+        into a list of topologic vertices, faces, and cells.
+        This method is designed to work in conjunction with the Topology.Mesh method.
+
+        Parameters
+        ----------
+        vertices : list
+            The list of vertices coordinates in the form: List[(x, y, z)].
+        faces : list , optional
+            The list of unique triangular faces in the form: List[(i0, i1, i2)]
+        tets : list , optional
+            The list of tetrahedral cells in the form: List[i0, i1, ,i2, i3, i4]
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, warning and error messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            "vertices": List[topologic_core.Vertex]
+            "faces"   : List[topologic_core.Face]      # triangles
+            "cells"    : List[topologicy_core.Cell]  # tetrahedra (3D) or [] (2D)
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+
+        t_verts = [Vertex.ByCoordinates(coords) for coords in vertices]
+        t_faces = [Face.ByVertices([t_verts[a], t_verts[b], t_verts[c]], tolerance=tolerance, silent=silent) for a,b,c in faces]
+        t_cells = []
+        for (a,b,c,d) in tets:
+            faces_tet = [
+                        (a, b, c),
+                        (a, b, d),
+                        (a, c, d),
+                        (b, c, d),
+                    ]
+            triangles = []
+            for face_tet in faces_tet:
+                verts = [t_verts[i] for i in face_tet]
+                triangles.append(Face.ByVertices(verts, tolerance=tolerance, silent=silent))
+            t_cells.append(Cell.ByFaces(triangles, tolerance=tolerance, silent=silent))
+        
+        d = {
+            "vertices": t_verts,
+            "faces": t_faces,
+            "cells": t_cells
+        }
+        return d
+
     @staticmethod
     def MeshData(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
         """
@@ -10997,6 +11411,9 @@ class Topology():
         """
         from topologicpy.Graph import Graph
         import inspect
+
+        if Topology.IsInstance(topology, "graph"):
+            return Graph.Vertices(topology)
         
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
@@ -11013,9 +11430,6 @@ class Topology():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return [topology]
-        
-        if Topology.IsInstance(topology, "Graph"):
-            return Graph.Vertices(topology)
         
         return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
     

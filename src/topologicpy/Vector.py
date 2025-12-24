@@ -58,44 +58,91 @@ class Vector(list):
         return [a + b for a, b in zip(vectorA, vectorB)]
     
     @staticmethod
-    def Angle(vectorA, vectorB, mantissa: int = 6):
+    def Angle(vectorA, vectorB, mantissa: int = 6, bracket: bool = False):
         """
-        Returns the angle in degrees between the two input vectors
+        Returns the angle in degrees between the two input vectors.
+
+        This implementation derives the angle from Rational Trigonometry's Spread:
+            spread = sin^2(theta)
+
+        The acute angle is recovered as:
+            acute = asin(sqrt(spread)) in [0, 90]
+
+        The obtuse/acute distinction is recovered using the sign of the dot product.
+        If bracket=True, the angle is forced into the acute range [0, 90].
 
         Parameters
         ----------
         vectorA : list
-            The first vector.
+            The first vector (length 2 or 3).
         vectorB : list
-            The second vector.
+            The second vector (length 2 or 3).
         mantissa : int, optional
             The length of the desired mantissa. Default is 6.
+        bracket : bool, optional
+            If set to True, the returned angle is bracketed between 0 and 90.
+            Default is False.
 
         Returns
         -------
         float
             The angle in degrees between the two input vectors.
-
         """
-        if vectorA == None:
+        import math
+
+        if vectorA is None:
             print("Vector.Angle - Error: The input vectorA is None. Returning None.")
             return None
-        if vectorB == None:
+        if vectorB is None:
             print("Vector.Angle - Error: The input vectorB is None. Returning None.")
             return None
-        n_v1=la.norm(vectorA)
-        n_v2=la.norm(vectorB)
-        if n_v1 == 0 or n_v2 == 0:
-            # Handle the case where one or both vectors have a magnitude of zero.
+        if not isinstance(vectorA, (list, tuple)):
+            print("Vector.Angle - Error: The input vectorA is not a valid vector. Returning None.")
+            return None
+        if not isinstance(vectorB, (list, tuple)):
+            print("Vector.Angle - Error: The input vectorB is not a valid vector. Returning None.")
+            return None
+
+        # Promote 2D vectors to 3D (must match Vector.Spread)
+        a = list(vectorA)
+        b = list(vectorB)
+        if len(a) == 2:
+            a = [a[0], a[1], 0.0]
+        if len(b) == 2:
+            b = [b[0], b[1], 0.0]
+        if len(a) != 3 or len(b) != 3:
+            print("Vector.Angle - Error: The input vectors must have length 2 or 3. Returning None.")
+            return None
+
+        # Degenerate vectors → zero angle (matches original semantics)
+        aa = a[0]*a[0] + a[1]*a[1] + a[2]*a[2]
+        bb = b[0]*b[0] + b[1]*b[1] + b[2]*b[2]
+        if aa == 0.0 or bb == 0.0:
             return 0.0
-    
-        if (abs(np.log10(n_v1/n_v2)) > 10):
-            vectorA = vectorA/n_v1
-            vectorB = vectorB/n_v2
-        cosang = np.dot(vectorA, vectorB)
-        sinang = la.norm(np.cross(vectorA, vectorB))
-        return round(math.degrees(np.arctan2(sinang, cosang)), mantissa)
-    
+
+        # Canonical computation via Spread (extra precision, round later)
+        s = Vector.Spread(a, b, mantissa=15, bracket=False)
+        if s is None:
+            return None
+
+        # Numerical safety
+        if s < 0.0:
+            s = 0.0
+        elif s > 1.0:
+            s = 1.0
+
+        # Acute angle from spread
+        acute = math.degrees(math.asin(math.sqrt(s)))  # [0, 90]
+
+        if bracket:
+            angle = acute
+        else:
+            # Recover obtuse vs acute using dot sign (cosine sign)
+            dot = a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+            angle = 180.0 - acute if dot < 0.0 else acute
+
+        return round(angle, mantissa)
+
     @staticmethod
     def Average(vectors: list):
         """
@@ -935,7 +982,37 @@ class Vector(list):
         
         """
         return [-1, 1, 0]
-    
+
+
+    @staticmethod
+    def Quadrance(vector, mantissa: int = 6):
+        """
+        Returns the quadrance of the input vector.
+
+        Quadrance is the rational trigonometry equivalent of vector magnitude
+        and is defined as the sum of squares of the vector components.
+
+        Parameters
+        ----------
+        vector : list
+            The input vector.
+        mantissa : int
+            The length of the desired mantissa. Default is 6.
+
+        Returns
+        -------
+        float
+            The quadrance of the input vector.
+        """
+        if vector is None or len(vector) == 0:
+            return 0.0
+
+        q = 0.0
+        for v in vector:
+            q += v * v
+
+        return round(q, mantissa)
+
     @staticmethod
     def Reverse(vector):
         """
@@ -1014,7 +1091,91 @@ class Vector(list):
         
         """
         return [-1, -1, 0]
-    
+
+    @staticmethod
+    def Spread(vectorA, vectorB, mantissa: int = 6, bracket: bool = False) -> float:
+        """
+        Returns the spread between the two input vectors.
+
+        Spread is the rational trigonometry equivalent of angle and is defined as:
+            spread = sin^2(theta)
+
+        Properties
+        ----------
+        - spread = 0   : vectors are parallel
+        - spread = 1   : vectors are perpendicular
+        - 0 <= spread <= 1
+        - No trigonometric functions are used
+
+        Parameters
+        ----------
+        vectorA : list
+            The first input vector (length 2 or 3).
+        vectorB : list
+            The second input vector (length 2 or 3).
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        bracket : bool
+            If set to True, the spread is bracketed to represent the acute case
+            (i.e. invariant under vector reversal). Default is False.
+
+        Returns
+        -------
+        float
+            The spread between the two input vectors.
+        """
+        if vectorA is None:
+            print("Vector.Spread - Error: The input vectorA is None. Returning None.")
+            return None
+        if vectorB is None:
+            print("Vector.Spread - Error: The input vectorB is None. Returning None.")
+            return None
+
+        if not isinstance(vectorA, (list, tuple)):
+            print("Vector.Spread - Error: The input vectorA is not a valid vector. Returning None.")
+            return None
+        if not isinstance(vectorB, (list, tuple)):
+            print("Vector.Spread - Error: The input vectorB is not a valid vector. Returning None.")
+            return None
+
+        # Promote 2D vectors to 3D for robustness
+        a = list(vectorA)
+        b = list(vectorB)
+        if len(a) == 2:
+            a = [a[0], a[1], 0.0]
+        if len(b) == 2:
+            b = [b[0], b[1], 0.0]
+
+        if len(a) != 3 or len(b) != 3:
+            print("Vector.Spread - Error: The input vectors must have length 2 or 3. Returning None.")
+            return None
+
+        ux, uy, uz = float(a[0]), float(a[1]), float(a[2])
+        vx, vy, vz = float(b[0]), float(b[1]), float(b[2])
+
+        # Dot products
+        dot = ux*vx + uy*vy + uz*vz
+        uu  = ux*ux + uy*uy + uz*uz
+        vv  = vx*vx + vy*vy + vz*vz
+
+        if uu == 0.0 or vv == 0.0:
+            return 0.0
+
+        # Rational trigonometry spread
+        spread = 1.0 - (dot*dot) / (uu * vv)
+
+        # Numerical safety
+        if spread < 0.0:
+            spread = 0.0
+        elif spread > 1.0:
+            spread = 1.0
+
+        # Optional bracketing (acute equivalent)
+        if bracket:
+            spread = min(spread, 1.0 - spread)
+
+        return round(spread, mantissa)
+
     @staticmethod
     def Subtract(vectorA, vectorB):
         """

@@ -412,12 +412,12 @@ class Edge():
         
         if not Topology.IsInstance(origin, "vertex"):
             if not silent:
-                print("Edge.ByVertexDirectionLength - Error: The input vertex parameter is not a valid vertex. Returning None.")
+                print("Edge.ByOriginDirectionLength - Error: The input vertex parameter is not a valid vertex. Returning None.")
             return None
         
         if length <= tolerance:
             if not silent:
-                print("Edge.ByVertexDirectionLength - Error: The input edge parameter must not be less than the input tolerance parameter. Returning None.")
+                print("Edge.ByOriginDirectionLength - Error: The input edge parameter must not be less than the input tolerance parameter. Returning None.")
             return None
 
         endVertex = Topology.TranslateByDirectionDistance(origin, direction=direction[:3], distance=length)
@@ -942,7 +942,7 @@ class Edge():
         return Vertex.ByCoordinates(x,y,0)
 
     @staticmethod
-    def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
+    def IsCollinear(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Return True if the two input edges are collinear. Returns False otherwise.
         This code is based on a contribution by https://github.com/gaoxipeng
@@ -1082,7 +1082,7 @@ class Edge():
         return np.isclose(scalar_triple_product, 0, atol=tolerance)
 
     @staticmethod
-    def IsParallel(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001) -> bool:
+    def IsParallel(edgeA, edgeB, mantissa: int = 6, tolerance: float = 0.0001):
         """
         Return True if the two input edges are parallel. Returns False otherwise.
 
@@ -1456,6 +1456,37 @@ class Edge():
             return None #Return silently because topologic C++ returns a runtime error if point is not on curve.
         return round(parameter, mantissa)
 
+
+    @staticmethod
+    def Quadrance(edge, mantissa: int = 6) -> float:
+        """
+        Returns the quadrance of the input edge. See: https://en.wikipedia.org/wiki/Euclidean_distance#Squared_Euclidean_distance
+
+        Parameters
+        ----------
+        edge : topologic_core.Edge
+            The input edge.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+
+        Returns
+        -------
+        float
+            The quadrance of the input edge.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(edge, "Edge"):
+            print("Edge.Quadrance - Error: The input edge parameter is not a valid topologic edge. Returning None.")
+            return None
+        sv = Edge.StartVertex(edge)
+        ev = Edge.EndVertex(edge)
+
+        return Vertex.Quadrance(sv, ev, mantissa = mantissa)
+
+
     @staticmethod
     def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -1517,6 +1548,54 @@ class Edge():
         if distance > 0:
             return Edge.Extend(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
         return Edge.Trim(edge=edge, distance=distance, bothSides=bothSides, reverse=reverse, tolerance=tolerance)
+
+    @staticmethod
+    def Spread(edgeA, edgeB, mantissa: int = 6, bracket: bool = False) -> float:
+        """
+        Returns the spread between the two input edges.
+
+        Spread is the rational trigonometry equivalent of angle and is defined as:
+            spread = sin^2(theta)
+
+        Properties
+        ----------
+        - spread = 0   : edges are parallel
+        - spread = 1   : edges are perpendicular
+        - 0 <= spread <= 1
+        - No trigonometric functions are used
+
+        Parameters
+        ----------
+        edgeA : topologic_core.Edge
+            The first input edge.
+        edgeB : topologic_core.Edge
+            The second input edge.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        bracket : bool
+            If set to True, the spread is bracketed to represent the acute case
+            (i.e. invariant under edge reversal). Default is False.
+
+        Returns
+        -------
+        float
+            The spread between the two input edges.
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+
+        if not Topology.IsInstance(edgeA, "Edge"):
+            print("Edge.Spread - Error: The input edgeA parameter is not a valid topologic edge. Returning None.")
+            return None
+        if not Topology.IsInstance(edgeB, "Edge"):
+            print("Edge.Spread - Error: The input edgeB parameter is not a valid topologic edge. Returning None.")
+            return None
+
+        # Direction vectors
+        u = Edge.Direction(edgeA, mantissa=15)
+        v = Edge.Direction(edgeB, mantissa=15)
+
+        return Vector.Spread(u, v, mantissa = mantissa, bracket = bracket)
 
     @staticmethod
     def StartVertex(edge, silent: bool = False):
@@ -1672,7 +1751,7 @@ class Edge():
         intVertex = Topology.Intersect(edgeA, edgeB)
         if intVertex and (Vertex.IsInternal(intVertex, edgeA)):
             if reverse:
-                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=slient)
+                return Edge.ByVertices([eva, intVertex], tolerance=tolerance, silent=silent)
             else:
                 return Edge.ByVertices([sva, intVertex], tolerance=tolerance, silent=silent)
         return edgeA

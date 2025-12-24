@@ -1066,7 +1066,7 @@ class Plotly:
 
 
         def faceData(vertices, faces, dictionaries=None, color="#FAFAFA", colorKey=None,
-                     opacity=0.5, labelKey=None, groupKey=None,
+                     opacity=0.5, opacityKey=None, labelKey=None, groupKey=None,
                      minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
                      legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="viridis"):
             x = []
@@ -1137,10 +1137,10 @@ class Plotly:
                     i.append(f[0])
                     j.append(f[1])
                     k.append(f[2])
-            
-            if len(list(set(groupList))) < 2:
+
+            if len(groupList) == 0:
                 groupList = None
-            if len(labels) < 1:
+            if len(labels) == 0:
                 labels = ""
             fData = go.Mesh3d(
                     x = x,
@@ -1276,8 +1276,7 @@ class Plotly:
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             if not faceColorKey == None:
                 d = Topology.Dictionary(topology)
-                fc_d = Dictionary.ValueAtKey(d, key=faceColorKey)
-                faceColor = Dictionary.ValueAtKey(d, key=faceColorKey) or faceColor
+                faceColor = Dictionary.ValueAtKey(d, faceColorKey, faceColor)
             if not faceOpacityKey == None:
                 d = Topology.Dictionary(topology)
                 d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey)
@@ -1295,11 +1294,10 @@ class Plotly:
                     triangles = Face.Triangulate(tp_face, tolerance=tolerance, silent=silent)
                     if isinstance(triangles, list):
                         for tri in triangles:
-                            if faceColorKey or faceOpacityKey or faceLabelKey or faceGroupKey:
-                                d = Topology.Dictionary(tp_face)
-                                f_dictionaries.append(d)
-                                if d:
-                                    tri = Topology.SetDictionary(tri, d, silent=True)
+                            d = Topology.Dictionary(tp_face)
+                            f_dictionaries.append(d)
+                            if d:
+                                tri = Topology.SetDictionary(tri, d, silent=True)
                             all_triangles.append(tri)
                 if len(all_triangles) > 0:
                     f_cluster = Cluster.ByTopologies(all_triangles)
@@ -1307,7 +1305,7 @@ class Plotly:
                     vertices = geo['vertices']
                     faces = geo['faces']
                     if len(faces) > 0:
-                        data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
+                        data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, opacityKey=faceOpacityKey, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
         return data
 
     @staticmethod

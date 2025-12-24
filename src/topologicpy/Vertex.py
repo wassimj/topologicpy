@@ -670,12 +670,12 @@ class Vertex():
         def distance_to_face(vertex, face, includeCentroid):
             v_proj = Vertex.Project(vertex, face, mantissa=mantissa)
             if not Vertex.IsInternal(v_proj, face):
-                vertices = Topology.Vertices(topology)
+                vertices = Topology.Vertices(face)
                 distances = [distance_to_vertex(vertex, v) for v in vertices]
-                edges = Topology.Edges(topology)
+                edges = Topology.Edges(face)
                 distances += [distance_to_edge(vertex, e) for e in edges]
                 if includeCentroid:
-                    distances.append(distance_to_vertex(vertex, Topology.Centroid(topology)))
+                    distances.append(distance_to_vertex(vertex, Topology.Centroid(face)))
                 return min(distances)
             dic = Face.PlaneEquation(face)
             a = dic["a"]
@@ -1984,6 +1984,158 @@ class Vertex():
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
         return Vertex.ByCoordinates(pt[0], pt[1], pt[2])
 
+
+    @staticmethod
+    def Quadrance(vertex, topology, includeCentroid: bool = True, mantissa: int = 6) -> float:
+        """
+        Returns the quadrance between the input vertex and the input topology.
+
+        Quadrance is the squared Euclidean distance. This method returns the quadrance
+        to the closest sub-topology in the input topology, optionally including its centroid.
+
+        Notes
+        -----
+        - For Vertex/Edge/Wire, this is purely "squared distance" in Euclidean 3D.
+        - For Face distance to plane (when projection is internal), this returns the
+        squared orthogonal distance to the face's plane: (|ax+by+cz+d|^2)/(a^2+b^2+c^2).
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        topology : topologic_core.Topology
+            The input topology.
+        includeCentroid : bool
+            If set to True, the centroid of the input topology will be considered in finding
+            the nearest subTopology to the input vertex. Default is True.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+
+        Returns
+        -------
+        float
+            The quadrance between the input vertex and the input topology.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+
+        def quad_point_to_point(p1, p2) -> float:
+            dx = p2[0] - p1[0]
+            dy = p2[1] - p1[1]
+            dz = p2[2] - p1[2]
+            return float(dx*dx + dy*dy + dz*dz)
+
+        def quad_point_to_segment(point, a, b) -> float:
+            # Squared distance from point to segment AB in 3D.
+            px, py, pz = point
+            ax, ay, az = a
+            bx, by, bz = b
+
+            abx, aby, abz = bx-ax, by-ay, bz-az
+            apx, apy, apz = px-ax, py-ay, pz-az
+
+            ab2 = abx*abx + aby*aby + abz*abz
+            if ab2 == 0.0:
+                return quad_point_to_point(point, a)
+
+            t = (apx*abx + apy*aby + apz*abz) / ab2
+            if t <= 0.0:
+                return quad_point_to_point(point, a)
+            if t >= 1.0:
+                return quad_point_to_point(point, b)
+
+            cx = ax + t*abx
+            cy = ay + t*aby
+            cz = az + t*abz
+            dx = px - cx
+            dy = py - cy
+            dz = pz - cz
+            return float(dx*dx + dy*dy + dz*dz)
+
+        def quad_to_vertex(vA, vB) -> float:
+            a = (Vertex.X(vA, mantissa=mantissa), Vertex.Y(vA, mantissa=mantissa), Vertex.Z(vA, mantissa=mantissa))
+            b = (Vertex.X(vB, mantissa=mantissa), Vertex.Y(vB, mantissa=mantissa), Vertex.Z(vB, mantissa=mantissa))
+            return quad_point_to_point(a, b)
+
+        def quad_to_edge(v, edge) -> float:
+            p = (Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            a = (Vertex.X(sv, mantissa=mantissa), Vertex.Y(sv, mantissa=mantissa), Vertex.Z(sv, mantissa=mantissa))
+            b = (Vertex.X(ev, mantissa=mantissa), Vertex.Y(ev, mantissa=mantissa), Vertex.Z(ev, mantissa=mantissa))
+            return quad_point_to_segment(p, a, b)
+
+        def quad_to_face(v, face, includeCentroid_flag: bool) -> float:
+            # If projection is outside, fall back to vertices/edges/centroid of the *face*.
+            v_proj = Vertex.Project(v, face, mantissa=mantissa)
+            if not Vertex.IsInternal(v_proj, face):
+                verts = Topology.Vertices(face)
+                quads = [quad_to_vertex(v, vv) for vv in verts]
+                eds = Topology.Edges(face)
+                quads += [quad_to_edge(v, ee) for ee in eds]
+                if includeCentroid_flag:
+                    quads.append(quad_to_vertex(v, Topology.Centroid(face)))
+                return min(quads) if quads else 0.0
+
+            # Squared orthogonal distance to plane of the face.
+            eq = Face.PlaneEquation(face)  # expects keys: a,b,c,d
+            a = float(eq.get("a", 0.0))
+            b = float(eq.get("b", 0.0))
+            c = float(eq.get("c", 0.0))
+            d0 = float(eq.get("d", 0.0))
+
+            x1, y1, z1 = Vertex.Coordinates(v, mantissa=mantissa)
+            num = (a*x1 + b*y1 + c*z1 + d0)
+            den = (a*a + b*b + c*c)
+            if den == 0.0:
+                return 0.0
+            return float((num*num) / den)
+
+        if (not Topology.IsInstance(vertex, "Vertex")) or (not Topology.IsInstance(topology, "Topology")):
+            return None
+
+        if Topology.IsInstance(topology, "Vertex"):
+            return round(quad_to_vertex(vertex, topology), mantissa)
+
+        elif Topology.IsInstance(topology, "Edge"):
+            return round(quad_to_edge(vertex, topology), mantissa)
+
+        elif Topology.IsInstance(topology, "Wire"):
+            verts = Topology.Vertices(topology)
+            quads = [quad_to_vertex(vertex, v) for v in verts]
+            eds = Topology.Edges(topology)
+            quads += [quad_to_edge(vertex, e) for e in eds]
+            if includeCentroid:
+                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(quads), mantissa) if quads else 0.0
+
+        elif Topology.IsInstance(topology, "Face"):
+            verts = Topology.Vertices(topology)
+            quads = [quad_to_vertex(vertex, v) for v in verts]
+            eds = Topology.Edges(topology)
+            quads += [quad_to_edge(vertex, e) for e in eds]
+            quads.append(quad_to_face(vertex, topology, includeCentroid))
+            if includeCentroid:
+                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(quads), mantissa) if quads else 0.0
+
+        elif (Topology.IsInstance(topology, "Shell") or Topology.IsInstance(topology, "Cell") or
+            Topology.IsInstance(topology, "CellComplex") or Topology.IsInstance(topology, "Cluster")):
+            verts = Topology.Vertices(topology)
+            quads = [quad_to_vertex(vertex, v) for v in verts]
+            eds = Topology.Edges(topology)
+            quads += [quad_to_edge(vertex, e) for e in eds]
+            faces = Topology.Faces(topology)
+            quads += [quad_to_face(vertex, f, includeCentroid) for f in faces]
+            if includeCentroid:
+                quads.append(quad_to_vertex(vertex, Topology.Centroid(topology)))
+            return round(min(quads), mantissa) if quads else 0.0
+
+        else:
+            print("Vertex.Quadrance - Error: Could not recognize the input topology. Returning None.")
+            return None
 
     @staticmethod
     def Separate(*vertices, minDistance: float = 0.0001, iterations: int = 100, strength: float = 0.1, tolerance: float = 0.0001, silent: bool = False):

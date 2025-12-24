@@ -960,7 +960,43 @@ class Face():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
-        ibList = [x for x in internalBoundaries if Topology.IsInstance(x, "Wire") and Wire.IsClosed(x)]
+        if not isinstance(internalBoundaries, list):
+            if not silent:
+                print("Face.ByWires - Error: The input internalBoundaries parameter is not a list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+        eb_face= Face.ByWire(externalBoundary)
+        eb_area = Face.Area(eb_face)
+        # Make sure all internal wires are actually inside the external wire.
+        ibList = []
+        for ib in internalBoundaries:
+            if not Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib):
+                if not silent:
+                    print("Face.ByWires - Warning: One of the internal wires is not a valid closed wire. Ignoring.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                continue
+            ib_face = Face.ByWire(ib)
+            ib_area = Face.Area(ib_face)
+            if ib_area >= eb_area:
+                if not silent:
+                    print("Face.ByWires - Warning: One of the iinternal wires has an area greater than that of the external wire. Ignoring.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                continue
+            sp = Topology.SpatialRelationship(ib_face, eb_face)
+            if not sp.lower() == "within":
+                if not silent:
+                    print("Face.ByWires - Warning: One of the internal wires is not within the external wires. Ignoring.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
+                continue
+            ibList.append(ib)
         face = None
         try:
             face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance) # Hook to Core
