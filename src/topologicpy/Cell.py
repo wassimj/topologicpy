@@ -3549,8 +3549,9 @@ class Cell():
             sphere = Topology.Translate(sphere, 0, 0, radius)
         elif placement.lower() == "lowerleft":
             sphere = Topology.Translate(sphere, radius, radius, radius)
-        sphere = Topology.Orient(sphere, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        sphere = Topology.Place(sphere, originA=Vertex.Origin(), originB=origin)
+        
+        if not direction == [0,0,1]:
+            sphere = Topology.Orient(sphere, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return sphere
     
     @staticmethod

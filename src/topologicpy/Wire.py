@@ -1109,7 +1109,7 @@ class Wire():
 
 
     @staticmethod
-    def Circle(origin= None, radius: float = 0.5, sides: int = 16, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
+    def Circle(origin= None, radius: float = 0.5, sides: int = 16, spokes: bool = False, fromAngle: float = 0.0, toAngle: float = 360.0, close: bool = True, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a circle.
 
@@ -1121,6 +1121,8 @@ class Wire():
             The radius of the circle. Default is 0.5.
         sides : int , optional
             The desired number of sides of the circle. Default is 16.
+        spokes : bool , optional
+            If set to True, spoke edges from the center to the circumference are added. Default is False.
         fromAngle : float , optional
             The angle in degrees from which to start creating the arc of the circle. Default is 0.
         toAngle : float , optional
@@ -1141,6 +1143,7 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(origin, "Vertex"):
@@ -1185,6 +1188,16 @@ class Wire():
         else:
             baseWire = Wire.ByVertices(baseV[::-1], close=close, tolerance=tolerance, silent=silent) #reversing the list so that the normal points up in Blender
 
+        if spokes == True and (angleRange == 360 or close==False):
+            vertices = Topology.Vertices(baseWire)
+            base_edges = Topology.Edges(baseWire)
+            spoke_edges = []
+            for v in vertices:
+                e = Edge.ByVertices(origin, v, tolerance=tolerance)
+                if e:
+                    spoke_edges.append(e)
+            if len(spoke_edges) > 0:
+                baseWire = Wire.ByEdges(base_edges+spoke_edges)
         if placement.lower() == "lowerleft":
             baseWire = Topology.Translate(baseWire, radius, radius, 0)
         elif placement.lower() == "upperleft":
@@ -4128,7 +4141,7 @@ class Wire():
         return w
 
     @staticmethod
-    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0, diagonals: bool = False, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a rectangle.
 
@@ -4140,6 +4153,8 @@ class Wire():
             The width of the rectangle. Default is 1.0.
         length : float , optional
             The length of the rectangle. Default is 1.0.
+        diagonals : bool , optional
+            If set to True, the diagonals of the rectangle are included. Diagonals are split at the centroid of the rectangle. Default is False.
         direction : list , optional
             The vector representing the up direction of the rectangle. Default is [0, 0, 1].
         placement : str , optional
@@ -4158,6 +4173,7 @@ class Wire():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(origin, "Vertex"):
@@ -4201,6 +4217,13 @@ class Wire():
         vb4 = Vertex.ByCoordinates(Vertex.X(origin)-width*0.5+xOffset,Vertex.Y(origin)+length*0.5+yOffset,Vertex.Z(origin))
 
         baseWire = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance, silent=silent)
+        base_edges = Wire.Edges(baseWire)
+        if diagonals == True:
+            e1 = Edge.ByVertices(vb1, origin)
+            e2 = Edge.ByVertices(origin, vb3)
+            e3 = Edge.ByVertices(vb2, origin)
+            e4 = Edge.ByVertices(origin, vb4)
+            baseWire = Wire.ByEdges([e1, e2, e3, e4]+base_edges)
         if direction != [0, 0, 1]:
             baseWire = Topology.Orient(baseWire, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return baseWire
@@ -4950,7 +4973,7 @@ class Wire():
         return wires
     
     @staticmethod
-    def Square(origin= None, size: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Square(origin= None, size: float = 1.0, diagonals= False, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
         """
         Creates a square.
 
@@ -4960,6 +4983,8 @@ class Wire():
             The location of the origin of the square. Default is None which results in the square being placed at (0, 0, 0).
         size : float , optional
             The size of the square. Default is 1.0.
+        diagonals : bool , optional
+            If set to True, the diagonals of the rectangle are included. Diagonals are split at the centroid of the rectangle. Default is False.
         direction : list , optional
             The vector representing the up direction of the square. Default is [0, 0, 1].
         placement : str , optional
@@ -4973,7 +4998,7 @@ class Wire():
             The created square.
 
         """
-        return Wire.Rectangle(origin=origin, width=size, length=size, direction=direction, placement=placement, tolerance=tolerance)
+        return Wire.Rectangle(origin=origin, width=size, length=size, diagonals=diagonals, direction=direction, placement=placement, tolerance=tolerance)
     
     @staticmethod
     def Squircle(origin = None, radius: float = 0.5, sides: int = 121, a: float = 2.0, b: float = 2.0, direction: list = [0, 0, 1], placement: str = "center", angTolerance: float = 0.1, tolerance: float = 0.0001):

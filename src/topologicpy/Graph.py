@@ -1889,11 +1889,366 @@ class Graph:
                                    mantissa= mantissa)
         return bot_graph.serialize(format=format)
 
+    @staticmethod
+    def BetweennessCentrality(graph,
+                            weightKey: str = None,
+                            normalize: bool = False,
+                            nxCompatible: bool = True,
+                            useEdges: bool = False,
+                            edgeKey: str = None,
+                            key: str = "betweenness_centrality",
+                            colorKey: str = "bc_color",
+                            colorScale: str = "viridis",
+                            mantissa: int = 6,
+                            tolerance: float = 0.001,
+                            silent: bool = False):
+        """
+        Computes betweenness centrality (Brandes) for vertices or edges.
+
+        Precedence
+        ----------
+        - If nxCompatible=True, NetworkX normalization is applied and `normalize` is ignored.
+        (Undirected conventions; endpoints=False.)
+        - If nxCompatible=False and normalize=True, values are min-max normalized to [0,1].
+
+        Edge bundling
+        ------------
+        If useEdges=True and edgeKey is provided, edge betweenness values are bundled by SUM and
+        assigned back to each member edge.
+
+        Returns
+        -------
+        list[float]
+            Centralities aligned with Graph.Vertices(graph) (useEdges=False) or Graph.Edges(graph) (useEdges=True).
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        import numbers
+        import heapq
+        from collections import deque, defaultdict
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.BetweennessCentrality - Error: The input graph is not a valid graph. Returning None.")
+            return None
+
+        # -----------------------------
+        # Helpers
+        # -----------------------------
+        def _unwrap(x):
+            if isinstance(x, list) and len(x) == 1:
+                return x[0]
+            return x
+
+        def _as_float(x, default=0.0):
+            x = _unwrap(x)
+            if isinstance(x, numbers.Number):
+                return float(x)
+            return float(default)
+
+        def _round(x):
+            if mantissa is None or mantissa <= 0:
+                return float(x)
+            return round(float(x), mantissa)
+
+        def _normalize_flat(vals):
+            if not vals:
+                return []
+            xs = [float(v) for v in vals]
+            mn = min(xs)
+            mx = max(xs)
+            eps = tolerance if (tolerance and tolerance > 0) else 1e-12
+            if abs(mx - mn) < eps:
+                return [0.0 for _ in xs]
+            denom = (mx - mn)
+            return [(x - mn) / denom for x in xs]
+
+        def _color_range(vals, unit_range: bool):
+            if not vals:
+                return (0.0, 1.0)
+            if unit_range:
+                return (0.0, 1.0)
+            mn = min(vals)
+            mx = max(vals)
+            eps = tolerance if (tolerance and tolerance > 0) else 1e-12
+            if abs(mx - mn) < eps:
+                mx = mn + eps
+            return (mn, mx)
+
+        def _apply_value_and_color_to_vertices(verts, vals, unit_range: bool):
+            if not verts or not vals:
+                return list(verts)
+            mn, mx = _color_range(vals, unit_range=unit_range)
+            out = list(verts)
+            m = min(len(out), len(vals))
+            for i in range(m):
+                try:
+                    v = float(vals[i])
+                    c = Color.AnyToHex(Color.ByValueInRange(v, minValue=mn, maxValue=mx, colorScale=colorScale))
+                    d = Topology.Dictionary(out[i])
+                    d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [v, c])
+                    out[i] = Topology.SetDictionary(out[i], d)
+                except Exception:
+                    continue
+            return out
+
+        def _apply_value_and_color_to_edges(edges, vals, unit_range: bool):
+            if not edges or not vals:
+                return list(edges)
+            mn, mx = _color_range(vals, unit_range=unit_range)
+            out = list(edges)
+            m = min(len(out), len(vals))
+            for i in range(m):
+                try:
+                    v = float(vals[i])
+                    c = Color.AnyToHex(Color.ByValueInRange(v, minValue=mn, maxValue=mx, colorScale=colorScale))
+                    d = Topology.Dictionary(out[i])
+                    d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [v, c])
+                    out[i] = Topology.SetDictionary(out[i], d)
+                except Exception:
+                    continue
+            return out
+
+        # Weight handling (NetworkX-style: weight is distance/cost)
+        if weightKey is None:
+            wk_mode = "unit"
+            wk_key = None
+        elif isinstance(weightKey, str) and (("len" in weightKey.lower()) or ("dis" in weightKey.lower())):
+            wk_mode = "length"
+            wk_key = None
+        else:
+            wk_mode = "dict"
+            wk_key = weightKey
+
+        def _edge_weight(e):
+            if wk_mode == "unit":
+                return 1.0
+            if wk_mode == "length":
+                return float(Edge.Length(e, mantissa=mantissa))
+            d = Topology.Dictionary(e)
+            return _as_float(Dictionary.ValueAtKey(d, wk_key), default=1.0)
+
+        # Coordinate-keyed vertex mapping (robust to object identity)
+        tol = tolerance if (tolerance and tolerance > 0) else 1e-9
+
+        def vkey(v):
+            x = Vertex.X(v); y = Vertex.Y(v); z = Vertex.Z(v)
+            return (round(x / tol), round(y / tol), round(z / tol))
+
+        # -----------------------------
+        # Build adjacency once
+        # -----------------------------
+        edges = Graph.Edges(graph)
+        if not edges:
+            if useEdges:
+                return []
+            verts = Graph.Vertices(graph)
+            vals = [_round(0.0) for _ in verts]
+            _apply_value_and_color_to_vertices(verts, vals, unit_range=True if nxCompatible else normalize)
+            return vals
+
+        key_to_idx = {}
+        idx_to_key = []
+
+        def _get_idx_for_vertex(v):
+            k = vkey(v)
+            if k not in key_to_idx:
+                key_to_idx[k] = len(idx_to_key)
+                idx_to_key.append(k)
+            return key_to_idx[k]
+
+        adj = defaultdict(list)  # node_idx -> list[(nbr_idx, weight, edge_index)]
+        for ei, e in enumerate(edges):
+            try:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+            except Exception:
+                continue
+            u = _get_idx_for_vertex(sv)
+            v = _get_idx_for_vertex(ev)
+            w = _edge_weight(e)
+            # undirected
+            adj[u].append((v, w, ei))
+            adj[v].append((u, w, ei))
+
+        n_nodes = len(idx_to_key)
+
+        # -----------------------------
+        # Brandes (undirected): returns RAW (unnormalized) and already /2 corrected
+        # -----------------------------
+        def _brandes_unweighted():
+            CBv = [0.0] * n_nodes
+            CBe = [0.0] * len(edges)
+
+            for s in range(n_nodes):
+                S = []
+                P = [[] for _ in range(n_nodes)]         # P[w] = list of (v, ei) predecessors
+                sigma = [0.0] * n_nodes                  # number of shortest paths
+                dist = [-1] * n_nodes
+
+                sigma[s] = 1.0
+                dist[s] = 0
+                Q = deque([s])
+
+                while Q:
+                    v = Q.popleft()
+                    S.append(v)
+                    dv = dist[v]
+                    for (w, _wt, ei) in adj.get(v, []):
+                        if dist[w] < 0:
+                            Q.append(w)
+                            dist[w] = dv + 1
+                        if dist[w] == dv + 1:
+                            sigma[w] += sigma[v]
+                            P[w].append((v, ei))
+
+                delta = [0.0] * n_nodes
+                while S:
+                    w = S.pop()
+                    for (v, ei) in P[w]:
+                        c = 0.0 if sigma[w] == 0 else (sigma[v] / sigma[w]) * (1.0 + delta[w])
+                        CBe[ei] += c
+                        delta[v] += c
+                    if w != s:
+                        CBv[w] += delta[w]
+
+            # undirected correction
+            return [x / 2.0 for x in CBv], [x / 2.0 for x in CBe]
+
+        def _brandes_weighted():
+            CBv = [0.0] * n_nodes
+            CBe = [0.0] * len(edges)
+            eq_eps = 1e-12  # equality tolerance for shortest-path ties
+
+            for s in range(n_nodes):
+                S = []
+                P = [[] for _ in range(n_nodes)]
+                sigma = [0.0] * n_nodes
+                dist = [float("inf")] * n_nodes
+
+                sigma[s] = 1.0
+                dist[s] = 0.0
+
+                heap = [(0.0, s)]
+                while heap:
+                    dv, v = heapq.heappop(heap)
+                    if dv > dist[v] + eq_eps:
+                        continue
+                    S.append(v)
+                    for (w, wt, ei) in adj.get(v, []):
+                        vw_dist = dv + float(wt)
+                        if vw_dist < dist[w] - eq_eps:
+                            dist[w] = vw_dist
+                            heapq.heappush(heap, (vw_dist, w))
+                            sigma[w] = sigma[v]
+                            P[w] = [(v, ei)]
+                        elif abs(vw_dist - dist[w]) <= eq_eps:
+                            sigma[w] += sigma[v]
+                            P[w].append((v, ei))
+
+                delta = [0.0] * n_nodes
+                while S:
+                    w = S.pop()
+                    for (v, ei) in P[w]:
+                        c = 0.0 if sigma[w] == 0 else (sigma[v] / sigma[w]) * (1.0 + delta[w])
+                        CBe[ei] += c
+                        delta[v] += c
+                    if w != s:
+                        CBv[w] += delta[w]
+
+            return [x / 2.0 for x in CBv], [x / 2.0 for x in CBe]
+
+        if weightKey is None:
+            CBv_nodes, CBe_edges = _brandes_unweighted()
+        else:
+            CBv_nodes, CBe_edges = _brandes_weighted()
+
+        # -----------------------------
+        # NetworkX normalization (undirected)
+        # -----------------------------
+        def _nx_scale_vertex(vals):
+            # nx: normalized=True => multiply by 2/((n-1)(n-2)) for undirected
+            n = n_nodes
+            if n <= 2:
+                return [0.0 for _ in vals]
+            scale = 2.0 / ((n - 1) * (n - 2))
+            return [float(v) * scale for v in vals]
+
+        def _nx_scale_edge(vals):
+            # nx edge betweenness normalized=True => multiply by 2/(n(n-1)) for undirected
+            n = n_nodes
+            if n <= 1:
+                return [0.0 for _ in vals]
+            scale = 2.0 / (n * (n - 1))
+            return [float(v) * scale for v in vals]
+
+        # -----------------------------
+        # Edge mode
+        # -----------------------------
+        if useEdges:
+            out_vals = [float(x) for x in CBe_edges]
+
+            # Bundling by SUM (if requested)
+            if edgeKey:
+                group_sum = {}
+                group_id = []
+                for ei, e in enumerate(edges):
+                    d = Topology.Dictionary(e)
+                    gid = _unwrap(Dictionary.ValueAtKey(d, edgeKey))
+                    if gid is None:
+                        gid = f"__edge_{ei}"
+                    group_id.append(gid)
+                    group_sum[gid] = group_sum.get(gid, 0.0) + float(out_vals[ei])
+                out_vals = [float(group_sum[group_id[ei]]) for ei in range(len(edges))]
+
+            # Scaling / normalization precedence
+            if nxCompatible:
+                out_vals = _nx_scale_edge(out_vals)
+                unit_range_for_color = True
+            else:
+                if normalize:
+                    out_vals = _normalize_flat(out_vals)
+                    unit_range_for_color = True
+                else:
+                    unit_range_for_color = False
+
+            out_vals = [_round(v) for v in out_vals]
+            _apply_value_and_color_to_edges(edges, out_vals, unit_range=unit_range_for_color)
+            return out_vals
+
+        # -----------------------------
+        # Vertex mode (map back to Graph.Vertices order)
+        # -----------------------------
+        graph_vertices = Graph.Vertices(graph)
+        if not graph_vertices:
+            return []
+
+        # values per quantized vertex key
+        key_value = {k: float(CBv_nodes[idx]) for k, idx in key_to_idx.items()}
+
+        out_vals = [float(key_value.get(vkey(v), 0.0)) for v in graph_vertices]
+
+        if nxCompatible:
+            out_vals = _nx_scale_vertex(out_vals)
+            unit_range_for_color = True
+        else:
+            if normalize:
+                out_vals = _normalize_flat(out_vals)
+                unit_range_for_color = True
+            else:
+                unit_range_for_color = False
+
+        out_vals = [_round(v) for v in out_vals]
+        _apply_value_and_color_to_vertices(graph_vertices, out_vals, unit_range=unit_range_for_color)
+        return out_vals
 
     @staticmethod
-    def BetweennessCentrality(
+    def BetweennessCentrality_older(
         graph,
-        method: str = "vertex",
+        useEdges: bool = False,
         weightKey: str = "length",
         normalize: bool = False,
         nxCompatible: bool = False,
@@ -1915,8 +2270,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        method : str , optional
-            The method of computing the betweenness centrality. The options are "vertex" or "edge". Default is "vertex".
+        useEdges : bool , optional
+            If set to True, the calculation uses the edges rather than the vertices. Default is False.
         weightKey : str , optional
             If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
             the shortest path. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
@@ -1966,7 +2321,6 @@ class Graph:
                 print("Graph.BetweennessCentrality - Warning: Graph has no vertices. Returning [].")
             return []
 
-        method_l = (method or "vertex").lower()
         compute_edges = "edge" in method_l
 
         # ---------- stable vertex indexing ----------
@@ -2043,7 +2397,7 @@ class Graph:
 
         # ---------- Brandes ----------
         CB_v = [0.0] * n
-        CB_e = {}  # key: (min_i, max_j) -> score (only if compute_edges)
+        CB_e = {}  # key: (min_i, max_j) -> score (only if useEdges)
 
         if n > 1:
             if not weighted:
@@ -2079,7 +2433,7 @@ class Graph:
                         for v in P[w]:
                             c = (sigma[v] / sw) * dw
                             delta[v] += c
-                            if compute_edges:
+                            if useEdges:
                                 a, b = (v, w) if v < w else (w, v)
                                 CB_e[a, b] = CB_e.get((a, b), 0.0) + c
                         if w != s:
@@ -7359,9 +7713,11 @@ class Graph:
     @staticmethod
     def ClosenessCentrality(
         graph,
-        weightKey: str = "length",
+        weightKey: str = None,
         normalize: bool = False,
         nxCompatible: bool = True,
+        useEdges: bool = False,
+        edgeKey: str = None,
         key: str = "closeness_centrality",
         colorKey: str = "cc_color",
         colorScale: str = "viridis",
@@ -7370,12 +7726,44 @@ class Graph:
         silent: bool = False
     ):
         """
-        Optimized closeness centrality:
-        - Avoids NetworkX and costly per-vertex Topologic calls.
-        - Builds integer-index adjacency once from edges (undirected).
-        - Unweighted: multi-source BFS (one per node).
-        - Weighted: Dijkstra per node (heapq), or SciPy csgraph if available.
-        - Supports 'wf_improved' scaling (nxCompatible) and optional normalization.
+        Computes the closeness centrality of the input graph. See: https://en.wikipedia.org/wiki/Closeness_centrality
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        weightKey : str, optional
+            If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
+            is used as its weight. If set to any other value, the value associated with that key in each edge's dictionary is used as the
+            edge weight. Default is None.
+        normalize : bool , optional
+            If set to True, the values are normalized between 0 and 1. Default is False.
+        nxCompatible : bool , optional
+            If set to True, the values are compatible with those derived from NetworkX. Default is True.
+        useEdges : bool , optional
+            If set to True, the calculation uses the edges rather than the vertices. Default is False.
+        edgeKey : str , optional
+            If not None, the value associated with that key in each edge's dictionary is used to bundle the edges
+            into one entity for the calculation. Otherwise, each edge segment is assumed to be an independent
+            entity. Default is None.
+        key : str , optional
+            The desired dictionary key name under which to store the calculated value. Default is "closeness_centrality".
+        colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "cc_color"
+        colorScale : str , optional
+            The desired colorscale name to use for colors. The default is "viridis".
+        mantissa: int , optional
+            The desired length of the mantissa (number of digits after the decimal point). Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of centralities in the order matching the vertices or edges as requested.
+
         """
         from collections import deque
         import math
@@ -7395,12 +7783,55 @@ class Graph:
             return None
 
         vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+        # Give each edge a unique and stable id
+        edge_dicts = []
+        for i, e in enumerate(edges):
+            d = Topology.Dictionary(e)
+            d = Dictionary.SetValueAtKey(d, "u_edge_id", i)
+            edge_dicts.append(d)
+            e = Topology.SetDictionary(e, d)
         n = len(vertices)
         if n == 0:
             if not silent:
                 print("Graph.ClosenessCentrality - Warning: Graph has no vertices. Returning [].")
             return []
 
+        # Check for useEdges
+        if useEdges:
+            # Convert to a Line graph where edges become vertices
+            l_graph = Graph.LineGraph(graph, transferEdgeDictionaries=True)
+            # Check if user wants to bundle edges:
+            if edgeKey:
+                l_graph = Graph.Quotient(l_graph, key=edgeKey, groupLabelKey="label", transferDictionaries=True)
+            _ = Graph.ClosenessCentrality(l_graph,
+                                             weightKey = None,
+                                             normalize = normalize,
+                                             nxCompatible = normalize,
+                                             useEdges = False,
+                                             edgeKey = None,
+                                             key = key,
+                                             colorKey = colorKey,
+                                             colorScale = colorScale,
+                                             mantissa = mantissa,
+                                             tolerance = tolerance,
+                                             silent = silent)
+            l_verts = Graph.Vertices(l_graph)
+            vert_dicts = [Topology.Dictionary(v) for v in l_verts]
+            if edgeKey == None:
+                edgeKey = "u_edge_id"
+            final_dicts = Dictionary.BooleanDictionariesByKey(edge_dicts,
+                                       vert_dicts,
+                                       key=edgeKey,
+                                       exclusive = True,
+                                       operation="impose")
+            temp_centralities = []
+            for i, d in enumerate(final_dicts):
+                d = Dictionary.RemoveKey(d, "u_edge_id")
+                v = Dictionary.ValueAtKey(d, key)
+                temp_centralities.append(v)
+                e = Topology.SetDictionary(edges[i], d)
+            return temp_centralities
         # Stable vertex key (prefer an 'id' in the vertex dictionary; else rounded coords)
         def vkey(v, r=9):
             d = Topology.Dictionary(v)
@@ -8097,10 +8528,12 @@ class Graph:
         return cut_vertices
     
     @staticmethod
-    def DegreeCentrality(graph,
-                         vertices: list = None,
+    def DegreeCentrality_old(graph,
                          weightKey: str= None,
                          normalize: bool = False,
+                         nxCompatible: bool = True,
+                         useEdges: bool = False,
+                         edgeKey: str = None,
                          key: str = "degree_centrality",
                          colorKey="dc_color",
                          colorScale="viridis",
@@ -8108,34 +8541,43 @@ class Graph:
                          tolerance: float = 0.001,
                          silent: bool = False):
         """
-        Returns the degree centrality of the input graph. The order of the returned list is the same as the order of vertices. See https://en.wikipedia.org/wiki/Degree_centrality.
+        Computes the degree centrality of the input graph. See: https://en.wikipedia.org/wiki/Centrality/
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
-        weightKey : str , optional
-            If specified, the value in the connected edges' dictionary specified by the weightKey string will be aggregated to calculate
-            the vertex degree. If a numeric value cannot be retrieved from an edge, a value of 1 is used instead.
-            This is used in weighted graphs. if weightKey is set to "Length" or "Distance", the length of the edge will be used as its weight.
-       normalize : bool , optional
-            If set to True, the values are normalized to be in the range 0 to 1. Otherwise they are not. Default is False.
+        weightKey : str, optional
+            If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
+            is used as its weight. If set to any other value, the value associated with that key in each edge's dictionary is used as the
+            edge weight. Default is None.
+        normalize : bool , optional
+            If set to True, the values are normalized between 0 and 1. Default is False.
+        nxCompatible : bool , optional
+            Not used. Kept for consistency with other centrality functions. Values are always compatible with those derived from NetworkX. Default is True.
+        useEdges : bool , optional
+            If set to True, the calculation uses the edges rather than the vertices. Default is False.
+        edgeKey : str , optional
+            If not None, the value associated with that key in each edge's dictionary is used to bundle the edges
+            into one entity for the calculation. Otherwise, each edge segment is assumed to be an independent
+            entity. Default is None.
         key : str , optional
-            The desired dictionary key under which to store the degree centrality score. Default is "degree_centrality".
+            The desired dictionary key name under which to store the calculated value. Default is "degree_centrality".
         colorKey : str , optional
-            The desired dictionary key under which to store the degree centrality color. Default is "dc_color".
+            The desired dictionary key name under which to store the calculated color. Default is "dc_color"
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The desired colorscale name to use for colors. The default is "viridis".
+        mantissa: int , optional
+            The desired length of the mantissa (number of digits after the decimal point). Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The degree centrality of the input list of vertices within the input graph. The values are in the range 0 to 1.
+            The list of centralities in the order matching the vertices or edges as requested.
 
         """
         
@@ -8144,12 +8586,61 @@ class Graph:
         from topologicpy.Helper import Helper
         from topologicpy.Color import Color
 
+        print("Entered Graph.DegreeCentrality")
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
                 print("Graph.DegreeCentrality - Error: The input graph is not a valid graph. Returning None.")
             return None
-        if vertices == None:
-            vertices = Graph.Vertices(graph)
+        
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if n == 0:
+            if not silent:
+                print("Graph.DegreeCentrality - Warning: Graph has no vertices. Returning [].")
+            return []
+        edges = Graph.Edges(graph)
+        # Give each edge a unique and stable id
+        edge_dicts = []
+        for i, e in enumerate(edges):
+            d = Topology.Dictionary(e)
+            d = Dictionary.SetValueAtKey(d, "u_edge_id", i)
+            edge_dicts.append(d)
+            e = Topology.SetDictionary(e, d)
+        # Check for useEdges
+        if useEdges:
+            # Convert to a Line graph where edges become vertices
+            l_graph = Graph.LineGraph(graph, transferEdgeDictionaries=True)
+            # Check if user wants to bundle edges:
+            if edgeKey:
+                l_graph = Graph.Quotient(l_graph, key=edgeKey, groupLabelKey="label", transferDictionaries=True)
+            _ = Graph.DegreeCentrality(l_graph,
+                                             weightKey = None,
+                                             normalize = normalize,
+                                             nxCompatible = nxCompatible,
+                                             useEdges = False,
+                                             edgeKey = None,
+                                             key = key,
+                                             colorKey = colorKey,
+                                             colorScale = colorScale,
+                                             mantissa = mantissa,
+                                             tolerance = tolerance,
+                                             silent = silent)
+            l_verts = Graph.Vertices(l_graph)
+            vert_dicts = [Topology.Dictionary(v) for v in l_verts]
+            if edgeKey == None:
+                edgeKey = "u_edge_id"
+            final_dicts = Dictionary.BooleanDictionariesByKey(edge_dicts,
+                                       vert_dicts,
+                                       key=edgeKey,
+                                       exclusive = True,
+                                       operation="impose")
+            temp_centralities = []
+            for i, d in enumerate(final_dicts):
+                d = Dictionary.RemoveKey(d, "u_edge_id")
+                v = Dictionary.ValueAtKey(d, key)
+                temp_centralities.append(v)
+                e = Topology.SetDictionary(edges[i], d)
+            return temp_centralities
         values = [Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) for v in vertices]
         if normalize == True:
             if mantissa > 0:
@@ -8171,7 +8662,329 @@ class Graph:
             d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [value, color])
             v = Topology.SetDictionary(vertices[i], d)
         return values
-    
+
+    @staticmethod
+    def DegreeCentrality(graph,
+                        weightKey: str = None,
+                        normalize: bool = False,
+                        nxCompatible: bool = True,
+                        useEdges: bool = False,
+                        edgeKey: str = None,
+                        key: str = "degree_centrality",
+                        colorKey: str = "dc_color",
+                        colorScale: str = "viridis",
+                        mantissa: int = 6,
+                        tolerance: float = 0.001,
+                        silent: bool = False):
+        """
+        Computes degree centrality.
+
+        Semantics
+        ---------
+        Vertex mode (useEdges=False)
+            - Computes (weighted) vertex degree by a single sweep over edges: O(V+E).
+            - If nxCompatible=True:
+                C_D(v) = deg(v) / (n - 1)     for n > 1
+            where deg(v) is the (possibly weighted) degree accumulated by weightKey.
+            In this mode, normalize is ignored.
+            - If nxCompatible=False and normalize=True:
+                values are min-max normalized to [0, 1].
+
+        Edge mode (useEdges=True)
+            - Computes edge "degree centrality" as the degree of the corresponding node in the line graph,
+            WITHOUT constructing the line graph (robust and fast).
+            For each primal vertex, if m edges meet, each of those edges gains (m-1).
+            - Vertex matching for edge-mode uses coordinate quantization by `tolerance` (like LineGraph),
+            preventing object-identity mismatch.
+            - If edgeKey is provided, edges are bundled by edgeKey and bundle values are computed as SUM
+            (and assigned back to each member edge).
+            - If nxCompatible=True:
+                values are scaled by 1/(M-1) where M is the number of line-graph nodes
+                (number of edges if no bundling; number of bundles if bundling).
+            In this mode, normalize is ignored.
+            - If nxCompatible=False and normalize=True:
+                values are min-max normalized to [0, 1].
+
+        Stores results
+        --------------
+        Stores `key` and `colorKey` into:
+            - vertex dictionaries (vertex mode)
+            - edge dictionaries (edge mode)
+        Colors are derived from the final values and `colorScale`.
+
+        Returns
+        -------
+        list[float]
+            Centralities aligned with Graph.Vertices(graph) (vertex mode) or Graph.Edges(graph) (edge mode).
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        import numbers
+
+        # -----------------------------
+        # Validate
+        # -----------------------------
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.DegreeCentrality - Error: The input graph is not a valid graph. Returning None.")
+            return None
+
+        # -----------------------------
+        # Helpers
+        # -----------------------------
+        def _unwrap(x):
+            # Topologic dictionaries often wrap scalars as one-item lists.
+            if isinstance(x, list) and len(x) == 1:
+                return x[0]
+            return x
+
+        def _as_float(x, default=0.0):
+            x = _unwrap(x)
+            if isinstance(x, numbers.Number):
+                return float(x)
+            return float(default)
+
+        def _round(x):
+            if mantissa is None or mantissa <= 0:
+                return float(x)
+            return round(float(x), mantissa)
+
+        def _normalize_flat(vals):
+            """Min-max normalize to [0,1] as a flat list of floats."""
+            if not vals:
+                return []
+            xs = [float(v) for v in vals]
+            mn = min(xs)
+            mx = max(xs)
+            eps = tolerance if (tolerance and tolerance > 0) else 1e-12
+            if abs(mx - mn) < eps:
+                return [0.0 for _ in xs]
+            denom = (mx - mn)
+            return [(x - mn) / denom for x in xs]
+
+        def _color_range(vals, do_unit_range: bool):
+            """Range for coloring: [0,1] if do_unit_range else data min/max with guard."""
+            if not vals:
+                return (0.0, 1.0)
+            if do_unit_range:
+                return (0.0, 1.0)
+            mn = min(vals)
+            mx = max(vals)
+            eps = tolerance if (tolerance and tolerance > 0) else 1e-12
+            if abs(mx - mn) < eps:
+                mx = mn + eps
+            return (mn, mx)
+
+        def _apply_value_and_color_to_vertices(verts, vals, unit_range: bool):
+            if not verts or not vals:
+                return list(verts)
+            mn, mx = _color_range(vals, do_unit_range=unit_range)
+            out = list(verts)
+            m = min(len(out), len(vals))
+            for i in range(m):
+                try:
+                    v = float(vals[i])
+                    c = Color.AnyToHex(Color.ByValueInRange(v, minValue=mn, maxValue=mx, colorScale=colorScale))
+                    d = Topology.Dictionary(out[i])
+                    d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [v, c])
+                    out[i] = Topology.SetDictionary(out[i], d)
+                except Exception:
+                    continue
+            return out
+
+        def _apply_value_and_color_to_edges(edges, vals, unit_range: bool):
+            if not edges or not vals:
+                return list(edges)
+            mn, mx = _color_range(vals, do_unit_range=unit_range)
+            out = list(edges)
+            m = min(len(out), len(vals))
+            for i in range(m):
+                try:
+                    v = float(vals[i])
+                    c = Color.AnyToHex(Color.ByValueInRange(v, minValue=mn, maxValue=mx, colorScale=colorScale))
+                    d = Topology.Dictionary(out[i])
+                    d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [v, c])
+                    out[i] = Topology.SetDictionary(out[i], d)
+                except Exception:
+                    continue
+            return out
+
+        # Weight handling (vertex mode only; kept for backward compatibility)
+        if weightKey is None:
+            wk_mode = "unit"
+            wk_key = None
+        elif isinstance(weightKey, str) and (("len" in weightKey.lower()) or ("dis" in weightKey.lower())):
+            wk_mode = "length"
+            wk_key = None
+        else:
+            wk_mode = "dict"
+            wk_key = weightKey
+
+        def _edge_weight(e):
+            if wk_mode == "unit":
+                return 1.0
+            if wk_mode == "length":
+                return float(Edge.Length(e, mantissa=mantissa))
+            d = Topology.Dictionary(e)
+            return _as_float(Dictionary.ValueAtKey(d, wk_key), default=1.0)
+
+        # -----------------------------
+        # Edge mode (useEdges=True): direct computation (NO LineGraph)
+        # -----------------------------
+        if useEdges:
+            edges = Graph.Edges(graph)
+            if not edges:
+                return []
+
+            # Coordinate-keyed incidence (robust against vertex object mismatch)
+            tol = tolerance if (tolerance and tolerance > 0) else 1e-9
+
+            def vkey(v):
+                x = Vertex.X(v); y = Vertex.Y(v); z = Vertex.Z(v)
+                return (round(x / tol), round(y / tol), round(z / tol))
+
+            incident = {}  # vkey -> set(edge_index)
+            for ei, e in enumerate(edges):
+                try:
+                    sv = Edge.StartVertex(e)
+                    ev = Edge.EndVertex(e)
+                except Exception:
+                    continue
+                incident.setdefault(vkey(sv), set()).add(ei)
+                incident.setdefault(vkey(ev), set()).add(ei)
+
+            # Per-edge line-graph degree (unweighted incidence count)
+            per_edge = [0.0] * len(edges)
+            for inc in incident.values():
+                m = len(inc)
+                if m <= 1:
+                    continue
+                add = float(m - 1)
+                for ei in inc:
+                    per_edge[ei] += add
+
+            # Optional bundling by edgeKey using SUM
+            if edgeKey is not None:
+                group_id = []
+                group_sum = {}
+                for ei, e in enumerate(edges):
+                    d = Topology.Dictionary(e)
+                    gid = _unwrap(Dictionary.ValueAtKey(d, edgeKey))
+                    if gid is None:
+                        gid = f"__edge_{ei}"  # unique fallback so unkeyed edges don't merge
+                    group_id.append(gid)
+                    group_sum[gid] = group_sum.get(gid, 0.0) + float(per_edge[ei])
+
+                vals = [float(group_sum[group_id[ei]]) for ei in range(len(edges))]
+                M = len(set(group_id))  # number of bundled entities (line-graph nodes)
+            else:
+                vals = [float(x) for x in per_edge]
+                M = len(edges)  # number of line-graph nodes
+
+            # Scaling/normalization
+            if nxCompatible:
+                # NX-style scaling for degree centrality on the line graph: deg/(M-1)
+                if M <= 1:
+                    vals = [0.0] * len(vals)
+                else:
+                    denom = float(M - 1)
+                    vals = [v / denom for v in vals]
+                # nxCompatible overrides normalize
+                unit_range_for_color = True
+            else:
+                if normalize:
+                    vals = _normalize_flat(vals)
+                    unit_range_for_color = True
+                else:
+                    unit_range_for_color = False
+
+            vals = [_round(v) for v in vals]
+            _ = _apply_value_and_color_to_edges(edges, vals, unit_range=unit_range_for_color)
+            return vals
+
+        # -----------------------------
+        # Vertex mode (useEdges=False): fast O(V+E) sweep
+        # -----------------------------
+        vertices = Graph.Vertices(graph)
+        n = len(vertices)
+        if n == 0:
+            if not silent:
+                print("Graph.DegreeCentrality - Warning: Graph has no vertices. Returning [].")
+            return []
+
+        edges = Graph.Edges(graph)
+        if not edges:
+            vals = [0.0] * n
+            if nxCompatible:
+                # deg/(n-1) => all zeros already
+                unit_range_for_color = True
+            else:
+                if normalize:
+                    vals = _normalize_flat(vals)
+                    unit_range_for_color = True
+                else:
+                    unit_range_for_color = False
+
+            vals = [_round(v) for v in vals]
+            _ = _apply_value_and_color_to_vertices(vertices, vals, unit_range=unit_range_for_color)
+            return vals
+
+        # Endpoint -> vertex index (identity map + tolerance-aware fallback)
+        id_to_vidx = {id(v): i for i, v in enumerate(vertices)}
+
+        def _vidx(v):
+            j = id_to_vidx.get(id(v), None)
+            if j is not None:
+                return j
+            j = Vertex.Index(v, vertices)
+            if j is None:
+                return None
+            id_to_vidx[id(v)] = j
+            return j
+
+        deg = [0.0] * n
+        for e in edges:
+            try:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+            except Exception:
+                continue
+
+            w = float(_edge_weight(e))
+            u = _vidx(sv)
+            v = _vidx(ev)
+
+            if u is not None:
+                deg[u] += w
+            if v is not None:
+                deg[v] += w  # self-loop adds twice
+
+        vals = [float(x) for x in deg]
+
+        # Scaling/normalization
+        if nxCompatible:
+            # NX-style degree centrality: deg/(n-1)
+            if n <= 1:
+                vals = [0.0] * n
+            else:
+                denom = float(n - 1)
+                vals = [v / denom for v in vals]
+            # nxCompatible overrides normalize
+            unit_range_for_color = True
+        else:
+            if normalize:
+                vals = _normalize_flat(vals)
+                unit_range_for_color = True
+            else:
+                unit_range_for_color = False
+
+        vals = [_round(v) for v in vals]
+        _ = _apply_value_and_color_to_vertices(vertices, vals, unit_range=unit_range_for_color)
+        return vals
+
     @staticmethod
     def DegreeMatrix(graph):
         """
@@ -8576,8 +9389,8 @@ class Graph:
         strict: bool = False,
         sortBy: str = None,
         reverse: bool = False,
-        silent: bool = False,
-        tolerance: float = 0.0001
+        tolerance: float = 0.0001,
+        silent: bool = False
     ) -> list:  # list[topologic_core.Edge]
         """
         Returns the list of edges from `graph` whose endpoints match the given `vertices`
@@ -8630,7 +9443,7 @@ class Graph:
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
-                print("Graph.InducedEdges - Error: The input 'graph' is not a valid Graph. Returning [].")
+                print("Graph.Edges - Error: The input 'graph' is not a valid Graph. Returning [].")
             return []
 
         graph_edges = []
@@ -13285,79 +14098,99 @@ class Graph:
         return [v for v in Graph.Vertices(graph) if Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) == 1]
     
     @staticmethod
-    def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=0.0001, silent=False):
-        """
-        Create a line graph based on the input graph. See https://en.wikipedia.org/wiki/Line_graph.
+    def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False,
+                tolerance=0.0001, silent=False):
 
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        transferVertexDictionaries : bool, optional
-            If set to True, the dictionaries of the vertices of the input graph are transferred to the edges of the line graph.
-        transferEdgeDictionaries : bool, optional
-            If set to True, the dictionaries of the edges of the input graph are transferred to the vertices of the line graph.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.Graph
-            The created line graph.
-
-        """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
-        
+        from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.LineGraph - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        
+
         graph_vertices = Graph.Vertices(graph)
         graph_edges = Graph.Edges(graph)
 
-        # Create line graph vertices (centroids of original graph edges)
-        if transferEdgeDictionaries == True:
-            lg_vertices = [
-                Topology.SetDictionary(Topology.Centroid(edge), Topology.Dictionary(edge), silent=silent)
-                for edge in graph_edges
-            ]
+        # ---- 1) Cache edge centroids once
+        edge_to_centroid = {}
+        lg_vertices = []
+        if transferEdgeDictionaries:
+            for e in graph_edges:
+                c = Topology.Centroid(e)
+                c = Topology.SetDictionary(c, Topology.Dictionary(e), silent=silent)
+                edge_to_centroid[e] = c
+                lg_vertices.append(c)
         else:
-            lg_vertices = [Topology.Centroid(edge) for edge in graph_edges]
-        
-        lg_edges = []
-        if transferVertexDictionaries == True:
-            for v in graph_vertices:
-                edges = Graph.Edges(graph, vertices=[v])
-                if len(edges) > 1:
-                    d = Topology.Dictionary(v)  # Only need to call Dictionary once
-                    visited = set()  # Use a set to track visited pairs of edges
-                    centroids = [Topology.Centroid(e) for e in edges]  # Precompute centroids once
-                    for i in range(len(edges)):
-                        for j in range(i + 1, len(edges)):  # Only loop over pairs (i, j) where i < j
-                            if (i, j) not in visited:
-                                lg_edge = Edge.ByVertices([centroids[i], centroids[j]], tolerance=tolerance, silent=silent)
-                                lg_edge = Topology.SetDictionary(lg_edge, d, silent=silent)
-                                lg_edges.append(lg_edge)
-                                visited.add((i, j))
-                                visited.add((j, i))  # Ensure both directions are marked as visited
-        else:
-            for v in graph_vertices:
-                edges = Graph.Edges(graph, vertices=[v])
-                if len(edges) > 1:
-                    visited = set()  # Use a set to track visited pairs of edges
-                    centroids = [Topology.Centroid(e) for e in edges]  # Precompute centroids once
-                    for i in range(len(edges)):
-                        for j in range(i + 1, len(edges)):  # Only loop over pairs (i, j) where i < j
-                            if (i, j) not in visited:
-                                lg_edge = Edge.ByVertices([centroids[i], centroids[j]], tolerance=tolerance, silent=silent)
-                                lg_edges.append(lg_edge)
-                                visited.add((i, j))
-                                visited.add((j, i))  # Ensure both directions are marked as visited
+            for e in graph_edges:
+                c = Topology.Centroid(e)
+                edge_to_centroid[e] = c
+                lg_vertices.append(c)
 
+        # ---- 2) Stable vertex keying by rounded coordinates
+        # Convert tolerance into a rounding "grid". This makes keys consistent.
+        if tolerance <= 0:
+            tol = 1e-9
+        else:
+            tol = tolerance
+
+        def vkey(v):
+            # Quantize coordinates onto a tolerance grid
+            x = Vertex.X(v); y = Vertex.Y(v); z = Vertex.Z(v)
+            return (round(x / tol), round(y / tol), round(z / tol))
+
+        # Map each original vertex to its key (and keep its dictionary if needed)
+        v_to_key = {}
+        key_to_vertex = {}  # representative vertex for dictionary transfer
+        for v in graph_vertices:
+            k = vkey(v)
+            v_to_key[v] = k
+            # keep first representative
+            if k not in key_to_vertex:
+                key_to_vertex[k] = v
+
+        # Build incident edges per vertex key in ONE pass
+        incident = {k: [] for k in key_to_vertex.keys()}
+        for e in graph_edges:
+            sv = Edge.StartVertex(e)
+            ev = Edge.EndVertex(e)
+            k1 = vkey(sv)
+            k2 = vkey(ev)
+
+            # If the graph is well-formed, these keys should exist. If not, add them.
+            if k1 not in incident:
+                incident[k1] = []
+                key_to_vertex[k1] = key_to_vertex.get(k1, sv)
+            if k2 not in incident:
+                incident[k2] = []
+                key_to_vertex[k2] = key_to_vertex.get(k2, ev)
+
+            incident[k1].append(e)
+            incident[k2].append(e)
+
+        # ---- 3) Create line-graph edges: connect every pair of incident edges at each vertex
+        lg_edges = []
+        if transferVertexDictionaries:
+            for k, inc in incident.items():
+                m = len(inc)
+                if m > 1:
+                    d = Topology.Dictionary(key_to_vertex[k])
+                    centroids = [edge_to_centroid[e] for e in inc]
+                    for i in range(m - 1):
+                        ci = centroids[i]
+                        for j in range(i + 1, m):
+                            lg_e = Edge.ByVertices([ci, centroids[j]], tolerance=tolerance, silent=silent)
+                            lg_edges.append(Topology.SetDictionary(lg_e, d, silent=silent))
+        else:
+            for inc in incident.values():
+                m = len(inc)
+                if m > 1:
+                    centroids = [edge_to_centroid[e] for e in inc]
+                    for i in range(m - 1):
+                        ci = centroids[i]
+                        for j in range(i + 1, m):
+                            lg_edges.append(Edge.ByVertices([ci, centroids[j]], tolerance=tolerance, silent=silent))
         return Graph.ByVerticesEdges(lg_vertices, lg_edges)
 
     @staticmethod
@@ -15128,6 +15961,7 @@ class Graph:
                 weighted: bool = False,
                 edgeWeightKey: str = "weight",
                 idKey: str = None,
+                transferDictionaries = False,
                 silent: bool = False):
         """
         Construct the quotient graph induced by grouping sub-topologies (Cells/Faces/Edges/Vertices)
@@ -15137,23 +15971,25 @@ class Graph:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology: topologic_core.Topology or topologic_core.Graph
             The input topology or graph.
-        topologyType : str
-            The type of subtopology for which to search. This can be one of "vertex", "edge", "face", "cell". It is case-insensitive.
-        key : str , optional
+        topologyType: str , optional
+            The type of subtopology for which to search. This can be one of "vertex", "edge", "face", "cell". It is case-insensitive. Default is "Vertex".
+        key: str , optional
             Dictionary key used to form groups. If None, all items fall into one group.
-        groupLabelKey : str , optional
-            Vertex-dictionary key storing the group label. Default is "group_label".
-        groupCountKey : str , optional
+        groupLabelKey: str , optional
+            Vertex-dictionary key storing the group label. Default is None which uses the key input parameter.
+        groupCountKey: str , optional
             Vertex-dictionary key storing the group size. Default is "count".
-        weighted : bool , optional
+        weighted: bool , optional
             If True, store counts of cross-group adjacencies on edges under edgeWeightKey. Default is False.
         edgeWeightKey : str , optional
             Edge-dictionary key storing the weight when weighted=True. Default "weight".
-        idKey : str , optional
+        idKey: str , optional
             Optional dictionary key that uniquely identifies each sub-topology. If provided and present
             on both members, lookup is O(1) without calling Topology.IsSame. If missing, falls back to Topology.IsSame. Default is None.
+        transferDictionaries: bool , optional
+            If set to True, the dictionaries of the members of the group are transfered and merged into the representative vertex. Default is False.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -15308,10 +16144,12 @@ class Graph:
         for lbl in group_labels:
             idxs = groups[lbl]
             pts = []
+            dicts = []
             for i in idxs:
                 try:
                     c = Topology.Centroid(subs[i])
                     pts.append(c)
+                    dicts.append(Topology.Dictionary(subs[i]))
                 except Exception:
                     pass
             if pts:
@@ -15326,7 +16164,17 @@ class Graph:
                 v = Vertex.ByCoordinates(0, 0, 0)
 
             try:
-                d = Dictionary.ByKeysValues([groupLabelKey, groupCountKey], [lbl, len(idxs)])
+                if transferDictionaries == True:
+                    if len(dicts) == 0:
+                        d = Dictionary.ByKeysValues(keys=[groupLabelKey, groupCountKey], values=[lbl, len(idxs)])
+                    elif len(dicts) == 1:
+                        d = dicts[0]
+                        d = Dictionary.SetValuesAtKeys(d, keys=[groupLabelKey, groupCountKey], values=[lbl, len(idxs)])
+                    else:
+                        d = Dictionary.ByMergedDictionaries(dicts)
+                        d = Dictionary.SetValuesAtKeys(d, keys=[groupLabelKey, groupCountKey], values=[lbl, len(idxs)])
+                else:
+                    d = Dictionary.ByKeysValues(keys=[groupLabelKey, groupCountKey], values=[lbl, len(idxs)])
                 v = Topology.SetDictionary(v, d)
             except Exception:
                 pass
