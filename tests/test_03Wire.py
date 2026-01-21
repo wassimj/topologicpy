@@ -119,11 +119,11 @@ def test_main():
     print("Case 7")
     # test 1
     Cir1 = Wire.Circle()                                                                                                  # without optional inputs
-    assert Topology.IsInstance(Cir1, "Wire"), "Wire.CirclE. Should be topologic.Wire"
+    assert Topology.IsInstance(Cir1, "Wire"), "Wire.Circle. Should be topologic.Wire"
     # test 2
-    Cir2 = Wire.Circle(origin=v1, radius=3, sides=21, fromAngle=30, toAngle=360,  # with optional inputs
+    Cir2 = Wire.Circle(origin=v1, radius=3, sides=21, spokes=False, fromAngle=30, toAngle=360,  # with optional inputs
                                  close=False, direction=[0,1,1], placement='center', tolerance=0.0001)               
-    assert Topology.IsInstance(Cir2, "Wire"), "Wire.CirclE. Should be topologic.Wire"    
+    assert Topology.IsInstance(Cir2, "Wire"), "Wire.Circle. Should be topologic.Wire"    
  
     # Case 8 - Cycles
     print("Case 8")
@@ -183,9 +183,9 @@ def test_main():
     # Case 13 - IsSimilar
     print("Case 13")
     # creating Wire
-    Rec1 = Wire.Rectangle(v1, 2, 3)         # create wire
-    Rec2 = Wire.Rectangle(v2, 2, 3)         # create wire
-    Rec3 = Wire.Rectangle(v3, 3, 2)         # create wire
+    Rec1 = Wire.Rectangle(v1, width=2, length=3)         # create wire
+    Rec2 = Wire.Rectangle(v2, width=2, length=3)         # create wire
+    Rec3 = Wire.Rectangle(v3, width=3, length=2)         # create wire
     # test 1
     Chk_W3 = Wire.IsSimilar(Rec1, Rec2)                                   # without optional inputs
     assert isinstance(Chk_W3, bool), "Wire.IsSimilar. Should be boolean"
@@ -242,7 +242,7 @@ def test_main():
     rec1 = Wire.Rectangle()                                                    # without optional inputs
     assert Topology.IsInstance(rec1, "Wire"), "Wire.Rectangle. Should be topologic.Wire"
     # test 2
-    rec2 = Wire.Rectangle(v2, 3, 7, [1, 0, 0], 'center', 0.005)     # with optional inputs
+    rec2 = Wire.Rectangle(v2, width=3, length=7, direction=[1, 0, 0], placement='center', tolerance=0.005)     # with optional inputs
     assert Topology.IsInstance(rec2, "Wire"), "Wire.Rectangle. Should be topologic.Wire"
  
     # Case 18 -  Split
