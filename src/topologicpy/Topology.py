@@ -11392,7 +11392,7 @@ class Topology():
         return unflat_topology
     
     @staticmethod
-    def Vertices(topology, silent: bool = False):
+    def Vertices(topology, silent: bool = True):
         """
         Returns the vertices of the input topology.
 
