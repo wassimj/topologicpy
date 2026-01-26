@@ -1933,7 +1933,12 @@ class Face():
             return centroid
 
         shell = Topology.Triangulate(face)
-        ib = Shell.InternalBoundaries(shell)
+        # ib = Shell.InternalEdges(shell)
+        # centroids = [Topology.Centroid(t) for t in ib]
+        faces = Topology.Faces(shell)
+        centroids = [Topology.Centroid(t) for t in faces]
+        cluster = Cluster.ByTopologies(centroids)
+        return Vertex.NearestVertex(centroid, cluster)
         cluster = Cluster.ByTopologies(ib)
         edges = Topology.Edges(cluster)
         bvh = BVH.ByTopologies(edges, tolerance=tolerance, silent=True)
