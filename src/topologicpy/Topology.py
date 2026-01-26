@@ -11694,6 +11694,8 @@ class Topology():
             The input topology with the dictionaries transferred to its subtopologies.
 
         """
+        import time
+        # timePrep = time.time()
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
@@ -11736,7 +11738,6 @@ class Topology():
                 return [topo]
             else:
                 return Topology.Vertices(topo, silent=True)
-
         vertices = []
         edges = []
         faces = []
@@ -11754,14 +11755,31 @@ class Topology():
         primitives.extend(faces)
         primitives.extend(edges)
         primitives.extend(vertices)
-        cluster = Cluster.ByTopologies(primitives)
+        # print("bvh preparation", f"{time.time() - timePrep:.4f}s", len(primitives))
+
+        # timeStart = time.time()
+
+        bvh = BVH.ByTopologies(primitives, tolerance=tolerance, silent=True)
+        # print("bvh created", f"{time.time() - timeStart:.4f}s", len(bvh.items))
+
         for s in selectors:
-            status, element = Vertex.IsInternal(s, cluster, identify=True, tolerance=tolerance)
-            if status:
-                d1 = Topology.Dictionary(s)
-                d2 = Topology.Dictionary(element)
-                d3 = Dictionary.ByMergedDictionaries(d1, d2)
-                element = Topology.SetDictionary(element, d3)
+            try:
+                candidates = BVH.Clashes(bvh, s, tolerance=tolerance) or []
+            except Exception as e:
+                # print(f"BVH clash query failed for a selector. Trying fallback. {e}")
+                # Fallback if your BVH needs a non-degenerate query
+                candidates = primitives
+
+            if not candidates:
+                continue
+            for element in candidates:
+                status = Vertex.IsInternal(s, element, tolerance=tolerance)
+                if status:
+                    d1 = Topology.Dictionary(s)
+                    d2 = Topology.Dictionary(element)
+                    d3 = Dictionary.ByMergedDictionaries(d1, d2)
+                    element = Topology.SetDictionary(element, d3)
+        # print("bvh query done", f"{time.time() - timeStart:.4f}s")
         return topology
 
     @staticmethod
