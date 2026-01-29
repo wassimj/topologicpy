@@ -342,12 +342,13 @@ class BVH:
         for topology in topologyList:
             if Topology.IsInstance(topology, "vertex"):
                 x,y,z = Vertex.Coordinates(topology, mantissa=mantissa)
-                points = [[x-tolerance, y-tolerance, z-tolerance], [x+tolerance, y+tolerance, z+tolerance]]
+                # points = [[x-tolerance, y-tolerance, z-tolerance], [x+tolerance, y+tolerance, z+tolerance]]
+                aabb_box = AABB(x-tolerance, y-tolerance, z-tolerance, x+tolerance, y+tolerance, z+tolerance)
             else:
                 points = [Vertex.Coordinates(v, mantissa=mantissa) for v in Topology.Vertices(topology)]
-            aabb_box = AABB.from_points(points, pad = tolerance)
+                aabb_box = AABB.from_points(points, pad = tolerance)
             return_topologies.extend([bvh.items[i] for i in BVH.QueryAABB(bvh, aabb_box)])
-        return return_topologies              
+        return return_topologies
 
     @staticmethod
     def Raycast(bvh, origin, direction: Tuple[float, float, float], mantissa: int = 6, silent: bool = False) -> List[int]:

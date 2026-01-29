@@ -1293,7 +1293,13 @@ class Vertex():
         # --------------------------
         points = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
         aabb = AABB.from_points(points, pad=tolerance)
+        if(Vertex.Coordinates(vertex) is None): 
+            if identify:
+                return (False, None)
+            return False
         if not aabb.contains_point(Vertex.Coordinates(vertex)):
+            if identify:
+                return (False, None)
             return False
 
         # --------------------------
@@ -1333,6 +1339,8 @@ class Vertex():
             edges = [] if faces or cells else collect_edges(topology)
             vertices = [] if edges or faces or cells else collect_vertices(topology)
         if not cells and not faces and not edges and not vertices:
+            if identify:
+                return (False, None)
             return False
 
         # --------------------------
@@ -1345,12 +1353,14 @@ class Vertex():
         primitives.extend(cells)
         bvh = BVH.ByTopologies(primitives, maxLeafSize=maxLeafSize, tolerance=tolerance, silent=True)
         try:
-            candidates = BVH.Clashes(bvh, vertex, tolernace=tolerance) or []
+            candidates = BVH.Clashes(bvh, vertex, tolerance=tolerance) or []
         except Exception:
             # Fallback if your BVH needs a non-degenerate query
             candidates = primitives
 
         if not candidates:
+            if identify:
+                return (False, None)
             return False
 
         # sort by types so that priority is given to lower dimensional types (e.g. vertices, then edges, then faces, then cells)
