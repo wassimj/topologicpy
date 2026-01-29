@@ -1476,7 +1476,7 @@ class Topology():
             if Topology.Type(topologyC) == Topology.TypeID("Vertex"):
                 sinkVertices = [topologyC]
             elif hidimC >= Topology.TypeID("Vertex"):
-                sinkVertices = Topology.Vertices(topologyC)
+                sinkVertices = Topology.Vertices(topologyC, silent=True)
             if len(sourceVertices) > 0 and len(sinkVertices) > 0:
                 _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance=tolerance)
 
@@ -1561,7 +1561,7 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         def bb(topology):
-            vertices = Topology.Vertices(topology)
+            vertices = Topology.Vertices(topology, silent=True)
             x = []
             y = []
             z = []
@@ -3207,191 +3207,326 @@ class Topology():
 
     @staticmethod
     def ByOBJString(objString: str, mtlString: str = None,
-                    defaultColor: list = [255,255,255], defaultOpacity: float = 1.0,
+                    defaultColor=None, defaultOpacity: float = 1.0,
                     transposeAxes: bool = True, removeCoplanarFaces: bool = False,
                     selfMerge: bool = False,
-                    mantissa = 6, tolerance = 0.0001):
+                    mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Imports a topology from  OBJ and MTL strings.
+        Imports a TopologicPy hierarchy from OBJ and optional MTL strings.
 
-        Parameters
-        ----------
-        objString : str
-            The string of the OBJ file.
-        mtlString : str , optional
-            The string of the MTL file. Default is None.
-        defaultColor : list , optional
-            The default color to use if none is specified in the string. Default is [255, 255, 255] (white).
-        defaultOpacity : float , optional
-            The default opacity to use if none is specified in the string. Default is 1.0 (fully opaque).
-        transposeAxes : bool , optional
-            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
-        removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are merged. Default is True.
-        selfMerge : bool , optional
-            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+        Supported OBJ primitives
+        ------------------------
+        - v   : vertices
+        - l   : polylines (edges-only / wire-only models)
+        - f   : faces (tri/quad/ngon; may be self-merged)
+
+        Grouping
+        --------
+        - g / o : groups/objects become separate returned topologies (one per group/object)
+
+        Materials
+        ---------
+        - usemtl + MTL Kd/d/Tr are used to set:
+            color   : [R,G,B] in 0..255
+            opacity : 0..1
 
         Returns
         -------
         list
-            The imported topologies.
-
+            One TopologicPy topology per OBJ group/object:
+            - If a group has faces: returns (best effort) a merged topology (or a Cluster of faces).
+            - Else if a group has polylines/edges: returns a Cluster of Wires/Edges.
+            - Else if a group has only points: returns a Cluster of Vertices.
+            - If mixed: returns a Cluster containing the appropriate mix.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
-        from topologicpy.Face import Face
-        from topologicpy.Shell import Shell
-        from topologicpy.Cell import Cell
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Helper import Helper
+        from topologicpy.Topology import Topology
 
-        def load_materials(mtl_string):
+        if defaultColor is None:
+            defaultColor = [255, 255, 255]
+
+        # -----------------------------
+        # MTL parsing (robust)
+        # -----------------------------
+        def load_materials(mtl_string: str):
             materials = {}
             if not mtl_string:
                 return materials
-            current_material = None
-            lines = mtlString.split('\n')
-            for line in lines:
-                line = line.strip()
-                if line.startswith('#') or not line:
+
+            current = None
+            for raw in mtl_string.splitlines():
+                line = raw.strip()
+                if not line or line.startswith("#"):
                     continue
                 parts = line.split()
                 if not parts:
                     continue
-                if parts[0] == 'newmtl':
-                    current_material = parts[1]
-                    materials[current_material] = {}
-                elif current_material:
-                    if parts[0] == 'Kd':  # Diffuse color
-                        materials[current_material]['Kd'] = list(map(float, parts[1:4]))
-                    elif parts[0] == 'Ka':  # Ambient color
-                        materials[current_material]['Ka'] = list(map(float, parts[1:4]))
-                    elif parts[0] == 'Ks':  # Specular color
-                        materials[current_material]['Ks'] = list(map(float, parts[1:4]))
-                    elif parts[0] == 'Ns':  # Specular exponent
-                        materials[current_material]['Ns'] = float(parts[1])
-                    elif parts[0] == 'd':  # Transparency
-                        materials[current_material]['d'] = float(parts[1])
-                    elif parts[0] == 'map_Kd':  # Diffuse texture map
-                        materials[current_material]['map_Kd'] = parts[1]
-                    # Add more properties as needed
+
+                tag = parts[0]
+                if tag == "newmtl" and len(parts) > 1:
+                    current = parts[1]
+                    materials[current] = {}
+                elif current:
+                    if tag in ("Kd", "Ka", "Ks") and len(parts) >= 4:
+                        materials[current][tag] = list(map(float, parts[1:4]))
+                    elif tag == "Ns" and len(parts) >= 2:
+                        materials[current]["Ns"] = float(parts[1])
+                    elif tag in ("d", "Tr") and len(parts) >= 2:
+                        # d is opacity; Tr sometimes is transparency (inverse)
+                        val = float(parts[1])
+                        if tag == "Tr":
+                            val = 1.0 - val
+                        materials[current]["d"] = val
+                    elif tag == "map_Kd" and len(parts) >= 2:
+                        materials[current]["map_Kd"] = " ".join(parts[1:])  # allow spaces
             return materials
 
         materials = load_materials(mtlString)
-        vertices = []
-        textures = []
-        normals = []
-        groups = {}
-        current_group = None
+
+        def clamp01(x: float) -> float:
+            return max(0.0, min(1.0, x))
+
+        def material_to_color_opacity(mat_name):
+            color = defaultColor
+            opacity = defaultOpacity
+            if mat_name and mat_name in materials:
+                m = materials[mat_name]
+                if "Kd" in m and isinstance(m["Kd"], list) and len(m["Kd"]) >= 3:
+                    color = [int(round(clamp01(c) * 255.0, 0)) for c in m["Kd"][:3]]
+                if "d" in m:
+                    try:
+                        opacity = float(m["d"])
+                    except Exception:
+                        opacity = defaultOpacity
+            return color, opacity
+
+        # -----------------------------
+        # OBJ parsing
+        # -----------------------------
+        verts_xyz = []
+        groups = {}  # name -> {"faces":[(triplets,mat)], "lines":[(indices,mat)], "points":[(idx,mat)]}
+        current_group = "default"
         current_material = None
-        lines = objString.split('\n')
-        for line in lines:
-            line = line.strip()
-            if line.startswith('#'):
+
+        def ensure_group(name: str):
+            if not name:
+                name = "default"
+            if name not in groups:
+                groups[name] = {"faces": [], "lines": [], "points": []}
+            return name
+
+        def resolve_index(idx: int, n: int):
+            """
+            OBJ indices are 1-based; negative indices are relative to the end.
+            Returns a 0-based index or None.
+            """
+            if idx is None:
+                return None
+            if idx > 0:
+                z = idx - 1
+            else:
+                z = n + idx  # idx is negative
+            if z < 0 or z >= n:
+                return None
+            return z
+
+        for raw in objString.splitlines():
+            line = raw.strip()
+            if not line or line.startswith("#"):
                 continue
 
             parts = line.split()
             if not parts:
                 continue
 
-            if parts[0] == 'v':
-                vertex = list(map(float, parts[1:4]))
-                vertex = [round(coord, mantissa) for coord in vertex]
-                if transposeAxes == True:
-                    vertex = [vertex[0], -vertex[2], vertex[1]]
-                vertices.append(vertex)
-            elif parts[0] == 'vt':
-                texture = list(map(float, parts[1:3]))
-                textures.append(texture)
-            elif parts[0] == 'vn':
-                normal = list(map(float, parts[1:4]))
-                normals.append(normal)
-            elif parts[0] == 'f':
-                face = []
-                for part in parts[1:]:
-                    indices = part.split('/')
-                    vertex_index = int(indices[0]) - 1 if indices[0] else None
-                    texture_index = int(indices[1]) - 1 if len(indices) > 1 and indices[1] else None
-                    normal_index = int(indices[2]) - 1 if len(indices) > 2 and indices[2] else None
-                    face.append((vertex_index, texture_index, normal_index))
+            tag = parts[0]
 
-                if current_group not in groups:
-                    groups[current_group] = []
-                groups[current_group].append((face, current_material))
-            elif parts[0] == 'usemtl':
+            if tag == "v" and len(parts) >= 4:
+                v = list(map(float, parts[1:4]))
+                v = [round(c, mantissa) for c in v]
+                if transposeAxes:
+                    v = [v[0], -v[2], v[1]]
+                verts_xyz.append(v)
+
+            elif tag == "usemtl" and len(parts) >= 2:
                 current_material = parts[1]
-            elif parts[0] == 'g' or parts[0] == 'o':
-                current_group = ' '.join(parts[1:]) if len(parts) > 1 else None
 
-        obj_data = {
-            'vertices': vertices,
-            'textures': textures,
-            'normals': normals,
-            'materials': materials,
-            'groups': groups
-        }
-        print(obj_data.keys())
-        vertices = obj_data['vertices']
-        groups = obj_data['groups']
-        materials = obj_data['materials']
-        names = list(groups.keys())
-        return_topologies = []
-        for i in range(len(names)):
-            object_faces = []
-            face_selectors = []
-            object_name = names[i]
-            faces = groups[object_name]
-            print("Number of faces:", len(faces))
-            f = faces[0] # Get object material from first face. Assume it is the material of the group
-            object_color = defaultColor
-            object_opacity = defaultOpacity
-            object_material = None
-            if len(f) >= 2:
-                object_material = f[1]
-                if object_material in materials.keys():
-                    object_color = materials[object_material]['Kd']
-                    object_color = [int(round(c*255,0)) for c in object_color]
-                    object_opacity = materials[object_material]['d']
-            for f in faces:
-                indices = f[0]
-                face_material = f[1]
-                face_indices = []
-                for coordinate in indices:
-                    face_indices.append(coordinate[0])
-                face = Topology.ByGeometry(vertices=vertices, faces=[face_indices])
-                object_faces.append(face)
-                if not face_material == object_material:
-                    if face_material in materials.keys():
-                        face_color = materials[face_material]['Kd']
-                        face_color = [int(round(c*255,0)) for c in face_color]
-                        face_opacity = materials[face_material]['d']
-                        selector = Face.InternalVertex(face)
-                        d = Dictionary.ByKeysValues(['color', 'opacity'], [face_color, face_opacity])
-                        selector = Topology.SetDictionary(selector, d)
-                        face_selectors.append(selector)
-              
-            #topology = Cluster.ByTopologies(object_faces)
-        return object_faces
-        #     if Topology.IsInstance(topology, "Topology"):
-        #         if selfMerge:
-        #             topology = Topology.SelfMerge(topology)
-        #         if Topology.IsInstance(topology, "Topology"):
-        #             if removeCoplanarFaces:
-        #                 topology = Topology.RemoveCoplanarFaces(topology, tolerance=tolerance)
-        #             if Topology.IsInstance(topology, "Topology"):
-        #                 d = Dictionary.ByKeysValues(['name', 'color', 'opacity'], [object_name, object_color, object_opacity])
-        #                 topology = Topology.SetDictionary(topology, d)
-        #                 if len(face_selectors) > 0:
-        #                     topology = Topology.TransferDictionariesBySelectors(topology, selectors=face_selectors, tranFaces=True, tolerance=tolerance)
-        #                 return_topologies.append(topology)
-        # return return_topologies
+            elif tag in ("g", "o"):
+                name = " ".join(parts[1:]).strip() if len(parts) > 1 else "default"
+                current_group = ensure_group(name)
+
+            elif tag == "f" and len(parts) >= 4:
+                current_group = ensure_group(current_group)
+
+                triplets = []
+                for p in parts[1:]:
+                    toks = p.split("/")
+                    vi = int(toks[0]) if toks[0] else None
+                    vti = int(toks[1]) if len(toks) > 1 and toks[1] else None
+                    vni = int(toks[2]) if len(toks) > 2 and toks[2] else None
+
+                    vi = resolve_index(vi, len(verts_xyz))
+                    triplets.append((vi, vti, vni))
+
+                if any(t[0] is None for t in triplets):
+                    continue
+
+                groups[current_group]["faces"].append((triplets, current_material))
+
+            elif tag == "l" and len(parts) >= 3:
+                # OBJ "l": polyline defined by vertex indices, optionally with texture indices.
+                # We'll read only vertex indices (first number before any '/')
+                current_group = ensure_group(current_group)
+
+                idxs = []
+                ok = True
+                for token in parts[1:]:
+                    # token can be "v" or "v/vt"
+                    subtoks = token.split("/")
+                    if not subtoks or not subtoks[0]:
+                        ok = False
+                        break
+                    vi = resolve_index(int(subtoks[0]), len(verts_xyz))
+                    if vi is None:
+                        ok = False
+                        break
+                    idxs.append(vi)
+
+                if not ok or len(idxs) < 2:
+                    continue
+
+                groups[current_group]["lines"].append((idxs, current_material))
+
+            elif tag == "p" and len(parts) >= 2:
+                # OBJ "p": point list (rare). Keep as vertices.
+                current_group = ensure_group(current_group)
+                for token in parts[1:]:
+                    try:
+                        vi = resolve_index(int(token), len(verts_xyz))
+                    except Exception:
+                        vi = None
+                    if vi is not None:
+                        groups[current_group]["points"].append((vi, current_material))
+
+            else:
+                # ignore: vt, vn, s, mtllib, etc. (vt/vn are not needed for Topologic hierarchy here)
+                pass
+
+        # If OBJ never declared a group but had geometry, ensure "default" exists
+        if not groups:
+            ensure_group("default")
+
+        # -----------------------------
+        # Build Topologic hierarchy
+        # -----------------------------
+        def set_dict(topo, group_name: str, mat_name: str):
+            c, a = material_to_color_opacity(mat_name)
+            d = Dictionary.ByKeysValues(
+                ["name", "group", "material", "color", "opacity"],
+                [group_name, group_name, mat_name if mat_name else "", c, a]
+            )
+            return Topology.SetDictionary(topo, d)
+
+        imported = []
+
+        for group_name, rec in groups.items():
+            faces_rec = rec.get("faces", [])
+            lines_rec = rec.get("lines", [])
+            points_rec = rec.get("points", [])
+
+            topologies = []
+
+            # --- Faces
+            face_topos = []
+            for triplets, mat in faces_rec:
+                face_indices = [t[0] for t in triplets]
+                # Create a face from raw coordinates (Topology.ByGeometry expects vertices as coordinate lists)
+                topo_face = Topology.ByGeometry(vertices=verts_xyz, faces=[face_indices])
+                if topo_face is None:
+                    continue
+                topo_face = set_dict(topo_face, group_name, mat)
+                face_topos.append(topo_face)
+
+            if face_topos:
+                # If requested, attempt to merge coplanar faces / build higher-dimensional objects
+                face_cluster = Cluster.ByTopologies(face_topos)
+                face_cluster = set_dict(face_cluster, group_name, faces_rec[0][1] if faces_rec else None)
+
+                if selfMerge or removeCoplanarFaces:
+                    merged = Topology.SelfMerge(face_cluster, tolerance=tolerance)
+                    if merged is not None:
+                        face_cluster = merged
+                        # Keep group-level dict (SelfMerge may drop dictionaries)
+                        face_cluster = set_dict(face_cluster, group_name, faces_rec[0][1] if faces_rec else None)
+
+                topologies.append(face_cluster)
+
+            # --- Lines (Wires/Edges)
+            line_topos = []
+            for idxs, mat in lines_rec:
+                v_objs = [Vertex.ByCoordinates(*verts_xyz[i]) for i in idxs]
+                if len(v_objs) == 2:
+                    topo = Edge.ByVertices(v_objs[0], v_objs[1], tolerance=tolerance)
+                else:
+                    topo = Wire.ByVertices(v_objs, close=False, tolerance=tolerance)
+                if topo is None:
+                    continue
+                topo = set_dict(topo, group_name, mat)
+                line_topos.append(topo)
+
+            if line_topos:
+                line_cluster = Cluster.ByTopologies(line_topos)
+                line_cluster = set_dict(line_cluster, group_name, lines_rec[0][1] if lines_rec else None)
+                topologies.append(line_cluster)
+
+            # --- Points (Vertices)
+            point_topos = []
+            # If there are explicit "p" points, use them.
+            # If there is no geometry at all except vertices in the file and no p/l/f,
+            # we’ll fall back to all vertices later.
+            for vi, mat in points_rec:
+                v = Vertex.ByCoordinates(*verts_xyz[vi])
+                v = set_dict(v, group_name, mat)
+                point_topos.append(v)
+
+            if point_topos:
+                point_cluster = Cluster.ByTopologies(point_topos)
+                point_cluster = set_dict(point_cluster, group_name, points_rec[0][1] if points_rec else None)
+                topologies.append(point_cluster)
+
+            # --- If group had *no* faces/lines/points but there are vertices in the file, return all vertices
+            if not topologies and verts_xyz:
+                all_vs = [Vertex.ByCoordinates(*xyz) for xyz in verts_xyz]
+                v_cluster = Cluster.ByTopologies(all_vs)
+                v_cluster = set_dict(v_cluster, group_name, None)
+                topologies.append(v_cluster)
+
+            # --- Decide "correct hierarchy" output for this group
+            if not topologies:
+                continue
+            elif len(topologies) == 1:
+                group_topo = topologies[0]
+            else:
+                # Mixed geometry in same group: return a cluster containing the mixed subclusters
+                group_topo = Cluster.ByTopologies(topologies)
+                # Use first available material as group hint
+                hint_mat = None
+                if faces_rec:
+                    hint_mat = faces_rec[0][1]
+                elif lines_rec:
+                    hint_mat = lines_rec[0][1]
+                elif points_rec:
+                    hint_mat = points_rec[0][1]
+                group_topo = set_dict(group_topo, group_name, hint_mat)
+
+            imported.append(group_topo)
+
+        return imported
+
 
     @staticmethod
     def ByOCCTShape(occtShape):
@@ -4537,7 +4672,7 @@ class Topology():
             convex_hull = Topology.Unflatten(convex_hull_2, origin=centroid, direction=normal)
             return convex_hull
         
-        vertices = Topology.Vertices(topology)
+        vertices = Topology.Vertices(topology, silent=True)
         if len(vertices) < 3:
             if not silent:
                 print("Topology.ConvexHull - Error: Need at least 3 points to compute a convex hull.")
@@ -5723,7 +5858,7 @@ class Topology():
             topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "edge":
                 return topology
-            vertices = Topology.Vertices(topology)
+            vertices = Topology.Vertices(topology, silent=True)
             if len(vertices) < 2:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
@@ -5736,7 +5871,7 @@ class Topology():
             topology = Topology.SelfMerge(topology, tolerance=tolerance)
             if Topology.TypeAsString(topology).lower() == "vertex":
                 return topology
-            vertices = Topology.Vertices(topology)
+            vertices = Topology.Vertices(topology,silent=True)
             if len(vertices) < 1:
                 print("Topology.Fix - Error: Desired topologyType cannot be achieved. Returning original topology.")
                 return topology
@@ -6673,7 +6808,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.IsPlanar - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        vertices = Topology.Vertices(topology)
+        vertices = Topology.Vertices(topology, silent=True)
 
         result = True
         if len(vertices) <= 3:
@@ -8493,7 +8628,7 @@ class Topology():
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         if len(vertices) < 1:
             return topology
-        t_vertices = Topology.Vertices(topology)
+        t_vertices = Topology.Vertices(topology, silent=True)
         t_edges = Topology.Edges(topology)
         if len(t_vertices) < 1:
             return topology
@@ -9011,7 +9146,7 @@ class Topology():
         topFaces = Topology.Faces(topology)
         topWires = Topology.Wires(topology)
         topEdges = Topology.Edges(topology)
-        topVertices = Topology.Vertices(topology)
+        topVertices = Topology.Vertices(topology, silent=True)
         if len(topCC) == 1:
             cc = topCC[0]
             ccVertices = Topology.Vertices(cc)
@@ -11276,7 +11411,7 @@ class Topology():
             topology = Topology.Triangulate(topology)
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
-        vertices = Topology.Vertices(topology)
+        vertices = Topology.Vertices(topology, silent=True)
         zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
         z_min = min(zList)
         maxZ = max(zList)
@@ -11330,7 +11465,7 @@ class Topology():
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.Centroid(topology)
             
-        vertices = Topology.Vertices(topology)
+        vertices = Topology.Vertices(topology, silent=True)
         zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
         z_min = min(zList)
         maxZ = max(zList)
@@ -11903,7 +12038,7 @@ class Topology():
                                                  silent=silent)
         
         if transferDictionaries == True:
-            vertices = Topology.Vertices(topology)
+            vertices = Topology.Vertices(topology, silent=True)
             edges = Topology.Edges(topology, silent=True)
             wires = Topology.Wires(topology, silent=True)
             faces = Topology.Faces(topology, silent=True)

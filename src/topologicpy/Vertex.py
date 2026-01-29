@@ -2324,6 +2324,29 @@ class Vertex():
         return Vertex.ByCoordinates(coords)
     
     @staticmethod
+    def Weld(vertices: list, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Returns a list of vertices where vertices within a specified tolerance distance are fused while retaining duplicates, ensuring that vertices with nearly identical coordinates are replaced by a single shared coordinate.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of topologic vertices.
+        mantissa : int , optional
+            The desired length of the mantissa for retrieving vertex coordinates. Default is 6.
+        tolerance : float , optional
+            The desired tolerance for computing if vertices need to be fused. Any vertices that are closer to each other than this tolerance will be fused. Default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of fused vertices. This list contains the same number of vertices and in the same order as the input list of vertices. However, the coordinates
+            of these vertices have now been modified so that they are exactly the same with other vertices that are within the tolerance distance.
+        
+        """
+        return Vertex.Fuse(vertices = vertices, mantissa = mantissa, tolerance = tolerance)
+    
+    @staticmethod
     def X(vertex, mantissa: int = 6) -> float:
         """
         Returns the X coordinate of the input vertex.

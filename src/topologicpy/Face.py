@@ -3361,7 +3361,7 @@ class Face():
         return Face.Rectangle(origin=origin, width=width, length=length, direction = direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Rectangle(origin= None, width: float = 1.0, length: float = 1.0, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001, silent: bool = True):
         """
         Creates a rectangle.
 
@@ -3379,6 +3379,8 @@ class Face():
             The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3389,9 +3391,10 @@ class Face():
         from topologicpy.Wire import Wire
         from topologicpy.Topology import Topology
         
-        wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance)
+        wire = Wire.Rectangle(origin=origin, width=width, length=length, direction=direction, placement=placement, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(wire, "Wire"):
-            print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
+            if not silent:
+                print("Face.Rectangle - Error: Could not create the base wire for the rectangle. Returning None.")
             return None
         return Face.ByWire(wire, tolerance=tolerance)
     
