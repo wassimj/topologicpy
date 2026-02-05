@@ -10072,6 +10072,17 @@ class Topology():
              faceLegendLabel="Faces",
              intensityKey=None,
              intensities=[],
+
+             material = "plastic",
+             materialKey=None,
+             ambient = None,
+             ambientKey=None,
+             diffuse = None,
+             diffuseKey=None,
+             specular = None,
+             specularKey=None,
+             roughness = None,
+             roughnessKey=None,
              
              width=950,
              height=500,
@@ -10274,6 +10285,46 @@ class Topology():
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
         intensities : list , optional
             The list of intensities against which to index the intensity of the vertex. Default is [].
+        material : str , optional
+            The type of object material. Case in-sensitive. Supported pre-built materials are:
+            Preset     Ambient  Diffuse  Specular  Roughness  Description
+            --------------------------------------------------------------
+            chalk        1.0      0.4       0.0        1.0     Very soft shading, low contrast
+            concrete     0.85     0.75      0.05       0.9     Highly matte, micro-rough surface, minimal specular reflection
+            eggshell     0.65     0.85      0.25       0.45    Slight sheen, soft highlights without gloss
+            glossy       0.5      0.9       0.6        0.1     Highly polished appearance
+            matte        0.9      0.7       0.0        1.0     Flat, non-reflective surfaces
+            metallic     0.3      0.8       0.9        0.2     Strong, sharp reflections
+            plastic      0.6      0.9       0.2        0.4     Soft highlights, good shape readability
+            Default is "plastic".
+        materialKey : str , optional
+            The dictionary key under which the material string is stored. Default is None.
+        ambient : float , optional
+            Controls the strength of ambient light applied uniformly to the surface.
+            Higher values reduce shading contrast by increasing overall brightness.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is 0.6.
+        ambientKey : str , optional
+            The dictionary key under which the ambient value (float) is stored. Default is None.
+        diffuse : float , optional
+            Controls the strength of diffuse (Lambertian) lighting based on the angle
+            between the light direction and the surface normal.
+            Higher values enhance shape perception through shading.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        diffuseKey : str , optional
+            The dictionary key under which the diffuse value (float) is stored. Default is None.
+        specular : float , optional
+            Controls the intensity of specular (mirror-like) highlights on the surface.
+            Higher values produce sharper and brighter highlights, giving a glossy appearance.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        specularKey : str , optional
+            The dictionary key under which the specular value (float) is stored. Default is None.
+        roughness : float , optional
+            Controls the spread of specular highlights on the surface.
+            Lower values result in sharp, concentrated highlights (smooth surfaces),
+            while higher values produce broader, softer highlights (rough surfaces).
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        roughnessKey : str , optional
+            The dictionary key under which the roughness value (float) is stored. Default is None.
         showScale : bool , optional
             If set to True, the colorbar is shown. Default is False.
         cbValues : list , optional
@@ -10468,6 +10519,16 @@ class Topology():
                                               faceLegendGroup=topology_counter+3,
                                               intensityKey=intensityKey,
                                               intensities=intensities,
+                                              material=material,
+                                              materialKey=materialKey,
+                                              ambient=ambient,
+                                              ambientKey=ambientKey,
+                                              diffuse=diffuse,
+                                              diffuseKey=diffuseKey,
+                                              specular=specular,
+                                              specularKey=specularKey,
+                                              roughness=roughness,
+                                              roughnessKey=roughnessKey,
                                               colorScale=colorScale,
                                               mantissa=mantissa,
                                               tolerance=tolerance,

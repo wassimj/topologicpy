@@ -902,8 +902,22 @@ class Plotly:
                        faceLegendLabel="Topology Faces",
                        faceLegendRank=3,
                        faceLegendGroup=3, 
-                       intensityKey=None, intensities=[], colorScale="viridis",
-                       mantissa=6, tolerance=0.0001, silent=False):
+                       intensityKey=None,
+                       intensities=[],
+                       material = "plastic",
+                       materialKey=None,
+                       ambient = None,
+                       ambientKey=None,
+                       diffuse = None,
+                       diffuseKey=None,
+                       specular = None,
+                       specularKey=None,
+                       roughness = None,
+                       roughnessKey=None,
+                       colorScale="viridis",
+                       mantissa=6,
+                       tolerance=0.0001,
+                       silent=False):
         """
         Creates plotly face, edge, and vertex data.
 
@@ -1035,10 +1049,50 @@ class Plotly:
             The legend rank order of the faces of this topology. Default is 3.
         faceLegendGroup : int , optional
             The number of the face legend group to which the faces of this topology belong. Default is 3.
-        intensityKey: str, optional
+        intensityKey : str, optional
             If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.
         intensities : list , optional
             The list of intensities against which to index the intensity of the vertex. Default is [].
+        material : str , optional
+            The type of object material. Supported pre-built materials are:
+            Preset     Ambient  Diffuse  Specular  Roughness  Description
+            --------------------------------------------------------------
+            chalk        1.0      0.4       0.0        1.0     Very soft shading, low contrast
+            concrete     0.85     0.75      0.05       0.9     Highly matte, micro-rough surface, minimal specular reflection
+            eggshell     0.65     0.85      0.25       0.45    Slight sheen, soft highlights without gloss
+            glossy       0.5      0.9       0.6        0.1     Highly polished appearance
+            matte        0.9      0.7       0.0        1.0     Flat, non-reflective surfaces
+            metallic     0.3      0.8       0.9        0.2     Strong, sharp reflections
+            plastic      0.6      0.9       0.2        0.4     Soft highlights, good shape readability
+            Default is plastic.
+        materialKey : str , optional
+            The dictionary key under which the material string is stored. Default is None.
+        ambient : float , optional
+            Controls the strength of ambient light applied uniformly to the surface.
+            Higher values reduce shading contrast by increasing overall brightness.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is 0.6.
+        ambientKey : str , optional
+            The dictionary key under which the ambient value (float) is stored. Default is None.
+        diffuse : float , optional
+            Controls the strength of diffuse (Lambertian) lighting based on the angle
+            between the light direction and the surface normal.
+            Higher values enhance shape perception through shading.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        diffuseKey : str , optional
+            The dictionary key under which the diffuse value (float) is stored. Default is None.
+        specular : float , optional
+            Controls the intensity of specular (mirror-like) highlights on the surface.
+            Higher values produce sharper and brighter highlights, giving a glossy appearance.
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        specularKey : str , optional
+            The dictionary key under which the specular value (float) is stored. Default is None.
+        roughness : float , optional
+            Controls the spread of specular highlights on the surface.
+            Lower values result in sharp, concentrated highlights (smooth surfaces),
+            while higher values produce broader, softer highlights (rough surfaces).
+            Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
+        roughnessKey : str , optional
+            The dictionary key under which the roughness value (float) is stored. Default is None.
         colorScale : str , optional
             The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
         mantissa : int , optional
@@ -1061,12 +1115,29 @@ class Plotly:
         from topologicpy.Helper import Helper
         from time import time
         
+        materials = {
+            "chalk": {"ambient":1.0, "diffuse":0.4, "specular":0.0, "roughness":1.0},
+            "concrete": {"ambient":0.85, "diffuse":0.75, "specular":0.05, "roughness":0.9},
+            "eggshell": {"ambient":0.65, "diffuse":0.85, "specular":0.25, "roughness":0.45},
+            "glossy": {"ambient":0.5, "diffuse":0.9, "specular":0.6, "roughness":0.1},
+            "matte": {"ambient":0.9, "diffuse":0.7, "specular":0.0, "roughness":1.0},
+            "metallic": {"ambient":0.3, "diffuse":0.8, "specular":0.9, "roughness":0.2},
+            "plastic": {"ambient":0.6, "diffuse":0.9, "specular":0.2, "roughness":0.4}
+        }
         def closest_index(input_value, values):
             return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
 
 
-        def faceData(vertices, faces, dictionaries=None, color="#FAFAFA", colorKey=None,
-                     opacity=0.5, opacityKey=None, labelKey=None, groupKey=None,
+        def faceData(vertices, faces, dictionaries=None,
+                     color="#FAFAFA",
+                     colorKey=None,
+                     opacity=0.5,
+                     opacityKey=None,
+                     ambient=0.6,
+                     diffuse=0.9,
+                     specular=0.2,
+                     roughness=0.4,
+                     labelKey=None, groupKey=None,
                      minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Faces",
                      legendGroup=3, legendRank=3, showLegend=True, intensities=None, colorScale="viridis"):
             x = []
@@ -1163,9 +1234,8 @@ class Plotly:
                     hoverinfo = 'text',
                     text = labels,
                     hovertext = labels,
-                    flatshading = True,
                     showscale = False,
-                    lighting = {"facenormalsepsilon": 0},
+                    lighting=dict(ambient=ambient, diffuse=diffuse, specular=specular, roughness=roughness)
                 )
             return fData
 
@@ -1274,15 +1344,52 @@ class Plotly:
                     data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
+            d = Topology.Dictionary(topology)
             if not faceColorKey == None:
-                d = Topology.Dictionary(topology)
                 faceColor = Dictionary.ValueAtKey(d, faceColorKey, faceColor)
             if not faceOpacityKey == None:
-                d = Topology.Dictionary(topology)
                 d_opacity = Dictionary.ValueAtKey(d, key=faceOpacityKey)
                 if not d_opacity == None:
                     if 0 <= d_opacity <= 1:
                         faceOpacity = d_opacity
+
+            if not materialKey == None:
+                d_material = Dictionary.ValueAtKey(d, key=materialKey)
+                if not d_material == None and isinstance(d_material, str):
+                    if material in list(materials.keys()):
+                        material = d_material
+            if not material == None and isinstance(material, str):
+                material = material.lower()
+            if not material in list(materials.keys()):
+                material = "plastic"
+            if not ambientKey == None:
+                d_ambient = Dictionary.ValueAtKey(d, key=ambientKey)
+                if not d_ambient == None:
+                    if 0 <= d_ambient <= 1:
+                        ambient = d_ambient
+            if not diffuseKey == None:
+                d_diffuse = Dictionary.ValueAtKey(d, key=diffuseKey)
+                if not d_diffuse == None:
+                    if 0 <= d_diffuse <= 1:
+                        diffuse = d_diffuse
+            if not specularKey == None:
+                d_specular = Dictionary.ValueAtKey(d, key=specularKey)
+                if not d_specular == None:
+                    if 0 <= d_specular <= 1:
+                        specular = d_specular
+            if not roughnessKey == None:
+                d_roughness = Dictionary.ValueAtKey(d, key=roughnessKey)
+                if not d_roughness == None:
+                    if 0 <= d_roughness <= 1:
+                        roughness = d_roughness
+            if ambient == None:
+                ambient = materials[material]['ambient']
+            if diffuse == None:
+                diffuse = materials[material]['diffuse']
+            if specular == None:
+                specular = materials[material]['specular']
+            if roughness == None:
+                roughness = materials[material]['roughness']
             if Topology.IsInstance(topology, "Face"):
                 tp_faces = [topology]
             else:
@@ -1305,7 +1412,9 @@ class Plotly:
                     vertices = geo['vertices']
                     faces = geo['faces']
                     if len(faces) > 0:
-                        data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, opacityKey=faceOpacityKey, labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
+                        data.append(faceData(vertices, faces, dictionaries=f_dictionaries, color=faceColor, colorKey=faceColorKey, opacity=faceOpacity, opacityKey=faceOpacityKey,
+                                             ambient=ambient, diffuse=diffuse, specular=specular, roughness=roughness,
+                                             labelKey=faceLabelKey, groupKey=faceGroupKey, minGroup=faceMinGroup, maxGroup=faceMaxGroup, groups=faceGroups, legendLabel=faceLegendLabel, legendGroup=faceLegendGroup, legendRank=faceLegendRank, showLegend=showFaceLegend, intensities=intensityList, colorScale=colorScale))
         return data
 
     @staticmethod
