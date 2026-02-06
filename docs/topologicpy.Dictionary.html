@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.98 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.8.99 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.8.98
+                0.8.99
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -234,37 +234,40 @@ values.append(value)</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Merge" title="topologicpy.Dictionary.Dictionary.Merge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Merge</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
 <td><p>Returns the merge (union) of dictionaryA and dictionaryB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.OneHotEncode" title="topologicpy.Dictionary.Dictionary.OneHotEncode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OneHotEncode</span></code></a>(d, keys, categoriesByKey[, silent])</p></td>
+<td><p>One-hot encodes multiple categorical dictionary values in one pass.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.PythonDictionary" title="topologicpy.Dictionary.Dictionary.PythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PythonDictionary</span></code></a>(dictionary[, silent])</p></td>
 <td><p>Returns the input dictionary as a python dictionary</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.RemoveKey" title="topologicpy.Dictionary.Dictionary.RemoveKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveKey</span></code></a>(dictionary, key[, silent])</p></td>
 <td><p>Removes the key (and its associated value) from the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValueAtKey" title="topologicpy.Dictionary.Dictionary.SetValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValueAtKey</span></code></a>(dictionary, key, value[, silent])</p></td>
 <td><p>Creates a key/value pair in the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="topologicpy.Dictionary.Dictionary.SetValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValuesAtKeys</span></code></a>(dictionary, keys, values[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SetValuesAtKeys" title="topologicpy.Dictionary.Dictionary.SetValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetValuesAtKeys</span></code></a>(dictionary, keys, values[, ...])</p></td>
 <td><p>Creates a key/value pair in the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SymDif" title="topologicpy.Dictionary.Dictionary.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SymDif" title="topologicpy.Dictionary.Dictionary.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
 <td><p>Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SymmetricDifference" title="topologicpy.Dictionary.Dictionary.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(dictionaryA, dictionaryB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.SymmetricDifference" title="topologicpy.Dictionary.Dictionary.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(dictionaryA, dictionaryB)</p></td>
 <td><p>Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Union" title="topologicpy.Dictionary.Dictionary.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Union" title="topologicpy.Dictionary.Dictionary.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
 <td><p>Returns the union (merge) of dictionaryA and dictionaryB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValueAtKey" title="topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueAtKey</span></code></a>(dictionary, key[, defaultValue, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValueAtKey" title="topologicpy.Dictionary.Dictionary.ValueAtKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValueAtKey</span></code></a>(dictionary, key[, defaultValue, ...])</p></td>
 <td><p>Returns the value of the input key in the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.Values" title="topologicpy.Dictionary.Dictionary.Values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Values</span></code></a>(dictionary[, silent])</p></td>
 <td><p>Returns the list of values in the input dictionary.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValuesAtKeys" title="topologicpy.Dictionary.Dictionary.ValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValuesAtKeys</span></code></a>(dictionary, keys[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ValuesAtKeys" title="topologicpy.Dictionary.Dictionary.ValuesAtKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValuesAtKeys</span></code></a>(dictionary, keys[, ...])</p></td>
 <td><p>Returns the list of values of the input list of keys in the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.XOR" title="topologicpy.Dictionary.Dictionary.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.XOR" title="topologicpy.Dictionary.Dictionary.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(dictionaryA, dictionaryB[, silent])</p></td>
 <td><p>Returns the XOR (symmetric difference) of dictionaryA and dictionaryB, based on keys.</p></td>
 </tr>
 </tbody>
@@ -644,6 +647,43 @@ construction and Dictionary.ByMergedDictionaries.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>topologic_core.Dictionary</dt><dd><p>The resulting merged dictionary.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.OneHotEncode">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OneHotEncode</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">d</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categoriesByKey</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.OneHotEncode" title="Permalink to this definition"></a></dt>
+<dd><p>One-hot encodes multiple categorical dictionary values in one pass. See <a class="reference external" href="https://en.wikipedia.org/wiki/One-hot">https://en.wikipedia.org/wiki/One-hot</a></p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl>
+<dt><strong>d</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
+</dd>
+<dt><strong>keys</strong><span class="classifier">list</span></dt><dd><p>List of dictionary keys to one-hot encode.</p>
+</dd>
+<dt><strong>categoriesByKey</strong><span class="classifier">dict</span></dt><dd><p>A dictionary mapping each key (str) to an ordered list of categories (list).
+Example:</p>
+<blockquote>
+<div><p>{
+“room_type”: [“Kitchen”,”Bedroom”,”WC”],
+“zone”: [“Public”,”Private”]
+}</p>
+</div></blockquote>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppress warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl>
+<dt>topologic_core.Dictionary</dt><dd><p>A new dictionary where each original key in <cite>keys</cite> is removed (if present)
+and replaced with one-hot encoded keys:</p>
+<blockquote>
+<div><p>“&lt;key&gt;_0”, “&lt;key&gt;_1”, …</p>
+</div></blockquote>
 </dd>
 </dl>
 </dd>
