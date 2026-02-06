@@ -1,4 +1,4 @@
-# Copyright (C) 2025
+# Copyright (C) 2026
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -14,2396 +14,1375 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
+"""
+TopologicPy: PyTorch Geometric (PyG) helper class
+=================================================
+
+This module provides a clean, beginner-friendly interface to:
+
+1) Load TopologicPy-exported CSV datasets (graphs.csv, nodes.csv, edges.csv)
+2) Train / validate / test models for:
+   - Graph-level prediction (classification or regression)
+   - Node-level prediction (classification or regression)
+   - Edge-level prediction (classification or regression)
+   - Link prediction (binary edge existence)
+
+3) Report performance metrics and interactive Plotly visualisations.
+
+User-controlled hyperparameters (medium-level)
+----------------------------------------------
+- Cross-validation: holdout or k-fold (graph-level)
+- Network topology: number of hidden layers and neurons per layer (hidden_dims)
+- GNN backbone: conv type (sage/gcn/gatv2), activation, dropout, batch_norm, residual
+- Training: epochs, batch_size, lr, weight_decay, optimizer (adam/adamw),
+           gradient clipping, early stopping
+
+CSV assumptions
+---------------
+- graphs.csv contains at least: graph_id, label, and optional graph feature columns:
+    feat_0, feat_1, ...
+
+- nodes.csv contains at least: graph_id, node_id, label, optional masks, and feature columns:
+    feat_0, feat_1, ...
+
+- edges.csv contains at least: graph_id, src_id, dst_id, label, optional masks, and feature columns:
+    feat_0, feat_1, ...
+
+Notes
+-----
+- This module intentionally avoids auto-install behaviour.
+- It aims to be easy to read and modify by non-ML experts.
+
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Tuple, Union, Literal
+
 import os
+import math
+import random
 import copy
-import warnings
-import gc
 
-try:
-    import numpy as np
-except:
-    print("PyG - Installing required numpy library.")
-    try:
-        os.system("pip install numpy")
-    except:
-        os.system("pip install numpy --user")
-    try:
-        import numpy as np
-        print("PyG - numpy library installed successfully.")
-    except:
-        warnings.warn("PyG - Error: Could not import numpy.")
+import numpy as np
+import pandas as pd
 
-try:
-    import pandas as pd
-except:
-    print("PyG - Installing required pandas library.")
-    try:
-        os.system("pip install pandas")
-    except:
-        os.system("pip install pandas --user")
-    try:
-        import numpy as np
-        print("PyG - pandas library installed successfully.")
-    except:
-        warnings.warn("PyG - Error: Could not import pandas.")
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-try:
-    from tqdm.auto import tqdm
-except:
-    print("PyG - Installing required tqdm library.")
-    try:
-        os.system("pip install tqdm")
-    except:
-        os.system("pip install tqdm --user")
-    try:
-        from tqdm.auto import tqdm
-        print("PyG - tqdm library installed correctly.")
-    except:
-        raise Exception("PyG - Error: Could not import tqdm.")
+from torch_geometric.data import Data
+from torch_geometric.loader import DataLoader
+from torch_geometric.nn import (
+    SAGEConv, GCNConv, GATv2Conv,
+    global_mean_pool, global_max_pool, global_add_pool
+)
+from torch_geometric.transforms import RandomLinkSplit
 
-try:
-    import torch
-    import torch.nn as nn
-    import torch.nn.functional as F
-    from torch.utils.data.sampler import SubsetRandomSampler
-except:
-    print("PyG - Installing required torch library.")
-    try:
-        os.system("pip install torch")
-    except:
-        os.system("pip install torch --user")
-    try:
-        import torch
-        import torch.nn as nn
-        import torch.nn.functional as F
-        from torch.utils.data.sampler import SubsetRandomSampler
-        print("PyG - torch library installed correctly.")
-    except:
-        warnings.warn("PyG - Error: Could not import torch.")
+from sklearn.metrics import (
+    accuracy_score, precision_recall_fscore_support, confusion_matrix,
+    mean_absolute_error, mean_squared_error, r2_score
+)
 
-try:
-    from torch_geometric.data import Data, Dataset
-    from torch_geometric.loader import DataLoader
-    from torch_geometric.nn import SAGEConv, global_mean_pool, global_max_pool, global_add_pool
-except:
-    print("PyG - Installing required torch_geometric library.")
-    try:
-        os.system("pip install torch_geometric")
-    except:
-        os.system("pip install torch_geometric --user")
-    try:
-        from torch_geometric.data import Data, Dataset
-        from torch_geometric.loader import DataLoader
-        from torch_geometric.nn import SAGEConv, global_mean_pool, global_max_pool, global_add_pool
-        print("PyG - torch_geometric library installed correctly.")
-    except:
-        warnings.warn("PyG - Error: Could not import torch.")
+import plotly.graph_objects as go
+import plotly.express as px
 
-try:
-    from sklearn.model_selection import KFold
-    from sklearn.metrics import accuracy_score
-except:
-    print("PyG - Installing required scikit-learn library.")
-    try:
-        os.system("pip install -U scikit-learn")
-    except:
-        os.system("pip install -U scikit-learn --user")
-    try:
-        from sklearn.model_selection import KFold
-        from sklearn.metrics import accuracy_score
-        print("PyG - scikit-learn library installed correctly.")
-    except:
-        warnings.warn("PyG - Error: Could not import scikit. Please install it manually.")
 
-class CustomGraphDataset(Dataset):
-    def __init__(self, root=None, data_list=None, indices=None, node_level=False, graph_level=True, 
-                 node_attr_key='feat', edge_attr_key='feat'):
-        """
-        Initializes the CustomGraphDataset.
+LabelType = Literal["categorical", "continuous"]
+Level = Literal["graph", "node", "edge", "link"]
+TaskKind = Literal["classification", "regression", "link_prediction"]
+ConvKind = Literal["sage", "gcn", "gatv2"]
+PoolingKind = Literal["mean", "max", "sum"]
 
-        Parameters:
-        - root: Root directory of the dataset (used only if data_list is None)
-        - data_list: List of preprocessed data objects (used if provided)
-        - indices: List of indices to select a subset of the data
-        - node_level: Boolean flag indicating if the dataset is node-level
-        - graph_level: Boolean flag indicating if the dataset is graph-level
-        - node_attr_key: Key for node attributes
-        - edge_attr_key: Key for edge attributes
-        """
-        assert not (node_level and graph_level), "Both node_level and graph_level cannot be True at the same time"
-        assert node_level or graph_level, "Both node_level and graph_level cannot be False at the same time"
 
-        self.node_level = node_level
-        self.graph_level = graph_level
-        self.node_attr_key = node_attr_key
-        self.edge_attr_key = edge_attr_key
+@dataclass
+class _RunConfig:
+    # ----------------------------
+    # Task selection
+    # ----------------------------
+    level: Level = "graph"            # "graph" | "node" | "edge" | "link"
+    task: TaskKind = "classification" # "classification" | "regression" | "link_prediction"
 
-        if data_list is not None:
-            self.data_list = data_list  # Use the provided data list
-        elif root is not None:
-            # Load and process data from root directory if data_list is not provided
-            self.graph_df = pd.read_csv(os.path.join(root, 'graphs.csv'))
-            self.nodes_df = pd.read_csv(os.path.join(root, 'nodes.csv'))
-            self.edges_df = pd.read_csv(os.path.join(root, 'edges.csv'))
-            self.data_list = self.process_all()
+    # label types (graph/node/edge)
+    graph_label_type: LabelType = "categorical"
+    node_label_type: LabelType = "categorical"
+    edge_label_type: LabelType = "categorical"
+
+    # ----------------------------
+    # CSV headers
+    # ----------------------------
+    graph_id_header: str = "graph_id"
+    graph_label_header: str = "label"
+    graph_features_header: str = "feat"
+
+    node_id_header: str = "node_id"
+    node_label_header: str = "label"
+    node_features_header: str = "feat"
+
+    edge_src_header: str = "src_id"
+    edge_dst_header: str = "dst_id"
+    edge_label_header: str = "label"
+    edge_features_header: str = "feat"
+
+    # masks (optional)
+    node_train_mask_header: str = "train_mask"
+    node_val_mask_header: str = "val_mask"
+    node_test_mask_header: str = "test_mask"
+
+    edge_train_mask_header: str = "train_mask"
+    edge_val_mask_header: str = "val_mask"
+    edge_test_mask_header: str = "test_mask"
+
+    # ----------------------------
+    # Cross-validation / splitting
+    # ----------------------------
+    cv: Literal["holdout", "kfold"] = "holdout"
+    split: Tuple[float, float, float] = (0.8, 0.1, 0.1)  # used for holdout
+    k_folds: int = 5                                    # used for kfold (graph-level only)
+    k_shuffle: bool = True
+    k_stratify: bool = True                             # only if categorical labels exist
+    random_state: int = 42
+    shuffle: bool = True                                # affects holdout + in-graph mask fallback
+
+    # link prediction split (within each graph)
+    link_val_ratio: float = 0.1
+    link_test_ratio: float = 0.1
+    link_is_undirected: bool = False
+
+    # ----------------------------
+    # Training hyperparameters
+    # ----------------------------
+    epochs: int = 50
+    batch_size: int = 32
+    lr: float = 1e-3
+    weight_decay: float = 0.0
+    optimizer: Literal["adam", "adamw"] = "adam"
+    gradient_clip_norm: Optional[float] = None
+    early_stopping: bool = False
+    early_stopping_patience: int = 10
+    use_gpu: bool = True
+
+    # ----------------------------
+    # Network topology / model hyperparameters
+    # ----------------------------
+    conv: ConvKind = "sage"
+    hidden_dims: Tuple[int, ...] = (64, 64)  # explicit per-layer widths (controls depth)
+    activation: Literal["relu", "gelu", "elu"] = "relu"
+    dropout: float = 0.1
+    batch_norm: bool = False
+    residual: bool = False
+    pooling: PoolingKind = "mean"   # only for graph-level
+
+
+class _GNNBackbone(nn.Module):
+    """
+    Shared GNN encoder that produces node embeddings.
+    """
+
+    def __init__(self,
+                 in_dim: int,
+                 hidden_dims: Tuple[int, ...],
+                 conv: ConvKind = "sage",
+                 activation: str = "relu",
+                 dropout: float = 0.1,
+                 batch_norm: bool = False,
+                 residual: bool = False):
+        super().__init__()
+        if in_dim <= 0:
+            raise ValueError("in_dim must be > 0. Your dataset has no node features columns.")
+        if hidden_dims is None or len(hidden_dims) == 0:
+            raise ValueError("hidden_dims must contain at least one layer width, e.g. (64, 64).")
+
+        self.dropout = float(dropout)
+        self.use_bn = bool(batch_norm)
+        self.use_residual = bool(residual)
+
+        if activation == "relu":
+            self.act = F.relu
+        elif activation == "gelu":
+            self.act = F.gelu
+        elif activation == "elu":
+            self.act = F.elu
         else:
-            raise ValueError("Either a root directory or a data_list must be provided.")
+            raise ValueError("Unsupported activation. Use 'relu', 'gelu', or 'elu'.")
 
-        # Filter data_list based on indices if provided
-        if indices is not None:
-            self.data_list = [self.data_list[i] for i in indices]
+        dims = [int(in_dim)] + [int(d) for d in hidden_dims]
 
-    def process_all(self):
-        data_list = []
-        for graph_id in self.graph_df['graph_id'].unique():
-            graph_nodes = self.nodes_df[self.nodes_df['graph_id'] == graph_id]
-            graph_edges = self.edges_df[self.edges_df['graph_id'] == graph_id]
+        self.convs = nn.ModuleList()
+        self.bns = nn.ModuleList()
 
-            if self.node_attr_key in graph_nodes.columns and not graph_nodes[self.node_attr_key].isnull().all():
-                x = torch.tensor(graph_nodes[self.node_attr_key].values.tolist(), dtype=torch.float)
-                if x.ndim == 1:
-                    x = x.unsqueeze(1)  # Ensure x has shape [num_nodes, *]
+        for i in range(1, len(dims)):
+            in_ch, out_ch = dims[i - 1], dims[i]
+
+            if conv == "sage":
+                self.convs.append(SAGEConv(in_ch, out_ch))
+            elif conv == "gcn":
+                self.convs.append(GCNConv(in_ch, out_ch))
+            elif conv == "gatv2":
+                self.convs.append(GATv2Conv(in_ch, out_ch, heads=1, concat=False))
             else:
-                x = None
+                raise ValueError(f"Unsupported conv='{conv}'.")
 
-            edge_index = torch.tensor(graph_edges[['src_id', 'dst_id']].values.T, dtype=torch.long)
+            if self.use_bn:
+                self.bns.append(nn.BatchNorm1d(out_ch))
 
-            if self.edge_attr_key in graph_edges.columns and not graph_edges[self.edge_attr_key].isnull().all():
-                edge_attr = torch.tensor(graph_edges[self.edge_attr_key].values.tolist(), dtype=torch.float)
-            else:
-                edge_attr = None
+        self.out_dim = dims[-1]
 
-            if self.graph_level:
-                label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
-                
-                if isinstance(label_value, np.int64):
-                    label_value = int(label_value)
-                if isinstance(label_value, np.float64):
-                    label_value = float(label_value)
-
-                if isinstance(label_value, int) or isinstance(label_value, np.int64):
-                    y = torch.tensor([label_value], dtype=torch.long)
-                elif isinstance(label_value, float):
-                    y = torch.tensor([label_value], dtype=torch.float)
-                else:
-                    raise ValueError(f"Unexpected label type: {type(label_value)}. Expected int or float.")
-                    
-            elif self.node_level:
-                label_values = graph_nodes['label'].values
-                
-                if issubclass(label_values.dtype.type, int):
-                    y = torch.tensor(label_values, dtype=torch.long)
-                elif issubclass(label_values.dtype.type, float):
-                    y = torch.tensor(label_values, dtype=torch.float)
-                else:
-                    raise ValueError(f"Unexpected label types: {label_values.dtype}. Expected int or float.")
-
-            data = Data(x=x, edge_index=edge_index, y=y)
-            if edge_attr is not None:
-                data.edge_attr = edge_attr
-
-            data_list.append(data)
-
-        return data_list
-
-    def __len__(self):
-        return len(self.data_list)
-
-    def __getitem__(self, idx):
-        return self.data_list[idx]
-
-
-
-
-# class CustomGraphDataset(Dataset):
-#     def __init__(self, root, node_level=False, graph_level=True, node_attr_key='feat', 
-#                  edge_attr_key='feat', transform=None, pre_transform=None):
-#         super(CustomGraphDataset, self).__init__(root, transform, pre_transform)
-#         assert not (node_level and graph_level), "Both node_level and graph_level cannot be True at the same time"
-#         assert node_level or graph_level, "Both node_level and graph_level cannot be False at the same time"
-
-#         self.node_level = node_level
-#         self.graph_level = graph_level
-#         self.node_attr_key = node_attr_key
-#         self.edge_attr_key = edge_attr_key
-
-#         self.graph_df = pd.read_csv(os.path.join(root, 'graphs.csv'))
-#         self.nodes_df = pd.read_csv(os.path.join(root, 'nodes.csv'))
-#         self.edges_df = pd.read_csv(os.path.join(root, 'edges.csv'))
-
-#         self.data_list = self.process_all()
-
-#     @property
-#     def raw_file_names(self):
-#         return ['graphs.csv', 'nodes.csv', 'edges.csv']
-
-#     def process_all(self):
-#         data_list = []
-#         for graph_id in self.graph_df['graph_id'].unique():
-#             graph_nodes = self.nodes_df[self.nodes_df['graph_id'] == graph_id]
-#             graph_edges = self.edges_df[self.edges_df['graph_id'] == graph_id]
-
-#             if self.node_attr_key in graph_nodes.columns and not graph_nodes[self.node_attr_key].isnull().all():
-#                 x = torch.tensor(graph_nodes[self.node_attr_key].values.tolist(), dtype=torch.float)
-#                 if x.ndim == 1:
-#                     x = x.unsqueeze(1)  # Ensure x has shape [num_nodes, *]
-#             else:
-#                 x = None
-
-#             edge_index = torch.tensor(graph_edges[['src_id', 'dst_id']].values.T, dtype=torch.long)
-
-#             if self.edge_attr_key in graph_edges.columns and not graph_edges[self.edge_attr_key].isnull().all():
-#                 edge_attr = torch.tensor(graph_edges[self.edge_attr_key].values.tolist(), dtype=torch.float)
-#             else:
-#                 edge_attr = None
-
-
-
-#             if self.graph_level:
-#                 label_value = self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]
-                
-#                 # Check if the label is an integer or a float and cast accordingly
-#                 if isinstance(label_value, int):
-#                     y = torch.tensor([label_value], dtype=torch.long)
-#                 elif isinstance(label_value, float):
-#                     y = torch.tensor([label_value], dtype=torch.float)
-#                 else:
-#                     raise ValueError(f"Unexpected label type: {type(label_value)}. Expected int or float.")
-                    
-#             elif self.node_level:
-#                 label_values = graph_nodes['label'].values
-                
-#                 # Check if the labels are integers or floats and cast accordingly
-#                 if issubclass(label_values.dtype.type, int):
-#                     y = torch.tensor(label_values, dtype=torch.long)
-#                 elif issubclass(label_values.dtype.type, float):
-#                     y = torch.tensor(label_values, dtype=torch.float)
-#                 else:
-#                     raise ValueError(f"Unexpected label types: {label_values.dtype}. Expected int or float.")
-
-
-#             # if self.graph_level:
-#             #     y = torch.tensor([self.graph_df[self.graph_df['graph_id'] == graph_id]['label'].values[0]], dtype=torch.long)
-#             # elif self.node_level:
-#             #     y = torch.tensor(graph_nodes['label'].values, dtype=torch.long)
-
-#             data = Data(x=x, edge_index=edge_index, y=y)
-#             if edge_attr is not None:
-#                 data.edge_attr = edge_attr
-
-#             data_list.append(data)
-
-#         return data_list
-
-#     def len(self):
-#         return len(self.data_list)
-
-#     def get(self, idx):
-#         return self.data_list[idx]
-
-#     def __getitem__(self, idx):
-#         return self.get(idx)
-
-class _Hparams:
-    def __init__(self, model_type="ClassifierHoldout", optimizer_str="Adam", amsgrad=False, betas=(0.9, 0.999), eps=1e-6, lr=0.001, lr_decay= 0, maximize=False, rho=0.9, weight_decay=0, cv_type="Holdout", split=[0.8,0.1, 0.1], k_folds=5, hl_widths=[32], conv_layer_type='SAGEConv', pooling="AvgPooling", batch_size=32, epochs=1, 
-                 use_gpu=False, loss_function="Cross Entropy", input_type="graph"):
-        """
-        Parameters
-        ----------
-        cv : str
-            A string to define the method of cross-validation
-            "Holdout": Holdout
-            "K-Fold": K-Fold cross validation
-        k_folds : int
-            An int value in the range of 2 to X to define the number of k-folds for cross-validation. Default is 5.
-        split : list
-            A list of three item in the range of 0 to 1 to define the split of train,
-            validate, and test data. A default value of [0.8,0.1,0.1] means 80% of data will be
-            used for training, 10% will be used for validation, and the remaining 10% will be used for training
-        hl_widths : list
-            List of hidden neurons for each layer such as [32] will mean
-            that there is one hidden layers in the network with 32 neurons
-        optimizer : torch.optim object
-            This will be the selected optimizer from torch.optim package. By
-            default, torch.optim.Adam is selected
-        learning_rate : float
-            a step value to be used to apply the gradients by optimizer
-        batch_size : int
-            to define a set of samples to be used for training and testing in 
-            each step of an epoch
-        epochs : int
-            An epoch means training the neural network with all the training data for one cycle. In an epoch, we use all of the data exactly once. A forward pass and a backward pass together are counted as one pass
-        use_GPU : use the GPU. Otherwise, use the CPU
-        input_type : str
-            selects the input_type of model such as graph, node or edge
-
-        Returns
-        -------
-        None
-
-        """
-        
-        self.model_type = model_type
-        self.optimizer_str = optimizer_str
-        self.amsgrad = amsgrad
-        self.betas = betas
-        self.eps = eps
-        self.lr = lr
-        self.lr_decay = lr_decay
-        self.maximize = maximize
-        self.rho = rho
-        self.weight_decay = weight_decay
-        self.cv_type = cv_type
-        self.split = split
-        self.k_folds = k_folds
-        self.hl_widths = hl_widths
-        self.conv_layer_type = conv_layer_type
-        self.pooling = pooling
-        self.batch_size = batch_size
-        self.epochs = epochs
-        self.use_gpu = use_gpu
-        self.loss_function = loss_function
-        self.input_type = input_type
-
-class _SAGEConv(nn.Module):
-    def __init__(self, in_feats, h_feats, num_classes, pooling=None):
-        super(_SAGEConv, self).__init__()
-        assert isinstance(h_feats, list), "h_feats must be a list"
-        h_feats = [x for x in h_feats if x is not None]
-        assert len(h_feats) != 0, "h_feats is empty. unable to add hidden layers"
-        self.list_of_layers = nn.ModuleList()
-        dim = [in_feats] + h_feats
-
-        # Convolution (Hidden) Layers
-        for i in range(1, len(dim)):
-            self.list_of_layers.append(SAGEConv(dim[i-1], dim[i]))
-
-        # Final Layer
-        self.final = nn.Linear(dim[-1], num_classes)
-
-        # Pooling layer
-        if pooling is None:
-            self.pooling_layer = None
-        else:
-            if "av" in pooling.lower():
-                self.pooling_layer = global_mean_pool
-            elif "max" in pooling.lower():
-                self.pooling_layer = global_max_pool
-            elif "sum" in pooling.lower():
-                self.pooling_layer = global_add_pool
-            else:
-                raise NotImplementedError
-
-    def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+    def forward(self, x, edge_index):
         h = x
-        # Generate node features
-        for layer in self.list_of_layers:
-            h = layer(h, edge_index)
-            h = F.relu(h)
-        # h will now be a matrix of dimension [num_nodes, h_feats[-1]]
-        h = self.final(h)
-        # Go from node-level features to graph-level features by pooling
-        if self.pooling_layer:
-            h = self.pooling_layer(h, batch)
-            # h will now be a vector of dimension [num_classes]
+        for i, conv in enumerate(self.convs):
+            h_in = h
+            h = conv(h, edge_index)
+            if self.use_bn:
+                h = self.bns[i](h)
+            h = self.act(h)
+
+            if self.use_residual and h_in.shape == h.shape:
+                h = h + h_in
+
+            h = F.dropout(h, p=self.dropout, training=self.training)
         return h
 
-class _GraphRegressorHoldout:
-    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.trainingDataset = trainingDataset
-        self.validationDataset = validationDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = _SAGEConv(trainingDataset[0].num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
+
+class _GraphHead(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, pooling: PoolingKind = "mean", dropout: float = 0.1):
+        super().__init__()
+        self.dropout = float(dropout)
+
+        if pooling == "mean":
+            self.pool = global_mean_pool
+        elif pooling == "max":
+            self.pool = global_max_pool
+        elif pooling == "sum":
+            self.pool = global_add_pool
         else:
-            raise NotImplementedError
-        
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                                 lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                                 lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                              lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.node_attr_key = trainingDataset[0].x.shape[1]
+            raise ValueError("GraphHead requires pooling in {'mean','max','sum'}.")
+
+        self.mlp = nn.Sequential(
+            nn.Linear(in_dim, in_dim),
+            nn.ReLU(),
+            nn.Dropout(self.dropout),
+            nn.Linear(in_dim, out_dim),
+        )
+
+    def forward(self, node_emb, batch):
+        g = self.pool(node_emb, batch)
+        return self.mlp(g)
+
+
+class _NodeHead(nn.Module):
+    def __init__(self, in_dim: int, out_dim: int, dropout: float = 0.1):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(in_dim, in_dim),
+            nn.ReLU(),
+            nn.Dropout(float(dropout)),
+            nn.Linear(in_dim, out_dim),
+        )
+
+    def forward(self, node_emb):
+        return self.mlp(node_emb)
+
+
+class _EdgeHead(nn.Module):
+    """
+    Edge prediction head using concatenation of endpoint embeddings.
+    """
+    def __init__(self, in_dim: int, out_dim: int, dropout: float = 0.1):
+        super().__init__()
+        self.mlp = nn.Sequential(
+            nn.Linear(in_dim * 2, in_dim),
+            nn.ReLU(),
+            nn.Dropout(float(dropout)),
+            nn.Linear(in_dim, out_dim),
+        )
+
+    def forward(self, node_emb, edge_index):
+        src, dst = edge_index[0], edge_index[1]
+        h = torch.cat([node_emb[src], node_emb[dst]], dim=-1)
+        return self.mlp(h)
+
+
+class _LinkPredictor(nn.Module):
+    """
+    Binary link predictor (edge exists or not).
+    """
+    def __init__(self, in_dim: int, hidden: int = 64, dropout: float = 0.1):
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(in_dim * 2, hidden),
+            nn.ReLU(),
+            nn.Dropout(float(dropout)),
+            nn.Linear(hidden, 1),
+        )
+
+    def forward(self, node_emb, edge_label_index):
+        src, dst = edge_label_index[0], edge_label_index[1]
+        h = torch.cat([node_emb[src], node_emb[dst]], dim=-1)
+        return self.net(h).squeeze(-1)  # logits
 
-        # Train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:])
-
-        if validationDataset:
-            self.train_dataloader = DataLoader(trainingDataset, 
-                                               batch_size=hparams.batch_size,
-                                               drop_last=False)
-            self.validate_dataloader = DataLoader(validationDataset,
-                                                  batch_size=hparams.batch_size,
-                                                  drop_last=False)
-        else:
-            self.train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, 
-                                               batch_size=hparams.batch_size,
-                                               drop_last=False)
-            self.validate_dataloader = DataLoader(trainingDataset, sampler=validate_sampler,
-                                                  batch_size=hparams.batch_size,
-                                                  drop_last=False)
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset,
-                                              batch_size=len(testingDataset),
-                                              drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler,
-                                              batch_size=hparams.batch_size,
-                                              drop_last=False)
-
-    def train(self):
-        # Init the loss and accuracy reporting lists
-        self.training_loss_list = []
-        self.validation_loss_list = []
-
-        # Run the training loop for defined number of epochs
-        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
-            # Iterate over the DataLoader for training data
-            for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                data = data.to(self.device)
-                # Make sure the model is in training mode
-                self.model.train()
-                # Zero the gradients
-                self.optimizer.zero_grad()
-
-                # Perform forward pass
-                pred = self.model(data).to(self.device)
-                # Compute loss
-                loss = F.mse_loss(torch.flatten(pred), data.y.float())
-
-                # Perform backward pass
-                loss.backward()
-
-                # Perform optimization
-                self.optimizer.step()
-
-            self.training_loss_list.append(torch.sqrt(loss).item())
-            self.validate()
-            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
-            gc.collect()
-
-    def validate(self):
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data).to(self.device)
-            loss = F.mse_loss(torch.flatten(pred), data.y.float())
-        self.validation_loss = loss
-    
-    def test(self):
-        self.model.eval()
-        for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data).to(self.device)
-            loss = F.mse_loss(torch.flatten(pred), data.y.float())
-        self.testing_loss = torch.sqrt(loss).item()
-    
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _GraphRegressorKFold:
-    def __init__(self, hparams, trainingDataset, testingDataset=None):
-        self.trainingDataset = trainingDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        self.losses = []
-        self.min_loss = 0
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        
-        self.model = self._initialize_model(hparams, trainingDataset)
-        self.optimizer = self._initialize_optimizer(hparams)
-        
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.node_attr_key = trainingDataset.node_attr_key
-
-        # Train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset, batch_size=len(testingDataset), drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler, batch_size=hparams.batch_size, drop_last=False)
-    
-    def _initialize_model(self, hparams, dataset):
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            return _SAGEConv(dataset[0].num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
-            #return _SAGEConv(dataset.num_node_features, hparams.hl_widths, 1, hparams.pooling).to(self.device)
-        else:
-            raise NotImplementedError
-    
-    def _initialize_optimizer(self, hparams):
-        if hparams.optimizer_str.lower() == "adadelta":
-            return torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            return torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            return torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-    
-    def reset_weights(self):
-        self.model = self._initialize_model(self.hparams, self.trainingDataset)
-        self.optimizer = self._initialize_optimizer(self.hparams)
-    
-    def train(self):
-        k_folds = self.hparams.k_folds
-        torch.manual_seed(42)
-        
-        kfold = KFold(n_splits=k_folds, shuffle=True)
-        models, weights, losses, train_dataloaders, validate_dataloaders = [], [], [], [], []
-
-        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", total=k_folds, leave=False):
-            epoch_training_loss_list, epoch_validation_loss_list = [], []
-            train_subsampler = SubsetRandomSampler(train_ids)
-            validate_subsampler = SubsetRandomSampler(validate_ids)
-
-            self.train_dataloader = DataLoader(self.trainingDataset, sampler=train_subsampler, batch_size=self.hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(self.trainingDataset, sampler=validate_subsampler, batch_size=self.hparams.batch_size, drop_last=False)
-
-            self.reset_weights()
-            best_rmse = np.inf
-
-            for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
-                for batched_graph in tqdm(self.train_dataloader, desc='Training', leave=False):
-                    self.model.train()
-                    self.optimizer.zero_grad()
-
-                    batched_graph = batched_graph.to(self.device)
-                    pred = self.model(batched_graph)
-                    loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-                    loss.backward()
-                    self.optimizer.step()
-
-                epoch_training_loss_list.append(torch.sqrt(loss).item())
-                self.validate()
-                epoch_validation_loss_list.append(torch.sqrt(self.validation_loss).item())
-                gc.collect()
-
-            models.append(self.model)
-            weights.append(copy.deepcopy(self.model.state_dict()))
-            losses.append(torch.sqrt(self.validation_loss).item())
-            train_dataloaders.append(self.train_dataloader)
-            validate_dataloaders.append(self.validate_dataloader)
-            self.training_loss_list.append(epoch_training_loss_list)
-            self.validation_loss_list.append(epoch_validation_loss_list)
-
-        self.losses = losses
-        self.min_loss = min(losses)
-        ind = losses.index(self.min_loss)
-        self.model = models[ind]
-        self.model.load_state_dict(weights[ind])
-        self.model.eval()
-        self.training_loss_list = self.training_loss_list[ind]
-        self.validation_loss_list = self.validation_loss_list[ind]
-
-    def validate(self):
-        self.model.eval()
-        for batched_graph in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            batched_graph = batched_graph.to(self.device)
-            pred = self.model(batched_graph)
-            loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-        self.validation_loss = loss
-    
-    def test(self):
-        self.model.eval()
-        for batched_graph in tqdm(self.test_dataloader, desc='Testing', leave=False):
-            batched_graph = batched_graph.to(self.device)
-            pred = self.model(batched_graph)
-            loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-        self.testing_loss = torch.sqrt(loss).item()
-    
-    def save(self, path):
-        if path:
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _GraphClassifierKFold:
-    def __init__(self, hparams, trainingDataset, testingDataset=None):
-        self.trainingDataset = trainingDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        self.testing_accuracy = 0
-        self.accuracies = []
-        self.max_accuracy = 0
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = _SAGEConv(trainingDataset.num_node_features, hparams.hl_widths, 
-                            trainingDataset.num_classes, hparams.pooling).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-
-    def reset_weights(self):
-        if self.hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = _SAGEConv(self.trainingDataset.num_node_features, self.hparams.hl_widths, 
-                            self.trainingDataset.num_classes, self.hparams.pooling).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if self.hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, rho=self.hparams.rho, weight_decay=self.hparams.weight_decay)
-        elif self.hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, lr_decay=self.hparams.lr_decay, weight_decay=self.hparams.weight_decay)
-        elif self.hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
-
-    def train(self):
-        k_folds = self.hparams.k_folds
-
-        # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
-        self.training_loss_list = []
-        self.validation_accuracy_list = []
-        self.validation_loss_list = []
-
-        # Set fixed random number seed
-        torch.manual_seed(42)
-        
-        # Define the K-fold Cross Validator
-        kfold = KFold(n_splits=k_folds, shuffle=True)
-
-        models = []
-        weights = []
-        accuracies = []
-        train_dataloaders = []
-        validate_dataloaders = []
-
-        # K-fold Cross-validation model evaluation
-        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", initial=1, total=k_folds, leave=False):
-            epoch_training_loss_list = []
-            epoch_training_accuracy_list = []
-            epoch_validation_loss_list = []
-            epoch_validation_accuracy_list = []
-            # Sample elements randomly from a given list of ids, no replacement.
-            train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
-            validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
-
-            # Define data loaders for training and testing data in this fold
-            self.train_dataloader = DataLoader(self.trainingDataset, sampler=train_subsampler, 
-                                                batch_size=self.hparams.batch_size,
-                                                drop_last=False)
-            self.validate_dataloader = DataLoader(self.trainingDataset, sampler=validate_subsampler,
-                                                batch_size=self.hparams.batch_size,
-                                                drop_last=False)
-            # Init the neural network
-            self.reset_weights()
-
-            # Run the training loop for defined number of epochs
-            for _ in tqdm(range(0,self.hparams.epochs), desc='Epochs', initial=1, total=self.hparams.epochs, leave=False):
-                temp_loss_list = []
-                temp_acc_list = []
-
-                # Iterate over the DataLoader for training data
-                for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                    data = data.to(self.device)
-                    # Make sure the model is in training mode
-                    self.model.train()
-                    
-                    # Zero the gradients
-                    self.optimizer.zero_grad()
-
-                    # Perform forward pass
-                    pred = self.model(data)
-
-                    # Compute loss
-                    if self.hparams.loss_function.lower() == "negative log likelihood":
-                        logp = F.log_softmax(pred, 1)
-                        loss = F.nll_loss(logp, data.y)
-                    elif self.hparams.loss_function.lower() == "cross entropy":
-                        loss = F.cross_entropy(pred, data.y)
-
-                    # Save loss information for reporting
-                    temp_loss_list.append(loss.item())
-                    temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-
-                    # Perform backward pass
-                    loss.backward()
-
-                    # Perform optimization
-                    self.optimizer.step()
-
-                epoch_training_accuracy_list.append(np.mean(temp_acc_list).item())
-                epoch_training_loss_list.append(np.mean(temp_loss_list).item())
-                self.validate()
-                epoch_validation_accuracy_list.append(self.validation_accuracy)
-                epoch_validation_loss_list.append(self.validation_loss)
-                gc.collect()
-            models.append(self.model)
-            weights.append(copy.deepcopy(self.model.state_dict()))
-            accuracies.append(self.validation_accuracy)
-            train_dataloaders.append(self.train_dataloader)
-            validate_dataloaders.append(self.validate_dataloader)
-            self.training_accuracy_list.append(epoch_training_accuracy_list)
-            self.training_loss_list.append(epoch_training_loss_list)
-            self.validation_accuracy_list.append(epoch_validation_accuracy_list)
-            self.validation_loss_list.append(epoch_validation_loss_list)
-        self.accuracies = accuracies
-        max_accuracy = max(accuracies)
-        self.max_accuracy = max_accuracy
-        ind = accuracies.index(max_accuracy)
-        self.model = models[ind]
-        self.model.load_state_dict(weights[ind])
-        self.model.eval()
-        self.training_accuracy_list = self.training_accuracy_list[ind]
-        self.training_loss_list = self.training_loss_list[ind]
-        self.validation_accuracy_list = self.validation_accuracy_list[ind]
-        self.validation_loss_list = self.validation_loss_list[ind]
-        
-    def validate(self):
-        temp_loss_list = []
-        temp_acc_list = []
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data)
-            if self.hparams.loss_function.lower() == "negative log likelihood":
-                logp = F.log_softmax(pred, 1)
-                loss = F.nll_loss(logp, data.y)
-            elif self.hparams.loss_function.lower() == "cross entropy":
-                loss = F.cross_entropy(pred, data.y)
-            temp_loss_list.append(loss.item())
-            temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-        self.validation_accuracy = np.mean(temp_acc_list).item()
-        self.validation_loss = np.mean(temp_loss_list).item()
-    
-    def test(self):
-        if self.testingDataset:
-            self.test_dataloader = DataLoader(self.testingDataset,
-                                                    batch_size=len(self.testingDataset),
-                                                    drop_last=False)
-            temp_loss_list = []
-            temp_acc_list = []
-            self.model.eval()
-            for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-                data = data.to(self.device)
-                pred = self.model(data)
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-            self.testing_accuracy = np.mean(temp_acc_list).item()
-            self.testing_loss = np.mean(temp_loss_list).item()
-        
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _GraphClassifierHoldout:
-    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.trainingDataset = trainingDataset
-        self.validationDataset = validationDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        gclasses = trainingDataset.num_classes
-        nfeats = trainingDataset.num_node_features
-       
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            self.model = _SAGEConv(nfeats, hparams.hl_widths, gclasses, hparams.pooling).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.node_attr_key = trainingDataset[0].x.shape[1]
-
-        # train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
-
-        if validationDataset:
-            self.train_dataloader = DataLoader(trainingDataset, batch_size=hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(validationDataset, batch_size=hparams.batch_size, drop_last=False)
-        else:
-            self.train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, batch_size=hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(trainingDataset, sampler=validate_sampler, batch_size=hparams.batch_size, drop_last=False)
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset, batch_size=len(testingDataset), drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler, batch_size=hparams.batch_size, drop_last=False)
-    
-    def train(self):
-        # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
-        self.training_loss_list = []
-        self.validation_accuracy_list = []
-        self.validation_loss_list = []
-
-        # Run the training loop for defined number of epochs
-        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', initial=1, leave=False):
-            temp_loss_list = []
-            temp_acc_list = []
-            # Make sure the model is in training mode
-            self.model.train()
-            # Iterate over the DataLoader for training data
-            for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                data = data.to(self.device)
-
-                # Zero the gradients
-                self.optimizer.zero_grad()
-
-                # Perform forward pass
-                pred = self.model(data)
-                
-                # Compute loss
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-
-                # Save loss information for reporting
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-
-                # Perform backward pass
-                loss.backward()
-
-                # Perform optimization
-                self.optimizer.step()
-
-            self.training_accuracy_list.append(np.mean(temp_acc_list).item())
-            self.training_loss_list.append(np.mean(temp_loss_list).item())
-            self.validate()
-            self.validation_accuracy_list.append(self.validation_accuracy)
-            self.validation_loss_list.append(self.validation_loss)
-            gc.collect()
-        
-    def validate(self):
-        temp_loss_list = []
-        temp_acc_list = []
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data)
-            if self.hparams.loss_function.lower() == "negative log likelihood":
-                logp = F.log_softmax(pred, 1)
-                loss = F.nll_loss(logp, data.y)
-            elif self.hparams.loss_function.lower() == "cross entropy":
-                loss = F.cross_entropy(pred, data.y)
-            temp_loss_list.append(loss.item())
-            temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-        self.validation_accuracy = np.mean(temp_acc_list).item()
-        self.validation_loss = np.mean(temp_loss_list).item()
-    
-    def test(self):
-        if self.test_dataloader:
-            temp_loss_list = []
-            temp_acc_list = []
-            self.model.eval()
-            for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-                data = data.to(self.device)
-                pred = self.model(data)
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-            self.testing_accuracy = np.mean(temp_acc_list).item()
-            self.testing_loss = np.mean(temp_loss_list).item()
-            
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _NodeClassifierHoldout:
-    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.trainingDataset = trainingDataset
-        self.validationDataset = validationDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        gclasses = trainingDataset.num_classes
-        nfeats = trainingDataset.num_node_features
-       
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            # pooling is set None for Node classifier
-            self.model = _SAGEConv(nfeats, hparams.hl_widths, gclasses, None).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-        self.node_attr_key = trainingDataset[0].x.shape[1]
-
-        # train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
-        
-        if validationDataset:
-            self.train_dataloader = DataLoader(trainingDataset, batch_size=hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(validationDataset, batch_size=hparams.batch_size, drop_last=False)
-        else:
-            self.train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, batch_size=hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(trainingDataset, sampler=validate_sampler, batch_size=hparams.batch_size, drop_last=False)
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset, batch_size=len(testingDataset), drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler, batch_size=hparams.batch_size, drop_last=False)
-    
-    def train(self):
-        # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
-        self.training_loss_list = []
-        self.validation_accuracy_list = []
-        self.validation_loss_list = []
-
-        # Run the training loop for defined number of epochs
-        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', initial=1, leave=False):
-            temp_loss_list = []
-            temp_acc_list = []
-            # Iterate over the DataLoader for training data
-            for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                data = data.to(self.device)
-                # Make sure the model is in training mode
-                self.model.train()
-
-                # Zero the gradients
-                self.optimizer.zero_grad()
-
-                # Perform forward pass
-                pred = self.model(data)
-                
-                # Compute loss
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-
-                # Save loss information for reporting
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-
-                # Perform backward pass
-                loss.backward()
-
-                # Perform optimization
-                self.optimizer.step()
-
-            self.training_accuracy_list.append(np.mean(temp_acc_list).item())
-            self.training_loss_list.append(np.mean(temp_loss_list).item())
-            self.validate()
-            self.validation_accuracy_list.append(self.validation_accuracy)
-            self.validation_loss_list.append(self.validation_loss)
-            gc.collect()
-        
-    def validate(self):
-        temp_loss_list = []
-        temp_acc_list = []
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data)
-            if self.hparams.loss_function.lower() == "negative log likelihood":
-                logp = F.log_softmax(pred, 1)
-                loss = F.nll_loss(logp, data.y)
-            elif self.hparams.loss_function.lower() == "cross entropy":
-                loss = F.cross_entropy(pred, data.y)
-            temp_loss_list.append(loss.item())
-            temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-        self.validation_accuracy = np.mean(temp_acc_list).item()
-        self.validation_loss = np.mean(temp_loss_list).item()
-    
-    def test(self):
-        if self.test_dataloader:
-            temp_loss_list = []
-            temp_acc_list = []
-            self.model.eval()
-            for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-                data = data.to(self.device)
-                pred = self.model(data)
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-            self.testing_accuracy = np.mean(temp_acc_list).item()
-            self.testing_loss = np.mean(temp_loss_list).item()
-            
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _NodeRegressorHoldout:
-    def __init__(self, hparams, trainingDataset, validationDataset=None, testingDataset=None):
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        self.trainingDataset = trainingDataset
-        self.validationDataset = validationDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            # pooling is set None for Node regressor
-            self.model = _SAGEConv(trainingDataset[0].num_node_features, hparams.hl_widths, 1, None).to(self.device)
-        else:
-            raise NotImplementedError
-        
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                                 lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                                 lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                              lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.node_attr_key = trainingDataset[0].x.shape[1]
-
-        # Train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        train_sampler = SubsetRandomSampler(idx[:num_train])
-        validate_sampler = SubsetRandomSampler(idx[num_train:num_train+num_validate])
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:])
-
-        if validationDataset:
-            self.train_dataloader = DataLoader(trainingDataset, 
-                                               batch_size=hparams.batch_size,
-                                               drop_last=False)
-            self.validate_dataloader = DataLoader(validationDataset,
-                                                  batch_size=hparams.batch_size,
-                                                  drop_last=False)
-        else:
-            self.train_dataloader = DataLoader(trainingDataset, sampler=train_sampler, 
-                                               batch_size=hparams.batch_size,
-                                               drop_last=False)
-            self.validate_dataloader = DataLoader(trainingDataset, sampler=validate_sampler,
-                                                  batch_size=hparams.batch_size,
-                                                  drop_last=False)
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset,
-                                              batch_size=len(testingDataset),
-                                              drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler,
-                                              batch_size=hparams.batch_size,
-                                              drop_last=False)
-
-    def train(self):
-        # Init the loss and accuracy reporting lists
-        self.training_loss_list = []
-        self.validation_loss_list = []
-
-        # Run the training loop for defined number of epochs
-        for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
-            # Iterate over the DataLoader for training data
-            for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                data = data.to(self.device)
-                # Make sure the model is in training mode
-                self.model.train()
-                # Zero the gradients
-                self.optimizer.zero_grad()
-
-                # Perform forward pass
-                pred = self.model(data).to(self.device)
-                # Compute loss
-                loss = F.mse_loss(torch.flatten(pred), data.y.float())
-
-                # Perform backward pass
-                loss.backward()
-
-                # Perform optimization
-                self.optimizer.step()
-
-            self.training_loss_list.append(torch.sqrt(loss).item())
-            self.validate()
-            self.validation_loss_list.append(torch.sqrt(self.validation_loss).item())
-            gc.collect()
-
-    def validate(self):
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data).to(self.device)
-            loss = F.mse_loss(torch.flatten(pred), data.y.float())
-        self.validation_loss = loss
-    
-    def test(self):
-        self.model.eval()
-        for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data).to(self.device)
-            loss = F.mse_loss(torch.flatten(pred), data.y.float())
-        self.testing_loss = torch.sqrt(loss).item()
-    
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _NodeClassifierKFold:
-    def __init__(self, hparams, trainingDataset, testingDataset=None):
-        self.trainingDataset = trainingDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        self.testing_accuracy = 0
-        self.accuracies = []
-        self.max_accuracy = 0
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            # pooling is set None for Node classifier
-            self.model = _SAGEConv(trainingDataset.num_node_features, hparams.hl_widths, 
-                            trainingDataset.num_classes, None).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, 
-                                            lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, 
-                                            lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.training_accuracy_list = []
-        self.validation_accuracy_list = []
-
-    def reset_weights(self):
-        if self.hparams.conv_layer_type.lower() == 'sageconv':
-            # pooling is set None for Node classifier
-            self.model = _SAGEConv(self.trainingDataset.num_node_features, self.hparams.hl_widths, 
-                            self.trainingDataset.num_classes, None).to(self.device)
-        else:
-            raise NotImplementedError
-
-        if self.hparams.optimizer_str.lower() == "adadelta":
-            self.optimizer = torch.optim.Adadelta(self.model.parameters(), eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, rho=self.hparams.rho, weight_decay=self.hparams.weight_decay)
-        elif self.hparams.optimizer_str.lower() == "adagrad":
-            self.optimizer = torch.optim.Adagrad(self.model.parameters(), eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, lr_decay=self.hparams.lr_decay, weight_decay=self.hparams.weight_decay)
-        elif self.hparams.optimizer_str.lower() == "adam":
-            self.optimizer = torch.optim.Adam(self.model.parameters(), amsgrad=self.hparams.amsgrad, betas=self.hparams.betas, eps=self.hparams.eps, 
-                                            lr=self.hparams.lr, maximize=self.hparams.maximize, weight_decay=self.hparams.weight_decay)
-
-    def train(self):
-        k_folds = self.hparams.k_folds
-
-        # Init the loss and accuracy reporting lists
-        self.training_accuracy_list = []
-        self.training_loss_list = []
-        self.validation_accuracy_list = []
-        self.validation_loss_list = []
-
-        # Set fixed random number seed
-        torch.manual_seed(42)
-        
-        # Define the K-fold Cross Validator
-        kfold = KFold(n_splits=k_folds, shuffle=True)
-
-        models = []
-        weights = []
-        accuracies = []
-        train_dataloaders = []
-        validate_dataloaders = []
-
-        # K-fold Cross-validation model evaluation
-        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", initial=1, total=k_folds, leave=False):
-            epoch_training_loss_list = []
-            epoch_training_accuracy_list = []
-            epoch_validation_loss_list = []
-            epoch_validation_accuracy_list = []
-            # Sample elements randomly from a given list of ids, no replacement.
-            train_subsampler = torch.utils.data.SubsetRandomSampler(train_ids)
-            validate_subsampler = torch.utils.data.SubsetRandomSampler(validate_ids)
-
-            # Define data loaders for training and testing data in this fold
-            self.train_dataloader = DataLoader(self.trainingDataset, sampler=train_subsampler, 
-                                                batch_size=self.hparams.batch_size,
-                                                drop_last=False)
-            self.validate_dataloader = DataLoader(self.trainingDataset, sampler=validate_subsampler,
-                                                batch_size=self.hparams.batch_size,
-                                                drop_last=False)
-            # Init the neural network
-            self.reset_weights()
-
-            # Run the training loop for defined number of epochs
-            for _ in tqdm(range(0,self.hparams.epochs), desc='Epochs', initial=1, total=self.hparams.epochs, leave=False):
-                temp_loss_list = []
-                temp_acc_list = []
-
-                # Iterate over the DataLoader for training data
-                for data in tqdm(self.train_dataloader, desc='Training', leave=False):
-                    data = data.to(self.device)
-                    # Make sure the model is in training mode
-                    self.model.train()
-                    
-                    # Zero the gradients
-                    self.optimizer.zero_grad()
-
-                    # Perform forward pass
-                    pred = self.model(data)
-
-                    # Compute loss
-                    if self.hparams.loss_function.lower() == "negative log likelihood":
-                        logp = F.log_softmax(pred, 1)
-                        loss = F.nll_loss(logp, data.y)
-                    elif self.hparams.loss_function.lower() == "cross entropy":
-                        loss = F.cross_entropy(pred, data.y)
-
-                    # Save loss information for reporting
-                    temp_loss_list.append(loss.item())
-                    temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-
-                    # Perform backward pass
-                    loss.backward()
-
-                    # Perform optimization
-                    self.optimizer.step()
-
-                epoch_training_accuracy_list.append(np.mean(temp_acc_list).item())
-                epoch_training_loss_list.append(np.mean(temp_loss_list).item())
-                self.validate()
-                epoch_validation_accuracy_list.append(self.validation_accuracy)
-                epoch_validation_loss_list.append(self.validation_loss)
-                gc.collect()
-            models.append(self.model)
-            weights.append(copy.deepcopy(self.model.state_dict()))
-            accuracies.append(self.validation_accuracy)
-            train_dataloaders.append(self.train_dataloader)
-            validate_dataloaders.append(self.validate_dataloader)
-            self.training_accuracy_list.append(epoch_training_accuracy_list)
-            self.training_loss_list.append(epoch_training_loss_list)
-            self.validation_accuracy_list.append(epoch_validation_accuracy_list)
-            self.validation_loss_list.append(epoch_validation_loss_list)
-        self.accuracies = accuracies
-        max_accuracy = max(accuracies)
-        self.max_accuracy = max_accuracy
-        ind = accuracies.index(max_accuracy)
-        self.model = models[ind]
-        self.model.load_state_dict(weights[ind])
-        self.model.eval()
-        self.training_accuracy_list = self.training_accuracy_list[ind]
-        self.training_loss_list = self.training_loss_list[ind]
-        self.validation_accuracy_list = self.validation_accuracy_list[ind]
-        self.validation_loss_list = self.validation_loss_list[ind]
-        
-    def validate(self):
-        temp_loss_list = []
-        temp_acc_list = []
-        self.model.eval()
-        for data in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            data = data.to(self.device)
-            pred = self.model(data)
-            if self.hparams.loss_function.lower() == "negative log likelihood":
-                logp = F.log_softmax(pred, 1)
-                loss = F.nll_loss(logp, data.y)
-            elif self.hparams.loss_function.lower() == "cross entropy":
-                loss = F.cross_entropy(pred, data.y)
-            temp_loss_list.append(loss.item())
-            temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-        self.validation_accuracy = np.mean(temp_acc_list).item()
-        self.validation_loss = np.mean(temp_loss_list).item()
-    
-    def test(self):
-        if self.testingDataset:
-            self.test_dataloader = DataLoader(self.testingDataset,
-                                                    batch_size=len(self.testingDataset),
-                                                    drop_last=False)
-            temp_loss_list = []
-            temp_acc_list = []
-            self.model.eval()
-            for data in tqdm(self.test_dataloader, desc='Testing', leave=False):
-                data = data.to(self.device)
-                pred = self.model(data)
-                if self.hparams.loss_function.lower() == "negative log likelihood":
-                    logp = F.log_softmax(pred, 1)
-                    loss = F.nll_loss(logp, data.y)
-                elif self.hparams.loss_function.lower() == "cross entropy":
-                    loss = F.cross_entropy(pred, data.y)
-                temp_loss_list.append(loss.item())
-                temp_acc_list.append(accuracy_score(data.y.cpu(), pred.argmax(1).cpu()))
-            self.testing_accuracy = np.mean(temp_acc_list).item()
-            self.testing_loss = np.mean(temp_loss_list).item()
-        
-    def save(self, path):
-        if path:
-            # Make sure the file extension is .pt
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        #self.model.load_state_dict(torch.load(path))
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
-
-class _NodeRegressorKFold:
-    def __init__(self, hparams, trainingDataset, testingDataset=None):
-        self.trainingDataset = trainingDataset
-        self.testingDataset = testingDataset
-        self.hparams = hparams
-        self.losses = []
-        self.min_loss = 0
-        self.device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        
-        self.model = self._initialize_model(hparams, trainingDataset)
-        self.optimizer = self._initialize_optimizer(hparams)
-        
-        self.use_gpu = hparams.use_gpu
-        self.training_loss_list = []
-        self.validation_loss_list = []
-        self.node_attr_key = trainingDataset.node_attr_key
-
-        # Train, validate, test split
-        num_train = int(len(trainingDataset) * hparams.split[0])
-        num_validate = int(len(trainingDataset) * hparams.split[1])
-        num_test = len(trainingDataset) - num_train - num_validate
-        idx = torch.randperm(len(trainingDataset))
-        test_sampler = SubsetRandomSampler(idx[num_train+num_validate:num_train+num_validate+num_test])
-        
-        if testingDataset:
-            self.test_dataloader = DataLoader(testingDataset, batch_size=len(testingDataset), drop_last=False)
-        else:
-            self.test_dataloader = DataLoader(trainingDataset, sampler=test_sampler, batch_size=hparams.batch_size, drop_last=False)
-    
-    def _initialize_model(self, hparams, dataset):
-        if hparams.conv_layer_type.lower() == 'sageconv':
-            # pooling is set None for Node
-            return _SAGEConv(dataset.num_node_features, hparams.hl_widths, 1, None).to(self.device)
-        else:
-            raise NotImplementedError
-    
-    def _initialize_optimizer(self, hparams):
-        if hparams.optimizer_str.lower() == "adadelta":
-            return torch.optim.Adadelta(self.model.parameters(), eps=hparams.eps, lr=hparams.lr, rho=hparams.rho, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adagrad":
-            return torch.optim.Adagrad(self.model.parameters(), eps=hparams.eps, lr=hparams.lr, lr_decay=hparams.lr_decay, weight_decay=hparams.weight_decay)
-        elif hparams.optimizer_str.lower() == "adam":
-            return torch.optim.Adam(self.model.parameters(), amsgrad=hparams.amsgrad, betas=hparams.betas, eps=hparams.eps, lr=hparams.lr, maximize=hparams.maximize, weight_decay=hparams.weight_decay)
-    
-    def reset_weights(self):
-        self.model = self._initialize_model(self.hparams, self.trainingDataset)
-        self.optimizer = self._initialize_optimizer(self.hparams)
-    
-    def train(self):
-        k_folds = self.hparams.k_folds
-        torch.manual_seed(42)
-        
-        kfold = KFold(n_splits=k_folds, shuffle=True)
-        models, weights, losses, train_dataloaders, validate_dataloaders = [], [], [], [], []
-
-        for fold, (train_ids, validate_ids) in tqdm(enumerate(kfold.split(self.trainingDataset)), desc="Fold", total=k_folds, leave=False):
-            epoch_training_loss_list, epoch_validation_loss_list = [], []
-            train_subsampler = SubsetRandomSampler(train_ids)
-            validate_subsampler = SubsetRandomSampler(validate_ids)
-
-            self.train_dataloader = DataLoader(self.trainingDataset, sampler=train_subsampler, batch_size=self.hparams.batch_size, drop_last=False)
-            self.validate_dataloader = DataLoader(self.trainingDataset, sampler=validate_subsampler, batch_size=self.hparams.batch_size, drop_last=False)
-
-            self.reset_weights()
-            best_rmse = np.inf
-
-            for _ in tqdm(range(self.hparams.epochs), desc='Epochs', total=self.hparams.epochs, leave=False):
-                for batched_graph in tqdm(self.train_dataloader, desc='Training', leave=False):
-                    self.model.train()
-                    self.optimizer.zero_grad()
-
-                    batched_graph = batched_graph.to(self.device)
-                    pred = self.model(batched_graph)
-                    loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-                    loss.backward()
-                    self.optimizer.step()
-
-                epoch_training_loss_list.append(torch.sqrt(loss).item())
-                self.validate()
-                epoch_validation_loss_list.append(torch.sqrt(self.validation_loss).item())
-                gc.collect()
-
-            models.append(self.model)
-            weights.append(copy.deepcopy(self.model.state_dict()))
-            losses.append(torch.sqrt(self.validation_loss).item())
-            train_dataloaders.append(self.train_dataloader)
-            validate_dataloaders.append(self.validate_dataloader)
-            self.training_loss_list.append(epoch_training_loss_list)
-            self.validation_loss_list.append(epoch_validation_loss_list)
-
-        self.losses = losses
-        self.min_loss = min(losses)
-        ind = losses.index(self.min_loss)
-        self.model = models[ind]
-        self.model.load_state_dict(weights[ind])
-        self.model.eval()
-        self.training_loss_list = self.training_loss_list[ind]
-        self.validation_loss_list = self.validation_loss_list[ind]
-
-    def validate(self):
-        self.model.eval()
-        for batched_graph in tqdm(self.validate_dataloader, desc='Validating', leave=False):
-            batched_graph = batched_graph.to(self.device)
-            pred = self.model(batched_graph)
-            loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-        self.validation_loss = loss
-    
-    def test(self):
-        self.model.eval()
-        for batched_graph in tqdm(self.test_dataloader, desc='Testing', leave=False):
-            batched_graph = batched_graph.to(self.device)
-            pred = self.model(batched_graph)
-            loss = F.mse_loss(torch.flatten(pred), batched_graph.y.float())
-        self.testing_loss = torch.sqrt(loss).item()
-    
-    def save(self, path):
-        if path:
-            ext = path[-3:]
-            if ext.lower() != ".pt":
-                path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
-    
-    def load(self, path):
-        self.model.load_state_dict(torch.load(path, weights_only=True, map_location=self.device))
 
 class PyG:
+    """
+    A clean PyTorch Geometric interface for TopologicPy-exported CSV datasets.
+
+    You can control medium-level hyperparameters by passing keyword arguments to ByCSVPath,
+    for example:
+
+    pyg = PyG.ByCSVPath(
+        path="C:/dataset",
+        level="graph",
+        task="classification",
+        graphLabelType="categorical",
+        cv="kfold",
+        k_folds=5,
+        conv="gatv2",
+        hidden_dims=(128, 128, 64),
+        activation="gelu",
+        batch_norm=True,
+        residual=True,
+        dropout=0.2,
+        lr=1e-3,
+        optimizer="adamw",
+        early_stopping=True,
+        early_stopping_patience=10,
+        gradient_clip_norm=1.0
+    )
+    """
+
+    # ---------
+    # Creation
+    # ---------
     @staticmethod
-    def DatasetByCSVPath(path, numberOfGraphClasses=0, nodeATTRKey='feat', edgeATTRKey='feat', nodeOneHotEncode=False, 
-                         nodeFeaturesCategories=[], edgeOneHotEncode=False, edgeFeaturesCategories=[], addSelfLoop=False, 
-                         node_level=False, graph_level=True):
+    def ByCSVPath(path: str,
+                  level: Level = "graph",
+                  task: TaskKind = "classification",
+                  graphLabelType: LabelType = "categorical",
+                  nodeLabelType: LabelType = "categorical",
+                  edgeLabelType: LabelType = "categorical",
+                  **kwargs) -> "PyG":
+        cfg = _RunConfig(level=level, task=task,
+                         graph_label_type=graphLabelType,
+                         node_label_type=nodeLabelType,
+                         edge_label_type=edgeLabelType)
+
+        # allow override of any config field via kwargs
+        for k, v in kwargs.items():
+            if hasattr(cfg, k):
+                setattr(cfg, k, v)
+
+        return PyG(path=path, config=cfg)
+
+    def __init__(self, path: str, config: _RunConfig):
+        self.path = path
+        self.config = config
+
+        self.device = torch.device("cuda:0" if (config.use_gpu and torch.cuda.is_available()) else "cpu")
+
+        self.graph_df: Optional[pd.DataFrame] = None
+        self.nodes_df: Optional[pd.DataFrame] = None
+        self.edges_df: Optional[pd.DataFrame] = None
+
+        self.data_list: List[Data] = []
+        self.train_set: Optional[List[Data]] = None
+        self.val_set: Optional[List[Data]] = None
+        self.test_set: Optional[List[Data]] = None
+
+        self.model: Optional[nn.Module] = None
+        self.history: Dict[str, List[float]] = {"train_loss": [], "val_loss": []}
+        self.cv_report: Optional[Dict[str, Union[float, List[Dict[str, float]]]]] = None
+
+        self._num_outputs: int = 1
+
+        self._load_csv()
+        self._build_data_list()
+        self._split_holdout()
+
+        self._build_model()
+
+
+    # ----------------------------
+    # Convenience: hyperparameters
+    # ----------------------------
+    def SetHyperparameters(self, **kwargs) -> Dict[str, Union[str, int, float, bool, Tuple]]:
         """
-        Returns PyTorch Geometric dataset according to the input CSV folder path. The folder must contain "graphs.csv", 
-        "edges.csv", "nodes.csv", and "meta.yml" files according to conventions.
+        Set one or more configuration values (hyperparameters) in a safe, readable way.
+
+        Examples
+        --------
+        pyg.SetHyperparameters(
+            cv="kfold", k_folds=5, k_stratify=True,
+            conv="gatv2", hidden_dims=(128, 128, 64),
+            activation="gelu", batch_norm=True, residual=True,
+            lr=1e-3, optimizer="adamw",
+            early_stopping=True, early_stopping_patience=10,
+            gradient_clip_norm=1.0
+        )
+
+        Notes
+        -----
+        - Unknown keys are ignored (with a warning if verbose=True).
+        - Some values are validated (e.g., split sums, hidden_dims).
+        - If you change model-related settings (conv/hidden_dims/etc.) the model is rebuilt automatically.
+        """
+        cfg = self.config
+        changed_model = False
+
+        for k, v in kwargs.items():
+            if not hasattr(cfg, k):
+                if cfg.verbose:
+                    print(f"PyG.SetHyperparameters - Warning: Unknown parameter '{k}' ignored.")
+                continue
+
+            # Basic validation / normalisation
+            if k == "split":
+                if (not isinstance(v, (tuple, list))) or len(v) != 3:
+                    raise ValueError("split must be a 3-tuple, e.g. (0.8, 0.1, 0.1).")
+                s = float(v[0]) + float(v[1]) + float(v[2])
+                if abs(s - 1.0) > 1e-3:
+                    raise ValueError("split ratios must sum to 1.")
+                v = (float(v[0]), float(v[1]), float(v[2]))
+
+            if k == "hidden_dims":
+                if isinstance(v, list):
+                    v = tuple(v)
+                if (not isinstance(v, tuple)) or len(v) == 0:
+                    raise ValueError("hidden_dims must be a non-empty tuple, e.g. (64, 64).")
+                v = tuple(int(x) for x in v)
+                changed_model = True
+
+            if k in ["conv", "activation", "dropout", "batch_norm", "residual", "pooling"]:
+                changed_model = True
+
+            setattr(cfg, k, v)
+
+        # rebuild model if needed
+        if changed_model:
+            self._build_model()
+
+        return self.Summary()
+
+    def Summary(self) -> Dict[str, Union[str, int, float, bool, Tuple]]:
+        """
+        Return a compact dictionary of the most relevant configuration choices.
+        """
+        cfg = self.config
+        return {
+            "level": cfg.level,
+            "task": cfg.task,
+            "graph_label_type": cfg.graph_label_type,
+            "node_label_type": cfg.node_label_type,
+            "edge_label_type": cfg.edge_label_type,
+            "cv": cfg.cv,
+            "split": cfg.split,
+            "k_folds": cfg.k_folds,
+            "conv": cfg.conv,
+            "hidden_dims": cfg.hidden_dims,
+            "activation": cfg.activation,
+            "dropout": cfg.dropout,
+            "batch_norm": cfg.batch_norm,
+            "residual": cfg.residual,
+            "pooling": cfg.pooling,
+            "epochs": cfg.epochs,
+            "batch_size": cfg.batch_size,
+            "lr": cfg.lr,
+            "weight_decay": cfg.weight_decay,
+            "optimizer": cfg.optimizer,
+            "gradient_clip_norm": cfg.gradient_clip_norm,
+            "early_stopping": cfg.early_stopping,
+            "early_stopping_patience": cfg.early_stopping_patience,
+            "device": str(self.device),
+            "num_graphs": len(self.data_list),
+            "num_outputs": int(self._num_outputs),
+        }
+
+    # ----------------------------
+    # Convenience: CV visualisation
+    # ----------------------------
+    def PlotCrossValidationSummary(self,
+                                  cv_report: Optional[Dict[str, Union[float, List[Dict[str, float]]]]] = None,
+                                  metrics: Optional[List[str]] = None,
+                                  show_mean_std: bool = True):
+        """
+        Plot a cross-validation summary as grouped bars per fold (Plotly).
 
         Parameters
         ----------
-        path : str
-            The path to the folder containing the necessary CSV and YML files.
+        cv_report : dict, optional
+            Output from CrossValidate(). If None, uses self.cv_report.
+        metrics : list[str], optional
+            Metrics to display. If None, chooses a sensible default based on task:
+              - classification: ["accuracy", "f1", "precision", "recall"]
+              - regression     : ["mae", "rmse", "r2"]
+        show_mean_std : bool, optional
+            If True, includes mean and ±std reference lines.
 
         Returns
         -------
-        PyG Dataset
-            The PyG dataset
+        plotly.graph_objects.Figure
         """
-        if not isinstance(path, str):
-            print("PyG.DatasetByCSVPath - Error: The input path parameter is not a valid string. Returning None.")
-            return None
-        if not os.path.exists(path):
-            print("PyG.DatasetByCSVPath - Error: The input path parameter does not exist. Returning None.")
-            return None
-        
-        return CustomGraphDataset(root=path, node_level=node_level, graph_level=graph_level, node_attr_key=nodeATTRKey, edge_attr_key=edgeATTRKey)
-    
-    @staticmethod
-    def DatasetGraphLabels(dataset, graphLabelHeader="label"):
-        """
-        Returns the labels of the graphs in the input dataset
+        if cv_report is None:
+            cv_report = self.cv_report
+        if cv_report is None:
+            raise ValueError("No cross-validation report found. Run CrossValidate() first or pass cv_report.")
 
-        Parameters
-        ----------
-        dataset : CustomDataset
-            The input dataset
-        graphLabelHeader: str , optional
-            The key string under which the graph labels are stored. Default is "label".
-        
-        Returns
-        -------
-        list
-            The list of graph labels.
-        """
-        import torch
+        fold_metrics = cv_report.get("fold_metrics", [])
+        if not fold_metrics:
+            raise ValueError("cv_report has no fold_metrics.")
 
-        graph_labels = []
-        for g in dataset:
-            # Get the label of the graph
-            label = g.y
-            graph_labels.append(label.item())
-        return graph_labels
-
-    @staticmethod
-    def DatasetSplit(dataset, split=[0.8,0.1,0.1], shuffle=True, randomState=42):
-        """
-        Splits the dataset into three subsets.
-
-        Parameters
-        ----------
-        dataset : CustomDataset
-            The input dataset
-        split: list , optional
-            The list of ratios. This list must be made out of three numbers adding to 1.
-        shuffle: boolean , optional
-            If set to True, the subsets are created from random indices. Otherwise, they are split sequentially. Default is True.
-        randomState : int , optional
-            The random seed to use for reproducibility. Default is 42.
-                
-        Returns
-        -------
-        list
-            The list of three subset datasets.
-        """
-
-        import torch
-        from torch.utils.data import random_split
-        train_ratio, val_ratio, test_ratio = split
-        assert abs(train_ratio + val_ratio + test_ratio - 1.0) < 1e-6, "Ratios must add up to 1."
-        
-        # Calculate the number of samples for each split
-        dataset_len = len(dataset)
-        train_len = int(train_ratio * dataset_len)
-        val_len = int(val_ratio * dataset_len)
-        test_len = dataset_len - train_len - val_len  # Ensure it adds up correctly
-
-        ## Generate indices for the split
-        indices = list(range(dataset_len))
-        if shuffle:
-            torch.manual_seed(randomState)  # For reproducibility
-            indices = torch.randperm(dataset_len).tolist()  # Shuffled indices
-
-        # Create splits
-        train_indices = indices[:train_len]
-        val_indices = indices[train_len:train_len + val_len]
-        test_indices = indices[train_len + val_len:train_len + val_len + test_len]
-
-        # Create new instances of CustomGraphDataset using the indices
-        train_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=train_indices)
-        val_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=val_indices)
-        test_dataset = CustomGraphDataset(data_list=dataset.data_list, indices=test_indices)
-
-        return train_dataset, val_dataset, test_dataset
-
-    @staticmethod
-    def Optimizer(name="Adam", amsgrad=True, betas=(0.9,0.999), eps=0.000001, lr=0.001, maximize=False, weightDecay=0.0, rho=0.9, lr_decay=0.0):
-        """
-        Returns the parameters of the optimizer
-
-        Parameters
-        ----------
-        amsgrad : bool , optional.
-            amsgrad is an extension to the Adam version of gradient descent that attempts to improve the convergence properties of the algorithm, avoiding large abrupt changes in the learning rate for each input variable. Default is True.
-        betas : tuple , optional
-            Betas are used as for smoothing the path to the convergence also providing some momentum to cross a local minima or saddle point. Default is (0.9, 0.999).
-        eps : float . optional.
-            eps is a term added to the denominator to improve numerical stability. Default is 0.000001.
-        lr : float
-            The learning rate (lr) defines the adjustment in the weights of our network with respect to the loss gradient descent. Default is 0.001.
-        maximize : float , optional
-            maximize the params based on the objective, instead of minimizing. Default is False.
-        weightDecay : float , optional
-            weightDecay (L2 penalty) is a regularization technique applied to the weights of a neural network. Default is 0.0.
-
-        Returns
-        -------
-        dict
-            The dictionary of the optimizer parameters. The dictionary contains the following keys and values:
-            - "name" (str): The name of the optimizer
-            - "amsgrad" (bool):
-            - "betas" (tuple):
-            - "eps" (float):
-            - "lr" (float):
-            - "maximize" (bool):
-            - weightDecay (float):
-
-        """
-        return {"name":name, "amsgrad":amsgrad, "betas":betas, "eps":eps, "lr": lr, "maximize":maximize, "weight_decay":weightDecay, "rho":rho, "lr_decay":lr_decay}
-    
-    @staticmethod
-    def Hyperparameters(optimizer, model_type="classifier", cv_type="Holdout", split=[0.8,0.1,0.1], k_folds=5,
-                        hl_widths=[32], conv_layer_type="SAGEConv", pooling="AvgPooling",
-                        batch_size=1, epochs=1, use_gpu=False, loss_function="Cross Entropy",
-                        input_type="graph"):
-        """
-        Creates a hyperparameters object based on the input settings.
-
-        Parameters
-        ----------
-        model_type : str , optional
-            The desired type of model. The options are:
-            - "Classifier"
-            - "Regressor"
-            The option is case insensitive. Default is "classifierholdout"
-        optimizer : Optimizer
-            The desired optimizer.
-        cv_type : str , optional
-            The desired cross-validation method. This can be "Holdout" or "K-Fold". It is case-insensitive. Default is "Holdout".
-        split : list , optional
-            The desired split between training validation, and testing. [0.8, 0.1, 0.1] means that 80% of the data is used for training 10% of the data is used for validation, and 10% is used for testing. Default is [0.8, 0.1, 0.1].
-        k_folds : int , optional
-            The desired number of k-folds. Default is 5.
-        hl_widths : list , optional
-            The list of hidden layer widths. A list of [16, 32, 16] means that the model will have 3 hidden layers with number of neurons in each being 16, 32, 16 respectively from input to output. Default is [32].
-        conv_layer_type : str , optional
-            The desired type of the convolution layer. The options are "Classic", "GraphConv", "GINConv", "SAGEConv", "TAGConv", "DGN". It is case insensitive. Default is "SAGEConv".
-        pooling : str , optional
-            The desired type of pooling. The options are "AvgPooling", "MaxPooling", or "SumPooling". It is case insensitive. Default is "AvgPooling".
-        batch_size : int , optional
-            The desired batch size. Default is 1.
-        epochs : int , optional
-            The desired number of epochs. Default is 1.
-        use_gpu : bool , optional
-            If set to True, the model will attempt to use the GPU. Default is False.
-        loss_function : str , optional
-            The desired loss function. The options are "Cross-Entropy" or "Negative Log Likelihood". It is case insensitive. Default is "Cross-Entropy".
-        input_type : str
-            selects the input_type of model such as graph, node or edge
-        Returns
-        -------
-        Hyperparameters
-            The created hyperparameters object.
-
-        """
-        
-        if optimizer['name'].lower() == "adadelta":
-            optimizer_str = "Adadelta"
-        elif optimizer['name'].lower() == "adagrad":
-            optimizer_str = "Adagrad"
-        elif optimizer['name'].lower() == "adam":
-            optimizer_str = "Adam"
-        return _Hparams(model_type,
-                        optimizer_str,
-                        optimizer['amsgrad'],
-                        optimizer['betas'],
-                        optimizer['eps'],
-                        optimizer['lr'],
-                        optimizer['lr_decay'],
-                        optimizer['maximize'],
-                        optimizer['rho'],
-                        optimizer['weight_decay'],
-                        cv_type,
-                        split,
-                        k_folds,
-                        hl_widths,
-                        conv_layer_type,
-                        pooling,
-                        batch_size,
-                        epochs,
-                        use_gpu,
-                        loss_function,
-                        input_type)
-    
-    @staticmethod
-    def Model(hparams, trainingDataset, validationDataset=None, testingDataset=None):
-        """
-        Creates a neural network classifier.
-
-        Parameters
-        ----------
-        hparams : HParams
-            The input hyperparameters 
-        trainingDataset : CustomDataset
-            The input training dataset.
-        validationDataset : CustomDataset
-            The input validation dataset. If not specified, a portion of the trainingDataset will be used for validation according the to the split list as specified in the hyper-parameters.
-        testingDataset : CustomDataset
-            The input testing dataset. If not specified, a portion of the trainingDataset will be used for testing according the to the split list as specified in the hyper-parameters.
-
-        Returns
-        -------
-        Classifier
-            The created classifier
-
-        """
-
-        model = None
-        if hparams.model_type.lower() == "classifier":
-            if hparams.input_type == 'graph':
-                if hparams.cv_type.lower() == "holdout":
-                    model = _GraphClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-                elif "k" in hparams.cv_type.lower():
-                    model = _GraphClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
-            elif hparams.input_type == 'node':
-                if hparams.cv_type.lower() == "holdout":
-                    model = _NodeClassifierHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-                elif "k" in hparams.cv_type.lower():
-                    model = _NodeClassifierKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
-        elif hparams.model_type.lower() == "regressor":
-            if hparams.input_type == 'graph':
-                if hparams.cv_type.lower() == "holdout":
-                    model = _GraphRegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-                elif "k" in hparams.cv_type.lower():
-                    model = _GraphRegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
-            elif hparams.input_type == 'node':
-                if hparams.cv_type.lower() == "holdout":
-                    model = _NodeRegressorHoldout(hparams=hparams, trainingDataset=trainingDataset, validationDataset=validationDataset, testingDataset=testingDataset)
-                elif "k" in hparams.cv_type.lower():
-                    model = _NodeRegressorKFold(hparams=hparams, trainingDataset=trainingDataset, testingDataset=testingDataset)
-        else:
-            raise NotImplementedError
-        return model
-
-    @staticmethod
-    def ModelTrain(model):
-        """
-        Trains the neural network model.
-
-        Parameters
-        ----------
-        model : Model
-            The input model.
-
-        Returns
-        -------
-        Model
-            The trained model
-
-        """
-        if not model:
-            return None
-        model.train()
-        return model
-    
-    @staticmethod
-    def ModelTest(model):
-        """
-        Tests the neural network model.
-
-        Parameters
-        ----------
-        model : Model
-            The input model.
-
-        Returns
-        -------
-        Model
-            The tested model
-
-        """
-        if not model:
-            return None
-        model.test()
-        return model
-    
-    @staticmethod
-    def ModelSave(model, path, overwrite=False):
-        """
-        Saves the model.
-
-        Parameters
-        ----------
-        model : Model
-            The input model.
-        path : str
-            The file path at which to save the model.
-        overwrite : bool, optional
-            If set to True, any existing file will be overwritten. Otherwise, it won't. Default is False.
-
-        Returns
-        -------
-        bool
-            True if the model is saved correctly. False otherwise.
-
-        """
-        import os
-
-        if model == None:
-            print("PyG.ModelSave - Error: The input model parameter is invalid. Returning None.")
-            return None
-        if path == None:
-            print("PyG.ModelSave - Error: The input path parameter is invalid. Returning None.")
-            return None
-        if not overwrite and os.path.exists(path):
-            print("PyG.ModelSave - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
-            return None
-        if overwrite and os.path.exists(path):
-            os.remove(path)
-        # Make sure the file extension is .pt
-        ext = path[len(path)-3:len(path)]
-        if ext.lower() != ".pt":
-            path = path+".pt"
-        model.save(path)
-        return True
-    
-    @staticmethod
-    def ModelData(model):
-        """
-        Returns the data of the model
-
-        Parameters
-        ----------
-        model : Model
-            The input model.
-
-        Returns
-        -------
-        dict
-            A dictionary containing the model data. The keys in the dictionary are:
-            'Model Type'
-            'Optimizer'
-            'CV Type'
-            'Split'
-            'K-Folds'
-            'HL Widths'
-            'Conv Layer Type'
-            'Pooling'
-            'Learning Rate'
-            'Batch Size'
-            'Epochs'
-            'Training Accuracy'
-            'Validation Accuracy'
-            'Testing Accuracy'
-            'Training Loss'
-            'Validation Loss'
-            'Testing Loss'
-            'Accuracies' (Classifier and K-Fold only)
-            'Max Accuracy' (Classifier and K-Fold only)
-            'Losses' (Regressor and K-fold only)
-            'min Loss' (Regressor and K-fold only)
-
-        """
-        from topologicpy.Helper import Helper
-        
-        data = {'Model Type': [model.hparams.model_type],
-                'Optimizer': [model.hparams.optimizer_str],
-                'CV Type': [model.hparams.cv_type],
-                'Split': model.hparams.split,
-                'K-Folds': [model.hparams.k_folds],
-                'HL Widths': model.hparams.hl_widths,
-                'Conv Layer Type': [model.hparams.conv_layer_type],
-                'Pooling': [model.hparams.pooling],
-                'Learning Rate': [model.hparams.lr],
-                'Batch Size': [model.hparams.batch_size],
-                'Epochs': [model.hparams.epochs]
-            }
-        
-        if model.hparams.model_type.lower() == "classifier":
-            testing_accuracy_list = [model.testing_accuracy] * model.hparams.epochs
-            try:
-                testing_loss_list = [model.testing_loss] * model.hparams.epochs
-            except:
-                testing_loss_list = [0.] * model.hparams.epochs
-            metrics_data = {
-                'Training Accuracy': [model.training_accuracy_list],
-                'Validation Accuracy': [model.validation_accuracy_list],
-                'Testing Accuracy' : [testing_accuracy_list],
-                'Training Loss': [model.training_loss_list],
-                'Validation Loss': [model.validation_loss_list],
-                'Testing Loss' : [testing_loss_list]
-            }
-            if model.hparams.cv_type.lower() == "k-fold":
-                accuracy_data = {
-                    'Accuracies' : [model.accuracies],
-                    'Max Accuracy' : [model.max_accuracy]
-                }
-                metrics_data.update(accuracy_data)
-            data.update(metrics_data)
-        
-        elif model.hparams.model_type.lower() == "regressor":
-            testing_loss_list = [model.testing_loss] * model.hparams.epochs
-            metrics_data = {
-                'Training Loss': [model.training_loss_list],
-                'Validation Loss': [model.validation_loss_list],
-                'Testing Loss' : [testing_loss_list]
-            }
-            if model.hparams.cv_type.lower() == "k-fold":
-                loss_data = {
-                    'Losses' : [model.losses],
-                    'Min Loss' : [model.min_loss]
-                }
-                metrics_data.update(loss_data)
-            data.update(metrics_data)
-        
-        return data
-    
-    @staticmethod
-    def Show(data,
-             labels,
-             title="Training/Validation",
-             xTitle="Epochs",
-             xSpacing=1,
-             yTitle="Accuracy and Loss",
-             ySpacing=0.1,
-             useMarkers=False,
-             chartType="Line",
-             width=950,
-             height=500,
-             backgroundColor='rgba(0,0,0,0)',
-             gridColor='lightgray',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=40,
-             marginBottom=0,
-             renderer = "notebook"):
-        """
-        Shows the data in a plolty graph.
-
-        Parameters
-        ----------
-        data : list
-            The data to display.
-        labels : list
-            The labels to use for the data.
-        width : int , optional
-            The desired width of the figure. Default is 950.
-        height : int , optional
-            The desired height of the figure. Default is 500.
-        title : str , optional
-            The chart title. Default is "Training and Testing Results".
-        xTitle : str , optional
-            The X-axis title. Default is "Epochs".
-        xSpacing : float , optional
-            The X-axis spacing. Default is 1.0.
-        yTitle : str , optional
-            The Y-axis title. Default is "Accuracy and Loss".
-        ySpacing : float , optional
-            The Y-axis spacing. Default is 0.1.
-        useMarkers : bool , optional
-            If set to True, markers will be displayed. Default is False.
-        chartType : str , optional
-            The desired type of chart. The options are "Line", "Bar", or "Scatter". It is case insensitive. Default is "Line".
-        backgroundColor : str , optional
-            The desired background color. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        gridColor : str , optional
-            The desired grid color. This can be any plotly color string and may be specified as:
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'lightgray'.
-        marginLeft : int , optional
-            The desired left margin in pixels. Default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. Default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. Default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. Default is 0.
-        renderer : str , optional
-            The desired plotly renderer. Default is "notebook".
-
-        Returns
-        -------
-        None.
-
-        """
-        from topologicpy.Plotly import Plotly
-
-        dataFrame = Plotly.DataByDGL(data, labels)
-        fig = Plotly.FigureByDataFrame(dataFrame,
-                                       labels=labels,
-                                       title=title,
-                                       xTitle=xTitle,
-                                       xSpacing=xSpacing,
-                                       yTitle=yTitle,
-                                       ySpacing=ySpacing,
-                                       useMarkers=useMarkers,
-                                       chartType=chartType,
-                                       width=width,
-                                       height=height,
-                                       backgroundColor=backgroundColor,
-                                       gridColor=gridColor,
-                                       marginRight=marginRight,
-                                       marginLeft=marginLeft,
-                                       marginTop=marginTop,
-                                       marginBottom=marginBottom
-                                       )
-        Plotly.Show(fig, renderer=renderer)
-    
-    @staticmethod
-    def ModelLoad(path, model):
-        """
-        Returns the model found at the input file path.
-
-        Parameters
-        ----------
-        path : str
-            File path for the saved classifier.
-        model : torch.nn.module
-            Initialized instance of model
-
-        Returns
-        -------
-        PyG Classifier
-            The classifier.
-
-        """
-        if not path:
-            return None
-        
-        model.load(path)
-        return model
-    
-    @staticmethod
-    def ConfusionMatrix(actual, predicted, normalize=False):
-        """
-        Returns the confusion matrix for the input actual and predicted labels. This is to be used with classification tasks only not regression.
-
-        Parameters
-        ----------
-        actual : list
-            The input list of actual labels.
-        predicted : list
-            The input list of predicts labels.
-        normalized : bool , optional
-            If set to True, the returned data will be normalized (proportion of 1). Otherwise, actual numbers are returned. Default is False.
-
-        Returns
-        -------
-        list
-            The created confusion matrix.
-
-        """
-
-        try:
-            from sklearn import metrics
-            from sklearn.metrics import accuracy_score
-        except:
-            print("PyG - Installing required scikit-learn (sklearn) library.")
-            try:
-                os.system("pip install scikit-learn")
-            except:
-                os.system("pip install scikit-learn --user")
-            try:
-                from sklearn import metrics
-                from sklearn.metrics import accuracy_score
-                print("PyG - scikit-learn (sklearn) library installed correctly.")
-            except:
-                warnings.warn("PyG - Error: Could not import scikit-learn (sklearn). Please try to install scikit-learn manually. Returning None.")
-                return None
-            
-        if not isinstance(actual, list):
-            print("PyG.ConfusionMatrix - ERROR: The actual input is not a list. Returning None")
-            return None
-        if not isinstance(predicted, list):
-            print("PyG.ConfusionMatrix - ERROR: The predicted input is not a list. Returning None")
-            return None
-        if len(actual) != len(predicted):
-            print("PyG.ConfusionMatrix - ERROR: The two input lists do not have the same length. Returning None")
-            return None
-        if normalize:
-            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted, normalize="true"))
-        else:
-            cm = np.transpose(metrics.confusion_matrix(y_true=actual, y_pred=predicted))
-        return cm
-
-    @staticmethod
-    def ModelPredict(model, dataset, nodeATTRKey="feat"):
-        """
-        Predicts the value of the input dataset.
-
-        Parameters
-        ----------
-        dataset : PyGDataset
-            The input PyG dataset.
-        model : Model
-            The input trained model.
-        nodeATTRKey : str , optional
-            The key used for node attributes. Default is "feat".
-    
-        Returns
-        -------
-        list
-            The list of predictions
-        """
-        try:
-            model = model.model #The inoput model might be our wrapper model. In that case, get its model attribute to do the prediciton.
-        except:
-            pass
-        values = []
-        dataloader = DataLoader(dataset, batch_size=1, drop_last=False)
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        model.eval()
-        for data in tqdm(dataloader, desc='Predicting', leave=False):
-            data = data.to(device)
-            pred = model(data)
-            values.extend(list(np.round(pred.detach().cpu().numpy().flatten(), 3)))
-        return values
-
-    @staticmethod
-    def ModelClassify(model, dataset, nodeATTRKey="feat"):
-        """
-        Predicts the classification the labels of the input dataset.
-
-        Parameters
-        ----------
-        dataset : PyGDataset
-            The input PyG dataset.
-        model : Model
-            The input trained model.
-        nodeATTRKey : str , optional
-            The key used for node attributes. Default is "feat".
-
-        Returns
-        -------
-        dict
-            Dictionary containing labels and probabilities. The included keys and values are:
-            - "predictions" (list): the list of predicted labels
-            - "probabilities" (list): the list of probabilities that the label is one of the categories.
-
-        """
-        try:
-            model = model.model #The inoput model might be our wrapper model. In that case, get its model attribute to do the prediciton.
-        except:
-            pass
-        labels = []
-        probabilities = []
-        dataloader = DataLoader(dataset, batch_size=1, drop_last=False)
-        device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-        for data in tqdm(dataloader, desc='Classifying', leave=False):
-            data = data.to(device)
-            pred = model(data)
-            labels.extend(pred.argmax(1).tolist())
-            probability = (torch.nn.functional.softmax(pred, dim=1).tolist())
-            probability = probability[0]
-            temp_probability = []
-            for p in probability:
-                temp_probability.append(round(p, 3))
-            probabilities.extend(temp_probability)
-        return {"predictions":labels, "probabilities":probabilities}
-    
-    @staticmethod
-    def Accuracy(actual, predicted, mantissa: int = 6):
-        """
-        Computes the accuracy of the input predictions based on the input labels. This is to be used only with classification not with regression.
-
-        Parameters
-        ----------
-        actual : list
-            The input list of actual values.
-        predicted : list
-            The input list of predicted values.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        dict
-            A dictionary returning the accuracy information. This contains the following keys and values:
-            - "accuracy" (float): The number of correct predictions divided by the length of the list.
-            - "correct" (int): The number of correct predictions
-            - "mask" (list): A boolean mask for correct vs. wrong predictions which can be used to filter the list of predictions
-            - "size" (int): The size of the predictions list
-            - "wrong" (int): The number of wrong predictions
-
-        """
-        if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
-            return None
-        correct = 0
-        mask = []
-        for i in range(len(predicted)):
-            if predicted[i] == actual[i]:
-                correct = correct + 1
-                mask.append(True)
+        # default metrics
+        if metrics is None:
+            if self.config.task == "regression":
+                metrics = ["mae", "rmse", "r2"]
             else:
-                mask.append(False)
-        size = len(predicted)
-        wrong = len(predicted)- correct
-        accuracy = round(float(correct) / float(len(predicted)), mantissa)
-        return {"accuracy":accuracy, "correct":correct, "mask":mask, "size":size, "wrong":wrong}
-    
+                metrics = ["accuracy", "f1", "precision", "recall"]
+
+        folds = [int(fm.get("fold", i)) for i, fm in enumerate(fold_metrics)]
+
+        fig = go.Figure()
+        for met in metrics:
+            vals = [float(fm.get(met, 0.0)) for fm in fold_metrics]
+            fig.add_trace(go.Bar(name=met, x=folds, y=vals))
+
+            if show_mean_std:
+                mean_k = f"mean_{met}"
+                std_k = f"std_{met}"
+                if mean_k in cv_report and std_k in cv_report:
+                    mu = float(cv_report[mean_k])
+                    sd = float(cv_report[std_k])
+                    # mean line
+                    fig.add_trace(go.Scatter(
+                        x=[min(folds), max(folds)], y=[mu, mu],
+                        mode="lines", name=f"{met} mean", line=dict(dash="dash")
+                    ))
+                    # +/- std (as band using two lines)
+                    fig.add_trace(go.Scatter(
+                        x=[min(folds), max(folds)], y=[mu + sd, mu + sd],
+                        mode="lines", name=f"{met} +std", line=dict(dash="dot")
+                    ))
+                    fig.add_trace(go.Scatter(
+                        x=[min(folds), max(folds)], y=[mu - sd, mu - sd],
+                        mode="lines", name=f"{met} -std", line=dict(dash="dot")
+                    ))
+
+        fig.update_layout(
+            barmode="group",
+            title="Cross-Validation Summary",
+            xaxis_title="Fold",
+            yaxis_title="Metric Value"
+        )
+        return fig
+
+    # ----------------
+    # Dataset loading
+    # ----------------
+    def _load_csv(self):
+        if not isinstance(self.path, str) or (not os.path.exists(self.path)):
+            raise ValueError("PyG - Error: path does not exist.")
+
+        gpath = os.path.join(self.path, "graphs.csv")
+        npath = os.path.join(self.path, "nodes.csv")
+        epath = os.path.join(self.path, "edges.csv")
+
+        if not os.path.exists(gpath) or not os.path.exists(npath) or not os.path.exists(epath):
+            raise ValueError("PyG - Error: graphs.csv, nodes.csv, edges.csv must exist in the folder.")
+
+        self.graph_df = pd.read_csv(gpath)
+        self.nodes_df = pd.read_csv(npath)
+        self.edges_df = pd.read_csv(epath)
+
+    def _feature_columns(self, df: pd.DataFrame, prefix: str) -> List[str]:
+        cols = [c for c in df.columns if c.startswith(prefix + "_")]
+        def _key(c):
+            parts = c.rsplit("_", 1)
+            if len(parts) == 2 and parts[1].isdigit():
+                return int(parts[1])
+            return 10**9
+        return sorted(cols, key=_key)
+
     @staticmethod
-    def MSE(actual, predicted, mantissa: int = 6):
-        """
-        Computes the Mean Squared Error (MSE) of the input predictions based on the input labels. This is to be used with regression models.
+    def _infer_num_classes(values: np.ndarray) -> int:
+        uniq = np.unique(values[~pd.isna(values)])
+        return int(len(uniq))
 
-        Parameters
-        ----------
-        actual : list
-            The input list of actual values.
-        predicted : list
-            The input list of predicted values.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+    def _build_data_list(self):
+        assert self.graph_df is not None and self.nodes_df is not None and self.edges_df is not None
 
-        Returns
-        -------
-        dict
-            A dictionary returning the MSE information. This contains the following keys and values:
-            - "mse" (float): The mean squared error rounded to the specified mantissa.
-            - "size" (int): The size of the predictions list.
-        """
-        if len(predicted) < 1 or len(actual) < 1 or not len(predicted) == len(actual):
-            return None
-        
-        mse = np.mean((np.array(predicted) - np.array(actual)) ** 2)
-        mse = round(mse, mantissa)
-        size = len(predicted)
+        cfg = self.config
+        gdf = self.graph_df
+        ndf = self.nodes_df
+        edf = self.edges_df
 
-        return {"mse": mse, "size": size}
+        graph_feat_cols = self._feature_columns(gdf, cfg.graph_features_header)
+        node_feat_cols = self._feature_columns(ndf, cfg.node_features_header)
+        edge_feat_cols = self._feature_columns(edf, cfg.edge_features_header)
 
-    @staticmethod
-    def Performance(actual, predicted, mantissa: int = 6):
-        """
-        Computes regression model performance measures. This is to be used only with regression not with classification.
+        if len(node_feat_cols) == 0:
+            raise ValueError(
+                f"PyG - Error: No node feature columns found. "
+                f"Expected columns starting with '{cfg.node_features_header}_'."
+            )
 
-        Parameters
-        ----------
-        actual : list
-            The input list of actual values.
-        predicted : list
-            The input list of predicted values.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        
-        Returns
-        -------
-        dict
-            The dictionary containing the performance measures. The keys in the dictionary are: 'mae', 'mape', 'mse', 'r', 'r2', 'rmse'.
-        """
-        
-        if not isinstance(actual, list):
-            print("PyG.Performance - ERROR: The actual input is not a list. Returning None")
-            return None
-        if not isinstance(predicted, list):
-            print("PyG.Performance - ERROR: The predicted input is not a list. Returning None")
-            return None
-        if not (len(actual) == len(predicted)):
-            print("PyG.Performance - ERROR: The actual and predicted input lists have different lengths. Returning None")
-            return None
-        
-        predicted = np.array(predicted)
-        actual = np.array(actual)
+        for gid in gdf[cfg.graph_id_header].unique():
+            g_row = gdf[gdf[cfg.graph_id_header] == gid]
+            g_nodes = ndf[ndf[cfg.graph_id_header] == gid].sort_values(cfg.node_id_header)
+            g_edges = edf[edf[cfg.graph_id_header] == gid]
 
-        mae = np.mean(np.abs(predicted - actual))
-        mape = np.mean(np.abs((actual - predicted) / actual))*100
-        mse = np.mean((predicted - actual)**2)
-        correlation_matrix = np.corrcoef(predicted, actual)
-        r = correlation_matrix[0, 1]
-        r2 = r**2
-        absolute_errors = np.abs(predicted - actual)
-        mean_actual = np.mean(actual)
-        if mean_actual == 0:
-            rae = None
+            x = torch.tensor(g_nodes[node_feat_cols].values, dtype=torch.float32)
+            edge_index = torch.tensor(
+                g_edges[[cfg.edge_src_header, cfg.edge_dst_header]].values.T,
+                dtype=torch.long
+            )
+
+            data = Data(x=x, edge_index=edge_index)
+
+            if len(edge_feat_cols) > 0:
+                data.edge_attr = torch.tensor(g_edges[edge_feat_cols].values, dtype=torch.float32)
+
+            # graph-level
+            if cfg.level == "graph":
+                y_val = g_row[cfg.graph_label_header].values[0]
+                if cfg.graph_label_type == "categorical":
+                    data.y = torch.tensor([int(y_val)], dtype=torch.long)
+                else:
+                    data.y = torch.tensor([float(y_val)], dtype=torch.float32)
+
+                if len(graph_feat_cols) > 0:
+                    data.u = torch.tensor(g_row[graph_feat_cols].values[0], dtype=torch.float32)
+
+            # node-level
+            if cfg.level == "node":
+                y_vals = g_nodes[cfg.node_label_header].values
+                if cfg.node_label_type == "categorical":
+                    data.y = torch.tensor(y_vals.astype(int), dtype=torch.long)
+                else:
+                    data.y = torch.tensor(y_vals.astype(float), dtype=torch.float32)
+                data.train_mask, data.val_mask, data.test_mask = self._get_or_make_node_masks(g_nodes)
+
+            # edge-level
+            if cfg.level == "edge":
+                y_vals = g_edges[cfg.edge_label_header].values
+                if cfg.edge_label_type == "categorical":
+                    data.edge_y = torch.tensor(y_vals.astype(int), dtype=torch.long)
+                else:
+                    data.edge_y = torch.tensor(y_vals.astype(float), dtype=torch.float32)
+                data.edge_train_mask, data.edge_val_mask, data.edge_test_mask = self._get_or_make_edge_masks(g_edges)
+
+            self.data_list.append(data)
+
+        # output dimensionality
+        if cfg.level == "graph":
+            self._num_outputs = self._infer_num_classes(gdf[cfg.graph_label_header].values) if cfg.graph_label_type == "categorical" else 1
+        elif cfg.level == "node":
+            self._num_outputs = self._infer_num_classes(ndf[cfg.node_label_header].values) if cfg.node_label_type == "categorical" else 1
+        elif cfg.level == "edge":
+            self._num_outputs = self._infer_num_classes(edf[cfg.edge_label_header].values) if cfg.edge_label_type == "categorical" else 1
+        elif cfg.level == "link":
+            self._num_outputs = 1
         else:
-            rae = np.mean(absolute_errors) / mean_actual
-        rmse = np.sqrt(mse)
-        return {'mae': round(mae, mantissa),
-                'mape': round(mape, mantissa),
-                'mse': round(mse, mantissa),
-                'r': round(r, mantissa),
-                'r2': round(r2, mantissa),
-                'rae': round(rae, mantissa),
-                'rmse': round(rmse, mantissa)
-                }
+            raise ValueError("Unsupported level.")
+
+    def _get_or_make_node_masks(self, g_nodes: pd.DataFrame):
+        cfg = self.config
+        cols = g_nodes.columns
+
+        if (cfg.node_train_mask_header in cols) and (cfg.node_val_mask_header in cols) and (cfg.node_test_mask_header in cols):
+            train_mask = torch.tensor(g_nodes[cfg.node_train_mask_header].astype(bool).values, dtype=torch.bool)
+            val_mask = torch.tensor(g_nodes[cfg.node_val_mask_header].astype(bool).values, dtype=torch.bool)
+            test_mask = torch.tensor(g_nodes[cfg.node_test_mask_header].astype(bool).values, dtype=torch.bool)
+            return train_mask, val_mask, test_mask
+
+        n = len(g_nodes)
+        idx = list(range(n))
+        if cfg.shuffle:
+            random.Random(cfg.random_state).shuffle(idx)
+
+        n_train = max(1, int(cfg.split[0] * n))
+        n_val = max(1, int(cfg.split[1] * n))
+        n_test = max(0, n - n_train - n_val)
+
+        train_idx = set(idx[:n_train])
+        val_idx = set(idx[n_train:n_train + n_val])
+        test_idx = set(idx[n_train + n_val:n_train + n_val + n_test])
+
+        train_mask = torch.tensor([i in train_idx for i in range(n)], dtype=torch.bool)
+        val_mask = torch.tensor([i in val_idx for i in range(n)], dtype=torch.bool)
+        test_mask = torch.tensor([i in test_idx for i in range(n)], dtype=torch.bool)
+        return train_mask, val_mask, test_mask
+
+    def _get_or_make_edge_masks(self, g_edges: pd.DataFrame):
+        cfg = self.config
+        cols = g_edges.columns
+
+        if (cfg.edge_train_mask_header in cols) and (cfg.edge_val_mask_header in cols) and (cfg.edge_test_mask_header in cols):
+            train_mask = torch.tensor(g_edges[cfg.edge_train_mask_header].astype(bool).values, dtype=torch.bool)
+            val_mask = torch.tensor(g_edges[cfg.edge_val_mask_header].astype(bool).values, dtype=torch.bool)
+            test_mask = torch.tensor(g_edges[cfg.edge_test_mask_header].astype(bool).values, dtype=torch.bool)
+            return train_mask, val_mask, test_mask
+
+        n = len(g_edges)
+        idx = list(range(n))
+        if cfg.shuffle:
+            random.Random(cfg.random_state).shuffle(idx)
+
+        n_train = max(1, int(cfg.split[0] * n))
+        n_val = max(1, int(cfg.split[1] * n))
+        n_test = max(0, n - n_train - n_val)
+
+        train_idx = set(idx[:n_train])
+        val_idx = set(idx[n_train:n_train + n_val])
+        test_idx = set(idx[n_train + n_val:n_train + n_val + n_test])
+
+        train_mask = torch.tensor([i in train_idx for i in range(n)], dtype=torch.bool)
+        val_mask = torch.tensor([i in val_idx for i in range(n)], dtype=torch.bool)
+        test_mask = torch.tensor([i in test_idx for i in range(n)], dtype=torch.bool)
+        return train_mask, val_mask, test_mask
+
+    # ----------------------------
+    # Holdout split (graph-level)
+    # ----------------------------
+    def _split_holdout(self):
+        cfg = self.config
+        if cfg.level in ["node", "edge", "link"]:
+            self.train_set = self.data_list
+            self.val_set = self.data_list
+            self.test_set = self.data_list
+            return
+
+        n = len(self.data_list)
+        idx = list(range(n))
+        if cfg.shuffle:
+            random.Random(cfg.random_state).shuffle(idx)
+
+        n_train = max(1, int(cfg.split[0] * n))
+        n_val = max(1, int(cfg.split[1] * n))
+        n_test = max(0, n - n_train - n_val)
+
+        train_idx = idx[:n_train]
+        val_idx = idx[n_train:n_train + n_val]
+        test_idx = idx[n_train + n_val:n_train + n_val + n_test]
+
+        self.train_set = [self.data_list[i] for i in train_idx]
+        self.val_set = [self.data_list[i] for i in val_idx]
+        self.test_set = [self.data_list[i] for i in test_idx]
+
+    # --------------
+    # Model building
+    # --------------
+    def _build_model(self):
+        cfg = self.config
+        in_dim = int(self.data_list[0].x.shape[1])
+
+        encoder = _GNNBackbone(
+            in_dim=in_dim,
+            hidden_dims=cfg.hidden_dims,
+            conv=cfg.conv,
+            activation=cfg.activation,
+            dropout=cfg.dropout,
+            batch_norm=cfg.batch_norm,
+            residual=cfg.residual
+        )
+
+        if cfg.level == "graph":
+            head = _GraphHead(encoder.out_dim, self._num_outputs, pooling=cfg.pooling, dropout=cfg.dropout)
+            self.model = nn.ModuleDict({"encoder": encoder, "head": head}).to(self.device)
+        elif cfg.level == "node":
+            head = _NodeHead(encoder.out_dim, self._num_outputs, dropout=cfg.dropout)
+            self.model = nn.ModuleDict({"encoder": encoder, "head": head}).to(self.device)
+        elif cfg.level == "edge":
+            head = _EdgeHead(encoder.out_dim, self._num_outputs, dropout=cfg.dropout)
+            self.model = nn.ModuleDict({"encoder": encoder, "head": head}).to(self.device)
+        elif cfg.level == "link":
+            predictor = _LinkPredictor(encoder.out_dim, hidden=max(32, encoder.out_dim), dropout=cfg.dropout)
+            self.model = nn.ModuleDict({"encoder": encoder, "predictor": predictor}).to(self.device)
+        else:
+            raise ValueError("Unsupported level.")
+
+        if cfg.optimizer == "adamw":
+            self.optimizer = torch.optim.AdamW(self.model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+        else:
+            self.optimizer = torch.optim.Adam(self.model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
+
+        if cfg.level == "link":
+            self.criterion = nn.BCEWithLogitsLoss()
+        else:
+            if cfg.task == "regression":
+                self.criterion = nn.MSELoss()
+            else:
+                self.criterion = nn.CrossEntropyLoss()
+
+    def _apply_gradients(self):
+        cfg = self.config
+        if cfg.gradient_clip_norm is not None:
+            torch.nn.utils.clip_grad_norm_(self.model.parameters(), float(cfg.gradient_clip_norm))
+        self.optimizer.step()
+
+    # -----------------------
+    # Training / evaluation
+    # -----------------------
+    def Train(self, epochs: Optional[int] = None, batch_size: Optional[int] = None) -> Dict[str, List[float]]:
+        """
+        Train a model using holdout splitting (or in-graph masks for node/edge tasks).
+
+        If you want k-fold cross-validation for graph-level tasks, call CrossValidate().
+        """
+        cfg = self.config
+        if epochs is not None:
+            cfg.epochs = int(epochs)
+        if batch_size is not None:
+            cfg.batch_size = int(batch_size)
+
+        self.history = {"train_loss": [], "val_loss": []}
+
+        if cfg.level == "graph":
+            train_loader = DataLoader(self.train_set, batch_size=cfg.batch_size, shuffle=True)
+            val_loader = DataLoader(self.val_set, batch_size=cfg.batch_size, shuffle=False)
+
+            best_val = float("inf")
+            patience = 0
+
+            for _ in range(cfg.epochs):
+                tr = self._train_epoch_graph(train_loader)
+                va = self._eval_epoch_graph(val_loader)
+                self.history["train_loss"].append(tr)
+                self.history["val_loss"].append(va)
+
+                if cfg.early_stopping:
+                    if va < best_val - 1e-9:
+                        best_val = va
+                        patience = 0
+                    else:
+                        patience += 1
+                        if patience >= int(cfg.early_stopping_patience):
+                            break
+
+        elif cfg.level == "node":
+            train_loader = DataLoader(self.data_list, batch_size=1, shuffle=True)
+            val_loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            for _ in range(cfg.epochs):
+                tr = self._train_epoch_node(train_loader)
+                va = self._eval_epoch_node(val_loader)
+                self.history["train_loss"].append(tr)
+                self.history["val_loss"].append(va)
+
+        elif cfg.level == "edge":
+            train_loader = DataLoader(self.data_list, batch_size=1, shuffle=True)
+            val_loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            for _ in range(cfg.epochs):
+                tr = self._train_epoch_edge(train_loader)
+                va = self._eval_epoch_edge(val_loader)
+                self.history["train_loss"].append(tr)
+                self.history["val_loss"].append(va)
+
+        elif cfg.level == "link":
+            train_loader = DataLoader(self.data_list, batch_size=1, shuffle=True)
+            val_loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            for _ in range(cfg.epochs):
+                tr = self._train_epoch_link(train_loader)
+                va = self._eval_epoch_link(val_loader)
+                self.history["train_loss"].append(tr)
+                self.history["val_loss"].append(va)
+
+        else:
+            raise ValueError("Unsupported level.")
+
+        return self.history
+
+    def CrossValidate(self,
+                      k_folds: Optional[int] = None,
+                      epochs: Optional[int] = None,
+                      batch_size: Optional[int] = None) -> Dict[str, Union[float, List[Dict[str, float]]]]:
+        """
+        Perform K-Fold cross-validation (graph-level only).
+
+        Parameters
+        ----------
+        k_folds : int, optional
+            Number of folds. Defaults to config.k_folds.
+        epochs : int, optional
+            Training epochs per fold. Defaults to config.epochs.
+        batch_size : int, optional
+            Batch size. Defaults to config.batch_size.
+
+        Returns
+        -------
+        dict
+            {
+              "fold_metrics": [ {metric: value, ...}, ... ],
+              "mean_<metric>": value,
+              "std_<metric>": value
+            }
+
+        Notes
+        -----
+        - Supported only for graph-level tasks (node/edge tasks typically use per-graph masks).
+        - If labels are categorical, stratified splits can be enabled (config.k_stratify).
+        """
+        cfg = self.config
+        if cfg.level != "graph":
+            raise ValueError("CrossValidate is supported for graph-level tasks only.")
+
+        if k_folds is None:
+            k_folds = int(cfg.k_folds)
+        if k_folds < 2:
+            raise ValueError("k_folds must be >= 2.")
+        if epochs is not None:
+            cfg.epochs = int(epochs)
+        if batch_size is not None:
+            cfg.batch_size = int(batch_size)
+
+        n = len(self.data_list)
+        indices = np.arange(n)
+
+        # Stratification labels (optional)
+        y = None
+        if cfg.k_stratify and cfg.task == "classification" and cfg.graph_label_type == "categorical":
+            y = np.array([int(d.y.item()) for d in self.data_list], dtype=int)
+
+        rng = np.random.RandomState(cfg.random_state)
+        if cfg.k_shuffle:
+            rng.shuffle(indices)
+
+        # Build folds
+        if y is None:
+            folds = np.array_split(indices, k_folds)
+        else:
+            folds = [np.array([], dtype=int) for _ in range(k_folds)]
+            classes = np.unique(y)
+            for c in classes:
+                cls_idx = indices[y[indices] == c]
+                cls_chunks = np.array_split(cls_idx, k_folds)
+                for fi in range(k_folds):
+                    folds[fi] = np.concatenate([folds[fi], cls_chunks[fi]])
+            folds = [rng.permutation(f) for f in folds]
+
+        fold_metrics: List[Dict[str, float]] = []
+        base_config = copy.deepcopy(cfg)
+
+        for fi in range(k_folds):
+            test_idx = folds[fi]
+            train_idx = np.concatenate([folds[j] for j in range(k_folds) if j != fi])
+
+            train_set = [self.data_list[i] for i in train_idx.tolist()]
+            test_set = [self.data_list[i] for i in test_idx.tolist()]
+
+            # Fresh model per fold
+            self.config = copy.deepcopy(base_config)
+            self._build_model()
+            self.history = {"train_loss": [], "val_loss": []}
+
+            train_loader = DataLoader(train_set, batch_size=self.config.batch_size, shuffle=True)
+            test_loader = DataLoader(test_set, batch_size=self.config.batch_size, shuffle=False)
+
+            best_loss = float("inf")
+            patience = 0
+
+            for _ in range(self.config.epochs):
+                tr_loss = self._train_epoch_graph(train_loader)
+                te_loss = self._eval_epoch_graph(test_loader)
+                self.history["train_loss"].append(tr_loss)
+                self.history["val_loss"].append(te_loss)
+
+                if self.config.early_stopping:
+                    if te_loss < best_loss - 1e-9:
+                        best_loss = te_loss
+                        patience = 0
+                    else:
+                        patience += 1
+                        if patience >= int(self.config.early_stopping_patience):
+                            break
+
+            # Metrics (unprefixed) for the fold
+            metrics = self._metrics_graph(test_loader, prefix="")
+            metrics["fold"] = float(fi)
+            fold_metrics.append(metrics)
+
+        # Restore original config and rebuild model
+        self.config = copy.deepcopy(base_config)
+        self._build_model()
+
+        # Aggregate
+        summary: Dict[str, Union[float, List[Dict[str, float]]]] = {"fold_metrics": fold_metrics}
+        metric_keys = [k for k in fold_metrics[0].keys()] if fold_metrics else []
+        metric_keys = [k for k in metric_keys if k != "fold"]
+
+        for k in metric_keys:
+            vals = np.array([fm[k] for fm in fold_metrics], dtype=float)
+            summary[f"mean_{k}"] = float(np.mean(vals))
+            summary[f"std_{k}"] = float(np.std(vals))
+
+        self.cv_report = summary
+        return summary
+
+    def Validate(self) -> Dict[str, float]:
+        cfg = self.config
+        if cfg.level == "graph":
+            loader = DataLoader(self.val_set, batch_size=cfg.batch_size, shuffle=False)
+            return self._metrics_graph(loader, prefix="val_")
+        if cfg.level == "node":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_node(loader, split="val")
+        if cfg.level == "edge":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_edge(loader, split="val")
+        if cfg.level == "link":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_link(loader, split="val")
+        raise ValueError("Unsupported level.")
+
+    def Test(self) -> Dict[str, float]:
+        cfg = self.config
+        if cfg.level == "graph":
+            loader = DataLoader(self.test_set, batch_size=cfg.batch_size, shuffle=False)
+            return self._metrics_graph(loader, prefix="test_")
+        if cfg.level == "node":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_node(loader, split="test")
+        if cfg.level == "edge":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_edge(loader, split="test")
+        if cfg.level == "link":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            return self._metrics_link(loader, split="test")
+        raise ValueError("Unsupported level.")
+
+    # --------
+    # Epochs
+    # --------
+    def _loss_from_logits(self, logits, y, task: TaskKind):
+        if task == "regression":
+            pred = logits.squeeze(-1)
+            return self.criterion(pred.float(), y.float())
+        return self.criterion(logits, y.long())
+
+    def _train_epoch_graph(self, loader):
+        self.model.train()
+        losses = []
+        for batch in loader:
+            batch = batch.to(self.device)
+            self.optimizer.zero_grad()
+            node_emb = self.model["encoder"](batch.x, batch.edge_index)
+            logits = self.model["head"](node_emb, batch.batch)
+            loss = self._loss_from_logits(logits, batch.y, self.config.task)
+            loss.backward()
+            self._apply_gradients()
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    @torch.no_grad()
+    def _eval_epoch_graph(self, loader):
+        self.model.eval()
+        losses = []
+        for batch in loader:
+            batch = batch.to(self.device)
+            node_emb = self.model["encoder"](batch.x, batch.edge_index)
+            logits = self.model["head"](node_emb, batch.batch)
+            loss = self._loss_from_logits(logits, batch.y, self.config.task)
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    def _train_epoch_node(self, loader):
+        self.model.train()
+        losses = []
+        for data in loader:
+            data = data.to(self.device)
+            self.optimizer.zero_grad()
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            logits = self.model["head"](node_emb)
+            mask = data.train_mask
+            loss = self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
+            loss.backward()
+            self._apply_gradients()
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    @torch.no_grad()
+    def _eval_epoch_node(self, loader):
+        self.model.eval()
+        losses = []
+        for data in loader:
+            data = data.to(self.device)
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            logits = self.model["head"](node_emb)
+            mask = data.val_mask
+            loss = self._loss_from_logits(logits[mask], data.y[mask], self.config.task)
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    def _train_epoch_edge(self, loader):
+        self.model.train()
+        losses = []
+        for data in loader:
+            data = data.to(self.device)
+            self.optimizer.zero_grad()
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            logits = self.model["head"](node_emb, data.edge_index)
+            mask = data.edge_train_mask
+            loss = self._loss_from_logits(logits[mask], data.edge_y[mask], self.config.task)
+            loss.backward()
+            self._apply_gradients()
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    @torch.no_grad()
+    def _eval_epoch_edge(self, loader):
+        self.model.eval()
+        losses = []
+        for data in loader:
+            data = data.to(self.device)
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            logits = self.model["head"](node_emb, data.edge_index)
+            mask = data.edge_val_mask
+            loss = self._loss_from_logits(logits[mask], data.edge_y[mask], self.config.task)
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    def _train_epoch_link(self, loader):
+        self.model.train()
+        losses = []
+        split = RandomLinkSplit(
+            num_val=self.config.link_val_ratio,
+            num_test=self.config.link_test_ratio,
+            is_undirected=self.config.link_is_undirected,
+            add_negative_train_samples=True,
+            neg_sampling_ratio=1.0
+        )
+        for data in loader:
+            train_data, _, _ = split(data)
+            train_data = train_data.to(self.device)
+            self.optimizer.zero_grad()
+            node_emb = self.model["encoder"](train_data.x, train_data.edge_index)
+            logits = self.model["predictor"](node_emb, train_data.edge_label_index)
+            loss = self.criterion(logits, train_data.edge_label.float())
+            loss.backward()
+            self._apply_gradients()
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    @torch.no_grad()
+    def _eval_epoch_link(self, loader):
+        self.model.eval()
+        losses = []
+        split = RandomLinkSplit(
+            num_val=self.config.link_val_ratio,
+            num_test=self.config.link_test_ratio,
+            is_undirected=self.config.link_is_undirected,
+            add_negative_train_samples=True,
+            neg_sampling_ratio=1.0
+        )
+        for data in loader:
+            _, val_data, _ = split(data)
+            val_data = val_data.to(self.device)
+            node_emb = self.model["encoder"](val_data.x, val_data.edge_index)
+            logits = self.model["predictor"](node_emb, val_data.edge_label_index)
+            loss = self.criterion(logits, val_data.edge_label.float())
+            losses.append(float(loss.detach().cpu()))
+        return float(np.mean(losses)) if losses else 0.0
+
+    # --------------
+    # Metrics helpers
+    # --------------
+    @torch.no_grad()
+    def _predict_graph(self, loader):
+        self.model.eval()
+        y_true, y_pred = [], []
+        for batch in loader:
+            batch = batch.to(self.device)
+            node_emb = self.model["encoder"](batch.x, batch.edge_index)
+            out = self.model["head"](node_emb, batch.batch)
+            if self.config.task == "regression":
+                y_true.extend(batch.y.squeeze(-1).detach().cpu().numpy().tolist())
+                y_pred.extend(out.squeeze(-1).detach().cpu().numpy().tolist())
+            else:
+                probs = F.softmax(out, dim=-1)
+                y_true.extend(batch.y.detach().cpu().numpy().tolist())
+                y_pred.extend(probs.argmax(dim=-1).detach().cpu().numpy().tolist())
+        return np.array(y_true), np.array(y_pred)
+
+    @torch.no_grad()
+    def _predict_node(self, loader, mask_name: str):
+        self.model.eval()
+        y_true, y_pred = [], []
+        for data in loader:
+            data = data.to(self.device)
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            out = self.model["head"](node_emb)
+            mask = getattr(data, mask_name)
+            if self.config.task == "regression":
+                y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
+                y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
+            else:
+                probs = F.softmax(out, dim=-1)
+                y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
+                y_pred.extend(probs.argmax(dim=-1)[mask].detach().cpu().numpy().tolist())
+        return np.array(y_true), np.array(y_pred)
+
+    @torch.no_grad()
+    def _predict_edge(self, loader, mask_name: str):
+        self.model.eval()
+        y_true, y_pred = [], []
+        for data in loader:
+            data = data.to(self.device)
+            node_emb = self.model["encoder"](data.x, data.edge_index)
+            out = self.model["head"](node_emb, data.edge_index)
+            mask = getattr(data, mask_name)
+            if self.config.task == "regression":
+                y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
+                y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
+            else:
+                probs = F.softmax(out, dim=-1)
+                y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
+                y_pred.extend(probs.argmax(dim=-1)[mask].detach().cpu().numpy().tolist())
+        return np.array(y_true), np.array(y_pred)
+
+    @torch.no_grad()
+    def _predict_link(self, loader, split_name: str):
+        self.model.eval()
+        split = RandomLinkSplit(
+            num_val=self.config.link_val_ratio,
+            num_test=self.config.link_test_ratio,
+            is_undirected=self.config.link_is_undirected,
+            add_negative_train_samples=True,
+            neg_sampling_ratio=1.0
+        )
+        y_true, y_score = [], []
+        for data in loader:
+            tr, va, te = split(data)
+            use = {"train": tr, "val": va, "test": te}[split_name]
+            use = use.to(self.device)
+            node_emb = self.model["encoder"](use.x, use.edge_index)
+            logits = self.model["predictor"](node_emb, use.edge_label_index)
+            probs = torch.sigmoid(logits).detach().cpu().numpy()
+            y = use.edge_label.detach().cpu().numpy()
+            y_true.extend(y.tolist())
+            y_score.extend(probs.tolist())
+        return np.array(y_true), np.array(y_score)
+
+    # ----------
+    # Public metrics API
+    # ----------
+    def _metrics_graph(self, loader, prefix: str):
+        y_true, y_pred = self._predict_graph(loader)
+        if self.config.task == "regression":
+            return self._regression_metrics(y_true, y_pred, prefix=prefix)
+        return self._classification_metrics(y_true, y_pred, prefix=prefix)
+
+    def _metrics_node(self, loader, split: Literal["train", "val", "test"]):
+        mask = "train_mask" if split == "train" else ("val_mask" if split == "val" else "test_mask")
+        y_true, y_pred = self._predict_node(loader, mask)
+        if self.config.task == "regression":
+            return self._regression_metrics(y_true, y_pred, prefix=f"{split}_")
+        return self._classification_metrics(y_true, y_pred, prefix=f"{split}_")
+
+    def _metrics_edge(self, loader, split: Literal["train", "val", "test"]):
+        mask = "edge_train_mask" if split == "train" else ("edge_val_mask" if split == "val" else "edge_test_mask")
+        y_true, y_pred = self._predict_edge(loader, mask)
+        if self.config.task == "regression":
+            return self._regression_metrics(y_true, y_pred, prefix=f"{split}_")
+        return self._classification_metrics(y_true, y_pred, prefix=f"{split}_")
+
+    def _metrics_link(self, loader, split: Literal["train", "val", "test"]):
+        y_true, y_score = self._predict_link(loader, split)
+        y_pred = (y_score >= 0.5).astype(int)
+        return self._classification_metrics(y_true, y_pred, prefix=f"{split}_")
+
+    @staticmethod
+    def _classification_metrics(y_true: np.ndarray, y_pred: np.ndarray, prefix: str = "") -> Dict[str, float]:
+        acc = float(accuracy_score(y_true, y_pred)) if len(y_true) else 0.0
+        prec, rec, f1, _ = precision_recall_fscore_support(y_true, y_pred, average="weighted", zero_division=0)
+        return {
+            f"{prefix}accuracy": float(acc),
+            f"{prefix}precision": float(prec),
+            f"{prefix}recall": float(rec),
+            f"{prefix}f1": float(f1),
+        }
+
+    @staticmethod
+    def _regression_metrics(y_true: np.ndarray, y_pred: np.ndarray, prefix: str = "") -> Dict[str, float]:
+        if len(y_true) == 0:
+            return {f"{prefix}mae": 0.0, f"{prefix}rmse": 0.0, f"{prefix}r2": 0.0}
+        mae = float(mean_absolute_error(y_true, y_pred))
+        rmse = float(math.sqrt(mean_squared_error(y_true, y_pred)))
+        r2 = float(r2_score(y_true, y_pred))
+        return {f"{prefix}mae": mae, f"{prefix}rmse": rmse, f"{prefix}r2": r2}
+
+    # -----------------
+    # Plotly reporting
+    # -----------------
+    def PlotHistory(self):
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(y=self.history["train_loss"], mode="lines+markers", name="Train Loss"))
+        fig.add_trace(go.Scatter(y=self.history["val_loss"], mode="lines+markers", name="Val Loss"))
+        fig.update_layout(title="Training History", xaxis_title="Epoch", yaxis_title="Loss")
+        return fig
+
+    def PlotConfusionMatrix(self, split: Literal["train", "val", "test"] = "test"):
+        if self.config.task != "classification" or self.config.level == "link":
+            raise ValueError("Confusion matrix is only available for classification (graph/node/edge).")
+
+        if self.config.level == "graph":
+            if split == "train":
+                loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
+            elif split == "val":
+                loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
+            else:
+                loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
+            y_true, y_pred = self._predict_graph(loader)
+
+        elif self.config.level == "node":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            mask = "train_mask" if split == "train" else ("val_mask" if split == "val" else "test_mask")
+            y_true, y_pred = self._predict_node(loader, mask)
+
+        else:  # edge
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            mask = "edge_train_mask" if split == "train" else ("edge_val_mask" if split == "val" else "edge_test_mask")
+            y_true, y_pred = self._predict_edge(loader, mask)
+
+        cm = confusion_matrix(y_true, y_pred)
+        fig = px.imshow(cm, text_auto=True, title=f"Confusion Matrix ({split})")
+        fig.update_layout(xaxis_title="Predicted", yaxis_title="True")
+        return fig
+
+    def PlotParity(self, split: Literal["train", "val", "test"] = "test"):
+        if self.config.task != "regression":
+            raise ValueError("Parity plot is only available for regression tasks.")
+
+        if self.config.level == "graph":
+            if split == "train":
+                loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
+            elif split == "val":
+                loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
+            else:
+                loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
+            y_true, y_pred = self._predict_graph(loader)
+
+        elif self.config.level == "node":
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            mask = "train_mask" if split == "train" else ("val_mask" if split == "val" else "test_mask")
+            y_true, y_pred = self._predict_node(loader, mask)
+
+        else:
+            loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+            mask = "edge_train_mask" if split == "train" else ("edge_val_mask" if split == "val" else "edge_test_mask")
+            y_true, y_pred = self._predict_edge(loader, mask)
+
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=y_true, y=y_pred, mode="markers", name="Predictions"))
+        mn = float(min(np.min(y_true), np.min(y_pred))) if len(y_true) else 0.0
+        mx = float(max(np.max(y_true), np.max(y_pred))) if len(y_true) else 1.0
+        fig.add_trace(go.Scatter(x=[mn, mx], y=[mn, mx], mode="lines", name="Ideal"))
+        fig.update_layout(title=f"Parity Plot ({split})", xaxis_title="True", yaxis_title="Predicted")
+        return fig
+
+    def SaveModel(self, path: str):
+        if not path.lower().endswith(".pt"):
+            path = path + ".pt"
+        torch.save(self.model.state_dict(), path)
+
+    def LoadModel(self, path: str):
+        state = torch.load(path, map_location=self.device)
+        self.model.load_state_dict(state)
+        self.model.to(self.device)
+        self.model.eval()

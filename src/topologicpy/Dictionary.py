@@ -1,4 +1,4 @@
-# Copyright (C) 2025
+# Copyright (C) 2026
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
@@ -1249,6 +1249,97 @@ class Dictionary():
             return None
 
         return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB)
+
+
+    @staticmethod
+    def OneHotEncode(d, keys, categoriesByKey, silent=False):
+        """
+        One-hot encodes multiple categorical dictionary values in one pass. See https://en.wikipedia.org/wiki/One-hot
+
+        Parameters
+        ----------
+        d : topologic_core.Dictionary
+            The input dictionary.
+        keys : list
+            List of dictionary keys to one-hot encode.
+        categoriesByKey : dict
+            A dictionary mapping each key (str) to an ordered list of categories (list).
+            Example:
+                {
+                "room_type": ["Kitchen","Bedroom","WC"],
+                "zone": ["Public","Private"]
+                }
+        silent : bool , optional
+            If True, suppress warnings. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            A new dictionary where each original key in `keys` is removed (if present)
+            and replaced with one-hot encoded keys:
+                "<key>_0", "<key>_1", ...
+        """
+
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(d, "Dictionary"):
+            if not silent:
+                print("Dictionary.OneHotEncode - Error: Input is not a valid Dictionary.")
+            return None
+
+        if keys is None:
+            if not silent:
+                print("Dictionary.OneHotEncode - Error: keys is None.")
+            return None
+
+        keys = list(keys)
+        if len(keys) == 0:
+            return d
+
+        if not isinstance(categoriesByKey, dict):
+            if not silent:
+                print("Dictionary.OneHotEncode - Error: categoriesByKey must be a dict mapping key -> categories.")
+            return None
+
+        # Read original dictionary once
+        orig_keys = Dictionary.Keys(d)
+        orig_vals = [Dictionary.ValueAtKey(d, k) for k in orig_keys]
+
+        # Build a quick index for deletions/updates
+        orig_index = {k: i for i, k in enumerate(orig_keys)}
+
+        # Determine which keys to remove and capture their values
+        values_by_key = {}
+        for k in keys:
+            if k in orig_index:
+                values_by_key[k] = orig_vals[orig_index[k]]
+            else:
+                values_by_key[k] = None
+
+        # Remove requested keys (preserving order of remaining items)
+        remove_set = set(keys)
+        out_keys = []
+        out_vals = []
+        for k, v in zip(orig_keys, orig_vals):
+            if k not in remove_set:
+                out_keys.append(k)
+                out_vals.append(v)
+
+        # Append one-hot encodings for each key in `keys`
+        for k in keys:
+            cats = categoriesByKey.get(k, None)
+            if not isinstance(cats, (list, tuple)) or len(cats) == 0:
+                if not silent:
+                    print(f"Dictionary.OneHotEncodeBatch - Warning: No categories provided for key '{k}'. Skipping.")
+                continue
+
+            value = values_by_key.get(k, None)
+            for i, cat in enumerate(cats):
+                out_keys.append(f"{k}_{i}")
+                out_vals.append(1 if value == cat else 0)
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
 
     @staticmethod
     def PythonDictionary(dictionary, silent: bool = False):

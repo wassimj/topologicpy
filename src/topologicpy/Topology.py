@@ -1,4 +1,4 @@
-# Copyright (C) 2025
+# Copyright (C) 2026
 # Wassim Jabi <wassim.jabi@gmail.com>
 #
 # This program is free software: you can redistribute it and/or modify it under
