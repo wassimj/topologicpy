@@ -17278,9 +17278,6 @@ class Graph:
         vertexB,
         vertexKey: str = "",
         edgeKey: str = "Length",
-        transferDictionaries: bool = False,
-        straighten: bool = False,
-        host: object = None,
         turnWeight: float = 0.0,
         turnPower: float = 1.0,
         turnKey: str = "",
@@ -17293,10 +17290,10 @@ class Graph:
         useAStar: bool = False,
         heuristicScale: float = 1.0,
         returnVertices: bool = False,
+        returnEdges: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False,
     ):
-
         """
         Returns the shortest path (as a Wire) between two vertices in a Graph using a
         pure-Python, feature-rich routing algorithm.
@@ -17314,95 +17311,60 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph on which routing is performed.
-
         vertexA : topologic_core.Vertex
             The start vertex. It is snapped to the nearest vertex in the graph.
-
         vertexB : topologic_core.Vertex
             The end vertex. It is snapped to the nearest vertex in the graph.
-
         vertexKey : str, optional
             Name of a numeric key in each vertex dictionary whose value is added
             to the path cost when that vertex is entered. Higher values make routes
             avoid those vertices. If empty, no vertex cost is applied.
-
         edgeKey : str, optional
             Name of a numeric key in each edge dictionary used as the edge traversal
             cost. If set to "Length" (case-insensitive), geometric edge length is used.
             This is the primary contributor to path length.
-
         transferDictionaries : bool, optional
             If True, dictionaries from the graph vertices are copied onto the vertices
             of the returned path. This does not affect routing, only the output data.
-
-        straighten : bool, optional
-            If True, the resulting path is post-processed to remove unnecessary bends
-            while remaining inside the specified face. This does not influence route
-            selection, only the final geometry.
-
-        host : topologic_core.Topology, optional
-            A host topology within which the path is
-            straightened when straighten=True.
-        
-        obstacles : list, optional
-            The list of topologies with which the straightened edges must not intersect.
-        
-        portals : list, optional
-            The list of topologies with which the straightened edges must intersect.
-            Portals with which the original wire does NOT intersect are ignored.
-
         turnWeight : float, optional
             Controls how strongly turning is penalised relative to edge length.
             A value of 0 disables turn cost. Larger values favour straighter routes
             even if they are longer. Default is 1.
-
         turnPower : float, optional
             Controls how sharply turn penalties increase with turn severity.
             Values greater than 1 strongly penalise right-angle turns while allowing
             gentle bends. Default is 2.
-
         turnKey : str, optional
             Name of a numeric key in vertex dictionaries that scales turn cost locally.
             Useful for modelling junction complexity or restricted turning areas. Default is None.
-
         directed : bool, optional
             If True, edges are traversed only from start to end vertex.
             If False, the graph is treated as undirected. Default is False.
-
         edgeFilter : callable(edge) -> bool, optional
             A function that returns False for edges that must not be traversed.
             This enforces hard constraints such as blocked corridors. Default is None.
-
         vertexFilter : callable(vertex) -> bool, optional
             A function that returns False for vertices that must not be visited
             (except for start and end vertices). Default is None.
-
         edgeCostFunc : callable(edge) -> float, optional
             Custom function overriding edgeKey and geometric length to compute
             edge traversal cost.
-
         vertexCostFunc : callable(vertex) -> float, optional
             Custom function overriding vertexKey to compute vertex visitation cost.
-
         turnCostFunc : callable(prev, curr, next, inEdge, outEdge, spread) -> float, optional
             Fully custom function to compute turn cost between consecutive edges.
             Overrides turnWeight, turnPower, and turnKey.
-
         useAStar : bool, optional
             If True, uses A* search instead of Dijkstra when edge costs are geometric,
             improving performance on large graphs.
-
         heuristicScale : float, optional
             Multiplier for the A* heuristic (must be ≤ 1 for admissibility).
             Lower values make the search more conservative.
-
         returnVertices : bool, optional
             If True, returns both the Wire and the ordered list of vertices forming
             the path. Useful for debugging or analysis.
-        
         tolerance : float, optional
             The desired tolerance. Default is 0.0001.
-
         silent : bool, optional
             If True, suppresses error and warning messages. Default is False.
 
@@ -17411,8 +17373,12 @@ class Graph:
         topologic_core.Wire
             A wire representing the shortest path between the two input vertices,
             optionally straightened and with transferred dictionaries.
-        """
 
+        If returnVertices and/or returnEdges are True:
+            - returnVertices=True  -> returns (wire, path_vertex_indices)
+            - returnEdges=True     -> returns (wire, path_edge_index_pairs)
+            - both True            -> returns (wire, path_vertex_indices, path_edge_index_pairs)
+        """
 
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
@@ -17440,18 +17406,10 @@ class Graph:
             if not silent:
                 print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        if straighten and not Topology.IsInstance(host, "Topology"):
-            if not silent:
-                print("Graph.ShortestPath - Error: Straighten is True but host is not a valid topology. Returning None.")
-            return None
-
         if isinstance(edgeKey, str) and edgeKey.lower() == "length":
             edgeKey = "Length"
-        
-        if heuristicScale < 0.0:
-            heuristicScale = 0.0
-        if heuristicScale > 1.0:
-            heuristicScale = 1.0
+
+        heuristicScale = max(0.0, min(1.0, float(heuristicScale)))
 
         # --------------------------------------------------
         # Helpers
@@ -17486,8 +17444,8 @@ class Graph:
                 sv, ev = Edge.StartVertex(e), Edge.EndVertex(e)
                 ax, ay, az = Vertex.Coordinates(sv, mantissa=15)
                 bx, by, bz = Vertex.Coordinates(ev, mantissa=15)
-                dx, dy, dz = bx-ax, by-ay, bz-az
-                return float(math.sqrt(dx*dx + dy*dy + dz*dz))
+                dx, dy, dz = bx - ax, by - ay, bz - az
+                return float(math.sqrt(dx * dx + dy * dy + dz * dz))
 
         # --------------------------------------------------
         # Extract graph vertices/edges
@@ -17516,13 +17474,13 @@ class Graph:
             if i is not None:
                 return i
 
-            # 2) nearest fallback by quadrance (only used for endpoints or stray vertices)
+            # 2) nearest fallback by quadrance (used only for endpoints or stray vertices)
             vx, vy, vz = Vertex.Coordinates(v, mantissa=15)
             best_i = None
             best_q = float("inf")
             for j, (x, y, z) in enumerate(coords):
                 dx, dy, dz = x - vx, y - vy, z - vz
-                q = dx*dx + dy*dy + dz*dz
+                q = dx * dx + dy * dy + dz * dz
                 if q < best_q:
                     best_q = q
                     best_i = j
@@ -17551,6 +17509,10 @@ class Graph:
                 print("Graph.ShortestPath - Error: Could not locate start/end vertices in graph. Returning None.")
             return None
 
+        if s_idx == t_idx:
+            # Start and end are the same after snapping
+            return None
+
         # --------------------------------------------------
         # Directed setting (if not explicitly provided)
         # --------------------------------------------------
@@ -17568,7 +17530,7 @@ class Graph:
             directed = False
 
         # --------------------------------------------------
-        # Vertex filter (FIXED: now actually used)
+        # Vertex filter (applied as hard constraints)
         # --------------------------------------------------
         allowed_vertex = [True] * len(vertices)
         if callable(vertexFilter):
@@ -17580,10 +17542,8 @@ class Graph:
                 except Exception:
                     allowed_vertex[i] = True
 
-        if not allowed_vertex[s_idx] or not allowed_vertex[t_idx]:
-            # Should not happen because endpoints are forced allowed, but keep safe
-            allowed_vertex[s_idx] = True
-            allowed_vertex[t_idx] = True
+        allowed_vertex[s_idx] = True
+        allowed_vertex[t_idx] = True
 
         # --------------------------------------------------
         # Vertex costs
@@ -17608,16 +17568,16 @@ class Graph:
             return _num_from_dict(vertices[i], turnKey, default=1.0)
 
         # --------------------------------------------------
-        # Build adjacency
-        #   We build directed traversal "arcs" even for undirected graphs, because
-        #   turn costs require direction vectors.
+        # Build adjacency with arc bookkeeping
+        #   arc_* arrays store traversal arcs, each referencing an ORIGINAL graph edge.
         # --------------------------------------------------
         adj = [[] for _ in range(len(vertices))]  # adj[u] = list of (v, arc_index)
 
         arc_u = []
         arc_v = []
-        arc_dir = []   # direction vector for traversal u->v
-        arc_w = []     # traversal cost
+        arc_dir = []    # direction vector for traversal u->v
+        arc_w = []      # traversal cost
+        arc_edge = []   # ORIGINAL graph edge object used for traversal u->v
 
         for e in edges:
             # Edge-level filter
@@ -17633,7 +17593,7 @@ class Graph:
             if ui is None or vi is None:
                 continue
 
-            # Vertex-level hard constraint (FIXED)
+            # Vertex-level hard constraint
             if not allowed_vertex[ui] or not allowed_vertex[vi]:
                 continue
 
@@ -17647,58 +17607,56 @@ class Graph:
                 if edgeKey == "Length":
                     w = _edge_length(e)
                 elif edgeKey:
-                    # default to 0.0 if missing, unless edgeKey is Length
-                    default = _edge_length(e) if edgeKey == "Length" else 0.0
-                    w = _num_from_dict(e, edgeKey, default=default)
+                    w = _num_from_dict(e, edgeKey, default=0.0)
                 else:
                     w = _edge_length(e)
 
             ax, ay, az = coords[ui]
             bx, by, bz = coords[vi]
 
-            # forward arc ui->vi
+            # forward arc ui->vi uses ORIGINAL edge e
             ai = len(arc_u)
             arc_u.append(ui)
             arc_v.append(vi)
-            arc_dir.append([bx-ax, by-ay, bz-az])
+            arc_dir.append([bx - ax, by - ay, bz - az])
             arc_w.append(w)
+            arc_edge.append(e)
             adj[ui].append((vi, ai))
 
             if not directed:
-                # reverse arc vi->ui
+                # reverse arc vi->ui still references ORIGINAL edge e (traversed opposite)
                 aj = len(arc_u)
                 arc_u.append(vi)
                 arc_v.append(ui)
-                arc_dir.append([ax-bx, ay-by, az-bz])
+                arc_dir.append([ax - bx, ay - by, az - bz])
                 arc_w.append(w)
+                arc_edge.append(e)
                 adj[vi].append((ui, aj))
 
-        if s_idx == t_idx:
-            # Start and end are the same after snapping
-            return None
-
         # --------------------------------------------------
-        # Heuristic (A*) - only safe/admissible if using geometric length-like costs and no custom funcs
+        # Heuristic (A*) - only admissible when using geometric length costs and no custom funcs
         # --------------------------------------------------
         def _heuristic(i: int) -> float:
             if not useAStar:
                 return 0.0
             ax, ay, az = coords[i]
             bx, by, bz = coords[t_idx]
-            dx, dy, dz = bx-ax, by-ay, bz-az
-            return heuristicScale * math.sqrt(dx*dx + dy*dy + dz*dz)
+            dx, dy, dz = bx - ax, by - ay, bz - az
+            return heuristicScale * math.sqrt(dx * dx + dy * dy + dz * dz)
 
         if useAStar:
-            # Disable A* when custom edge cost function is supplied or edgeKey not Length-like.
-            if callable(edgeCostFunc) or (edgeKey != "Length"):
+            if callable(edgeCostFunc) or (edgeKey != "Length") or callable(turnCostFunc) or (turnWeight != 0.0) or bool(turnKey):
+                # Conservative: disable A* if costs are not purely geometric / consistent.
                 useAStar = False
 
         # --------------------------------------------------
-        # Dijkstra / A* with optional turn costs
+        # Dijkstra / (optionally A*) with optional turn costs
         # --------------------------------------------------
         use_turn = (turnWeight != 0.0) or callable(turnCostFunc) or bool(turnKey)
-
         INF = float("inf")
+
+        path_idx = None
+        path_arcs = None  # ordered arc indices along the path, length = len(path_idx)-1
 
         if not use_turn:
             # ----------------------------
@@ -17729,27 +17687,35 @@ class Graph:
             if dist[t_idx] == INF:
                 return None
 
-            # Reconstruct vertex indices
-            path_idx = []
+            # Reconstruct vertex indices and arcs
+            idx_rev = []
+            arc_rev = []
             cur = t_idx
             while cur is not None:
-                path_idx.append(cur)
+                idx_rev.append(cur)
+                a = prev_arc[cur]
+                if a is not None:
+                    arc_rev.append(a)
                 cur = prev_v[cur]
-            path_idx.reverse()
+
+            idx_rev.reverse()
+            arc_rev.reverse()
+
+            path_idx = idx_rev
+            path_arcs = arc_rev
 
         else:
             # ----------------------------
             # Turn-cost routing on states (prev_vertex, curr_vertex)
-            # We store the incoming arc index in the state to compute Spread for the next transition.
+            # incoming arc is stored per state so we can compute spread into outgoing arc
             # ----------------------------
-            start_state = (-1, s_idx)  # (prev_vertex_idx, curr_vertex_idx)
+            start_state = (-1, s_idx)
 
             dist_state = {start_state: 0.0}
-            prev_state = {}       # state -> previous state
+            prev_state = {}         # state -> previous state
             in_arc_state = {start_state: None}  # state -> incoming arc index
 
             pq = [(0.0 + _heuristic(s_idx), 0.0, start_state)]  # (f, g, state)
-
             goal_state = None
 
             while pq:
@@ -17767,7 +17733,6 @@ class Graph:
                 for v, out_arc in adj[u]:
                     ng = g + arc_w[out_arc] + v_cost[v]
 
-                    # Turn penalty only if we have an incoming arc (i.e., not the first move)
                     if in_arc is not None:
                         s = Vector.Spread(arc_dir[in_arc], arc_dir[out_arc], mantissa=15, bracket=False)
 
@@ -17782,7 +17747,7 @@ class Graph:
                                 ts = (s ** turnPower) if turnPower != 1.0 else s
                             except Exception:
                                 ts = s
-                            ng += turnWeight * mult * ts
+                            ng += float(turnWeight) * float(mult) * float(ts)
 
                     next_state = (u, v)
                     if ng < dist_state.get(next_state, INF):
@@ -17794,177 +17759,100 @@ class Graph:
             if goal_state is None:
                 return None
 
-            # Reconstruct vertex indices from states
-            path_idx_rev = [t_idx]
+            # Reconstruct vertices + arcs by walking states back.
+            # Each non-start state has an incoming arc stored in in_arc_state.
+            states = []
             st = goal_state
-            while st != start_state:
-                pst = prev_state.get(st, None)
-                if pst is None:
+            while True:
+                states.append(st)
+                if st == start_state:
                     break
-                # pst is (p, u) where u is the vertex we came from
-                path_idx_rev.append(pst[1])
-                st = pst
-            path_idx_rev.reverse()
+                st = prev_state.get(st, None)
+                if st is None:
+                    break
+            states.reverse()
 
-            # Ensure start is present and remove any adjacent duplicates only
-            if not path_idx_rev or path_idx_rev[0] != s_idx:
-                path_idx_rev = [s_idx] + path_idx_rev
-            path_idx = []
-            for i in path_idx_rev:
-                if not path_idx or path_idx[-1] != i:
-                    path_idx.append(i)
+            # states: [(-1,s), (s,v1), (v1,v2), ... , (vk-1,t)]
+            # vertices: [s, v1, v2, ... , t]
+            # arcs:     incoming arcs of states[1:], in order
+            verts = [states[0][1]]
+            arcs = []
+            for i in range(1, len(states)):
+                verts.append(states[i][1])
+                arcs.append(in_arc_state.get(states[i], None))
 
-        # --------------------------------------------------
-        # Build output vertices (dictionary transfer is output-only)
-        # FIXED: Topology.SetDictionary returns a new topology (do not ignore return value)
-        # --------------------------------------------------
-        out_vertices = []
-        if transferDictionaries:
-            for i in path_idx:
-                gv = vertices[i]
-                x, y, z = coords[i]
-                pv = Vertex.ByCoordinates(x, y, z)
-                try:
-                    pv = Topology.SetDictionary(pv, Topology.Dictionary(gv))
-                except Exception:
+            # Clean adjacent duplicates (defensive)
+            cleaned_verts = []
+            cleaned_arcs = []
+            for i, vi in enumerate(verts):
+                if not cleaned_verts or cleaned_verts[-1] != vi:
+                    cleaned_verts.append(vi)
+                    if i > 0:
+                        cleaned_arcs.append(arcs[i - 1])
+                else:
+                    # duplicate vertex; drop corresponding arc as well
                     pass
-                out_vertices.append(pv)
-        else:
-            out_vertices = [vertices[i] for i in path_idx]
 
-        if len(out_vertices) < 2:
+            # Remove any None arcs (should not happen except pathological backtracking)
+            final_arcs = []
+            for a in cleaned_arcs:
+                if a is not None:
+                    final_arcs.append(a)
+
+            if len(cleaned_verts) < 2 or len(final_arcs) != (len(cleaned_verts) - 1):
+                return None
+
+            path_idx = cleaned_verts
+            path_arcs = final_arcs
+
+        if not path_idx or len(path_idx) < 2:
             return None
 
         # --------------------------------------------------
-        # Build wire
+        # Build output using ORIGINAL graph entities
         # --------------------------------------------------
-        out_edges = []
-        for i in range(len(out_vertices) - 1):
-            try:
-                e = Edge.ByVertices([out_vertices[i], out_vertices[i+1]], tolerance=tolerance, silent=True)
-            except Exception:
-                try:
-                    e = Edge.ByVertices([out_vertices[i], out_vertices[i+1]])
-                except Exception:
-                    e = None
-            if e is None:
-                return None
-            out_edges.append(e)
+        out_vertices = [vertices[i] for i in path_idx]
 
+        # Ordered ORIGINAL edges along the path (may include same edge object multiple times in undirected traversal)
+        out_edges = []
+        edge_index_pairs = []
+        for aidx in path_arcs:
+            u = arc_u[aidx]
+            v = arc_v[aidx]
+            out_edges.append(arc_edge[aidx])
+            edge_index_pairs.append((u, v))
+
+        # Build wire from ORIGINAL edges
         wire = Wire.ByEdges(out_edges)
         if wire is None:
             return None
 
-        # Orient edges consistently from start
-        try:
-            wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
-        except Exception:
-            pass
+        # --------------------------------------------------
+        # Returns
+        # --------------------------------------------------
+        if returnEdges:
+            m_data = Graph.MeshData(graph)
+            m_edges = m_data['edges']
+            r_e_list = []
+            for i_p in edge_index_pairs:
+                e_i = None
+                try:
+                    e_i = m_edges.index([i_p[0], i_p[1]])
+                except:
+                    try:
+                        e_i = m_edges.index(i_p[1], i_p[0])
+                    except:
+                        pass
+                if not e_i == None:
+                    r_e_list.append(e_i)            
 
-        # Optional straightening (post-process)
-        if straighten and Topology.IsInstance(wire, "Wire") and Topology.IsInstance(face, "Face"):
-            try:
-                wire = Wire.Straighten(wire, host)
-            except Exception:
-                pass
-
+        if returnVertices and returnEdges:
+            return wire, list(path_idx), r_e_list
         if returnVertices:
-            return wire, out_vertices
+            return wire, list(path_idx)
+        if returnEdges:
+            return wire, r_e_list
         return wire
-
-    @staticmethod
-    def ShortestPath_old(graph,
-                     vertexA,
-                     vertexB,
-                     vertexKey: str = "",
-                     edgeKey: str = "Length",
-                     transferDictionaries: bool = False,
-                     straighten: bool = False,
-                     face: Any = None,
-                     tolerance: float = 0.0001,
-                     silent: bool = False):
-        """
-        Returns the shortest path that connects the input vertices. The shortest path will take into consideration both the vertexKey and the edgeKey if both are specified and will minimize the total "cost" of the path. Otherwise, it will take into consideration only whatever key is specified.
-
-        Parameters
-        ----------
-        graph : topologic_core.Graph
-            The input graph.
-        vertexA : topologic_core.Vertex
-            The first input vertex.
-        vertexB : topologic_core.Vertex
-            The second input vertex.
-        vertexKey : string , optional
-            The vertex key to minimise. If set the vertices dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value must be numeric. Default is None.
-        edgeKey : string , optional
-            The edge key to minimise. If set the edges dictionaries will be searched for this key and the associated value will be used to compute the shortest path that minimized the total value. The value of the key must be numeric. If set to "length" (case insensitive), the shortest path by length is computed. Default is "length".
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the graph vertices will be transferred to the vertices of the shortest path. Otherwise, they won't. Default is False.
-            Note: Edge dictionaries are not transferred (In straightened paths, the path edges are no longer the same as
-            the original graph edges. Thus, you must implement your own logic to transfer edge dictionaries if needed).
-       straighten : bool , optional
-            If set to True, the path will be straightened as much as possible while remaining inside the specified face.
-            Thus, the face input must be a valid topologic Face that is planar and residing on the XY plane. Default is False.
-        face : topologic_core.Face , optional
-            The face on which the path resides. This is used for straightening the path. Default is None.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        topologic_core.Wire
-            The shortest path between the input vertices.
-
-        """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
-
-        if not Topology.IsInstance(graph, "Graph"):
-            if not silent:
-                print("Graph.ShortestPath - Error: The input graph is not a valid graph. Returning None.")
-            return None
-        if not Topology.IsInstance(vertexA, "Vertex"):
-            if not silent:
-                print("Graph.ShortestPath - Error: The input vertexA is not a valid vertex. Returning None.")
-            return None
-        if not Topology.IsInstance(vertexB, "Vertex"):
-            if not silent:
-                print("Graph.ShortestPath - Error: The input vertexB is not a valid vertex. Returning None.")
-            return None
-        if straighten == True:
-            if not Topology.IsInstance(face, "face"):
-                if not silent:
-                    print("Graph.ShortestPath - Error: Straighten is set to True, but the face parameter is not a valid toopologic face. Returning None.")
-                return None
-        if edgeKey:
-            if edgeKey.lower() == "length":
-                edgeKey = "Length"
-        try:
-            gsv = Graph.NearestVertex(graph, vertexA)
-            gev = Graph.NearestVertex(graph, vertexB)
-            shortest_path = graph.ShortestPath(gsv, gev, vertexKey, edgeKey) # Hook to Core
-            if not shortest_path == None:
-                if Topology.IsInstance(shortest_path, "Edge"):
-                        shortest_path = Wire.ByEdges([shortest_path])
-                sv = Topology.Vertices(shortest_path)[0]
-                if Vertex.Distance(sv, gev) <= tolerance: # Path is reversed. Correct it.
-                    if Topology.IsInstance(shortest_path, "Wire"):
-                        shortest_path = Wire.Reverse(shortest_path)
-                shortest_path = Wire.OrientEdges(shortest_path, Wire.StartVertex(shortest_path), tolerance=tolerance)
-            if Topology.IsInstance(shortest_path, "wire"):
-                if straighten == True and Topology.IsInstance(face, "face"):
-                    shortest_path = Wire.StraightenInFace(shortest_path, face)
-                if transferDictionaries == True:
-                    path_verts = Topology.Vertices(shortest_path)
-                    for p_v in path_verts:
-                        g_v = Graph.NearestVertex(graph, p_v)
-                        p_v = Topology.SetDictionary(p_v, Topology.Dictionary(g_v))
-            return shortest_path
-        except:
-            return None
 
     @staticmethod
     def ShortestPaths(graph, vertexA, vertexB, vertexKey="", edgeKey="length", timeLimit=10,
