@@ -8534,7 +8534,13 @@ class Graph:
     #     return values_for_return
 
     @staticmethod
-    def Community(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Community(graph,
+                  key: str = "community",
+                  colorKey: str = "cp_color",
+                  colorScale: str = "viridis",
+                  mantissa: int = 6,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
         """
         Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
 
@@ -8543,7 +8549,11 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to store the partition number. Default is "partition".
+            The dictionary key under which to store the community partition number. Default is "community".
+        colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "cp_color"
+        colorScale : str , optional
+            The desired colorscale name to use for colors. The default is "viridis".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
@@ -8561,7 +8571,13 @@ class Graph:
         return Graph.CommunityPartition(graph=graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def CommunityPartition(graph, key: str = "partition", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def CommunityPartition(graph,
+                           key: str = "community",
+                           colorKey: str = "cp_color",
+                           colorScale: str = "viridis",
+                           mantissa: int = 6,
+                           tolerance: float = 0.0001,
+                           silent: bool = False):
         """
         Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
 
@@ -8570,7 +8586,11 @@ class Graph:
         graph : topologicp.Graph
             The input topologic graph.
         key : str , optional
-            The dictionary key under which to store the partition number. Default is "partition".
+            The dictionary key under which to store the community partition number. Default is "community".
+         colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "cp_color"
+        colorScale : str , optional
+            The desired colorscale name to use for colors. The default is "viridis".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
@@ -8587,6 +8607,7 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
         import os
         import warnings
         
@@ -8621,7 +8642,8 @@ class Graph:
         vertices = Graph.Vertices(graph)
         for i, v in enumerate(vertices):
             d = Topology.Dictionary(v)
-            d = Dictionary.SetValueAtKey(d, key, partition_list[i]+1)
+            color = Color.AnyToHex(Color.ByValueInRange(partition_list[i]+1, minValue=1, maxValue=len(partition_list), colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i]+1, color])
             v = Topology.SetDictionary(v, d)
         edges = Graph.Edges(graph)
         if not edges == None:
@@ -8647,7 +8669,8 @@ class Graph:
                     if partition_1 == partition_2:
                         partition = partition_1
                 d = Topology.Dictionary(edge)
-                d = Dictionary.SetValueAtKey(d, key, partition)
+                color = Color.AnyToHex(Color.ByValueInRange(partition, minValue=0, maxValue=len(partition_list), colorScale=colorScale))
+                d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i]+1, color])
                 edge = Topology.SetDictionary(edge, d)
         return graph
 

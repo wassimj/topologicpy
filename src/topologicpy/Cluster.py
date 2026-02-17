@@ -977,186 +977,452 @@ class Cluster():
         vertices = Topology.Vertices(cluster)
         if len(vertices) > 0:
             return Topology.TypeID("Vertex")
-    
+
     @staticmethod
-    def K_Means(topologies, selectors=None, keys=["x", "y", "z"], k=4, maxIterations=100, centroidKey="k_centroid"):
+    def KMeans(topologies,
+                selectors=None,
+                keys=["x", "y", "z"],
+                k=4,
+                maxIterations=100,
+                centroidKey="k_centroid",
+                distanceMeasure: str = "euclidean",   # "euclidean", "sqeuclidean", "manhattan", "chebyshev", "cosine", "mahalanobis"
+                init: str = "kmeans++",              # "kmeans++" or "random"
+                nInit: int = 10,                     # best-of-n restarts (like sklearn)
+                tol: float = 1e-6,                   # convergence tolerance on centroid shift
+                standardize: bool = False,           # z-score standardization
+                normalize: bool = False,             # L2-normalize rows (useful for cosine / spherical k-means)
+                randomSeed: int = None,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Clusters the input topologies using K-Means clustering. See https://en.wikipedia.org/wiki/K-means_clustering
+        Clusters the input topologies using K-Means-like clustering.
+
+        Best-practice upgrades vs the legacy implementation:
+        - k-means++ initialization (default) for faster, stabler convergence.
+        - Multiple restarts (nInit) and selects best (lowest inertia / objective).
+        - Vectorized numpy core for speed.
+        - More distance measures:
+            * euclidean / sqeuclidean : classic k-means (centroid = mean)
+            * manhattan              : k-medians update (centroid = coordinate-wise median)
+            * chebyshev              : centroid = coordinate-wise midrange (0.5*(min+max)) (robust-ish heuristic)
+            * cosine                 : spherical k-means (normalize; centroid = normalized mean)
+            * mahalanobis            : mean in whitened space (uses global covariance)
+        - Robust empty-cluster handling (reseed with farthest point).
+
+        Notes
+        -----
+        - Classic k-means objective is squared Euclidean; for other metrics this function uses the
+        appropriate/standard centroid update where available (k-medians, spherical k-means), or a
+        reasonable heuristic (chebyshev).
+        - Feature extraction:
+            * If keys include "x","y","z" (case-insensitive), these are taken from the selector vertex (or topology vertex).
+            * Any other key is read from the topology dictionary and must be numeric.
+            * Missing/None values are replaced by 0.0 (warns unless silent).
 
         Parameters
         ----------
         topologies : list
-            The input list of topologies. If this is not a list of topologic vertices then please provide a list of selectors
+            The input list of topologies.
         selectors : list , optional
-            If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-            If set to None, the list of topologies is expected to be a list of vertices. Default is None.
+            If topologies are not vertices, provide selector vertices (e.g., centroids) of equal length.
+            If None, topologies must be vertices.
         keys : list, optional
-            The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). Default is ["x", "y", "z"]
+            Keys to build the feature vector. Include "x","y","z" (any case) for coordinates.
         k : int , optional
-            The desired number of clusters. Default is 4.
+            Number of clusters.
         maxIterations : int , optional
-            The desired maximum number of iterations for the clustering algorithm
+            Maximum iterations.
         centroidKey : str , optional
-            The desired dictionary key under which to store the cluster's centroid (this is not to be confused with the actual geometric centroid of the cluster). Default is "k_centroid"
+            Dictionary key under which to store the cluster centroid feature vector.
+        distanceMeasure : str , optional
+            See list above.
+        init : str , optional
+            "kmeans++" or "random".
+        nInit : int , optional
+            Number of random restarts; best result returned.
+        tol : float , optional
+            Convergence tolerance on centroid movement.
+        standardize : bool , optional
+            Z-score features before clustering (recommended when mixing units).
+        normalize : bool , optional
+            L2-normalize feature rows (recommended for cosine / spherical k-means).
+        randomSeed : int , optional
+            RNG seed.
+        mantissa : int , optional
+            Rounding precision when storing centroid.
+        tolerance : float , optional
+            Tolerance (kept for API consistency).
+        silent : bool , optional
+            Suppress warnings/errors.
 
         Returns
         -------
         list
-            The created list of clusters.
-
+            The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.
         """
-        from topologicpy.Helper import Helper
+        import math
+        import numpy as np
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
 
-        def k_means(data, vertices, k=4, maxIterations=100):
-            import random
-            def euclidean_distance(p, q):
-                return sum((pi - qi) ** 2 for pi, qi in zip(p, q)) ** 0.5
-
-            # Initialize k centroids randomly
-            centroids = random.sample(data, k)
-
-            for _ in range(maxIterations):
-                # Assign each data point to the nearest centroid
-                clusters = [[] for _ in range(k)]
-                clusters_v = [[] for _ in range(k)]
-                for i, point in enumerate(data):
-                    distances = [euclidean_distance(point, centroid) for centroid in centroids]
-                    nearest_centroid_index = distances.index(min(distances))
-                    clusters[nearest_centroid_index].append(point)
-                    clusters_v[nearest_centroid_index].append(vertices[i])
-
-                # Compute the new centroids as the mean of the points in each cluster
-                new_centroids = []
-                for cluster in clusters:
-                    if not cluster:
-                        # If a cluster is empty, keep the previous centroid
-                        new_centroids.append(centroids[clusters.index(cluster)])
-                    else:
-                        new_centroids.append([sum(dim) / len(cluster) for dim in zip(*cluster)])
-
-                # Check if the centroids have converged
-                if new_centroids == centroids:
-                    break
-
-                centroids = new_centroids
-
-            return {'clusters': clusters, 'clusters_v': clusters_v, 'centroids': centroids}
-
+        # --------------------------
+        # Validation
+        # --------------------------
         if not isinstance(topologies, list):
-            print("Cluster.K_Means - Error: The input topologies parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Cluster.KMeans - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
+
         topologies = [t for t in topologies if Topology.IsInstance(t, "Topology")]
         if len(topologies) < 1:
-            print("Cluster.K_Means - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+            if not silent:
+                print("Cluster.KMeans - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
             return None
-        if not isinstance(selectors, list):
-            check_vertices = [v for v in topologies if not Topology.IsInstance(v, "Vertex")]
-            if len(check_vertices) > 0:
-                print("Cluster.K_Means - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+
+        if selectors is None:
+            # Require vertices
+            non_vertices = [t for t in topologies if not Topology.IsInstance(t, "Vertex")]
+            if len(non_vertices) > 0:
+                if not silent:
+                    print("Cluster.KMeans - Error: selectors is None but topologies include non-Vertex objects. Returning None.")
                 return None
         else:
+            if not isinstance(selectors, list):
+                if not silent:
+                    print("Cluster.KMeans - Error: The input selectors parameter is not a valid list. Returning None.")
+                return None
             selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
-            if len(selectors) < 1:
-                check_vertices = [v for v in topologies if not Topology.IsInstance(v, "Vertex")]
-                if len(check_vertices) > 0:
-                    print("Cluster.K_Means - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
-                    return None
-            if not len(selectors) == len(topologies):
-                print("Cluster.K_Means - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
+            if len(selectors) != len(topologies):
+                if not silent:
+                    print("Cluster.KMeans - Error: topologies and selectors must have the same length. Returning None.")
                 return None
-        if not isinstance(keys, list):
-            print("Cluster.K_Means - Error: The input keys parameter is not a valid list. Returning None.")
+            if len(selectors) < 1:
+                if not silent:
+                    print("Cluster.KMeans - Error: selectors does not contain any valid vertices. Returning None.")
+                return None
+
+        if not isinstance(keys, list) or len(keys) < 1:
+            if not silent:
+                print("Cluster.KMeans - Error: The input keys parameter is not a valid non-empty list. Returning None.")
             return None
-        if not isinstance(k , int):
-            print("Cluster.K_Means - Error: The input k parameter is not a valid integer. Returning None.")
+
+        if not isinstance(k, int) or k < 1:
+            if not silent:
+                print("Cluster.KMeans - Error: The input k parameter is not a valid integer >= 1. Returning None.")
             return None
-        if k < 1:
-            print("Cluster.K_Means - Error: The input k parameter is less than one. Returning None.")
+
+        n = len(topologies)
+        if n < k:
+            if not silent:
+                print("Cluster.KMeans - Error: The number of topologies is less than k. Returning None.")
             return None
-        if len(topologies) < k:
-            print("Cluster.K_Means - Error: The input topologies parameter is less than the specified number of clusters. Returning None.")
+
+        if not isinstance(maxIterations, int) or maxIterations < 1:
+            if not silent:
+                print("Cluster.KMeans - Error: maxIterations must be an integer >= 1. Returning None.")
             return None
-        if len(topologies) == k:
-            t_clusters = []
-            for topology in topologies:
-                t_cluster = Cluster.ByTopologies([topology])
-                for key in keys:
-                        if key.lower() == "x":
-                            value = Vertex.X(t)
-                        elif key.lower() == "y":
-                            value = Vertex.Y(t)
-                        elif key.lower() == "z":
-                            value = Vertex.Z(t)
-                        else:
-                            value = Dictionary.ValueAtKey(d, key)
-                        if value != None:
-                            elements.append(value)
-                d = Dictionary.ByKeysValues([centroidKey], [elements])
-                t_cluster = Topology.SetDictionary(t_cluster, d)
-                t_clusters.append(t_cluster)
-            return t_clusters
-        
-        data = []
-        if selectors == None:
-            for t in topologies:
-                elements = []
-                if keys:
-                    d = Topology.Dictionary(t)
-                    for key in keys:
-                        if key.lower() == "x":
-                            value = Vertex.X(t)
-                        elif key.lower() == "y":
-                            value = Vertex.Y(t)
-                        elif key.lower() == "z":
-                            value = Vertex.Z(t)
-                        else:
-                            value = Dictionary.ValueAtKey(d, key)
-                        if value != None:
-                            elements.append(value)
-                data.append(elements)
-        else:
-            for i, s in enumerate(selectors):
-                elements = []
-                if keys:
-                    d = Topology.Dictionary(topologies[i])
-                    for key in keys:
-                        if key.lower() == "x":
-                            value = Vertex.X(s)
-                        elif key.lower() == "y":
-                            value = Vertex.Y(s)
-                        elif key.lower() == "z":
-                            value = Vertex.Z(s)
-                        else:
-                            value = Dictionary.ValueAtKey(d, key)
-                        if value != None:
-                            elements.append(value)
-                data.append(elements)
-        if len(data) == 0:
-            print("Cluster.K_Means - Error: Could not perform the operation. Returning None.")
-            return None
-        if selectors:
-            dict = k_means(data, selectors, k=k, maxIterations=maxIterations)
-        else:
-            dict = k_means(data, topologies, k=k, maxIterations=maxIterations)
-        clusters = dict['clusters_v']
-        centroids = dict['centroids']
-        t_clusters = []
-        for i, cluster in enumerate(clusters):
-            cluster_vertices = []
-            for v in cluster:
-                if selectors == None:
-                    cluster_vertices.append(v)
+
+        distanceMeasure = (distanceMeasure or "euclidean").strip().lower()
+        init = (init or "kmeans++").strip().lower()
+        if init not in ["kmeans++", "random"]:
+            init = "kmeans++"
+
+        if not isinstance(nInit, int) or nInit < 1:
+            nInit = 1
+
+        rng = np.random.default_rng(randomSeed)
+
+        # --------------------------
+        # Feature extraction
+        # --------------------------
+        def _safe_float(val):
+            try:
+                if val is None:
+                    return None
+                f = float(val)
+                if math.isnan(f) or math.isinf(f):
+                    return None
+                return f
+            except Exception:
+                return None
+
+        def _feature_row(topology, selector_vertex):
+            row = []
+            d = Topology.Dictionary(topology)
+            for key in keys:
+                kl = str(key).lower()
+                if kl == "x":
+                    v = Vertex.X(selector_vertex)
+                    fv = _safe_float(v)
+                elif kl == "y":
+                    v = Vertex.Y(selector_vertex)
+                    fv = _safe_float(v)
+                elif kl == "z":
+                    v = Vertex.Z(selector_vertex)
+                    fv = _safe_float(v)
                 else:
-                    index = selectors.index(v)
-                    cluster_vertices.append(topologies[index])
-            cluster = Cluster.ByTopologies(cluster_vertices)
-            d = Dictionary.ByKeysValues([centroidKey], [centroids[i]])
-            cluster = Topology.SetDictionary(cluster, d)
-            t_clusters.append(cluster)
+                    v = Dictionary.ValueAtKey(d, key)
+                    fv = _safe_float(v)
+                if fv is None:
+                    if not silent:
+                        print(f"Cluster.KMeans - Warning: Non-numeric or missing value for key '{key}'. Using 0.0.")
+                    fv = 0.0
+                row.append(fv)
+            return row
+
+        selector_list = selectors if selectors is not None else topologies
+        X = np.array([_feature_row(topologies[i], selector_list[i]) for i in range(n)], dtype=float)
+
+        if X.ndim != 2 or X.shape[0] != n or X.shape[1] < 1:
+            if not silent:
+                print("Cluster.KMeans - Error: Could not build a valid feature matrix. Returning None.")
+            return None
+
+        # Optional preprocessing
+        X_work = X.copy()
+
+        if standardize:
+            mu = X_work.mean(axis=0)
+            sigma = X_work.std(axis=0)
+            sigma[sigma == 0] = 1.0
+            X_work = (X_work - mu) / sigma
+
+        if normalize:
+            norms = np.linalg.norm(X_work, axis=1, keepdims=True)
+            norms[norms == 0] = 1.0
+            X_work = X_work / norms
+
+        # --------------------------
+        # Distance utilities
+        # --------------------------
+        def _pairwise_distances(Xa, C):
+            """
+            Returns D shape (n, k): distance from each Xa row to each centroid row in C.
+            """
+            if distanceMeasure in ["euclidean", "sqeuclidean"]:
+                # Use squared distances for stability/speed; take sqrt only if requested.
+                # d^2 = ||x||^2 + ||c||^2 - 2 x·c
+                x2 = np.sum(Xa * Xa, axis=1, keepdims=True)          # (n,1)
+                c2 = np.sum(C * C, axis=1, keepdims=True).T          # (1,k)
+                d2 = np.maximum(x2 + c2 - 2.0 * (Xa @ C.T), 0.0)
+                if distanceMeasure == "euclidean":
+                    return np.sqrt(d2)
+                return d2
+
+            if distanceMeasure == "manhattan":
+                return np.sum(np.abs(Xa[:, None, :] - C[None, :, :]), axis=2)
+
+            if distanceMeasure == "chebyshev":
+                return np.max(np.abs(Xa[:, None, :] - C[None, :, :]), axis=2)
+
+            if distanceMeasure == "cosine":
+                # 1 - cosine similarity (in [0,2]); assumes rows are normalized for spherical k-means
+                # Still works without normalization but then includes magnitude effects.
+                xnorm = np.linalg.norm(Xa, axis=1, keepdims=True)
+                cnorm = np.linalg.norm(C, axis=1, keepdims=True).T
+                xnorm[xnorm == 0] = 1.0
+                cnorm[cnorm == 0] = 1.0
+                sim = (Xa @ C.T) / (xnorm * cnorm)
+                sim = np.clip(sim, -1.0, 1.0)
+                return 1.0 - sim
+
+            if distanceMeasure == "mahalanobis":
+                # Global covariance (whitening) on X_work
+                # d(x,c) = sqrt( (x-c)^T S^{-1} (x-c) )
+                # We'll precompute inv covariance in outer scope for speed.
+                raise RuntimeError("Internal: mahalanobis handled via whitening.")
+
+            # Fallback
+            return _pairwise_distances(Xa, C)
+
+        # Mahalanobis via whitening
+        if distanceMeasure == "mahalanobis":
+            # Regularized covariance
+            cov = np.cov(X_work, rowvar=False)
+            cov = np.atleast_2d(cov)
+            reg = 1e-9 * np.eye(cov.shape[0])
+            try:
+                inv_cov = np.linalg.inv(cov + reg)
+            except Exception:
+                inv_cov = np.linalg.pinv(cov + reg)
+
+            # whiten transform via Cholesky of inv_cov if possible; else use eig
+            try:
+                L = np.linalg.cholesky(inv_cov)   # inv_cov = L L^T
+                Xw = X_work @ L
+            except Exception:
+                w, V = np.linalg.eigh(inv_cov)
+                w[w < 0] = 0
+                Xw = X_work @ (V @ np.diag(np.sqrt(w)) @ V.T)
+            X_work = Xw
+            # Now Mahalanobis distance reduces to Euclidean in whitened space
+            distanceMeasure = "euclidean"
+
+        # --------------------------
+        # Initialization
+        # --------------------------
+        def _init_centroids_random(Xa, k):
+            idx = rng.choice(Xa.shape[0], size=k, replace=False)
+            return Xa[idx].copy()
+
+        def _init_centroids_kmeanspp(Xa, k):
+            n = Xa.shape[0]
+            # pick first centroid uniformly
+            c_idx = [int(rng.integers(0, n))]
+            C = [Xa[c_idx[0]].copy()]
+
+            # maintain closest squared distance to any chosen centroid
+            # use squared euclidean in working space for kmeans++ selection (standard approach)
+            closest_d2 = np.sum((Xa - C[0]) ** 2, axis=1)
+
+            for _ in range(1, k):
+                probs = closest_d2 / (closest_d2.sum() if closest_d2.sum() > 0 else 1.0)
+                next_idx = int(rng.choice(n, p=probs))
+                c_idx.append(next_idx)
+                C.append(Xa[next_idx].copy())
+                d2_new = np.sum((Xa - Xa[next_idx]) ** 2, axis=1)
+                closest_d2 = np.minimum(closest_d2, d2_new)
+
+            return np.vstack(C)
+
+        # --------------------------
+        # Centroid updates
+        # --------------------------
+        def _update_centroids(Xa, labels, k):
+            C = np.zeros((k, Xa.shape[1]), dtype=float)
+            counts = np.zeros(k, dtype=int)
+
+            for j in range(k):
+                mask = (labels == j)
+                counts[j] = int(mask.sum())
+                if counts[j] == 0:
+                    continue
+                Xj = Xa[mask]
+                if distanceMeasure in ["sqeuclidean", "euclidean"]:
+                    C[j] = Xj.mean(axis=0)
+                elif distanceMeasure == "manhattan":
+                    C[j] = np.median(Xj, axis=0)
+                elif distanceMeasure == "chebyshev":
+                    C[j] = 0.5 * (Xj.min(axis=0) + Xj.max(axis=0))
+                elif distanceMeasure == "cosine":
+                    # spherical k-means: mean then renormalize
+                    cj = Xj.mean(axis=0)
+                    norm = np.linalg.norm(cj)
+                    C[j] = cj / (norm if norm > 0 else 1.0)
+                else:
+                    C[j] = Xj.mean(axis=0)
+            return C, counts
+
+        def _objective(Xa, C, labels):
+            # Inertia-like objective (sum of distances or squared distances depending on metric)
+            if distanceMeasure == "sqeuclidean":
+                d2 = np.sum((Xa - C[labels]) ** 2, axis=1)
+                return float(d2.sum())
+            D = _pairwise_distances(Xa, C)
+            return float(D[np.arange(Xa.shape[0]), labels].sum())
+
+        # --------------------------
+        # Core solve (single run)
+        # --------------------------
+        def _solve_once(Xa):
+            if init == "random":
+                C = _init_centroids_random(Xa, k)
+            else:
+                C = _init_centroids_kmeanspp(Xa, k)
+
+            prev_obj = None
+
+            for _it in range(maxIterations):
+                D = _pairwise_distances(Xa, C)
+                labels = np.argmin(D, axis=1)
+
+                C_new, counts = _update_centroids(Xa, labels, k)
+
+                # Empty cluster handling: reseed empties to farthest points
+                if np.any(counts == 0):
+                    # distance to assigned centroid
+                    dist_to_assigned = D[np.arange(Xa.shape[0]), labels]
+                    # sort farthest-first
+                    far_order = np.argsort(-dist_to_assigned)
+                    empties = np.where(counts == 0)[0].tolist()
+                    used = set()
+                    for j in empties:
+                        # pick farthest point not already used for reseeding
+                        pick = None
+                        for idx in far_order:
+                            if int(idx) not in used:
+                                pick = int(idx)
+                                break
+                        if pick is None:
+                            pick = int(far_order[0])
+                        used.add(pick)
+                        C_new[j] = Xa[pick].copy()
+
+                # Convergence check: centroid shift
+                shift = np.linalg.norm(C_new - C)
+                C = C_new
+
+                obj = _objective(Xa, C, labels)
+                if prev_obj is not None and abs(prev_obj - obj) <= tol * (abs(prev_obj) + tol):
+                    break
+                if shift <= tol:
+                    break
+                prev_obj = obj
+
+            # final labels/objective
+            D = _pairwise_distances(Xa, C)
+            labels = np.argmin(D, axis=1)
+            obj = _objective(Xa, C, labels)
+            return labels, C, obj
+
+        # --------------------------
+        # Best-of-nInit
+        # --------------------------
+        best = None
+        best_obj = float("inf")
+        for _ in range(nInit):
+            labels, C_work, obj = _solve_once(X_work)
+            if obj < best_obj:
+                best_obj = obj
+                best = (labels.copy(), C_work.copy())
+
+        labels, C_work = best
+
+        # --------------------------
+        # Map centroids back to original feature space (for storage)
+        # --------------------------
+        # If we standardized, unstandardize stored centroids.
+        # If we normalized, stored centroids are in normalized space (that’s appropriate for cosine/spherical);
+        # we still store them as-is, since they represent the model centroid in feature space used.
+        C_store = C_work.copy()
+        if standardize:
+            # reverse z-score
+            C_store = (C_store * sigma) + mu
+
+        # Round centroids for storage
+        C_store = np.round(C_store.astype(float), mantissa).tolist()
+
+        # --------------------------
+        # Build Topologic clusters
+        # --------------------------
+        t_clusters = []
+        for j in range(k):
+            idxs = np.where(labels == j)[0].tolist()
+            if len(idxs) == 0:
+                continue  # should not happen after reseeding, but keep safe
+
+            # cluster members are ORIGINAL topologies (not selectors)
+            members = [topologies[i] for i in idxs]
+            t_cluster = Cluster.ByTopologies(members)
+
+            d = Dictionary.ByKeysValues([centroidKey], [C_store[j]])
+            t_cluster = Topology.SetDictionary(t_cluster, d)
+            t_clusters.append(t_cluster)
+
         return t_clusters
 
     @staticmethod

@@ -1285,7 +1285,7 @@ class Wire():
 
 
     @staticmethod
-    def ConcaveHull(topology, k: int = 3, mantissa: int = 6, tolerance: float = 0.0001):
+    def ConcaveHull(topology, k: int = 3, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a wire representing the 2D concave hull of the input topology. The vertices of the topology are assumed to be coplanar.
         Code based on Moreira, A and Santos, M Y, "CONCAVE HULL: A K-NEAREST NEIGHBOURS APPROACH FOR THE COMPUTATION OF THE REGION OCCUPIED BY A SET OF POINTS"
@@ -1303,6 +1303,8 @@ class Wire():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
                 
         Returns
         -------
@@ -1475,13 +1477,17 @@ class Wire():
             # Return the completed hull if all points are inside
             return hull
 
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Wire.ConcaveHull - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
         f = None
         # Create a sample face and flatten
         while not Topology.IsInstance(f, "Face"):
             vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
             v = sample(vertices, 3)
-            w = Wire.ByVertices(v, tolerance=tolerance)
-            f = Face.ByWire(w, tolerance=tolerance, silent=True)
+            w = Wire.ByVertices(v, tolerance=tolerance, silent=silent)
+            f = Face.ByWire(w, tolerance=tolerance, silent=silent)
             if not f == None:
                 origin = Topology.Centroid(f)
                 normal = Face.Normal(f, mantissa=mantissa)
@@ -1495,7 +1501,7 @@ class Wire():
         hull_vertices = []
         for p in hull:
             hull_vertices.append(Vertex.ByCoordinates(p[0], p[1], 0))
-        ch = Wire.ByVertices(hull_vertices, close=True, tolerance=tolerance)
+        ch = Wire.ByVertices(hull_vertices, close=True, tolerance=tolerance, silent=silent)
         ch = Topology.Unflatten(ch, origin=origin, direction=normal)
         return ch
 
@@ -2851,6 +2857,571 @@ class Wire():
         print("Wire.Funnel - Result:", result)
         print("Wire.Funnel - Percentage:", percentage)
         return new_wire
+
+    @staticmethod
+    def GoldenRectangle(width: float = 1.0,
+                        maxIterations: int = 10,
+                        clockwise: bool = False,
+                        origin=None,
+                        placement: str = "center",
+                        direction: list = [0, 0, 1],
+                        mantissa: int = 6,
+                        tolerance: float = 0.0001,
+                        silent: bool = False):
+        """
+        Creates a "golden rectangle". See https://en.wikipedia.org/wiki/Golden_rectangle.
+        
+        Parameters
+        ----------
+        width : float
+            The desired long side of the outer golden rectangle. Height is width/phi.
+        maxIterations : int
+            Number of subdivision squares to generate.
+        clockwise : bool , optional
+            Controls the square “peel” progression (affects which side each next square
+            is taken from). Default is False.
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
+        direction : list , optional
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created golden rectangle wire.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+
+        import math
+
+        # -----------------------------
+        # Helpers
+        # -----------------------------
+        def _safe_vertex(v):
+            return v if v is not None else Vertex.Origin()
+
+        def _round(x):
+            return round(float(x), int(mantissa))
+
+        def _edge(v0, v1):
+            return Edge.ByStartVertexEndVertex(v0, v1, tolerance=tolerance, silent=silent)
+
+        def _square_edges(sx, sy, s):
+            bl = Vertex.ByCoordinates(_round(sx),   _round(sy),   0.0)
+            br = Vertex.ByCoordinates(_round(sx+s), _round(sy),   0.0)
+            tr = Vertex.ByCoordinates(_round(sx+s), _round(sy+s), 0.0)
+            tl = Vertex.ByCoordinates(_round(sx),   _round(sy+s), 0.0)
+            return [_edge(bl, br), _edge(br, tr), _edge(tr, tl), _edge(tl, bl)]
+
+        # -----------------------------
+        # Validate
+        # -----------------------------
+        width = float(width)
+        if width <= 0:
+            if not silent:
+                print("Wire.GoldenRectangle - Error: width must be greater than 0. Returning None.")
+            return None
+        maxIterations = int(maxIterations)
+        if maxIterations < 0:
+            if not silent:
+                print("Wire.GoldenRectangle - Error: maxIterations must be >= 0. Returning None.")
+            return None
+        clockwise = bool(clockwise)
+
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.GoldenRectangle - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+        
+        placement = str(placement).lower()
+        if not placement in ["center", "lowerleft", "lowerright", "upperleft", "upperright"]:
+            if not silent:
+                print("Wire.GoldenRectangle - Error: The input placement parameter is not a valid placement string. Returning None.")
+            return None
+        
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.GoldenRectangle - Error: The input direction parameter is not a valid list. Returning None.")
+            return None
+        
+        direction = [x for x in direction if isinstance(x, (int, float))]
+        
+        if len(direction) != 3:
+            if not silent:
+                print("Wire.GoldenRectangle - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        # -----------------------------
+        # Canonical golden rectangle (UNIT width), centered at (0,0,0)
+        # -----------------------------
+        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        W0 = 1.0
+        H0 = 1.0 / phi
+
+        x0 = -W0 * 0.5
+        y0 = -H0 * 0.5
+        centerV = Vertex.ByCoordinates(0.0, 0.0, 0.0)
+
+        # Outer boundary (canonical)
+        boundary = Wire.Rectangle(origin=Vertex.ByCoordinates(_round(x0), _round(y0), 0.0),
+                                width=W0, length=H0, placement="lowerleft",
+                                direction=[0, 0, 1])
+
+        # If no iterations requested, just return the boundary with final transforms
+        if maxIterations == 0:
+            wire = boundary
+        else:
+            # -----------------------------
+            # Canonical recursive subdivision squares (k progression ALWAYS CCW canonical)
+            # -----------------------------
+            def _subdivide(rx, ry, rW, rH, k, depth, outSquares):
+                if depth <= 0:
+                    return
+                if rW <= tolerance or rH <= tolerance:
+                    if not silent:
+                        print("Wire.GoldenRectangle - Warning: Edge lengths have fallen below tolerance. Stopping early.")
+                    return
+
+                wide = (rW >= rH)
+
+                # k: 0:left, 1:bottom, 2:right, 3:top  (canonical progression only)
+                if wide:
+                    s = rH
+                    if k == 0:      # left
+                        sx, sy = rx, ry
+                        nrx, nry = rx + s, ry
+                        nW, nH = rW - s, rH
+                    elif k == 2:    # right
+                        sx, sy = rx + (rW - s), ry
+                        nrx, nry = rx, ry
+                        nW, nH = rW - s, rH
+                    elif k == 1:    # bottom (fallback)
+                        sx, sy = rx, ry
+                        nrx, nry = rx, ry + s
+                        nW, nH = rW, rH - s
+                    else:           # top (fallback)
+                        sx, sy = rx, ry + (rH - s)
+                        nrx, nry = rx, ry
+                        nW, nH = rW, rH - s
+                else:
+                    s = rW
+                    if k == 1:      # bottom
+                        sx, sy = rx, ry
+                        nrx, nry = rx, ry + s
+                        nW, nH = rW, rH - s
+                    elif k == 3:    # top
+                        sx, sy = rx, ry + (rH - s)
+                        nrx, nry = rx, ry
+                        nW, nH = rW, rH - s
+                    elif k == 0:    # left (fallback)
+                        sx, sy = rx, ry
+                        nrx, nry = rx + s, ry
+                        nW, nH = rW - s, rH
+                    else:           # right (fallback)
+                        sx, sy = rx + (rW - s), ry
+                        nrx, nry = rx, ry
+                        nW, nH = rW - s, rH
+
+                outSquares.append((sx, sy, s))
+                _subdivide(nrx, nry, nW, nH, (k + 1) % 4, depth - 1, outSquares)
+
+            squares = []
+            _subdivide(float(x0), float(y0), float(W0), float(H0), 0, maxIterations, squares)
+            if len(squares) == 0:
+                if not silent:
+                    print("Wire.GoldenRectangle - Error: Could not create rectangle. Returning None.")
+                return None
+
+            # Build square edges (canonical)
+            sq_edges = []
+            for (sx, sy, s) in squares:
+                e_list = _square_edges(sx, sy, s)
+                if None in e_list:
+                    if not silent:
+                        print("Wire.GoldenRectangle - Warning: Could not create an edge. Stopping early.")
+                    break
+                sq_edges += e_list
+
+            wire = Wire.ByEdges(sq_edges, tolerance=tolerance)
+            wire = Topology.Merge(wire, boundary)
+
+            if wire is None:
+                if not silent:
+                    print("Wire.GoldenRectangle - Error: Could not create golden rectangle. Returning None.")
+                return None
+
+        # -----------------------------
+        # FINAL transforms (only here)
+        # -----------------------------
+
+        # 1) Mirror (clockwise) about canonical center
+        if clockwise:
+            wire = Topology.Scale(wire, centerV, 1.0, -1.0, 1.0)
+
+        # 2) Scale to requested width (canonical W0=1.0 => scale factors are (width, width, 1))
+        wire = Topology.Scale(wire, centerV, width, width, 1.0)
+
+        # 3) Translate so placement reference point lies at canonical origin (0,0,0)
+        # After scaling:
+        W = width
+        H = width / phi
+        pl = placement.lower()
+
+        if pl == "center":
+            refx, refy = 0.0, 0.0
+        elif pl == "lowerleft":
+            refx, refy = -W * 0.5, -H * 0.5
+        elif pl == "lowerright":
+            refx, refy =  W * 0.5, -H * 0.5
+        elif pl == "upperleft":
+            refx, refy = -W * 0.5,  H * 0.5
+        elif pl == "upperright":
+            refx, refy =  W * 0.5,  H * 0.5
+        else:
+            refx, refy = 0.0, 0.0
+
+        wire = Topology.Translate(wire, -refx, -refy, 0.0)
+
+        # 4) Orient/place (as requested)
+        if direction != [0,0,1]:
+            wire = Topology.Orient(wire, origin=origin, dirA=[0,0,1], dirB=direction)
+
+        return wire
+
+    @staticmethod
+    def GoldenSpiral(width: float = 1.0,
+                    maxIterations: int = 10,
+                    clockwise: bool = False,
+                    sides: int = 96,
+                    origin=None,
+                    placement: str = "center",
+                    direction: list = [0, 0, 1],
+                    mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
+        """
+        Creates a "golden spiral" as segmented quarter-circle arcs. See https://en.wikipedia.org/wiki/Golden_spiral
+        
+        Parameters
+        ----------
+        width : float
+            The desired long side of the outer golden rectangle. Height is width/phi.
+        maxIterations : int
+            Number of subdivision squares to generate.
+        clockwise : bool , optional
+            Controls the square “peel” progression (affects which side each next square
+            is taken from). Default is False.
+        sides : int , optional
+            The number of sides of the golden spiral (if included).
+            Notes: If you set sides to be equal to maxIterations, you get the diagonals.
+            It is best if the number of sides is a multiple of maxIterations.
+            Default is 96.
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
+        direction : list , optional
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created golden spiral wire
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+
+        import math
+
+        # -----------------------------
+        # Helpers
+        # -----------------------------
+        def _round(x):
+            return round(float(x), int(mantissa))
+
+        def _dist_xy(a, b):
+            dx = Vertex.X(a) - Vertex.X(b)
+            dy = Vertex.Y(a) - Vertex.Y(b)
+            return math.sqrt(dx*dx + dy*dy)
+
+        def _square_corners(sx, sy, s):
+            bl = Vertex.ByCoordinates(_round(sx),   _round(sy),   0.0)
+            br = Vertex.ByCoordinates(_round(sx+s), _round(sy),   0.0)
+            tr = Vertex.ByCoordinates(_round(sx+s), _round(sy+s), 0.0)
+            tl = Vertex.ByCoordinates(_round(sx),   _round(sy+s), 0.0)
+            return (bl, br, tr, tl)
+
+        def _ang_from(center, p):
+            return math.atan2(Vertex.Y(p) - Vertex.Y(center), Vertex.X(p) - Vertex.X(center))
+
+        def _normalize_angle(a):
+            while a <= -math.pi:
+                a += 2.0 * math.pi
+            while a > math.pi:
+                a -= 2.0 * math.pi
+            return a
+
+        def _arc_edges(center, p_start, p_end, nseg):
+            """
+            If nseg == 1: return the diagonal edge (p_start -> p_end).
+            Else: return a polyline approximation of the quarter-circle.
+            """
+            nseg = max(1, int(nseg))
+            if nseg == 1:
+                return [Edge.ByStartVertexEndVertex(p_start, p_end, tolerance=tolerance)]
+
+            r = max(tolerance, _dist_xy(center, p_start))
+            ang0 = _ang_from(center, p_start)
+            angT = _ang_from(center, p_end)
+
+            # choose +/- 90 degrees from ang0 that best hits angT
+            candA = ang0 + math.pi / 2.0
+            candB = ang0 - math.pi / 2.0
+            dA = abs(_normalize_angle(candA - angT))
+            dB = abs(_normalize_angle(candB - angT))
+            ang1 = candA if dA <= dB else candB
+
+            cx, cy = Vertex.X(center), Vertex.Y(center)
+            pts = []
+            for i in range(nseg + 1):
+                t = float(i) / float(nseg)
+                a = ang0 + t * (ang1 - ang0)
+                x = cx + r * math.cos(a)
+                y = cy + r * math.sin(a)
+                pts.append(Vertex.ByCoordinates(_round(x), _round(y), 0.0))
+
+            edges = []
+            for i in range(len(pts) - 1):
+                edges.append(Edge.ByStartVertexEndVertex(pts[i], pts[i+1], tolerance=tolerance))
+            return edges
+
+        # -----------------------------
+        # Validate
+        # -----------------------------
+        width = float(width)
+        if width <= 0:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: width must be greater than 0. Returning None.")
+            return None
+        maxIterations = int(maxIterations)
+        if maxIterations <= 0:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: maxIterations must be >= 0. Returning None.")
+            return None
+        
+        sides = int(sides)
+        if sides < maxIterations:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: sides must be >= maxIterations. Returning None.")
+            return None
+        clockwise = bool(clockwise)
+
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Wire.GoldenSpiral - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+        
+        placement = str(placement).lower()
+        if not placement in ["center", "lowerleft", "lowerright", "upperleft", "upperright"]:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: The input placement parameter is not a valid placement string. Returning None.")
+            return None
+        
+        if not isinstance(direction, list):
+            if not silent:
+                print("Wire.GoldenSpiral - Error: The input direction parameter is not a valid list. Returning None.")
+            return None
+        
+        direction = [x for x in direction if isinstance(x, (int, float))]
+        
+        if len(direction) != 3:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        # -----------------------------
+        # Canonical golden rectangle (unit width), centered at (0,0,0)
+        # -----------------------------
+        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        W0 = 1.0
+        H0 = 1.0 / phi
+
+        x0 = -W0 * 0.5
+        y0 = -H0 * 0.5
+        centerV = Vertex.ByCoordinates(0.0, 0.0, 0.0)
+
+        # -----------------------------
+        # Canonical square sequence (CCW peel-side cycle)
+        # -----------------------------
+        # This is canonical; clockwise is applied later via mirroring.
+        side_cycle = ["left", "bottom", "right", "top"]
+
+        rx, ry, rW, rH = float(x0), float(y0), float(W0), float(H0)
+        squares = []  # (sx, sy, s, side)
+
+        for i in range(maxIterations):
+            if rW <= tolerance or rH <= tolerance:
+                break
+
+            side = side_cycle[i % 4]
+
+            if rW >= rH:
+                s = rH
+                if side == "right":
+                    sx, sy = rx + (rW - s), ry
+                    rW = rW - s
+                else:  # left or fallback
+                    sx, sy = rx, ry
+                    rx = rx + s
+                    rW = rW - s
+            else:
+                s = rW
+                if side == "top":
+                    sx, sy = rx, ry + (rH - s)
+                    rH = rH - s
+                else:  # bottom or fallback
+                    sx, sy = rx, ry
+                    ry = ry + s
+                    rH = rH - s
+
+            squares.append((sx, sy, s, side))
+
+        if not squares:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: Could not create square sequence. Returning None.")
+            return None
+
+        # -----------------------------
+        # Distribute global sides across arcs (min 1 per arc)
+        # -----------------------------
+        weights = [max(tolerance, s) for (_, _, s, _) in squares]
+        wsum = sum(weights) if sum(weights) > 0 else 1.0
+
+        segs = []
+        for w in weights:
+            n = int(round(sides * (w / wsum)))
+            segs.append(max(1, n))
+
+        # normalize to exactly `sides` while maintaining >=1
+        cur = sum(segs)
+        while cur > sides:
+            j = max(range(len(segs)), key=lambda i: segs[i])
+            if segs[j] > 1:
+                segs[j] -= 1
+                cur -= 1
+            else:
+                break
+        while cur < sides:
+            j = max(range(len(segs)), key=lambda i: weights[i])
+            segs[j] += 1
+            cur += 1
+
+        # -----------------------------
+        # Build spiral arcs only (flipped-diagonal orientation by side)
+        # -----------------------------
+        spiral_edges = []
+        last_end = None
+        eps_join = 10.0 ** (-mantissa)
+
+        for (sx, sy, s, side), nseg in zip(squares, segs):
+            bl, br, tr, tl = _square_corners(sx, sy, s)
+
+            # Flipped-diagonal mapping (by side)
+            if side == "left":
+                p0, p1 = tl, br
+                c = tr
+            elif side == "bottom":
+                p0, p1 = bl, tr
+                c = tl
+            elif side == "right":
+                p0, p1 = br, tl
+                c = bl
+            else:  # top
+                p0, p1 = tr, bl
+                c = br
+
+            # continuity (swap endpoints if needed)
+            if last_end is not None:
+                if abs(Vertex.X(p0) - Vertex.X(last_end)) > eps_join or abs(Vertex.Y(p0) - Vertex.Y(last_end)) > eps_join:
+                    if abs(Vertex.X(p1) - Vertex.X(last_end)) <= eps_join and abs(Vertex.Y(p1) - Vertex.Y(last_end)) <= eps_join:
+                        p0, p1 = p1, p0
+
+            edges = _arc_edges(c, p0, p1, nseg)
+            if edges:
+                last_end = Edge.EndVertex(edges[-1])
+            spiral_edges += edges
+
+        spiral = Wire.ByEdges(spiral_edges, tolerance=tolerance)
+        if spiral is None:
+            spiral = Topology.SelfMerge(Cluster.ByTopologies(spiral_edges))
+        if spiral is None:
+            if not silent:
+                print("Wire.GoldenSpiral - Error: Could not create spiral. Returning None.")
+            return None
+
+        # -----------------------------
+        # FINAL transforms (only here)
+        # -----------------------------
+
+        # 1) Mirror for clockwise (negative scaling on Y axis about center)
+        if clockwise:
+            spiral = Topology.Scale(spiral, centerV, 1.0, -1.0, 1.0)
+
+        # 2) Scale to requested width (canonical W0=1 => uniform XY scale = width)
+        spiral = Topology.Scale(spiral, centerV, width, width, 1.0)
+
+        # 3) Translate so placement reference of the *golden rectangle* lands at (0,0,0)
+        W = width
+        H = width / phi
+        pl = placement.lower()
+
+        if pl == "center":
+            refx, refy = 0.0, 0.0
+        elif pl == "lowerleft":
+            refx, refy = -W * 0.5, -H * 0.5
+        elif pl == "lowerright":
+            refx, refy =  W * 0.5, -H * 0.5
+        elif pl == "upperleft":
+            refx, refy = -W * 0.5,  H * 0.5
+        elif pl == "upperright":
+            refx, refy =  W * 0.5,  H * 0.5
+        else:
+            refx, refy = 0.0, 0.0
+
+        spiral = Topology.Translate(spiral, -refx, -refy, 0.0)
+
+        # 4) Orient/place
+        spiral = Topology.Orient(spiral, origin, [0, 0, 1], direction)
+
+        return spiral
 
     @staticmethod
     def InteriorAngles(wire, tolerance: float = 0.0001, mantissa: int = 6) -> list:

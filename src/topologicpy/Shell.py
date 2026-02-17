@@ -747,7 +747,145 @@ class Shell():
         faces = []
         _ = shell.Faces(None, faces)
         return faces
-    
+
+    @staticmethod
+    def GoldenRectangle(width: float = 1.0,
+                            maxIterations: int = 10,
+                            clockwise: bool = False,
+                            includeSpiral = True,
+                            sides = 96,
+                            origin=None,
+                            placement: str = "center",
+                            direction: list = [0, 0, 1],
+                            mantissa: int = 6,
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
+        """
+        Creates a "golden rectangle" with an optional "golden spiral". See https://en.wikipedia.org/wiki/Golden_rectangle and https://en.wikipedia.org/wiki/Golden_spiral.
+
+        Parameters
+        ----------
+        width : float
+            The desired long side of the outer golden rectangle. Height is width/phi.
+        maxIterations : int
+            Number of subdivision squares to generate.
+        clockwise : bool , optional
+            Controls the square “peel” progression (affects which side each next square
+            is taken from). Default is False.
+        includeSpiral : bool , optional
+            If set to True, the golden spiral is included in the resulting shell. Default is True.
+        sides : int , optional
+            The number of sides of the golden spiral (if included).
+            Notes: If you set sides to be equal to maxIterations, you get the diagonals.
+            It is best if the number of sides is a multiple of maxIterations.
+            Default is 96.
+        origin : topologic_core.Vertex, optional
+            The location of the origin of the rectangle. Default is None which results in the rectangle being placed at (0, 0, 0).
+        direction : list , optional
+            The vector representing the up direction of the rectangle. Default is [0, 0, 1].
+        placement : str , optional
+            The description of the placement of the origin of the rectangle. This can be "center", "lowerleft", "upperleft", "lowerright", "upperright". It is case insensitive. Default is "center".
+        mantissa : int , optional
+            The desired length of the mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Shell
+            A shell made from the faces of all subdivision squares (multiple loops).
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        import math
+
+        # -----------------------------
+        # Validate
+        # -----------------------------
+        width = float(width)
+        if width <= 0:
+            if not silent:
+                print("Shell.GoldenRectangle - Error: width must be greater than 0. Returning None.")
+            return None
+        maxIterations = int(maxIterations)
+        if maxIterations <= 0:
+            if not silent:
+                print("Shell.GoldenRectangle - Error: maxIterations must be >= 0. Returning None.")
+            return None
+        if includeSpiral == True:
+            sides = int(sides)
+            if sides < maxIterations:
+                if not silent:
+                    print("Shell.GoldenRectangle - Error: sides must be >= maxIterations. Returning None.")
+                return None
+        clockwise = bool(clockwise)
+        if origin == None:
+            origin = Vertex.Origin()
+        
+        if not Topology.IsInstance(origin, "vertex"):
+            if not silent:
+                print("Shell.GoldenRectangle - Error: The input origin parameter is not a valid vertex. Returning None.")
+            return None
+        placement = str(placement).lower()
+        if not placement in ["center", "lowerleft", "lowerright", "upperleft", "upperright"]:
+            if not silent:
+                print("Shell.GoldenRectangle - Error: The input placement parameter is not a valid placement string. Returning None.")
+            return None
+        if not isinstance(direction, list):
+            if not silent:
+                print("Shell.GoldenRectangle - Error: The input direction parameter is not a valid list. Returning None.")
+            return None
+        direction = [x for x in direction if isinstance(x, (int, float))]
+        if len(direction) != 3:
+            if not silent:
+                print("Shell.GoldenRectangle - Error: The input direction parameter is not a valid 3D vector. Returning None.")
+            return None
+
+        gr = Wire.GoldenRectangle(width=width,
+                            maxIterations = maxIterations,
+                            clockwise = clockwise,
+                            origin=origin,
+                            placement=placement,
+                            direction = [0,0,1],
+                            mantissa = mantissa,
+                            tolerance = tolerance,
+                            silent=silent)
+        
+        if includeSpiral == True:
+            gs = Wire.GoldenSpiral(width=width,
+                            maxIterations = maxIterations,
+                            clockwise = clockwise,
+                            sides = sides,
+                            origin=origin,
+                            placement=placement,
+                            direction = [0,0,1],
+                            mantissa = mantissa,
+                            tolerance = tolerance,
+                            silent=silent)
+            gr = Topology.Merge(gr, gs)
+
+        phi = (1.0 + math.sqrt(5.0)) / 2.0
+        W = width
+        L = width / phi
+        face = Face.Rectangle(width=W, length=L, placement=placement, origin=origin, direction=[0,0,1])
+        shell = Topology.Slice(face, gr)
+        faces = Topology.Faces(shell)
+
+        if len(faces) < maxIterations+1:
+            if not silent:
+                print("Shell.GoldenRectangle - Warning: Could not create all the required faces. Consider increasing the size of the rectangle.")
+        # -----------------------------
+        # Orient to direction
+        # -----------------------------
+        if direction != [0, 0, 1]:
+            shell = Topology.Orient(shell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return shell
+
     @staticmethod
     def HyperbolicParaboloidRectangularDomain(origin= None,
                                               llVertex= None,
