@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Cluster module &mdash; topologicpy 0.9.0 documentation</title>
+  <title>topologicpy.Cluster module &mdash; topologicpy 0.9.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.0
+                0.9.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -201,8 +201,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.HighestType" title="topologicpy.Cluster.Cluster.HighestType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HighestType</span></code></a>(cluster)</p></td>
 <td><p>Returns the type of the highest dimension subtopology found in the input cluster.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.K_Means" title="topologicpy.Cluster.Cluster.K_Means"><code class="xref py py-obj docutils literal notranslate"><span class="pre">K_Means</span></code></a>(topologies[, selectors, keys, k, ...])</p></td>
-<td><p>Clusters the input topologies using K-Means clustering.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.KMeans" title="topologicpy.Cluster.Cluster.KMeans"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KMeans</span></code></a>(topologies[, selectors, keys, k, ...])</p></td>
+<td><p>Clusters the input topologies using K-Means-like clustering.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Cluster.Cluster.MergeCells" title="topologicpy.Cluster.Cluster.MergeCells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MergeCells</span></code></a>(cells[, tolerance])</p></td>
 <td><p>Creates a cluster that contains cellComplexes where it can create them plus any additional free cells.</p></td>
@@ -623,35 +623,85 @@ make sure the keys list includes “X”, “Y”, and/or “Z” (case insensit
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.K_Means">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">K_Means</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['x',</span> <span class="pre">'y',</span> <span class="pre">'z']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroidKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k_centroid'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.K_Means" title="Permalink to this definition"></a></dt>
-<dd><p>Clusters the input topologies using K-Means clustering. See <a class="reference external" href="https://en.wikipedia.org/wiki/K-means_clustering">https://en.wikipedia.org/wiki/K-means_clustering</a></p>
+<dt class="sig sig-object py" id="topologicpy.Cluster.Cluster.KMeans">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">KMeans</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selectors</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">['x',</span> <span class="pre">'y',</span> <span class="pre">'z']</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxIterations</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">centroidKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'k_centroid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">distanceMeasure</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'euclidean'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'kmeans++'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nInit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tol</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1e-06</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">standardize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomSeed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Cluster.Cluster.KMeans" title="Permalink to this definition"></a></dt>
+<dd><p>Clusters the input topologies using K-Means-like clustering.</p>
+<p>Best-practice upgrades vs the legacy implementation:
+- k-means++ initialization (default) for faster, stabler convergence.
+- Multiple restarts (nInit) and selects best (lowest inertia / objective).
+- Vectorized numpy core for speed.
+- More distance measures:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>euclidean / sqeuclidean : classic k-means (centroid = mean)</p></li>
+<li><p>manhattan              : k-medians update (centroid = coordinate-wise median)</p></li>
+<li><p>chebyshev              : centroid = coordinate-wise midrange (0.5*(min+max)) (robust-ish heuristic)</p></li>
+<li><p>cosine                 : spherical k-means (normalize; centroid = normalized mean)</p></li>
+<li><p>mahalanobis            : mean in whitened space (uses global covariance)</p></li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li><p>Robust empty-cluster handling (reseed with farthest point).</p></li>
+</ul>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies. If this is not a list of topologic vertices then please provide a list of selectors</p>
+<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>selectors</strong><span class="classifier">list , optional</span></dt><dd><p>If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
-If set to None, the list of topologies is expected to be a list of vertices. Default is None.</p>
+<dt><strong>selectors</strong><span class="classifier">list , optional</span></dt><dd><p>If topologies are not vertices, provide selector vertices (e.g., centroids) of equal length.
+If None, topologies must be vertices.</p>
 </dd>
-<dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
-make sure the keys list includes “X”, “Y”, and/or “Z” (case insensitive). Default is [“x”, “y”, “z”]</p>
+<dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>Keys to build the feature vector. Include “x”,”y”,”z” (any case) for coordinates.</p>
 </dd>
-<dt><strong>k</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of clusters. Default is 4.</p>
+<dt><strong>k</strong><span class="classifier">int , optional</span></dt><dd><p>Number of clusters.</p>
 </dd>
-<dt><strong>maxIterations</strong><span class="classifier">int , optional</span></dt><dd><p>The desired maximum number of iterations for the clustering algorithm</p>
+<dt><strong>maxIterations</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum iterations.</p>
 </dd>
-<dt><strong>centroidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key under which to store the cluster’s centroid (this is not to be confused with the actual geometric centroid of the cluster). Default is “k_centroid”</p>
+<dt><strong>centroidKey</strong><span class="classifier">str , optional</span></dt><dd><p>Dictionary key under which to store the cluster centroid feature vector.</p>
+</dd>
+<dt><strong>distanceMeasure</strong><span class="classifier">str , optional</span></dt><dd><p>See list above.</p>
+</dd>
+<dt><strong>init</strong><span class="classifier">str , optional</span></dt><dd><p>“kmeans++” or “random”.</p>
+</dd>
+<dt><strong>nInit</strong><span class="classifier">int , optional</span></dt><dd><p>Number of random restarts; best result returned.</p>
+</dd>
+<dt><strong>tol</strong><span class="classifier">float , optional</span></dt><dd><p>Convergence tolerance on centroid movement.</p>
+</dd>
+<dt><strong>standardize</strong><span class="classifier">bool , optional</span></dt><dd><p>Z-score features before clustering (recommended when mixing units).</p>
+</dd>
+<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>L2-normalize feature rows (recommended for cosine / spherical k-means).</p>
+</dd>
+<dt><strong>randomSeed</strong><span class="classifier">int , optional</span></dt><dd><p>RNG seed.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Rounding precision when storing centroid.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Tolerance (kept for API consistency).</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>Suppress warnings/errors.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The created list of clusters.</p>
+<dt>list</dt><dd><p>The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Classic k-means objective is squared Euclidean; for other metrics this function uses the</p></li>
+</ul>
+<p>appropriate/standard centroid update where available (k-medians, spherical k-means), or a
+reasonable heuristic (chebyshev).
+- Feature extraction:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>If keys include “x”,”y”,”z” (case-insensitive), these are taken from the selector vertex (or topology vertex).</p></li>
+<li><p>Any other key is read from the topology dictionary and must be numeric.</p></li>
+<li><p>Missing/None values are replaced by 0.0 (warns unless silent).</p></li>
+</ul>
+</div></blockquote>
 </dd></dl>
 
 <dl class="py method">

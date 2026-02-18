@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.9.0 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.9.1 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.0
+                0.9.1
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -285,10 +285,10 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Color" title="topologicpy.Graph.Graph.Color"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Color</span></code></a>(graph[, oldKey, key, maxColors, tolerance])</p></td>
 <td><p>Colors the input vertices within the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Community" title="topologicpy.Graph.Graph.Community"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Community</span></code></a>(graph[, key, mantissa, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Community" title="topologicpy.Graph.Graph.Community"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Community</span></code></a>(graph[, key, colorKey, ...])</p></td>
 <td><p>Computes the best community partition of the input graph based on the Louvain method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CommunityPartition" title="topologicpy.Graph.Graph.CommunityPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommunityPartition</span></code></a>(graph[, key, mantissa, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.CommunityPartition" title="topologicpy.Graph.Graph.CommunityPartition"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CommunityPartition</span></code></a>(graph[, key, colorKey, ...])</p></td>
 <td><p>Computes the best community partition of the input graph based on the Louvain method.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Compare" title="topologicpy.Graph.Graph.Compare"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Compare</span></code></a>(graphA, graphB[, ...])</p></td>
@@ -2413,14 +2413,18 @@ Any vertices that have been pre-colored will not be affected. See <a class="refe
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Community">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Community</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'partition'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Community" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Community</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'community'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cp_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Community" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the best community partition of the input graph based on the Louvain method. See <a class="reference external" href="https://en.wikipedia.org/wiki/Louvain_method">https://en.wikipedia.org/wiki/Louvain_method</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologicp.Graph</span></dt><dd><p>The input topologic graph.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the partition number. Default is “partition”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the community partition number. Default is “community”.</p>
+</dd>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key name under which to store the calculated color. Default is “cp_color”</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired colorscale name to use for colors. The default is “viridis”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -2439,14 +2443,22 @@ Any vertices that have been pre-colored will not be affected. See <a class="refe
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.CommunityPartition">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CommunityPartition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'partition'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.CommunityPartition" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CommunityPartition</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'community'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'cp_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.CommunityPartition" title="Permalink to this definition"></a></dt>
 <dd><p>Computes the best community partition of the input graph based on the Louvain method. See <a class="reference external" href="https://en.wikipedia.org/wiki/Louvain_method">https://en.wikipedia.org/wiki/Louvain_method</a>.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
+<dd class="field-odd"><dl>
 <dt><strong>graph</strong><span class="classifier">topologicp.Graph</span></dt><dd><p>The input topologic graph.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to store the partition number. Default is “partition”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><blockquote>
+<div><p>The dictionary key under which to store the community partition number. Default is “community”.</p>
+</div></blockquote>
+<dl class="simple">
+<dt>colorKey<span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key name under which to store the calculated color. Default is “cp_color”</p>
+</dd>
+</dl>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired colorscale name to use for colors. The default is “viridis”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -2456,7 +2468,7 @@ Any vertices that have been pre-colored will not be affected. See <a class="refe
 </dd>
 <dt><strong>Returns</strong></dt><dd></dd>
 <dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>topologicpy.Graph</strong></dt><dd><p>The partitioned topologic graph.</p>
+<dt><strong>list</strong></dt><dd><p>The list of partitions ordered the same as the graph vertices.</p>
 </dd>
 </dl>
 </dd>
