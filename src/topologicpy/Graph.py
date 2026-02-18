@@ -8599,8 +8599,8 @@ class Graph:
                 If set to True, error and warning messages are suppressed. Default is False.
         Returns
         -------
-        topologicpy.Graph
-            The partitioned topologic graph.
+        list
+            The list of partitions ordered the same as the graph vertices.
 
         """
         from topologicpy.Vertex import Vertex
@@ -8639,11 +8639,13 @@ class Graph:
 
         # Get the list of communities sorted same as vertices
         partition_list = communities.membership
+        max_value = max(partition_list)
+        min_value = min(partition_list)
         vertices = Graph.Vertices(graph)
         for i, v in enumerate(vertices):
             d = Topology.Dictionary(v)
-            color = Color.AnyToHex(Color.ByValueInRange(partition_list[i]+1, minValue=1, maxValue=len(partition_list), colorScale=colorScale))
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i]+1, color])
+            color = Color.AnyToHex(Color.ByValueInRange(partition_list[i], minValue=min_value, maxValue=max_value, colorScale=colorScale))
+            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
             v = Topology.SetDictionary(v, d)
         edges = Graph.Edges(graph)
         if not edges == None:
@@ -8669,10 +8671,10 @@ class Graph:
                     if partition_1 == partition_2:
                         partition = partition_1
                 d = Topology.Dictionary(edge)
-                color = Color.AnyToHex(Color.ByValueInRange(partition, minValue=0, maxValue=len(partition_list), colorScale=colorScale))
-                d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i]+1, color])
+                color = Color.AnyToHex(Color.ByValueInRange(partition, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+                d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
                 edge = Topology.SetDictionary(edge, d)
-        return graph
+        return partition_list
 
     @staticmethod
     def Connect(graph, verticesA, verticesB, tolerance=0.0001):

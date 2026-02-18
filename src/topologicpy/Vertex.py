@@ -1275,13 +1275,39 @@ class Vertex():
         
         # 2D containment in a Face (vertex assumed coplanar or nearly so)
         def point_in_face(vtx, face, tol):
-            dist = Vertex.PerpendicularDistance(vtx, face)
-            if dist <= tol:
-                vtx2 = Vertex.Project(vtx, face)
-                status = topologic.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
+            from topologicpy.Vector import Vector
+            v = Vertex.ByCoordinates(Vertex.Coordinates(vtx))
+            if Vertex.PerpendicularDistance(v, face) > tol:
+                return False
             else:
-                status = False
-            return status
+                v = Vertex.Project(v, face)
+            centroid = Topology.Centroid(face)
+            x_tran = -Vertex.X(centroid)
+            y_tran = -Vertex.Y(centroid)
+            z_tran = -Vertex.Z(centroid)
+            face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
+            vertex_2 = Topology.Translate(v, x_tran, y_tran, z_tran)
+
+            face_normal = Face.Normal(face_2)
+            up = [0,0,1]
+            tran_mat = Vector.TransformationMatrix(face_normal, up)
+            flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
+            flat_vertex = Topology.Transform(vertex_2, tran_mat)
+            flat_vertex = Topology.Translate(flat_vertex, 0, 0, -Vertex.Z(flat_vertex))
+            return Vertex.IsInternal2D(flat_vertex, flat_face)
+            # from topologicpy.Vector import Vector
+            # face_normal = Face.Normal(face)
+            # up = [0,0,1]
+            # tran_mat = Vector.TransformationMatrix(face_normal, up)
+            # flat_face = Topology.Transform(face, tran_mat)
+            # flat_vertex = Topology.Transform(vtx, tran_mat)
+            # dist = Vertex.PerpendicularDistance(vtx, face)
+            # if dist <= tol:
+            #     vtx2 = Vertex.Project(vtx, face)
+            #     status = topologic.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
+            # else:
+            #     status = False
+            # return status
 
         # 3D containment in a Cell via ray casting (+X direction)
         def point_in_cell(vtx, cell, tol):
@@ -1416,6 +1442,211 @@ class Vertex():
             return (False, None)
         return False
     
+    @staticmethod
+    def IsInternal2D(vertices, face, includeBoundary: bool = True,
+                    mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Fast, batch point-in-face test (supports holes) using NumPy vectorized ray casting.
+
+        Parameters
+        ----------
+        face : topologic_core.Face
+            Input face (may have holes). Assumes planar and evaluated in XY.
+        vertices : topologic_core.Vertex or list[topologic_core.Vertex]
+            Query vertex/vertices.
+        includeBoundary : bool, optional
+            If True, points on the *outer* boundary are counted as inside.
+            Points on hole boundaries are always treated as outside. Default is True.
+        mantissa : int, optional
+            Rounding precision for XY conversion. Default is 6.
+        tolerance : float, optional
+            The desired tolerance. Default 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool or list[bool]
+            If a single vertex is supplied, returns a bool.
+            If a list is supplied, returns a list of bools of the same length.
+        """
+        import numpy as np
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+
+        # -----------------------------
+        # Local helpers
+        # -----------------------------
+        def _as_list(vs):
+            if vs is None:
+                return []
+            if isinstance(vs, (list, tuple)):
+                return list(vs)
+            return [vs]
+
+        def _to_xy(vs):
+            # (M,2) float64
+            return np.array(
+                [[round(Vertex.X(v), mantissa), round(Vertex.Y(v), mantissa)] for v in vs],
+                dtype=np.float64
+            )
+
+        def _wire_xy(wire):
+            wv = Wire.Vertices(wire) or []
+            return _to_xy(wv)
+
+        def _points_in_polygon(P, V):
+            """
+            Vectorized ray casting (crossing number). P: (M,2), V: (N,2) open ring.
+            Returns (M,) bool.
+            """
+            P = np.asarray(P, dtype=np.float64)
+            V = np.asarray(V, dtype=np.float64)
+            m = P.shape[0]
+            n = V.shape[0]
+            if m == 0 or n < 3:
+                return np.zeros((m,), dtype=bool)
+
+            x = P[:, 0]
+            y = P[:, 1]
+
+            x0 = V[:, 0]
+            y0 = V[:, 1]
+            x1 = np.roll(x0, -1)
+            y1 = np.roll(y0, -1)
+
+            # bbox reject
+            minx, maxx = x0.min(), x0.max()
+            miny, maxy = y0.min(), y0.max()
+            cand = (x >= minx) & (x <= maxx) & (y >= miny) & (y <= maxy)
+            idx = np.nonzero(cand)[0]
+            if idx.size == 0:
+                return np.zeros((m,), dtype=bool)
+
+            xx = x[idx][:, None]  # (K,1)
+            yy = y[idx][:, None]  # (K,1)
+
+            # straddle test
+            cond = ((y0 > yy) != (y1 > yy))
+            xinters = (x1 - x0) * (yy - y0) / (y1 - y0 + 1e-300) + x0
+            crossings = cond & (xx < xinters)
+
+            out = np.zeros((m,), dtype=bool)
+            out[idx] = (np.count_nonzero(crossings, axis=1) & 1) == 1
+            return out
+
+        def _points_on_edges(P, V, tol):
+            """
+            Vectorized 'point on any segment' test.
+            Loops over edges (usually modest), vectorizes over points.
+            Returns (M,) bool.
+            """
+            P = np.asarray(P, dtype=np.float64)
+            V = np.asarray(V, dtype=np.float64)
+            m = P.shape[0]
+            n = V.shape[0]
+            if m == 0 or n < 2:
+                return np.zeros((m,), dtype=bool)
+
+            tol2 = float(tol) * float(tol)
+            on = np.zeros((m,), dtype=bool)
+
+            x = P[:, 0]
+            y = P[:, 1]
+
+            x0 = V[:, 0]
+            y0 = V[:, 1]
+            x1 = np.roll(x0, -1)
+            y1 = np.roll(y0, -1)
+
+            for i in range(n):
+                ax, ay = x0[i], y0[i]
+                bx, by = x1[i], y1[i]
+
+                # segment bbox prune (+tol)
+                minx, maxx = (ax, bx) if ax <= bx else (bx, ax)
+                miny, maxy = (ay, by) if ay <= by else (by, ay)
+                cand = (x >= (minx - tol)) & (x <= (maxx + tol)) & (y >= (miny - tol)) & (y <= (maxy + tol))
+                if not np.any(cand):
+                    continue
+
+                dx = bx - ax
+                dy = by - ay
+                seg_len2 = dx*dx + dy*dy
+                if seg_len2 <= 1e-300:
+                    # degenerate edge: treat as point
+                    ddx = x[cand] - ax
+                    ddy = y[cand] - ay
+                    on[cand] |= (ddx*ddx + ddy*ddy) <= tol2
+                    continue
+
+                # projection t onto segment [0,1]
+                px = x[cand] - ax
+                py = y[cand] - ay
+                t = (px*dx + py*dy) / seg_len2
+                t = np.clip(t, 0.0, 1.0)
+
+                cx = ax + t*dx
+                cy = ay + t*dy
+
+                ddx = x[cand] - cx
+                ddy = y[cand] - cy
+                on[cand] |= (ddx*ddx + ddy*ddy) <= tol2
+
+                if np.all(on):
+                    break
+
+            return on
+
+        
+        # -----------------------------
+        # Inputs
+        # -----------------------------
+        vs = _as_list(vertices)
+        if len(vs) == 0:
+            return [] if isinstance(vertices, (list, tuple)) else False
+
+        P = _to_xy(vs)
+
+        # Face rings (XY)
+        outer_wire = Face.ExternalBoundary(face)
+        outer = _wire_xy(outer_wire)
+
+        holes = []
+        ib = Face.InternalBoundaries(face)
+        if ib:
+            for w in ib:
+                holes.append(_wire_xy(w))
+
+        # -----------------------------
+        # Inside / boundary logic
+        # -----------------------------
+        inside_outer = _points_in_polygon(P, outer)
+
+        if includeBoundary:
+            on_outer = _points_on_edges(P, outer, tolerance)
+            inside = inside_outer | on_outer
+        else:
+            inside = inside_outer
+
+        if holes:
+            for h in holes:
+                if h.shape[0] < 3:
+                    continue
+                inside_h = _points_in_polygon(P, h)
+                if includeBoundary:
+                    on_h = _points_on_edges(P, h, tolerance)
+                    # holes remove interior AND boundary
+                    inside &= ~(inside_h | on_h)
+                else:
+                    inside &= ~inside_h
+
+        # Return type matches input
+        if isinstance(vertices, (list, tuple)):
+            return inside.tolist()
+        return bool(inside[0])
+
     @staticmethod
     def IsPeripheral(vertex, topology, tolerance: float = 0.0001, silent: bool = False) -> bool:
         """

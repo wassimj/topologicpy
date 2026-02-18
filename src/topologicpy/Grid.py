@@ -307,7 +307,8 @@ class Grid():
                             vRange: list = [-0.5, -0.25, 0, 0.25, 0.5],
                             clip: bool = False,
                             mantissa: int = 6,
-                            tolerance: float = 0.0001):
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
         """
         Creates a grid (cluster of vertices).
 
@@ -329,6 +330,8 @@ class Grid():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, no warning or error messages are printed. Default is False.
 
         Returns
         -------
@@ -454,11 +457,26 @@ class Grid():
                     # Prefer TopologicPy's consistent pattern
                     Topology.SetDictionary(gv, d)
 
-                if clip and has_face:
-                    if Vertex.IsInternal(gv, face):
-                        gridVertices.append(gv)
-                else:
-                    gridVertices.append(gv)
+                gridVertices.append(gv)
+        
+        if clip and has_face:
+            from topologicpy.Vector import Vector
+            cluster = Cluster.ByTopologies(gridVertices)
+            centroid = Topology.Centroid(face)
+            x_tran = -Vertex.X(centroid)
+            y_tran = -Vertex.Y(centroid)
+            z_tran = -Vertex.Z(centroid)
+            face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
+            cluster_2 = Topology.Translate(cluster, x_tran, y_tran, z_tran)
+
+            face_normal = Face.Normal(face_2)
+            up = [0,0,1]
+            tran_mat = Vector.TransformationMatrix(face_normal, up)
+            flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
+            flat_cluster = Topology.Transform(cluster_2, tran_mat)
+            # flat_cluster = Topology.Translate(flat_cluster, 0, 0, -Vertex.Z(flat_vertex))
+            status_list = Vertex.IsInternal2D(Topology.Vertices(flat_cluster), flat_face)
+            gridVertices = [v for i, v in enumerate(gridVertices) if status_list[i] == True]
 
         if len(gridVertices) < 1:
             return None
@@ -466,7 +484,7 @@ class Grid():
         return Cluster.ByTopologies(gridVertices)
 
     @staticmethod
-    def VerticesByParameters(face=None, uRange=[0.0,0.25,0.5,0.75,1.0], vRange=[0.0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001):
+    def VerticesByParameters(face=None, uRange=[0.0,0.25,0.5,0.75,1.0], vRange=[0.0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001, silent: bool = False):
         """
         Creates a grid (cluster of vertices).
 
@@ -482,6 +500,8 @@ class Grid():
             If True the grid will be clipped by the shape of the input face. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, no warning or error messages are printed. Default is False.
 
         Returns
         -------
@@ -498,12 +518,20 @@ class Grid():
         from topologicpy.Vector import Vector
 
         if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Grid.VerticesByParameters - Error: The input face parameter is not a valid face. Returning None.")
             return None
         if len(uRange) < 1 or len(vRange) < 1:
+            if not silent:
+                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
             return None
         if (min(uRange) < 0) or (max(uRange) > 1):
+            if not silent:
+                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
             return None
         if (min(vRange) < 0) or (max(vRange) > 1):
+            if not silent:
+                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
             return None
 
         uRange.sort()
@@ -514,19 +542,28 @@ class Grid():
             for u in uRange:
                 for v in vRange:
                     gridVertex = Face.VertexByParameters(face, u, v)
-                    if clip and Topology.IsInstance(face, "Face"):
-                        if Vertex.IsInternal(gridVertex, face):
-                            d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                            if d:
-                                gridVertex.SetDictionary(d)
-                            gridVertices.append(gridVertex)
-                    #     gridVertex = gridVertex.Intersect(face, False)
-                    # if Topology.IsInstance(gridVertex, "Vertex"):
-                    #     d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                    #     if d:
-                    #         gridVertex.SetDictionary(d)
-                    #     gridVertices.append(gridVertex)
-        grid = None
-        if len(gridVertices) > 0:
-            grid = Cluster.ByTopologies(gridVertices)
-        return grid
+                    d = Dictionary.ByKeysValues(["u","v"],[u,v])
+                    gridVertex.SetDictionary(d)
+                    gridVertices.append(gridVertex)
+        if clip:
+            from topologicpy.Vector import Vector
+            cluster = Cluster.ByTopologies(gridVertices)
+            centroid = Topology.Centroid(face)
+            x_tran = -Vertex.X(centroid)
+            y_tran = -Vertex.Y(centroid)
+            z_tran = -Vertex.Z(centroid)
+            face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
+            cluster_2 = Topology.Translate(cluster, x_tran, y_tran, z_tran)
+
+            face_normal = Face.Normal(face_2)
+            up = [0,0,1]
+            tran_mat = Vector.TransformationMatrix(face_normal, up)
+            flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
+            flat_cluster = Topology.Transform(cluster_2, tran_mat)
+            status_list = Vertex.IsInternal2D(Topology.Vertices(flat_cluster), flat_face)
+            gridVertices = [v for i, v in enumerate(gridVertices) if status_list[i] == True]
+        
+        if len(gridVertices) < 1:
+            return None
+
+        return Cluster.ByTopologies(gridVertices)

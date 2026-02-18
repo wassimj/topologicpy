@@ -362,6 +362,62 @@ class PyG:
                   nodeLabelType: LabelType = "categorical",
                   edgeLabelType: LabelType = "categorical",
                   **kwargs) -> "PyG":
+        """Creates a :class:`~topologicpy.PyG.PyG` instance from a TopologicPy-exported CSV dataset folder.
+
+        The dataset folder is expected to contain **three** files:
+
+        - ``graphs.csv`` : one row per graph (graph-level labels/features)
+        - ``nodes.csv``  : one row per node (node-level labels/features/masks)
+        - ``edges.csv``  : one row per edge (edge-level labels/features/masks)
+
+        The created instance immediately loads the CSVs, builds a list of
+        :class:`torch_geometric.data.Data` objects, performs an initial holdout split
+        (for graph-level tasks), and builds a default model according to the provided
+        configuration.
+
+        Parameters
+        ----------
+        path : str
+            Path to the dataset folder that contains ``graphs.csv``, ``nodes.csv``,
+            and ``edges.csv``.
+        level : {"graph", "node", "edge", "link"}, optional
+            The prediction level:
+
+            - ``"graph"``: graph-level labels in ``graphs.csv``
+            - ``"node"`` : node-level labels in ``nodes.csv``
+            - ``"edge"`` : edge-level labels in ``edges.csv``
+            - ``"link"`` : link prediction (binary edge existence)
+        task : {"classification", "regression", "link_prediction"}, optional
+            The learning task. For ``level="link"`` this should be
+            ``"link_prediction"``.
+        graphLabelType : {"categorical", "continuous"}, optional
+            Label type for graph-level targets (used when ``level="graph"``).
+        nodeLabelType : {"categorical", "continuous"}, optional
+            Label type for node-level targets (used when ``level="node"``).
+        edgeLabelType : {"categorical", "continuous"}, optional
+            Label type for edge-level targets (used when ``level="edge"``).
+        **kwargs : dict
+            Optional overrides for any field in :class:`~topologicpy.PyG._RunConfig`.
+            Common examples include ``conv``, ``hidden_dims``, ``activation``,
+            ``dropout``, ``batch_norm``, ``residual``, ``pooling``, ``epochs``,
+            ``batch_size``, ``lr``, ``weight_decay``, and cross-validation options.
+
+        Returns
+        -------
+        PyG
+            The created :class:`~topologicpy.PyG.PyG` instance.
+
+        Raises
+        ------
+        ValueError
+            If the path does not exist, required CSV files are missing, or no node
+            feature columns are found.
+
+        Examples
+        --------
+        >>> pyg = PyG.ByCSVPath(path="C:/dataset", level="graph", task="classification")
+        >>> history = pyg.Train(epochs=50)
+        """
         cfg = _RunConfig(level=level, task=task,
                          graph_label_type=graphLabelType,
                          node_label_type=nodeLabelType,
@@ -406,25 +462,37 @@ class PyG:
     # Convenience: hyperparameters
     # ----------------------------
     def SetHyperparameters(self, **kwargs) -> Dict[str, Union[str, int, float, bool, Tuple]]:
-        """
-        Set one or more configuration values (hyperparameters) in a safe, readable way.
+        """Set one or more configuration values (hyperparameters) on this instance.
 
-        Examples
-        --------
-        pyg.SetHyperparameters(
-            cv="kfold", k_folds=5, k_stratify=True,
-            conv="gatv2", hidden_dims=(128, 128, 64),
-            activation="gelu", batch_norm=True, residual=True,
-            lr=1e-3, optimizer="adamw",
-            early_stopping=True, early_stopping_patience=10,
-            gradient_clip_norm=1.0
-        )
+        This method updates :attr:`~topologicpy.PyG.PyG.config` fields using keyword
+        arguments. If any *model-shaping* setting changes (e.g. ``conv``, ``hidden_dims``,
+        ``activation``, ``dropout``, ``batch_norm``, ``residual``, ``pooling``), the
+        model is rebuilt automatically.
+
+        Parameters
+        ----------
+        **kwargs : dict
+            Key/value pairs matching fields in :class:`~topologicpy.PyG._RunConfig`.
+            Unknown keys are ignored.
+
+        Returns
+        -------
+        dict
+            A compact configuration summary (same as :meth:`~topologicpy.PyG.PyG.Summary`).
+
+        Raises
+        ------
+        ValueError
+            If an attempted setting fails validation (e.g. malformed ``split`` or empty
+            ``hidden_dims``).
 
         Notes
         -----
-        - Unknown keys are ignored (with a warning if verbose=True).
-        - Some values are validated (e.g., split sums, hidden_dims).
-        - If you change model-related settings (conv/hidden_dims/etc.) the model is rebuilt automatically.
+        - For graph-level tasks, changing ``split`` affects holdout splitting. You may
+          want to call :meth:`~topologicpy.PyG.PyG.ByCSVPath` again (or re-instantiate)
+          if you need a fresh split with new ratios.
+        - For node/edge tasks, masks are taken from CSV columns if present; otherwise
+          they are generated using ``split`` ratios within each graph.
         """
         cfg = self.config
         changed_model = False
@@ -464,8 +532,19 @@ class PyG:
         return self.Summary()
 
     def Summary(self) -> Dict[str, Union[str, int, float, bool, Tuple]]:
-        """
-        Return a compact dictionary of the most relevant configuration choices.
+        """Return a compact summary of the current configuration and dataset size.
+
+        Returns
+        -------
+        dict
+            A dictionary containing key configuration choices such as ``level``, ``task``,
+            network options (``conv``, ``hidden_dims``, etc.), training hyperparameters,
+            current device, and basic dataset counts.
+
+        Notes
+        -----
+        This is intended to be a lightweight, ReadTheDocs-friendly snapshot suitable for
+        logging and reproducibility.
         """
         cfg = self.config
         return {
@@ -504,23 +583,30 @@ class PyG:
                                   cv_report: Optional[Dict[str, Union[float, List[Dict[str, float]]]]] = None,
                                   metrics: Optional[List[str]] = None,
                                   show_mean_std: bool = True):
-        """
-        Plot a cross-validation summary as grouped bars per fold (Plotly).
+        """Create a Plotly figure summarising k-fold cross-validation performance.
 
         Parameters
         ----------
         cv_report : dict, optional
-            Output from CrossValidate(). If None, uses self.cv_report.
+            The output of :meth:`~topologicpy.PyG.PyG.CrossValidate`. If ``None``,
+            the method uses :attr:`~topologicpy.PyG.PyG.cv_report`.
         metrics : list[str], optional
-            Metrics to display. If None, chooses a sensible default based on task:
-              - classification: ["accuracy", "f1", "precision", "recall"]
-              - regression     : ["mae", "rmse", "r2"]
+            Metrics to include. If ``None`` a default set is chosen based on task:
+
+            - classification: ``["accuracy", "f1", "precision", "recall"]``
+            - regression: ``["mae", "rmse", "r2"]``
         show_mean_std : bool, optional
-            If True, includes mean and ±std reference lines.
+            If ``True``, adds mean and +/-std reference lines when present in ``cv_report``.
 
         Returns
         -------
         plotly.graph_objects.Figure
+            A grouped bar chart (one group per fold, one bar per metric).
+
+        Raises
+        ------
+        ValueError
+            If no cross-validation report is available, or it does not contain fold metrics.
         """
         if cv_report is None:
             cv_report = self.cv_report
@@ -822,10 +908,35 @@ class PyG:
     # Training / evaluation
     # -----------------------
     def Train(self, epochs: Optional[int] = None, batch_size: Optional[int] = None) -> Dict[str, List[float]]:
-        """
-        Train a model using holdout splitting (or in-graph masks for node/edge tasks).
+        """Train the model using the current configuration.
 
-        If you want k-fold cross-validation for graph-level tasks, call CrossValidate().
+        Training behaviour depends on :attr:`~topologicpy.PyG.PyG.config.level`:
+
+        - ``"graph"``: uses the current holdout split (train/val sets)
+        - ``"node"`` : uses in-graph boolean masks (``train_mask``, ``val_mask``)
+        - ``"edge"`` : uses in-graph boolean masks (``edge_train_mask``, ``edge_val_mask``)
+        - ``"link"`` : uses :class:`torch_geometric.transforms.RandomLinkSplit` per graph
+
+        Parameters
+        ----------
+        epochs : int, optional
+            If provided, overrides ``config.epochs`` for this run.
+        batch_size : int, optional
+            If provided, overrides ``config.batch_size`` for this run. For node/edge/link
+            tasks the loader uses ``batch_size=1`` (one graph at a time).
+
+        Returns
+        -------
+        dict
+            Training history dictionary with keys ``"train_loss"`` and ``"val_loss"``.
+            Each value is a list of floats (one per epoch).
+
+        Notes
+        -----
+        - For graph-level tasks, early stopping can be enabled via
+          ``config.early_stopping`` and ``config.early_stopping_patience``.
+        - For k-fold cross-validation on graph-level tasks, use
+          :meth:`~topologicpy.PyG.PyG.CrossValidate` instead.
         """
         cfg = self.config
         if epochs is not None:
@@ -893,31 +1004,42 @@ class PyG:
                       k_folds: Optional[int] = None,
                       epochs: Optional[int] = None,
                       batch_size: Optional[int] = None) -> Dict[str, Union[float, List[Dict[str, float]]]]:
-        """
-        Perform K-Fold cross-validation (graph-level only).
+        """Perform k-fold cross-validation for graph-level tasks.
+
+        This method rebuilds and retrains a fresh model per fold, evaluates on the fold's
+        held-out set, and returns fold-wise metrics along with mean/std aggregates.
 
         Parameters
         ----------
         k_folds : int, optional
-            Number of folds. Defaults to config.k_folds.
+            Number of folds. Defaults to ``config.k_folds``.
         epochs : int, optional
-            Training epochs per fold. Defaults to config.epochs.
+            Training epochs per fold. Defaults to ``config.epochs``.
         batch_size : int, optional
-            Batch size. Defaults to config.batch_size.
+            Batch size for DataLoader. Defaults to ``config.batch_size``.
 
         Returns
         -------
         dict
-            {
-              "fold_metrics": [ {metric: value, ...}, ... ],
-              "mean_<metric>": value,
-              "std_<metric>": value
-            }
+            A dictionary of the form::
+
+                {
+                  "fold_metrics": [{"fold": 0, ...}, {"fold": 1, ...}, ...],
+                  "mean_<metric>": ...,
+                  "std_<metric>": ...
+                }
+
+        Raises
+        ------
+        ValueError
+            If called for non-graph levels, or if ``k_folds < 2``.
 
         Notes
         -----
-        - Supported only for graph-level tasks (node/edge tasks typically use per-graph masks).
-        - If labels are categorical, stratified splits can be enabled (config.k_stratify).
+        - Stratified folding is available for categorical graph labels when
+          ``config.k_stratify`` is ``True``.
+        - Cross-validation is intentionally limited to graph-level tasks; node/edge tasks
+          typically rely on per-graph masks rather than splitting graphs.
         """
         cfg = self.config
         if cfg.level != "graph":
@@ -1016,6 +1138,21 @@ class PyG:
         return summary
 
     def Validate(self) -> Dict[str, float]:
+        """Compute metrics on the validation split.
+
+        Returns
+        -------
+        dict
+            A dictionary of metric values. Key names are prefixed depending on task:
+
+            - graph-level: keys are prefixed with ``"val_"``
+            - node/edge/link: keys are prefixed with ``"val_"`` via internal helpers
+
+        Raises
+        ------
+        ValueError
+            If the configured level is unsupported.
+        """
         cfg = self.config
         if cfg.level == "graph":
             loader = DataLoader(self.val_set, batch_size=cfg.batch_size, shuffle=False)
@@ -1032,6 +1169,21 @@ class PyG:
         raise ValueError("Unsupported level.")
 
     def Test(self) -> Dict[str, float]:
+        """Compute metrics on the test split.
+
+        Returns
+        -------
+        dict
+            A dictionary of metric values. Key names are prefixed depending on task:
+
+            - graph-level: keys are prefixed with ``"test_"``
+            - node/edge/link: keys are prefixed with ``"test_"`` via internal helpers
+
+        Raises
+        ------
+        ValueError
+            If the configured level is unsupported.
+        """
         cfg = self.config
         if cfg.level == "graph":
             loader = DataLoader(self.test_set, batch_size=cfg.batch_size, shuffle=False)
@@ -1311,6 +1463,18 @@ class PyG:
     # Plotly reporting
     # -----------------
     def PlotHistory(self):
+        """Plot training and validation loss curves (Plotly).
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+            A line chart showing ``train_loss`` and ``val_loss`` over epochs.
+
+        Notes
+        -----
+        Call :meth:`~topologicpy.PyG.PyG.Train` (or :meth:`~topologicpy.PyG.PyG.CrossValidate`)
+        before plotting to populate :attr:`~topologicpy.PyG.PyG.history`.
+        """
         fig = go.Figure()
         fig.add_trace(go.Scatter(y=self.history["train_loss"], mode="lines+markers", name="Train Loss"))
         fig.add_trace(go.Scatter(y=self.history["val_loss"], mode="lines+markers", name="Val Loss"))
@@ -1318,6 +1482,28 @@ class PyG:
         return fig
 
     def PlotConfusionMatrix(self, split: Literal["train", "val", "test"] = "test"):
+        """Plot a confusion matrix for classification tasks (Plotly).
+
+        Parameters
+        ----------
+        split : {"train", "val", "test"}, optional
+            Which split to evaluate. Default is ``"test"``.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+            Heatmap of the confusion matrix.
+
+        Raises
+        ------
+        ValueError
+            If called for regression tasks or link prediction.
+
+        Notes
+        -----
+        - For node/edge tasks, the method uses the corresponding boolean mask on each
+          graph and aggregates predictions across all graphs.
+        """
         if self.config.task != "classification" or self.config.level == "link":
             raise ValueError("Confusion matrix is only available for classification (graph/node/edge).")
 
@@ -1346,6 +1532,23 @@ class PyG:
         return fig
 
     def PlotParity(self, split: Literal["train", "val", "test"] = "test"):
+        """Plot a parity (true vs predicted) plot for regression tasks (Plotly).
+
+        Parameters
+        ----------
+        split : {"train", "val", "test"}, optional
+            Which split to evaluate. Default is ``"test"``.
+
+        Returns
+        -------
+        plotly.graph_objects.Figure
+            Scatter plot of true vs predicted values with an ``y=x`` reference line.
+
+        Raises
+        ------
+        ValueError
+            If called when ``config.task`` is not ``"regression"``.
+        """
         if self.config.task != "regression":
             raise ValueError("Parity plot is only available for regression tasks.")
 
@@ -1377,11 +1580,44 @@ class PyG:
         return fig
 
     def SaveModel(self, path: str):
+        """Save the current model weights to disk.
+
+        Parameters
+        ----------
+        path : str
+            Output file path. If the extension is not ``.pt``, it is appended automatically.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        This saves only the model state dictionary (``state_dict``). To reproduce a run,
+        also save your configuration (e.g. :meth:`~topologicpy.PyG.PyG.Summary`) and
+        dataset preprocessing choices.
+        """
         if not path.lower().endswith(".pt"):
             path = path + ".pt"
         torch.save(self.model.state_dict(), path)
 
     def LoadModel(self, path: str):
+        """Load model weights from disk.
+
+        Parameters
+        ----------
+        path : str
+            Path to a ``.pt`` file produced by :meth:`~topologicpy.PyG.PyG.SaveModel`.
+
+        Returns
+        -------
+        None
+
+        Notes
+        -----
+        The loaded weights are mapped onto the current device and the model is set to
+        evaluation mode.
+        """
         state = torch.load(path, map_location=self.device)
         self.model.load_state_dict(state)
         self.model.to(self.device)

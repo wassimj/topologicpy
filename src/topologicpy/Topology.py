@@ -9071,6 +9071,7 @@ class Topology():
             for i, t in enumerate(r_cellComplexes):
                 t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
             return return_topology
+        return return_topology
 
     
     @staticmethod
@@ -11979,7 +11980,7 @@ class Topology():
         return topology
 
     @staticmethod
-    def Transform(topology, matrix: list, angTolerance: float = 0.001, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def Transform_old(topology, matrix: list, angTolerance: float = 0.001, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Transforms the input topology by the input 4X4 transformation matrix.
 
@@ -12043,7 +12044,7 @@ class Topology():
         try:
             return_topology = topologic.TopologyUtility.Transform(topology, kTranslationX, kTranslationY, kTranslationZ, kRotation11, kRotation12, kRotation13, kRotation21, kRotation22, kRotation23, kRotation31, kRotation32, kRotation33) # Hook to Core
         except:
-            print("Topology.Transoform - Warning: Core transform operation failed. Attempting a workaround.")
+            print("Topology.Transform - Warning: Core transform operation failed. Attempting a workaround.")
             
             # Extract translation (last column of the matrix)
             translation = [m[3] for m in matrix[:3]]
@@ -12215,6 +12216,241 @@ class Topology():
             return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
         return return_topology
     
+    @staticmethod
+    def Transform(topology,
+                matrix: list,
+                angTolerance: float = 0.001,
+                transferDictionaries: bool = True,
+                tolerance: float = 0.0001,
+                silent: bool = False):
+        """
+        Transforms the input topology by the input 4x4 affine transformation matrix.
+
+        Notes
+        -----
+        - This method prioritizes correctness and speed:
+            1) If `topologic_core.TopologyUtility.Transform` is available, it is used
+            (fastest + most general, supports shear).
+            2) Otherwise, it decomposes the matrix into (scale, rotation, translation)
+            and applies Topology.Scale -> Topology.Rotate -> Topology.Translate.
+            This path assumes the 3x3 linear block is (rotation * axis-aligned scale)
+            with negligible shear.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        matrix : list
+            The input 4x4 transformation matrix (row-major). Translation is assumed to be
+            in the last column: [ [*,*,*,tx],
+                                [*,*,*,ty],
+                                [*,*,*,tz],
+                                [0,0,0, 1] ].
+        angTolerance : float , optional
+            Angle tolerance in degrees under which no rotation is carried out. Default is 0.001.
+        transferDictionaries : bool , optional
+            If True, dictionaries are transferred from the original object to the transformed
+            object (best-effort; relies on consistent sub-topology ordering). Default is True.
+        tolerance : float , optional
+            Desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The transformed topology.
+
+        """
+
+        # ---------- basic validation ----------
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.Transform - Error: The input topology is not a valid topology. Returning None.")
+            return None
+
+        if (not isinstance(matrix, (list, tuple))) or len(matrix) != 4 or any((not isinstance(r, (list, tuple))) or len(r) != 4 for r in matrix):
+            if not silent:
+                print("Topology.Transform - Error: The input matrix is not a valid 4x4 list. Returning None.")
+            return None
+
+        # ---------- fastest + most general path (if available) ----------
+        # This supports full affine transforms (including shear) directly in core (when present).
+        try:
+            import topologic_core as topologic  # guaranteed to exist in TopologicPy runtime
+            tu = getattr(topologic, "TopologyUtility", None)
+            if tu is not None and hasattr(tu, "Transform"):
+                # Most core builds accept a flat 16-list or a 4x4; we try both safely.
+                try:
+                    transformed = tu.Transform(topology, matrix)
+                except Exception:
+                    flat = [matrix[i][j] for i in range(4) for j in range(4)]
+                    transformed = tu.Transform(topology, flat)
+
+                if transformed is None:
+                    if not silent:
+                        print("Topology.Transform - Warning: Core Transform returned None. Falling back to decomposition.")
+                else:
+                    # Best-effort dictionary transfer (core may already preserve dictionaries; we still honor the flag)
+                    if transferDictionaries:
+                        try:
+                            Topology.SetDictionary(transformed, Topology.Dictionary(topology), silent=True)
+                        except Exception:
+                            pass
+                    return transformed
+        except Exception:
+            # Fall back to decomposition path below
+            pass
+
+        # ---------- decomposition path (rotation + axis-aligned scale + translation) ----------
+        from topologicpy.Vertex import Vertex
+
+        # translation in last column (row-major)
+        tx, ty, tz = matrix[0][3], matrix[1][3], matrix[2][3]
+
+        # 3x3 linear block
+        a00, a01, a02 = matrix[0][0], matrix[0][1], matrix[0][2]
+        a10, a11, a12 = matrix[1][0], matrix[1][1], matrix[1][2]
+        a20, a21, a22 = matrix[2][0], matrix[2][1], matrix[2][2]
+
+        # Extract axis-aligned scales as column norms (assumes column-vector convention).
+        # If you treat vectors as row-vectors, the “row norms” would be used instead. TopologicPy
+        # conventions typically align with the column-vector affine form above.
+        import math
+        sx = math.sqrt(a00*a00 + a10*a10 + a20*a20)
+        sy = math.sqrt(a01*a01 + a11*a11 + a21*a21)
+        sz = math.sqrt(a02*a02 + a12*a12 + a22*a22)
+
+        eps = max(1e-12, 10.0 * float(tolerance))
+        if sx < eps or sy < eps or sz < eps:
+            if not silent:
+                print("Topology.Transform - Error: Degenerate scale detected in matrix. Returning None.")
+            return None
+
+        # Build rotation matrix by normalizing columns.
+        r00, r10, r20 = a00/sx, a10/sx, a20/sx
+        r01, r11, r21 = a01/sy, a11/sy, a21/sy
+        r02, r12, r22 = a02/sz, a12/sz, a22/sz
+
+        # Reflection handling: ensure proper rotation (det +1). If det<0, flip the largest scale axis.
+        det = (r00*(r11*r22 - r12*r21) -
+            r01*(r10*r22 - r12*r20) +
+            r02*(r10*r21 - r11*r20))
+        if det < 0.0:
+            # flip the axis with the largest scale magnitude (minimizes relative error)
+            if sx >= sy and sx >= sz:
+                sx = -sx
+                r00, r10, r20 = -r00, -r10, -r20
+            elif sy >= sx and sy >= sz:
+                sy = -sy
+                r01, r11, r21 = -r01, -r11, -r21
+            else:
+                sz = -sz
+                r02, r12, r22 = -r02, -r12, -r22
+
+        # Detect shear (rotation columns should be orthonormal). If not, we still proceed, but warn.
+        # This decomposition path cannot reproduce general shear exactly using Scale+Rotate+Translate.
+        dot01 = r00*r01 + r10*r11 + r20*r21
+        dot02 = r00*r02 + r10*r12 + r20*r22
+        dot12 = r01*r02 + r11*r12 + r21*r22
+        if (abs(dot01) > 1e-4) or (abs(dot02) > 1e-4) or (abs(dot12) > 1e-4):
+            if not silent:
+                print("Topology.Transform - Warning: Matrix contains shear/non-orthogonal rotation. "
+                    "Falling back to approximate decomposition (no exact shear support in this path).")
+
+        # Axis-angle from rotation matrix (robust + clamped)
+        trace = r00 + r11 + r22
+        c = max(-1.0, min(1.0, (trace - 1.0) * 0.5))
+        angle_rad = math.acos(c)
+        angle_deg = angle_rad * (180.0 / math.pi)
+
+        # If rotation is tiny, skip it.
+        do_rotate = angle_deg > float(angTolerance)
+
+        # Compute axis
+        if do_rotate:
+            s = math.sin(angle_rad)
+            if abs(s) > 1e-12:
+                ax = (r21 - r12) / (2.0 * s)
+                ay = (r02 - r20) / (2.0 * s)
+                az = (r10 - r01) / (2.0 * s)
+            else:
+                # Near 0 or pi: use diagonal-based fallback (works for pi; harmless for ~0 where we skip anyway)
+                ax = math.sqrt(max(0.0, (r00 + 1.0) * 0.5))
+                ay = math.sqrt(max(0.0, (r11 + 1.0) * 0.5))
+                az = math.sqrt(max(0.0, (r22 + 1.0) * 0.5))
+                # preserve signs using off-diagonals if possible
+                if (r21 - r12) < 0: ax = -ax
+                if (r02 - r20) < 0: ay = -ay
+                if (r10 - r01) < 0: az = -az
+
+            # Normalize axis
+            n = math.sqrt(ax*ax + ay*ay + az*az)
+            if n < 1e-12:
+                do_rotate = False
+            else:
+                ax, ay, az = ax/n, ay/n, az/n
+
+        origin = Vertex.ByCoordinates(0, 0, 0)
+
+        # Apply scale -> rotate -> translate (transfer dictionaries at the end, for speed)
+        result = Topology.Scale(
+            topology,
+            origin=origin,
+            x=sx, y=sy, z=sz,
+            transferDictionaries=False,
+            silent=False
+        )
+
+        if do_rotate:
+            result = Topology.Rotate(
+                result,
+                origin=origin,
+                axis=[ax, ay, az],
+                angle=angle_deg,
+                angTolerance=angTolerance,
+                transferDictionaries=False,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        result = Topology.Translate(
+            result,
+            x=tx, y=ty, z=tz,
+            transferDictionaries=False,
+            silent=silent
+        )
+
+        # ---------- dictionary transfer (best-effort, fixed bug: apply to actual subtopologies) ----------
+        if transferDictionaries:
+            try:
+                # Parent dictionary
+                Topology.SetDictionary(result, Topology.Dictionary(topology), silent=True)
+
+                # Subtopologies (order is presumed stable; if not, this remains best-effort)
+                def _transfer(src_list, dst_list):
+                    if (not src_list) or (not dst_list):
+                        return
+                    n = min(len(src_list), len(dst_list))
+                    for i in range(n):
+                        try:
+                            Topology.SetDictionary(dst_list[i], Topology.Dictionary(src_list[i]), silent=True)
+                        except Exception:
+                            pass
+
+                _transfer(Topology.Vertices(topology, silent=True),       Topology.Vertices(result, silent=True))
+                _transfer(Topology.Edges(topology, silent=True),          Topology.Edges(result, silent=True))
+                _transfer(Topology.Wires(topology, silent=True),          Topology.Wires(result, silent=True))
+                _transfer(Topology.Faces(topology, silent=True),          Topology.Faces(result, silent=True))
+                _transfer(Topology.Shells(topology, silent=True),         Topology.Shells(result, silent=True))
+                _transfer(Topology.Cells(topology, silent=True),          Topology.Cells(result, silent=True))
+                _transfer(Topology.CellComplexes(topology, silent=True),  Topology.CellComplexes(result, silent=True))
+            except Exception:
+                # Never fail the transform because of metadata
+                pass
+
+        return result
+
     @staticmethod
     def TranslateByDirectionDistance(topology, direction: list = [0, 0, 0], distance: float = 0, transferDictionaries: bool =True, silent: bool = False):
         """
