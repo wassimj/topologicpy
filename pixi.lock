@@ -73,7 +73,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/6a/57f43e054fb3d3a56ac9fc532bc684fc6169a26c75c353e65425b3e56eef/propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/be/8fed28dd0a180dca19e72c233cbf58efa36df055e5b9d90d64fd1740b828/pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/b0/1a/dd1b9d7e627486cf8e7523d09b70010e05a4bc41414f4ae6ce184cf0afb6/pydantic_settings-2.13.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/4b/ccc026168948fec4f7555b9164c724cf4125eac006e176541483d2c959be/pydantic_settings-2.13.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/df/df1457c4df3826e908879fe3d76bc5b6e60aae45f4ee42539512438cfd5d/scipy-1.17.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -196,7 +196,7 @@ environments:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/ncurses-6.5-h2d0b736_3.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/nest-asyncio-1.6.0-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/networkx-3.6.1-pyhcf101f3_0.conda
-      - conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-24.13.0-h3d65ac4_1.conda
+      - conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-24.13.1-h3d65ac4_0.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/notebook-shim-0.2.4-pyhd8ed1ab_1.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/openssl-3.6.1-h35e630c_1.conda
       - conda: https://conda.anaconda.org/conda-forge/noarch/overrides-7.7.0-pyhd8ed1ab_1.conda
@@ -274,12 +274,12 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/cb/50/2f4e99b216821ac921dbebf91c644ba95818f5d07857acadee17220221f3/gql-3.5.3-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ae/4f/7297663840621022bc73c22d7d9d80dbc78b4db6297f764b545cd5dd462d/graphql_core-3.2.6-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/07/94/f3c27ddff61ec3dc4a51e202b42e48a1f280d706f8dd5072fe530add0485/honeybee-0.1.0a4.tar.gz
-      - pypi: https://files.pythonhosted.org/packages/b4/19/e2ab2bcfe487945745d4e3cebd6ac7d6a1bb60dc29cef6fc1dca42608165/honeybee_core-1.64.19-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b9/55/bd207ca365d679e3f7b56f6cb2321cb440b015d54aa5143a32a69d70a454/honeybee_energy-1.116.123-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/7d/35/040279f56f37711ccbacbd60151d152fc602648a6eba4c34a0168893e237/honeybee_radiance-1.66.235-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/24/95/8dc97b494e80ccaa18ec622ed1d0032b1aae59e136544a6e47072e0386d3/honeybee_core-1.64.20-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/b8/1c/0b61e1da85b4eb2da0bfb9ddbc8a389fd0a07e99734f854e2af2e1b41514/honeybee_energy-1.116.125-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/32/64/3716c7b610c2ee2ba8703403005047f9170b0f2fc420f92a06bf13642174/honeybee_radiance-1.66.236-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/12/c8/fb2d275feffe8987c8e9646b0e8f9efa3ab600c3045336338fd91dc7581a/honeybee_radiance_command-1.23.0-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/81/8e/f9e0978118b41913b5108b6d9bb0bf20c9a694d26d706db3f432f6515bd9/honeybee_radiance_folder-2.11.17-py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/eb/fd/9102f4aedad573f4e514e975526b0803cbce80cb6618efd5b078fba72697/honeybee_schema-2.0.1-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/91/69/7d608423375005936692a71e5841d430773ee1b25d8f0517601b719655c0/honeybee_schema-2.0.2-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/17/55/4a94086c7054db931527be64bb1d4ae0ec37a17867dec0671709d71a0fd7/honeybee_standards-2.0.7-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/7e/6b/a3c4d85f8f609c78336e76b78733d5cdd0871b79fcce1fa66533849aab0c/jupyterlab_quarto-0.3.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/4a/64/4f808e8cec6ac5fe2a2d87aa7edc2e09a3f60b1b570eaf2c0b6544a90032/ladybug-0.0.2.tar.gz
@@ -293,8 +293,8 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/6a/57f43e054fb3d3a56ac9fc532bc684fc6169a26c75c353e65425b3e56eef/propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/be/8fed28dd0a180dca19e72c233cbf58efa36df055e5b9d90d64fd1740b828/pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/d7/6f/a7105ee46e0d10600799f13727cc0a500b39580d327ca53b588ba5e9f8c2/pydantic_openapi_helper-1.0.2-py2.py3-none-any.whl
-      - pypi: https://files.pythonhosted.org/packages/b0/1a/dd1b9d7e627486cf8e7523d09b70010e05a4bc41414f4ae6ce184cf0afb6/pydantic_settings-2.13.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/73/31/1c152dd6eb781f6c92b07f3ef5bddf896c38e418ac17dd8675c6ad2fd554/pydantic_openapi_helper-1.0.3-py2.py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/4b/ccc026168948fec4f7555b9164c724cf4125eac006e176541483d2c959be/pydantic_settings-2.13.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/df/df1457c4df3826e908879fe3d76bc5b6e60aae45f4ee42539512438cfd5d/scipy-1.17.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -389,7 +389,7 @@ environments:
       - pypi: https://files.pythonhosted.org/packages/52/6a/57f43e054fb3d3a56ac9fc532bc684fc6169a26c75c353e65425b3e56eef/propcache-0.4.1-cp311-cp311-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl
       - pypi: https://files.pythonhosted.org/packages/5a/87/b70ad306ebb6f9b585f114d0ac2137d792b48be34d732d60e597c2f8465a/pydantic-2.12.5-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/c8/be/8fed28dd0a180dca19e72c233cbf58efa36df055e5b9d90d64fd1740b828/pydantic_core-2.41.5-cp311-cp311-manylinux_2_17_x86_64.manylinux2014_x86_64.whl
-      - pypi: https://files.pythonhosted.org/packages/b0/1a/dd1b9d7e627486cf8e7523d09b70010e05a4bc41414f4ae6ce184cf0afb6/pydantic_settings-2.13.0-py3-none-any.whl
+      - pypi: https://files.pythonhosted.org/packages/00/4b/ccc026168948fec4f7555b9164c724cf4125eac006e176541483d2c959be/pydantic_settings-2.13.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/14/1b/a298b06749107c305e1fe0f814c6c74aea7b2f1e10989cb30f544a1b3253/python_dotenv-1.2.1-py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/3f/51/d4db610ef29373b879047326cbf6fa98b6c1969d6f6dc423279de2b1be2c/requests_toolbelt-1.0.0-py2.py3-none-any.whl
       - pypi: https://files.pythonhosted.org/packages/ef/df/df1457c4df3826e908879fe3d76bc5b6e60aae45f4ee42539512438cfd5d/scipy-1.17.0-cp311-cp311-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl
@@ -987,29 +987,29 @@ packages:
   sha256: 81db0f4b3abbcf922b8d3e652befd7239fcaa54deda1b0a4eadf6147cce3a39a
   requires_dist:
   - numpy
-- pypi: https://files.pythonhosted.org/packages/b4/19/e2ab2bcfe487945745d4e3cebd6ac7d6a1bb60dc29cef6fc1dca42608165/honeybee_core-1.64.19-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/24/95/8dc97b494e80ccaa18ec622ed1d0032b1aae59e136544a6e47072e0386d3/honeybee_core-1.64.20-py3-none-any.whl
   name: honeybee-core
-  version: 1.64.19
-  sha256: 822446a7986bbd2435eaec4e1475177f0ee03974a50c45fa27fa99f1aa4220b9
+  version: 1.64.20
+  sha256: 6d055bcce1124c75e471dbd3ade236c2a28be55726c766298fc6335071f070b4
   requires_dist:
   - ladybug-core==0.44.36
   - ladybug-geometry-polyskel==1.7.40
-  - honeybee-schema==2.0.1 ; python_full_version >= '3.7'
-- pypi: https://files.pythonhosted.org/packages/b9/55/bd207ca365d679e3f7b56f6cb2321cb440b015d54aa5143a32a69d70a454/honeybee_energy-1.116.123-py3-none-any.whl
+  - honeybee-schema==2.0.2 ; python_full_version >= '3.7'
+- pypi: https://files.pythonhosted.org/packages/b8/1c/0b61e1da85b4eb2da0bfb9ddbc8a389fd0a07e99734f854e2af2e1b41514/honeybee_energy-1.116.125-py3-none-any.whl
   name: honeybee-energy
-  version: 1.116.123
-  sha256: 3f3abf7fb772c8bb382be4a00dd4f498117390926cc358630fd0c21827466339
+  version: 1.116.125
+  sha256: 77ba9a93ec12244bdb4af90c16a8ac6c2007b766a95ad41ca7acb58d603fb3fe
   requires_dist:
-  - honeybee-core==1.64.19
+  - honeybee-core==1.64.20
   - honeybee-standards==2.0.7
   - honeybee-energy-standards==2.3.0 ; extra == 'standards'
-  - honeybee-openstudio==0.4.7 ; extra == 'openstudio'
-- pypi: https://files.pythonhosted.org/packages/7d/35/040279f56f37711ccbacbd60151d152fc602648a6eba4c34a0168893e237/honeybee_radiance-1.66.235-py3-none-any.whl
+  - honeybee-openstudio==0.4.8 ; extra == 'openstudio'
+- pypi: https://files.pythonhosted.org/packages/32/64/3716c7b610c2ee2ba8703403005047f9170b0f2fc420f92a06bf13642174/honeybee_radiance-1.66.236-py3-none-any.whl
   name: honeybee-radiance
-  version: 1.66.235
-  sha256: 029b334518d1280fe6af1c21ef70d95cee6a98641145f278e86d47b46fa7bd6b
+  version: 1.66.236
+  sha256: 93ab07fc628408b66796c18f213e700e86dcfa87a24fa9f2230b0914b69bce04
   requires_dist:
-  - honeybee-core==1.64.19
+  - honeybee-core==1.64.20
   - honeybee-radiance-folder==2.11.17
   - honeybee-radiance-command==1.23.0
   - honeybee-standards==2.0.7
@@ -1023,12 +1023,12 @@ packages:
   sha256: 4e3583247f12059f3914d3dc36506d21188c7d0feb4046b2a4c40a6df8538454
   requires_dist:
   - click>=7.1.2 ; extra == 'cli'
-- pypi: https://files.pythonhosted.org/packages/eb/fd/9102f4aedad573f4e514e975526b0803cbce80cb6618efd5b078fba72697/honeybee_schema-2.0.1-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/91/69/7d608423375005936692a71e5841d430773ee1b25d8f0517601b719655c0/honeybee_schema-2.0.2-py3-none-any.whl
   name: honeybee-schema
-  version: 2.0.1
-  sha256: 744c10b3a705120d425b0d30880ed6c317d2d0017f4c37354219bc3f433bb4b4
+  version: 2.0.2
+  sha256: 7ce3cf1eb88172a57cec6441e3248b85adde47457262fea76b2589e243da132a
   requires_dist:
-  - pydantic-openapi-helper==1.0.2
+  - pydantic-openapi-helper==1.0.3
   - honeybee-standards==2.0.7
   - click>=7.1.2 ; extra == 'cli'
 - pypi: https://files.pythonhosted.org/packages/17/55/4a94086c7054db931527be64bb1d4ae0ec37a17867dec0671709d71a0fd7/honeybee_standards-2.0.7-py2.py3-none-any.whl
@@ -1674,6 +1674,7 @@ packages:
   - libgcc-ng ==15.2.0=*_18
   - libgomp 15.2.0 he0feb66_18
   license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
   purls: []
   size: 1041788
   timestamp: 1771378212382
@@ -1683,6 +1684,7 @@ packages:
   depends:
   - libgcc 15.2.0 he0feb66_18
   license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
   purls: []
   size: 27526
   timestamp: 1771378224552
@@ -1692,6 +1694,7 @@ packages:
   depends:
   - __glibc >=2.17,<3.0.a0
   license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
   purls: []
   size: 603262
   timestamp: 1771378117851
@@ -1765,6 +1768,7 @@ packages:
   constrains:
   - libstdcxx-ng ==15.2.0=*_18
   license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
   purls: []
   size: 5852330
   timestamp: 1771378262446
@@ -1774,6 +1778,7 @@ packages:
   depends:
   - libstdcxx 15.2.0 h934c35e_18
   license: GPL-3.0-only WITH GCC-exception-3.1
+  license_family: GPL
   purls: []
   size: 27575
   timestamp: 1771378314494
@@ -1979,28 +1984,28 @@ packages:
   - pkg:pypi/networkx?source=compressed-mapping
   size: 1587439
   timestamp: 1765215107045
-- conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-24.13.0-h3d65ac4_1.conda
-  sha256: fd277972af5ac2071837678b18e39bb729565376cacaa5c1bb46a1c873400dec
-  md5: fdc039a4ac846c997edd2b2d6fb2e23c
+- conda: https://conda.anaconda.org/conda-forge/linux-64/nodejs-24.13.1-h3d65ac4_0.conda
+  sha256: 217a2b7c65e1900fcf16a74eb4db54cb7558942ce040ee64507ddeecec3cead0
+  md5: 45fe531d027ce218b895565110a79a1f
   depends:
   - libgcc >=14
-  - __glibc >=2.28,<3.0.a0
   - libstdcxx >=14
+  - __glibc >=2.28,<3.0.a0
+  - libzlib >=1.3.1,<2.0a0
+  - libuv >=1.51.0,<2.0a0
+  - openssl >=3.5.5,<4.0a0
+  - icu >=78.2,<79.0a0
+  - libsqlite >=3.51.2,<4.0a0
+  - libnghttp2 >=1.67.0,<2.0a0
+  - c-ares >=1.34.6,<2.0a0
   - zstd >=1.5.7,<1.6.0a0
   - libbrotlicommon >=1.2.0,<1.3.0a0
   - libbrotlienc >=1.2.0,<1.3.0a0
   - libbrotlidec >=1.2.0,<1.3.0a0
-  - c-ares >=1.34.6,<2.0a0
-  - icu >=78.2,<79.0a0
-  - openssl >=3.5.5,<4.0a0
-  - libnghttp2 >=1.67.0,<2.0a0
-  - libsqlite >=3.51.2,<4.0a0
-  - libzlib >=1.3.1,<2.0a0
-  - libuv >=1.51.0,<2.0a0
   license: MIT
   purls: []
-  size: 17544732
-  timestamp: 1771399361266
+  size: 17461175
+  timestamp: 1771438393537
 - conda: https://conda.anaconda.org/conda-forge/noarch/notebook-shim-0.2.4-pyhd8ed1ab_1.conda
   sha256: 7b920e46b9f7a2d2aa6434222e5c8d739021dbc5cc75f32d124a8191d86f9056
   md5: e7f89ea5f7ea9401642758ff50a2d9c1
@@ -2339,16 +2344,16 @@ packages:
   requires_dist:
   - typing-extensions>=4.14.1
   requires_python: '>=3.9'
-- pypi: https://files.pythonhosted.org/packages/d7/6f/a7105ee46e0d10600799f13727cc0a500b39580d327ca53b588ba5e9f8c2/pydantic_openapi_helper-1.0.2-py2.py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/73/31/1c152dd6eb781f6c92b07f3ef5bddf896c38e418ac17dd8675c6ad2fd554/pydantic_openapi_helper-1.0.3-py2.py3-none-any.whl
   name: pydantic-openapi-helper
-  version: 1.0.2
-  sha256: a26f671cb251c88543a175bcda89519cecc2a0871c7e63e9ef5d690e2321ca3d
+  version: 1.0.3
+  sha256: 093d4e1f6b1e6eb72dee4a16d17267869169ea888916e037f2b51f27587fbdae
   requires_dist:
   - pydantic>=2.0
-- pypi: https://files.pythonhosted.org/packages/b0/1a/dd1b9d7e627486cf8e7523d09b70010e05a4bc41414f4ae6ce184cf0afb6/pydantic_settings-2.13.0-py3-none-any.whl
+- pypi: https://files.pythonhosted.org/packages/00/4b/ccc026168948fec4f7555b9164c724cf4125eac006e176541483d2c959be/pydantic_settings-2.13.1-py3-none-any.whl
   name: pydantic-settings
-  version: 2.13.0
-  sha256: d67b576fff39cd086b595441bf9c75d4193ca9c0ed643b90360694d0f1240246
+  version: 2.13.1
+  sha256: d56fd801823dbeae7f0975e1f8c8e25c258eb75d278ea7abb5d9cebb01b56237
   requires_dist:
   - pydantic>=2.7.0
   - python-dotenv>=0.21.0
@@ -2881,7 +2886,7 @@ packages:
 - pypi: ./
   name: topologicpy
   version: 0.9.3
-  sha256: 137f9a445ba78b82d42ce9e55c237ba3f7eb31329c7647dd7e3d8c0c9bd76488
+  sha256: 1f673cdb6fcd922cdf65b2c3d9fbdb4aad876f272639d600da0ecdce2ba127fe
   requires_dist:
   - numpy>=1.18.0
   - scipy>=1.4.1
