@@ -68,17 +68,34 @@ import copy
 import numpy as np
 import pandas as pd
 
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+    from torch_geometric.data import Data
+    from torch_geometric.loader import DataLoader
+    from torch_geometric.nn import SAGEConv, GCNConv, GATv2Conv, global_mean_pool, global_max_pool, global_add_pool
+    from torch_geometric.transforms import RandomLinkSplit
+except Exception as _e:
+    torch = nn = F = Data = DataLoader = SAGEConv = GCNConv = GATv2Conv = None
+    global_mean_pool = global_max_pool = global_add_pool = None
+    RandomLinkSplit = None
+    _PYG_IMPORT_ERROR = _e
+else:
+    _PYG_IMPORT_ERROR = None
 
-from torch_geometric.data import Data
-from torch_geometric.loader import DataLoader
-from torch_geometric.nn import (
-    SAGEConv, GCNConv, GATv2Conv,
-    global_mean_pool, global_max_pool, global_add_pool
-)
-from torch_geometric.transforms import RandomLinkSplit
+
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
+
+# from torch_geometric.data import Data
+# from torch_geometric.loader import DataLoader
+# from torch_geometric.nn import (
+#     SAGEConv, GCNConv, GATv2Conv,
+#     global_mean_pool, global_max_pool, global_add_pool
+# )
+# from torch_geometric.transforms import RandomLinkSplit
 
 from sklearn.metrics import (
     accuracy_score, precision_recall_fscore_support, confusion_matrix,
@@ -98,6 +115,9 @@ PoolingKind = Literal["mean", "max", "sum"]
 
 @dataclass
 class _RunConfig:
+
+    verbose : bool = False
+
     # ----------------------------
     # Task selection
     # ----------------------------
@@ -362,7 +382,8 @@ class PyG:
                   nodeLabelType: LabelType = "categorical",
                   edgeLabelType: LabelType = "categorical",
                   **kwargs) -> "PyG":
-        """Creates a :class:`~topologicpy.PyG.PyG` instance from a TopologicPy-exported CSV dataset folder.
+        """
+        Creates a :class:`~topologicpy.PyG.PyG` instance from a TopologicPy-exported CSV dataset folder.
 
         The dataset folder is expected to contain **three** files:
 
@@ -415,9 +436,15 @@ class PyG:
 
         Examples
         --------
-        >>> pyg = PyG.ByCSVPath(path="C:/dataset", level="graph", task="classification")
-        >>> history = pyg.Train(epochs=50)
+        . pyg = PyG.ByCSVPath(path="C:/dataset", level="graph", task="classification")
+        . history = pyg.Train(epochs=50)
         """
+        if _PYG_IMPORT_ERROR is not None:
+            raise ImportError(
+                "topologicpy.PyG requires optional dependencies. Install with the PyG extras "
+                "(e.g. torch + torch_geometric) and try again."
+            ) from _PYG_IMPORT_ERROR
+        
         cfg = _RunConfig(level=level, task=task,
                          graph_label_type=graphLabelType,
                          node_label_type=nodeLabelType,
@@ -462,7 +489,8 @@ class PyG:
     # Convenience: hyperparameters
     # ----------------------------
     def SetHyperparameters(self, **kwargs) -> Dict[str, Union[str, int, float, bool, Tuple]]:
-        """Set one or more configuration values (hyperparameters) on this instance.
+        """
+        Set one or more configuration values (hyperparameters) on this instance.
 
         This method updates :attr:`~topologicpy.PyG.PyG.config` fields using keyword
         arguments. If any *model-shaping* setting changes (e.g. ``conv``, ``hidden_dims``,
@@ -532,7 +560,8 @@ class PyG:
         return self.Summary()
 
     def Summary(self) -> Dict[str, Union[str, int, float, bool, Tuple]]:
-        """Return a compact summary of the current configuration and dataset size.
+        """
+        Return a compact summary of the current configuration and dataset size.
 
         Returns
         -------
@@ -583,7 +612,8 @@ class PyG:
                                   cv_report: Optional[Dict[str, Union[float, List[Dict[str, float]]]]] = None,
                                   metrics: Optional[List[str]] = None,
                                   show_mean_std: bool = True):
-        """Create a Plotly figure summarising k-fold cross-validation performance.
+        """
+        Create a Plotly figure summarising k-fold cross-validation performance.
 
         Parameters
         ----------
@@ -908,7 +938,8 @@ class PyG:
     # Training / evaluation
     # -----------------------
     def Train(self, epochs: Optional[int] = None, batch_size: Optional[int] = None) -> Dict[str, List[float]]:
-        """Train the model using the current configuration.
+        """
+        Train the model using the current configuration.
 
         Training behaviour depends on :attr:`~topologicpy.PyG.PyG.config.level`:
 
@@ -1004,7 +1035,8 @@ class PyG:
                       k_folds: Optional[int] = None,
                       epochs: Optional[int] = None,
                       batch_size: Optional[int] = None) -> Dict[str, Union[float, List[Dict[str, float]]]]:
-        """Perform k-fold cross-validation for graph-level tasks.
+        """
+        Perform k-fold cross-validation for graph-level tasks.
 
         This method rebuilds and retrains a fresh model per fold, evaluates on the fold's
         held-out set, and returns fold-wise metrics along with mean/std aggregates.
@@ -1138,7 +1170,8 @@ class PyG:
         return summary
 
     def Validate(self) -> Dict[str, float]:
-        """Compute metrics on the validation split.
+        """
+        Compute metrics on the validation split.
 
         Returns
         -------
@@ -1169,7 +1202,8 @@ class PyG:
         raise ValueError("Unsupported level.")
 
     def Test(self) -> Dict[str, float]:
-        """Compute metrics on the test split.
+        """
+        Compute metrics on the test split.
 
         Returns
         -------
@@ -1463,7 +1497,8 @@ class PyG:
     # Plotly reporting
     # -----------------
     def PlotHistory(self):
-        """Plot training and validation loss curves (Plotly).
+        """
+        Plot training and validation loss curves (Plotly).
 
         Returns
         -------
@@ -1482,7 +1517,8 @@ class PyG:
         return fig
 
     def PlotConfusionMatrix(self, split: Literal["train", "val", "test"] = "test"):
-        """Plot a confusion matrix for classification tasks (Plotly).
+        """
+        Plot a confusion matrix for classification tasks (Plotly).
 
         Parameters
         ----------
@@ -1532,7 +1568,8 @@ class PyG:
         return fig
 
     def PlotParity(self, split: Literal["train", "val", "test"] = "test"):
-        """Plot a parity (true vs predicted) plot for regression tasks (Plotly).
+        """
+        Plot a parity (true vs predicted) plot for regression tasks (Plotly).
 
         Parameters
         ----------
@@ -1580,7 +1617,8 @@ class PyG:
         return fig
 
     def SaveModel(self, path: str):
-        """Save the current model weights to disk.
+        """
+        Save the current model weights to disk.
 
         Parameters
         ----------
@@ -1602,7 +1640,8 @@ class PyG:
         torch.save(self.model.state_dict(), path)
 
     def LoadModel(self, path: str):
-        """Load model weights from disk.
+        """
+        Load model weights from disk.
 
         Parameters
         ----------
