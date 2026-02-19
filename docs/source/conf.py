@@ -26,6 +26,18 @@ extensions = [
     "nbsphinx_link"
 ]
 
+
+# -- Autodoc / autosummary -------------------------------------------------
+# TopologicPy includes optional heavy dependencies (e.g. torch/pyg/plotly).
+# During docs builds these may not be installed; mocking prevents autodoc import failures.
+autosummary_generate = True
+autodoc_mock_imports = [
+    'torch', 'torch.nn', 'torch.nn.functional',
+    'torch_geometric', 'torch_geometric.data', 'torch_geometric.loader',
+    'torch_geometric.nn', 'torch_geometric.transforms',
+    'sklearn', 'sklearn.metrics',
+    'plotly', 'plotly.graph_objects', 'plotly.express',
+]
 source_suffix = ['.rst', '.md']
 
 templates_path = ['_templates']
