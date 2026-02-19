@@ -18,34 +18,6 @@ import topologic_core as topologic
 from topologic_core import IntAttribute, DoubleAttribute, StringAttribute, ListAttribute
 
 class Dictionary():
-    '''
-    @staticmethod
-    def ByDGLData(item):
-        """
-        Parameters
-        ----------
-        item : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        dictionaries : TYPE
-            DESCRIPTION.
-
-        """
-        keys = list(item.keys())
-        vList = []
-        for k in keys:
-            vList.append(item[k].tolist())
-        dictionaries = []
-        for v in range(len(vList[0])):
-            values = []
-            for k in range(len(keys)):
-                value = vList[k][v]
-                values.append(value)
-            dictionaries.append(Dictionary.ByKeysValues(keys, values))
-        return dictionaries
-    '''
 
     @staticmethod
     def _ConvertAttribute(attr):
@@ -721,14 +693,6 @@ class Dictionary():
         """
         Returns the difference of dictionaryA and dictionaryB (A \\ B), based on keys.
 
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. If dictionaryA is None, return None.
-        3. If dictionaryB is None, return dictionaryA.
-        4. Return a new dictionary containing only keys found in dictionaryA but not
-           found in dictionaryB. Values are derived from dictionaryA.
-
         Parameters
         ----------
         dictionaryA : topologic_core.Dictionary
@@ -877,15 +841,6 @@ class Dictionary():
         """
         Returns the intersection of dA and dB, based on keys, using a two-step
         construction and Dictionary.ByMergedDictionaries.
-
-        Procedure
-        ---------
-        1. Compute the common keys between dA and dB.
-        2. Build two new dictionaries (dA_1 and dB_1) that contain exactly the
-           same common keys:
-              - dA_1 values are taken from dA
-              - dB_1 values are taken from dB
-        3. Return Dictionary.ByMergedDictionaries(dA_1, dB_1)
         
         Parameters
         ----------
@@ -940,15 +895,6 @@ class Dictionary():
     def Impose(dictionaryA, dictionaryB, silent: bool = False):
         """
         Imposes dictionaryB onto dictionaryA.
-
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. If dictionaryA is None, return None.
-        3. If dictionaryB is None, return dictionaryA.
-        4. Create a new dictionary that:
-           - overwrites values in dictionaryA with values from dictionaryB for overlapping keys
-           - adds keys/values from dictionaryB that do not exist in dictionaryA
 
         Parameters
         ----------
@@ -1011,15 +957,6 @@ class Dictionary():
         """
         Imprints dictionaryB onto dictionaryA.
 
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. If dictionaryA is None, return None.
-        3. If dictionaryB is None, return dictionaryA.
-        4. Create a new dictionary that:
-           - overwrites values in dictionaryA with values from dictionaryB for overlapping keys
-           - ignores keys in dictionaryB that do not exist in dictionaryA
-
         Parameters
         ----------
         dictionaryA : topologic_core.Dictionary
@@ -1077,15 +1014,6 @@ class Dictionary():
         """
         Returns the intersection of dA and dB, based on keys, using a two-step
         construction and Dictionary.ByMergedDictionaries.
-
-        Procedure
-        ---------
-        1. Compute the common keys between dA and dB.
-        2. Build two new dictionaries (dA_1 and dB_1) that contain exactly the
-           same common keys:
-              - dA_1 values are taken from dA
-              - dB_1 values are taken from dB
-        3. Return Dictionary.ByMergedDictionaries(dA_1, dB_1)
         
         Parameters
         ----------
@@ -1196,12 +1124,6 @@ class Dictionary():
     def Merge(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the merge (union) of dictionaryA and dictionaryB.
-
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. If either input is None, return the other (if valid).
-        3. Return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB).
 
         Parameters
         ----------
@@ -1552,14 +1474,6 @@ class Dictionary():
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
 
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. Compute keys that exist in exactly one of the two dictionaries.
-        3. Create a new dictionary containing:
-           - unique keys from dictionaryA with values from dictionaryA
-           - unique keys from dictionaryB with values from dictionaryB
-
         Parameters
         ----------
         dictionaryA : topologic_core.Dictionary
@@ -1634,14 +1548,6 @@ class Dictionary():
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
 
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. Compute keys that exist in exactly one of the two dictionaries.
-        3. Create a new dictionary containing:
-           - unique keys from dictionaryA with values from dictionaryA
-           - unique keys from dictionaryB with values from dictionaryB
-
         Parameters
         ----------
         dictionaryA : topologic_core.Dictionary
@@ -1715,12 +1621,6 @@ class Dictionary():
     def Union(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the union (merge) of dictionaryA and dictionaryB.
-
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. If either input is None, return the other (if valid).
-        3. Return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB).
 
         Parameters
         ----------
@@ -1900,14 +1800,6 @@ class Dictionary():
     def XOR(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the XOR (symmetric difference) of dictionaryA and dictionaryB, based on keys.
-
-        Procedure
-        ---------
-        1. Validate inputs.
-        2. Compute keys that exist in exactly one of the two dictionaries.
-        3. Create a new dictionary containing:
-           - unique keys from dictionaryA with values from dictionaryA
-           - unique keys from dictionaryB with values from dictionaryB
 
         Parameters
         ----------

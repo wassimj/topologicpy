@@ -227,51 +227,6 @@ class Plotly:
             return colorScale
     
     @staticmethod
-    def DataByDGL(data, labels):
-        """
-        Returns a data frame from the DGL data.
-
-        Parameters
-        ----------
-        data : list
-            The data to display.
-        labels : list
-            The labels to use for the data. The data with the labels in this list will be extracted and used in the returned dataFrame.
-
-        Returns
-        -------
-        pd.DataFrame
-            A pandas dataFrame
-
-        """
-
-        try:
-            import pandas as pd
-        except:
-            print("Plotly - Installing required pandas library.")
-            try:
-                os.system("pip install pandas")
-            except:
-                os.system("pip install pandas --user")
-            try:
-                import pandas as pd
-            except:
-                warnings.warn("Plotly.DataByDGL - Error: Could not import pandas. Please install the pandas library manually. Returning None")
-                return None
-        
-        if isinstance(data[labels[0]][0], int):
-            xAxis_list = list(range(1, data[labels[0]][0]+1))
-        else:
-            xAxis_list = data[labels[0]][0]
-        plot_data = [xAxis_list]
-        for i in range(1,len(labels)):
-            plot_data.append(data[labels[i]][0][:len(xAxis_list)])
-
-        dlist = list(map(list, zip(*plot_data)))
-        df = pd.DataFrame(dlist, columns=labels)
-        return df
-
-    @staticmethod
     def DataByGraph(graph,
                     sagitta: float = 0,
                     absolute: bool = False,

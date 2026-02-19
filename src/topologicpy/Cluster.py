@@ -65,25 +65,27 @@ class Cluster():
             A tuple (start, end, step) representing the range of X values for which the formula should be evaluated.
             For example, to evaluate Y for X values from -5 to 5 with a step of 0.1, you should specify xRange=(-5, 5, 0.1).
             If the xRange is set to None or not specified:
-                The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
-                The method will attempt to evaluate X based on the specified yRange.
-                xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+            . The method assumes that the formula uses the yString (e.g. 'Y' as in 'Y**2 + 2*Y - sqrt(Y)')
+            . The method will attempt to evaluate X based on the specified yRange.
+            . xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
         yRange : tuple , optional
             A tuple (start, end, step) representing the range of Y values for which the formula should be evaluated.
             For example, to evaluate X for Y values from -5 to 5 with a step of 0.1, you should specify yRange=(-5,5,0.1).
             If the yRange is set to None or not specified:
-                The method assumes that the formula uses the xString (e.g. 'X' as in 'X**2 + 2*X - sqrt(X)')
-                The method will attempt to evaluate Y based on the specified xRange.
-                xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
+            . The method assumes that the formula uses the xString (e.g. 'X' as in 'X**2 + 2*X - sqrt(X)')
+            . The method will attempt to evaluate Y based on the specified xRange.
+            . xRange and yRange CANNOT be None or unspecified at the same time. One or the other must be specified.
         xString : str , optional
             The string used to represent the X independent variable. Default is 'X' (uppercase).
         yString : str , optional
             The string used to represent the Y independent variable. Default is 'Y' (uppercase).
 
-        Returns:
-            topologic_core.Cluster
-                The created cluster of vertices.
+        Returns
+        -------
+        topologic_core.Cluster
+            The created cluster of vertices.
         """
+
         from topologicpy.Vertex import Vertex
         import math
         if xRange == None and yRange == None:
@@ -1011,7 +1013,6 @@ class Cluster():
         - Robust empty-cluster handling (reseed with farthest point).
 
         Notes
-        -----
         - Classic k-means objective is squared Euclidean; for other metrics this function uses the
         appropriate/standard centroid update where available (k-medians, spherical k-means), or a
         reasonable heuristic (chebyshev).
@@ -1061,6 +1062,7 @@ class Cluster():
         list
             The created list of clusters (topologic_core.Cluster), each with centroidKey stored in its dictionary.
         """
+        
         import math
         import numpy as np
 

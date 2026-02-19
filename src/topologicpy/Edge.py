@@ -1557,8 +1557,6 @@ class Edge():
         Spread is the rational trigonometry equivalent of angle and is defined as:
             spread = sin^2(theta)
 
-        Properties
-        ----------
         - spread = 0   : edges are parallel
         - spread = 1   : edges are perpendicular
         - 0 <= spread <= 1

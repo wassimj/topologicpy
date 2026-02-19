@@ -1905,22 +1905,48 @@ class Graph:
         """
         Computes betweenness centrality (Brandes) for vertices or edges.
 
-        Precedence
+        Parameters
         ----------
-        - If nxCompatible=True, NetworkX normalization is applied and `normalize` is ignored.
+        graph : topologic_core.Graph
+            The input graph.
+        weightKey : str, optional
+            If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
+            is used as its weight. If set to any other value, the value associated with that key in each edge's dictionary is used as the
+            edge weight. Default is None.
+        normalize : bool , optional
+            If set to True, the values are normalized between 0 and 1. Default is False.
+        nxCompatible : bool , optional
+             If set to True, NetworkX normalization is applied and `normalize` is ignored.
         (Undirected conventions; endpoints=False.)
-        - If nxCompatible=False and normalize=True, values are min-max normalized to [0,1].
-
-        Edge bundling
-        ------------
-        If useEdges=True and edgeKey is provided, edge betweenness values are bundled by SUM and
-        assigned back to each member edge.
+        useEdges : bool , optional
+            If set to True,  If useEdges=True and edgeKey is provided, edge betweenness values are bundled by
+            SUM and assigned back to each member edge. Default is False.
+        edgeKey : str , optional
+            If not None, the value associated with that key in each edge's dictionary is used to bundle the edges
+            into one entity for the calculation. Otherwise, each edge segment is assumed to be an independent
+            entity. Default is None.
+        key : str , optional
+            The desired dictionary key name under which to store the calculated value. Default is "degree_centrality".
+        colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "dc_color"
+        colorScale : str , optional
+            The desired colorscale name to use for colors. The default is "viridis".
+        mantissa: int , optional
+            The desired length of the mantissa (number of digits after the decimal point). Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list[float]
-            Centralities aligned with Graph.Vertices(graph) (useEdges=False) or Graph.Edges(graph) (useEdges=True).
+        list
+            The list of centralities in the order matching the vertices or edges as requested.
+
         """
+
+
+        
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
@@ -2828,7 +2854,7 @@ class Graph:
     @staticmethod
     def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, edgeKeyFwd="weightFwd", edgeKeyBwd="weightBwd", xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, silent=False):
         """
-        Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
+        Returns graphs according to the input folder path. This method assumes the CSV files follow pytorch geometric schema.
 
         Parameters
         ----------
@@ -3116,14 +3142,12 @@ class Graph:
                 tolerance=0.0001, silent=False):
         """
         Imports TopologicPy graphs from a folder containing CSV files (graphs.csv, nodes.csv, edges.csv)
-        exported using the *new* TopologicPy CSV format for PyTorch Geometric / DGL-style datasets.
+        exported using the *new* TopologicPy CSV format for PyTorch Geometric-style datasets.
 
         New format changes handled
-        --------------------------
         - Graph, node, and edge features are stored in *separate numeric columns*:
             <featuresHeader>_0, <featuresHeader>_1, <featuresHeader>_2, ...
         (instead of a single comma-separated string column).
-
         - Graph label and graph features are embedded in the returned graph's dictionary.
 
         Parameters
@@ -3452,7 +3476,7 @@ class Graph:
                   nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask", nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
                   nodeFeaturesKeys=[], tolerance=0.0001, silent=False):
         """
-        Returns graphs according to the input folder path. This method assumes the CSV files follow DGL's schema.
+        Returns graphs according to the input folder path. This method assumes the CSV files follow pytorch geometric schema.
 
         Parameters
         ----------
@@ -3506,7 +3530,7 @@ class Graph:
         Returns
         -------
         dict
-            The dictionary of DGL graphs and labels found in the input CSV files. The keys in the dictionary are "graphs", "labels", "features"
+            The dictionary of pytorch geometric graphs and labels found in the input CSV files. The keys in the dictionary are "graphs", "labels", "features"
 
         """
         from topologicpy.Vertex import Vertex
@@ -9043,45 +9067,44 @@ class Graph:
                         tolerance: float = 0.001,
                         silent: bool = False):
         """
-        Computes degree centrality.
+        Computes the degree centrality of the input graph. See: https://en.wikipedia.org/wiki/Centrality/
 
-        Semantics
-        ---------
-        Vertex mode (useEdges=False)
-            - Computes (weighted) vertex degree by a single sweep over edges: O(V+E).
-            - If nxCompatible=True:
-                C_D(v) = deg(v) / (n - 1)     for n > 1
-            where deg(v) is the (possibly weighted) degree accumulated by weightKey.
-            In this mode, normalize is ignored.
-            - If nxCompatible=False and normalize=True:
-                values are min-max normalized to [0, 1].
-
-        Edge mode (useEdges=True)
-            - Computes edge "degree centrality" as the degree of the corresponding node in the line graph,
-            WITHOUT constructing the line graph (robust and fast).
-            For each primal vertex, if m edges meet, each of those edges gains (m-1).
-            - Vertex matching for edge-mode uses coordinate quantization by `tolerance` (like LineGraph),
-            preventing object-identity mismatch.
-            - If edgeKey is provided, edges are bundled by edgeKey and bundle values are computed as SUM
-            (and assigned back to each member edge).
-            - If nxCompatible=True:
-                values are scaled by 1/(M-1) where M is the number of line-graph nodes
-                (number of edges if no bundling; number of bundles if bundling).
-            In this mode, normalize is ignored.
-            - If nxCompatible=False and normalize=True:
-                values are min-max normalized to [0, 1].
-
-        Stores results
-        --------------
-        Stores `key` and `colorKey` into:
-            - vertex dictionaries (vertex mode)
-            - edge dictionaries (edge mode)
-        Colors are derived from the final values and `colorScale`.
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        weightKey : str, optional
+            If set to None, each edge is assumed to have a weight of 1. If set to "length" or "distance", the geometric length of each edge
+            is used as its weight. If set to any other value, the value associated with that key in each edge's dictionary is used as the
+            edge weight. Default is None.
+        normalize : bool , optional
+            If set to True, the values are normalized between 0 and 1. Default is False.
+        nxCompatible : bool , optional
+            Not used. Kept for consistency with other centrality functions. Values are always compatible with those derived from NetworkX. Default is True.
+        useEdges : bool , optional
+            If set to True, the calculation uses the edges rather than the vertices. Default is False.
+        edgeKey : str , optional
+            If not None, the value associated with that key in each edge's dictionary is used to bundle the edges
+            into one entity for the calculation. Otherwise, each edge segment is assumed to be an independent
+            entity. Default is None.
+        key : str , optional
+            The desired dictionary key name under which to store the calculated value. Default is "degree_centrality".
+        colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "dc_color"
+        colorScale : str , optional
+            The desired colorscale name to use for colors. The default is "viridis".
+        mantissa: int , optional
+            The desired length of the mantissa (number of digits after the decimal point). Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list[float]
-            Centralities aligned with Graph.Vertices(graph) (vertex mode) or Graph.Edges(graph) (edge mode).
+        list
+            The list of centralities in the order matching the vertices or edges as requested.
+
         """
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
@@ -9974,7 +9997,7 @@ class Graph:
     @staticmethod
     def ExportToAdjacencyMatrixCSV(adjacencyMatrix, path):
         """
-        Exports the input graph into a set of CSV files compatible with DGL.
+        Exports the input graph into a set of CSV files compatible with pytorch geometric.
 
         Parameters
         ----------
@@ -10239,7 +10262,7 @@ class Graph:
                     overwrite=False,
                     silent=False):
         """
-        Exports the input graph into a set of CSV files compatible with DGL.
+        Exports the input graph into a set of CSV files compatible with pytorch geometric.
 
         Parameters
         ----------
@@ -10412,7 +10435,7 @@ class Graph:
                        nodeTrainRatio=0.8, nodeValidateRatio=0.1, nodeTestRatio=0.1,
                        mantissa=6, tolerance=0.0001, overwrite=False):
         """
-        Exports the input graph into a set of CSV files compatible with DGL.
+        Exports the input graph into a set of CSV files compatible with pytorch geometric.
 
         Parameters
         ----------
@@ -10795,7 +10818,6 @@ class Graph:
         in a format suitable for graph ML pipelines.
 
         Modifications vs. ExportToCSV
-        -----------------------------
         1. Graph labels are retrieved from the graph dictionary using `graphLabelKey`
         (fallback to `defaultGraphLabel`).
         2. Graph features are retrieved from the graph dictionary using `graphFeaturesKeys`.
@@ -10804,10 +10826,98 @@ class Graph:
             - Node : nodeFeaturesHeader_0  ... nodeFeaturesHeader_{k-1}
             - Edge : edgeFeaturesHeader_0  ... edgeFeaturesHeader_{k-1}
 
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph
+        path : str
+            The desired path to the output folder where the graphs, edges, and nodes CSV files will be saved.
+        graphLabel : float or int
+            The input graph label. This can be an int (categorical) or a float (continous)
+        graphFeatures : str , optional
+            The input graph features. This is a single string of numeric features separated by commas. Example: "3.456, 2.011, 56.4". The defauly is "".
+        graphIDHeader : str , optional
+            The desired graph ID column header. Default is "graph_id".
+        graphLabelHeader : str , optional
+            The desired graph label column header. Default is "label".
+        graphFeaturesHeader : str , optional
+            The desired graph features column header. Default is "feat".
+        edgeLabelKey : str , optional
+            The edge label dictionary key saved in each graph edge. Default is "label".
+        defaultEdgeLabel : int , optional
+            The default edge label to use if no edge label is found. Default is 0.
+        edgeLabelHeader : str , optional
+            The desired edge label column header. Default is "label".
+        edgeSRCHeader : str , optional
+            The desired edge source column header. Default is "src_id".
+        edgeDSTHeader : str , optional
+            The desired edge destination column header. Default is "dst_id".
+        edgeFeaturesHeader : str , optional
+            The desired edge features column header. Default is "feat".
+        edgeFeaturesKeys : list , optional
+            The list of feature dictionary keys saved in the dicitonaries of edges. Default is [].
+        edgeTrainMaskHeader : str , optional
+            The desired edge train mask column header. Default is "train_mask".
+        edgeValidateMaskHeader : str , optional
+            The desired edge validate mask column header. Default is "val_mask".
+        edgeTestMaskHeader : str , optional
+            The desired edge test mask column header. Default is "test_mask".
+        edgeMaskKey : str , optional
+            The dictionary key where the edge train, validate, test category is to be found. The value should be 0 for train
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. Default is "mask".
+        edgeTrainRatio : float , optional
+            The desired ratio of the edge data to use for training. The number must be between 0 and 1. Default is 0.8 which means 80% of the data will be used for training.
+            This value is ignored if an edgeMaskKey is foud.
+        edgeValidateRatio : float , optional
+            The desired ratio of the edge data to use for validation. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for validation.
+            This value is ignored if an edgeMaskKey is foud.
+        edgeTestRatio : float , optional
+            The desired ratio of the edge data to use for testing. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for testing.
+            This value is ignored if an edgeMaskKey is foud.
+        bidirectional : bool , optional
+            If set to True, a reversed edge will also be saved for each edge in the graph. Otherwise, it will not. Default is True.
+        nodeFeaturesKeys : list , optional
+            The list of features keys saved in the dicitonaries of nodes. Default is [].
+        nodeLabelKey : str , optional
+            The node label dictionary key saved in each graph vertex. Default is "label".
+        defaultNodeLabel : int , optional
+            The default node label to use if no node label is found. Default is 0.
+        nodeIDHeader : str , optional
+            The desired node ID column header. Default is "node_id".
+        nodeLabelHeader : str , optional
+            The desired node label column header. Default is "label".
+        nodeFeaturesHeader : str , optional
+            The desired node features column header. Default is "feat".
+        nodeTrainMaskHeader : str , optional
+            The desired node train mask column header. Default is "train_mask".
+        nodeValidateMaskHeader : str , optional
+            The desired node validate mask column header. Default is "val_mask".
+        nodeTestMaskHeader : str , optional
+            The desired node test mask column header. Default is "test_mask".
+        nodeMaskKey : str , optional
+            The dictionary key where the node train, validate, test category is to be found. The value should be 0 for train
+            1 for validate, and 2 for test. If no key is found, the ratio of train/validate/test will be used. Default is "mask".
+        nodeTrainRatio : float , optional
+            The desired ratio of the node data to use for training. The number must be between 0 and 1. Default is 0.8 which means 80% of the data will be used for training.
+            This value is ignored if an nodeMaskKey is found.
+        nodeValidateRatio : float , optional
+            The desired ratio of the node data to use for validation. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for validation.
+            This value is ignored if an nodeMaskKey is found.
+        nodeTestRatio : float , optional
+            The desired ratio of the node data to use for testing. The number must be between 0 and 1. Default is 0.1 which means 10% of the data will be used for testing.
+            This value is ignored if an nodeMaskKey is found.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        overwrite : bool , optional
+            If set to True, any existing files are overwritten. Otherwise, the input list of graphs is appended to the end of each file. Default is False.
+
         Returns
         -------
         bool
-            True if export succeeded, False otherwise.
+            True if the graph has been successfully exported. False otherwise.
+
         """
 
         from topologicpy.Graph import Graph

@@ -1101,7 +1101,6 @@ class Vector(list):
             spread = sin^2(theta)
 
         Properties
-        ----------
         - spread = 0   : vectors are parallel
         - spread = 1   : vectors are perpendicular
         - 0 <= spread <= 1

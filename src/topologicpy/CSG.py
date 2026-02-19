@@ -60,8 +60,8 @@ class CSG():
         
         Returns
         -------
-            topologic_core.Vertex
-                The added vertex.
+        topologic_core.Vertex
+            The added vertex.
         """
 
         from topologicpy.Vertex import Vertex
@@ -125,9 +125,10 @@ class CSG():
         
         Returns
         -------
-            topologic_core.Vertex
-                The added vertex.
+        topologic_core.Vertex
+            The added vertex.
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
@@ -187,9 +188,10 @@ class CSG():
         
         Returns
         -------
-            topologic_core.Vertex
-                The added vertex.
+        topologic_core.Vertex
+            The added vertex.
         """
+        
         from topologicpy.Graph import Graph
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
@@ -230,8 +232,8 @@ class CSG():
 
         Returns
         -------
-            topologic_core.Graph
-                The initialized empty graph.
+        topologic_core.Graph
+            The initialized empty graph.
         """
 
         from topologicpy.Graph import Graph
@@ -252,8 +254,8 @@ class CSG():
         
         Returns
         -------
-            topologic_core.Topology
-                The final topology.
+        topologic_core.Topology
+            The final topology.
         """
 
         from topologicpy.Topology import Topology
@@ -362,8 +364,8 @@ class CSG():
         
         Returns
         -------
-           list
-                The list of topologies placed at their corresponding location in the graph.
+        list
+            The list of topologies placed at their corresponding location in the graph.
         """
         
         from topologicpy.Topology import Topology

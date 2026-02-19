@@ -431,6 +431,7 @@ class BVH:
         """
         Returns the topology with centroid nearest to the input vertex.
         Uses AABB distance lower-bounds to prune search.
+
         Parameters
         ----------
         bvh : BVH

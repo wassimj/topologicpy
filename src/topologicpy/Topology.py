@@ -3215,21 +3215,37 @@ class Topology():
         Imports a TopologicPy hierarchy from OBJ and optional MTL strings.
 
         Supported OBJ primitives
-        ------------------------
         - v   : vertices
         - l   : polylines (edges-only / wire-only models)
         - f   : faces (tri/quad/ngon; may be self-merged)
 
         Grouping
-        --------
         - g / o : groups/objects become separate returned topologies (one per group/object)
 
         Materials
-        ---------
         - usemtl + MTL Kd/d/Tr are used to set:
             color   : [R,G,B] in 0..255
             opacity : 0..1
-
+        
+        Parameters
+        ----------
+        objPath : str
+            The path to the OBJ file.
+        defaultColor : list , optional
+            The default color to use if none is specified in the file. Default is [255, 255, 255] (white).
+        defaultOpacity : float , optional
+            The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).
+        transposeAxes : bool , optional
+            If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.
+        removeCoplanarFaces : bool , optional
+            If set to True, coplanar faces are merged. Default is True.
+        selfMerge : bool , optional
+            If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001
+        
         Returns
         -------
         list

@@ -36,7 +36,7 @@ except:
 try:
     import pandas as pd
 except:
-    print("DGL - Installing required pandas library.")
+    print("ANN - Installing required pandas library.")
     try:
         os.system("pip install pandas")
     except:

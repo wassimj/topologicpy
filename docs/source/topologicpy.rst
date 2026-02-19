@@ -16,7 +16,6 @@ Submodules
    topologicpy.Cluster
    topologicpy.Color
    topologicpy.Context
-   topologicpy.DGL
    topologicpy.Dictionary
    topologicpy.Edge
    topologicpy.EnergyModel

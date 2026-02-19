@@ -31,7 +31,7 @@ class Color:
         Returns
         -------
         str
-            The resulting hex color after addition (e.g., "#FF88FF").
+            The resulting hex color after addition (e.g., '#FF88FF').
         """
         import inspect
         from topologicpy.Helper import Helper
@@ -226,6 +226,7 @@ class Color:
         alpha : float , optional
             The transparency value. 0.0 means the color is fully transparent, 1.0 means the color is fully opaque. Default is None
             which means no transparency value will be included in the returned color.
+        
         Returns
         -------
         list
@@ -269,7 +270,7 @@ class Color:
         useAlpha : bool , optional
             If set to True, the returns list includes the alpha value as a fourth element in the list.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. 'Viridis', 'Plasma'). Default is 'Viridis'. For a full list of names, see https://plotly.com/python/builtin-colorscales/.
 
         Returns
         -------
