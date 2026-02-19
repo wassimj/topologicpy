@@ -9,7 +9,6 @@
 *.json
 *.suo
 *.wsuo
-*.lock
 *.vsidx
 *.sqlite
 # pixi environments
