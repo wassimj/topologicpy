@@ -12,3 +12,14 @@
 *.lock
 *.vsidx
 *.sqlite
+# pixi environments
+.pixi/*
+!.pixi/config.toml
+EnergyModels/**
+build/**
+notebooks/.ipynb_checkpoints/**
+tutorials/.ipynb_checkpoints/**
+notebooks/iframe_figures/**
+tutorials/iframe_figures/**
+src/topologicpy.egg-info/**
+tutorials/_site/**
