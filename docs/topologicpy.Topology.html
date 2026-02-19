@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.2 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.2
+                0.9.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,7 +57,6 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -1598,9 +1597,41 @@ This method is basic and does not support textures and vertex normals.</p>
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ByOBJString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByOBJString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">objString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mtlString</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultOpacity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transposeAxes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">selfMerge</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ByOBJString" title="Permalink to this definition"></a></dt>
 <dd><p>Imports a TopologicPy hierarchy from OBJ and optional MTL strings.</p>
+<p>Supported OBJ primitives
+- v   : vertices
+- l   : polylines (edges-only / wire-only models)
+- f   : faces (tri/quad/ngon; may be self-merged)</p>
+<p>Grouping
+- g / o : groups/objects become separate returned topologies (one per group/object)</p>
+<p>Materials
+- usemtl + MTL Kd/d/Tr are used to set:</p>
+<blockquote>
+<div><p>color   : [R,G,B] in 0..255
+opacity : 0..1</p>
+</div></blockquote>
 <dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
+<dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
+<dt><strong>objPath</strong><span class="classifier">str</span></dt><dd><p>The path to the OBJ file.</p>
+</dd>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
+</dd>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
+</dd>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
+</dd>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
+</dd>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>One TopologicPy topology per OBJ group/object:
 - If a group has faces: returns (best effort) a merged topology (or a Cluster of faces).
 - Else if a group has polylines/edges: returns a Cluster of Wires/Edges.

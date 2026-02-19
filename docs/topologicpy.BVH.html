@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.BVH module &mdash; topologicpy 0.9.2 documentation</title>
+  <title>topologicpy.BVH module &mdash; topologicpy 0.9.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.2
+                0.9.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,7 +57,6 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -290,7 +289,7 @@ primitive = bvh.items[idx]</p>
 <td><p>Returns an approximate depth of the BVH.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.Nearest" title="topologicpy.BVH.BVH.Nearest"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Nearest</span></code></a>(bvh, vertex[, mantissa, silent])</p></td>
-<td><p>Returns the topology with centroid nearest to the input vertex. Uses AABB distance lower-bounds to prune search. Parameters ---------- bvh : BVH     The bvh tree. vertex : topologic_core.Vertex     The input vertex. mantissa : int , optional     The desired length of the mantissa. Default is 6. silent : bool , optional     If set to True, error and warning messages are suppressed. Default is False.</p></td>
+<td><p>Returns the topology with centroid nearest to the input vertex.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.BVH.BVH.QueryAABB" title="topologicpy.BVH.BVH.QueryAABB"><code class="xref py py-obj docutils literal notranslate"><span class="pre">QueryAABB</span></code></a>(bvh, query_box)</p></td>
 <td><p>Return indices of items whose AABBs overlap query_box.</p></td>
@@ -392,24 +391,22 @@ properly enclosed within their bounding boxes. Default is 0.0001.</p>
 <dt class="sig sig-object py" id="topologicpy.BVH.BVH.Nearest">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Nearest</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bvh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.BVH.BVH.Nearest" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the topology with centroid nearest to the input vertex.
-Uses AABB distance lower-bounds to prune search.
-Parameters
-———-
-bvh : BVH</p>
-<blockquote>
-<div><p>The bvh tree.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>vertex<span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+Uses AABB distance lower-bounds to prune search.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>bvh</strong><span class="classifier">BVH</span></dt><dd><p>The bvh tree.</p>
 </dd>
-<dt>mantissa<span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
+<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
 </dd>
-<dt>silent<span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
 <dt>topologic_core.Topology</dt><dd><p>The topology with centroid nearest to the input vertex.</p>
 </dd>
 </dl>

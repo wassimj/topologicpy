@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.9.2 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.9.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.2
+                0.9.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,7 +57,6 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -363,7 +362,6 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary"><code class="docutils literal notranslate"><span class="pre">Dictionary</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Dictionary.html#topologicpy.Dictionary.Dictionary.AdjacencyDictionary"><code class="docutils literal notranslate"><span class="pre">Dictionary.AdjacencyDictionary()</span></code></a></li>
@@ -829,7 +827,6 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.AddColorBar"><code class="docutils literal notranslate"><span class="pre">Plotly.AddColorBar()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.ColorScale"><code class="docutils literal notranslate"><span class="pre">Plotly.ColorScale()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.Colors"><code class="docutils literal notranslate"><span class="pre">Plotly.Colors()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByDGL"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByDGL()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByGraph"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByGraph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.DataByTopology"><code class="docutils literal notranslate"><span class="pre">Plotly.DataByTopology()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Plotly.html#topologicpy.Plotly.Plotly.ExportToImage"><code class="docutils literal notranslate"><span class="pre">Plotly.ExportToImage()</span></code></a></li>
@@ -869,7 +866,31 @@
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Polyskel.html#topologicpy.Polyskel.skeletonize"><code class="docutils literal notranslate"><span class="pre">skeletonize()</span></code></a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.PyG.html#topologicpy-pytorch-geometric-pyg-helper-class">TopologicPy: PyTorch Geometric (PyG) helper class</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#user-controlled-hyperparameters-medium-level">User-controlled hyperparameters (medium-level)</a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#csv-assumptions">CSV assumptions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#notes">Notes</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG"><code class="docutils literal notranslate"><span class="pre">PyG</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.ByCSVPath"><code class="docutils literal notranslate"><span class="pre">PyG.ByCSVPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.CrossValidate"><code class="docutils literal notranslate"><span class="pre">PyG.CrossValidate()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.LoadModel"><code class="docutils literal notranslate"><span class="pre">PyG.LoadModel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.PlotConfusionMatrix"><code class="docutils literal notranslate"><span class="pre">PyG.PlotConfusionMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.PlotCrossValidationSummary"><code class="docutils literal notranslate"><span class="pre">PyG.PlotCrossValidationSummary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.PlotHistory"><code class="docutils literal notranslate"><span class="pre">PyG.PlotHistory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.PlotParity"><code class="docutils literal notranslate"><span class="pre">PyG.PlotParity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.SaveModel"><code class="docutils literal notranslate"><span class="pre">PyG.SaveModel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.SetHyperparameters"><code class="docutils literal notranslate"><span class="pre">PyG.SetHyperparameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.Summary"><code class="docutils literal notranslate"><span class="pre">PyG.Summary()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.Test"><code class="docutils literal notranslate"><span class="pre">PyG.Test()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.Train"><code class="docutils literal notranslate"><span class="pre">PyG.Train()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG.Validate"><code class="docutils literal notranslate"><span class="pre">PyG.Validate()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar"><code class="docutils literal notranslate"><span class="pre">ShapeGrammar</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.ShapeGrammar.html#topologicpy.ShapeGrammar.ShapeGrammar.AddRule"><code class="docutils literal notranslate"><span class="pre">ShapeGrammar.AddRule()</span></code></a></li>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Plotly module &mdash; topologicpy 0.9.2 documentation</title>
+  <title>topologicpy.Plotly module &mdash; topologicpy 0.9.3 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.2
+                0.9.3
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,7 +57,6 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="topologicpy.DGL.html">topologicpy.DGL module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -159,67 +158,64 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Colors" title="topologicpy.Plotly.Plotly.Colors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Colors</span></code></a>()</p></td>
 <td><p>Returns the list of named CSS colors that plotly can use.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByDGL" title="topologicpy.Plotly.Plotly.DataByDGL"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByDGL</span></code></a>(data, labels)</p></td>
-<td><p>Returns a data frame from the DGL data.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByGraph" title="topologicpy.Plotly.Plotly.DataByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByGraph</span></code></a>(graph[, sagitta, absolute, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByGraph" title="topologicpy.Plotly.Plotly.DataByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByGraph</span></code></a>(graph[, sagitta, absolute, ...])</p></td>
 <td><p>Creates plotly vertex and edge data from the input graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByTopology" title="topologicpy.Plotly.Plotly.DataByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByTopology" title="topologicpy.Plotly.Plotly.DataByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
 <td><p>Creates plotly face, edge, and vertex data.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.ExportToImage" title="topologicpy.Plotly.Plotly.ExportToImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToImage</span></code></a>(figure, path[, format, width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.ExportToImage" title="topologicpy.Plotly.Plotly.ExportToImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToImage</span></code></a>(figure, path[, format, width, ...])</p></td>
 <td><p>Exports the plotly figure to an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="topologicpy.Plotly.Plotly.FigureByConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByConfusionMatrix</span></code></a>(matrix[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="topologicpy.Plotly.Plotly.FigureByConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByConfusionMatrix</span></code></a>(matrix[, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input confusion matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="topologicpy.Plotly.Plotly.FigureByCorrelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByCorrelation</span></code></a>(actual, predicted[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="topologicpy.Plotly.Plotly.FigureByCorrelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByCorrelation</span></code></a>(actual, predicted[, ...])</p></td>
 <td><p>Returns a Plotly Figure showing the correlation between the input actual and predicted values.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByData" title="topologicpy.Plotly.Plotly.FigureByData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByData</span></code></a>(data[, width, height, xAxis, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByData" title="topologicpy.Plotly.Plotly.FigureByData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByData</span></code></a>(data[, width, height, xAxis, ...])</p></td>
 <td><p>Creates a plotly figure.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByDataFrame</span></code></a>(dataFrame[, labels, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByDataFrame</span></code></a>(dataFrame[, labels, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input dataframe</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONFile</span></code></a>(file)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONFile</span></code></a>(file)</p></td>
 <td><p>Imports a plotly figure from a JSON file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONPath</span></code></a>(path)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONPath</span></code></a>(path)</p></td>
 <td><p>Imports a plotly figure from a JSON file path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="topologicpy.Plotly.Plotly.FigureByMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByMatrix</span></code></a>(matrix[, xCategories, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="topologicpy.Plotly.Plotly.FigureByMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByMatrix</span></code></a>(matrix[, xCategories, ...])</p></td>
 <td><p>Returns a Plotly Figure of the input matrix.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="topologicpy.Plotly.Plotly.FigureByPieChart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByPieChart</span></code></a>(data, values, names)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="topologicpy.Plotly.Plotly.FigureByPieChart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByPieChart</span></code></a>(data, values, names)</p></td>
 <td><p>Creates a plotly pie chart figure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="topologicpy.Plotly.Plotly.FigureByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="topologicpy.Plotly.Plotly.FigureByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
 <td><p>Creates a figure from the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToJSON</span></code></a>(figure, path[, overwrite])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToJSON</span></code></a>(figure, path[, overwrite])</p></td>
 <td><p>Exports the input plotly figure to a JSON file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPDF</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPDF</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a PDF file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPNG</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPNG</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a PNG file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToSVG</span></code></a>(figure, path[, width, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToSVG</span></code></a>(figure, path[, width, ...])</p></td>
 <td><p>Exports the input plotly figure to a SVG file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderer" title="topologicpy.Plotly.Plotly.Renderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderer</span></code></a>()</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderer" title="topologicpy.Plotly.Plotly.Renderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderer</span></code></a>()</p></td>
 <td><p>Return the renderer most suitable for the environment in which the script is running.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderers" title="topologicpy.Plotly.Plotly.Renderers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderers</span></code></a>()</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderers" title="topologicpy.Plotly.Plotly.Renderers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderers</span></code></a>()</p></td>
 <td><p>Returns a list of the available plotly renderers.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.SetCamera" title="topologicpy.Plotly.Plotly.SetCamera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetCamera</span></code></a>(figure[, camera, center, up, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.SetCamera" title="topologicpy.Plotly.Plotly.SetCamera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetCamera</span></code></a>(figure[, camera, center, up, ...])</p></td>
 <td><p>Sets the camera for the input figure.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Show" title="topologicpy.Plotly.Plotly.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(figure[, camera, center, up, renderer, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Show" title="topologicpy.Plotly.Plotly.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(figure[, camera, center, up, renderer, ...])</p></td>
 <td><p>Shows the input figure.</p></td>
 </tr>
 </tbody>
@@ -293,28 +289,6 @@ In addition to these, three color-blind friendly scales are included. These are 
 <dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
 <dt>list</dt><dd><p>The list of named CSS colors.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.DataByDGL">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DataByDGL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.DataByDGL" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a data frame from the DGL data.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>data</strong><span class="classifier">list</span></dt><dd><p>The data to display.</p>
-</dd>
-<dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>The labels to use for the data. The data with the labels in this list will be extracted and used in the returned dataFrame.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>pd.DataFrame</dt><dd><p>A pandas dataFrame</p>
 </dd>
 </dl>
 </dd>
