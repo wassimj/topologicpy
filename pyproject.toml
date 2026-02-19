@@ -87,7 +87,8 @@ jupyterlab-quarto = "*"
 
 [tool.pixi.tasks]
 open-tutorials = {cmd="/mnt/c/windows/explorer.exe index.html", cwd="tutorials/_site"} # this will only work on WSL
-download-openstudio = {cmd="wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb", cwd="build"}
+build-dir = {cmd="mkdir -p build", cwd="."}
+download-openstudio = {cmd="wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb", cwd="build", depends-on = ["build-dir"]}
 install-openstudio = { cmd = "sudo dpkg -i ./OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb" , cwd="build", depends-on = ["download-openstudio"]}
 
 [tool.pixi.feature.dev.tasks]
