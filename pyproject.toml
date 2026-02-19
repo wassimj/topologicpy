@@ -25,6 +25,7 @@ dependencies = [
     "lark",
     "specklepy",
     "webcolors",
+    "torch_geometric",
     "topologic_core>=7.0.1",
 ]
 
