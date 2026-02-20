@@ -17336,7 +17336,7 @@ class Graph:
         return graph
 
     @staticmethod
-    def RemoveVertex(graph, *vertices, silent: bool = False):
+    def RemoveVertex(graph, vertices, silent: bool = False):
         """
         Removes the input vertex from the input graph.
 
@@ -17344,7 +17344,7 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        *vertices : topologic_core.Vertex or list of vertices
+        vertices : topologic_core.Vertex or list of vertices
             The input vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -17361,13 +17361,13 @@ class Graph:
             print("Graph.RemoveVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        vertexList = list(vertices)
-        vertexList = [v for v in vertexList if Topology.IsInstance(v, "vertex")]
-        if len(vertexList) == 0:
+        if Topology.IsInstance(vertices, "vertex"):
+            vertices = [vertices]
+        if len(vertices) == 0:
             if not silent:
                 print("Graph.RemoveVertex - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
             return None
-        vertexList = [Graph.NearestVertex(graph, v) for v in vertexList]
+        vertexList = [Graph.NearestVertex(graph, v) for v in vertices]
         _ = graph.RemoveVertices(vertexList) # Hook to Core
         return graph
 

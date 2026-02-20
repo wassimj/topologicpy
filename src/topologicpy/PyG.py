@@ -1255,6 +1255,438 @@ if _PYG_IMPORT_ERROR is None:
                 loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
                 return self._metrics_link(loader, split="test")
             raise ValueError("Unsupported level.")
+        
+        def Predict(self,
+                    split: str = "all",
+                    threshold: float = 0.5,
+                    return_logits: bool = False,
+                    return_probs: bool = True,
+                    return_embeddings: bool = False,
+                    attach_to_data: bool = False,
+                    pred_key: str = "pred",
+                    prob_key: str = "prob",
+                    logits_key: str = "logits",
+                    emb_key: str = "emb") -> Dict[str, object]:
+            """Run inference (prediction) using the current model on the loaded dataset.
+
+            This method is designed for **post-training** workflows, including the common pattern
+            of *train → save → reload → predict on unseen data*. It performs forward passes only
+            (no gradient computation) and returns predictions in a compact, serializable form.
+
+            Behaviour depends on :attr:`~topologicpy.PyG.PyG.config.level`:
+
+            - ``"graph"``: graph-level prediction using a mini-batched :class:`~torch_geometric.loader.DataLoader`
+            - ``"node"`` : node-level prediction using node masks (``train_mask``, ``val_mask``, ``test_mask``)
+            - ``"edge"`` : edge-level prediction using edge masks (``edge_train_mask``, ``edge_val_mask``, ``edge_test_mask``)
+            - ``"link"`` : link prediction using :class:`~torch_geometric.transforms.RandomLinkSplit` per graph
+
+            Parameters
+            ----------
+            split : str, optional
+                The subset to predict. Supported values depend on ``config.level``:
+
+                - graph-level: ``"train"``, ``"val"``, ``"test"``, ``"all"``
+                - node-level : ``"train"``, ``"val"``, ``"test"``, ``"all"`` (``"all"`` returns full-length vectors)
+                - edge-level : ``"train"``, ``"val"``, ``"test"``, ``"all"`` (``"all"`` returns full-length vectors)
+                - link-level : ``"train"``, ``"val"``, ``"test"`` (``"all"`` is treated as ``"test"``)
+
+                Default is ``"all"``.
+            threshold : float, optional
+                Threshold for converting link-prediction probabilities into binary labels.
+                Only used when ``config.level == "link"``. Default is 0.5.
+            return_logits : bool, optional
+                If True, includes raw model outputs (logits) in the returned dictionary.
+                For regression tasks, logits are the raw predictions. Default is False.
+            return_probs : bool, optional
+                If True, includes probabilities/scores when applicable:
+
+                - classification: softmax probabilities
+                - link prediction: sigmoid probabilities
+                - regression: ignored (no probabilities)
+
+                Default is True.
+            return_embeddings : bool, optional
+                If True, includes the **node embeddings** produced by the GNN backbone
+                (the output of ``model["encoder"]``) for each predicted batch/graph.
+                Default is False.
+            attach_to_data : bool, optional
+                If True, attaches prediction tensors to each :class:`~torch_geometric.data.Data`
+                object in :attr:`~topologicpy.PyG.PyG.data_list` using keys ``pred_key``,
+                ``prob_key``, ``logits_key``, and ``emb_key``. This is useful for downstream
+                processing (e.g., exporting to CSV or mapping back to Topologic entities).
+                Default is False.
+            pred_key : str, optional
+                Attribute name to attach predicted labels/values to each Data object when
+                ``attach_to_data`` is True. Default is ``"pred"``.
+            prob_key : str, optional
+                Attribute name to attach probabilities/scores to each Data object when
+                ``attach_to_data`` is True. Default is ``"prob"``.
+            logits_key : str, optional
+                Attribute name to attach logits/raw outputs to each Data object when
+                ``attach_to_data`` is True. Default is ``"logits"``.
+            emb_key : str, optional
+                Attribute name to attach encoder embeddings to each Data object when
+                ``attach_to_data`` is True. Default is ``"emb"``.
+
+            Returns
+            -------
+            dict
+                A dictionary containing (at minimum) the key ``"pred"`` with predictions.
+
+                **Graph-level**
+                    - ``"pred"``: ``(N,)`` predicted class indices or regression values
+                    - ``"y_true"``: ``(N,)`` true labels/targets if present
+                    - ``"index"``: ``(N,)`` integer indices aligned with ``self.data_list`` order
+
+                **Node/Edge-level**
+                    - ``"pred"``: list of arrays (one per graph) unless ``split != "all"``
+                    - ``"y_true"``: list of arrays (one per graph) if present
+                    - ``"mask"``: mask name used when ``split in {train,val,test}``
+
+                **Link-level**
+                    - ``"score"``: sigmoid probabilities for edge_label_index samples
+                    - ``"pred"``: binary predictions derived from ``threshold``
+                    - ``"y_true"``: binary ground truth labels for sampled links
+
+            Raises
+            ------
+            ValueError
+                If ``split`` or ``config.level`` is unsupported, or if the model is not initialised.
+
+            Notes
+            -----
+            - This method assumes you have already called :meth:`~topologicpy.PyG.PyG.ByCSVPath`
+            (or otherwise populated :attr:`~topologicpy.PyG.PyG.data_list`), and that
+            :attr:`~topologicpy.PyG.PyG.model` is loaded/initialised (e.g., via
+            :meth:`~topologicpy.PyG.PyG.Train` or :meth:`~topologicpy.PyG.PyG.LoadModel`).
+            - For classification tasks, the returned class indices follow the encoding present in the CSV labels.
+            """
+            if self.model is None:
+                raise ValueError("PyG - Error: Model is not initialised. Train or LoadModel first.")
+
+            cfg = self.config
+            split = (split or "all").lower().strip()
+
+            # ----------------------------
+            # Graph-level predictions
+            # ----------------------------
+            if cfg.level == "graph":
+                if split == "train":
+                    data_src = self.train_set
+                elif split in ("val", "valid", "validation"):
+                    data_src = self.val_set
+                elif split == "test":
+                    data_src = self.test_set
+                elif split == "all":
+                    data_src = self.data_list
+                else:
+                    raise ValueError("PyG - Error: split must be one of {'train','val','test','all'} for graph-level.")
+
+                loader = DataLoader(data_src, batch_size=cfg.batch_size, shuffle=False)
+
+                self.model.eval()
+                all_logits, all_probs, all_pred, all_true, all_idx, all_emb = [], [], [], [], [], []
+
+                # Build a stable index mapping back to self.data_list order
+                # For train/val/test subsets, we map by object identity.
+                id_to_index = {id(d): i for i, d in enumerate(self.data_list)}
+
+                with torch.no_grad():
+                    for batch in loader:
+                        # When DataLoader batches, object identity is not preserved; keep it simple:
+                        # we return indices only for 'all'. For subsets we return -1.
+                        batch = batch.to(self.device)
+                        node_emb = self.model["encoder"](batch.x, batch.edge_index)
+                        logits = self.model["head"](node_emb, batch.batch)
+
+                        if return_embeddings:
+                            # store per-batch node embeddings on CPU
+                            all_emb.append(node_emb.detach().cpu())
+
+                        if cfg.task == "regression":
+                            pred = logits.squeeze(-1).detach().cpu().numpy()
+                            all_pred.extend(pred.tolist())
+                            if hasattr(batch, "y") and batch.y is not None:
+                                all_true.extend(batch.y.squeeze(-1).detach().cpu().numpy().tolist())
+                            if return_logits:
+                                all_logits.append(logits.detach().cpu())
+                        else:
+                            probs = F.softmax(logits, dim=-1)
+                            pred = probs.argmax(dim=-1)
+                            all_pred.extend(pred.detach().cpu().numpy().tolist())
+                            if hasattr(batch, "y") and batch.y is not None:
+                                all_true.extend(batch.y.detach().cpu().numpy().tolist())
+                            if return_probs:
+                                all_probs.append(probs.detach().cpu())
+                            if return_logits:
+                                all_logits.append(logits.detach().cpu())
+
+                        if split == "all":
+                            # For 'all' we can safely report sequential indices in data_list order
+                            # by tracking running count.
+                            pass
+
+                # Index for graph-level: sequential for chosen subset.
+                all_idx = list(range(len(all_pred)))
+
+                out = {
+                    "pred": np.array(all_pred),
+                    "index": np.array(all_idx)
+                }
+                if len(all_true) > 0:
+                    out["y_true"] = np.array(all_true)
+                if return_probs and len(all_probs) > 0:
+                    out["prob"] = torch.cat(all_probs, dim=0).numpy()
+                if return_logits and len(all_logits) > 0:
+                    out["logits"] = torch.cat(all_logits, dim=0).numpy()
+                if return_embeddings and len(all_emb) > 0:
+                    out["emb"] = all_emb  # list of torch tensors on CPU (variable sized)
+
+                # Optional attachment (best-effort): only for split='all' since we need alignment
+                if attach_to_data and split == "all":
+                    # We need per-graph predictions; with graph batching this is already per-graph.
+                    # Attach to each Data in data_list.
+                    for i, d in enumerate(self.data_list):
+                        setattr(d, pred_key, out["pred"][i])
+                        if "y_true" in out:
+                            setattr(d, "y_true", out["y_true"][i])
+                    if "prob" in out:
+                        for i, d in enumerate(self.data_list):
+                            setattr(d, prob_key, out["prob"][i])
+                    if "logits" in out:
+                        for i, d in enumerate(self.data_list):
+                            setattr(d, logits_key, out["logits"][i])
+
+                return out
+
+            # ----------------------------
+            # Node-level predictions
+            # ----------------------------
+            if cfg.level == "node":
+                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                self.model.eval()
+
+                if split == "train":
+                    mask_name = "train_mask"
+                elif split in ("val", "valid", "validation"):
+                    mask_name = "val_mask"
+                elif split == "test":
+                    mask_name = "test_mask"
+                elif split == "all":
+                    mask_name = None
+                else:
+                    raise ValueError("PyG - Error: split must be one of {'train','val','test','all'} for node-level.")
+
+                preds_per_graph, true_per_graph = [], []
+                probs_per_graph, logits_per_graph, emb_per_graph = [], [], []
+
+                with torch.no_grad():
+                    for data in loader:
+                        data = data.to(self.device)
+                        node_emb = self.model["encoder"](data.x, data.edge_index)
+                        logits = self.model["head"](node_emb)
+
+                        if return_embeddings:
+                            emb_cpu = node_emb.detach().cpu()
+                            emb_per_graph.append(emb_cpu)
+
+                        if cfg.task == "regression":
+                            pred_all = logits.squeeze(-1)
+                            if mask_name is not None:
+                                mask = getattr(data, mask_name)
+                                pred = pred_all[mask]
+                                y_true = data.y[mask] if hasattr(data, "y") else None
+                            else:
+                                pred = pred_all
+                                y_true = data.y if hasattr(data, "y") else None
+
+                            preds_per_graph.append(pred.detach().cpu().numpy())
+                            if y_true is not None:
+                                true_per_graph.append(y_true.detach().cpu().numpy())
+                            if return_logits:
+                                logits_per_graph.append(logits.detach().cpu().numpy())
+                        else:
+                            probs_all = F.softmax(logits, dim=-1)
+                            pred_all = probs_all.argmax(dim=-1)
+                            if mask_name is not None:
+                                mask = getattr(data, mask_name)
+                                pred = pred_all[mask]
+                                probs = probs_all[mask]
+                                y_true = data.y[mask] if hasattr(data, "y") else None
+                            else:
+                                pred = pred_all
+                                probs = probs_all
+                                y_true = data.y if hasattr(data, "y") else None
+
+                            preds_per_graph.append(pred.detach().cpu().numpy())
+                            if y_true is not None:
+                                true_per_graph.append(y_true.detach().cpu().numpy())
+                            if return_probs:
+                                probs_per_graph.append(probs.detach().cpu().numpy())
+                            if return_logits:
+                                logits_per_graph.append(logits.detach().cpu().numpy())
+
+                        if attach_to_data:
+                            # Attach full-length predictions to the underlying Data object (CPU arrays).
+                            # For split!=all, we still attach full-length arrays for convenience.
+                            d0 = data.cpu()
+                            if cfg.task == "regression":
+                                setattr(d0, pred_key, pred_all.detach().cpu().numpy())
+                            else:
+                                setattr(d0, pred_key, pred_all.detach().cpu().numpy())
+                                if return_probs:
+                                    setattr(d0, prob_key, probs_all.detach().cpu().numpy())
+                                if return_logits:
+                                    setattr(d0, logits_key, logits.detach().cpu().numpy())
+                            if return_embeddings:
+                                setattr(d0, emb_key, node_emb.detach().cpu().numpy())
+
+                out = {"pred": preds_per_graph}
+                if len(true_per_graph) > 0:
+                    out["y_true"] = true_per_graph
+                if mask_name is not None:
+                    out["mask"] = mask_name
+                if return_probs and len(probs_per_graph) > 0:
+                    out["prob"] = probs_per_graph
+                if return_logits and len(logits_per_graph) > 0:
+                    out["logits"] = logits_per_graph
+                if return_embeddings and len(emb_per_graph) > 0:
+                    out["emb"] = emb_per_graph
+                return out
+
+            # ----------------------------
+            # Edge-level predictions
+            # ----------------------------
+            if cfg.level == "edge":
+                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                self.model.eval()
+
+                if split == "train":
+                    mask_name = "edge_train_mask"
+                elif split in ("val", "valid", "validation"):
+                    mask_name = "edge_val_mask"
+                elif split == "test":
+                    mask_name = "edge_test_mask"
+                elif split == "all":
+                    mask_name = None
+                else:
+                    raise ValueError("PyG - Error: split must be one of {'train','val','test','all'} for edge-level.")
+
+                preds_per_graph, true_per_graph = [], []
+                probs_per_graph, logits_per_graph, emb_per_graph = [], [], []
+
+                with torch.no_grad():
+                    for data in loader:
+                        data = data.to(self.device)
+                        node_emb = self.model["encoder"](data.x, data.edge_index)
+                        logits = self.model["head"](node_emb, data.edge_index)
+
+                        if return_embeddings:
+                            emb_per_graph.append(node_emb.detach().cpu())
+
+                        if cfg.task == "regression":
+                            pred_all = logits.squeeze(-1)
+                            if mask_name is not None:
+                                mask = getattr(data, mask_name)
+                                pred = pred_all[mask]
+                                y_true = data.edge_y[mask] if hasattr(data, "edge_y") else None
+                            else:
+                                pred = pred_all
+                                y_true = data.edge_y if hasattr(data, "edge_y") else None
+
+                            preds_per_graph.append(pred.detach().cpu().numpy())
+                            if y_true is not None:
+                                true_per_graph.append(y_true.detach().cpu().numpy())
+                            if return_logits:
+                                logits_per_graph.append(logits.detach().cpu().numpy())
+                        else:
+                            probs_all = F.softmax(logits, dim=-1)
+                            pred_all = probs_all.argmax(dim=-1)
+                            if mask_name is not None:
+                                mask = getattr(data, mask_name)
+                                pred = pred_all[mask]
+                                probs = probs_all[mask]
+                                y_true = data.edge_y[mask] if hasattr(data, "edge_y") else None
+                            else:
+                                pred = pred_all
+                                probs = probs_all
+                                y_true = data.edge_y if hasattr(data, "edge_y") else None
+
+                            preds_per_graph.append(pred.detach().cpu().numpy())
+                            if y_true is not None:
+                                true_per_graph.append(y_true.detach().cpu().numpy())
+                            if return_probs:
+                                probs_per_graph.append(probs.detach().cpu().numpy())
+                            if return_logits:
+                                logits_per_graph.append(logits.detach().cpu().numpy())
+
+                        if attach_to_data:
+                            d0 = data.cpu()
+                            setattr(d0, pred_key, pred_all.detach().cpu().numpy())
+                            if cfg.task != "regression" and return_probs:
+                                setattr(d0, prob_key, probs_all.detach().cpu().numpy())
+                            if return_logits:
+                                setattr(d0, logits_key, logits.detach().cpu().numpy())
+                            if return_embeddings:
+                                setattr(d0, emb_key, node_emb.detach().cpu().numpy())
+
+                out = {"pred": preds_per_graph}
+                if len(true_per_graph) > 0:
+                    out["y_true"] = true_per_graph
+                if mask_name is not None:
+                    out["mask"] = mask_name
+                if return_probs and len(probs_per_graph) > 0:
+                    out["prob"] = probs_per_graph
+                if return_logits and len(logits_per_graph) > 0:
+                    out["logits"] = logits_per_graph
+                if return_embeddings and len(emb_per_graph) > 0:
+                    out["emb"] = emb_per_graph
+                return out
+
+            # ----------------------------
+            # Link prediction
+            # ----------------------------
+            if cfg.level == "link":
+                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                self.model.eval()
+
+                use_split = split
+                if use_split == "all":
+                    use_split = "test"
+                if use_split not in ("train", "val", "test"):
+                    raise ValueError("PyG - Error: split must be one of {'train','val','test'} for link prediction.")
+
+                split_tf = RandomLinkSplit(
+                    num_val=cfg.link_val_ratio,
+                    num_test=cfg.link_test_ratio,
+                    is_undirected=cfg.link_is_undirected,
+                    add_negative_train_samples=True,
+                    neg_sampling_ratio=1.0
+                )
+
+                all_score, all_true = [], []
+                with torch.no_grad():
+                    for data in loader:
+                        tr, va, te = split_tf(data)
+                        use = {"train": tr, "val": va, "test": te}[use_split].to(self.device)
+                        node_emb = self.model["encoder"](use.x, use.edge_index)
+                        logits = self.model["predictor"](node_emb, use.edge_label_index)
+                        score = torch.sigmoid(logits).detach().cpu().numpy().reshape(-1)
+                        y = use.edge_label.detach().cpu().numpy().reshape(-1)
+                        all_score.extend(score.tolist())
+                        all_true.extend(y.tolist())
+
+                score_arr = np.array(all_score)
+                true_arr = np.array(all_true)
+                pred_arr = (score_arr >= float(threshold)).astype(int)
+
+                out = {"score": score_arr, "pred": pred_arr, "y_true": true_arr, "threshold": float(threshold)}
+                if return_logits:
+                    # logits are not stored batch-wise here; expose scores only unless needed
+                    pass
+                return out
+
+            raise ValueError("Unsupported level.")
 
         # --------
         # Epochs
@@ -1541,16 +1973,31 @@ if _PYG_IMPORT_ERROR is None:
             fig.update_layout(title="Training History", xaxis_title="Epoch", yaxis_title="Loss")
             return fig
 
-        def PlotConfusionMatrix(self, split: Literal["train", "val", "test"] = "test"):
-            if go is None or px is None:
-                raise ImportError('Plotly is required for plotting methods. Install plotly to use this feature.')
+        def PlotConfusionMatrix(self,
+                                split: str = "test",
+                                normalize: bool = False,
+                                title: str = None):
             """
             Plot a confusion matrix for classification tasks (Plotly).
 
             Parameters
             ----------
-            split : {"train", "val", "test"}, optional
-                Which split to evaluate. Default is ``"test"``.
+            split : {"train", "val", "validate", "validation", "test", "all"}, optional
+                Which split to evaluate.
+
+                - "train"            : training split
+                - "val"/"validate"   : validation split
+                - "test"             : test split
+                - "all"              : concatenates predictions across train+val+test
+
+                Default is "test".
+
+            normalize : bool, optional
+                If True, row-normalize the confusion matrix so each row sums to 1.
+                Default is False.
+
+            title : str, optional
+                Custom plot title. If None, an automatic title is generated.
 
             Returns
             -------
@@ -1560,134 +2007,360 @@ if _PYG_IMPORT_ERROR is None:
             Raises
             ------
             ValueError
-                If called for regression tasks or link prediction.
-
-            Notes
-            -----
-            - For node/edge tasks, the method uses the corresponding boolean mask on each
-              graph and aggregates predictions across all graphs.
+                If called for non-classification tasks or link prediction.
+            RuntimeError
+                If no labels are found for the requested split(s).
             """
+            if go is None or px is None:
+                raise ImportError("Plotly is required for plotting methods. Install plotly to use this feature.")
+            if confusion_matrix is None:
+                raise ImportError("scikit-learn is required for confusion matrices. Install scikit-learn to use this feature.")
+
+            # ---- Correct task source (the bug you hit)
             if self.config.task != "classification" or self.config.level == "link":
                 raise ValueError("Confusion matrix is only available for classification (graph/node/edge).")
 
-            if self.config.level == "graph":
-                if split == "train":
-                    loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
-                elif split == "val":
-                    loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
-                else:
-                    loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
-                y_true, y_pred = self._predict_graph(loader)
+            split_l = (split or "test").lower()
+            if split_l in ("validate", "validation"):
+                split_l = "val"
 
-            elif self.config.level == "node":
-                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
-                mask = "train_mask" if split == "train" else ("val_mask" if split == "val" else "test_mask")
-                y_true, y_pred = self._predict_node(loader, mask)
+            def _y_for_one_split(one_split: str):
+                # Build loaders exactly like the original implementation
+                if self.config.level == "graph":
+                    if one_split == "train":
+                        loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
+                    elif one_split == "val":
+                        loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
+                    else:
+                        loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
+                    return self._predict_graph(loader)
 
-            else:  # edge
-                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
-                mask = "edge_train_mask" if split == "train" else ("edge_val_mask" if split == "val" else "edge_test_mask")
-                y_true, y_pred = self._predict_edge(loader, mask)
+                elif self.config.level == "node":
+                    loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                    mask = "train_mask" if one_split == "train" else ("val_mask" if one_split == "val" else "test_mask")
+                    return self._predict_node(loader, mask)
 
-            cm = confusion_matrix(y_true, y_pred)
-            fig = px.imshow(cm, text_auto=True, title=f"Confusion Matrix ({split})")
-            fig.update_layout(xaxis_title="Predicted", yaxis_title="True")
+                else:  # edge
+                    loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                    mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
+                    return self._predict_edge(loader, mask)
+
+            # ---- Collect y_true/y_pred for split or splits
+            if split_l == "all":
+                splits = ["train", "val", "test"]
+                y_true_all = []
+                y_pred_all = []
+                for s in splits:
+                    yt, yp = _y_for_one_split(s)
+                    if yt is not None and len(yt):
+                        y_true_all.append(yt)
+                        y_pred_all.append(yp)
+
+                if not y_true_all:
+                    raise RuntimeError("No labels found for confusion matrix (split='all').")
+
+                import numpy as np
+                y_true = np.concatenate(y_true_all, axis=0)
+                y_pred = np.concatenate(y_pred_all, axis=0)
+            else:
+                if split_l not in ("train", "val", "test"):
+                    raise ValueError(f"Unknown split '{split}'. Use train/val/test/all.")
+                y_true, y_pred = _y_for_one_split(split_l)
+
+                if y_true is None or len(y_true) == 0:
+                    raise RuntimeError(f"No labels found for confusion matrix (split='{split_l}').")
+
+            import numpy as np
+
+            # --- Explicit labels ---
+            labels = sorted(set(y_true) | set(y_pred))
+
+            cm = confusion_matrix(y_true, y_pred, labels=labels)
+
+            if normalize:
+                cm = cm.astype(float)
+                cm = cm / (cm.sum(axis=1, keepdims=True) + 1e-12)
+
+            fig = px.imshow(
+                cm,
+                x=labels,
+                y=labels,
+                text_auto=True,
+                aspect="auto",
+                color_continuous_scale="Blues"
+            )
+
+            fig.update_layout(
+                title=title,
+                xaxis_title="Predicted",
+                yaxis_title="True"
+            )
+
+            # --- FORCE all tick labels to show ---
+            fig.update_xaxes(
+                tickmode="array",
+                tickvals=list(range(len(labels))),
+                ticktext=labels
+            )
+
+            fig.update_yaxes(
+                tickmode="array",
+                tickvals=list(range(len(labels))),
+                ticktext=labels
+            )
+
             return fig
 
-        def PlotParity(self, split: Literal["train", "val", "test"] = "test"):
-            if go is None or px is None:
-                raise ImportError('Plotly is required for plotting methods. Install plotly to use this feature.')
+
+        def PlotParity(self,
+                    split: str = "test",
+                    title: str = None,
+                    show_identity: bool = True,
+                    show_best_fit: bool = True,
+                    point_size: int = 6):
             """
             Plot a parity (true vs predicted) plot for regression tasks (Plotly).
 
             Parameters
             ----------
-            split : {"train", "val", "test"}, optional
-                Which split to evaluate. Default is ``"test"``.
+            split : {"train", "val", "validate", "validation", "test", "all"}, optional
+                Which split to evaluate.
+
+                - "train"            : training split
+                - "val"/"validate"   : validation split
+                - "test"             : test split
+                - "all"              : concatenates train+val+test
+
+                Default is ``"test"``.
+
+            title : str, optional
+                Custom plot title. If None, an automatic title is generated.
+
+            show_identity : bool, optional
+                If True, draws the ``y=x`` reference line. Default is True.
+
+            show_best_fit : bool, optional
+                If True, draws a least-squares best-fit line (ŷ = a·y + b). Default is True.
+
+            point_size : int, optional
+                Marker size. Default is 6.
 
             Returns
             -------
             plotly.graph_objects.Figure
-                Scatter plot of true vs predicted values with an ``y=x`` reference line.
+                Scatter plot of true vs predicted values with optional reference lines.
 
             Raises
             ------
             ValueError
-                If called when ``config.task`` is not ``"regression"``.
+                If called when ``config.task`` is not ``"regression"`` or when ``config.level`` is ``"link"``.
+            RuntimeError
+                If no regression labels are found for the requested split(s).
+
+            Notes
+            -----
+            - For node/edge regression, the method uses the corresponding boolean masks on each
+            graph and aggregates across all graphs.
+            - This method relies on :meth:`_predict_graph`, :meth:`_predict_node`, and :meth:`_predict_edge`.
             """
-            if self.config.task != "regression":
-                raise ValueError("Parity plot is only available for regression tasks.")
+            if go is None or px is None:
+                raise ImportError("Plotly is required for plotting methods. Install plotly to use this feature.")
 
-            if self.config.level == "graph":
-                if split == "train":
-                    loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
-                elif split == "val":
-                    loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
-                else:
-                    loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
-                y_true, y_pred = self._predict_graph(loader)
+            import numpy as np
 
-            elif self.config.level == "node":
-                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
-                mask = "train_mask" if split == "train" else ("val_mask" if split == "val" else "test_mask")
-                y_true, y_pred = self._predict_node(loader, mask)
+            if self.config.task != "regression" or self.config.level == "link":
+                raise ValueError("Parity plot is only available for regression (graph/node/edge).")
 
+            split_l = (split or "test").lower()
+            if split_l in ("validate", "validation"):
+                split_l = "val"
+
+            def _y_for_one_split(one_split: str):
+                if self.config.level == "graph":
+                    if one_split == "train":
+                        loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
+                    elif one_split == "val":
+                        loader = DataLoader(self.val_set, batch_size=self.config.batch_size, shuffle=False)
+                    else:
+                        loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
+                    return self._predict_graph(loader)
+
+                elif self.config.level == "node":
+                    loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                    mask = "train_mask" if one_split == "train" else ("val_mask" if one_split == "val" else "test_mask")
+                    return self._predict_node(loader, mask)
+
+                else:  # edge
+                    loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                    mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
+                    return self._predict_edge(loader, mask)
+
+            # ---- Collect y_true/y_pred for split or splits
+            if split_l == "all":
+                y_true_all = []
+                y_pred_all = []
+                for s in ("train", "val", "test"):
+                    yt, yp = _y_for_one_split(s)
+                    if yt is not None and len(yt):
+                        y_true_all.append(yt)
+                        y_pred_all.append(yp)
+                if not y_true_all:
+                    raise RuntimeError("No labels found for parity plot (split='all').")
+                y_true = np.concatenate(y_true_all, axis=0)
+                y_pred = np.concatenate(y_pred_all, axis=0)
             else:
-                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
-                mask = "edge_train_mask" if split == "train" else ("edge_val_mask" if split == "val" else "edge_test_mask")
-                y_true, y_pred = self._predict_edge(loader, mask)
+                if split_l not in ("train", "val", "test"):
+                    raise ValueError(f"Unknown split '{split}'. Use train/val/test/all.")
+                y_true, y_pred = _y_for_one_split(split_l)
+                if y_true is None or len(y_true) == 0:
+                    raise RuntimeError(f"No labels found for parity plot (split='{split_l}').")
 
+            # ---- Build figure
             fig = go.Figure()
-            fig.add_trace(go.Scatter(x=y_true, y=y_pred, mode="markers", name="Predictions"))
+            fig.add_trace(go.Scatter(
+                x=y_true, y=y_pred,
+                mode="markers",
+                name="Predictions",
+                marker=dict(size=int(point_size))
+            ))
+
             mn = float(min(np.min(y_true), np.min(y_pred))) if len(y_true) else 0.0
             mx = float(max(np.max(y_true), np.max(y_pred))) if len(y_true) else 1.0
-            fig.add_trace(go.Scatter(x=[mn, mx], y=[mn, mx], mode="lines", name="Ideal"))
-            fig.update_layout(title=f"Parity Plot ({split})", xaxis_title="True", yaxis_title="Predicted")
+
+            if show_identity:
+                fig.add_trace(go.Scatter(
+                    x=[mn, mx], y=[mn, mx],
+                    mode="lines",
+                    name="Ideal (y=x)",
+                    hoverinfo="skip"
+                ))
+
+            if show_best_fit and len(y_true) >= 2:
+                a, b = np.polyfit(y_true.astype(float), y_pred.astype(float), 1)
+                fig.add_trace(go.Scatter(
+                    x=[mn, mx], y=[a * mn + b, a * mx + b],
+                    mode="lines",
+                    name=f"Best fit (y={a:.3g}x+{b:.3g})",
+                    hoverinfo="skip"
+                ))
+
+            # lightweight metrics
+            eps = 1e-12
+            y_true_f = y_true.astype(float)
+            y_pred_f = y_pred.astype(float)
+            mae = float(np.mean(np.abs(y_pred_f - y_true_f)))
+            rmse = float(np.sqrt(np.mean((y_pred_f - y_true_f) ** 2)))
+            ss_res = float(np.sum((y_true_f - y_pred_f) ** 2))
+            ss_tot = float(np.sum((y_true_f - np.mean(y_true_f)) ** 2))
+            r2 = 1.0 - ss_res / (ss_tot + eps)
+
+            if title is None:
+                title = f"Parity Plot ({split_l})"
+
+            fig.update_layout(
+                title=f"{title} — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}",
+                xaxis_title="True",
+                yaxis_title="Predicted"
+            )
             return fig
 
-        def SaveModel(self, path: str):
+        def SaveModel(self, path: str, include_config: bool = True):
             """
-            Save the current model weights to disk.
+            Save the model to disk.
 
             Parameters
             ----------
             path : str
                 Output file path. If the extension is not ``.pt``, it is appended automatically.
+            include_config : bool, optional
+                If True, saves enough configuration alongside weights to rebuild the model on load.
+                Default is True.
 
             Returns
             -------
             None
-
-            Notes
-            -----
-            This saves only the model state dictionary (``state_dict``). To reproduce a run,
-            also save your configuration (e.g. :meth:`~topologicpy.PyG.PyG.Summary`) and
-            dataset preprocessing choices.
             """
             if not path.lower().endswith(".pt"):
                 path = path + ".pt"
-            torch.save(self.model.state_dict(), path)
 
-        def LoadModel(self, path: str):
+            if self.model is None:
+                raise RuntimeError("PyG.SaveModel - Error: No model to save.")
+
+            if include_config:
+                # Save full config fields (not only Summary) so future options can be restored too.
+                cfg = self.config
+                cfg_fields = {k: getattr(cfg, k) for k in vars(cfg).keys()}
+                payload = {
+                    "state_dict": self.model.state_dict(),
+                    "config_fields": cfg_fields,
+                    "summary": self.Summary()
+                }
+                torch.save(payload, path)
+            else:
+                torch.save(self.model.state_dict(), path)
+
+
+        def LoadModel(self, path: str, strict: bool = True, rebuild_from_checkpoint: bool = True):
             """
             Load model weights from disk.
+
+            This method is backward compatible with older ``.pt`` files that contain only
+            a raw ``state_dict``. If the file contains a checkpoint dict produced by
+            :meth:`~topologicpy.PyG.PyG.SaveModel` with ``include_config=True``, the model
+            can be rebuilt automatically to match the saved architecture.
 
             Parameters
             ----------
             path : str
-                Path to a ``.pt`` file produced by :meth:`~topologicpy.PyG.PyG.SaveModel`.
+                Path to a ``.pt`` file.
+            strict : bool, optional
+                Passed to ``load_state_dict``. Default is True.
+            rebuild_from_checkpoint : bool, optional
+                If True and the checkpoint contains saved config fields, rebuilds the model
+                before loading weights. Default is True.
 
             Returns
             -------
             None
-
-            Notes
-            -----
-            The loaded weights are mapped onto the current device and the model is set to
-            evaluation mode.
             """
-            state = torch.load(path, map_location=self.device)
-            self.model.load_state_dict(state)
+            if self.model is None:
+                # In case someone creates PyG without model building (unlikely), build now.
+                self._build_model()
+
+            # Try safe loading first (future default behavior)
+            try:
+                obj = torch.load(path, map_location=self.device, weights_only=True)
+            except TypeError:
+                # Older PyTorch version (no weights_only argument)
+                obj = torch.load(path, map_location=self.device)
+
+
+            # New format: dict checkpoint
+            if isinstance(obj, dict) and ("state_dict" in obj):
+                state = obj["state_dict"]
+
+                if rebuild_from_checkpoint and ("config_fields" in obj) and isinstance(obj["config_fields"], dict):
+                    # Restore config fields that affect model shape first
+                    # (conv/hidden_dims/activation/dropout/batch_norm/residual/pooling)
+                    cfg_fields = obj["config_fields"]
+
+                    model_keys = {"conv", "hidden_dims", "activation", "dropout", "batch_norm", "residual", "pooling",
+                                "level", "task", "graph_label_type", "node_label_type", "edge_label_type"}
+
+                    # Apply only fields that exist on this version of _RunConfig
+                    for k, v in cfg_fields.items():
+                        if hasattr(self.config, k) and (k in model_keys):
+                            setattr(self.config, k, v)
+
+                    # IMPORTANT: rebuild model to match checkpoint architecture
+                    self._build_model()
+
+            # Old format: state_dict only
+            else:
+                state = obj
+
+            # Finally load weights
+            self.model.load_state_dict(state, strict=strict)
             self.model.to(self.device)
             self.model.eval()
 
