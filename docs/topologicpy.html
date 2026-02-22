@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.9.4 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.9.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.4
+                0.9.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +61,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
@@ -146,20 +147,18 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN"><code class="docutils literal notranslate"><span class="pre">ANN</span></code></a><ul>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.DatasetByCSVPath"><code class="docutils literal notranslate"><span class="pre">ANN.DatasetByCSVPath()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.DatasetBySampleName"><code class="docutils literal notranslate"><span class="pre">ANN.DatasetBySampleName()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.DatasetSampleNames"><code class="docutils literal notranslate"><span class="pre">ANN.DatasetSampleNames()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.DatasetSplit"><code class="docutils literal notranslate"><span class="pre">ANN.DatasetSplit()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Figures"><code class="docutils literal notranslate"><span class="pre">ANN.Figures()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Hyperparameters"><code class="docutils literal notranslate"><span class="pre">ANN.Hyperparameters()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.HyperparametersBySampleName"><code class="docutils literal notranslate"><span class="pre">ANN.HyperparametersBySampleName()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Initialize"><code class="docutils literal notranslate"><span class="pre">ANN.Initialize()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Load"><code class="docutils literal notranslate"><span class="pre">ANN.Load()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Metrics"><code class="docutils literal notranslate"><span class="pre">ANN.Metrics()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.ModelData"><code class="docutils literal notranslate"><span class="pre">ANN.ModelData()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Save"><code class="docutils literal notranslate"><span class="pre">ANN.Save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.ByCSVPath"><code class="docutils literal notranslate"><span class="pre">ANN.ByCSVPath()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.LoadModel"><code class="docutils literal notranslate"><span class="pre">ANN.LoadModel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.PlotConfusionMatrix"><code class="docutils literal notranslate"><span class="pre">ANN.PlotConfusionMatrix()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.PlotHistory"><code class="docutils literal notranslate"><span class="pre">ANN.PlotHistory()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.PlotParity"><code class="docutils literal notranslate"><span class="pre">ANN.PlotParity()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Predict"><code class="docutils literal notranslate"><span class="pre">ANN.Predict()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.SaveModel"><code class="docutils literal notranslate"><span class="pre">ANN.SaveModel()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.SetHyperparameters"><code class="docutils literal notranslate"><span class="pre">ANN.SetHyperparameters()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Summary"><code class="docutils literal notranslate"><span class="pre">ANN.Summary()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Test"><code class="docutils literal notranslate"><span class="pre">ANN.Test()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Train"><code class="docutils literal notranslate"><span class="pre">ANN.Train()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.ANN.html#topologicpy.ANN.ANN.Validate"><code class="docutils literal notranslate"><span class="pre">ANN.Validate()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -534,6 +533,39 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Vertices"><code class="docutils literal notranslate"><span class="pre">Face.Vertices()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Wire"><code class="docutils literal notranslate"><span class="pre">Face.Wire()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Face.html#topologicpy.Face.Face.Wires"><code class="docutils literal notranslate"><span class="pre">Face.Wires()</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA"><code class="docutils literal notranslate"><span class="pre">GA</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.BestFitness"><code class="docutils literal notranslate"><span class="pre">GA.BestFitness</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.BestIndex"><code class="docutils literal notranslate"><span class="pre">GA.BestIndex</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.BestSolution"><code class="docutils literal notranslate"><span class="pre">GA.BestSolution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Build"><code class="docutils literal notranslate"><span class="pre">GA.Build()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.EnableCheckpointing"><code class="docutils literal notranslate"><span class="pre">GA.EnableCheckpointing()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.GA"><code class="docutils literal notranslate"><span class="pre">GA.GA</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.LatestCheckpoint"><code class="docutils literal notranslate"><span class="pre">GA.LatestCheckpoint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Load"><code class="docutils literal notranslate"><span class="pre">GA.Load()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Params"><code class="docutils literal notranslate"><span class="pre">GA.Params()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.ParetoFront"><code class="docutils literal notranslate"><span class="pre">GA.ParetoFront()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.ParetoFrontIndices"><code class="docutils literal notranslate"><span class="pre">GA.ParetoFrontIndices()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.PlotParetoFront"><code class="docutils literal notranslate"><span class="pre">GA.PlotParetoFront()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Population"><code class="docutils literal notranslate"><span class="pre">GA.Population</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.PopulationFitness"><code class="docutils literal notranslate"><span class="pre">GA.PopulationFitness</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Ran"><code class="docutils literal notranslate"><span class="pre">GA.Ran</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Results"><code class="docutils literal notranslate"><span class="pre">GA.Results()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.ResumeFromLatestCheckpoint"><code class="docutils literal notranslate"><span class="pre">GA.ResumeFromLatestCheckpoint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Run"><code class="docutils literal notranslate"><span class="pre">GA.Run()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.Save"><code class="docutils literal notranslate"><span class="pre">GA.Save()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GA.SetParams"><code class="docutils literal notranslate"><span class="pre">GA.SetParams()</span></code></a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GARunSummary"><code class="docutils literal notranslate"><span class="pre">GARunSummary</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GARunSummary.best_fitness"><code class="docutils literal notranslate"><span class="pre">GARunSummary.best_fitness</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GARunSummary.best_index"><code class="docutils literal notranslate"><span class="pre">GARunSummary.best_index</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GARunSummary.best_solution"><code class="docutils literal notranslate"><span class="pre">GARunSummary.best_solution</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.GA.html#topologicpy.GA.GARunSummary.generations_completed"><code class="docutils literal notranslate"><span class="pre">GARunSummary.generations_completed</span></code></a></li>
 </ul>
 </li>
 </ul>

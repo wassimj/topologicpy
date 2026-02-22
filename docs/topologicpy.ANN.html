@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ANN module &mdash; topologicpy 0.9.4 documentation</title>
+  <title>topologicpy.ANN module &mdash; topologicpy 0.9.5 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.4
+                0.9.5
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,6 +61,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
@@ -145,6 +146,9 @@
 <dt class="sig sig-object py" id="topologicpy.ANN.ANN">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.ANN.</span></span><span class="sig-name descname"><span class="pre">ANN</span></span><a class="headerlink" href="#topologicpy.ANN.ANN" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>ANN is a TopologicPy-style helper class for regular tabular ML using PyTorch.</p>
+<p>The class mirrors the high-level API of <a class="reference internal" href="topologicpy.PyG.html#topologicpy.PyG.PyG" title="topologicpy.PyG.PyG"><code class="xref py py-class docutils literal notranslate"><span class="pre">topologicpy.PyG.PyG</span></code></a> but targets
+non-graph datasets (rows in a CSV file).</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -152,68 +156,79 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.DatasetByCSVPath" title="topologicpy.ANN.ANN.DatasetByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetByCSVPath</span></code></a>(path[, taskType, description])</p></td>
-<td><p>Returns a dataset according to the input CSV file path.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.ByCSVPath" title="topologicpy.ANN.ANN.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(path[, task, labelHeader, ...])</p></td>
+<td><p>Create an ANN instance by reading a dataset from a CSV file path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.DatasetBySampleName" title="topologicpy.ANN.ANN.DatasetBySampleName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetBySampleName</span></code></a>(name)</p></td>
-<td><p>Returns a dataset from the scikit-learn dataset samples.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.LoadModel" title="topologicpy.ANN.ANN.LoadModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadModel</span></code></a>(path[, strict, ...])</p></td>
+<td><p>Load model weights from disk (backward compatible).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.DatasetSampleNames" title="topologicpy.ANN.ANN.DatasetSampleNames"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetSampleNames</span></code></a>()</p></td>
-<td><p>Returns the names of the available sample datasets from sci-kit learn.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.PlotConfusionMatrix" title="topologicpy.ANN.ANN.PlotConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotConfusionMatrix</span></code></a>([split, normalize, title])</p></td>
+<td><p>Plot a confusion matrix for classification.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.DatasetSplit" title="topologicpy.ANN.ANN.DatasetSplit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DatasetSplit</span></code></a>(X, y[, testRatio, randomState])</p></td>
-<td><p>Splits the input dataset according to the input ratios.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.PlotHistory" title="topologicpy.ANN.ANN.PlotHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotHistory</span></code></a>([title])</p></td>
+<td><p>Plot training history curves (losses) using Plotly.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Figures" title="topologicpy.ANN.ANN.Figures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Figures</span></code></a>(model[, width, height, template, ...])</p></td>
-<td><p>Creates Plotly Figures from the model data.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.PlotParity" title="topologicpy.ANN.ANN.PlotParity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotParity</span></code></a>([split, title, show_identity, ...])</p></td>
+<td><p>Plot a parity plot (true vs predicted) for regression.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Hyperparameters" title="topologicpy.ANN.ANN.Hyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Hyperparameters</span></code></a>([title, taskType, ...])</p></td>
-<td><p>Returns a Hyperparameters dictionary based on the input parameters.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Predict" title="topologicpy.ANN.ANN.Predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Predict</span></code></a>([path, return_proba, return_logits, ...])</p></td>
+<td><p>Predict outputs for the loaded dataset or a new CSV dataset.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.HyperparametersBySampleName" title="topologicpy.ANN.ANN.HyperparametersBySampleName"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HyperparametersBySampleName</span></code></a>(name)</p></td>
-<td><p>Returns the suggested initial hyperparameters to use for the dataset named in the name input parameter.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.SaveModel" title="topologicpy.ANN.ANN.SaveModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SaveModel</span></code></a>(path[, include_config])</p></td>
+<td><p>Save model weights (and optionally config) to disk.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Initialize" title="topologicpy.ANN.ANN.Initialize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Initialize</span></code></a>(hyperparameters, dataset)</p></td>
-<td><p>Initializes an ANN model with the input dataset and hyperparameters.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.SetHyperparameters" title="topologicpy.ANN.ANN.SetHyperparameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetHyperparameters</span></code></a>(**kwargs)</p></td>
+<td><p>Update training/model hyperparameters.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Load" title="topologicpy.ANN.ANN.Load"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Load</span></code></a>(model, path)</p></td>
-<td><p>Loads the model state dictionary found at the input file path.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Summary" title="topologicpy.ANN.ANN.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>()</p></td>
+<td><p>Return a concise string summary of the ANN configuration and dataset shape.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Metrics" title="topologicpy.ANN.ANN.Metrics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Metrics</span></code></a>(model)</p></td>
-<td><p>Returns the model performance metrics given the input labels and predictions, and the model's task type.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Test" title="topologicpy.ANN.ANN.Test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Test</span></code></a>()</p></td>
+<td><p>Evaluate the model on the test split.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.ModelData" title="topologicpy.ANN.ANN.ModelData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelData</span></code></a>(model)</p></td>
-<td><p>Returns the data of the model</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Train" title="topologicpy.ANN.ANN.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>()</p></td>
+<td><p>Train the ANN model.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Save" title="topologicpy.ANN.ANN.Save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Save</span></code></a>(model, path[, overwrite])</p></td>
-<td><p>Saves the model.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Test" title="topologicpy.ANN.ANN.Test"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Test</span></code></a>(model, hyperparameters, dataset)</p></td>
-<td><p>Returns the labels (actual values) and predictions (predicted values) given the input model, features (X), and target (y).</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Train" title="topologicpy.ANN.ANN.Train"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Train</span></code></a>(hyperparameters, dataset)</p></td>
-<td><p>Trains the input model given the input features (X), and target (y).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ANN.ANN.Validate" title="topologicpy.ANN.ANN.Validate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Validate</span></code></a>()</p></td>
+<td><p>Evaluate the model on the validation split.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.DatasetByCSVPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taskType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.DatasetByCSVPath" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a dataset according to the input CSV file path.</p>
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.ByCSVPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">task</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'classification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelHeader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">featHeader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idHeader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">featuresKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useMasksIfPresent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">(0.8,</span> <span class="pre">0.1,</span> <span class="pre">0.1)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomState</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">shuffle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.ByCSVPath" title="Permalink to this definition"></a></dt>
+<dd><p>Create an ANN instance by reading a dataset from a CSV file path.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the folder containing the necessary CSV and YML files.</p>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Path to a CSV file.</p>
 </dd>
-<dt><strong>taskType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of evaluation task. This can be ‘classification’ or ‘regression’. Default is ‘classification’.</p>
+<dt><strong>task</strong><span class="classifier">str, optional</span></dt><dd><p>“classification” or “regression”. Default is “classification”.</p>
 </dd>
-<dt><strong>description</strong><span class="classifier">str , optional</span></dt><dd><p>The description of the dataset. In keeping with the scikit BUNCH class, this will be saved in the DESCR parameter.</p>
+<dt><strong>labelHeader</strong><span class="classifier">str, optional</span></dt><dd><p>Label column name. Default is “label”.</p>
+</dd>
+<dt><strong>featHeader</strong><span class="classifier">str, optional</span></dt><dd><p>Feature column name (list-like string). Default is “feat”.</p>
+</dd>
+<dt><strong>idHeader</strong><span class="classifier">str, optional</span></dt><dd><p>Optional ID column name. Default is “id”.</p>
+</dd>
+<dt><strong>featuresKeys</strong><span class="classifier">list, optional</span></dt><dd><p>If provided, features will be built from these explicit columns
+instead of parsing <cite>featHeader</cite>.</p>
+</dd>
+<dt><strong>useMasksIfPresent</strong><span class="classifier">bool, optional</span></dt><dd><p>If True and mask columns exist, use them. Default is True.</p>
+</dd>
+<dt><strong>split</strong><span class="classifier">tuple(float,float,float), optional</span></dt><dd><p>Train/val/test ratio used when masks are not provided. Default is (0.8,0.1,0.1).</p>
+</dd>
+<dt><strong>device</strong><span class="classifier">str, optional</span></dt><dd><p>“auto”, “cpu”, or “cuda”. Default is “auto”.</p>
+</dd>
+<dt><strong>randomState</strong><span class="classifier">int, optional</span></dt><dd><p>RNG seed for splitting and training determinism. Default is 42.</p>
+</dd>
+<dt><strong>shuffle</strong><span class="classifier">bool, optional</span></dt><dd><p>Whether to shuffle prior to ratio split. Default is True.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>sklearn.utils._bunch.Bunch</dt><dd><p>The created dataset.</p>
+<dt>ANN</dt><dd><p>A configured ANN instance with data loaded and splits created.</p>
 </dd>
 </dl>
 </dd>
@@ -221,19 +236,135 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.DatasetBySampleName">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetBySampleName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.DatasetBySampleName" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a dataset from the scikit-learn dataset samples.</p>
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.LoadModel">
+<span class="sig-name descname"><span class="pre">LoadModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rebuild_from_checkpoint</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.LoadModel" title="Permalink to this definition"></a></dt>
+<dd><p>Load model weights from disk (backward compatible).</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The  name of the dataset. This can be one of [‘breast_cancer’, ‘california_housing’, ‘digits’, ‘iris’, ‘wine’]</p>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Path to a <code class="docutils literal notranslate"><span class="pre">.pt</span></code> checkpoint file.</p>
+</dd>
+<dt><strong>strict</strong><span class="classifier">bool, optional</span></dt><dd><p>Passed to <code class="docutils literal notranslate"><span class="pre">load_state_dict</span></code>. Default is True.</p>
+</dd>
+<dt><strong>rebuild_from_checkpoint</strong><span class="classifier">bool, optional</span></dt><dd><p>If True and the checkpoint includes config fields, rebuild the model
+before loading. Default is True.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>sklearn.utils._bunch.Bunch</dt><dd><p>The created dataset.</p>
+<dt>None</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.PlotConfusionMatrix">
+<span class="sig-name descname"><span class="pre">PlotConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.PlotConfusionMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a confusion matrix for classification.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>split</strong><span class="classifier">{“train”,”val”,”validate”,”validation”,”test”,”all”}, optional</span></dt><dd><p>Which split(s) to evaluate. Default is “test”.</p>
+</dd>
+<dt><strong>normalize</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, row-normalize the confusion matrix. Default is False.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>Custom title. If None, uses an automatic title.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objects.Figure</dt><dd><p>Confusion matrix heatmap (Plotly).</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Requires scikit-learn and plotly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.PlotHistory">
+<span class="sig-name descname"><span class="pre">PlotHistory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Learning</span> <span class="pre">Curves'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.PlotHistory" title="Permalink to this definition"></a></dt>
+<dd><p>Plot training history curves (losses) using Plotly.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>Plot title. Default is “Learning Curves”.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objects.Figure</dt><dd><p>A Plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Requires Plotly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.PlotParity">
+<span class="sig-name descname"><span class="pre">PlotParity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_identity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_best_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.PlotParity" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a parity plot (true vs predicted) for regression.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>split</strong><span class="classifier">{“train”,”val”,”validate”,”validation”,”test”,”all”}, optional</span></dt><dd><p>Which split(s) to evaluate. Default is “test”.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>Custom title. If None, uses an automatic title.</p>
+</dd>
+<dt><strong>show_identity</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, plot y=x. Default is True.</p>
+</dd>
+<dt><strong>show_best_fit</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, plot least-squares fit line. Default is True.</p>
+</dd>
+<dt><strong>point_size</strong><span class="classifier">int, optional</span></dt><dd><p>Marker size. Default is 6.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objects.Figure</dt><dd><p>Parity scatter plot.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>Requires plotly.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Predict">
+<span class="sig-name descname"><span class="pre">Predict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_proba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_logits</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attach_to_df</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.Predict" title="Permalink to this definition"></a></dt>
+<dd><p>Predict outputs for the loaded dataset or a new CSV dataset.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str, optional</span></dt><dd><p>If provided, load a new CSV file and run inference on it. If None,
+predicts on the currently loaded dataset.</p>
+</dd>
+<dt><strong>return_proba</strong><span class="classifier">bool, optional</span></dt><dd><p>If True and task is classification, return class probabilities.
+Default is False.</p>
+</dd>
+<dt><strong>return_logits</strong><span class="classifier">bool, optional</span></dt><dd><p>If True and task is classification, return raw logits.
+Default is False.</p>
+</dd>
+<dt><strong>attach_to_df</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, attach predictions back to <code class="docutils literal notranslate"><span class="pre">self.df</span></code> (or newly loaded df)
+as columns: “pred” and optionally “proba_*”. Default is True.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>Prediction package with keys:
+- “pred” : numpy array of predictions (class indices or regression values)
+- “proba” : numpy array (N,C) if requested for classification
+- “logits”: numpy array (N,C) if requested for classification
+- “df” : pandas DataFrame if attach_to_df=True</p>
 </dd>
 </dl>
 </dd>
@@ -241,330 +372,60 @@
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.DatasetSampleNames">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetSampleNames</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.DatasetSampleNames" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the names of the available sample datasets from sci-kit learn.</p>
-<dl class="field-list">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.SaveModel">
+<span class="sig-name descname"><span class="pre">SaveModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">include_config</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.SaveModel" title="Permalink to this definition"></a></dt>
+<dd><p>Save model weights (and optionally config) to disk.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><blockquote>
-<div></div></blockquote>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Output file path. If it does not end with <code class="docutils literal notranslate"><span class="pre">.pt</span></code>, it is appended.</p>
+</dd>
+<dt><strong>include_config</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, saves a checkpoint dict that includes config fields to support
+robust reload. Default is True.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of names of available sample datasets</p>
-</dd>
+<dt>None</dt><dd></dd>
 </dl>
 </dd>
 </dl>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.DatasetSplit">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DatasetSplit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">X</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testRatio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomState</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.DatasetSplit" title="Permalink to this definition"></a></dt>
-<dd><p>Splits the input dataset according to the input ratios.</p>
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.SetHyperparameters">
+<span class="sig-name descname"><span class="pre">SetHyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">None</span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.SetHyperparameters" title="Permalink to this definition"></a></dt>
+<dd><p>Update training/model hyperparameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>X</strong><span class="classifier">list</span></dt><dd><p>The list of features.</p>
-</dd>
-<dt><strong>y</strong><span class="classifier">list</span></dt><dd><p>The list of targets.</p>
-</dd>
-<dt><strong>testRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The ratio of the dataset to reserve as unseen data for testing. Default is 0.3</p>
-</dd>
-<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
-it controls the shuffling of the data before splitting it into training and testing sets.
-This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
-The default is 42 which is just a randomly picked integer number. Specify None for random sampling.</p>
+<dt><strong>**kwargs</strong><span class="classifier">dict</span></dt><dd><p>Any attribute of the internal config. Common keys include:
+epochs, batch_size, lr, weight_decay, optimizer, hidden_dims,
+activation, dropout, batch_norm, early_stopping, early_stopping_patience,
+gradient_clip_norm, split, shuffle, random_state, device.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>Returns the following list : [X_train, X_test, y_train,y_test]
-X_train is the list of features used for training
-X_test is the list of features used for testing
-y_train is the list of targets used for training
-y_test is the list of targets used for testing</p>
-</dd>
+<dt>None</dt><dd></dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>If a model-shaping parameter changes (e.g. hidden_dims, activation, batch_norm),
+the model is rebuilt automatically.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Figures">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Figures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">900</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">template</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'plotly'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Figures" title="Permalink to this definition"></a></dt>
-<dd><p>Creates Plotly Figures from the model data. For classification tasks this includes
-a confusion matrix, loss, and accuracy figures. For regression tasks this includes
-loss and MAE figures.</p>
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Summary">
+<span class="sig-name descname"><span class="pre">Summary</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.Summary" title="Permalink to this definition"></a></dt>
+<dd><p>Return a concise string summary of the ANN configuration and dataset shape.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">ANN Model</span></dt><dd><p>The input model.</p>
-</dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired figure width in pixels. Default is 900.</p>
-</dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired figure height in pixels. Default is 900.</p>
-</dd>
-<dt><strong>template</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Plotly template to use for the scatter plot.
-This can be one of [‘ggplot2’, ‘seaborn’, ‘simple_white’, ‘plotly’,
-‘plotly_white’, ‘plotly_dark’, ‘presentation’, ‘xgridoff’,
-‘ygridoff’, ‘gridon’, ‘none’]. Default is “plotly”.</p>
-</dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
-</dd>
-<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>Returns a list of Plotly figures and a corresponding list of file names.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Hyperparameters">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Hyperparameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Untitled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">taskType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'classification'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">testRatio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validationRatio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hiddenLayers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[12,</span> <span class="pre">12,</span> <span class="pre">12]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">learningRate</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batchSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">earlyStopping</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">randomState</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">42</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">crossValidationType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'holdout'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">kFolds</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">interval</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Hyperparameters" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a Hyperparameters dictionary based on the input parameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title for the dataset. Default is “Untitled”.</p>
-</dd>
-<dt><strong>taskType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired task type. This can be either ‘classification’ or ‘regression’ (case insensitive).
-Classification is a type of supervised learning where the model is trained to predict categorical labels (classes) from input data.
-Regression is a type of supervised learning where the model is trained to predict continuous numerical values from input data.</p>
-</dd>
-<dt><strong>testRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and testing. Default is 0.3. This means that
-70% of the data will be used for training/validation and 30% will be reserved for testing as unseen data.</p>
-</dd>
-<dt><strong>validationRatio</strong><span class="classifier">float , optional</span></dt><dd><p>The split ratio between training and validation. Default is 0.2. This means that
-80% of the validation data (left over after reserving test data) will be used for training and 20% will be used for validation.</p>
-</dd>
-<dt><strong>hiddenLayers</strong><span class="classifier">list , optional</span></dt><dd><p>The number of hidden layers and the number of nodes in each layer.
-If you wish to have 3hidden layers with 8 nodes in the first
-16 nodes in the second, and 4 nodes in the last layer, you specify [8,16,4].
-The default is [12,12,12]</p>
-</dd>
-<dt><strong>learningRate</strong><span class="classifier">float, optional</span></dt><dd><p>The desired learning rate. Default is 0.001. See <a class="reference external" href="https://en.wikipedia.org/wiki/Learning_rate">https://en.wikipedia.org/wiki/Learning_rate</a></p>
-</dd>
-<dt><strong>epochs</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs. Default is 10. See <a class="reference external" href="https://en.wikipedia.org/wiki/Neural_network_(machine_learning">https://en.wikipedia.org/wiki/Neural_network_(machine_learning</a>)</p>
-</dd>
-<dt><strong>batchSize</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of samples that will be propagated through the network at one time before the model’s internal parameters are updated. Instead of updating the model parameters after every single training sample
-(stochastic gradient descent) or after the entire training dataset (batch gradient descent), mini-batch gradient descent updates the model parameters after
-a specified number of samples, which is determined by batchSize. Default is 1.</p>
-</dd>
-<dt><strong>patience</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of epochs with no improvement in the validation loss after which training will be stopped if early stopping is enabled.</p>
-</dd>
-<dt><strong>earlyStopping</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the training will stop if the validation loss does not improve after a certain number of epochs defined by patience. Default is True.</p>
-</dd>
-<dt><strong>randomState</strong><span class="classifier">int , optional</span></dt><dd><p>The randomState parameter is used to ensure reproducibility of the results. When you set the randomState parameter to a specific integer value,
-it controls the shuffling of the data before splitting it into training and testing sets.
-This means that every time you run your code with the same randomState value and the same dataset, you will get the same split of the data.
-The default is 42 which is just a randomly picked integer number. Specify None for random sampling.</p>
-</dd>
-<dt><strong>crossValidationType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of cross-validation. This can be one of ‘holdout’ or ‘k-fold’. Default is ‘holdout’</p>
-</dd>
-<dt><strong>kFolds</strong><span class="classifier">int , optional</span></dt><dd><p>The number of splits (folds) to use if K-Fold cross validation is selected. Default is 5.</p>
-</dd>
-<dt><strong>interval</strong><span class="classifier">int , optional</span></dt><dd><p>The desired epoch interval at which to report and save metrics data. This must be less than the total number of epochs. Default is 1.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>Returns a dictionary with the following keys:
-‘title’
-‘task_type’
-‘test_ratio’
-‘validation_ratio’
-‘hidden_layers’
-‘learning_rate’
-‘epochs’
-‘batch_size’
-‘early_stopping’
-‘patience’
-‘random_state’
-‘cross_val_type’
-‘kFolds’
-‘interval’
-‘mantissa’</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.HyperparametersBySampleName">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HyperparametersBySampleName</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.HyperparametersBySampleName" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the suggested initial hyperparameters to use for the dataset named in the name input parameter.
-You can get a list of available sample datasets using ANN.SampleDatasets().</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>name</strong><span class="classifier">str</span></dt><dd><p>The input name of the sample dataset. This must be one of [‘breast_cancer’, ‘california_housing’, ‘digits’, ‘iris’, ‘wine’]</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>Returns a dictionary with the following keys:
-‘title’
-‘task_type’
-‘test_ratio’
-‘validation_ratio’
-‘hidden_layers’
-‘learning_rate’
-‘epochs’
-‘batch_size’
-‘early_stopping’
-‘patience’
-‘random_state’
-‘cross_val_type’
-‘k_folds’
-‘interval’
-‘mantissa’</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Initialize">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Initialize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Initialize" title="Permalink to this definition"></a></dt>
-<dd><p>Initializes an ANN model with the input dataset and hyperparameters.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>hyperparameters</strong><span class="classifier">dict</span></dt><dd><p>The hyperparameters dictionary. You can create one using ANN.Hyperparameters() or, if you are using a sample Dataset, you can get it from ANN.HyperParametersBySampleName.</p>
-</dd>
-<dt><strong>dataset</strong><span class="classifier">sklearn.utils._bunch.Bunch</span></dt><dd><p>The input dataset.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>_ANNModel</dt><dd><p>Returns the initialized model.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Load">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Load</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Load" title="Permalink to this definition"></a></dt>
-<dd><p>Loads the model state dictionary found at the input file path. The model input parameter must be pre-initialized using the ANN.Initialize() method.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">ANN object</span></dt><dd><p>The input ANN model. The model must be pre-initialized using the ModelInitialize method.</p>
-</dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>File path for the saved model state dictionary.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>ANN model</dt><dd><p>The neural network class.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Metrics">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Metrics" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the model performance metrics given the input labels and predictions, and the model’s task type.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">ANN Model</span></dt><dd><p>The input model.</p>
-</dd>
-<dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>The input list of labels (actual values).</p>
-</dd>
-<dt><strong>predictions</strong><span class="classifier">list</span></dt><dd><p>The input list of predictions (predicted values).</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><dl class="simple">
-<dt>if the task type is ‘classification’, this methods return a dictionary with the following keys:</dt><dd><p>“Accuracy”
-“Precision”
-“Recall”
-“F1 Score”
-“Confusion Matrix”</p>
-</dd>
-<dt>else if the task type is ‘regression’, this method returns:</dt><dd><p>“Mean Squared Error”
-“Mean Absolute Error”
-“R-squared”</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.ModelData">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.ModelData" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the data of the model</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>A dictionary containing the model data. The keys in the dictionary are:
-‘epochs’ (list of epoch numbers at which metrics data was collected)
-‘training_loss’ (LOSS)
-‘validation_loss’ (VALIDATION LOSS)
-‘training_accuracy’ (ACCURACY for classification tasks only)
-‘validation_accuracy’ (ACCURACYfor classification tasks only)
-‘training_mae’ (MAE for regression tasks only)
-‘validation_mae’ (MAE for regression tasks only)
-‘training_mse’ (MSE for regression tasks only)
-‘validation_mse’ (MSE for regression tasks only)
-‘training_r2’ (R^2 for regression tasks only)
-‘validation_r2’ (R^2 for regression tasks only)</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Save">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Save" title="Permalink to this definition"></a></dt>
-<dd><p>Saves the model.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">Model</span></dt><dd><p>The input model.</p>
-</dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The file path at which to save the model.</p>
-</dd>
-<dt><strong>overwrite</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, any existing file will be overwritten. Otherwise, it won’t. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if the model is saved correctly. False otherwise.</p>
+<dt>str</dt><dd><p>Human-readable summary.</p>
 </dd>
 </dl>
 </dd>
@@ -573,22 +434,13 @@ You can get a list of available sample datasets using ANN.SampleDatasets().</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ANN.ANN.Test">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Test</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Test" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the labels (actual values) and predictions (predicted values) given the input model, features (X), and target (y).</p>
+<span class="sig-name descname"><span class="pre">Test</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.Test" title="Permalink to this definition"></a></dt>
+<dd><p>Evaluate the model on the test split.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>model</strong><span class="classifier">ANN Model</span></dt><dd><p>The input model.</p>
-</dd>
-<dt><strong>X</strong><span class="classifier">list</span></dt><dd><p>The input list of features.</p>
-</dd>
-<dt><strong>y</strong><span class="classifier">list</span></dt><dd><p>The input list of targets</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list, list</dt><dd><p>Returns four lists: y_test, predictions, metrics, and confusion_matrix.</p>
+<dt>dict</dt><dd><p>Metrics dictionary. For classification includes accuracy/f1_macro/etc.
+For regression includes mae/rmse/r2. Always includes y_true and y_pred.</p>
 </dd>
 </dl>
 </dd>
@@ -597,20 +449,28 @@ You can get a list of available sample datasets using ANN.SampleDatasets().</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ANN.ANN.Train">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Train</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">hyperparameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ANN.ANN.Train" title="Permalink to this definition"></a></dt>
-<dd><p>Trains the input model given the input features (X), and target (y).</p>
+<span class="sig-name descname"><span class="pre">Train</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.Train" title="Permalink to this definition"></a></dt>
+<dd><p>Train the ANN model.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
+<dt class="field-odd">Returns</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>hyperparameters</strong><span class="classifier">dict</span></dt><dd><p>The hyperparameters dictionary. You can create one using ANN.Hyperparameters() or, if you are using a sample Dataset, you can get it from ANN.HyperParametersBySampleName.</p>
-</dd>
-<dt><strong>dataset</strong><span class="classifier">sklearn.utils._bunch.Bunch</span></dt><dd><p>The input dataset.</p>
+<dt>dict</dt><dd><p>Training history dictionary with per-epoch curves. Typical keys:
+“train_loss”, “val_loss” and task-specific metric keys.</p>
 </dd>
 </dl>
 </dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>_ANNModel</dt><dd><p>Returns the trained model.</p>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.ANN.ANN.Validate">
+<span class="sig-name descname"><span class="pre">Validate</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.ANN.ANN.Validate" title="Permalink to this definition"></a></dt>
+<dd><p>Evaluate the model on the validation split.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>dict</dt><dd><p>Metrics dictionary. For classification includes accuracy/f1_macro/etc.
+For regression includes mae/rmse/r2. Always includes y_true and y_pred.</p>
 </dd>
 </dl>
 </dd>
