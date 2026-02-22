@@ -20,6 +20,7 @@ Submodules
    topologicpy.Edge
    topologicpy.EnergyModel
    topologicpy.Face
+   topologicpy.GA
    topologicpy.Graph
    topologicpy.Grid
    topologicpy.Helper
