@@ -20,5 +20,6 @@ notebooks/.ipynb_checkpoints/**
 tutorials/.ipynb_checkpoints/**
 notebooks/iframe_figures/**
 tutorials/iframe_figures/**
+tutorials/test01/**
 src/topologicpy.egg-info/**
 tutorials/_site/**
