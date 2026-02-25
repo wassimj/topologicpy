@@ -1,0 +1,258 @@
+---
+title: Energy Model with Openstudio
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .qmd
+      format_name: quarto
+      format_version: '1.0'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+
+## Import the needed classes
+
+```{python}
+# Import the needed classes
+from topologicpy.Vertex import Vertex
+from topologicpy.Face import Face
+from topologicpy.Cell import Cell
+from topologicpy.CellComplex import CellComplex
+from topologicpy.Cluster import Cluster
+from topologicpy.Topology import Topology
+from topologicpy.Dictionary import Dictionary
+from topologicpy.Color import Color
+from topologicpy.Plotly import Plotly
+from topologicpy.EnergyModel import EnergyModel
+from topologicpy.Helper import Helper
+print("\nDONE")
+```
+
+```{python}
+import openstudio
+result = getattr(openstudio, "openStudioVersion", None)
+result()
+```
+
+## Check software versions
+
+```{python}
+import sys
+print("This workflow was designed and verified to work with python 3.11, TopologicPy 0.8.54 and OpenStudio SDK 3.10.0.\n")
+py_version = sys.version.split()[0]
+print("Python version:", py_version)
+
+print("TopologicPy Version:", Helper.Version(check=False))
+print("OpenStudio SDK Version:", EnergyModel.Version(check=False))
+print(" ")
+print("TopologicPy Version:", Helper.Version(check=True))
+print("OpenStudio SDK Version:", EnergyModel.Version(check=True))
+print("\nDONE")
+```
+
+## Set the input variables for path names and load geometries
+
+```{python}
+import pathlib
+fdir = pathlib.Path("..")
+weatherFilePath = fdir / "assets" / "EnergyModel"/ "GBR_London.Gatwick.037760_IWEC.epw"
+designDayFilePath = fdir / "assets" / "EnergyModel" / "GBR_London.Gatwick.037760_IWEC.ddy"
+# osBinaryPath = r"C:" / "openstudio-3.10.0" / "bin" / "openstudio.exe"
+
+buildingPath = fdir / "assets" / "EnergyModel" / "TopologicBuilding.brep"
+shadingPath = fdir / "assets" / "EnergyModel" / "TopologicShadingSurfaces.brep"
+osModelPath = fdir / "assets" / "EnergyModel" / "OSMTemplate-OfficeBuilding-3.10.0.osm"
+outputFolder = fdir / "EnergyModels"
+outputFolder.mkdir(exist_ok=True)
+
+assert buildingPath.is_file()
+weatherFilePath, designDayFilePath, buildingPath, shadingPath, osModelPath, outputFolder = [str(x.resolve()) for x in [weatherFilePath, designDayFilePath, buildingPath, shadingPath, osModelPath, outputFolder]]
+
+```
+
+```{python}
+osModelPath
+```
+
+## Load and set the building geometry, apertures (External Windows), and shading surfaces
+
+```{python}
+# BUILDING
+building = Topology.ByBREPPath(buildingPath)
+
+# APERTURES
+# Decompose the building
+d = CellComplex.Decompose(building)
+# Specify a glazing (window to wall) ratio:
+import math
+gr = 0.25
+# Create apertures (windows) by scaling the external vertical walls
+# Get the external vertical faces
+walls = d['externalVerticalFaces']
+apertures = []
+for wall in walls:
+    centroid = Topology.Centroid(wall)
+    aperture = Topology.Scale(wall, centroid, math.sqrt(gr), math.sqrt(gr), math.sqrt(gr))
+    apertures.append(aperture)
+building = Topology.AddApertures(building, apertures, subTopologyType="face")
+
+# SHADING SURFACES
+shadingSurfaces = Topology.ByBREPPath(shadingPath)
+
+# DISPLAY RESULT
+Topology.Show(building, shadingSurfaces, apertures)
+print("\nDONE")
+```
+
+## Create an Energy Model
+
+```{python}
+model = EnergyModel.ByTopology(building=building,
+                               shadingSurfaces = shadingSurfaces,
+                               osModelPath=osModelPath,
+                               weatherFilePath=weatherFilePath,
+                               designDayFilePath=designDayFilePath,
+                               glazingRatio=0.25)
+
+print("THIS IS A SNIPPET OF THE OSM MODEL TO VERIFY THAT IT WORKED.")
+print(str(model)[:900])
+print("\nDONE")
+```
+
+## Create an HBJSON Model
+
+```{python}
+from topologicpy.Honeybee import Honeybee
+
+hb_model = Honeybee.ModelByTopology(building, shadingSurfaces)
+
+print("THIS IS A SNIPPET OF THE OSM MODEL TO VERIFY THAT IT WORKED.")
+print(str(hb_model)[:900])
+print("\nDONE")
+```
+
+## (Optional) Export the model to OSM, GBXML, or HBJSON
+
+```{python}
+# Uncomment these files and change output path if you wish to export the model
+#status01 = EnergyModel.ExportToOSM(model, outputFolder+"/EnergyModel.osm", overwrite=True)
+#status02 = EnergyModel.ExportToGbXML(model, outputFolder+"/EnergyModel.xml", overwrite=True)
+#status03 = Honeybee.ExportToHBJSON(hb_model, outputFolder+"/EnergyModel.hbjson", overwrite=True)
+print("\DONE")
+```
+
+## Run the Simulation
+
+```{python}
+# Run the simulation
+import ipywidgets as w
+osBinaryPath = "openstudio" # this works if it is on the PATH
+out = w.Output()
+with out:
+    model = EnergyModel.Run(model, weatherFilePath=weatherFilePath,
+                            osBinaryPath=osBinaryPath, outputFolder=outputFolder)
+print("\nDONE")
+```
+
+## Get the space names used in the energy model
+
+```{python}
+# Get the topologies from the energy model. These have the correct dictionaries with space names etc.
+topologies = EnergyModel.Topologies(model)
+cells = topologies['cells']
+
+# Get the required row names for the SQL query
+names = []
+for cell in cells:
+    d = Topology.Dictionary(cell)
+    name = Dictionary.ValueAtKey(d, 'TOPOLOGIC_name')
+    name = name.upper()+"_THERMAL_ZONE"
+    names.append(name)
+print("\nDONE")
+```
+
+```{python}
+names
+```
+
+## Set the report, table, and column names to retrieve from the SQL data
+
+```{python}
+# Set the report, table, and column names to retrieve from the SQL data
+
+# Here we specify three possible reports. We get them by index for convenience.
+reports = ["HVACSizingSummary", "HVACSizingSummary", "SystemSummary"]
+forStrings = ["Entire Facility", "Entire Facility", "Entire Facility"]
+tableNames = ["Zone Sensible Cooling", "Zone Sensible Heating", "Time Not Comfortable Based on Simple ASHRAE 55-2004"]
+columnNames = ["User Design Load", "User Design Load", "Summer or Winter Clothes"]
+unitsList = ["W", "W", "hr"]
+
+# Choose report 0, 1, or 2
+index = 0 
+
+reportName = reports[index]
+reportForString = forStrings[index]
+tableName = tableNames[index]
+columnName = columnNames[index]
+units = unitsList[index]
+
+# Get the values from the SQL data
+values = EnergyModel.Query(model,
+                          reportName = reportName,
+                          reportForString = reportForString,
+                          tableName = tableName,
+                          columnName = columnName,
+                          rowNames = names,
+                          units = units)
+print("\nDONE")
+```
+
+## Apply the values to the bottom face(s) of each space/cell.
+
+```{python}
+# This section is to apply the values only to the bottom face of each cell.
+faces = []
+selectors = []
+for i, cell in enumerate(cells):
+    d = Cell.Decompose(cell)
+    bottomFaces = d['bottomHorizontalFaces']
+    for bottomFace in bottomFaces:
+        d = Dictionary.ByKeysValues(["value", "label"], [values[i], str(round(values[i], 2))])
+        faces.append(bottomFace)
+        s = Face.InternalVertex(bottomFace)
+        s = Topology.SetDictionary(s, d)
+        selectors.append(s)
+faceCluster = Cluster.ByTopologies(faces)
+faceCluster = Topology.TransferDictionariesBySelectors(faceCluster, selectors, tranFaces=True, tolerance=0.0001)
+print("\nDONE")
+```
+
+## Create a Plotly figure and draw it.
+
+```{python}
+# Create a Plotly figure and draw it.
+# Create a cluster to represent the building envelope (translucent). This is just for visualisation.
+envelopeCluster = Cluster.ByTopologies(cells+apertures+Topology.Faces(shadingSurfaces))
+plotlyData = Plotly.DataByTopology(envelopeCluster, faceOpacity=0.1)
+
+# Add the color-coded faces
+colorScale = "thermal"
+plotlyData += Plotly.DataByTopology(faceCluster, faceOpacity=1, faceGroupKey="value",
+                              faceLabelKey="label", faceGroups=values,
+                              colorScale=colorScale)
+# Create a Plotly Figure
+figure = Plotly.FigureByData(plotlyData, width=800, height=600, backgroundColor="White")
+
+# Add a colorbar
+figure = Plotly.AddColorBar(figure, values=values, width=30, outlineWidth=1,
+                            nTicks=len(values), title=tableName, subTitle=columnName,
+                            units=units, colorScale=colorScale, mantissa=2)
+# Show plotly figure
+Plotly.Show(figure)
+print("\nDONE")
+```
+

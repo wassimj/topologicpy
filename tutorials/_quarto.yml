@@ -11,8 +11,8 @@ website:
     search: true
     style: "docked"
     contents:
-      - Building_Tower.ipynb
-      - EnergyModel.ipynb
+      - Building_Tower.qmd
+      - EnergyModel.qmd
       - MEP.ipynb
 
     # TODO: add API reference using quartodoc?
