@@ -74,6 +74,7 @@ plotly = "*"
 networkx = "*"
 tqdm = "*"
 quarto = "*"
+jupytext = ">=1.19.1,<2"
 
 [tool.pixi.feature.dev.pypi-dependencies]
 openstudio = "*"
