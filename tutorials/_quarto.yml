@@ -8,20 +8,25 @@ website:
       - href: index.qmd
 
   sidebar:
-    style: "docked"
-    search: true
-    contents:
-      - Building_Tower.ipynb
-      - EnergyModel.ipynb
-      - MEP.ipynb
+    - title: "Tutorials"
+      search: true
+      style: "docked"
+      contents:
+        - Building_Tower.ipynb
+        - EnergyModel.ipynb
+        - MEP.ipynb
+
+    # TODO: add API reference using quartodoc?
+    # - title: "API Reference"
+    #   style: "docked"
+    #   contents:
+    #     - reference/*
+        # navigation items
 
 format:
   html:
-    theme:
-      - cosmo
-      - brand
     css: styles.css
     toc: true
-
-
-
+    theme:
+      light: flatly
+      dark: darkly

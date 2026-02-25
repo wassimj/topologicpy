@@ -1,6 +1,6 @@
 # TODO: setup auto-update pixi.lock https://pixi.sh/latest/advanced/updates_github_actions/#how-to-use
 
-name: Build docs
+name: Build tutorials
 
 on:
     push:
@@ -19,7 +19,7 @@ jobs:
             pixi-version: v0.63.2
             cache: true
             cache-write: ${{ github.event_name == 'push' && github.ref_name == 'add-pixi' }}
-      - run: pixi run install-openstudio
+      - run: pixi run install-openstudio-ubuntu
       - run: pixi run tutorials
       - name: Push docs to gh-pages
         uses: JamesIves/github-pages-deploy-action@v4
