@@ -8,13 +8,12 @@ website:
       - href: index.qmd
 
   sidebar:
-    - title: "Tutorials"
-      search: true
-      style: "docked"
-      contents:
-        - Building_Tower.ipynb
-        - EnergyModel.ipynb
-        - MEP.ipynb
+    search: true
+    style: "docked"
+    contents:
+      - Building_Tower.ipynb
+      - EnergyModel.ipynb
+      - MEP.ipynb
 
     # TODO: add API reference using quartodoc?
     # - title: "API Reference"
