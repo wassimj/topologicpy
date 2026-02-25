@@ -10,7 +10,7 @@ authors = [
 description = "An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = '>=3.8, <3.14'  # TODO
+requires-python = '>=3.8, <3.14'  # TODO, update when https://github.com/wassimj/topologicpy/issues/87 resolved
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -86,11 +86,13 @@ ladybug-geometry = "*"
 jupyterlab-quarto = "*"
 
 [tool.pixi.tasks]
-tests = "pytest"
 open-tutorials = {cmd="/mnt/c/windows/explorer.exe index.html", cwd="tutorials/_site"} # this will only work on WSL
 mk-build-dir = {cmd="mkdir -p build", cwd="."}
 download-openstudio-ubuntu = { cmd = "wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb", cwd="build", depends-on = ["mk-build-dir"]}
 install-openstudio-ubuntu = { cmd = "sudo dpkg -i ./OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb" , cwd="build", depends-on = ["download-openstudio-ubuntu"]}
+
+[tool.pixi.feature.test.tasks]
+tests = "pytest"
 
 [tool.pixi.feature.dev.tasks]
 lab = { cmd="jupyter lab", cwd = "notebooks" }
