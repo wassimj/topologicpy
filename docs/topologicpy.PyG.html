@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.PyG module &mdash; topologicpy 0.9.5 documentation</title>
+  <title>topologicpy.PyG module &mdash; topologicpy 0.9.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.5
+                0.9.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -239,8 +239,8 @@ gradient_clip_norm=1.0</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.LoadModel" title="topologicpy.PyG.PyG.LoadModel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LoadModel</span></code></a>(path[, strict, ...])</p></td>
 <td><p>Load model weights from disk.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="topologicpy.PyG.PyG.PlotConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotConfusionMatrix</span></code></a>([split, normalize, title])</p></td>
-<td><p>Plot a confusion matrix for classification tasks (Plotly).</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="topologicpy.PyG.PyG.PlotConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotConfusionMatrix</span></code></a>([split, normalize, ...])</p></td>
+<td><p>Plot a confusion matrix for classification tasks using TopologicPy's Plotly helper.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotCrossValidationSummary" title="topologicpy.PyG.PyG.PlotCrossValidationSummary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotCrossValidationSummary</span></code></a>([cv_report, ...])</p></td>
 <td><p></p></td>
@@ -413,42 +413,12 @@ before loading weights. Default is True.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.PlotConfusionMatrix">
-<span class="sig-name descname"><span class="pre">PlotConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="Permalink to this definition"></a></dt>
-<dd><p>Plot a confusion matrix for classification tasks (Plotly).</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>split</strong><span class="classifier">{“train”, “val”, “validate”, “validation”, “test”, “all”}, optional</span></dt><dd><p>Which split to evaluate.</p>
-<ul class="simple">
-<li><p>“train”            : training split</p></li>
-<li><p>“val”/”validate”   : validation split</p></li>
-<li><p>“test”             : test split</p></li>
-<li><p>“all”              : concatenates predictions across train+val+test</p></li>
-</ul>
-<p>Default is “test”.</p>
-</dd>
-<dt><strong>normalize</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, row-normalize the confusion matrix so each row sums to 1.
-Default is False.</p>
-</dd>
-<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>Custom plot title. If None, an automatic title is generated.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>plotly.graph_objects.Figure</dt><dd><p>Heatmap of the confusion matrix.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If called for non-classification tasks or link prediction.</p>
-</dd>
-<dt>RuntimeError</dt><dd><p>If no labels are found for the requested split(s).</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<span class="sig-name descname"><span class="pre">PlotConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisTitleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotationFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotConfusionMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a confusion matrix for classification tasks using TopologicPy’s Plotly helper.</p>
+<p class="rubric">Notes</p>
+<p>This method computes the confusion matrix (rows=Actual, cols=Predicted) and
+delegates plotting to <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByConfusionMatrix</span></code>. It then explicitly
+enforces both X and Y tick labels to ensure categories appear correctly.</p>
 </dd></dl>
 
 <dl class="py method">

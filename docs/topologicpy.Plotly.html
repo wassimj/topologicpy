@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Plotly module &mdash; topologicpy 0.9.5 documentation</title>
+  <title>topologicpy.Plotly module &mdash; topologicpy 0.9.6 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.5
+                0.9.6
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -619,8 +619,9 @@ Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByConfusionMatrix">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis, Predicted categories are displayed on the Y-Axis.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisTitleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotationFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis,
+Predicted categories are displayed on the Y-Axis.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -628,9 +629,9 @@ Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
 </dd>
 <dt><strong>categories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the X and Y axes.</p>
 </dd>
-<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.</p>
+<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minimum value found in the input matrix will be used.</p>
 </dd>
-<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.</p>
+<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used.</p>
 </dd>
 <dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Confusion Matrix”.</p>
 </dd>
@@ -644,33 +645,29 @@ Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.
 </dd>
 <dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. Default is True.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”.</p>
 </dd>
 <dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
 </dd>
-<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
-- An rgb list (e.g. [255,0,0])
-- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-- A hex string (e.g. ‘#ff0000’)
-- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
-- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
-- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
-- A named CSS color.
-The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color (see docstring above). Default is transparent.</p>
 </dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
+<dt><strong>marginLeft, marginRight, marginTop, marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>Plot margins in pixels.</p>
 </dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
+<dt><strong>baseFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The base font size. Default is 16.</p>
 </dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
+<dt><strong>tickFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The tick font size. Default is 14.</p>
 </dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
+<dt><strong>titleFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The title font size. Default is 22.</p>
+</dd>
+<dt><strong>axisTitleFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The axis title font size. Default is 16.</p>
+</dd>
+<dt><strong>annotationFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The annotation font size. Default is 18.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>plotly.Figure</dt><dd><p>The created plotly figure.</p>
+<dt>plotly.graph_objects.Figure</dt><dd><p>The created plotly figure.</p>
 </dd>
 </dl>
 </dd>
@@ -904,60 +901,14 @@ The default is ‘lightgray’</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByMatrix">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisTitleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotationFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a Plotly Figure of the input matrix.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>matrix</strong><span class="classifier">list or numpy.array</span></dt><dd><p>The matrix to display.</p>
-</dd>
-<dt><strong>xCategories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the X axis.</p>
-</dd>
-<dt><strong>yCategories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the Y axis.</p>
-</dd>
-<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.</p>
-</dd>
-<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.</p>
-</dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Confusion Matrix”.</p>
-</dd>
-<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual”.</p>
-</dd>
-<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted”.</p>
-</dd>
-<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
-</dd>
-<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
-</dd>
-<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. Default is True.</p>
-</dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
-</dd>
-<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
-</dd>
-<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
-- An rgb list (e.g. [255,0,0])
-- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-- A hex string (e.g. ‘#ff0000’)
-- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
-- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
-- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
-- A named CSS color.
-The default is ‘rgba(0,0,0,0)’ (transparent).</p>
-</dd>
-<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
-</dd>
-<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
-</dd>
-<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
-</dd>
-<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired number of digits of the mantissa. Default is 6.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Plots matrix values as provided (no implicit normalization).</p></li>
+<li><p>Annotation text colour is chosen using the computed luminance of the</p></li>
+</ul>
+<p>interpolated heatmap colour (robust for Viridis and other scales).</p>
 </dd></dl>
 
 <dl class="py method">
