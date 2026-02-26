@@ -1374,24 +1374,30 @@ class Plotly:
 
     @staticmethod
     def FigureByConfusionMatrix(matrix,
-             categories=[],
-             minValue=None,
-             maxValue=None,
-             title="Confusion Matrix",
-             xTitle = "Actual Categories",
-             yTitle = "Predicted Categories",
-             width=950,
-             height=500,
-             showScale = True,
-             colorScale='viridis',
-             colorSamples=10,
-             backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=40,
-             marginBottom=0):
+            categories=[],
+            minValue=None,
+            maxValue=None,
+            title="Confusion Matrix",
+            xTitle = "Actual Categories",
+            yTitle = "Predicted Categories",
+            width=950,
+            height=500,
+            showScale = True,
+            colorScale='viridis',
+            colorSamples=10,
+            backgroundColor='rgba(0,0,0,0)',
+            marginLeft=0,
+            marginRight=0,
+            marginTop=40,
+            marginBottom=0,
+            baseFontSize = 16,
+            tickFontSize = 14,
+            titleFontSize = 22,
+            axisTitleFontSize = 16,
+            annotationFontSize = 18):
         """
-        Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis, Predicted categories are displayed on the Y-Axis.
+        Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis,
+        Predicted categories are displayed on the Y-Axis.
 
         Parameters
         ----------
@@ -1400,9 +1406,9 @@ class Plotly:
         categories : list
             The list of categories to use on the X and Y axes.
         minValue : float , optional
-            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.
+            The desired minimum value to use for the color scale. If set to None, the minimum value found in the input matrix will be used.
         maxValue : float , optional
-            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used.
         title : str , optional
             The desired title to display. Default is "Confusion Matrix".
         xTitle : str , optional
@@ -1416,251 +1422,427 @@ class Plotly:
         showScale : bool , optional
             If set to True, a color scale is shown on the right side of the figure. Default is True.
         colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis".
         colorSamples : int , optional
             The number of discrete color samples to use for displaying the data. Default is 10.
         backgroundColor : list or str , optional
-            The desired background color. This can be any color list or plotly color string and may be specified as:
-            - An rgb list (e.g. [255,0,0])
-            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        marginLeft : int , optional
-            The desired left margin in pixels. Default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. Default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. Default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. Default is 0.
-        
+            The desired background color (see docstring above). Default is transparent.
+        marginLeft, marginRight, marginTop, marginBottom : int , optional
+            Plot margins in pixels.
+        baseFontSize : int , optional
+            The base font size. Default is 16.
+        tickFontSize : int , optional
+            The tick font size. Default is 14.
+        titleFontSize : int , optional
+            The title font size. Default is 22.
+        axisTitleFontSize : int , optional
+            The axis title font size. Default is 16.
+        annotationFontSize : int , optional
+            The annotation font size. Default is 18.
+
         Returns
         -------
-        plotly.Figure
+        plotly.graph_objects.Figure
             The created plotly figure.
         """
+        import warnings
+        import numpy as np
+
+        # Local imports (TopologicPy style)
         from topologicpy.Color import Color
 
+        # Ensure Plotly class is accessible in this scope
+        # (This method lives inside topologicpy.Plotly.Plotly)
         try:
-            import numpy as np
-        except:
-            print("Plotly.FigureByConfusionMatrix - Installing required numpy library.")
-            try:
-                os.system("pip install numpy")
-            except:
-                os.system("pip install numpy --user")
-            try:
-                import numpy as np
-            except:
-                warnings.warn("Plotly.FigureByConfusionMatrix - Error: Could not import numpy. Please install numpy manually. Returning None.")
-                return None
-        
-        if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
-            print("Plotly.FigureByConfusionMatrix - Error: The input matrix is not of the correct type. Returning None.")
+            Plotly  # noqa: B018
+        except NameError:
+            # Fallback import if called from elsewhere
+            from topologicpy.Plotly import Plotly as Plotly  # type: ignore
+
+        # --- Validate matrix
+        if not isinstance(matrix, (list, np.ndarray)):
+            warnings.warn("Plotly.FigureByConfusionMatrix - Error: The input matrix is not a list or numpy array. Returning None.")
             return None
-        figure = Plotly.FigureByMatrix(matrix,
-             xCategories=categories,
-             minValue=minValue,
-             maxValue=maxValue,
-             title=title,
-             xTitle=xTitle,
-             yTitle=yTitle,
-             width=width,
-             height=height,
-             showScale=showScale,
-             colorScale=Plotly.ColorScale(colorScale),
-             colorSamples=colorSamples,
-             backgroundColor= Color.AnyToHex(backgroundColor),
-             marginLeft=marginLeft,
-             marginRight=marginRight,
-             marginTop=marginTop,
-             marginBottom=marginBottom)
-        layout = {
-            "yaxis": {"autorange": "reversed"},
-        }
-        figure.update_layout(layout)
+
+        m = np.array(matrix)
+        if m.ndim != 2:
+            warnings.warn("Plotly.FigureByConfusionMatrix - Error: The input matrix is not 2D. Returning None.")
+            return None
+
+        n_rows, n_cols = int(m.shape[0]), int(m.shape[1])
+
+        # --- Defensive categories handling (avoid mutable-default pitfalls + mismatches)
+        cats = list(categories) if categories is not None else []
+        if len(cats) == 0:
+            # Default category names if none provided
+            cats = [str(i) for i in range(max(n_rows, n_cols))]
+        else:
+            cats = [str(c) for c in cats]
+
+        # Confusion matrices should be square; if not, handle gracefully.
+        # Make sure we have at least max(n_rows, n_cols) labels.
+        needed = max(n_rows, n_cols)
+        if len(cats) < needed:
+            cats = cats + [str(i) for i in range(len(cats), needed)]
+        elif len(cats) > needed:
+            cats = cats[:needed]
+
+        # --- Derive min/max if needed
+        if minValue is None:
+            minValue = float(np.nanmin(m)) if m.size else 0.0
+        if maxValue is None:
+            maxValue = float(np.nanmax(m)) if m.size else 1.0
+
+        # --- Build the figure using existing robust matrix plotter
+        figure = Plotly.FigureByMatrix(
+            m.tolist(),
+            xCategories=cats[:n_cols],
+            minValue=minValue,
+            maxValue=maxValue,
+            title=title,
+            xTitle=xTitle,
+            yTitle=yTitle,
+            width=width,
+            height=height,
+            showScale=showScale,
+            colorScale=Plotly.ColorScale(colorScale),
+            colorSamples=colorSamples,
+            backgroundColor=Color.AnyToHex(backgroundColor),
+            marginLeft=marginLeft,
+            marginRight=marginRight,
+            marginTop=marginTop,
+            marginBottom=marginBottom,
+            baseFontSize = baseFontSize,
+            tickFontSize = tickFontSize,
+            titleFontSize = titleFontSize,
+            axisTitleFontSize = axisTitleFontSize,
+            annotationFontSize = annotationFontSize
+        )
+
+        # --- Enforce correct y-axis order (confusion matrix convention)
+        figure.update_layout(yaxis={"autorange": "reversed"})
+
+        # ------------------------------------------------------------------
+        # Improve size + clarity (ticks, titles, annotations, colorbar)
+        # ------------------------------------------------------------------
+        # Global font sizing
+        base_font = baseFontSize
+        tick_font = tickFontSize
+        title_font = titleFontSize
+        axis_title_font = axisTitleFontSize
+        annot_font = annotationFontSize
+
+        # If many categories, rotate x tick labels for readability
+        rotate_x = 0
+        if len(cats) >= 8:
+            rotate_x = 45
+        if len(cats) >= 16:
+            rotate_x = 60
+
+        figure.update_layout(
+            template="plotly_white",
+            font=dict(size=base_font),
+            title=dict(font=dict(size=title_font)),
+        )
+
+        figure.update_xaxes(
+            tickfont=dict(size=tick_font),
+            title_font=dict(size=axis_title_font),
+            tickangle=rotate_x,
+            tickmode="array",
+            tickvals=list(range(n_cols)),
+            ticktext=cats[:n_cols]
+        )
+        figure.update_yaxes(
+            tickfont=dict(size=tick_font),
+            title_font=dict(size=axis_title_font),
+            tickmode="array",
+            tickvals=list(range(n_rows)),
+            ticktext=cats[:n_rows]
+        )
+
+        # Colorbar text sizing (if a heatmap with a colorbar exists)
+        if getattr(figure, "data", None):
+            for tr in figure.data:
+                if hasattr(tr, "colorbar") and tr.colorbar is not None:
+                    tr.colorbar.tickfont = dict(size=tick_font)
+                    tr.colorbar.title = dict(font=dict(size=axis_title_font))
+
+        # Increase annotation font size if FigureByMatrix generated annotations
+        if hasattr(figure.layout, "annotations") and figure.layout.annotations:
+            new_anns = []
+            for a in figure.layout.annotations:
+                a = a.to_plotly_json() if hasattr(a, "to_plotly_json") else dict(a)
+                a_font = a.get("font", {}) or {}
+                a_font["size"] = max(int(a_font.get("size", annot_font)), annot_font)
+                a["font"] = a_font
+                new_anns.append(a)
+            figure.update_layout(annotations=new_anns)
+
         return figure
     
     @staticmethod
     def FigureByMatrix(matrix,
-             xCategories=[],
-             yCategories=[],
-             minValue=None,
-             maxValue=None,
-             title="Matrix",
-             xTitle = "X Axis",
-             yTitle = "Y Axis",
-             width=950,
-             height=950,
-             showScale = False,
-             colorScale='gray',
-             colorSamples=10,
-             backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=40,
-             marginBottom=0,
-             mantissa: int = 6):
+            xCategories=[],
+            yCategories=[],
+            minValue=None,
+            maxValue=None,
+            title="Matrix",
+            xTitle = "X Axis",
+            yTitle = "Y Axis",
+            width=950,
+            height=950,
+            showScale = False,
+            colorScale='gray',
+            colorSamples=10,
+            backgroundColor='rgba(0,0,0,0)',
+            marginLeft=0,
+            marginRight=0,
+            marginTop=40,
+            marginBottom=0,
+            baseFontSize = 16,
+            tickFontSize = 14,
+            titleFontSize = 22,
+            axisTitleFontSize = 16,
+            annotationFontSize = 18,
+            mantissa: int = 6):
         """
         Returns a Plotly Figure of the input matrix.
 
-        Parameters
-        ----------
-        matrix : list or numpy.array
-            The matrix to display.
-        xCategories : list
-            The list of categories to use on the X axis.
-        yCategories : list
-            The list of categories to use on the Y axis.
-        minValue : float , optional
-            The desired minimum value to use for the color scale. If set to None, the minmum value found in the input matrix will be used. Default is None.
-        maxValue : float , optional
-            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used. Default is None.
-        title : str , optional
-            The desired title to display. Default is "Confusion Matrix".
-        xTitle : str , optional
-            The desired X-axis title to display. Default is "Actual".
-        yTitle : str , optional
-            The desired Y-axis title to display. Default is "Predicted".
-        width : int , optional
-            The desired width of the figure. Default is 950.
-        height : int , optional
-            The desired height of the figure. Default is 500.
-        showScale : bool , optional
-            If set to True, a color scale is shown on the right side of the figure. Default is True.
-        colorScale : str , optional
-            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
-        colorSamples : int , optional
-            The number of discrete color samples to use for displaying the data. Default is 10.
-        backgroundColor : list or str , optional
-            The desired background color. This can be any color list or plotly color string and may be specified as:
-            - An rgb list (e.g. [255,0,0])
-            - A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
-            - A hex string (e.g. '#ff0000')
-            - An rgb/rgba string (e.g. 'rgb(255,0,0)')
-            - An hsl/hsla string (e.g. 'hsl(0,100%,50%)')
-            - An hsv/hsva string (e.g. 'hsv(0,100%,100%)')
-            - A named CSS color.
-            The default is 'rgba(0,0,0,0)' (transparent).
-        marginLeft : int , optional
-            The desired left margin in pixels. Default is 0.
-        marginRight : int , optional
-            The desired right margin in pixels. Default is 0.
-        marginTop : int , optional
-            The desired top margin in pixels. Default is 40.
-        marginBottom : int , optional
-            The desired bottom margin in pixels. Default is 0.
-        mantissa : int , optional
-            The desired number of digits of the mantissa. Default is 6.
-
+        Notes
+        -----
+        - Plots matrix values as provided (no implicit normalization).
+        - Annotation text colour is chosen using the computed luminance of the
+        interpolated heatmap colour (robust for Viridis and other scales).
         """
-        #import plotly.figure_factory as ff
+        import os
+        import warnings
+
         import plotly.graph_objects as go
         import plotly.express as px
         from topologicpy.Color import Color
 
         try:
             import numpy as np
-        except:
+        except Exception:
             print("Plotly.FigureByMatrix - Installing required numpy library.")
             try:
                 os.system("pip install numpy")
-            except:
+            except Exception:
                 os.system("pip install numpy --user")
             try:
                 import numpy as np
-            except:
+            except Exception:
                 warnings.warn("Plotly.FigureByMatrix - Error: Could not import numpy. Please install numpy manually. Returning None.")
                 return None
 
-        if not isinstance(matrix, list) and not isinstance(matrix, np.ndarray):
-            print("Plotly.FigureByMatrix - Error: The input matrix is not of the correct type. Returning None.")
+        try:
+            Plotly  # noqa: B018
+        except NameError:
+            from topologicpy.Plotly import Plotly as Plotly  # type: ignore
+
+        if not isinstance(matrix, (list, np.ndarray)):
+            warnings.warn("Plotly.FigureByMatrix - Error: The input matrix is not a list or numpy array. Returning None.")
             return None
 
-        annotations = []
+        m = np.array(matrix)
+        if m.ndim != 2:
+            warnings.warn("Plotly.FigureByMatrix - Error: The input matrix is not 2D. Returning None.")
+            return None
 
-        if isinstance(matrix, list):
-            matrix = np.array(matrix)
-        colors = px.colors.sample_colorscale(Plotly.ColorScale(colorScale), [n/(colorSamples -1) for n in range(colorSamples)])
+        n_rows, n_cols = int(m.shape[0]), int(m.shape[1])
 
-        if not xCategories:
-            xCategories = [x for x in range(len(matrix[0]))]
-        if not yCategories:
-            yCategories = [y for y in range(len(matrix))]
-        
-        if not maxValue or not minValue:
-            max_values = []
-            min_values = []
-            for i in range(len(matrix)):
-                row = matrix[i]
-                max_values.append(max(row))
-                min_values.append(min(row))
-                for j, value in enumerate(row):
-                    annotations.append(
-                        {
-                            "x": xCategories[j],
-                            "y": yCategories[i],
-                            "font": {"color": "black"},
-                            "bgcolor": "white",
-                            "opacity": 0.5,
-                            "text": str(round(value, mantissa)), 
-                            "xref": "x1",
-                            "yref": "y1",
-                            "showarrow": False
-                        }
-                    )
-            if not minValue:
-                minValueB = min(min_values)
-            if not maxValue:
-                maxValue = max(max_values)
+        # -----------------------------
+        # Categories (safe + strings)
+        # -----------------------------
+        xCats = list(xCategories) if xCategories is not None else []
+        yCats = list(yCategories) if yCategories is not None else []
+
+        if len(xCats) == 0:
+            xCats = [str(i) for i in range(n_cols)]
         else:
-            for i in range(len(matrix)):
-                row = matrix[i]
-                for j, value in enumerate(row):
-                    annotations.append(
-                        {
-                            "x": xCategories[j],
-                            "y": yCategories[i],
-                            "font": {"color": "black"},
-                            "bgcolor": "white",
-                            "opacity": 0.5,
-                            "text": str(round(value,mantissa)),
-                            "xref": "x1",
-                            "yref": "y1",
-                            "showarrow": False
-                        }
-                    )
-        new_matrix = []
-        for i in range(len(matrix)):
-            row = matrix[i]
-            new_row = []
-            maxRow = sum(row)
-            for j in range(len(row)):
-                if maxRow == 0:
-                    new_row.append(round(0, mantissa))
+            xCats = [str(x) for x in xCats]
+            if len(xCats) < n_cols:
+                xCats += [str(i) for i in range(len(xCats), n_cols)]
+            elif len(xCats) > n_cols:
+                xCats = xCats[:n_cols]
+
+        if len(yCats) == 0:
+            yCats = [str(i) for i in range(n_rows)]
+        else:
+            yCats = [str(y) for y in yCats]
+            if len(yCats) < n_rows:
+                yCats += [str(i) for i in range(len(yCats), n_rows)]
+            elif len(yCats) > n_rows:
+                yCats = yCats[:n_rows]
+
+        # -----------------------------
+        # Min/Max (None-safe; allow 0)
+        # -----------------------------
+        if minValue is None:
+            minValue = float(np.nanmin(m)) if m.size else 0.0
+        if maxValue is None:
+            maxValue = float(np.nanmax(m)) if m.size else 1.0
+
+        denom = (maxValue - minValue) if (maxValue - minValue) != 0 else 1.0
+
+        # -----------------------------
+        # Build discrete colorscale
+        # -----------------------------
+        base_scale = Plotly.ColorScale(colorScale)
+        if isinstance(base_scale, str):
+            samples = [i / max(int(colorSamples) - 1, 1) for i in range(max(int(colorSamples), 2))]
+            cols = px.colors.sample_colorscale(base_scale, samples)
+            colorscale = [[samples[i], cols[i]] for i in range(len(samples))]
+        else:
+            colorscale = base_scale
+
+        # -----------------------------
+        # Helpers: hex/rgb parse + interpolation + luminance
+        # -----------------------------
+        def _parse_rgb(s):
+            s = str(s).strip()
+            if s.startswith("#"):
+                h = s.lstrip("#")
+                if len(h) == 3:
+                    h = "".join([c + c for c in h])
+                r = int(h[0:2], 16); g = int(h[2:4], 16); b = int(h[4:6], 16)
+                return (r, g, b)
+            if s.startswith("rgb"):
+                inside = s[s.find("(")+1:s.find(")")]
+                parts = [p.strip() for p in inside.split(",")]
+                r = int(float(parts[0])); g = int(float(parts[1])); b = int(float(parts[2]))
+                return (r, g, b)
+            # fallback (try Color.AnyToHex then parse)
+            hx = Color.AnyToHex(s)
+            return _parse_rgb(hx)
+
+        # Pre-parse scale to numeric+rgb
+        scale_pos = [float(p) for p, _ in colorscale]
+        scale_rgb = [_parse_rgb(c) for _, c in colorscale]
+
+        def _interp_color(t):
+            # clamp
+            if t <= scale_pos[0]:
+                return scale_rgb[0]
+            if t >= scale_pos[-1]:
+                return scale_rgb[-1]
+            # find segment
+            for k in range(len(scale_pos) - 1):
+                a, b = scale_pos[k], scale_pos[k + 1]
+                if a <= t <= b:
+                    u = 0.0 if b == a else (t - a) / (b - a)
+                    r0, g0, b0 = scale_rgb[k]
+                    r1, g1, b1 = scale_rgb[k + 1]
+                    r = r0 + (r1 - r0) * u
+                    g = g0 + (g1 - g0) * u
+                    bb = b0 + (b1 - b0) * u
+                    return (r, g, bb)
+            return scale_rgb[-1]
+
+        def _rel_luminance(rgb):
+            # WCAG relative luminance from sRGB
+            def f(c):
+                c = float(c) / 255.0
+                return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+            r, g, b = rgb
+            return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+        # -----------------------------
+        # Annotations: larger + robust contrast
+        # -----------------------------
+        annotations = []
+        annot_font_size = annotationFontSize  # <-- bigger text
+        for i in range(n_rows):
+            for j in range(n_cols):
+                val = m[i, j]
+                t = float((val - minValue) / denom)
+                rgb = _interp_color(t)
+                lum = _rel_luminance(rgb)
+
+                # Choose text + subtle background for guaranteed readability
+                # Viridis bright yellow has high luminance => use black text.
+                font_color = "black" if lum >= 0.55 else "white"
+                bg = "rgba(255,255,255,0.35)" if font_color == "black" else "rgba(0,0,0,0.35)"
+
+                if np.isfinite(val) and float(val).is_integer():
+                    txt = str(int(val))
                 else:
-                    new_row.append(round(float(row[j])/float(maxRow), mantissa))
-            new_matrix.append(new_row)
-        data = go.Heatmap(z=new_matrix, y=yCategories, x=xCategories, zmin=minValue, zmax=maxValue, showscale=showScale, colorscale=colors)
-        
-        layout = {
-            "width": width,
-            "height": height,
-            "title": title,
-            "xaxis": {"title": xTitle},
-            "yaxis": {"title": yTitle, "autorange": "reversed"},
-            "annotations": annotations,
-            "paper_bgcolor": Color.AnyToHex(backgroundColor),
-            "plot_bgcolor": Color.AnyToHex(backgroundColor),
-            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
-        }
-        fig = go.Figure(data=data, layout=layout)
-        fig.update_xaxes( tickvals=xCategories)
-        fig.update_yaxes( tickvals=yCategories)
+                    txt = str(round(float(val), int(mantissa))) if np.isfinite(val) else "nan"
+
+                annotations.append(
+                    dict(
+                        x=j, y=i,
+                        text=txt,
+                        showarrow=False,
+                        xref="x", yref="y",
+                        font=dict(color=font_color, size=annot_font_size),
+                        bgcolor=bg,
+                        opacity=1.0
+                    )
+                )
+
+        # -----------------------------
+        # Heatmap
+        # -----------------------------
+        data = go.Heatmap(
+            z=m,
+            x=list(range(n_cols)),
+            y=list(range(n_rows)),
+            zmin=minValue,
+            zmax=maxValue,
+            showscale=bool(showScale),
+            colorscale=colorscale,
+            colorbar=dict(
+                tickfont=dict(size=14),
+                title=dict(font=dict(size=15))
+            )
+        )
+
+        # -----------------------------
+        # Layout + axes (bigger fonts)
+        # -----------------------------
+        base_font = baseFontSize
+        tick_font = tickFontSize
+        title_font = titleFontSize
+        axis_title_font = axisTitleFontSize
+
+        rotate_x = 0
+        if n_cols >= 8:
+            rotate_x = 45
+        if n_cols >= 16:
+            rotate_x = 60
+
+        fig = go.Figure(data=data)
+        fig.update_layout(
+            width=width,
+            height=height,
+            title=dict(text=title, font=dict(size=title_font)),
+            paper_bgcolor=Color.AnyToHex(backgroundColor),
+            plot_bgcolor=Color.AnyToHex(backgroundColor),
+            margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+            template="plotly_white",
+            annotations=annotations,
+            font=dict(size=base_font)
+        )
+
+        fig.update_xaxes(
+            title=dict(text=xTitle, font=dict(size=axis_title_font)),
+            tickmode="array",
+            tickvals=list(range(n_cols)),
+            ticktext=xCats,
+            tickangle=rotate_x,
+            tickfont=dict(size=tick_font)
+        )
+        fig.update_yaxes(
+            title=dict(text=yTitle, font=dict(size=axis_title_font)),
+            tickmode="array",
+            tickvals=list(range(n_rows)),
+            ticktext=yCats,
+            tickfont=dict(size=tick_font),
+            autorange="reversed"
+        )
+
         return fig
     
     @staticmethod

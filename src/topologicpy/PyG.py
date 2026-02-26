@@ -499,6 +499,11 @@ if _PYG_IMPORT_ERROR is None:
 
             self._num_outputs: int = 1
 
+            # Saved training schema (used to keep feature dimensions consistent during inference)
+            self._in_dim: Optional[int] = None
+            self._feature_schema: Optional[Dict[str, List[str]]] = None
+            self._freeze_num_outputs: bool = False
+
             self._load_csv()
             self._build_data_list()
             self._split_holdout()
@@ -740,6 +745,26 @@ if _PYG_IMPORT_ERROR is None:
                 return 10**9
             return sorted(cols, key=_key)
 
+        
+        def _current_feature_schema(self) -> Dict[str, List[str]]:
+            """Return the current feature-column schema inferred from the loaded CSVs."""
+            cfg = self.config
+            assert self.graph_df is not None and self.nodes_df is not None and self.edges_df is not None
+            return {
+                "graph_feat_cols": self._feature_columns(self.graph_df, cfg.graph_features_header),
+                "node_feat_cols": self._feature_columns(self.nodes_df, cfg.node_features_header),
+                "edge_feat_cols": self._feature_columns(self.edges_df, cfg.edge_features_header),
+            }
+
+        @staticmethod
+        def _ensure_feature_columns(df: pd.DataFrame, cols: List[str]) -> pd.DataFrame:
+            """Ensure that *all* columns in ``cols`` exist in ``df`` (missing columns are added as zeros)."""
+            if df is None:
+                return df
+            for c in cols:
+                if c not in df.columns:
+                    df[c] = 0.0
+            return df
         @staticmethod
         def _infer_num_classes(values: np.ndarray) -> int:
             uniq = np.unique(values[~pd.isna(values)])
@@ -756,6 +781,25 @@ if _PYG_IMPORT_ERROR is None:
             graph_feat_cols = self._feature_columns(gdf, cfg.graph_features_header)
             node_feat_cols = self._feature_columns(ndf, cfg.node_features_header)
             edge_feat_cols = self._feature_columns(edf, cfg.edge_features_header)
+
+            # If a saved feature schema exists (e.g. loaded from a trained checkpoint),
+            # enforce it so that node/edge feature dimensions match the trained model.
+            if getattr(self, "_feature_schema", None):
+                sch = self._feature_schema or {}
+                if "graph_feat_cols" in sch:
+                    graph_feat_cols = list(sch["graph_feat_cols"])
+                if "node_feat_cols" in sch:
+                    node_feat_cols = list(sch["node_feat_cols"])
+                if "edge_feat_cols" in sch:
+                    edge_feat_cols = list(sch["edge_feat_cols"])
+
+                # Add any missing columns as zeros (common when one-hot columns are absent in an unseen dataset).
+                gdf = self._ensure_feature_columns(gdf, graph_feat_cols)
+                ndf = self._ensure_feature_columns(ndf, node_feat_cols)
+                edf = self._ensure_feature_columns(edf, edge_feat_cols)
+
+                # Persist back (so later calls see the aligned frames)
+                self.graph_df, self.nodes_df, self.edges_df = gdf, ndf, edf
 
             if len(node_feat_cols) == 0:
                 raise ValueError(
@@ -811,16 +855,22 @@ if _PYG_IMPORT_ERROR is None:
                 self.data_list.append(data)
 
             # output dimensionality
-            if cfg.level == "graph":
-                self._num_outputs = self._infer_num_classes(gdf[cfg.graph_label_header].values) if cfg.graph_label_type == "categorical" else 1
-            elif cfg.level == "node":
-                self._num_outputs = self._infer_num_classes(ndf[cfg.node_label_header].values) if cfg.node_label_type == "categorical" else 1
-            elif cfg.level == "edge":
-                self._num_outputs = self._infer_num_classes(edf[cfg.edge_label_header].values) if cfg.edge_label_type == "categorical" else 1
-            elif cfg.level == "link":
-                self._num_outputs = 1
-            else:
-                raise ValueError("Unsupported level.")
+            if not getattr(self, "_freeze_num_outputs", False):
+                if cfg.level == "graph":
+                    self._num_outputs = self._infer_num_classes(gdf[cfg.graph_label_header].values) if cfg.graph_label_type == "categorical" else 1
+                elif cfg.level == "node":
+                    self._num_outputs = self._infer_num_classes(ndf[cfg.node_label_header].values) if cfg.node_label_type == "categorical" else 1
+                elif cfg.level == "edge":
+                    self._num_outputs = self._infer_num_classes(edf[cfg.edge_label_header].values) if cfg.edge_label_type == "categorical" else 1
+                elif cfg.level == "link":
+                    self._num_outputs = 1
+                else:
+                    raise ValueError("Unsupported level.")
+
+            # Cache input dimension for convenience (used when saving checkpoints)
+            self._in_dim = int(self.data_list[0].x.shape[1]) if self.data_list else self._in_dim
+            # Cache input dimension for convenience (used when saving checkpoints)
+            self._in_dim = int(self.data_list[0].x.shape[1]) if self.data_list else self._in_dim
 
         def _get_or_make_node_masks(self, g_nodes: pd.DataFrame):
             cfg = self.config
@@ -911,7 +961,11 @@ if _PYG_IMPORT_ERROR is None:
         # --------------
         def _build_model(self):
             cfg = self.config
-            in_dim = int(self.data_list[0].x.shape[1])
+
+            if getattr(self, "_in_dim", None) is not None: # Prefer to get the input dimension from the stored value, not the current dataset.
+                in_dim = int(self._in_dim)
+            else:
+                in_dim = int(self.data_list[0].x.shape[1])  # fallback (training-time)
 
             encoder = _GNNBackbone(
                 in_dim=in_dim,
@@ -1976,56 +2030,53 @@ if _PYG_IMPORT_ERROR is None:
         def PlotConfusionMatrix(self,
                                 split: str = "test",
                                 normalize: bool = False,
-                                title: str = None):
+                                title: str = None,
+                                xTitle: str = "Actual Categories",
+                                yTitle: str = "Predicted Categories",
+                                width: int = 950,
+                                height: int = 500,
+                                showScale: bool = True,
+                                colorScale: str = "viridis",
+                                colorSamples: int = 10,
+                                backgroundColor: str = 'rgba(0,0,0,0)',
+                                marginLeft: int = 0,
+                                marginRight: int = 0,
+                                marginTop: int = 40,
+                                marginBottom: int = 0,
+                                minValue=None,
+                                maxValue=None,
+                                baseFontSize = 16,
+                                tickFontSize = 14,
+                                titleFontSize = 22,
+                                axisTitleFontSize = 16,
+                                annotationFontSize=18):
             """
-            Plot a confusion matrix for classification tasks (Plotly).
+            Plot a confusion matrix for classification tasks using TopologicPy's Plotly helper.
 
-            Parameters
-            ----------
-            split : {"train", "val", "validate", "validation", "test", "all"}, optional
-                Which split to evaluate.
-
-                - "train"            : training split
-                - "val"/"validate"   : validation split
-                - "test"             : test split
-                - "all"              : concatenates predictions across train+val+test
-
-                Default is "test".
-
-            normalize : bool, optional
-                If True, row-normalize the confusion matrix so each row sums to 1.
-                Default is False.
-
-            title : str, optional
-                Custom plot title. If None, an automatic title is generated.
-
-            Returns
-            -------
-            plotly.graph_objects.Figure
-                Heatmap of the confusion matrix.
-
-            Raises
-            ------
-            ValueError
-                If called for non-classification tasks or link prediction.
-            RuntimeError
-                If no labels are found for the requested split(s).
+            Notes
+            -----
+            This method computes the confusion matrix (rows=Actual, cols=Predicted) and
+            delegates plotting to ``Plotly.FigureByConfusionMatrix``. It then explicitly
+            enforces both X and Y tick labels to ensure categories appear correctly.
             """
-            if go is None or px is None:
-                raise ImportError("Plotly is required for plotting methods. Install plotly to use this feature.")
             if confusion_matrix is None:
-                raise ImportError("scikit-learn is required for confusion matrices. Install scikit-learn to use this feature.")
+                raise ImportError("scikit-learn is required. Install scikit-learn to use this feature.")
 
-            # ---- Correct task source (the bug you hit)
+            try:
+                from topologicpy.Plotly import Plotly
+            except Exception as e:
+                raise ImportError("topologicpy.Plotly is required to plot the confusion matrix.") from e
+
+            import numpy as np
+
             if self.config.task != "classification" or self.config.level == "link":
-                raise ValueError("Confusion matrix is only available for classification (graph/node/edge).")
+                raise ValueError("PlotConfusionMatrix is only available for classification (graph/node/edge).")
 
             split_l = (split or "test").lower()
             if split_l in ("validate", "validation"):
                 split_l = "val"
 
             def _y_for_one_split(one_split: str):
-                # Build loaders exactly like the original implementation
                 if self.config.level == "graph":
                     if one_split == "train":
                         loader = DataLoader(self.train_set, batch_size=self.config.batch_size, shuffle=False)
@@ -2045,35 +2096,28 @@ if _PYG_IMPORT_ERROR is None:
                     mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
                     return self._predict_edge(loader, mask)
 
-            # ---- Collect y_true/y_pred for split or splits
+            # ---- Collect y_true/y_pred
             if split_l == "all":
-                splits = ["train", "val", "test"]
-                y_true_all = []
-                y_pred_all = []
-                for s in splits:
+                y_true_all, y_pred_all = [], []
+                for s in ("train", "val", "test"):
                     yt, yp = _y_for_one_split(s)
                     if yt is not None and len(yt):
                         y_true_all.append(yt)
                         y_pred_all.append(yp)
-
                 if not y_true_all:
                     raise RuntimeError("No labels found for confusion matrix (split='all').")
-
-                import numpy as np
                 y_true = np.concatenate(y_true_all, axis=0)
                 y_pred = np.concatenate(y_pred_all, axis=0)
             else:
                 if split_l not in ("train", "val", "test"):
                     raise ValueError(f"Unknown split '{split}'. Use train/val/test/all.")
                 y_true, y_pred = _y_for_one_split(split_l)
-
                 if y_true is None or len(y_true) == 0:
                     raise RuntimeError(f"No labels found for confusion matrix (split='{split_l}').")
 
-            import numpy as np
-
-            # --- Explicit labels ---
-            labels = sorted(set(y_true) | set(y_pred))
+            # ---- Ensure all categories appear
+            labels = sorted(set(y_true.tolist()) | set(y_pred.tolist()))
+            labels_str = [str(c) for c in labels]
 
             cm = confusion_matrix(y_true, y_pred, labels=labels)
 
@@ -2081,36 +2125,50 @@ if _PYG_IMPORT_ERROR is None:
                 cm = cm.astype(float)
                 cm = cm / (cm.sum(axis=1, keepdims=True) + 1e-12)
 
-            fig = px.imshow(
-                cm,
-                x=labels,
-                y=labels,
-                text_auto=True,
-                aspect="auto",
-                color_continuous_scale="Blues"
-            )
+            if title is None:
+                title = f"Confusion Matrix ({split_l})"
 
-            fig.update_layout(
+            if minValue is None:
+                minValue = 0.0
+            if maxValue is None:
+                maxValue = 1.0 if normalize else float(np.max(cm)) if cm.size else 1.0
+
+            debug = cm.tolist()
+            for i in debug:
+                print(i)
+            # ---- Delegate to TopologicPy Plotly
+            fig = Plotly.FigureByConfusionMatrix(
+                matrix=cm.tolist(),
+                categories=labels_str,
+                minValue=minValue,
+                maxValue=maxValue,
                 title=title,
-                xaxis_title="Predicted",
-                yaxis_title="True"
+                xTitle=xTitle,
+                yTitle=yTitle,
+                width=width,
+                height=height,
+                showScale=showScale,
+                colorScale=colorScale,
+                colorSamples=colorSamples,
+                backgroundColor=backgroundColor,
+                marginLeft=marginLeft,
+                marginRight=marginRight,
+                marginTop=marginTop,
+                marginBottom=marginBottom,
+                baseFontSize = baseFontSize,
+                tickFontSize = tickFontSize,
+                titleFontSize = titleFontSize,
+                axisTitleFontSize = axisTitleFontSize,
+                annotationFontSize = annotationFontSize
             )
 
-            # --- FORCE all tick labels to show ---
-            fig.update_xaxes(
-                tickmode="array",
-                tickvals=list(range(len(labels))),
-                ticktext=labels
-            )
-
-            fig.update_yaxes(
-                tickmode="array",
-                tickvals=list(range(len(labels))),
-                ticktext=labels
-            )
+            # ---- FIX: force BOTH axes ticks to show categories (prevents sequential Y labels)
+            n = len(labels_str)
+            tickvals = list(range(n))
+            fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
+            fig.update_yaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
 
             return fig
-
 
         def PlotParity(self,
                     split: str = "test",
@@ -2293,7 +2351,11 @@ if _PYG_IMPORT_ERROR is None:
                 payload = {
                     "state_dict": self.model.state_dict(),
                     "config_fields": cfg_fields,
-                    "summary": self.Summary()
+                    "summary": self.Summary(),
+                    # Schema required for safe inference on unseen datasets
+                    "in_dim": int(self._in_dim) if getattr(self, "_in_dim", None) is not None else int(self.data_list[0].x.shape[1]) if self.data_list else None,
+                    "num_outputs": int(self._num_outputs),
+                    "feature_schema": self._current_feature_schema() if (self.graph_df is not None and self.nodes_df is not None and self.edges_df is not None) else None,
                 }
                 torch.save(payload, path)
             else:
@@ -2353,13 +2415,47 @@ if _PYG_IMPORT_ERROR is None:
                             setattr(self.config, k, v)
 
                     # IMPORTANT: rebuild model to match checkpoint architecture
+
+                    # Restore training-time schema if present (keeps feature dims + head dims stable).
+                    if "in_dim" in obj and obj.get("in_dim", None) is not None:
+                        self._in_dim = int(obj["in_dim"])
+                    if "num_outputs" in obj and obj.get("num_outputs", None) is not None:
+                        self._num_outputs = int(obj["num_outputs"])
+                        self._freeze_num_outputs = True
+                    if "feature_schema" in obj and isinstance(obj.get("feature_schema"), dict):
+                        self._feature_schema = obj.get("feature_schema")
+
+                    # If we already have CSVs loaded (common when doing: ByCSVPath(unseen) -> LoadModel()),
+                    # rebuild data_list using the saved schema so tensors match the trained model.
+                    if (self.graph_df is not None) and (self.nodes_df is not None) and (self.edges_df is not None):
+                        self.data_list = []
+                        self._build_data_list()
+                        self._split_holdout()
+
                     self._build_model()
 
             # Old format: state_dict only
             else:
                 state = obj
 
-            # Finally load weights
+            
+            # Restore training-time schema if present even if we did not rebuild from checkpoint
+            # (useful when predicting on unseen datasets).
+            if isinstance(obj, dict):
+                if ("in_dim" in obj) and (obj.get("in_dim", None) is not None):
+                    self._in_dim = int(obj["in_dim"])
+                if ("num_outputs" in obj) and (obj.get("num_outputs", None) is not None):
+                    self._num_outputs = int(obj["num_outputs"])
+                    self._freeze_num_outputs = True
+                if ("feature_schema" in obj) and isinstance(obj.get("feature_schema"), dict):
+                    self._feature_schema = obj.get("feature_schema")
+
+                # Align already-loaded CSVs to the schema (if any) so prediction tensors match.
+                if self._feature_schema and (self.graph_df is not None) and (self.nodes_df is not None) and (self.edges_df is not None):
+                    self.data_list = []
+                    self._build_data_list()
+                    self._split_holdout()
+# Finally load weights
             self.model.load_state_dict(state, strict=strict)
             self.model.to(self.device)
             self.model.eval()

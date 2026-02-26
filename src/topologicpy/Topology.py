@@ -9047,6 +9047,15 @@ class Topology():
             if not silent:
                 print("Topology.Scale - Error: The input origin parameter is not a valid Vertex. Returning None.")
             return None
+        if abs(x) <= 0.00001:
+            if not silent:
+                print("Topology.Scale - Warning: the x input parameter is close to 0. This can cause an malformed geometric result.")
+        if abs(y) <= 0.00001:
+            if not silent:
+                print("Topology.Scale - Warning: the y input parameter is close to 0. This can cause an malformed geometric result.")
+        if abs(z) <= 0.00001:
+            if not silent:
+                print("Topology.Scale - Warning: the z input parameter is close to 0. This can cause an malformed geometric result.")
         return_topology = None
         try:
             return_topology = topologic.TopologyUtility.Scale(topology, origin, x, y, z) # Hook to Core
@@ -12410,6 +12419,7 @@ class Topology():
         origin = Vertex.ByCoordinates(0, 0, 0)
 
         # Apply scale -> rotate -> translate (transfer dictionaries at the end, for speed)
+
         result = Topology.Scale(
             topology,
             origin=origin,
