@@ -1,0 +1,17 @@
+---
+title: "topologicpy-tutorials"
+---
+
+This is a Quarto website. To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+[`pixi`](https://pixi.prefix.dev/latest/) has been added to support the setup of multiple environments, specifically environments
+with the extra dependencies required to run the notebooks. 
+
+A handful of notebooks have been copied from `notebooks` to a new `tutorials` folder in the root dir and this website is
+built from executing those notebooks. The notebooks are executed on CI (including an example that requires [`openstudio`](https://openstudio.net/downloads0)), 
+adding a form of integration testing and showing-casing the power of `topologicpy` in an easy to read website.
+
+I think that there is more opportunity to both: 
+
+- show-case more (all?) of the notebooks in the built website
+- simplify the CI workflows and general setup and reprocubility using pixi
+

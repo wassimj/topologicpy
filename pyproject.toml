@@ -10,7 +10,7 @@ authors = [
 description = "An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction."
 readme = "README.md"
 license = {file = "LICENSE"}
-requires-python = '>=3.8, <3.15'
+requires-python = '>=3.8, <3.14'  # TODO, update when https://github.com/wassimj/topologicpy/issues/87 resolved
 classifiers = [
     "Programming Language :: Python :: 3",
     "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
@@ -53,3 +53,53 @@ addopts = "-nauto --strict-markers --strict-config -v"
 # to be defined and raise on invalid config values
 # treat xpasses as test failures so they get converted to regular tests as soon as possible
 xfail_strict = true
+
+[tool.pixi.workspace]
+channels = ["conda-forge"]
+platforms = ["linux-64"] # NOTE: could add osx-64 and win-64 but that would require testing on those platforms and we don't have that setup yet
+
+[tool.pixi.pypi-dependencies]
+topologicpy = { path = ".", editable = true }
+
+[tool.pixi.environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[tool.pixi.feature.dev.dependencies]
+pytest-xdist = ">=2.4.0,<3.0.0"
+jupyterlab = "*"
+ipywidgets = "*"
+plotly = "*"
+networkx = "*"
+tqdm = "*"
+quarto = "*"
+jupytext = ">=1.19.1,<2"
+
+[tool.pixi.feature.dev.pypi-dependencies]
+openstudio = "*"
+honeybee = "*"
+honeybee-energy = "*"
+honeybee-radiance = "*"
+ladybug = "*"
+ladybug-geometry = "*"
+# TODO: consider using lbt-honeybee as a catch all installing all honeybee deps
+jupyterlab-quarto = "*"
+
+[tool.pixi.tasks]
+open-tutorials = {cmd="/mnt/c/windows/explorer.exe index.html", cwd="tutorials/_site"} # this will only work on WSL
+mk-build-dir = {cmd="mkdir -p build", cwd="."}
+download-openstudio-ubuntu = { cmd = "wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb", cwd="build", depends-on = ["mk-build-dir"]}
+install-openstudio-ubuntu = { cmd = "sudo dpkg -i ./OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb" , cwd="build", depends-on = ["download-openstudio-ubuntu"]}
+
+[tool.pixi.feature.test.tasks]
+tests = "pytest"
+
+[tool.pixi.feature.dev.tasks]
+lab = { cmd="jupyter lab", cwd = "notebooks" }
+lab-tutorials = { cmd="jupyter lab", cwd = "tutorials" }
+test-energy = "pytest tests/test_16EnergyModel.py"
+del-tutorials = { cmd="rm -rf _site", cwd = "tutorials" }
+tutorials = { cmd= "quarto render .", cwd = "tutorials" }
+preview = { cmd= "quarto preview .", cwd = "tutorials" }
+

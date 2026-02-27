@@ -1,0 +1,31 @@
+project:
+  type: website
+
+website:
+  # title: "topologicpy-tutorials"
+  navbar:
+    left:
+      - href: index.qmd
+
+  sidebar:
+    search: true
+    style: "docked"
+    contents:
+      - Building_Tower.qmd
+      - EnergyModel.qmd
+      - MEP.ipynb
+
+    # TODO: add API reference using quartodoc?
+    # - title: "API Reference"
+    #   style: "docked"
+    #   contents:
+    #     - reference/*
+        # navigation items
+
+format:
+  html:
+    css: styles.css
+    toc: true
+    theme:
+      light: flatly
+      dark: darkly
