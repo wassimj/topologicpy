@@ -1,5 +1,19 @@
-# Copyright (c) 2026
-# TopologicPy-style ANN helper for tabular ML using PyTorch (no PyG required).
+# Copyright (C) 2026
+# Wassim Jabi <wassim.jabi@gmail.com>
+#
+# This program is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Affero General Public License as published by the Free Software
+# Foundation, either version 3 of the License, or (at your option) any later
+# version.
+#
+# This program is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
+# FOR A PARTICULAR PURPOSE. See the GNU Affero General Public License for more
+# details.
+#
+# You should have received a copy of the GNU Affero General Public License along with
+# this program. If not, see <https://www.gnu.org/licenses/>.
+
 
 from __future__ import annotations
 
@@ -253,6 +267,12 @@ class ANN:
         self.class_to_index: Optional[Dict[Any, int]] = None
         self.index_to_class: Optional[Dict[int, Any]] = None
 
+        # Feature schema freeze (for inference consistency)
+        # mode: None | 'columns' | 'feat'
+        self._feature_schema_mode: Optional[str] = None
+        self._feature_schema_keys: Optional[List[str]] = None
+        self._feature_schema_dim: Optional[int] = None
+
     # -------------------------------------------------------------------------
     # Constructors
     # -------------------------------------------------------------------------
@@ -346,25 +366,48 @@ class ANN:
 
         # Features
         if cfg.features_keys is not None and len(cfg.features_keys) > 0:
-            missing = [k for k in cfg.features_keys if k not in df.columns]
-            if missing:
-                raise ValueError(f"ANN - Error: Missing feature columns: {missing}")
-            X = df[cfg.features_keys].to_numpy(dtype=float)
+            # Freeze training-time feature column schema (ordered keys)
+            if self._feature_schema_mode is None:
+                self._feature_schema_mode = "columns"
+                self._feature_schema_keys = list(cfg.features_keys)
+
+            # Enforce frozen schema
+            keys = list(self._feature_schema_keys) if self._feature_schema_keys is not None else list(cfg.features_keys)
+            for k in keys:
+                if k not in df.columns:
+                    df[k] = 0.0
+            X = df[keys].to_numpy(dtype=float)
+
         else:
+            # Features from a single vector column (e.g. "[0.1, 0.2, ...]")
             if cfg.feat_header not in df.columns:
                 raise ValueError(f"ANN - Error: Feature column '{cfg.feat_header}' not found.")
+
             feats = []
             for i, cell in enumerate(df[cfg.feat_header].values):
                 v = _parse_feat_cell(cell)
                 if v is None:
                     raise ValueError(f"ANN - Error: Could not parse features at row {i}.")
                 feats.append(v)
-            # enforce rectangular
-            d0 = len(feats[0])
+
+            # Freeze training-time feature dimensionality
+            if self._feature_schema_mode is None:
+                self._feature_schema_mode = "feat"
+                self._feature_schema_dim = int(len(feats[0]))
+
+            target_dim = int(self._feature_schema_dim) if self._feature_schema_dim is not None else int(len(feats[0]))
+
+            # Enforce dimensional consistency by padding / trimming
+            new_feats = []
             for i, v in enumerate(feats):
-                if len(v) != d0:
-                    raise ValueError(f"ANN - Error: Non-rectangular features at row {i}: expected {d0}, got {len(v)}")
-            X = np.asarray(feats, dtype=float)
+                vv = list(v)
+                if len(vv) < target_dim:
+                    vv = vv + [0.0] * (target_dim - len(vv))
+                elif len(vv) > target_dim:
+                    vv = vv[:target_dim]
+                new_feats.append(vv)
+
+            X = np.asarray(new_feats, dtype=float)
 
         self.X = X
         self.num_features = int(X.shape[1])
@@ -565,6 +608,9 @@ class ANN:
                 "num_classes": int(self.num_classes) if self.num_classes is not None else None,
                 "class_to_index": self.class_to_index,
                 "index_to_class": self.index_to_class,
+                "feature_schema_mode": self._feature_schema_mode,
+                "feature_schema_keys": self._feature_schema_keys,
+                "feature_schema_dim": self._feature_schema_dim,
             }
             torch.save(payload, path)
         else:
@@ -607,6 +653,10 @@ class ANN:
                 self.class_to_index = obj.get("class_to_index", self.class_to_index)
                 self.index_to_class = obj.get("index_to_class", self.index_to_class)
 
+                
+                self._feature_schema_mode = obj.get("feature_schema_mode", self._feature_schema_mode)
+                self._feature_schema_keys = obj.get("feature_schema_keys", self._feature_schema_keys)
+                self._feature_schema_dim = obj.get("feature_schema_dim", self._feature_schema_dim)
                 self._build_model()
 
             state = obj["state_dict"]
@@ -628,7 +678,22 @@ class ANN:
         X = self.X[idx]
         y = None if self.y is None else self.y[idx]
         ds = _TabularDataset(X, y)
-        return DataLoader(ds, batch_size=int(self.config.batch_size), shuffle=bool(shuffle))
+
+        bs = int(self.config.batch_size)
+        # BatchNorm requires at least 2 samples per batch in training mode.
+        # When training on small datasets, the last batch can be size 1; we drop it to avoid runtime errors.
+        drop_last = False
+        if bool(shuffle) and bool(getattr(self.config, "batch_norm", False)):
+            if bs <= 1:
+                raise ValueError("ANN - Error: batch_norm=True requires batch_size >= 2 during training.")
+            n = int(len(idx))
+            if n < 2:
+                raise ValueError("ANN - Error: batch_norm=True requires at least 2 training samples.")
+            # Only drop last if it would be size 1.
+            if (n % bs) == 1:
+                drop_last = True
+
+        return DataLoader(ds, batch_size=bs, shuffle=bool(shuffle), drop_last=drop_last)
 
     def _loss_fn(self) -> nn.Module:
         if self.config.task == "classification":
@@ -680,9 +745,15 @@ class ANN:
             for batch in train_loader:
                 if cfg.task == "classification":
                     x, y = batch
+                    # BatchNorm cannot train on a batch of size 1
+                    if bool(cfg.batch_norm) and x is not None and hasattr(x, 'shape') and int(x.shape[0]) < 2:
+                        continue
                     y = torch.as_tensor(y, dtype=torch.long)
                 else:
                     x, y = batch
+                    # BatchNorm cannot train on a batch of size 1
+                    if bool(cfg.batch_norm) and x is not None and hasattr(x, 'shape') and int(x.shape[0]) < 2:
+                        continue
                     y = torch.as_tensor(y, dtype=torch.float32)
 
                 x = x.to(self.device)
@@ -1000,9 +1071,23 @@ class ANN:
     def PlotConfusionMatrix(self,
                             split: str = "test",
                             normalize: bool = False,
-                            title: Optional[str] = None):
+                            title: Optional[str] = None,
+                            xTitle: str = "Actual Categories",
+                            yTitle: str = "Predicted Categories",
+                            width: int = 950,
+                            height: int = 500,
+                            showScale: bool = True,
+                            colorScale: str = "viridis",
+                            colorSamples: int = 10,
+                            backgroundColor: str = "rgba(0,0,0,0)",
+                            marginLeft: int = 0,
+                            marginRight: int = 0,
+                            marginTop: int = 40,
+                            marginBottom: int = 0,
+                            minValue=None,
+                            maxValue=None):
         """
-        Plot a confusion matrix for classification.
+        Plot a confusion matrix for classification using TopologicPy's Plotly helper.
 
         Parameters
         ----------
@@ -1013,47 +1098,57 @@ class ANN:
         title : str, optional
             Custom title. If None, uses an automatic title.
 
+        Other Parameters
+        ----------------
+        xTitle, yTitle, width, height, showScale, colorScale, colorSamples, backgroundColor,
+        marginLeft, marginRight, marginTop, marginBottom, minValue, maxValue :
+            Passed through to ``Plotly.FigureByConfusionMatrix``.
+
         Returns
         -------
         plotly.graph_objects.Figure
-            Confusion matrix heatmap (Plotly).
-
-        Notes
-        -----
-        Requires scikit-learn and plotly.
+            Confusion matrix figure.
         """
         if self.config.task != "classification":
             raise ValueError("ANN.PlotConfusionMatrix - Error: Only valid for classification.")
-        if px is None or confusion_matrix is None:
-            raise ImportError("Plotly and scikit-learn are required for confusion matrices.")
+        if confusion_matrix is None:
+            raise ImportError("scikit-learn is required for confusion matrices.")
+
+        try:
+            from topologicpy.Plotly import Plotly
+        except Exception as e:
+            raise ImportError("topologicpy.Plotly is required to plot the confusion matrix.") from e
+
+        import numpy as np
 
         s = (split or "test").lower()
         if s in ("validate", "validation"):
             s = "val"
 
+        # --- Collect y_true/y_pred via ANN's evaluator (this is why PyG version can't be reused directly)
         if s == "train":
             m = self._evaluate_split(self.idx_train)
+            y_true, y_pred = m["y_true"], m["y_pred"]
         elif s == "val":
             m = self._evaluate_split(self.idx_val)
+            y_true, y_pred = m["y_true"], m["y_pred"]
         elif s == "test":
             m = self._evaluate_split(self.idx_test)
+            y_true, y_pred = m["y_true"], m["y_pred"]
         elif s == "all":
-            yt = []
-            yp = []
+            yt, yp = [], []
             for idx in (self.idx_train, self.idx_val, self.idx_test):
                 mm = self._evaluate_split(idx)
                 yt.append(mm["y_true"])
                 yp.append(mm["y_pred"])
             y_true = np.concatenate(yt, axis=0)
             y_pred = np.concatenate(yp, axis=0)
-            m = {"y_true": y_true, "y_pred": y_pred}
         else:
             raise ValueError("ANN.PlotConfusionMatrix - Error: split must be train/val/test/all.")
 
-        y_true = m["y_true"]
-        y_pred = m["y_pred"]
-
         labels = sorted(set(y_true.tolist()) | set(y_pred.tolist()))
+        labels_str = [str(c) for c in labels]
+
         cm = confusion_matrix(y_true, y_pred, labels=labels)
 
         if normalize:
@@ -1063,11 +1158,37 @@ class ANN:
         if title is None:
             title = f"Confusion Matrix ({s})"
 
-        fig = px.imshow(cm, x=labels, y=labels, text_auto=True, aspect="auto")
-        fig.update_layout(title=title, xaxis_title="Predicted", yaxis_title="True")
-        # Force all tick labels to show
-        fig.update_xaxes(tickmode="array", tickvals=list(range(len(labels))), ticktext=[str(x) for x in labels])
-        fig.update_yaxes(tickmode="array", tickvals=list(range(len(labels))), ticktext=[str(x) for x in labels])
+        if minValue is None:
+            minValue = 0.0
+        if maxValue is None:
+            maxValue = 1.0 if normalize else float(np.max(cm)) if cm.size else 1.0
+
+        fig = Plotly.FigureByConfusionMatrix(
+            matrix=cm.tolist(),
+            categories=labels_str,
+            minValue=minValue,
+            maxValue=maxValue,
+            title=title,
+            xTitle=xTitle,
+            yTitle=yTitle,
+            width=width,
+            height=height,
+            showScale=showScale,
+            colorScale=colorScale,
+            colorSamples=colorSamples,
+            backgroundColor=backgroundColor,
+            marginLeft=marginLeft,
+            marginRight=marginRight,
+            marginTop=marginTop,
+            marginBottom=marginBottom
+        )
+
+        # Force both axes to display category labels (avoids numeric Y labels)
+        n = len(labels_str)
+        tickvals = list(range(n))
+        fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
+        fig.update_yaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
+
         return fig
 
     def PlotParity(self,
