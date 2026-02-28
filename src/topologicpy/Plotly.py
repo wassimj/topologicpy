@@ -1394,7 +1394,8 @@ class Plotly:
             tickFontSize = 14,
             titleFontSize = 22,
             axisTitleFontSize = 16,
-            annotationFontSize = 18):
+            annotationFontSize = 18,
+            grayScale = False):
         """
         Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis,
         Predicted categories are displayed on the Y-Axis.
@@ -1439,6 +1440,8 @@ class Plotly:
             The axis title font size. Default is 16.
         annotationFontSize : int , optional
             The annotation font size. Default is 18.
+        grayScale : bool , optional
+            If set to True, the figure is rendered in grayscale. Default is False.
 
         Returns
         -------
@@ -1516,7 +1519,8 @@ class Plotly:
             tickFontSize = tickFontSize,
             titleFontSize = titleFontSize,
             axisTitleFontSize = axisTitleFontSize,
-            annotationFontSize = annotationFontSize
+            annotationFontSize = annotationFontSize,
+            grayscale = grayScale
         )
 
         # --- Enforce correct y-axis order (confusion matrix convention)
@@ -1588,23 +1592,24 @@ class Plotly:
             minValue=None,
             maxValue=None,
             title="Matrix",
-            xTitle = "X Axis",
-            yTitle = "Y Axis",
+            xTitle="X Axis",
+            yTitle="Y Axis",
             width=950,
             height=950,
-            showScale = False,
-            colorScale='gray',
+            showScale=False,
+            colorScale="gray",
             colorSamples=10,
-            backgroundColor='rgba(0,0,0,0)',
+            backgroundColor="rgba(0,0,0,0)",
             marginLeft=0,
             marginRight=0,
             marginTop=40,
             marginBottom=0,
-            baseFontSize = 16,
-            tickFontSize = 14,
-            titleFontSize = 22,
-            axisTitleFontSize = 16,
-            annotationFontSize = 18,
+            baseFontSize=16,
+            tickFontSize=14,
+            titleFontSize=22,
+            axisTitleFontSize=16,
+            annotationFontSize=18,
+            grayscale=False,          # <-- grayscaleinput flag (used below)
             mantissa: int = 6):
         """
         Returns a Plotly Figure of the input matrix.
@@ -1612,8 +1617,9 @@ class Plotly:
         Notes
         -----
         - Plots matrix values as provided (no implicit normalization).
-        - Annotation text colour is chosen using the computed luminance of the
-        interpolated heatmap colour (robust for Viridis and other scales).
+        - If `grayscale` is True, the figure becomes publication-friendly:
+        white background, black axis lines/ticks, grayscale colorscale, and
+        annotation contrast tuned for grayscale.
         """
         import os
         import warnings
@@ -1687,11 +1693,37 @@ class Plotly:
         denom = (maxValue - minValue) if (maxValue - minValue) != 0 else 1.0
 
         # -----------------------------
+        # Grayscale "publication" mode
+        # -----------------------------
+        grayscaleInput = bool(grayscale)  # <-- this is the grayscaleinput flag the user asked for
+
+        # For publication: prefer white paper, black text, black axis lines.
+        if grayscaleInput:
+            # Ignore provided backgroundColor for publication-friendly output
+            paper_bg = "#FFFFFF"
+            plot_bg = "#FFFFFF"
+            template_name = "plotly_white"
+
+            # Force a true grayscale scale. (Low=white, High=black)
+            # Keep it continuous but discretized via `colorSamples` for consistent legend steps.
+            forced_color_scale = "Greys"
+            forced_samples = max(int(colorSamples), 2)
+        else:
+            paper_bg = Color.AnyToHex(backgroundColor)
+            plot_bg = Color.AnyToHex(backgroundColor)
+            template_name = "plotly_white"
+            forced_color_scale = None
+            forced_samples = None
+
+        # -----------------------------
         # Build discrete colorscale
         # -----------------------------
-        base_scale = Plotly.ColorScale(colorScale)
+        scale_name = forced_color_scale if grayscaleInput else colorScale
+        base_scale = Plotly.ColorScale(scale_name)
+
         if isinstance(base_scale, str):
-            samples = [i / max(int(colorSamples) - 1, 1) for i in range(max(int(colorSamples), 2))]
+            nS = forced_samples if grayscaleInput else max(int(colorSamples), 2)
+            samples = [i / max(nS - 1, 1) for i in range(nS)]
             cols = px.colors.sample_colorscale(base_scale, samples)
             colorscale = [[samples[i], cols[i]] for i in range(len(samples))]
         else:
@@ -1709,25 +1741,21 @@ class Plotly:
                 r = int(h[0:2], 16); g = int(h[2:4], 16); b = int(h[4:6], 16)
                 return (r, g, b)
             if s.startswith("rgb"):
-                inside = s[s.find("(")+1:s.find(")")]
+                inside = s[s.find("(") + 1:s.find(")")]
                 parts = [p.strip() for p in inside.split(",")]
                 r = int(float(parts[0])); g = int(float(parts[1])); b = int(float(parts[2]))
                 return (r, g, b)
-            # fallback (try Color.AnyToHex then parse)
             hx = Color.AnyToHex(s)
             return _parse_rgb(hx)
 
-        # Pre-parse scale to numeric+rgb
         scale_pos = [float(p) for p, _ in colorscale]
         scale_rgb = [_parse_rgb(c) for _, c in colorscale]
 
         def _interp_color(t):
-            # clamp
             if t <= scale_pos[0]:
                 return scale_rgb[0]
             if t >= scale_pos[-1]:
                 return scale_rgb[-1]
-            # find segment
             for k in range(len(scale_pos) - 1):
                 a, b = scale_pos[k], scale_pos[k + 1]
                 if a <= t <= b:
@@ -1749,10 +1777,16 @@ class Plotly:
             return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
 
         # -----------------------------
-        # Annotations: larger + robust contrast
+        # Annotations: robust contrast
         # -----------------------------
         annotations = []
-        annot_font_size = annotationFontSize  # <-- bigger text
+        annot_font_size = annotationFontSize
+
+        # In grayscale mode, use slightly more conservative threshold and subtler backgrounds.
+        lum_threshold = 0.60 if grayscaleInput else 0.55
+        bg_light = "rgba(255,255,255,0.25)" if grayscaleInput else "rgba(255,255,255,0.35)"
+        bg_dark  = "rgba(0,0,0,0.25)"       if grayscaleInput else "rgba(0,0,0,0.35)"
+
         for i in range(n_rows):
             for j in range(n_cols):
                 val = m[i, j]
@@ -1760,10 +1794,11 @@ class Plotly:
                 rgb = _interp_color(t)
                 lum = _rel_luminance(rgb)
 
-                # Choose text + subtle background for guaranteed readability
-                # Viridis bright yellow has high luminance => use black text.
-                font_color = "black" if lum >= 0.55 else "white"
-                bg = "rgba(255,255,255,0.35)" if font_color == "black" else "rgba(0,0,0,0.35)"
+                font_color = "black" if lum >= lum_threshold else "white"
+
+                # Publication mode: keep annotation backgrounds subtle (or none if you prefer)
+                # Here we keep a slight translucent pad for readability on mid-gray cells.
+                bg = bg_light if font_color == "black" else bg_dark
 
                 if np.isfinite(val) and float(val).is_integer():
                     txt = str(int(val))
@@ -1794,19 +1829,16 @@ class Plotly:
             showscale=bool(showScale),
             colorscale=colorscale,
             colorbar=dict(
-                tickfont=dict(size=14),
-                title=dict(font=dict(size=15))
+                tickfont=dict(size=14, color=("black" if grayscaleInput else None)),
+                title=dict(font=dict(size=15, color=("black" if grayscaleInput else None))),
+                outlinecolor=("black" if grayscaleInput else None),
+                outlinewidth=(1 if grayscaleInput else None)
             )
         )
 
         # -----------------------------
-        # Layout + axes (bigger fonts)
+        # Layout + axes
         # -----------------------------
-        base_font = baseFontSize
-        tick_font = tickFontSize
-        title_font = titleFontSize
-        axis_title_font = axisTitleFontSize
-
         rotate_x = 0
         if n_cols >= 8:
             rotate_x = 45
@@ -1817,30 +1849,47 @@ class Plotly:
         fig.update_layout(
             width=width,
             height=height,
-            title=dict(text=title, font=dict(size=title_font)),
-            paper_bgcolor=Color.AnyToHex(backgroundColor),
-            plot_bgcolor=Color.AnyToHex(backgroundColor),
+            title=dict(text=title, font=dict(size=titleFontSize, color=("black" if grayscaleInput else None))),
+            paper_bgcolor=paper_bg,
+            plot_bgcolor=plot_bg,
             margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
-            template="plotly_white",
+            template=template_name,
             annotations=annotations,
-            font=dict(size=base_font)
+            font=dict(size=baseFontSize, color=("black" if grayscaleInput else None))
+        )
+
+        # Axis styling for publication grayscale output
+        axis_common = dict(
+            showline=True if grayscaleInput else False,
+            linecolor="black" if grayscaleInput else None,
+            linewidth=1 if grayscaleInput else None,
+            mirror=True if grayscaleInput else False,
+            ticks="outside" if grayscaleInput else None,
+            tickcolor="black" if grayscaleInput else None,
+            ticklen=6 if grayscaleInput else None,
+            tickwidth=1 if grayscaleInput else None,
+            showgrid=True,
+            gridcolor="rgba(0,0,0,0.12)" if grayscaleInput else "rgba(0,0,0,0.08)",
+            zeroline=False
         )
 
         fig.update_xaxes(
-            title=dict(text=xTitle, font=dict(size=axis_title_font)),
+            title=dict(text=xTitle, font=dict(size=axisTitleFontSize, color=("black" if grayscaleInput else None))),
             tickmode="array",
             tickvals=list(range(n_cols)),
             ticktext=xCats,
             tickangle=rotate_x,
-            tickfont=dict(size=tick_font)
+            tickfont=dict(size=tickFontSize, color=("black" if grayscaleInput else None)),
+            **axis_common
         )
         fig.update_yaxes(
-            title=dict(text=yTitle, font=dict(size=axis_title_font)),
+            title=dict(text=yTitle, font=dict(size=axisTitleFontSize, color=("black" if grayscaleInput else None))),
             tickmode="array",
             tickvals=list(range(n_rows)),
             ticktext=yCats,
-            tickfont=dict(size=tick_font),
-            autorange="reversed"
+            tickfont=dict(size=tickFontSize, color=("black" if grayscaleInput else None)),
+            autorange="reversed",
+            **axis_common
         )
 
         return fig

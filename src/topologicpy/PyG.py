@@ -2030,6 +2030,8 @@ if _PYG_IMPORT_ERROR is None:
         def PlotConfusionMatrix(self,
                                 split: str = "test",
                                 normalize: bool = False,
+                                minValue: int = None,
+                                maxValue: int = None,
                                 title: str = None,
                                 xTitle: str = "Actual Categories",
                                 yTitle: str = "Predicted Categories",
@@ -2043,21 +2045,66 @@ if _PYG_IMPORT_ERROR is None:
                                 marginRight: int = 0,
                                 marginTop: int = 40,
                                 marginBottom: int = 0,
-                                minValue=None,
-                                maxValue=None,
-                                baseFontSize = 16,
-                                tickFontSize = 14,
-                                titleFontSize = 22,
-                                axisTitleFontSize = 16,
-                                annotationFontSize=18):
+                                baseFontSize: int = 16,
+                                tickFontSize: int = 14,
+                                titleFontSize: int = 22,
+                                axisTitleFontSize: int = 16,
+                                annotationFontSize: int = 18,
+                                grayScale: bool = False,
+                                mantissa: int = 6):
             """
-            Plot a confusion matrix for classification tasks using TopologicPy's Plotly helper.
+            Returns a Plotly Figure of the confusion matrix of the inference. Actual categories are displayed on the X-Axis,
+            Predicted categories are displayed on the Y-Axis.
 
-            Notes
-            -----
-            This method computes the confusion matrix (rows=Actual, cols=Predicted) and
-            delegates plotting to ``Plotly.FigureByConfusionMatrix``. It then explicitly
-            enforces both X and Y tick labels to ensure categories appear correctly.
+            Parameters
+            ----------
+            split : str , optional
+                Which split(s) to evaluate. Options are: {"train","val","validate","validation","test","all"}. Default is "test".
+            normalize : bool, optional
+                If True, row-normalize the confusion matrix. Default is False.
+            minValue : float , optional
+                The desired minimum value to use for the color scale. If set to None, the minimum value found in the input data will be used.
+            maxValue : float , optional
+                The desired maximum value to use for the color scale. If set to None, the maximum value found in the input data will be used.
+            title : str , optional
+                The desired title to display. Default is "Confusion Matrix".
+            xTitle : str , optional
+                The desired X-axis title to display. Default is "Actual Categories".
+            yTitle : str , optional
+                The desired Y-axis title to display. Default is "Predicted Categories".
+            width : int , optional
+                The desired width of the figure. Default is 950.
+            height : int , optional
+                The desired height of the figure. Default is 500.
+            showScale : bool , optional
+                If set to True, a color scale is shown on the right side of the figure. Default is True.
+            colorScale : str , optional
+                The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis".
+            colorSamples : int , optional
+                The number of discrete color samples to use for displaying the data. Default is 10.
+            backgroundColor : list or str , optional
+                The desired background color (see docstring above). Default is transparent.
+            marginLeft, marginRight, marginTop, marginBottom : int , optional
+                Plot margins in pixels.
+            baseFontSize : int , optional
+                The base font size. Default is 16.
+            tickFontSize : int , optional
+                The tick font size. Default is 14.
+            titleFontSize : int , optional
+                The title font size. Default is 22.
+            axisTitleFontSize : int , optional
+                The axis title font size. Default is 16.
+            annotationFontSize : int , optional
+                The annotation font size. Default is 18.
+            grayScale : bool , optional
+                If set to True, the figure is rendered in grayscale. Default is False.
+            mantissa : int , optional
+                The desired length of the mantissa. Default is 6.
+
+            Returns
+            -------
+            plotly.graph_objects.Figure
+                The created plotly figure.
             """
             if confusion_matrix is None:
                 raise ImportError("scikit-learn is required. Install scikit-learn to use this feature.")
@@ -2125,6 +2172,18 @@ if _PYG_IMPORT_ERROR is None:
                 cm = cm.astype(float)
                 cm = cm / (cm.sum(axis=1, keepdims=True) + 1e-12)
 
+                # Round
+                cm = np.round(cm, decimals=mantissa)
+
+                # Enforce exact row sum = 1
+                col_sums = cm.sum(axis=0)
+                diff = 1.0 - col_sums
+
+                # Add correction to the largest element in each column
+                for j in range(cm.shape[1]):
+                    i = np.argmax(cm[j])
+                    cm[i, j] += diff[i]
+
             if title is None:
                 title = f"Confusion Matrix ({split_l})"
 
@@ -2133,9 +2192,6 @@ if _PYG_IMPORT_ERROR is None:
             if maxValue is None:
                 maxValue = 1.0 if normalize else float(np.max(cm)) if cm.size else 1.0
 
-            debug = cm.tolist()
-            for i in debug:
-                print(i)
             # ---- Delegate to TopologicPy Plotly
             fig = Plotly.FigureByConfusionMatrix(
                 matrix=cm.tolist(),
@@ -2159,7 +2215,8 @@ if _PYG_IMPORT_ERROR is None:
                 tickFontSize = tickFontSize,
                 titleFontSize = titleFontSize,
                 axisTitleFontSize = axisTitleFontSize,
-                annotationFontSize = annotationFontSize
+                annotationFontSize = annotationFontSize,
+                grayScale = grayScale
             )
 
             # ---- FIX: force BOTH axes ticks to show categories (prevents sequential Y labels)

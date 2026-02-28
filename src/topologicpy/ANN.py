@@ -1071,6 +1071,8 @@ class ANN:
     def PlotConfusionMatrix(self,
                             split: str = "test",
                             normalize: bool = False,
+                            minValue: float = None,
+                            maxValue: float = None,
                             title: Optional[str] = None,
                             xTitle: str = "Actual Categories",
                             yTitle: str = "Predicted Categories",
@@ -1084,25 +1086,58 @@ class ANN:
                             marginRight: int = 0,
                             marginTop: int = 40,
                             marginBottom: int = 0,
-                            minValue=None,
-                            maxValue=None):
+                            baseFontSize: int = 16,
+                            tickFontSize: int = 14,
+                            titleFontSize: int = 22,
+                            axisTitleFontSize: int = 16,
+                            annotationFontSize: int = 18,
+                            grayScale: bool = False,
+                            mantissa: int = 6):
         """
         Plot a confusion matrix for classification using TopologicPy's Plotly helper.
 
         Parameters
         ----------
-        split : {"train","val","validate","validation","test","all"}, optional
-            Which split(s) to evaluate. Default is "test".
+        split : str , optional
+            Which split(s) to evaluate. Options are: {"train","val","validate","validation","test","all"}. Default is "test".
         normalize : bool, optional
             If True, row-normalize the confusion matrix. Default is False.
-        title : str, optional
-            Custom title. If None, uses an automatic title.
-
-        Other Parameters
-        ----------------
-        xTitle, yTitle, width, height, showScale, colorScale, colorSamples, backgroundColor,
-        marginLeft, marginRight, marginTop, marginBottom, minValue, maxValue :
-            Passed through to ``Plotly.FigureByConfusionMatrix``.
+        title : str , optional
+            The desired title to display. Default is "Confusion Matrix".
+        xTitle : str , optional
+            The desired X-axis title to display. Default is "Actual Categories".
+        yTitle : str , optional
+            The desired Y-axis title to display. Default is "Predicted Categories".
+        minValue : float , optional
+            The desired minimum value to use for the color scale. If set to None, the minimum value found in the input matrix will be used.
+        maxValue : float , optional
+            The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used.
+        width : int , optional
+            The desired width of the figure. Default is 950.
+        height : int , optional
+            The desired height of the figure. Default is 500.
+        showScale : bool , optional
+            If set to True, a color scale is shown on the right side of the figure. Default is True.
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "Viridis", "Plasma"). Default is "Viridis".
+        colorSamples : int , optional
+            The number of discrete color samples to use for displaying the data. Default is 10.
+        backgroundColor : list or str , optional
+            The desired background color (see docstring above). Default is transparent.
+        marginLeft, marginRight, marginTop, marginBottom : int , optional
+            Plot margins in pixels.
+        baseFontSize : int , optional
+            The base font size. Default is 16.
+        tickFontSize : int , optional
+            The tick font size. Default is 14.
+        titleFontSize : int , optional
+            The title font size. Default is 22.
+        axisTitleFontSize : int , optional
+            The axis title font size. Default is 16.
+        annotationFontSize : int , optional
+            The annotation font size. Default is 18.
+        grayScale : bool , optional
+            If set to True, the figure is rendered in grayscale. Default is False.
 
         Returns
         -------
@@ -1155,6 +1190,18 @@ class ANN:
             cm = cm.astype(float)
             cm = cm / (cm.sum(axis=1, keepdims=True) + 1e-12)
 
+            # Round
+            cm = np.round(cm, decimals=mantissa)
+
+            # Enforce exact row sum = 1
+            col_sums = cm.sum(axis=0)
+            diff = 1.0 - col_sums
+
+            # Add correction to the largest element in each column
+            for j in range(cm.shape[1]):
+                i = np.argmax(cm[j])
+                cm[i, j] += diff[i]
+
         if title is None:
             title = f"Confusion Matrix ({s})"
 
@@ -1180,7 +1227,13 @@ class ANN:
             marginLeft=marginLeft,
             marginRight=marginRight,
             marginTop=marginTop,
-            marginBottom=marginBottom
+            marginBottom=marginBottom,
+            baseFontSize=baseFontSize,
+            tickFontSize=tickFontSize,
+            titleFontSize=titleFontSize,
+            axisTitleFontSize=axisTitleFontSize,
+            annotationFontSize=annotationFontSize,
+            grayScale = grayScale
         )
 
         # Force both axes to display category labels (avoids numeric Y labels)
