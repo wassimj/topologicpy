@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CellComplex module &mdash; topologicpy 0.9.7 documentation</title>
+  <title>topologicpy.CellComplex module &mdash; topologicpy 0.9.10 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.7
+                0.9.10
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -183,7 +183,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Cube" title="topologicpy.CellComplex.CellComplex.Cube"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cube</span></code></a>([origin, size, uSides, vSides, wSides, ...])</p></td>
 <td><p>Creates a cube with internal cells.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Decompose" title="topologicpy.CellComplex.CellComplex.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cellComplex[, tiltAngle, tolerance])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Decompose" title="topologicpy.CellComplex.CellComplex.Decompose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Decompose</span></code></a>(cellComplex[, tiltAngle, ...])</p></td>
 <td><p>Decomposes the input cellComplex into its logical components.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Delaunay" title="topologicpy.CellComplex.CellComplex.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>([vertices, tolerance])</p></td>
@@ -515,7 +515,7 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CellComplex.CellComplex.Decompose">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Decompose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellComplex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tiltAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.CellComplex.CellComplex.Decompose" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Decompose</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellComplex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tiltAngle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.CellComplex.CellComplex.Decompose" title="Permalink to this definition"></a></dt>
 <dd><p>Decomposes the input cellComplex into its logical components. This method assumes that the positive Z direction is UP.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
