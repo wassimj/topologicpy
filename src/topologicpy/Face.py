@@ -1144,7 +1144,7 @@ class Face():
         # Make sure all internal wires are actually inside the external wire.
         ibList = []
         for ib in internalBoundaries:
-            if not Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib):
+            if not (Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib)):
                 if not silent:
                     print("Face.ByWires - Warning: One of the internal wires is not a valid closed wire. Ignoring.")
                     curframe = inspect.currentframe()
