@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.9.12 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.9.13 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.12
+                0.9.13
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -622,6 +622,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Community"><code class="docutils literal notranslate"><span class="pre">Graph.Community()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.CommunityPartition"><code class="docutils literal notranslate"><span class="pre">Graph.CommunityPartition()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Compare"><code class="docutils literal notranslate"><span class="pre">Graph.Compare()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.CompiledRoutingGraph"><code class="docutils literal notranslate"><span class="pre">Graph.CompiledRoutingGraph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Complement"><code class="docutils literal notranslate"><span class="pre">Graph.Complement()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Complete"><code class="docutils literal notranslate"><span class="pre">Graph.Complete()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Connect"><code class="docutils literal notranslate"><span class="pre">Graph.Connect()</span></code></a></li>
@@ -670,6 +671,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Integration"><code class="docutils literal notranslate"><span class="pre">Graph.Integration()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Intersect"><code class="docutils literal notranslate"><span class="pre">Graph.Intersect()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsBipartite"><code class="docutils literal notranslate"><span class="pre">Graph.IsBipartite()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsCompiledRoutingGraph"><code class="docutils literal notranslate"><span class="pre">Graph.IsCompiledRoutingGraph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsComplete"><code class="docutils literal notranslate"><span class="pre">Graph.IsComplete()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsConnected"><code class="docutils literal notranslate"><span class="pre">Graph.IsConnected()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.IsEmpty"><code class="docutils literal notranslate"><span class="pre">Graph.IsEmpty()</span></code></a></li>
@@ -1245,6 +1247,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreOnSameSide"><code class="docutils literal notranslate"><span class="pre">Vertex.AreOnSameSide()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.AreOnSameSideCluster"><code class="docutils literal notranslate"><span class="pre">Vertex.AreOnSameSideCluster()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.ByCoordinates"><code class="docutils literal notranslate"><span class="pre">Vertex.ByCoordinates()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.ByOffset2DRelativeToEdge"><code class="docutils literal notranslate"><span class="pre">Vertex.ByOffset2DRelativeToEdge()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Centroid"><code class="docutils literal notranslate"><span class="pre">Vertex.Centroid()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Clockwise2D"><code class="docutils literal notranslate"><span class="pre">Vertex.Clockwise2D()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Vertex.html#topologicpy.Vertex.Vertex.Coordinates"><code class="docutils literal notranslate"><span class="pre">Vertex.Coordinates()</span></code></a></li>
@@ -1285,6 +1288,7 @@
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire"><code class="docutils literal notranslate"><span class="pre">Wire</span></code></a><ul>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Arc"><code class="docutils literal notranslate"><span class="pre">Wire.Arc()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ArcByEdge"><code class="docutils literal notranslate"><span class="pre">Wire.ArcByEdge()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Bisectors"><code class="docutils literal notranslate"><span class="pre">Wire.Bisectors()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.BoundingRectangle"><code class="docutils literal notranslate"><span class="pre">Wire.BoundingRectangle()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByEdges"><code class="docutils literal notranslate"><span class="pre">Wire.ByEdges()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.ByEdgesCluster"><code class="docutils literal notranslate"><span class="pre">Wire.ByEdgesCluster()</span></code></a></li>
@@ -1332,6 +1336,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.RemoveCollinearEdges"><code class="docutils literal notranslate"><span class="pre">Wire.RemoveCollinearEdges()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Representation"><code class="docutils literal notranslate"><span class="pre">Wire.Representation()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Reverse"><code class="docutils literal notranslate"><span class="pre">Wire.Reverse()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Ribbon"><code class="docutils literal notranslate"><span class="pre">Wire.Ribbon()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Roof"><code class="docutils literal notranslate"><span class="pre">Wire.Roof()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Simplify"><code class="docutils literal notranslate"><span class="pre">Wire.Simplify()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Wire.html#topologicpy.Wire.Wire.Skeleton"><code class="docutils literal notranslate"><span class="pre">Wire.Skeleton()</span></code></a></li>
