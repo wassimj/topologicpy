@@ -1143,13 +1143,18 @@ class Face():
         eb_area = Face.Area(eb_face)
         # Make sure all internal wires are actually inside the external wire.
         ibList = []
+        ibImprint = []
         for ib in internalBoundaries:
-            if not (Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib)):
+            if not (Topology.IsInstance(ib, "Wire"):
                 if not silent:
-                    print("Face.ByWires - Warning: One of the internal wires is not a valid closed wire. Ignoring.")
+                    print("Face.ByWires - Warning: One of the internal wires is not a valid wire. Ignoring.")
                     curframe = inspect.currentframe()
                     calframe = inspect.getouterframes(curframe, 2)
                     print('caller name:', calframe[1][3])
+                continue
+            # Wire is not closed but lets try to imprint it
+            if not Wire.IsClosed(ib):  
+                ibImprint.append(ib)    
                 continue
             ib_face = Face.ByWire(ib)
             ib_area = Face.Area(ib_face)
@@ -1172,6 +1177,8 @@ class Face():
         face = None
         try:
             face = Core.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
+            if ibImprint:
+                face = Topology.Imprint(face, Topology.MergeAll(ibImprint), tolerance=tolerance)
         except:
             if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
