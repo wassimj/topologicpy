@@ -634,7 +634,7 @@ class Cluster():
         return tp_clusters, tp_noise
 
     @staticmethod
-    def HDBSCAN(topologies, selectors=None, keys=["x", "y", "z"], minClusterSize: int = 5, minSamples: int = None, clusterSelectionMethod: str = "eom"):
+    def HDBSCAN(topologies, selectors=None, keys=["x", "y", "z"], minClusterSize: int = 5, minSamples: int = None, clusterSelectionMethod: str = "eom", allowSingleCluster: bool = False):
         """
         Clusters the input topologies based on the Hierarchical Density-Based Spatial Clustering of Applications with Noise (HDBSCAN) method.
         See https://en.wikipedia.org/wiki/HDBSCAN
@@ -658,6 +658,9 @@ class Cluster():
             The number of neighbors used to compute the core distance for each point. If set to None, it defaults to the value of minClusterSize. Default is None.
         clusterSelectionMethod : str , optional
             The method used to select clusters from the condensed tree. Options are "eom" (Excess of Mass, default) which maximizes total cluster stability, or "leaf" which selects the leaf clusters. Default is "eom".
+        allowSingleCluster : bool , optional
+            Whether to allow the algorithm to return a single cluster. When False (default), the root cluster cannot
+            dominate its children in the EOM selection, preventing trivial single-cluster results. Default is False.
 
         Returns
         -------
@@ -846,7 +849,7 @@ class Cluster():
 
             return condensed_tree, cluster_nodes
 
-        def _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, method):
+        def _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, method, allow_single_cluster=False):
             """
             Compute stability for each cluster and extract final clusters.
             Returns labels array.
@@ -915,8 +918,11 @@ class Cluster():
             selected = {node: True for node in cluster_nodes}
             stab = dict(stability)
 
-            # Process bottom-up (sorted by node id, smallest first = deepest)
-            for node in sorted(cluster_nodes):
+            # Identify the root cluster (the one with no parent in the condensed tree)
+            root_cluster = min(cluster_nodes)
+
+            # Process bottom-up (largest id first = leaves before parents)
+            for node in sorted(cluster_nodes, reverse=True):
                 if node not in children_of:
                     continue
                 child_clusters = [ch for ch, lam, sz in children_of[node] if ch in cluster_nodes]
@@ -926,7 +932,12 @@ class Cluster():
                 children_stab_sum = sum(stab.get(ch, 0.0) for ch in child_clusters)
                 node_stab = stab.get(node, 0.0)
 
-                if children_stab_sum > node_stab:
+                # When allow_single_cluster is False, the root can never beat its children
+                children_win = children_stab_sum > node_stab
+                if not allow_single_cluster and node == root_cluster:
+                    children_win = True
+
+                if children_win:
                     # Children are more stable - deselect parent, propagate stability up
                     selected[node] = False
                     stab[node] = children_stab_sum
@@ -1050,7 +1061,7 @@ class Cluster():
         condensed_tree, cluster_nodes = _build_hierarchy_and_condensed_tree(mst_edges, n_points, minClusterSize)
 
         # Step 6: Extract clusters
-        labels = _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, clusterSelectionMethod)
+        labels = _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, clusterSelectionMethod, allowSingleCluster)
 
         # --- Build output clusters (same pattern as DBSCAN) ---
         unique_labels = sorted(set(labels))
