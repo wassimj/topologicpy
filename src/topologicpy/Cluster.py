@@ -634,6 +634,442 @@ class Cluster():
         return tp_clusters, tp_noise
 
     @staticmethod
+    def HDBSCAN(topologies, selectors=None, keys=["x", "y", "z"], minClusterSize: int = 5, minSamples: int = None, clusterSelectionMethod: str = "eom"):
+        """
+        Clusters the input topologies based on the Hierarchical Density-Based Spatial Clustering of Applications with Noise (HDBSCAN) method.
+        See https://en.wikipedia.org/wiki/HDBSCAN
+
+        Unlike DBSCAN, HDBSCAN does not require an epsilon parameter, making it more robust for datasets with clusters of varying density.
+        It builds a hierarchy of clusters and extracts the most stable ones automatically.
+
+        Parameters
+        ----------
+        topologies : list
+            The input list of topologies to be clustered.
+        selectors : list , optional
+            If the list of topologies are not vertices then please provide a corresponding list of selectors (vertices) that represent the topologies for clustering. For example, these can be the centroids of the topologies.
+            If set to None, the list of topologies is expected to be a list of vertices. Default is None.
+        keys : list, optional
+            The keys in the embedded dictionaries in the topologies. If specified, the values at these keys will be added to the dimensions to be clustered. The values must be numeric. If you wish the x, y, z location to be included,
+            make sure the keys list includes "X", "Y", and/or "Z" (case insensitive). Default is ["x", "y", "z"]
+        minClusterSize : int , optional
+            The minimum number of points required to form a cluster. Default is 5.
+        minSamples : int , optional
+            The number of neighbors used to compute the core distance for each point. If set to None, it defaults to the value of minClusterSize. Default is None.
+        clusterSelectionMethod : str , optional
+            The method used to select clusters from the condensed tree. Options are "eom" (Excess of Mass, default) which maximizes total cluster stability, or "leaf" which selects the leaf clusters. Default is "eom".
+
+        Returns
+        -------
+        list, list
+            The list of clusters and the list of topologies considered to be noise if any (otherwise returns None).
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def _compute_core_distances(dists, k):
+            """Compute core distance for each point: distance to k-th nearest neighbor."""
+            n = dists.shape[0]
+            core_dists = np.empty(n)
+            for i in range(n):
+                sorted_dists = np.sort(dists[i])
+                # sorted_dists[0] is distance to self (0), so k-th neighbor is at index k
+                if k < n:
+                    core_dists[i] = sorted_dists[k]
+                else:
+                    core_dists[i] = sorted_dists[-1]
+            return core_dists
+
+        def _mutual_reachability_matrix(dists, core_dists):
+            """Compute mutual reachability distance: max(core(a), core(b), dist(a,b))."""
+            n = dists.shape[0]
+            mrd = np.copy(dists)
+            for i in range(n):
+                for j in range(i + 1, n):
+                    val = max(core_dists[i], core_dists[j], dists[i, j])
+                    mrd[i, j] = val
+                    mrd[j, i] = val
+            return mrd
+
+        def _prim_mst(mrd):
+            """Build minimum spanning tree using Prim's algorithm. Returns sorted edges."""
+            n = mrd.shape[0]
+            in_tree = np.zeros(n, dtype=bool)
+            min_edge = np.full(n, np.inf)
+            min_edge_from = np.full(n, -1, dtype=int)
+            edges = []
+
+            # Start from node 0
+            in_tree[0] = True
+            for j in range(n):
+                if j != 0:
+                    min_edge[j] = mrd[0, j]
+                    min_edge_from[j] = 0
+
+            for _ in range(n - 1):
+                # Find the closest node not yet in tree
+                candidates = np.where(~in_tree)[0]
+                best = candidates[np.argmin(min_edge[candidates])]
+                edges.append((min_edge[best], min_edge_from[best], best))
+                in_tree[best] = True
+
+                # Update distances
+                for j in range(n):
+                    if not in_tree[j] and mrd[best, j] < min_edge[j]:
+                        min_edge[j] = mrd[best, j]
+                        min_edge_from[j] = best
+
+            # Sort edges by weight
+            edges.sort(key=lambda x: x[0])
+            return edges
+
+        def _build_hierarchy_and_condensed_tree(mst_edges, n_points, min_cluster_size):
+            """
+            Build a full dendrogram from MST, then walk it top-down to create the condensed tree.
+            Returns (condensed_tree, cluster_node_set) where condensed_tree is a list of
+            (parent_cluster, child, lambda_val, child_size) tuples.
+            """
+            # Step 1: Build full dendrogram using union-find (bottom-up)
+            parent_uf = list(range(2 * n_points))
+            size_uf = [1] * (2 * n_points)
+            # dendrogram: for each internal node (n_points + i), store (left_child, right_child, weight, size)
+            dendrogram = {}
+
+            def find(x):
+                while parent_uf[x] != x:
+                    parent_uf[x] = parent_uf[parent_uf[x]]
+                    x = parent_uf[x]
+                return x
+
+            next_id = n_points
+            node_map = {}  # UF root -> dendrogram node id
+            for i in range(n_points):
+                node_map[i] = i
+
+            for weight, u, v in mst_edges:
+                root_u = find(u)
+                root_v = find(v)
+                if root_u == root_v:
+                    continue
+
+                left = node_map[root_u]
+                right = node_map[root_v]
+                left_size = size_uf[root_u]
+                right_size = size_uf[root_v]
+                new_node = next_id
+                next_id += 1
+
+                dendrogram[new_node] = (left, right, weight, left_size, right_size)
+
+                # Union
+                parent_uf[root_u] = new_node
+                parent_uf[root_v] = new_node
+                parent_uf[new_node] = new_node
+                size_uf[new_node] = left_size + right_size
+                node_map[find(new_node)] = new_node
+
+            root = next_id - 1
+
+            # Step 2: Collect all leaf points beneath each dendrogram node
+            leaves_cache = {}
+
+            def get_leaves(node):
+                if node in leaves_cache:
+                    return leaves_cache[node]
+                if node < n_points:
+                    leaves_cache[node] = [node]
+                    return [node]
+                left, right, w, ls, rs = dendrogram[node]
+                result = get_leaves(left) + get_leaves(right)
+                leaves_cache[node] = result
+                return result
+
+            # Step 3: Walk dendrogram top-down to build condensed tree
+            condensed_tree = []  # (parent_cluster, child, lambda_val, child_size)
+            cluster_nodes = set()
+            next_cluster_id = [n_points]  # mutable counter
+
+            def walk(dendro_node, cluster_id):
+                """Walk the dendrogram top-down, building the condensed tree."""
+                if dendro_node < n_points:
+                    return
+                if dendro_node not in dendrogram:
+                    return
+
+                left, right, weight, left_size, right_size = dendrogram[dendro_node]
+                lambda_val = 1.0 / weight if weight > 0 else float('inf')
+
+                if left_size >= min_cluster_size and right_size >= min_cluster_size:
+                    # Real split: both children become new clusters
+                    new_left_id = next_cluster_id[0]
+                    next_cluster_id[0] += 1
+                    new_right_id = next_cluster_id[0]
+                    next_cluster_id[0] += 1
+
+                    cluster_nodes.add(new_left_id)
+                    cluster_nodes.add(new_right_id)
+
+                    condensed_tree.append((cluster_id, new_left_id, lambda_val, left_size))
+                    condensed_tree.append((cluster_id, new_right_id, lambda_val, right_size))
+
+                    walk(left, new_left_id)
+                    walk(right, new_right_id)
+
+                elif left_size >= min_cluster_size:
+                    # Right is too small - its points fall out as noise
+                    for pt in get_leaves(right):
+                        condensed_tree.append((cluster_id, pt, lambda_val, 1))
+                    # Left continues with same cluster_id
+                    walk(left, cluster_id)
+
+                elif right_size >= min_cluster_size:
+                    # Left is too small - its points fall out as noise
+                    for pt in get_leaves(left):
+                        condensed_tree.append((cluster_id, pt, lambda_val, 1))
+                    # Right continues with same cluster_id
+                    walk(right, cluster_id)
+
+                else:
+                    # Both too small - all points fall out as noise
+                    for pt in get_leaves(left):
+                        condensed_tree.append((cluster_id, pt, lambda_val, 1))
+                    for pt in get_leaves(right):
+                        condensed_tree.append((cluster_id, pt, lambda_val, 1))
+
+            # Root cluster
+            root_cluster = n_points  # Use first available cluster id for root
+            next_cluster_id[0] = n_points + 1
+            cluster_nodes.add(root_cluster)
+            walk(root, root_cluster)
+
+            return condensed_tree, cluster_nodes
+
+        def _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, method):
+            """
+            Compute stability for each cluster and extract final clusters.
+            Returns labels array.
+            """
+            # Find lambda_birth for each cluster (when it appeared as a child in the condensed tree)
+            lambda_birth = {}
+            children_of = {}  # cluster -> list of (child, lambda_val, size)
+
+            for parent, child, lam, sz in condensed_tree:
+                if child in cluster_nodes:
+                    lambda_birth[child] = lam
+                if parent not in children_of:
+                    children_of[parent] = []
+                children_of[parent].append((child, lam, sz))
+
+            # Root cluster birth = 0
+            for node in cluster_nodes:
+                if node not in lambda_birth:
+                    lambda_birth[node] = 0.0
+
+            # Compute stability for each cluster:
+            # stability = sum over all individual points falling out of (lambda_point - lambda_birth)
+            stability = {node: 0.0 for node in cluster_nodes}
+            for parent, child, lam, sz in condensed_tree:
+                if parent in cluster_nodes and child < n_points:
+                    # Individual point falling out
+                    birth = lambda_birth.get(parent, 0.0)
+                    stability[parent] += (lam - birth)
+
+            # Collect points belonging to each cluster node
+            # A cluster's points = all individual points that fall out of it + points in child clusters
+            cluster_points = {node: set() for node in cluster_nodes}
+            for parent, child, lam, sz in condensed_tree:
+                if parent in cluster_nodes and child < n_points:
+                    cluster_points[parent].add(child)
+
+            # Add points from child clusters (recursively)
+            def get_all_points(node):
+                pts = set(cluster_points.get(node, set()))
+                if node in children_of:
+                    for ch, lam, sz in children_of[node]:
+                        if ch in cluster_nodes:
+                            pts |= get_all_points(ch)
+                return pts
+
+            all_points = {node: get_all_points(node) for node in cluster_nodes}
+
+            if method == "leaf":
+                # Leaf clusters: cluster nodes that have no cluster children
+                leaf_clusters = []
+                for node in cluster_nodes:
+                    child_clusters = []
+                    if node in children_of:
+                        child_clusters = [ch for ch, lam, sz in children_of[node] if ch in cluster_nodes]
+                    if len(child_clusters) == 0:
+                        leaf_clusters.append(node)
+
+                labels = np.full(n_points, -1, dtype=int)
+                for cluster_id, node in enumerate(sorted(leaf_clusters)):
+                    for pt in all_points[node]:
+                        if labels[pt] == -1:
+                            labels[pt] = cluster_id
+                return labels
+
+            # EOM method: bottom-up selection
+            selected = {node: True for node in cluster_nodes}
+            stab = dict(stability)
+
+            # Process bottom-up (sorted by node id, smallest first = deepest)
+            for node in sorted(cluster_nodes):
+                if node not in children_of:
+                    continue
+                child_clusters = [ch for ch, lam, sz in children_of[node] if ch in cluster_nodes]
+                if len(child_clusters) == 0:
+                    continue
+
+                children_stab_sum = sum(stab.get(ch, 0.0) for ch in child_clusters)
+                node_stab = stab.get(node, 0.0)
+
+                if children_stab_sum > node_stab:
+                    # Children are more stable - deselect parent, propagate stability up
+                    selected[node] = False
+                    stab[node] = children_stab_sum
+                else:
+                    # Parent is more stable - deselect all descendant clusters
+                    def deselect(n):
+                        selected[n] = False
+                        if n in children_of:
+                            for ch, lam, sz in children_of[n]:
+                                if ch in cluster_nodes:
+                                    deselect(ch)
+                    for ch in child_clusters:
+                        deselect(ch)
+
+            # Collect selected clusters (skip root if it's the only one selected)
+            result_clusters = sorted([n for n in cluster_nodes if selected[n]])
+
+            # If only the root is selected, that means no meaningful sub-clusters were found
+            # Still return it as one cluster
+            labels = np.full(n_points, -1, dtype=int)
+            for cluster_id, node in enumerate(result_clusters):
+                for pt in all_points[node]:
+                    if labels[pt] == -1:
+                        labels[pt] = cluster_id
+
+            return labels
+
+        # --- Input validation (same pattern as DBSCAN) ---
+        if not isinstance(topologies, list):
+            print("Cluster.HDBSCAN - Error: The input topologies parameter is not a valid list. Returning None.")
+            return None, None
+        topologyList = [t for t in topologies if Topology.IsInstance(t, "Topology")]
+        if len(topologyList) < 1:
+            print("Cluster.HDBSCAN - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
+            return None, None
+
+        if minSamples is None:
+            minSamples = minClusterSize
+
+        if len(topologyList) < minClusterSize:
+            print("Cluster.HDBSCAN - Error: The input minClusterSize parameter cannot be larger than the number of topologies. Returning None.")
+            return None, None
+
+        if not isinstance(selectors, list):
+            check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
+            if len(check_vertices) > 0:
+                print("Cluster.HDBSCAN - Error: The input selectors parameter is not a valid list and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                return None, None
+        else:
+            selectors = [s for s in selectors if Topology.IsInstance(s, "Vertex")]
+            if len(selectors) < 1:
+                check_vertices = [t for t in topologyList if not Topology.IsInstance(t, "Vertex")]
+                if len(check_vertices) > 0:
+                    print("Cluster.HDBSCAN - Error: The input selectors parameter does not contain any valid vertices and this is needed since the list of topologies contains objects of type other than a topologic_core.Vertex. Returning None.")
+                    return None, None
+            if not len(selectors) == len(topologyList):
+                print("Cluster.HDBSCAN - Error: The input topologies and selectors parameters do not have the same length. Returning None.")
+                return None, None
+        if not isinstance(keys, list):
+            print("Cluster.HDBSCAN - Error: The input keys parameter is not a valid list. Returning None.")
+            return None, None
+
+        if clusterSelectionMethod not in ("eom", "leaf"):
+            print("Cluster.HDBSCAN - Error: The clusterSelectionMethod must be 'eom' or 'leaf'. Returning None.")
+            return None, None
+
+        # --- Feature extraction (same pattern as DBSCAN) ---
+        data = []
+        if selectors is None:
+            for t in topologyList:
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(t)
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(t)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(t)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(t)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value is not None:
+                            elements.append(value)
+                data.append(elements)
+        else:
+            for i, s in enumerate(selectors):
+                elements = []
+                if keys:
+                    d = Topology.Dictionary(topologyList[i])
+                    for key in keys:
+                        if key.lower() == "x":
+                            value = Vertex.X(s)
+                        elif key.lower() == "y":
+                            value = Vertex.Y(s)
+                        elif key.lower() == "z":
+                            value = Vertex.Z(s)
+                        else:
+                            value = Dictionary.ValueAtKey(d, key)
+                        if value is not None:
+                            elements.append(value)
+                data.append(elements)
+
+        # --- HDBSCAN algorithm ---
+        data_array = np.array(data)
+        n_points = data_array.shape[0]
+
+        # Step 1: Compute pairwise distances
+        dists = squareform(pdist(data_array))
+
+        # Step 2: Compute core distances
+        core_dists = _compute_core_distances(dists, minSamples)
+
+        # Step 3: Compute mutual reachability distance matrix
+        mrd = _mutual_reachability_matrix(dists, core_dists)
+
+        # Step 4: Build minimum spanning tree
+        mst_edges = _prim_mst(mrd)
+
+        # Step 5: Build condensed tree from hierarchy
+        condensed_tree, cluster_nodes = _build_hierarchy_and_condensed_tree(mst_edges, n_points, minClusterSize)
+
+        # Step 6: Extract clusters
+        labels = _compute_stability_and_extract(condensed_tree, cluster_nodes, n_points, clusterSelectionMethod)
+
+        # --- Build output clusters (same pattern as DBSCAN) ---
+        unique_labels = sorted(set(labels))
+        tp_clusters = []
+        for lab in unique_labels:
+            if lab == -1:
+                continue
+            indices = list(np.where(labels == lab)[0])
+            if len(indices) > 0:
+                tp_clusters.append(Cluster.ByTopologies([topologyList[i] for i in indices]))
+
+        noise_indices = list(np.where(labels == -1)[0])
+        tp_noise = None
+        if len(noise_indices) > 0:
+            tp_noise = Cluster.ByTopologies([topologyList[i] for i in noise_indices])
+
+        return tp_clusters, tp_noise
+
+    @staticmethod
     def Edges(cluster) -> list:
         """
         Returns the edges of the input cluster.
