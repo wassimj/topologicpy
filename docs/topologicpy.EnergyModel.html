@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.9.13 documentation</title>
+  <title>topologicpy.EnergyModel module &mdash; topologicpy 0.9.14 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.13
+                0.9.14
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -292,20 +292,20 @@ return None</p>
 </dd>
 <dt><strong>shadingSurfaces</strong><span class="classifier">topologic_core.Topology , optional</span></dt><dd><p>The input topology for shading surfaces. Default is None.</p>
 </dd>
-<dt><strong>osModelPath</strong><span class="classifier">str , optional</span></dt><dd><p>The path to the template OSM file. Default is “./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.5.0.osm”.</p>
+<dt><strong>osModelPath</strong><span class="classifier">str , optional</span></dt><dd><p>The path to the template OSM file. Default is “./assets/EnergyModel/OSMTemplate-OfficeBuilding-3.10.0.osm”.</p>
 </dd>
 <dt><strong>weatherFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input energy plus weather (epw) file. Default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.epw”.</p>
 </dd>
-<dt><strong>designDayFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input design day (ddy) file path. Default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy”,</p>
+<dt><strong>designDayFilePath</strong><span class="classifier">str , optional</span></dt><dd><p>The input design day (ddy) file path. Default is “./assets/EnergyModel/GBR_London.Gatwick.037760_IWEC.ddy”.</p>
 </dd>
 <dt><strong>floorLevels</strong><span class="classifier">list , optional</span></dt><dd><p>The list of floor level Z heights including the lowest most and the highest most levels. If set to None, this method will attempt to
-find the floor levels from the horizontal faces of the input topology</p>
+find the floor levels from the horizontal faces of the input topology.</p>
 </dd>
 <dt><strong>buildingName</strong><span class="classifier">str , optional</span></dt><dd><p>The desired name of the building. Default is “TopologicBuilding”.</p>
 </dd>
 <dt><strong>buildingType</strong><span class="classifier">str , optional</span></dt><dd><p>The building type. Default is “Commercial”.</p>
 </dd>
-<dt><strong>defaultSpaceType</strong><span class="classifier">str , optional</span></dt><dd><p>The default space type to apply to spaces that do not have a type assigned in their dictionary. Default is “189.1-2009 - Office - WholeBuilding - Lg Office - CZ4-8”.</p>
+<dt><strong>defaultSpaceType</strong><span class="classifier">str , optional</span></dt><dd><p>The default space type to apply to spaces that do not have a type assigned in their dictionary.</p>
 </dd>
 <dt><strong>northAxis</strong><span class="classifier">float , optional</span></dt><dd><p>The counter-clockwise angle in degrees from the positive Y-axis representing the direction of the north axis. Default is 0.0.</p>
 </dd>
@@ -313,11 +313,11 @@ find the floor levels from the horizontal faces of the input topology</p>
 </dd>
 <dt><strong>coolingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the cooling system should activate. Default is 25.0.</p>
 </dd>
-<dt><strong>heatingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the heating system should activate. Default is 25.0..</p>
+<dt><strong>heatingTemp</strong><span class="classifier">float , optional</span></dt><dd><p>The desired temperature in degrees at which the heating system should activate. Default is 20.0.</p>
 </dd>
-<dt><strong>spaceNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space name value. Default is “Name”.</p>
+<dt><strong>spaceNameKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space name value. Default is “TOPOLOGIC_name”.</p>
 </dd>
-<dt><strong>spaceTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space type value. Default is “Type”.</p>
+<dt><strong>spaceTypeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to find the space type value. Default is “TOPOLOGIC_type”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
