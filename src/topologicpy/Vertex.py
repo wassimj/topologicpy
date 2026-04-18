@@ -884,7 +884,6 @@ class Vertex():
         
         bvh = BVH.ByTopologies(cells, tolerance=tolerance, silent=True)
         candidates = BVH.Clashes(bvh, vertex, tolerance=tolerance)
-        print("Vertex.EnclosingCells - candidates:", candidates)
         enclosingCells = []
         for i in range(len(candidates)):
             if Vertex.IsInternal(vertex, candidates[i], tolerance=tolerance):

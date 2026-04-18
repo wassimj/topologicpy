@@ -1905,20 +1905,24 @@ class Plotly:
     
     @staticmethod
     def FigureByCorrelation(actual,
-                        predicted,
-                        title="Correlation between Actual and Predicted Values",
-                        xTitle = "Actual Values",
-                        yTitle = "Predicted Values",
-                        dotColor = "blue",
-                        lineColor = "red",
-                        width=800,
-                        height=600,
-                        theme='default',
-                        backgroundColor='rgba(0,0,0,0)',
-                        marginLeft=0,
-                        marginRight=0,
-                        marginTop=40,
-                        marginBottom=0):
+                            predicted,
+                            title="Correlation between Actual and Predicted Values",
+                            xTitle="Actual Values",
+                            yTitle="Predicted Values",
+                            showIdentity=True,
+                            showBestFit=True,
+                            dotSize=6,
+                            dotColor="blue",
+                            lineColor="red",
+                            width=800,
+                            height=600,
+                            theme='default',
+                            backgroundColor='rgba(0,0,0,0)',
+                            marginLeft=0,
+                            marginRight=0,
+                            marginTop=40,
+                            marginBottom=0,
+                            ):
         """
         Returns a Plotly Figure showing the correlation between the input actual and predicted values. Actual values are displayed on the X-Axis, Predicted values are displayed on the Y-Axis.
 
@@ -1934,6 +1938,12 @@ class Plotly:
             The desired X-axis title to display. Default is "Actual Values".
         yTitle : str , optional
             The desired Y-axis title to display. Default is "Predicted Values".
+        showIdentity : bool, optional
+            If set to true, shows the 45 degree line.
+        showBestFit : bool, optional
+            If set to True, draws the best fit line through the data.
+        dotSize : int, optional
+            The marker size
         dotColor : str , optional
             The desired color of the dots. This can be any plotly color string and may be specified as:
             - A hex string (e.g. '#ff0000')
@@ -1983,78 +1993,89 @@ class Plotly:
         """
 
         import numpy as np
-        import plotly.graph_objs as go
-        from sklearn.linear_model import LinearRegression
-        import plotly.io as pio
-        from topologicpy.Color import Color
+        import plotly.graph_objects as go
 
-        actual_values = np.array(actual)
-        predicted_values = np.array(predicted)
+        # --- Safety
+        if actual is None or predicted is None:
+            return None
 
-        # Validate the theme input
-        if theme == 'light':
-            pio.templates.default = "plotly_white"
-            backgroundColor='white'
-        elif theme == 'dark':
-            pio.templates.default = "plotly_dark"
-            backgroundColor='black'
-        else:
-            pio.templates.default = None  # Use default Plotly theme
-        
-        # Calculate the best-fit line using linear regression
-        regressor = LinearRegression()
-        regressor.fit(np.array(actual_values).reshape(-1, 1), np.array(predicted_values))
-        line = regressor.predict(np.array(actual_values).reshape(-1, 1))
+        x = np.array(actual).reshape(-1).astype(float)
+        y = np.array(predicted).reshape(-1).astype(float)
 
-        # Determine the range and tick step
-        combined_values = np.concatenate([actual_values, predicted_values])
-        min_value = np.min(combined_values)
-        max_value = np.max(combined_values)
-        margin = 0.1 * (max_value - min_value)
-        tick_range = [min_value - margin, max_value + margin]
-        tick_step = (max_value - min_value) / 10  # Adjust as needed for a different number of ticks
+        if len(x) == 0:
+            return None
 
-        # Create the scatter plot for actual vs predicted values
-        scatter_trace = go.Scatter(
-            x=actual_values,
-            y=predicted_values,
-            mode='markers',
-            name='Actual vs. Predicted',
-            marker=dict(color=dotColor)
+        # --- Metrics
+        eps = 1e-12
+        mae = float(np.mean(np.abs(y - x)))
+        rmse = float(np.sqrt(np.mean((y - x) ** 2)))
+        ss_res = float(np.sum((x - y) ** 2))
+        ss_tot = float(np.sum((x - np.mean(x)) ** 2))
+        r2 = 1.0 - ss_res / (ss_tot + eps)
+
+        # --- Figure
+        fig = go.Figure()
+
+        # Scatter
+        fig.add_trace(go.Scatter(
+            x=x,
+            y=y,
+            mode="markers",
+            name="Predictions",
+            marker=dict(
+                size=int(dotSize),
+                color=dotColor,
+                opacity=0.8
+            )
+        ))
+
+        mn = float(min(np.min(x), np.min(y)))
+        mx = float(max(np.max(x), np.max(y)))
+
+        # Identity line
+        if showIdentity:
+            fig.add_trace(go.Scatter(
+                x=[mn, mx],
+                y=[mn, mx],
+                mode="lines",
+                name="Identity (y=x)",
+                line=dict(color="black", dash="dash"),
+                hoverinfo="skip"
+            ))
+
+        # Best-fit line
+        if showBestFit and len(x) >= 2:
+            a, b = np.polyfit(x, y, 1)
+            fig.add_trace(go.Scatter(
+                x=[mn, mx],
+                y=[a * mn + b, a * mx + b],
+                mode="lines",
+                name=f"Best fit (y={a:.3g}x+{b:.3g})",
+                line=dict(color=lineColor),
+                hoverinfo="skip"
+            ))
+
+        # --- Layout
+        fig.update_layout(
+            title=f"{title} — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}",
+            xaxis_title=xTitle,
+            yaxis_title=yTitle,
+            width=width,
+            height=height,
+            template="plotly_white" if theme == "default" else f"plotly_{theme}",
+            paper_bgcolor=backgroundColor,
+            plot_bgcolor=backgroundColor,
+            margin=dict(
+                l=marginLeft,
+                r=marginRight,
+                t=marginTop,
+                b=marginBottom
+            )
         )
 
-        # Create the line of best fit
-        line_trace = go.Scatter(
-            x=actual_values,
-            y=line,
-            mode='lines',
-            name='Best Fit Line',
-            line=dict(color=lineColor)
-        )
-
-        # Create the 45-degree line
-        line_45_trace = go.Scatter(
-            x=tick_range,
-            y=tick_range,
-            mode='lines',
-            name='45-Degree Line',
-        line=dict(color='green', dash='dash')
-        )
-
-        # Combine the traces into a single figure
-        layout = {
-            "title": title,
-            "width": width,
-            "height": height,
-            "xaxis": {"title": xTitle, "range":tick_range, "dtick":tick_step},
-            "yaxis": {"title": yTitle, "range":tick_range, "dtick":tick_step},
-            "showlegend": True,
-            "paper_bgcolor": Color.AnyToHex(backgroundColor),
-            "plot_bgcolor": Color.AnyToHex(backgroundColor),
-            "margin":dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom)
-        }
-
-        fig = go.Figure(data=[scatter_trace, line_trace, line_45_trace], layout=layout)
+        # --- Enforce square axes (important for parity plots)
+        fig.update_xaxes(scaleanchor="y", scaleratio=1)
+        fig.update_yaxes(scaleanchor="x", scaleratio=1)
 
         return fig
 

@@ -177,6 +177,7 @@ class _RunConfig:
     k_stratify: bool = True                             # only if categorical labels exist
     random_state: int = 42
     shuffle: bool = True                                # affects holdout + in-graph mask fallback
+    holdout_group_by: Optional[str] = None              # graph_df column name for group-aware graph-level holdout
 
     # link prediction split (within each graph)
     link_val_ratio: float = 0.1
@@ -361,7 +362,7 @@ if _PYG_IMPORT_ERROR is None:
         def forward(self, node_emb, edge_label_index):
             src, dst = edge_label_index[0], edge_label_index[1]
             h = torch.cat([node_emb[src], node_emb[dst]], dim=-1)
-            return self.net(h).squeeze(-1)  # logits
+            return self.net(h).reshape(-1)  # logits
 
 
     class PyG:
@@ -611,6 +612,7 @@ if _PYG_IMPORT_ERROR is None:
                 "cv": cfg.cv,
                 "split": cfg.split,
                 "k_folds": cfg.k_folds,
+                "holdout_group_by": cfg.holdout_group_by,
                 "conv": cfg.conv,
                 "hidden_dims": cfg.hidden_dims,
                 "activation": cfg.activation,
@@ -940,17 +942,84 @@ if _PYG_IMPORT_ERROR is None:
                 return
 
             n = len(self.data_list)
-            idx = list(range(n))
-            if cfg.shuffle:
-                random.Random(cfg.random_state).shuffle(idx)
+            if n == 0:
+                self.train_set = []
+                self.val_set = []
+                self.test_set = []
+                return
 
-            n_train = max(1, int(cfg.split[0] * n))
-            n_val = max(1, int(cfg.split[1] * n))
-            n_test = max(0, n - n_train - n_val)
+            def _counts(total: int) -> Tuple[int, int, int]:
+                if total <= 1:
+                    return total, 0, 0
+                if total == 2:
+                    return 1, 0, 1
+                n_train = max(1, int(cfg.split[0] * total))
+                n_val = max(1, int(cfg.split[1] * total))
+                n_test = max(0, total - n_train - n_val)
+                if n_train + n_val + n_test > total:
+                    overflow = (n_train + n_val + n_test) - total
+                    if n_test >= overflow:
+                        n_test -= overflow
+                    elif n_val >= overflow:
+                        n_val -= overflow
+                    else:
+                        n_train = max(1, n_train - overflow)
+                if n_test == 0 and total >= 3:
+                    if n_val > 1:
+                        n_val -= 1
+                        n_test = 1
+                    elif n_train > 1:
+                        n_train -= 1
+                        n_test = 1
+                return n_train, n_val, n_test
 
-            train_idx = idx[:n_train]
-            val_idx = idx[n_train:n_train + n_val]
-            test_idx = idx[n_train + n_val:n_train + n_val + n_test]
+            # Group-aware holdout split for graph-level tasks.
+            # All graphs with the same group value stay in the same split.
+            if getattr(cfg, "holdout_group_by", None):
+                if self.graph_df is None:
+                    raise ValueError("PyG - Error: graph_df is not loaded, so group-aware holdout split cannot be computed.")
+                if cfg.holdout_group_by not in self.graph_df.columns:
+                    raise ValueError(
+                        f"PyG - Error: holdout_group_by='{cfg.holdout_group_by}' was not found in graphs.csv columns."
+                    )
+
+                gids = list(self.graph_df[cfg.graph_id_header].unique())
+                gid_to_index = {gid: i for i, gid in enumerate(gids)}
+                group_series = (
+                    self.graph_df[[cfg.graph_id_header, cfg.holdout_group_by]]
+                    .drop_duplicates(subset=[cfg.graph_id_header])
+                    .set_index(cfg.graph_id_header)[cfg.holdout_group_by]
+                )
+
+                groups = [group_series.loc[gid] for gid in gids]
+                unique_groups = list(dict.fromkeys(groups))
+                if cfg.shuffle:
+                    random.Random(cfg.random_state).shuffle(unique_groups)
+
+                g_train, g_val, g_test = _counts(len(unique_groups))
+                train_groups = set(unique_groups[:g_train])
+                val_groups = set(unique_groups[g_train:g_train + g_val])
+                test_groups = set(unique_groups[g_train + g_val:g_train + g_val + g_test])
+
+                train_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in train_groups]
+                val_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in val_groups]
+                test_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in test_groups]
+
+                if len(train_idx) == 0:
+                    raise ValueError("PyG - Error: group-aware holdout split produced an empty training set.")
+                if (len(val_idx) == 0) and (len(unique_groups) >= 3):
+                    raise ValueError("PyG - Error: group-aware holdout split produced an empty validation set.")
+                if (len(test_idx) == 0) and (len(unique_groups) >= 3):
+                    raise ValueError("PyG - Error: group-aware holdout split produced an empty test set.")
+            else:
+                idx = list(range(n))
+                if cfg.shuffle:
+                    random.Random(cfg.random_state).shuffle(idx)
+
+                n_train, n_val, n_test = _counts(n)
+                train_idx = idx[:n_train]
+                val_idx = idx[n_train:n_train + n_val]
+                test_idx = idx[n_train + n_val:n_train + n_val + n_test]
 
             self.train_set = [self.data_list[i] for i in train_idx]
             self.val_set = [self.data_list[i] for i in val_idx]
@@ -1458,10 +1527,10 @@ if _PYG_IMPORT_ERROR is None:
                             all_emb.append(node_emb.detach().cpu())
 
                         if cfg.task == "regression":
-                            pred = logits.squeeze(-1).detach().cpu().numpy()
+                            pred = logits.reshape(-1).detach().cpu().numpy()
                             all_pred.extend(pred.tolist())
                             if hasattr(batch, "y") and batch.y is not None:
-                                all_true.extend(batch.y.squeeze(-1).detach().cpu().numpy().tolist())
+                                all_true.extend(batch.y.reshape(-1).detach().cpu().numpy().tolist())
                             if return_logits:
                                 all_logits.append(logits.detach().cpu())
                         else:
@@ -1545,7 +1614,7 @@ if _PYG_IMPORT_ERROR is None:
                             emb_per_graph.append(emb_cpu)
 
                         if cfg.task == "regression":
-                            pred_all = logits.squeeze(-1)
+                            pred_all = logits.reshape(-1)
                             if mask_name is not None:
                                 mask = getattr(data, mask_name)
                                 pred = pred_all[mask]
@@ -1639,7 +1708,7 @@ if _PYG_IMPORT_ERROR is None:
                             emb_per_graph.append(node_emb.detach().cpu())
 
                         if cfg.task == "regression":
-                            pred_all = logits.squeeze(-1)
+                            pred_all = logits.reshape(-1)
                             if mask_name is not None:
                                 mask = getattr(data, mask_name)
                                 pred = pred_all[mask]
@@ -1747,7 +1816,7 @@ if _PYG_IMPORT_ERROR is None:
         # --------
         def _loss_from_logits(self, logits, y, task: TaskKind):
             if task == "regression":
-                pred = logits.squeeze(-1)
+                pred = logits.reshape(-1)
                 return self.criterion(pred.float(), y.float())
             return self.criterion(logits, y.long())
 
@@ -1887,8 +1956,8 @@ if _PYG_IMPORT_ERROR is None:
                 node_emb = self.model["encoder"](batch.x, batch.edge_index)
                 out = self.model["head"](node_emb, batch.batch)
                 if self.config.task == "regression":
-                    y_true.extend(batch.y.squeeze(-1).detach().cpu().numpy().tolist())
-                    y_pred.extend(out.squeeze(-1).detach().cpu().numpy().tolist())
+                    y_true.extend(batch.y.reshape(-1).detach().cpu().numpy().tolist())
+                    y_pred.extend(out.reshape(-1).detach().cpu().numpy().tolist())
                 else:
                     probs = F.softmax(out, dim=-1)
                     y_true.extend(batch.y.detach().cpu().numpy().tolist())
@@ -1906,7 +1975,7 @@ if _PYG_IMPORT_ERROR is None:
                 mask = getattr(data, mask_name)
                 if self.config.task == "regression":
                     y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
-                    y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
+                    y_pred.extend(out.reshape(-1)[mask].detach().cpu().numpy().tolist())
                 else:
                     probs = F.softmax(out, dim=-1)
                     y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
@@ -1924,7 +1993,7 @@ if _PYG_IMPORT_ERROR is None:
                 mask = getattr(data, mask_name)
                 if self.config.task == "regression":
                     y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
-                    y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
+                    y_pred.extend(out.reshape(-1)[mask].detach().cpu().numpy().tolist())
                 else:
                     probs = F.softmax(out, dim=-1)
                     y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
@@ -2219,7 +2288,6 @@ if _PYG_IMPORT_ERROR is None:
                 grayScale = grayScale
             )
 
-            # ---- FIX: force BOTH axes ticks to show categories (prevents sequential Y labels)
             n = len(labels_str)
             tickvals = list(range(n))
             fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
@@ -2228,60 +2296,92 @@ if _PYG_IMPORT_ERROR is None:
             return fig
 
         def PlotParity(self,
-                    split: str = "test",
-                    title: str = None,
-                    show_identity: bool = True,
-                    show_best_fit: bool = True,
-                    point_size: int = 6):
+                split: str = "test",
+                title: str = None,
+                xTitle: str = "Actual Values",
+                yTitle: str = "Predicted Values",
+                showIdentity: bool = True,
+                showBestFit: bool = True,
+                dotSize: int = 6,
+                dotColor: str = "blue",
+                lineColor: str = "red",
+                width: int = 800,
+                height: int = 600,
+                theme: str = "default",
+                backgroundColor: str = 'rgba(0,0,0,0)',
+                marginLeft: int = 0,
+                marginRight: int = 0,
+                marginTop: int = 40,
+                marginBottom: int = 0):
             """
-            Plot a parity (true vs predicted) plot for regression tasks (Plotly).
+            Plot a parity / correlation plot for regression tasks by delegating to
+            ``Plotly.FigureByCorrelation``.
 
             Parameters
             ----------
             split : {"train", "val", "validate", "validation", "test", "all"}, optional
-                Which split to evaluate.
-
-                - "train"            : training split
-                - "val"/"validate"   : validation split
-                - "test"             : test split
-                - "all"              : concatenates train+val+test
-
-                Default is ``"test"``.
-
+                Which split to evaluate. Default is ``"test"``.
             title : str, optional
                 Custom plot title. If None, an automatic title is generated.
-
-            show_identity : bool, optional
-                If True, draws the ``y=x`` reference line. Default is True.
-
-            show_best_fit : bool, optional
-                If True, draws a least-squares best-fit line (ŷ = a·y + b). Default is True.
-
-            point_size : int, optional
-                Marker size. Default is 6.
+            xTitle : str, optional
+                The X-axis title. Default is ``"Actual Values"``.
+            yTitle : str, optional
+                The Y-axis title. Default is ``"Predicted Values"``.
+            showIdentity : bool, optional
+                If set to true, shows the 45 degree line.
+            showBestFit : bool, optional
+                If set to True, draws the best fit line through the data.
+            dotSize : int, optional
+                The marker size
+            dotColor : str, optional
+                Dot color passed to ``Plotly.FigureByCorrelation``.
+            lineColor : str, optional
+                Best-fit line color passed to ``Plotly.FigureByCorrelation``.
+            width : int, optional
+                Figure width in pixels.
+            height : int, optional
+                Figure height in pixels.
+            theme : str, optional
+                Plotly theme. Options are ``"dark"``, ``"light"``, ``"default"``.
+            backgroundColor : str, optional
+                Figure background color.
+            marginLeft : int, optional
+                Left margin in pixels.
+            marginRight : int, optional
+                Right margin in pixels.
+            marginTop : int, optional
+                Top margin in pixels.
+            marginBottom : int, optional
+                Bottom margin in pixels.
 
             Returns
             -------
             plotly.graph_objects.Figure
-                Scatter plot of true vs predicted values with optional reference lines.
+                A correlation figure of actual vs predicted values.
 
             Raises
             ------
             ValueError
-                If called when ``config.task`` is not ``"regression"`` or when ``config.level`` is ``"link"``.
+                If called when ``config.task`` is not ``"regression"`` or when
+                ``config.level`` is ``"link"``.
             RuntimeError
                 If no regression labels are found for the requested split(s).
 
             Notes
             -----
-            - For node/edge regression, the method uses the corresponding boolean masks on each
-            graph and aggregates across all graphs.
-            - This method relies on :meth:`_predict_graph`, :meth:`_predict_node`, and :meth:`_predict_edge`.
+            - For node/edge regression, the method uses the corresponding boolean masks
+            on each graph and aggregates across all graphs.
+            - This method relies on :meth:`_predict_graph`, :meth:`_predict_node`,
+            and :meth:`_predict_edge`.
+            - ``show_identity``, ``show_best_fit``, and ``point_size`` are kept only
+            for API compatibility. The delegated Plotly method always shows the
+            best-fit line and 45-degree line, and does not expose point size.  
             """
             if go is None or px is None:
                 raise ImportError("Plotly is required for plotting methods. Install plotly to use this feature.")
 
             import numpy as np
+            from topologicpy.Plotly import Plotly
 
             if self.config.task != "regression" or self.config.level == "link":
                 raise ValueError("Parity plot is only available for regression (graph/node/edge).")
@@ -2310,15 +2410,15 @@ if _PYG_IMPORT_ERROR is None:
                     mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
                     return self._predict_edge(loader, mask)
 
-            # ---- Collect y_true/y_pred for split or splits
+            # Collect y_true / y_pred
             if split_l == "all":
                 y_true_all = []
                 y_pred_all = []
                 for s in ("train", "val", "test"):
                     yt, yp = _y_for_one_split(s)
                     if yt is not None and len(yt):
-                        y_true_all.append(yt)
-                        y_pred_all.append(yp)
+                        y_true_all.append(np.asarray(yt).reshape(-1))
+                        y_pred_all.append(np.asarray(yp).reshape(-1))
                 if not y_true_all:
                     raise RuntimeError("No labels found for parity plot (split='all').")
                 y_true = np.concatenate(y_true_all, axis=0)
@@ -2329,37 +2429,10 @@ if _PYG_IMPORT_ERROR is None:
                 y_true, y_pred = _y_for_one_split(split_l)
                 if y_true is None or len(y_true) == 0:
                     raise RuntimeError(f"No labels found for parity plot (split='{split_l}').")
+                y_true = np.asarray(y_true).reshape(-1)
+                y_pred = np.asarray(y_pred).reshape(-1)
 
-            # ---- Build figure
-            fig = go.Figure()
-            fig.add_trace(go.Scatter(
-                x=y_true, y=y_pred,
-                mode="markers",
-                name="Predictions",
-                marker=dict(size=int(point_size))
-            ))
-
-            mn = float(min(np.min(y_true), np.min(y_pred))) if len(y_true) else 0.0
-            mx = float(max(np.max(y_true), np.max(y_pred))) if len(y_true) else 1.0
-
-            if show_identity:
-                fig.add_trace(go.Scatter(
-                    x=[mn, mx], y=[mn, mx],
-                    mode="lines",
-                    name="Ideal (y=x)",
-                    hoverinfo="skip"
-                ))
-
-            if show_best_fit and len(y_true) >= 2:
-                a, b = np.polyfit(y_true.astype(float), y_pred.astype(float), 1)
-                fig.add_trace(go.Scatter(
-                    x=[mn, mx], y=[a * mn + b, a * mx + b],
-                    mode="lines",
-                    name=f"Best fit (y={a:.3g}x+{b:.3g})",
-                    hoverinfo="skip"
-                ))
-
-            # lightweight metrics
+            # Lightweight metrics for title
             eps = 1e-12
             y_true_f = y_true.astype(float)
             y_pred_f = y_pred.astype(float)
@@ -2370,13 +2443,29 @@ if _PYG_IMPORT_ERROR is None:
             r2 = 1.0 - ss_res / (ss_tot + eps)
 
             if title is None:
-                title = f"Parity Plot ({split_l})"
+                title = f"Parity Plot ({split_l}) — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}"
 
-            fig.update_layout(
-                title=f"{title} — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}",
-                xaxis_title="True",
-                yaxis_title="Predicted"
+            fig = Plotly.FigureByCorrelation(
+                actual=y_true_f.tolist(),
+                predicted=y_pred_f.tolist(),
+                title=title,
+                xTitle=xTitle,
+                yTitle=yTitle,
+                showIdentity=showIdentity,
+                showBestFit=showBestFit,
+                dotSize=dotSize,
+                dotColor=dotColor,
+                lineColor=lineColor,
+                width=width,
+                height=height,
+                theme=theme,
+                backgroundColor=backgroundColor,
+                marginLeft=marginLeft,
+                marginRight=marginRight,
+                marginTop=marginTop,
+                marginBottom=marginBottom
             )
+
             return fig
 
         def SaveModel(self, path: str, include_config: bool = True):
