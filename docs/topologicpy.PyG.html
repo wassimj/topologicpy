@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.PyG module &mdash; topologicpy 0.9.18 documentation</title>
+  <title>topologicpy.PyG module &mdash; topologicpy 0.9.19 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.18
+                0.9.19
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -248,8 +248,8 @@ gradient_clip_norm=1.0</p>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotHistory" title="topologicpy.PyG.PyG.PlotHistory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotHistory</span></code></a>()</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotParity" title="topologicpy.PyG.PyG.PlotParity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotParity</span></code></a>([split, title, show_identity, ...])</p></td>
-<td><p>Plot a parity (true vs predicted) plot for regression tasks (Plotly).</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.PlotParity" title="topologicpy.PyG.PyG.PlotParity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PlotParity</span></code></a>([split, title, xTitle, yTitle, ...])</p></td>
+<td><p>Plot a parity / correlation plot for regression tasks by delegating to <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.PyG.PyG.Predict" title="topologicpy.PyG.PyG.Predict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Predict</span></code></a>([split, threshold, return_logits, ...])</p></td>
 <td><p>Run inference (prediction) using the current model on the loaded dataset.</p></td>
@@ -484,39 +484,58 @@ Predicted categories are displayed on the Y-Axis.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.PyG.PyG.PlotParity">
-<span class="sig-name descname"><span class="pre">PlotParity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_identity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">show_best_fit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">point_size</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotParity" title="Permalink to this definition"></a></dt>
-<dd><p>Plot a parity (true vs predicted) plot for regression tasks (Plotly).</p>
-<dl class="field-list">
+<span class="sig-name descname"><span class="pre">PlotParity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'test'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showIdentity</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showBestFit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.PyG.PyG.PlotParity" title="Permalink to this definition"></a></dt>
+<dd><p>Plot a parity / correlation plot for regression tasks by delegating to
+<code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>split</strong><span class="classifier">{“train”, “val”, “validate”, “validation”, “test”, “all”}, optional</span></dt><dd><p>Which split to evaluate.</p>
-<ul class="simple">
-<li><p>“train”            : training split</p></li>
-<li><p>“val”/”validate”   : validation split</p></li>
-<li><p>“test”             : test split</p></li>
-<li><p>“all”              : concatenates train+val+test</p></li>
-</ul>
-<p>Default is <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>.</p>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>split</strong><span class="classifier">{“train”, “val”, “validate”, “validation”, “test”, “all”}, optional</span></dt><dd><p>Which split to evaluate. Default is <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>.</p>
 </dd>
 <dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>Custom plot title. If None, an automatic title is generated.</p>
 </dd>
-<dt><strong>show_identity</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, draws the <code class="docutils literal notranslate"><span class="pre">y=x</span></code> reference line. Default is True.</p>
+<dt><strong>xTitle</strong><span class="classifier">str, optional</span></dt><dd><p>The X-axis title. Default is <code class="docutils literal notranslate"><span class="pre">&quot;Actual</span> <span class="pre">Values&quot;</span></code>.</p>
 </dd>
-<dt><strong>show_best_fit</strong><span class="classifier">bool, optional</span></dt><dd><p>If True, draws a least-squares best-fit line (ŷ = a·y + b). Default is True.</p>
+<dt><strong>yTitle</strong><span class="classifier">str, optional</span></dt><dd><p>The Y-axis title. Default is <code class="docutils literal notranslate"><span class="pre">&quot;Predicted</span> <span class="pre">Values&quot;</span></code>.</p>
 </dd>
-<dt><strong>point_size</strong><span class="classifier">int, optional</span></dt><dd><p>Marker size. Default is 6.</p>
+<dt><strong>showIdentity</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to true, shows the 45 degree line.</p>
+</dd>
+<dt><strong>showBestFit</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, draws the best fit line through the data.</p>
+</dd>
+<dt><strong>dotSize</strong><span class="classifier">int, optional</span></dt><dd><p>The marker size</p>
+</dd>
+<dt><strong>dotColor</strong><span class="classifier">str, optional</span></dt><dd><p>Dot color passed to <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p>
+</dd>
+<dt><strong>lineColor</strong><span class="classifier">str, optional</span></dt><dd><p>Best-fit line color passed to <code class="docutils literal notranslate"><span class="pre">Plotly.FigureByCorrelation</span></code>.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>Figure width in pixels.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int, optional</span></dt><dd><p>Figure height in pixels.</p>
+</dd>
+<dt><strong>theme</strong><span class="classifier">str, optional</span></dt><dd><p>Plotly theme. Options are <code class="docutils literal notranslate"><span class="pre">&quot;dark&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;light&quot;</span></code>, <code class="docutils literal notranslate"><span class="pre">&quot;default&quot;</span></code>.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">str, optional</span></dt><dd><p>Figure background color.</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int, optional</span></dt><dd><p>Left margin in pixels.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int, optional</span></dt><dd><p>Right margin in pixels.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int, optional</span></dt><dd><p>Top margin in pixels.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int, optional</span></dt><dd><p>Bottom margin in pixels.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>plotly.graph_objects.Figure</dt><dd><p>Scatter plot of true vs predicted values with optional reference lines.</p>
+<dt>plotly.graph_objects.Figure</dt><dd><p>A correlation figure of actual vs predicted values.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-odd">Raises</dt>
 <dd class="field-odd"><dl class="simple">
-<dt>ValueError</dt><dd><p>If called when <code class="docutils literal notranslate"><span class="pre">config.task</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;regression&quot;</span></code> or when <code class="docutils literal notranslate"><span class="pre">config.level</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;link&quot;</span></code>.</p>
+<dt>ValueError</dt><dd><p>If called when <code class="docutils literal notranslate"><span class="pre">config.task</span></code> is not <code class="docutils literal notranslate"><span class="pre">&quot;regression&quot;</span></code> or when
+<code class="docutils literal notranslate"><span class="pre">config.level</span></code> is <code class="docutils literal notranslate"><span class="pre">&quot;link&quot;</span></code>.</p>
 </dd>
 <dt>RuntimeError</dt><dd><p>If no regression labels are found for the requested split(s).</p>
 </dd>
@@ -525,10 +544,14 @@ Predicted categories are displayed on the Y-Axis.</p>
 </dl>
 <p class="rubric">Notes</p>
 <ul class="simple">
-<li><p>For node/edge regression, the method uses the corresponding boolean masks on each</p></li>
+<li><p>For node/edge regression, the method uses the corresponding boolean masks</p></li>
 </ul>
-<p>graph and aggregates across all graphs.
-- This method relies on <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_graph()</span></code>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_node()</span></code>, and <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_edge()</span></code>.</p>
+<p>on each graph and aggregates across all graphs.
+- This method relies on <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_graph()</span></code>, <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_node()</span></code>,
+and <code class="xref py py-meth docutils literal notranslate"><span class="pre">_predict_edge()</span></code>.
+- <code class="docutils literal notranslate"><span class="pre">show_identity</span></code>, <code class="docutils literal notranslate"><span class="pre">show_best_fit</span></code>, and <code class="docutils literal notranslate"><span class="pre">point_size</span></code> are kept only
+for API compatibility. The delegated Plotly method always shows the
+best-fit line and 45-degree line, and does not expose point size.</p>
 </dd></dl>
 
 <dl class="py method">
