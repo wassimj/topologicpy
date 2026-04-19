@@ -4223,29 +4223,32 @@ class Graph:
         graph_feat_cols = _feature_columns(graphs_df, graphFeaturesHeader)
         node_feat_cols = _feature_columns(nodes_df, nodeFeaturesHeader)
         edge_feat_cols = _feature_columns(edges_df, edgeFeaturesHeader)
+        clean_graph_feat_cols =  [c.rsplit("_", 1)[1] for c in graph_feat_cols if "_" in c]
+        clean_node_feat_cols =  [c.rsplit("_", 1)[1] for c in node_feat_cols if "_" in c]
+        clean_edge_feat_cols =  [c.rsplit("_", 1)[1] for c in edge_feat_cols if "_" in c]
 
         # Feature keys mapping
         if graphFeaturesKeys is None:
-            graph_feat_keys = graph_feat_cols[:]  # store using column names
+            graph_feat_keys = clean_graph_feat_cols[:]  # store using column names
         else:
             graph_feat_keys = list(graphFeaturesKeys)
-            if len(graph_feat_keys) != len(graph_feat_cols):
+            if len(graph_feat_keys) != len(clean_graph_feat_cols):
                 _warn("Graph.ByCSVPath - Error: graphFeaturesKeys length does not match number of graph feature columns.")
                 return None
 
         if nodeFeaturesKeys is None:
-            node_feat_keys = node_feat_cols[:]
+            node_feat_keys = clean_node_feat_cols[:]
         else:
             node_feat_keys = list(nodeFeaturesKeys)
-            if len(node_feat_keys) != len(node_feat_cols):
+            if len(node_feat_keys) != len(clean_node_feat_cols):
                 _warn("Graph.ByCSVPath - Error: nodeFeaturesKeys length does not match number of node feature columns.")
                 return None
 
         if edgeFeaturesKeys is None:
-            edge_feat_keys = edge_feat_cols[:]
+            edge_feat_keys = clean_edge_feat_cols[:]
         else:
             edge_feat_keys = list(edgeFeaturesKeys)
-            if len(edge_feat_keys) != len(edge_feat_cols):
+            if len(edge_feat_keys) != len(clean_edge_feat_cols):
                 _warn("Graph.ByCSVPath - Error: edgeFeaturesKeys length does not match number of edge feature columns.")
                 return None
 
@@ -12419,8 +12422,11 @@ class Graph:
             except Exception:
                 return default_val
 
-        def _feature_headers(prefix, k):
-            return [f"{prefix}_{i}" for i in range(int(k))]
+        # def _feature_headers(prefix, k):
+        #     return [f"{prefix}_{i}" for i in range(int(k))]
+        
+        def _feature_headers(prefix, feature_keys):
+            return [f"{prefix}_{key}" for key in feature_keys]
 
         # ----------------------------
         # Validate inputs
@@ -12461,9 +12467,12 @@ class Graph:
         edge_feature_keys = Helper.Flatten(edgeFeaturesKeys)
 
         # Build feature headers
-        graph_feat_headers = _feature_headers(graphFeaturesHeader, len(graph_feature_keys))
-        node_feat_headers = _feature_headers(nodeFeaturesHeader, len(node_feature_keys))
-        edge_feat_headers = _feature_headers(edgeFeaturesHeader, len(edge_feature_keys))
+        # graph_feat_headers = _feature_headers(graphFeaturesHeader, len(graph_feature_keys))
+        # node_feat_headers = _feature_headers(nodeFeaturesHeader, len(node_feature_keys))
+        # edge_feat_headers = _feature_headers(edgeFeaturesHeader, len(edge_feature_keys))
+        graph_feat_headers = _feature_headers(graphFeaturesHeader, graph_feature_keys)
+        node_feat_headers = _feature_headers(nodeFeaturesHeader, node_feature_keys)
+        edge_feat_headers = _feature_headers(edgeFeaturesHeader, edge_feature_keys)
 
         # CSV modes
         graphs_mode = "w" if overwrite else "a"

@@ -177,7 +177,6 @@ class _RunConfig:
     k_stratify: bool = True                             # only if categorical labels exist
     random_state: int = 42
     shuffle: bool = True                                # affects holdout + in-graph mask fallback
-    holdout_group_by: Optional[str] = None              # graph_df column name for group-aware graph-level holdout
 
     # link prediction split (within each graph)
     link_val_ratio: float = 0.1
@@ -202,7 +201,7 @@ class _RunConfig:
     # ----------------------------
     conv: ConvKind = "sage"
     hidden_dims: Tuple[int, ...] = (64, 64)  # explicit per-layer widths (controls depth)
-    activation: Literal["relu", "gelu", "elu", "tanh"] = "relu"
+    activation: Literal["relu", "gelu", "elu"] = "relu"
     dropout: float = 0.1
     batch_norm: bool = False
     residual: bool = False
@@ -246,8 +245,6 @@ if _PYG_IMPORT_ERROR is None:
                 self.act = F.gelu
             elif activation == "elu":
                 self.act = F.elu
-            elif activation == "tanh":
-                self.act = torch.tanh
             else:
                 raise ValueError("Unsupported activation. Use 'relu', 'gelu', or 'elu'.")
 
@@ -364,7 +361,7 @@ if _PYG_IMPORT_ERROR is None:
         def forward(self, node_emb, edge_label_index):
             src, dst = edge_label_index[0], edge_label_index[1]
             h = torch.cat([node_emb[src], node_emb[dst]], dim=-1)
-            return self.net(h).reshape(-1)  # logits
+            return self.net(h).squeeze(-1)  # logits
 
 
     class PyG:
@@ -614,7 +611,6 @@ if _PYG_IMPORT_ERROR is None:
                 "cv": cfg.cv,
                 "split": cfg.split,
                 "k_folds": cfg.k_folds,
-                "holdout_group_by": cfg.holdout_group_by,
                 "conv": cfg.conv,
                 "hidden_dims": cfg.hidden_dims,
                 "activation": cfg.activation,
@@ -805,11 +801,15 @@ if _PYG_IMPORT_ERROR is None:
                 # Persist back (so later calls see the aligned frames)
                 self.graph_df, self.nodes_df, self.edges_df = gdf, ndf, edf
 
+            # Allow featureless node tables by synthesizing a constant feature column.
+            # PyG convolution layers still require x to have at least one channel.
             if len(node_feat_cols) == 0:
-                raise ValueError(
-                    f"PyG - Error: No node feature columns found. "
-                    f"Expected columns starting with '{cfg.node_features_header}_'."
-                )
+                synthetic_col = f"{cfg.node_features_header}_0"
+                if synthetic_col not in ndf.columns:
+                    ndf = ndf.copy()
+                    ndf[synthetic_col] = 1.0
+                    self.nodes_df = ndf
+                node_feat_cols = [synthetic_col]
 
             for gid in gdf[cfg.graph_id_header].unique():
                 g_row = gdf[gdf[cfg.graph_id_header] == gid]
@@ -944,84 +944,17 @@ if _PYG_IMPORT_ERROR is None:
                 return
 
             n = len(self.data_list)
-            if n == 0:
-                self.train_set = []
-                self.val_set = []
-                self.test_set = []
-                return
+            idx = list(range(n))
+            if cfg.shuffle:
+                random.Random(cfg.random_state).shuffle(idx)
 
-            def _counts(total: int) -> Tuple[int, int, int]:
-                if total <= 1:
-                    return total, 0, 0
-                if total == 2:
-                    return 1, 0, 1
-                n_train = max(1, int(cfg.split[0] * total))
-                n_val = max(1, int(cfg.split[1] * total))
-                n_test = max(0, total - n_train - n_val)
-                if n_train + n_val + n_test > total:
-                    overflow = (n_train + n_val + n_test) - total
-                    if n_test >= overflow:
-                        n_test -= overflow
-                    elif n_val >= overflow:
-                        n_val -= overflow
-                    else:
-                        n_train = max(1, n_train - overflow)
-                if n_test == 0 and total >= 3:
-                    if n_val > 1:
-                        n_val -= 1
-                        n_test = 1
-                    elif n_train > 1:
-                        n_train -= 1
-                        n_test = 1
-                return n_train, n_val, n_test
+            n_train = max(1, int(cfg.split[0] * n))
+            n_val = max(1, int(cfg.split[1] * n))
+            n_test = max(0, n - n_train - n_val)
 
-            # Group-aware holdout split for graph-level tasks.
-            # All graphs with the same group value stay in the same split.
-            if getattr(cfg, "holdout_group_by", None):
-                if self.graph_df is None:
-                    raise ValueError("PyG - Error: graph_df is not loaded, so group-aware holdout split cannot be computed.")
-                if cfg.holdout_group_by not in self.graph_df.columns:
-                    raise ValueError(
-                        f"PyG - Error: holdout_group_by='{cfg.holdout_group_by}' was not found in graphs.csv columns."
-                    )
-
-                gids = list(self.graph_df[cfg.graph_id_header].unique())
-                gid_to_index = {gid: i for i, gid in enumerate(gids)}
-                group_series = (
-                    self.graph_df[[cfg.graph_id_header, cfg.holdout_group_by]]
-                    .drop_duplicates(subset=[cfg.graph_id_header])
-                    .set_index(cfg.graph_id_header)[cfg.holdout_group_by]
-                )
-
-                groups = [group_series.loc[gid] for gid in gids]
-                unique_groups = list(dict.fromkeys(groups))
-                if cfg.shuffle:
-                    random.Random(cfg.random_state).shuffle(unique_groups)
-
-                g_train, g_val, g_test = _counts(len(unique_groups))
-                train_groups = set(unique_groups[:g_train])
-                val_groups = set(unique_groups[g_train:g_train + g_val])
-                test_groups = set(unique_groups[g_train + g_val:g_train + g_val + g_test])
-
-                train_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in train_groups]
-                val_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in val_groups]
-                test_idx = [gid_to_index[gid] for gid, grp in zip(gids, groups) if grp in test_groups]
-
-                if len(train_idx) == 0:
-                    raise ValueError("PyG - Error: group-aware holdout split produced an empty training set.")
-                if (len(val_idx) == 0) and (len(unique_groups) >= 3):
-                    raise ValueError("PyG - Error: group-aware holdout split produced an empty validation set.")
-                if (len(test_idx) == 0) and (len(unique_groups) >= 3):
-                    raise ValueError("PyG - Error: group-aware holdout split produced an empty test set.")
-            else:
-                idx = list(range(n))
-                if cfg.shuffle:
-                    random.Random(cfg.random_state).shuffle(idx)
-
-                n_train, n_val, n_test = _counts(n)
-                train_idx = idx[:n_train]
-                val_idx = idx[n_train:n_train + n_val]
-                test_idx = idx[n_train + n_val:n_train + n_val + n_test]
+            train_idx = idx[:n_train]
+            val_idx = idx[n_train:n_train + n_val]
+            test_idx = idx[n_train + n_val:n_train + n_val + n_test]
 
             self.train_set = [self.data_list[i] for i in train_idx]
             self.val_set = [self.data_list[i] for i in val_idx]
@@ -1616,7 +1549,7 @@ if _PYG_IMPORT_ERROR is None:
                             emb_per_graph.append(emb_cpu)
 
                         if cfg.task == "regression":
-                            pred_all = logits.reshape(-1)
+                            pred_all = logits.squeeze(-1)
                             if mask_name is not None:
                                 mask = getattr(data, mask_name)
                                 pred = pred_all[mask]
@@ -1710,7 +1643,7 @@ if _PYG_IMPORT_ERROR is None:
                             emb_per_graph.append(node_emb.detach().cpu())
 
                         if cfg.task == "regression":
-                            pred_all = logits.reshape(-1)
+                            pred_all = logits.squeeze(-1)
                             if mask_name is not None:
                                 mask = getattr(data, mask_name)
                                 pred = pred_all[mask]
@@ -1818,7 +1751,7 @@ if _PYG_IMPORT_ERROR is None:
         # --------
         def _loss_from_logits(self, logits, y, task: TaskKind):
             if task == "regression":
-                pred = logits.reshape(-1)
+                pred = logits.squeeze(-1)
                 return self.criterion(pred.float(), y.float())
             return self.criterion(logits, y.long())
 
@@ -1977,7 +1910,7 @@ if _PYG_IMPORT_ERROR is None:
                 mask = getattr(data, mask_name)
                 if self.config.task == "regression":
                     y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
-                    y_pred.extend(out.reshape(-1)[mask].detach().cpu().numpy().tolist())
+                    y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
                 else:
                     probs = F.softmax(out, dim=-1)
                     y_true.extend(data.y[mask].detach().cpu().numpy().tolist())
@@ -1995,7 +1928,7 @@ if _PYG_IMPORT_ERROR is None:
                 mask = getattr(data, mask_name)
                 if self.config.task == "regression":
                     y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
-                    y_pred.extend(out.reshape(-1)[mask].detach().cpu().numpy().tolist())
+                    y_pred.extend(out.squeeze(-1)[mask].detach().cpu().numpy().tolist())
                 else:
                     probs = F.softmax(out, dim=-1)
                     y_true.extend(data.edge_y[mask].detach().cpu().numpy().tolist())
@@ -2290,6 +2223,7 @@ if _PYG_IMPORT_ERROR is None:
                 grayScale = grayScale
             )
 
+            # ---- FIX: force BOTH axes ticks to show categories (prevents sequential Y labels)
             n = len(labels_str)
             tickvals = list(range(n))
             fig.update_xaxes(tickmode="array", tickvals=tickvals, ticktext=labels_str)
@@ -2298,97 +2232,118 @@ if _PYG_IMPORT_ERROR is None:
             return fig
 
         def PlotParity(self,
-                split: str = "test",
-                title: str = None,
-                xTitle: str = "Actual Values",
-                yTitle: str = "Predicted Values",
-                showIdentity: bool = True,
-                showBestFit: bool = True,
-                dotSize: int = 6,
-                dotColor: str = "blue",
-                lineColor: str = "red",
-                width: int = 800,
-                height: int = 600,
-                theme: str = "default",
-                backgroundColor: str = 'rgba(0,0,0,0)',
-                marginLeft: int = 0,
-                marginRight: int = 0,
-                marginTop: int = 40,
-                marginBottom: int = 0):
+                    split: str = "test",
+                    title: str = None,
+                    xTitle: str = "Actual Values",
+                    yTitle: str = "Predicted Values",
+                    width: int = 700,
+                    height: int = 700,
+                    showScale: bool = False,
+                    colorScale: str = "viridis",
+                    colorSamples: int = 10,
+                    backgroundColor: str = 'rgba(0,0,0,0)',
+                    marginLeft: int = 0,
+                    marginRight: int = 0,
+                    marginTop: int = 40,
+                    marginBottom: int = 0,
+                    baseFontSize: int = 16,
+                    tickFontSize: int = 14,
+                    titleFontSize: int = 22,
+                    axisTitleFontSize: int = 16,
+                    annotationFontSize: int = 18,
+                    grayScale: bool = False,
+                    show_identity: bool = True,
+                    show_best_fit: bool = True,
+                    point_size: int = 6,
+                    point_alpha: float = 0.8,
+                    padRatio: float = 0.02,
+                    mantissa: int = 6):
             """
-            Plot a parity / correlation plot for regression tasks by delegating to
-            ``Plotly.FigureByCorrelation``.
+            Returns a Plotly Figure of the parity plot of the inference. Actual values are displayed on the X-Axis,
+            predicted values are displayed on the Y-Axis.
 
             Parameters
             ----------
-            split : {"train", "val", "validate", "validation", "test", "all"}, optional
-                Which split to evaluate. Default is ``"test"``.
-            title : str, optional
-                Custom plot title. If None, an automatic title is generated.
-            xTitle : str, optional
-                The X-axis title. Default is ``"Actual Values"``.
-            yTitle : str, optional
-                The Y-axis title. Default is ``"Predicted Values"``.
-            showIdentity : bool, optional
-                If set to true, shows the 45 degree line.
-            showBestFit : bool, optional
-                If set to True, draws the best fit line through the data.
-            dotSize : int, optional
-                The marker size
-            dotColor : str, optional
-                Dot color passed to ``Plotly.FigureByCorrelation``.
-            lineColor : str, optional
-                Best-fit line color passed to ``Plotly.FigureByCorrelation``.
-            width : int, optional
-                Figure width in pixels.
-            height : int, optional
-                Figure height in pixels.
-            theme : str, optional
-                Plotly theme. Options are ``"dark"``, ``"light"``, ``"default"``.
-            backgroundColor : str, optional
-                Figure background color.
-            marginLeft : int, optional
-                Left margin in pixels.
-            marginRight : int, optional
-                Right margin in pixels.
-            marginTop : int, optional
-                Top margin in pixels.
-            marginBottom : int, optional
-                Bottom margin in pixels.
+            split : str , optional
+                Which split(s) to evaluate. Options are: {"train","val","validate","validation","test","all"}. Default is "test".
+            title : str , optional
+                The desired title to display. Default is "Parity Plot".
+            xTitle : str , optional
+                The desired X-axis title to display. Default is "Actual Values".
+            yTitle : str , optional
+                The desired Y-axis title to display. Default is "Predicted Values".
+            width : int , optional
+                The desired width of the figure. Default is 700.
+            height : int , optional
+                The desired height of the figure. Default is 700.
+            showScale : bool , optional
+                If set to True, the color scale is displayed. Default is False.
+            colorScale : str , optional
+                The desired Plotly color scale name to use if point colors are enabled. Default is "viridis".
+            colorSamples : int , optional
+                The number of samples to use when discretizing the input color scale. Default is 10.
+            backgroundColor : str , optional
+                The desired background color of the figure. Default is 'rgba(0,0,0,0)'.
+            marginLeft : int , optional
+                The desired left margin in pixels. Default is 0.
+            marginRight : int , optional
+                The desired right margin in pixels. Default is 0.
+            marginTop : int , optional
+                The desired top margin in pixels. Default is 40.
+            marginBottom : int , optional
+                The desired bottom margin in pixels. Default is 0.
+            baseFontSize : int , optional
+                The desired base font size. Default is 16.
+            tickFontSize : int , optional
+                The desired axis tick font size. Default is 14.
+            titleFontSize : int , optional
+                The desired title font size. Default is 22.
+            axisTitleFontSize : int , optional
+                The desired axis title font size. Default is 16.
+            annotationFontSize : int , optional
+                The desired annotation font size. Default is 18.
+            grayScale : bool , optional
+                If set to True, the selected color scale is converted to grayscale. Default is False.
+            show_identity : bool , optional
+                If set to True, draws the ideal y=x line. Default is True.
+            show_best_fit : bool , optional
+                If set to True, draws the least-squares best-fit line. Default is True.
+            point_size : int , optional
+                The desired marker size. Default is 6.
+            point_alpha : float , optional
+                The desired marker opacity between 0 and 1. Default is 0.8.
+            padRatio : float , optional
+                The desired fractional padding added around the shared axis range. Default is 0.02.
+            mantissa : int , optional
+                The desired length of the mantissa for displayed metrics. Default is 6.
 
             Returns
             -------
             plotly.graph_objects.Figure
-                A correlation figure of actual vs predicted values.
+                The Plotly Figure.
 
             Raises
             ------
             ValueError
-                If called when ``config.task`` is not ``"regression"`` or when
-                ``config.level`` is ``"link"``.
+                If called when the task is not regression or when the level is link prediction.
             RuntimeError
                 If no regression labels are found for the requested split(s).
 
             Notes
             -----
-            - For node/edge regression, the method uses the corresponding boolean masks
-            on each graph and aggregates across all graphs.
-            - This method relies on :meth:`_predict_graph`, :meth:`_predict_node`,
-            and :meth:`_predict_edge`.
-            - ``show_identity``, ``show_best_fit``, and ``point_size`` are kept only
-            for API compatibility. The delegated Plotly method always shows the
-            best-fit line and 45-degree line, and does not expose point size.  
+            This method enforces identical numeric domains, identical tick values, and a square plot domain so that
+            the parity line is geometrically and numerically meaningful.
             """
             if go is None or px is None:
                 raise ImportError("Plotly is required for plotting methods. Install plotly to use this feature.")
 
-            import numpy as np
+            from topologicpy.Color import Color
             from topologicpy.Plotly import Plotly
 
             if self.config.task != "regression" or self.config.level == "link":
                 raise ValueError("Parity plot is only available for regression (graph/node/edge).")
 
-            split_l = (split or "test").lower()
+            split_l = (split or "test").lower().strip()
             if split_l in ("validate", "validation"):
                 split_l = "val"
 
@@ -2401,18 +2356,14 @@ if _PYG_IMPORT_ERROR is None:
                     else:
                         loader = DataLoader(self.test_set, batch_size=self.config.batch_size, shuffle=False)
                     return self._predict_graph(loader)
-
-                elif self.config.level == "node":
+                if self.config.level == "node":
                     loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
                     mask = "train_mask" if one_split == "train" else ("val_mask" if one_split == "val" else "test_mask")
                     return self._predict_node(loader, mask)
+                loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
+                mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
+                return self._predict_edge(loader, mask)
 
-                else:  # edge
-                    loader = DataLoader(self.data_list, batch_size=1, shuffle=False)
-                    mask = "edge_train_mask" if one_split == "train" else ("edge_val_mask" if one_split == "val" else "edge_test_mask")
-                    return self._predict_edge(loader, mask)
-
-            # Collect y_true / y_pred
             if split_l == "all":
                 y_true_all = []
                 y_pred_all = []
@@ -2434,40 +2385,115 @@ if _PYG_IMPORT_ERROR is None:
                 y_true = np.asarray(y_true).reshape(-1)
                 y_pred = np.asarray(y_pred).reshape(-1)
 
-            # Lightweight metrics for title
+            y_true = y_true.astype(float)
+            y_pred = y_pred.astype(float)
+
+            valid_mask = np.isfinite(y_true) & np.isfinite(y_pred)
+            y_true = y_true[valid_mask]
+            y_pred = y_pred[valid_mask]
+            if len(y_true) == 0:
+                raise RuntimeError(f"No finite labels found for parity plot (split='{split_l}').")
+
+            min_val = float(min(np.min(y_true), np.min(y_pred)))
+            max_val = float(max(np.max(y_true), np.max(y_pred)))
+            span = max_val - min_val
+            pad = float(padRatio) * span if span > 0 else 1.0
+            min_val -= pad
+            max_val += pad
+
+            num_ticks = 6
+            tick_vals = np.linspace(min_val, max_val, num_ticks)
+            tick_text = [str(round(float(v), int(mantissa))) for v in tick_vals]
+
             eps = 1e-12
-            y_true_f = y_true.astype(float)
-            y_pred_f = y_pred.astype(float)
-            mae = float(np.mean(np.abs(y_pred_f - y_true_f)))
-            rmse = float(np.sqrt(np.mean((y_pred_f - y_true_f) ** 2)))
-            ss_res = float(np.sum((y_true_f - y_pred_f) ** 2))
-            ss_tot = float(np.sum((y_true_f - np.mean(y_true_f)) ** 2))
+            mae = float(np.mean(np.abs(y_pred - y_true)))
+            rmse = float(np.sqrt(np.mean((y_pred - y_true) ** 2)))
+            ss_res = float(np.sum((y_true - y_pred) ** 2))
+            ss_tot = float(np.sum((y_true - np.mean(y_true)) ** 2))
             r2 = 1.0 - ss_res / (ss_tot + eps)
 
             if title is None:
-                title = f"Parity Plot ({split_l}) — MAE={mae:.4g}, RMSE={rmse:.4g}, R²={r2:.4g}"
+                title = f"Parity Plot ({split_l})"
+            title = f"{title}<br><sup>MAE={round(mae, int(mantissa))}, RMSE={round(rmse, int(mantissa))}, R²={round(r2, int(mantissa))}</sup>"
 
-            fig = Plotly.FigureByCorrelation(
-                actual=y_true_f.tolist(),
-                predicted=y_pred_f.tolist(),
+            marker_color = Color.ByValueInRange(value=r2,
+                                                minValue=-1,
+                                                maxValue=1,
+                                                colorScale=colorScale)
+            if grayScale:
+                marker_color = Color.AnyToHex(marker_color)
+            elif isinstance(marker_color, (list, tuple)) and len(marker_color) >= 3:
+                marker_color = f"rgb({int(marker_color[0])},{int(marker_color[1])},{int(marker_color[2])})"
+
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                x=y_true,
+                y=y_pred,
+                mode="markers",
+                name="Predictions",
+                marker=dict(
+                    size=int(point_size),
+                    color="black",
+                    opacity=max(0.0, min(1.0, float(point_alpha))),
+                    showscale=bool(showScale),
+                    colorscale=colorScale if showScale else None,
+                    colorbar=dict(title="R²") if showScale else None
+                ),
+                hovertemplate="Actual: %{x}<br>Predicted: %{y}<extra></extra>"
+            ))
+
+            if show_identity:
+                fig.add_trace(go.Scatter(
+                    x=[min_val, max_val],
+                    y=[min_val, max_val],
+                    mode="lines",
+                    name="Ideal (y=x)",
+                    hoverinfo="skip",
+                    line=dict(dash="dash")
+                ))
+
+            if show_best_fit and len(y_true) >= 2:
+                a, b = np.polyfit(y_true, y_pred, 1)
+                fig.add_trace(go.Scatter(
+                    x=[min_val, max_val],
+                    y=[a * min_val + b, a * max_val + b],
+                    mode="lines",
+                    name=f"Best Fit (y={round(float(a), int(mantissa))}x+{round(float(b), int(mantissa))})",
+                    hoverinfo="skip",
+                    line=dict(dash="dot")
+                ))
+
+            fig.update_layout(
                 title=title,
-                xTitle=xTitle,
-                yTitle=yTitle,
-                showIdentity=showIdentity,
-                showBestFit=showBestFit,
-                dotSize=dotSize,
-                dotColor=dotColor,
-                lineColor=lineColor,
-                width=width,
-                height=height,
-                theme=theme,
-                backgroundColor=backgroundColor,
-                marginLeft=marginLeft,
-                marginRight=marginRight,
-                marginTop=marginTop,
-                marginBottom=marginBottom
+                xaxis_title=xTitle,
+                yaxis_title=yTitle,
+                showlegend=True,
+                legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
             )
 
+            fig.update_xaxes(
+                range=[min_val, max_val],
+                tickmode="array",
+                tickvals=tick_vals.tolist(),
+                ticktext=tick_text,
+                constrain="domain",
+                showgrid=True,
+                zeroline=False,
+                title_font=dict(size=axisTitleFontSize),
+                tickfont=dict(size=tickFontSize)
+            )
+            fig.update_yaxes(
+                range=[min_val, max_val],
+                tickmode="array",
+                tickvals=tick_vals.tolist(),
+                ticktext=tick_text,
+                scaleanchor="x",
+                scaleratio=1,
+                showgrid=True,
+                zeroline=False,
+                title_font=dict(size=axisTitleFontSize),
+                tickfont=dict(size=tickFontSize)
+            )
             return fig
 
         def SaveModel(self, path: str, include_config: bool = True):
