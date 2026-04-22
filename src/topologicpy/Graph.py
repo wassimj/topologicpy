@@ -16407,6 +16407,95 @@ class Graph:
                 return None
 
     @staticmethod
+    def Neigborhood(
+        graph,
+        vertices: list = None,
+        k: int = 1,
+        searchType: str = "equal to",
+        key: str = None,
+        value: Any = None,
+        direction: str = "both",
+        silent: bool = False,
+    ):
+        """
+        Returns a subgraph consisting of the k-hop neighborhood around the input list of seed vertices.
+
+        Parameters
+        ----------
+        graph : topologicpy.Graph
+            The input graph.
+        vertices : list
+            The input list of seed vertices. If set to None, all the vertices of the graph will be searched.
+        k : int, optional
+            Number of hops. Default is 1.
+        searchType : str , optional
+            The type of search query to conduct in the topology's dictionary to filter the input vertices. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". Default is "equal to".
+        key : str , optional
+            The dictionary key to search within. If set, the input vertices will be filtered based on this key and value pair. Default is None which means it will not filter the input vertices.
+        value : str , optional
+            The value to search for at the specified key. If set, the input vertices will be filtered based on this value. Default is None which means it will not filter the input vertices..
+        direction : str, optional
+            'both', 'out', or 'in'. Default 'both'.
+        silent : bool, optional
+            Suppress warnings/errors. Default False.
+
+        Returns
+        -------
+        topologicpy.Graph or None
+            The resulting subgraph, or None on error.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        # ---- validate inputs ----
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.Neighborhood - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        graph_vertices = Graph.Vertices(graph)
+        if not graph_vertices:
+            if not silent:
+                print("Graph.Neighborhood - Error: The input graph does not contain any vertices. Returning None.")
+            return None
+        if key == None:
+            value == None
+        if (vertices == None or vertices == []) and key == None:
+            if not silent:
+                print("Graph.Neighborhood - Warning: The neighborhood of all graph vertices without any filtering is the whole graph. Returning the original input graph.")
+            return graph
+        if (vertices == None or vertices == []):
+            seed_vertices = graph_vertices
+        else:
+            # Keep only valid vertex objects
+            seed_vertices = [v for v in vertices if Topology.IsInstance(v, "vertex")]
+        if not seed_vertices:
+            if not silent:
+                print("Graph.Neighborhood - Error: The input vertices list does not contain any valid vertices. Returning None.")
+            return None
+        
+        if key and value:
+            seed_vertices = Topology.Filter(seed_vertices,
+                                   topologyType="vertex",
+                                   searchType=searchType,
+                                   key=key,
+                                   value=value).get("filtered", [])
+        if not isinstance(seed_vertices, list) or len(seed_vertices) == 0:
+            if not silent:
+                print("Graph.Neighborhood - Error: No vertices matched the query. Returning None.")
+            return None
+
+        return Graph.KHopsSubgraph(graph = graph,
+                                   vertices = seed_vertices,
+                                   k = k,
+                                   direction = direction,
+                                   silent = silent)
+
+    @staticmethod
     def Laplacian(graph, silent: bool = False, normalized: bool = False):
         """
         Returns the Laplacian matrix of the input graph. See https://en.wikipedia.org/wiki/Laplacian_matrix.

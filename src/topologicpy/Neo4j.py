@@ -14,468 +14,1654 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
-import time
 import random
-import os
 import warnings
 
 try:
     import neo4j
     from neo4j import GraphDatabase
-except:
-    print("Neo4j - Installing required neo4j library.")
-    try:
-        os.system("pip install neo4j")
-    except:
-        os.system("pip install neo4j --user")
-    try:
-        import neo4j
-        from neo4j import GraphDatabase
-    except:
-        warnings.warn("Neo4j - Error: Could not import neo4j")
+except Exception:
+    warnings.warn("Neo4j - Error: Could not import neo4j. Please install it using pip install neo4j.")
+    neo4j = None
+    GraphDatabase = None
 
-class Neo4j:    
+
+class Neo4j:
     @staticmethod
-    def ExportToGraph(neo4jGraph, cypher=None, xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, tolerance=0.0001, silent=False):
+    def _is_driver(driver):
         """
-        Exports the input neo4j graph to a topologic graph.
+        Returns True if the input object appears to be a valid Neo4j driver.
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The input neo4j driver.
-        cypher : str, optional
-            If set to a non-empty string, a Cypher query will be run on the neo4j graph database to return a sub-graph. Default is None.
-        xMin : float, optional
-            The desired minimum value to assign for a vertex's X coordinate. Default is -0.5.
-        yMin : float, optional
-            The desired minimum value to assign for a vertex's Y coordinate. Default is -0.5.
-        zMin : float, optional
-            The desired minimum value to assign for a vertex's Z coordinate. Default is -0.5.
-        xMax : float, optional
-            The desired maximum value to assign for a vertex's X coordinate. Default is 0.5.
-        yMax : float, optional
-            The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
-        zMax : float, optional
-            The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
-        silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        tolerance : float, optional
-            The desired tolerance. Default is 0.0001.
+        driver : object
+            The input object.
 
         Returns
         -------
-        topologic_core.Graph
-            The output Topologic graph.
+        bool
+            True if the input object appears to be a valid Neo4j driver.
+            False otherwise.
         """
-        import random
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-        from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
-
-        vertices = []
-        edges = []
-        all_vertices = []
-        
-        with neo4jGraph.session() as session:
-            nodes_result = session.run("MATCH (n) RETURN n")
-            # Process nodes
-            nodes = [record.get('n') for record in nodes_result]
-            for node in nodes:
-                if node:
-                    properties = dict(node.items())
-                    x = properties.get('x', random.uniform(xMin, xMax))
-                    y = properties.get('y', random.uniform(yMin, yMax))
-                    z = properties.get('z', random.uniform(zMin, zMax))
-                    vertex = Vertex.ByCoordinates(x, y, z)  # Create Topologic vertex
-                    d = Dictionary.ByPythonDictionary(properties)
-                    vertex = Topology.SetDictionary(vertex, d)
-                    all_vertices.append(vertex)
-            
-            if cypher:
-                # Run the provided Cypher query
-                nodes_result = session.run(cypher)
-            else:
-                # Fetch all nodes and relationships
-                nodes_result = session.run("MATCH (n) RETURN n")
-                relationships_result = session.run("MATCH (a)-[r]->(b) RETURN a, r, b")
-            
-            # Process nodes
-            nodes = [record.get('n') for record in nodes_result]
-            for node in nodes:
-                if node:
-                    properties = dict(node.items())
-                    x = properties.get('x', random.uniform(xMin, xMax))
-                    y = properties.get('y', random.uniform(yMin, yMax))
-                    z = properties.get('z', random.uniform(zMin, zMax))
-                    vertex = Vertex.ByCoordinates(x, y, z)  # Create Topologic vertex
-                    d = Dictionary.ByPythonDictionary(properties)
-                    vertex = Topology.SetDictionary(vertex, d)
-                    vertices.append(vertex)
-
-            # If a Cypher query was provided, process edges
-            if cypher:
-                relationships_result = session.run(cypher)
-            
-            # Process relationships
-            for record in relationships_result:
-                start_node = record.get('a')
-                end_node = record.get('b')
-                relationship = record.get('r')
-
-                if start_node and end_node:
-                    # Find corresponding vertices
-                    #start_vertex = next((v for v in vertices if v.id == start_node.id), None)
-                    #end_vertex = next((v for v in vertices if v.id == end_node.id), None)
-                    start_filter = Topology.Filter(all_vertices, searchType="equal to", key="id", value=start_node['id'])['filtered']
-                    if len(start_filter) > 0:
-                        start_vertex = start_filter[0]
-                    else:
-                        start_vertex = NotImplemented
-                    end_filter = Topology.Filter(all_vertices, searchType="equal to", key="id", value=end_node['id'])['filtered']
-                    if len(end_filter) > 0:
-                        end_vertex = end_filter[0]
-                    else:
-                        end_vertex = None
-
-                    if not start_vertex == None and not end_vertex == None:
-                        edge = Edge.ByVertices(start_vertex, end_vertex)
-                        relationship_props = dict(relationship.items())
-                        d = Dictionary.ByPythonDictionary(relationship_props)
-                        edge = Topology.SetDictionary(edge, d)
-                        edges.append(edge)
-        return Graph.ByVerticesEdges(vertices, edges)
+        return driver is not None and hasattr(driver, "session") and hasattr(driver, "close")
 
     @staticmethod
-    def ByParameters(url, username, password):
+    def _sanitize_identifier(value, default="X"):
         """
-        Returns a Neo4j graph by the input parameters.
+        Returns a Neo4j-safe identifier.
+
+        Parameters
+        ----------
+        value : any
+            The input value.
+        default : str , optional
+            The default value to use if the input is invalid. Default is "X".
+
+        Returns
+        -------
+        str
+            The sanitized identifier.
+        """
+        import re
+
+        if value is None:
+            value = default
+        value = str(value).strip()
+        if len(value) < 1:
+            value = default
+        value = re.sub(r"[^0-9a-zA-Z_]", "_", value)
+        if len(value) < 1:
+            value = default
+        if not value[0].isalpha() and value[0] != "_":
+            value = "_"+value
+        return value
+
+    @staticmethod
+    def _node_properties(node):
+        """
+        Returns a Python dictionary of the input Neo4j node properties.
+
+        Parameters
+        ----------
+        node : neo4j.graph.Node
+            The input Neo4j node.
+
+        Returns
+        -------
+        dict
+            The dictionary of properties.
+        """
+        props = dict(node.items())
+        props["id"] = getattr(node, "element_id", None)
+        props["labels"] = list(getattr(node, "labels", []))
+        return props
+
+    @staticmethod
+    def _relationship_properties(relationship):
+        """
+        Returns a Python dictionary of the input Neo4j relationship properties.
+
+        Parameters
+        ----------
+        relationship : neo4j.graph.Relationship
+            The input Neo4j relationship.
+
+        Returns
+        -------
+        dict
+            The dictionary of properties.
+        """
+        props = dict(relationship.items())
+        props["id"] = getattr(relationship, "element_id", None)
+        props["type"] = getattr(relationship, "type", None)
+        return props
+
+    @staticmethod
+    def Connect(url, username, password, database=None, silent=False):
+        """
+        Returns a Neo4j driver created from the input connection parameters.
 
         Parameters
         ----------
         url : str
-            The URL of the server.
+            The Neo4j server URL.
         username : str
-            The username to use for logging in.
+            The username.
         password : str
-            The password to use for logging in.
+            The password.
+        database : str , optional
+            The default database to test against. If set to None, the driver's
+            default database is used. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The returned neo4j driver.
+        neo4j.Driver
+            The created Neo4j driver.
+        """
+        if GraphDatabase is None:
+            if not silent:
+                print("Neo4j.Connect - Error: Could not import neo4j. Returning None.")
+            return None
 
-        """
-        return GraphDatabase.driver(url, auth=(username, password))
-    
+        try:
+            driver = GraphDatabase.driver(url, auth=(username, password))
+            try:
+                if database:
+                    driver.verify_connectivity(database=database)
+                else:
+                    driver.verify_connectivity()
+            except TypeError:
+                driver.verify_connectivity()
+            return driver
+        except Exception as ex:
+            if not silent:
+                print("Neo4j.Connect - Error: Could not connect to the Neo4j server. Returning None.")
+                print(ex)
+            return None
+
     @staticmethod
-    def Reset(neo4jGraph):
+    def Close(driver, silent=False):
         """
-        Resets the database completely.
+        Closes the input Neo4j driver.
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The input neo4j driver.
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The returned neo4j driver.
-
+        bool
+            True if the driver was successfully closed. False otherwise.
         """
-        with neo4jGraph.session() as session:
-            # Delete all nodes and relationships
-            session.run("MATCH (n) DETACH DELETE n")
+        if not Neo4j._is_driver(driver):
+            if not silent:
+                print("Neo4j.Close - Error: The input driver is not a valid Neo4j driver. Returning False.")
+            return False
+        try:
+            driver.close()
+            return True
+        except Exception as ex:
+            if not silent:
+                print("Neo4j.Close - Error: Could not close the driver. Returning False.")
+                print(ex)
+            return False
 
-            # Drop all indexes
-            indexes = session.run("SHOW INDEXES").data()
-            for index in indexes:
-                index_name = index['name']
-                session.run(f"DROP INDEX {index_name}")
+    @staticmethod
+    def Execute(driver, cypher, parameters=None, write=False, database=None, silent=False):
+        """
+        Executes the input Cypher statement and returns the resulting records.
 
-            # Drop all constraints
-            constraints = session.run("SHOW CONSTRAINTS").data()
-            for constraint in constraints:
-                constraint_name = constraint['name']
-                session.run(f"DROP CONSTRAINT {constraint_name}")
-        
-        return neo4jGraph
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str
+            The input Cypher statement.
+        parameters : dict , optional
+            The input query parameters. Default is None.
+        write : bool , optional
+            If set to True, the statement is executed as a write transaction.
+            Otherwise, it is executed as a read transaction. Default is False.
+        database : str , optional
+            The database name. If set to None, the driver's default database is
+            used. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
-    def ByGraph(neo4jGraph,
+        Returns
+        -------
+        list
+            The resulting list of Neo4j records.
+        """
+        if not Neo4j._is_driver(driver):
+            if not silent:
+                print("Neo4j.Execute - Error: The input driver is not a valid Neo4j driver. Returning None.")
+            return None
+        if not isinstance(cypher, str) or len(cypher.strip()) < 1:
+            if not silent:
+                print("Neo4j.Execute - Error: The input cypher is not a valid string. Returning None.")
+            return None
+
+        parameters = parameters or {}
+
+        def _run(tx):
+            result = tx.run(cypher, parameters)
+            return list(result)
+
+        try:
+            kwargs = {}
+            if database:
+                kwargs["database"] = database
+            with driver.session(**kwargs) as session:
+                if write:
+                    try:
+                        return session.execute_write(_run)
+                    except AttributeError:
+                        return session.write_transaction(_run)
+                try:
+                    return session.execute_read(_run)
+                except AttributeError:
+                    return session.read_transaction(_run)
+        except Exception as ex:
+            if not silent:
+                print("Neo4j.Execute - Error: Could not execute the Cypher statement. Returning None.")
+                print(ex)
+            return None
+
+    @staticmethod
+    def Query(driver, cypher, parameters=None, database=None, silent=False):
+        """
+        Executes the input Cypher query and returns the resulting records.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str
+            The input Cypher query.
+        parameters : dict , optional
+            The input query parameters. Default is None.
+        database : str , optional
+            The database name. If set to None, the driver's default database is
+            used. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The resulting list of Neo4j records.
+        """
+        return Neo4j.Execute(driver=driver, cypher=cypher, parameters=parameters, write=False, database=database, silent=silent)
+
+    @staticmethod
+    def BatchExecute(driver, cypher, data, batchSize=1000, database=None, silent=False):
+        """
+        Executes the input Cypher statement repeatedly in batches.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str
+            The input Cypher statement. This statement should expect a
+            parameter named ``rows``.
+        data : list
+            The input list of dictionaries.
+        batchSize : int , optional
+            The desired batch size. Default is 1000.
+        database : str , optional
+            The database name. If set to None, the driver's default database is
+            used. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if the operation completed successfully. False otherwise.
+        """
+        if not isinstance(data, list):
+            if not silent:
+                print("Neo4j.BatchExecute - Error: The input data is not a valid list. Returning False.")
+            return False
+        if len(data) < 1:
+            return True
+        try:
+            batchSize = max(1, int(batchSize))
+        except Exception:
+            batchSize = 1000
+
+        for i in range(0, len(data), batchSize):
+            batch = data[i:i+batchSize]
+            result = Neo4j.Execute(driver=driver,
+                                   cypher=cypher,
+                                   parameters={"rows": batch},
+                                   write=True,
+                                   database=database,
+                                   silent=silent)
+            if result is None:
+                return False
+        return True
+
+    @staticmethod
+    def Reset(driver, database=None, silent=False):
+        """
+        Resets the input Neo4j database completely.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        database : str , optional
+            The database name. If set to None, the driver's default database is
+            used. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful. False otherwise.
+        """
+        if not Neo4j._is_driver(driver):
+            if not silent:
+                print("Neo4j.Reset - Error: The input driver is not a valid Neo4j driver. Returning False.")
+            return False
+
+        ok = Neo4j.Execute(driver, "MATCH (n) DETACH DELETE n", write=True, database=database, silent=silent)
+        if ok is None:
+            return False
+
+        indexes = Neo4j.Query(driver, "SHOW INDEXES", database=database, silent=True) or []
+        for index in indexes:
+            try:
+                name = index["name"]
+                Neo4j.Execute(driver, f"DROP INDEX {Neo4j._sanitize_identifier(name)}", write=True, database=database, silent=True)
+            except Exception:
+                pass
+
+        constraints = Neo4j.Query(driver, "SHOW CONSTRAINTS", database=database, silent=True) or []
+        for constraint in constraints:
+            try:
+                name = constraint["name"]
+                Neo4j.Execute(driver, f"DROP CONSTRAINT {Neo4j._sanitize_identifier(name)}", write=True, database=database, silent=True)
+            except Exception:
+                pass
+        return True
+
+    @staticmethod
+    def CreateIndex(driver, label, property, indexName=None, ifNotExists=True, database=None, silent=False):
+        """
+        Creates an index on the input node label and property.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        label : str
+            The node label.
+        property : str
+            The property name.
+        indexName : str , optional
+            The index name. If set to None, a name is generated automatically.
+            Default is None.
+        ifNotExists : bool , optional
+            If set to True, the index is only created if it does not already
+            exist. Default is True.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful. False otherwise.
+        """
+        label = Neo4j._sanitize_identifier(label, default="Node")
+        property = Neo4j._sanitize_identifier(property, default="id")
+        if indexName is None:
+            indexName = f"idx_{label}_{property}"
+        indexName = Neo4j._sanitize_identifier(indexName)
+        ifClause = " IF NOT EXISTS" if ifNotExists else ""
+        cypher = f"CREATE INDEX {indexName}{ifClause} FOR (n:{label}) ON (n.{property})"
+        result = Neo4j.Execute(driver, cypher, write=True, database=database, silent=silent)
+        return result is not None
+
+    @staticmethod
+    def CreateConstraint(driver, label, property, unique=True, constraintName=None, ifNotExists=True, database=None, silent=False):
+        """
+        Creates a node property constraint.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        label : str
+            The node label.
+        property : str
+            The property name.
+        unique : bool , optional
+            If set to True, a uniqueness constraint is created. Otherwise,
+            a property existence constraint is created. Default is True.
+        constraintName : str , optional
+            The constraint name. If set to None, a name is generated
+            automatically. Default is None.
+        ifNotExists : bool , optional
+            If set to True, the constraint is only created if it does not
+            already exist. Default is True.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful. False otherwise.
+        """
+        label = Neo4j._sanitize_identifier(label, default="Node")
+        property = Neo4j._sanitize_identifier(property, default="id")
+        if constraintName is None:
+            suffix = "unique" if unique else "exists"
+            constraintName = f"con_{label}_{property}_{suffix}"
+        constraintName = Neo4j._sanitize_identifier(constraintName)
+        ifClause = " IF NOT EXISTS" if ifNotExists else ""
+        if unique:
+            cypher = f"CREATE CONSTRAINT {constraintName}{ifClause} FOR (n:{label}) REQUIRE n.{property} IS UNIQUE"
+        else:
+            cypher = f"CREATE CONSTRAINT {constraintName}{ifClause} FOR (n:{label}) REQUIRE n.{property} IS NOT NULL"
+        result = Neo4j.Execute(driver, cypher, write=True, database=database, silent=silent)
+        return result is not None
+
+    @staticmethod
+    def Schema(driver, database=None, silent=False):
+        """
+        Returns the schema information of the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary containing the database indexes and constraints.
+        """
+        indexes = Neo4j.Query(driver, "SHOW INDEXES", database=database, silent=silent)
+        constraints = Neo4j.Query(driver, "SHOW CONSTRAINTS", database=database, silent=silent)
+        if indexes is None or constraints is None:
+            return None
+        return {"indexes": indexes, "constraints": constraints}
+
+    @staticmethod
+    def CountNodes(driver, label=None, database=None, silent=False):
+        """
+        Returns the number of nodes in the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        label : str , optional
+            The node label to filter by. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        int
+            The number of nodes.
+        """
+        if label:
+            label = Neo4j._sanitize_identifier(label, default="Node")
+            cypher = f"MATCH (n:{label}) RETURN count(n) AS count"
+        else:
+            cypher = "MATCH (n) RETURN count(n) AS count"
+        result = Neo4j.Query(driver, cypher, database=database, silent=silent)
+        if result is None or len(result) < 1:
+            return None
+        return result[0]["count"]
+
+    @staticmethod
+    def CountRelationships(driver, relationshipType=None, database=None, silent=False):
+        """
+        Returns the number of relationships in the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        relationshipType : str , optional
+            The relationship type to filter by. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        int
+            The number of relationships.
+        """
+        if relationshipType:
+            relationshipType = Neo4j._sanitize_identifier(relationshipType, default="CONNECTED_TO")
+            cypher = f"MATCH ()-[r:{relationshipType}]->() RETURN count(r) AS count"
+        else:
+            cypher = "MATCH ()-[r]->() RETURN count(r) AS count"
+        result = Neo4j.Query(driver, cypher, database=database, silent=silent)
+        if result is None or len(result) < 1:
+            return None
+        return result[0]["count"]
+
+    @staticmethod
+    def Labels(driver, database=None, silent=False):
+        """
+        Returns the list of labels in the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The list of labels.
+        """
+        result = Neo4j.Query(driver, "CALL db.labels()", database=database, silent=silent)
+        if result is None:
+            return None
+        labels = []
+        for record in result:
+            try:
+                labels.append(record["label"])
+            except Exception:
+                try:
+                    labels.append(record[0])
+                except Exception:
+                    pass
+        return labels
+
+    @staticmethod
+    def RelationshipTypes(driver, database=None, silent=False):
+        """
+        Returns the list of relationship types in the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The list of relationship types.
+        """
+        result = Neo4j.Query(driver, "CALL db.relationshipTypes()", database=database, silent=silent)
+        if result is None:
+            return None
+        types = []
+        for record in result:
+            try:
+                types.append(record["relationshipType"])
+            except Exception:
+                try:
+                    types.append(record[0])
+                except Exception:
+                    pass
+        return types
+
+    @staticmethod
+    def Info(driver, database=None, silent=False):
+        """
+        Returns summary information about the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary containing summary information.
+        """
+        return {
+            "nodeCount": Neo4j.CountNodes(driver, database=database, silent=silent),
+            "relationshipCount": Neo4j.CountRelationships(driver, database=database, silent=silent),
+            "labels": Neo4j.Labels(driver, database=database, silent=silent),
+            "relationshipTypes": Neo4j.RelationshipTypes(driver, database=database, silent=silent)
+        }
+
+    @staticmethod
+    def MatchNodes(driver, label=None, properties=None, database=None, silent=False):
+        """
+        Returns the list of nodes matching the input label and properties.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        label : str , optional
+            The node label. Default is None.
+        properties : dict , optional
+            The input property dictionary. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            The list of matching nodes as Python dictionaries.
+        """
+        properties = properties or {}
+        clauses = []
+        params = {}
+        if label:
+            label_clause = ":"+Neo4j._sanitize_identifier(label, default="Node")
+        else:
+            label_clause = ""
+        for i, (k, v) in enumerate(properties.items()):
+            pk = Neo4j._sanitize_identifier(k, default=f"p{i}")
+            clauses.append(f"n.{pk} = $p{i}")
+            params[f"p{i}"] = v
+        where = ""
+        if len(clauses) > 0:
+            where = " WHERE " + " AND ".join(clauses)
+        cypher = f"MATCH (n{label_clause}){where} RETURN n"
+        result = Neo4j.Query(driver, cypher, parameters=params, database=database, silent=silent)
+        if result is None:
+            return None
+        output = []
+        for record in result:
+            try:
+                output.append(Neo4j._node_properties(record["n"]))
+            except Exception:
+                pass
+        return output
+
+    @staticmethod
+    def DeleteNodes(driver, label=None, properties=None, database=None, silent=False):
+        """
+        Deletes the nodes matching the input label and properties.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        label : str , optional
+            The node label. Default is None.
+        properties : dict , optional
+            The input property dictionary. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful. False otherwise.
+        """
+        properties = properties or {}
+        clauses = []
+        params = {}
+        if label:
+            label_clause = ":"+Neo4j._sanitize_identifier(label, default="Node")
+        else:
+            label_clause = ""
+        for i, (k, v) in enumerate(properties.items()):
+            pk = Neo4j._sanitize_identifier(k, default=f"p{i}")
+            clauses.append(f"n.{pk} = $p{i}")
+            params[f"p{i}"] = v
+        where = ""
+        if len(clauses) > 0:
+            where = " WHERE " + " AND ".join(clauses)
+        cypher = f"MATCH (n{label_clause}){where} DETACH DELETE n"
+        result = Neo4j.Execute(driver, cypher, parameters=params, write=True, database=database, silent=silent)
+        return result is not None
+
+    @staticmethod
+    def DeleteRelationships(driver, relationshipType=None, database=None, silent=False):
+        """
+        Deletes the relationships matching the input type.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        relationshipType : str , optional
+            The relationship type. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful. False otherwise.
+        """
+        if relationshipType:
+            relationshipType = Neo4j._sanitize_identifier(relationshipType, default="CONNECTED_TO")
+            cypher = f"MATCH ()-[r:{relationshipType}]->() DELETE r"
+        else:
+            cypher = "MATCH ()-[r]->() DELETE r"
+        result = Neo4j.Execute(driver, cypher, write=True, database=database, silent=silent)
+        return result is not None
+
+    @staticmethod
+    def Validate(driver, idKey="topologic_id", database=None, silent=False):
+        """
+        Returns a validation report for the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        idKey : str , optional
+            The node property used as a stable identifier. Default is
+            "topologic_id".
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        dict
+            A validation report.
+        """
+        idKey = Neo4j._sanitize_identifier(idKey, default="topologic_id")
+        duplicate_result = Neo4j.Query(
+            driver,
+            f"MATCH (n) WHERE n.{idKey} IS NOT NULL WITH n.{idKey} AS id, count(n) AS c WHERE c > 1 RETURN count(id) AS count",
+            database=database,
+            silent=silent
+        )
+        missing_result = Neo4j.Query(
+            driver,
+            f"MATCH (n) WHERE n.{idKey} IS NULL RETURN count(n) AS count",
+            database=database,
+            silent=silent
+        )
+        orphan_result = Neo4j.Query(
+            driver,
+            "MATCH (n) WHERE NOT (n)--() RETURN count(n) AS count",
+            database=database,
+            silent=silent
+        )
+        if duplicate_result is None or missing_result is None or orphan_result is None:
+            return None
+        return {
+            "duplicateNodeIds": duplicate_result[0]["count"],
+            "missingNodeIds": missing_result[0]["count"],
+            "orphanNodes": orphan_result[0]["count"]
+        }
+
+    @staticmethod
+    def ToDataFrame(driver, cypher, parameters=None, database=None, silent=False):
+        """
+        Returns the result of the input Cypher query as a pandas DataFrame.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str
+            The input Cypher query.
+        parameters : dict , optional
+            The input query parameters. Default is None.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        pandas.DataFrame
+            The resulting DataFrame.
+        """
+        try:
+            import pandas as pd
+        except Exception:
+            if not silent:
+                print("Neo4j.ToDataFrame - Error: Could not import pandas. Returning None.")
+            return None
+
+        records = Neo4j.Query(driver, cypher, parameters=parameters, database=database, silent=silent)
+        if records is None:
+            return None
+        rows = []
+        for record in records:
+            row = {}
+            for key in record.keys():
+                value = record[key]
+                if hasattr(value, "items") and hasattr(value, "element_id"):
+                    try:
+                        value = dict(value.items())
+                    except Exception:
+                        pass
+                row[key] = value
+            rows.append(row)
+        return pd.DataFrame(rows)
+
+    @staticmethod
+    def _prepare_graph_rows(graph,
+                            nodeLabelKey="label",
+                            defaultNodeLabel="Node",
+                            nodeCategoryKey="category",
+                            defaultNodeCategory=None,
+                            relationshipTypeKey="label",
+                            defaultRelationshipType="CONNECTED_TO",
+                            relationshipCategoryKey="category",
+                            defaultRelationshipCategory=None,
+                            mantissa=6,
+                            tolerance=0.0001,
+                            silent=False):
+        """
+        Returns dictionaries representing the input Topologic graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input Topologic graph.
+        nodeLabelKey : str , optional
+            The dictionary key used to find the node label. Default is "label".
+        defaultNodeLabel : str , optional
+            The default node label. Default is "Node".
+        nodeCategoryKey : str , optional
+            The dictionary key used to find the node category. Default is
+            "category".
+        defaultNodeCategory : str , optional
+            The default node category. Default is None.
+        relationshipTypeKey : str , optional
+            The dictionary key used to find the relationship type. Default is
+            "label".
+        defaultRelationshipType : str , optional
+            The default relationship type. Default is "CONNECTED_TO".
+        relationshipCategoryKey : str , optional
+            The dictionary key used to find the relationship category.
+            Default is "category".
+        defaultRelationshipCategory : str , optional
+            The default relationship category. Default is None.
+        mantissa : int , optional
+            The desired mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        tuple
+            A tuple containing the node rows, relationship rows, and vertices.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Neo4j._prepare_graph_rows - Error: The input graph is not a valid Topologic graph. Returning None.")
+            return None
+
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+
+        node_rows = []
+        width = max(3, len(str(max(1, len(vertices)))))
+        for i, vertex in enumerate(vertices):
+            d = Topology.Dictionary(vertex)
+            pd = Dictionary.PythonDictionary(d) if d else {}
+            label = Neo4j._sanitize_identifier(pd.get(nodeLabelKey, f"{defaultNodeLabel}_{str(i+1).zfill(width)}"), default=defaultNodeLabel)
+            category = pd.get(nodeCategoryKey, defaultNodeCategory)
+            properties = dict(pd)
+            properties["x"] = Vertex.X(vertex, mantissa=mantissa)
+            properties["y"] = Vertex.Y(vertex, mantissa=mantissa)
+            properties["z"] = Vertex.Z(vertex, mantissa=mantissa)
+            properties["topologic_id"] = i
+            if category is not None:
+                properties[nodeCategoryKey] = category
+            properties[nodeLabelKey] = label
+            node_rows.append({"topologic_id": i, "label": label, "properties": properties})
+
+        relationship_rows = []
+        for edge in edges:
+            d = Topology.Dictionary(edge)
+            pd = Dictionary.PythonDictionary(d) if d else {}
+            relType = Neo4j._sanitize_identifier(pd.get(relationshipTypeKey, defaultRelationshipType), default=defaultRelationshipType)
+            category = pd.get(relationshipCategoryKey, defaultRelationshipCategory)
+            sv = Edge.StartVertex(edge)
+            ev = Edge.EndVertex(edge)
+            sid = Vertex.Index(vertex=sv, vertices=vertices, strict=False, tolerance=tolerance)
+            eid = Vertex.Index(vertex=ev, vertices=vertices, strict=False, tolerance=tolerance)
+            properties = dict(pd)
+            if category is not None:
+                properties[relationshipCategoryKey] = category
+            properties[relationshipTypeKey] = relType
+            relationship_rows.append({"start_id": sid, "end_id": eid, "type": relType, "properties": properties})
+
+        return node_rows, relationship_rows, vertices
+
+    @staticmethod
+    def ByGraph(driver,
                 graph,
-                vertexLabelKey: str = "label",
-                defaultVertexLabel: str = "NODE",
-                vertexCategoryKey: str = "category",
-                defaultVertexCategory: str = None,
-                edgeLabelKey: str = "label",
-                defaultEdgeLabel: str = "CONNECTED_TO",
-                edgeCategoryKey: str = "category",
-                defaultEdgeCategory: str = None,
-                bidirectional: bool = True,
-                mantissa: int = 6,
+                nodeLabelKey="label",
+                defaultNodeLabel="Node",
+                nodeCategoryKey="category",
+                defaultNodeCategory=None,
+                relationshipTypeKey="label",
+                defaultRelationshipType="CONNECTED_TO",
+                relationshipCategoryKey="category",
+                defaultRelationshipCategory=None,
+                bidirectional=True,
+                deleteAll=False,
+                createIndex=True,
+                createConstraint=False,
+                mantissa=6,
+                tolerance=0.0001,
+                database=None,
+                silent=False):
+        """
+        Writes the input Topologic graph to the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        graph : topologic_core.Graph
+            The input Topologic graph.
+        nodeLabelKey : str , optional
+            The dictionary key used to find the node label. Default is "label".
+        defaultNodeLabel : str , optional
+            The default node label. Default is "Node".
+        nodeCategoryKey : str , optional
+            The dictionary key used to find the node category. Default is
+            "category".
+        defaultNodeCategory : str , optional
+            The default node category. Default is None.
+        relationshipTypeKey : str , optional
+            The dictionary key used to find the relationship type. Default is
+            "label".
+        defaultRelationshipType : str , optional
+            The default relationship type. Default is "CONNECTED_TO".
+        relationshipCategoryKey : str , optional
+            The dictionary key used to find the relationship category.
+            Default is "category".
+        defaultRelationshipCategory : str , optional
+            The default relationship category. Default is None.
+        bidirectional : bool , optional
+            If set to True, reverse relationships are also created. Default is
+            True.
+        deleteAll : bool , optional
+            If set to True, all existing nodes and relationships are deleted
+            before the graph is written. Default is False.
+        createIndex : bool , optional
+            If set to True, an index is created on the ``topologic_id``
+            property. Default is True.
+        createConstraint : bool , optional
+            If set to True, a uniqueness constraint is created on the
+            ``topologic_id`` property for each encountered label. Default is
+            False.
+        mantissa : int , optional
+            The desired mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        neo4j.Driver
+            The input Neo4j driver.
+        """
+        rows = Neo4j._prepare_graph_rows(graph=graph,
+                                         nodeLabelKey=nodeLabelKey,
+                                         defaultNodeLabel=defaultNodeLabel,
+                                         nodeCategoryKey=nodeCategoryKey,
+                                         defaultNodeCategory=defaultNodeCategory,
+                                         relationshipTypeKey=relationshipTypeKey,
+                                         defaultRelationshipType=defaultRelationshipType,
+                                         relationshipCategoryKey=relationshipCategoryKey,
+                                         defaultRelationshipCategory=defaultRelationshipCategory,
+                                         mantissa=mantissa,
+                                         tolerance=tolerance,
+                                         silent=silent)
+        if rows is None:
+            return None
+        node_rows, relationship_rows, vertices = rows
+
+        if deleteAll:
+            if not Neo4j.Reset(driver, database=database, silent=silent):
+                return None
+
+        labels = sorted(list(set([row["label"] for row in node_rows])))
+
+        node_cypher = """
+        UNWIND $rows AS row
+        CALL apoc.create.node([row.label], row.properties) YIELD node
+        RETURN count(node) AS count
+        """
+        use_apoc = True
+        test_apoc = Neo4j.Query(driver, "RETURN apoc.version() AS version", database=database, silent=True)
+        if test_apoc is None:
+            use_apoc = False
+
+        if use_apoc:
+            ok = Neo4j.BatchExecute(driver, node_cypher, node_rows, batchSize=1000, database=database, silent=silent)
+            if not ok:
+                return None
+        else:
+            for row in node_rows:
+                label = row["label"]
+                cypher = f"CREATE (n:{label} $properties)"
+                result = Neo4j.Execute(driver,
+                                       cypher,
+                                       parameters={"properties": row["properties"]},
+                                       write=True,
+                                       database=database,
+                                       silent=silent)
+                if result is None:
+                    return None
+
+        for label in labels:
+            if createIndex:
+                Neo4j.CreateIndex(driver, label=label, property="topologic_id", database=database, silent=True)
+            if createConstraint:
+                Neo4j.CreateConstraint(driver, label=label, property="topologic_id", unique=True, database=database, silent=True)
+
+        for row in relationship_rows:
+            relType = row["type"]
+            cypher = f"""
+            MATCH (a {{topologic_id: $start_id}}), (b {{topologic_id: $end_id}})
+            CREATE (a)-[r:{relType} $properties]->(b)
+            """
+            result = Neo4j.Execute(driver,
+                                   cypher,
+                                   parameters={"start_id": row["start_id"], "end_id": row["end_id"], "properties": row["properties"]},
+                                   write=True,
+                                   database=database,
+                                   silent=silent)
+            if result is None:
+                return None
+
+            if bidirectional:
+                result = Neo4j.Execute(driver,
+                                       cypher,
+                                       parameters={"start_id": row["end_id"], "end_id": row["start_id"], "properties": row["properties"]},
+                                       write=True,
+                                       database=database,
+                                       silent=silent)
+                if result is None:
+                    return None
+        return driver
+
+    @staticmethod
+    def MergeGraph(driver,
+                   graph,
+                   nodeLabelKey="label",
+                   defaultNodeLabel="Node",
+                   nodeCategoryKey="category",
+                   defaultNodeCategory=None,
+                   relationshipTypeKey="label",
+                   defaultRelationshipType="CONNECTED_TO",
+                   relationshipCategoryKey="category",
+                   defaultRelationshipCategory=None,
+                   bidirectional=True,
+                   createIndex=True,
+                   createConstraint=False,
+                   mantissa=6,
+                   tolerance=0.0001,
+                   database=None,
+                   silent=False):
+        """
+        Merges the input Topologic graph into the input Neo4j database.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        graph : topologic_core.Graph
+            The input Topologic graph.
+        nodeLabelKey : str , optional
+            The dictionary key used to find the node label. Default is "label".
+        defaultNodeLabel : str , optional
+            The default node label. Default is "Node".
+        nodeCategoryKey : str , optional
+            The dictionary key used to find the node category. Default is
+            "category".
+        defaultNodeCategory : str , optional
+            The default node category. Default is None.
+        relationshipTypeKey : str , optional
+            The dictionary key used to find the relationship type. Default is
+            "label".
+        defaultRelationshipType : str , optional
+            The default relationship type. Default is "CONNECTED_TO".
+        relationshipCategoryKey : str , optional
+            The dictionary key used to find the relationship category.
+            Default is "category".
+        defaultRelationshipCategory : str , optional
+            The default relationship category. Default is None.
+        bidirectional : bool , optional
+            If set to True, reverse relationships are also merged. Default is
+            True.
+        createIndex : bool , optional
+            If set to True, an index is created on the ``topologic_id``
+            property. Default is True.
+        createConstraint : bool , optional
+            If set to True, a uniqueness constraint is created on the
+            ``topologic_id`` property for each encountered label. Default is
+            False.
+        mantissa : int , optional
+            The desired mantissa. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        neo4j.Driver
+            The input Neo4j driver.
+        """
+        rows = Neo4j._prepare_graph_rows(graph=graph,
+                                         nodeLabelKey=nodeLabelKey,
+                                         defaultNodeLabel=defaultNodeLabel,
+                                         nodeCategoryKey=nodeCategoryKey,
+                                         defaultNodeCategory=defaultNodeCategory,
+                                         relationshipTypeKey=relationshipTypeKey,
+                                         defaultRelationshipType=defaultRelationshipType,
+                                         relationshipCategoryKey=relationshipCategoryKey,
+                                         defaultRelationshipCategory=defaultRelationshipCategory,
+                                         mantissa=mantissa,
+                                         tolerance=tolerance,
+                                         silent=silent)
+        if rows is None:
+            return None
+        node_rows, relationship_rows, vertices = rows
+
+        labels = sorted(list(set([row["label"] for row in node_rows])))
+        for label in labels:
+            if createIndex:
+                Neo4j.CreateIndex(driver, label=label, property="topologic_id", database=database, silent=True)
+            if createConstraint:
+                Neo4j.CreateConstraint(driver, label=label, property="topologic_id", unique=True, database=database, silent=True)
+
+        for row in node_rows:
+            label = row["label"]
+            cypher = f"""
+            MERGE (n:{label} {{topologic_id: $topologic_id}})
+            SET n += $properties
+            """
+            result = Neo4j.Execute(driver,
+                                   cypher,
+                                   parameters={"topologic_id": row["topologic_id"], "properties": row["properties"]},
+                                   write=True,
+                                   database=database,
+                                   silent=silent)
+            if result is None:
+                return None
+
+        for row in relationship_rows:
+            relType = row["type"]
+            cypher = f"""
+            MATCH (a {{topologic_id: $start_id}}), (b {{topologic_id: $end_id}})
+            MERGE (a)-[r:{relType}]->(b)
+            SET r += $properties
+            """
+            result = Neo4j.Execute(driver,
+                                   cypher,
+                                   parameters={"start_id": row["start_id"], "end_id": row["end_id"], "properties": row["properties"]},
+                                   write=True,
+                                   database=database,
+                                   silent=silent)
+            if result is None:
+                return None
+            if bidirectional:
+                result = Neo4j.Execute(driver,
+                                       cypher,
+                                       parameters={"start_id": row["end_id"], "end_id": row["start_id"], "properties": row["properties"]},
+                                       write=True,
+                                       database=database,
+                                       silent=silent)
+                if result is None:
+                    return None
+        return driver
+
+    @staticmethod
+    def _collect_graph_value(value, nodes_by_id, rels_by_id):
+        """
+        Collects Neo4j graph entities from the input value.
+
+        Parameters
+        ----------
+        value : any
+            The input value.
+        nodes_by_id : dict
+            The dictionary of nodes keyed by element id.
+        rels_by_id : dict
+            The dictionary of relationships keyed by element id.
+
+        Returns
+        -------
+        None
+            None.
+        """
+        try:
+            from neo4j.graph import Node, Relationship, Path
+        except Exception:
+            Node = None
+            Relationship = None
+            Path = None
+
+        if value is None:
+            return
+
+        if Node is not None and isinstance(value, Node):
+            nodes_by_id[value.element_id] = value
+            return
+
+        if Relationship is not None and isinstance(value, Relationship):
+            rels_by_id[value.element_id] = value
+            try:
+                nodes_by_id[value.start_node.element_id] = value.start_node
+                nodes_by_id[value.end_node.element_id] = value.end_node
+            except Exception:
+                pass
+            return
+
+        if Path is not None and isinstance(value, Path):
+            try:
+                for node in value.nodes:
+                    nodes_by_id[node.element_id] = node
+            except Exception:
+                pass
+            try:
+                for rel in value.relationships:
+                    rels_by_id[rel.element_id] = rel
+                    try:
+                        nodes_by_id[rel.start_node.element_id] = rel.start_node
+                        nodes_by_id[rel.end_node.element_id] = rel.end_node
+                    except Exception:
+                        pass
+            except Exception:
+                pass
+            return
+
+        if isinstance(value, dict):
+            for v in value.values():
+                Neo4j._collect_graph_value(v, nodes_by_id, rels_by_id)
+            return
+
+        if isinstance(value, (list, tuple, set)):
+            for v in value:
+                Neo4j._collect_graph_value(v, nodes_by_id, rels_by_id)
+            return
+
+    @staticmethod
+    def ToGraph(driver,
+                cypher: str = None,
+                parameters: dict = None,
+                xMin: float = -0.5,
+                yMin: float = -0.5,
+                zMin: float = -0.5,
+                xMax: float = 0.5,
+                yMax: float = 0.5,
+                zMax: float = 0.5,
                 tolerance: float = 0.0001,
                 silent: bool = False):
         """
-        Converts a Topologic graph to a Neo4j graph.
+        Returns a Topologic graph from the input Neo4j database or query result.
 
         Parameters
         ----------
-        neo4jGraph : neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The input neo4j driver.
-        vertexLabelKey : str , optional
-            The returned vertices are labelled according to the dictionary values stored under this key.
-            If the vertexLabelKey does not exist, it will be created and the vertices are labelled numerically using the format defaultVertexLabel_XXX. Default is "label".
-        defaultVertexLabel : str , optional
-            The default vertex label to use if no value is found under the vertexLabelKey. Default is "NODE".
-        vertexCategoryKey : str , optional
-            The returned vertices are categorized according to the dictionary values stored under this key. The dfefault is "category".
-        defaultVertexCategory : str , optional
-            The default vertex category to use if no value is found under the vertexCategoryKey. Default is None.
-        edgeLabelKey : str , optional
-            The returned edges are labelled according to the dictionary values stored under this key.
-            If the edgeLabelKey does not exist, it will be created and the edges are labelled numerically using the format defaultEdgeLabel_XXX. Default is "label".
-        defaultEdgeLabel : str , optional
-            The default edge label to use if no value is found under the edgeLabelKey. Default is "CONNECTED_TO".
-        edgeCategoryKey : str , optional
-            The returned edges are categorized according to the dictionary values stored under this key. The dfefault is "category".
-        defaultEdgeCategory : str , optional
-            The default edge category to use if no value is found under the edgeCategoryKey. Default is None.
-        bidirectional : bool , optional
-            If set to True, the output Neo4j graph is forced to be bidirectional. The defaul is True.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str , optional
+            The input Cypher query. The query may return nodes, relationships,
+            paths, lists, and dictionaries that contain graph entities. If set
+            to None, the entire database graph is imported. Default is None.
+        parameters : dict , optional
+            The dictionary of Cypher parameters. Default is None.
+        xMin : float , optional
+            The minimum random X coordinate to use when a node does not contain
+            an ``x`` property. Default is -0.5.
+        yMin : float , optional
+            The minimum random Y coordinate to use when a node does not contain
+            a ``y`` property. Default is -0.5.
+        zMin : float , optional
+            The minimum random Z coordinate to use when a node does not contain
+            a ``z`` property. Default is -0.5.
+        xMax : float , optional
+            The maximum random X coordinate to use when a node does not contain
+            an ``x`` property. Default is 0.5.
+        yMax : float , optional
+            The maximum random Y coordinate to use when a node does not contain
+            a ``y`` property. Default is 0.5.
+        zMax : float , optional
+            The maximum random Z coordinate to use when a node does not contain
+            a ``z`` property. Default is 0.5.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
-        
+
         Returns
         -------
-        neo4j._sync.driver.BoltDriver or neo4jGraph, neo4j._sync.driver.Neo4jDriver
-            The returned neo4j driver.
-        
+        topologic_core.Graph
+            The created Topologic graph.
         """
+        import random
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
-        def sanitize_for_neo4j(identifier):
-            """
-            Replaces illegal characters in Neo4j labels or relationship types with an underscore ('_').
-            Ensures the identifier starts with an alphabetic character and contains only valid characters.
-            """
-            import re
-            # Replace any non-alphanumeric characters with underscores
-            sanitized = re.sub(r'[^a-zA-Z0-9]', '_', identifier)
-
-            # Ensure the identifier starts with an alphabetic character
-            if not sanitized[0].isalpha():
-                sanitized = f"_{sanitized}"
-
-            return sanitized
-        
-        if not isinstance(neo4jGraph, neo4j._sync.driver.BoltDriver) and not isinstance(neo4jGraph, neo4j._sync.driver.Neo4jDriver):
+        if driver is None or not hasattr(driver, "session"):
             if not silent:
-                print("Neo4j.ByGraph - Error: The input neo4jGraph is not a valid neo4j graph. Returning None.")
+                print("Neo4j.ToGraph - Error: The input driver is not a valid Neo4j driver. Returning None.")
             return None
-        if not Topology.IsInstance(graph, "Graph"):
+
+        if cypher is None:
+            cypher = "MATCH p=(a)-[r]->(b) RETURN p AS result UNION MATCH (n) RETURN n AS result"
+
+        parameters = parameters or {}
+
+        try:
+            records = Neo4j.Query(driver, cypher, parameters=parameters)
+        except Exception as ex:
             if not silent:
-                print("Neo4j.ByGraph - Error: The input graph is not a valid topologic graph. Returning None.")
+                print("Neo4j.ToGraph - Error: Could not execute the Cypher query. Returning None.")
+                print(ex)
             return None
-        # if not isinstance(vertexLabelKey, str):
-        #     if not silent:
-        #         print("Neo4j.ByGraph - Error: The input vertexLabelKey is not a valid string. Returning None.")
-        #     return None
-        # if not isinstance(defaultVertexLabel, str):
-        #     if not silent:
-        #         print("Neo4j.ByGraph - Error: The input defaultVertexLabel is not a valid string. Returning None.")
-        #     return None
-        # if not isinstance(vertexCategoryKey, str):
-        #     if not silent:
-        #         print("Neo4j.ByGraph - Error: The input vertexCategoryKey is not a valid string. Returning None.")
-        #     return None
-        # if not isinstance(edgeLabelKey, str):
-        #     if not silent:
-        #         print("Neo4j.ByGraph - Error: The input vertexLabelKey is not a valid string. Returning None.")
-        #     return None
-        # if not isinstance(defaultEdgeLabel, str):
-        #     if not silent:
-        #         print("Neo4j.ByGraph - Error: The input defaultEdgeLabel is not a valid string. Returning None.")
-        #     return None
-        vertices = Graph.Vertices(graph)
-        edges = Graph.Edges(graph)
 
-        with neo4jGraph.session() as session:
-            # Create vertices (nodes in Neo4j)
-            n = max(len(str(len(vertices))), 3)
-            for i, vertex in enumerate(vertices):
-                vertex_props = Dictionary.PythonDictionary(Topology.Dictionary(vertex))  # Get the dictionary of vertex attributes
-                
-                # Extract label and category, remove them from the properties
-                value = defaultVertexLabel+"_"+str(i+1).zfill(n)
-                vertex_label = vertex_props.pop(vertexLabelKey, value)
-                vertex_label = sanitize_for_neo4j(vertex_label)
-                vertex_category = vertex_props.pop(vertexCategoryKey, defaultVertexCategory)  # Extract category if it exists
-                # Add coordinates to the vertex properties
-                vertex_props.update({
-                    'x': Vertex.X(vertex, mantissa=mantissa),  # X coordinate
-                    'y': Vertex.Y(vertex, mantissa=mantissa),  # Y coordinate
-                    'z': Vertex.Z(vertex, mantissa=mantissa),  # Z coordinate
-                })
-                
-                if not vertex_category == None:
-                    vertex_props['category'] = vertex_category  # Add category to properties if it exists
-                if not vertex_label == None:
-                    vertex_props[vertexLabelKey] = vertex_label  # Add label to properties if it exists
-                
-                vertex_props['id'] = i
+        nodes_by_id = {}
+        rels_by_id = {}
 
-                # Create a node with dynamic label and properties
-                session.run(f"""
-                    CREATE (n:{vertex_label} $properties)
-                """, properties=vertex_props)
+        def collect_value(value):
+            if value is None:
+                return
 
-            # Create edges (relationships in Neo4j)
-            for edge in edges:
-                edge_props = Dictionary.PythonDictionary(Topology.Dictionary(edge))  # Get the dictionary of edge attributes
-                
-                # Extract label and category for the relationship
-                edge_label = edge_props.pop(edgeLabelKey, defaultEdgeLabel)  # Default label is 'CONNECTED_TO'
-                edge_label = sanitize_for_neo4j(edge_label)
-                edge_category = edge_props.pop(edgeCategoryKey, defaultEdgeCategory)  # Extract category if it exists
+            try:
+                from neo4j.graph import Node, Relationship, Path
+            except Exception:
+                Node = None
+                Relationship = None
+                Path = None
 
-                start_vertex = Edge.StartVertex(edge)  # Get the starting vertex of the edge
-                start_id = Vertex.Index(vertex=start_vertex, vertices=vertices, strict=False, tolerance=tolerance)
-                end_vertex = Edge.EndVertex(edge)      # Get the ending vertex of the edge
-                end_id = Vertex.Index(vertex=end_vertex, vertices=vertices, strict=False, tolerance=tolerance)
+            if Node is not None and isinstance(value, Node):
+                nodes_by_id[value.element_id] = value
+                return
 
-                # Add category to edge properties if it exists
-                if not edge_category == None:
-                    edge_props['category'] = edge_category
-                if not edge_label == None:
-                    edge_props[edgeLabelKey] = edge_label  # Add label to properties if it exists
-                # Create the relationship with dynamic label and properties
-                session.run(f"""
-                    MATCH (a {{id: $start_id}}), (b {{id: $end_id}})
-                    CREATE (a)-[r:{edge_label} $properties]->(b)
-                """, start_id=start_id, end_id=end_id, properties=edge_props)
+            if Relationship is not None and isinstance(value, Relationship):
+                rels_by_id[value.element_id] = value
+                try:
+                    nodes_by_id[value.start_node.element_id] = value.start_node
+                    nodes_by_id[value.end_node.element_id] = value.end_node
+                except Exception:
+                    pass
+                return
 
-                # If the graph is bi-directional, add the reverse edge as well
-                if bidirectional:
-                    session.run(f"""
-                        MATCH (a {{id: $end_id}}), (b {{id: $start_id}})
-                        CREATE (a)-[r:{edge_label} $properties]->(b)
-                    """, start_id=start_id, end_id=end_id, properties=edge_props)
-        
-        return neo4jGraph
+            if Path is not None and isinstance(value, Path):
+                try:
+                    for node in value.nodes:
+                        nodes_by_id[node.element_id] = node
+                except Exception:
+                    pass
+                try:
+                    for rel in value.relationships:
+                        rels_by_id[rel.element_id] = rel
+                        try:
+                            nodes_by_id[rel.start_node.element_id] = rel.start_node
+                            nodes_by_id[rel.end_node.element_id] = rel.end_node
+                        except Exception:
+                            pass
+                except Exception:
+                    pass
+                return
 
+            if isinstance(value, (list, tuple, set)):
+                for item in value:
+                    collect_value(item)
+                return
+
+            if isinstance(value, dict):
+                for v in value.values():
+                    collect_value(v)
+                return
+
+        for record in records:
+            for value in record.values():
+                collect_value(value)
+
+        topologic_vertices = {}
+        vertices = []
+        edges = []
+
+        for _, node in nodes_by_id.items():
+            properties = dict(node.items())
+            x = properties.get("x", random.uniform(xMin, xMax))
+            y = properties.get("y", random.uniform(yMin, yMax))
+            z = properties.get("z", random.uniform(zMin, zMax))
+
+            vertex = Vertex.ByCoordinates(x, y, z)
+            properties["id"] = node.element_id
+            properties["labels"] = list(node.labels)
+
+            d = Dictionary.ByPythonDictionary(properties)
+            vertex = Topology.SetDictionary(vertex, d)
+
+            topologic_vertices[node.element_id] = vertex
+            vertices.append(vertex)
+
+        for _, rel in rels_by_id.items():
+            sv = topologic_vertices.get(rel.start_node.element_id)
+            ev = topologic_vertices.get(rel.end_node.element_id)
+
+            if sv is None or ev is None:
+                continue
+
+            edge = Edge.ByVertices(sv, ev)
+            properties = dict(rel.items())
+            properties["id"] = rel.element_id
+            properties["type"] = rel.type
+
+            d = Dictionary.ByPythonDictionary(properties)
+            edge = Topology.SetDictionary(edge, d)
+            edges.append(edge)
+
+        return Graph.ByVerticesEdges(vertices, edges)
 
     @staticmethod
-    def SetGraph(neo4jGraph,
-                 graph,
-                 labelKey: str = None,
-                 relationshipKey: str = None,
-                 bidirectional: bool = True,
-                 deleteAll: bool = True,
-                 mantissa: int = 6,
-                 tolerance: float = 0.0001):
+    def Subgraph(driver,
+                 cypher,
+                 xMin=-0.5,
+                 yMin=-0.5,
+                 zMin=-0.5,
+                 xMax=0.5,
+                 yMax=0.5,
+                 zMax=0.5,
+                 tolerance=0.0001,
+                 database=None,
+                 silent=False):
         """
-        Sets the input topologic graph to the input neo4jGraph.
+        Returns a Topologic graph from the input Cypher subgraph query.
 
         Parameters
         ----------
-        neo4jGraph : Neo4j.Graph
-            The input neo4j graph.
-        graph : topologic_core.Graph
-            The input topologic graph.
-        labelKey : str , optional
-            The dictionary key under which to find the vertex's label value. Default is None which means the vertex gets the name 'TopologicGraphVertex'.
-        relationshipKey : str , optional
-            The dictionary key under which to find the edge's relationship value. Default is None which means the edge gets the relationship type 'Connected To'.
-        bidirectional : bool , optional
-            If set to True, the edges in the neo4j graph are set to be bi-drectional.
-        deleteAll : bool , optional
-            If set to True, all previous entities are deleted before adding the new entities.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        cypher : str
+            The input Cypher query.
+        xMin : float , optional
+            The minimum random X coordinate to use if a node does not have one.
+            Default is -0.5.
+        yMin : float , optional
+            The minimum random Y coordinate to use if a node does not have one.
+            Default is -0.5.
+        zMin : float , optional
+            The minimum random Z coordinate to use if a node does not have one.
+            Default is -0.5.
+        xMax : float , optional
+            The maximum random X coordinate to use if a node does not have one.
+            Default is 0.5.
+        yMax : float , optional
+            The maximum random Y coordinate to use if a node does not have one.
+            Default is 0.5.
+        zMax : float , optional
+            The maximum random Z coordinate to use if a node does not have one.
+            Default is 0.5.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        database : str , optional
+            The database name. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        neo4jGraph : TYPE
-            The input neo4j graph with the input topologic graph added to it.
-
+        topologic_core.Graph
+            The created Topologic graph.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Graph import Graph
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        
-        import time
-        gmt = time.gmtime()
-        timestamp =  str(gmt.tm_zone)+"_"+str(gmt.tm_year)+"_"+str(gmt.tm_mon)+"_"+str(gmt.tm_wday)+"_"+str(gmt.tm_hour)+"_"+str(gmt.tm_min)+"_"+str(gmt.tm_sec)
+        return Neo4j.ToGraph(driver=driver,
+                             cypher=cypher,
+                             xMin=xMin,
+                             yMin=yMin,
+                             zMin=zMin,
+                             xMax=xMax,
+                             yMax=yMax,
+                             zMax=zMax,
+                             tolerance=tolerance,
+                             database=database,
+                             silent=silent)
 
-        vertices = Graph.Vertices(graph)
-        edges = Graph.Edges(graph)
-        tx = neo4jGraph.begin()
-        nodes = []
-        for  i in range(len(vertices)):
-            vDict = Topology.Dictionary(vertices[i])
-            if not vDict:
-                keys = []
-                values = []
-            else:
-                keys = Dictionary.Keys(vDict)
-                if not keys:
-                    keys = []
-                values = Dictionary.Values(vDict)
-                if not values:
-                    values = []
-            keys.append("x")
-            keys.append("y")
-            keys.append("z")
-            keys.append("timestamp")
-            keys.append("location")
-            values.append(Vertex.X(vertices[i], mantissa=mantissa))
-            values.append(Vertex.Y(vertices[i], mantissa=mantissa))
-            values.append(Vertex.Z(vertices[i], mantissa=mantissa))
-            values.append(timestamp)
-            values.append(sp.CartesianPoint([Vertex.X(vertices[i], mantissa=mantissa), Vertex.Y(vertices[i], mantissa=mantissa), Vertex.Z(vertices[i], mantissa=mantissa)]))
-            zip_iterator = zip(keys, values)
-            pydict = dict(zip_iterator)
-            if (labelKey == 'None') or (not (labelKey)):
-                nodeName = "TopologicGraphVertex"
-            else:
-                nodeName = str(Dictionary.ValueAtKey(vDict, labelKey))
-            n = py2neo.Node(nodeName, **pydict)
-            tx.create(n)
-            nodes.append(n)
-        for i in range(len(edges)):
-            e = edges[i]
-            sv = Edge.StartVertex(e)
-            ev = Edge.EndVertex(e)
-            sn = nodes[Vertex.Index(vertex=sv, vertices=vertices, strict=False, tolerance=tolerance)]
-            en = nodes[Vertex.Index(vertex=ev, vertices=vertices, strict=False, tolerance=tolerance)]
-            ed = Topology.Dictionary(e)
-            if relationshipKey:
-                relationshipType = Dictionary.ValueAtKey(ed, relationshipKey)
-            else:
-                relationshipType = "Connected To"
-            if not (relationshipType):
-                relationshipType = "Connected To"
-            snen = py2neo.Relationship(sn, relationshipType, en)
-            tx.create(snen)
-            if bidirectional:
-                snen = py2neo.Relationship(en, relationshipType, sn)
-                tx.create(snen)
-        if deleteAll:
-            neo4jGraph.delete_all()
-        neo4jGraph.commit(tx)
-        return neo4jGraph
+    @staticmethod
+    def Neighborhood(driver,
+                     nodeId,
+                     depth: int = 1,
+                     xMin: float = -0.5,
+                     yMin: float = -0.5,
+                     zMin: float = -0.5,
+                     xMax: float = 0.5,
+                     yMax: float = 0.5,
+                     zMax: float = 0.5,
+                     tolerance: float = 0.0001,
+                     silent: bool = False):
+        """
+        Returns the neighborhood of the input Neo4j node as a Topologic graph.
+
+        Parameters
+        ----------
+        driver : neo4j.Driver
+            The input Neo4j driver.
+        nodeId : str
+            The Neo4j internal element id of the source node.
+        depth : int , optional
+            The neighborhood depth. Default is 1.
+        xMin : float , optional
+            The minimum random X coordinate to use when a node does not contain
+            an ``x`` property. Default is -0.5.
+        yMin : float , optional
+            The minimum random Y coordinate to use when a node does not contain
+            a ``y`` property. Default is -0.5.
+        zMin : float , optional
+            The minimum random Z coordinate to use when a node does not contain
+            a ``z`` property. Default is -0.5.
+        xMax : float , optional
+            The maximum random X coordinate to use when a node does not contain
+            an ``x`` property. Default is 0.5.
+        yMax : float , optional
+            The maximum random Y coordinate to use when a node does not contain
+            a ``y`` property. Default is 0.5.
+        zMax : float , optional
+            The maximum random Z coordinate to use when a node does not contain
+            a ``z`` property. Default is 0.5.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The returned Topologic graph.
+        """
+        if driver is None or not hasattr(driver, "session"):
+            if not silent:
+                print("Neo4j.Neighborhood - Error: The input driver is not a valid Neo4j driver. Returning None.")
+            return None
+
+        if not isinstance(nodeId, str) or len(nodeId) < 1:
+            if not silent:
+                print("Neo4j.Neighborhood - Error: The input nodeId is not a valid string. Returning None.")
+            return None
+
+        if not isinstance(depth, int) or depth < 1:
+            if not silent:
+                print("Neo4j.Neighborhood - Error: The input depth is not a valid positive integer. Returning None.")
+            return None
+
+        cypher = f"""
+        MATCH (n)
+        WHERE elementId(n) = $nodeId
+        OPTIONAL MATCH p=(n)-[*1..{depth}]-(m)
+        RETURN n AS result
+        UNION
+        MATCH (n)
+        WHERE elementId(n) = $nodeId
+        OPTIONAL MATCH p=(n)-[*1..{depth}]-(m)
+        WITH p
+        WHERE p IS NOT NULL
+        RETURN p AS result
+        """
+
+        return Neo4j.ToGraph(driver,
+                             cypher=cypher,
+                             parameters={"nodeId": nodeId},
+                             xMin=xMin,
+                             yMin=yMin,
+                             zMin=zMin,
+                             xMax=xMax,
+                             yMax=yMax,
+                             zMax=zMax,
+                             tolerance=tolerance,
+                             silent=silent)

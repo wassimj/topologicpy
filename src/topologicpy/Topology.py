@@ -6631,75 +6631,185 @@ class Topology():
         topologies : list
             The input list of topologies.
         topologyType : str , optional
-            The type of topology to filter by. This can be one of "any", "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster". It is case insensitive. Default is "any".
+            The type of topology to filter by. This can be one of "any", "vertex",
+            "edge", "wire", "face", "shell", "cell", "cellcomplex", or "cluster".
+            It is case insensitive. Default is "any".
         searchType : str , optional
-            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". Default is "any".
+            The type of search query to conduct in the topology's dictionary. This can
+            be one of "any", "equal to", "contains", "starts with", "ends with",
+            "not equal to", or "does not contain". It is case insensitive.
+            Wildcard matching using shell-style patterns is supported in all search
+            types through the use of "*" and "?".
+            Default is "any".
         key : str , optional
-            The dictionary key to search within. Default is None which means it will filter by topology type only.
-        value : str , optional
-            The value to search for at the specified key. Default is None which means it will filter by topology type only.
+            The dictionary key to search within. Default is None which means it will
+            filter by topology type only.
+        value : any , optional
+            The value to search for at the specified key. Default is None which means
+            it will filter by topology type only.
 
         Returns
         -------
         dict
-            A dictionary of filtered and other elements. The dictionary has two keys:
-            - "filtered" The filtered topologies.
-            - "other" The other topologies that did not meet the filter criteria.
+            A dictionary with the following keys:
+            - "filtered": the filtered topologies.
+            - "other": the other topologies that did not meet the filter criteria.
 
         """
+        import fnmatch
+        from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
 
-        def listToString(item):
-            returnString = ""
+        def normalize_string(item):
+            """
+            Converts the input item to a normalized lower-case string.
+            Lists are converted to a stable concatenated representation.
+            """
+            if item is None:
+                return None
             if isinstance(item, list):
-                if len(item) < 2:
-                    return str(item[0])
-                else:
-                    returnString = item[0]
-                    for i in range(1, len(item)):
-                        returnString = returnString+str(item[i])
-            return returnString
-        
+                try:
+                    return " ".join([str(x) for x in sorted(item)]).lower()
+                except Exception:
+                    return " ".join([str(x) for x in item]).lower()
+            return str(item).lower()
+
+        def has_wildcards(s):
+            """
+            Returns True if the input string contains shell-style wildcard characters.
+            """
+            if not isinstance(s, str):
+                return False
+            return ("*" in s) or ("?" in s) or ("[" in s and "]" in s)
+
+        def wildcard_equal(pattern, candidate):
+            """
+            Case-insensitive shell-style wildcard equality.
+            """
+            if pattern is None or candidate is None:
+                return False
+            return fnmatch.fnmatch(candidate, pattern)
+
+        def wildcard_contains(pattern, candidate):
+            """
+            Case-insensitive shell-style wildcard containment.
+            If the pattern contains wildcards, match against all substrings by wrapping
+            the pattern in leading and trailing '*', unless already present.
+            """
+            if pattern is None or candidate is None:
+                return False
+            if has_wildcards(pattern):
+                test_pattern = pattern
+                if not test_pattern.startswith("*"):
+                    test_pattern = "*" + test_pattern
+                if not test_pattern.endswith("*"):
+                    test_pattern = test_pattern + "*"
+                return fnmatch.fnmatch(candidate, test_pattern)
+            return pattern in candidate
+
+        def wildcard_startswith(pattern, candidate):
+            """
+            Case-insensitive shell-style wildcard starts-with matching.
+            """
+            if pattern is None or candidate is None:
+                return False
+            if has_wildcards(pattern):
+                return fnmatch.fnmatch(candidate, pattern + "*")
+            return candidate.startswith(pattern)
+
+        def wildcard_endswith(pattern, candidate):
+            """
+            Case-insensitive shell-style wildcard ends-with matching.
+            """
+            if pattern is None or candidate is None:
+                return False
+            if has_wildcards(pattern):
+                return fnmatch.fnmatch(candidate, "*" + pattern)
+            return candidate.endswith(pattern)
+
         filteredTopologies = []
         otherTopologies = []
+
+        if not isinstance(topologies, list):
+            return {"filtered": filteredTopologies, "other": otherTopologies}
+
+        topologyType = "any" if topologyType is None else str(topologyType).lower()
+        searchType = "any" if searchType is None else str(searchType).lower()
+
         for aTopology in topologies:
             if not aTopology:
                 continue
-            if (topologyType.lower() == "any") or (Topology.TypeAsString(aTopology).lower() == topologyType.lower()):
-                if value == "" or key == "":
-                    filteredTopologies.append(aTopology)
+
+            # Filter by topology type first
+            try:
+                aTopologyType = Topology.TypeAsString(aTopology).lower()
+            except Exception:
+                otherTopologies.append(aTopology)
+                continue
+
+            if topologyType != "any" and aTopologyType != topologyType:
+                otherTopologies.append(aTopology)
+                continue
+
+            # If no key/value is supplied, filter by topology type only
+            if key is None or key == "" or value is None or value == "":
+                filteredTopologies.append(aTopology)
+                continue
+
+            # Get dictionary safely
+            try:
+                d = Topology.Dictionary(aTopology)
+            except Exception:
+                d = None
+
+            if not d:
+                otherTopologies.append(aTopology)
+                continue
+
+            try:
+                dictValue = Dictionary.ValueAtKey(d, key)
+            except Exception:
+                dictValue = None
+
+            if dictValue is None:
+                otherTopologies.append(aTopology)
+                continue
+
+            valueString = normalize_string(value)
+            dictValueString = normalize_string(dictValue)
+
+            if valueString is None or dictValueString is None:
+                otherTopologies.append(aTopology)
+                continue
+
+            if searchType == "any":
+                searchResult = True
+            elif searchType == "equal to" or searchType == "equal" or searchType == "equals" or searchType == "equals to":
+                if has_wildcards(valueString):
+                    searchResult = wildcard_equal(valueString, dictValueString)
                 else:
-                    if isinstance(value, list):
-                        value.sort()
-                    value = str(value)
-                    value.replace("*",".+")
-                    value = value.lower()
-                    d = Topology.Dictionary(aTopology)
-                    v = Dictionary.ValueAtKey(d, key)
-                    if v == None:
-                        otherTopologies.append(aTopology)
-                    else:
-                        v = str(v).lower()
-                        if searchType.lower() == "equal to":
-                            searchResult = (value == v)
-                        elif searchType.lower() == "contains":
-                            searchResult = (value in v)
-                        elif searchType.lower() == "starts with":
-                            searchResult = (value == v[0: len(value)])
-                        elif searchType.lower() == "ends with":
-                            searchResult = (value == v[len(v)-len(value):len(v)])
-                        elif searchType.lower() == "not equal to":
-                            searchResult = not (value == v)
-                        elif searchType.lower() == "does not contain":
-                            searchResult = not (value in v)
-                        else:
-                            searchResult = False
-                        if searchResult:
-                            filteredTopologies.append(aTopology)
-                        else:
-                            otherTopologies.append(aTopology) 
+                    searchResult = (valueString == dictValueString)
+            elif searchType == "contains":
+                searchResult = wildcard_contains(valueString, dictValueString)
+            elif searchType == "starts with":
+                searchResult = wildcard_startswith(valueString, dictValueString)
+            elif searchType == "ends with":
+                searchResult = wildcard_endswith(valueString, dictValueString)
+            elif searchType == "not equal to":
+                if has_wildcards(valueString):
+                    searchResult = not wildcard_equal(valueString, dictValueString)
+                else:
+                    searchResult = (valueString != dictValueString)
+            elif searchType == "does not contain":
+                searchResult = not wildcard_contains(valueString, dictValueString)
+            else:
+                searchResult = False
+
+            if searchResult:
+                filteredTopologies.append(aTopology)
             else:
                 otherTopologies.append(aTopology)
+
         return {"filtered": filteredTopologies, "other": otherTopologies}
 
     @staticmethod
