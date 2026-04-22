@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy package &mdash; topologicpy 0.9.20 documentation</title>
+  <title>topologicpy package &mdash; topologicpy 0.9.21 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.20
+                0.9.21
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -704,6 +704,7 @@
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.MinimumSpanningTree"><code class="docutils literal notranslate"><span class="pre">Graph.MinimumSpanningTree()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NavigationGraph"><code class="docutils literal notranslate"><span class="pre">Graph.NavigationGraph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NearestVertex"><code class="docutils literal notranslate"><span class="pre">Graph.NearestVertex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Neigborhood"><code class="docutils literal notranslate"><span class="pre">Graph.Neigborhood()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.NetworkXGraph"><code class="docutils literal notranslate"><span class="pre">Graph.NetworkXGraph()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.Order"><code class="docutils literal notranslate"><span class="pre">Graph.Order()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Graph.html#topologicpy.Graph.Graph.OutgoingEdges"><code class="docutils literal notranslate"><span class="pre">Graph.OutgoingEdges()</span></code></a></li>
@@ -851,11 +852,30 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j"><code class="docutils literal notranslate"><span class="pre">Neo4j</span></code></a><ul>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.BatchExecute"><code class="docutils literal notranslate"><span class="pre">Neo4j.BatchExecute()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ByGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.ByGraph()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ByParameters"><code class="docutils literal notranslate"><span class="pre">Neo4j.ByParameters()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ExportToGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.ExportToGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Close"><code class="docutils literal notranslate"><span class="pre">Neo4j.Close()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Connect"><code class="docutils literal notranslate"><span class="pre">Neo4j.Connect()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.CountNodes"><code class="docutils literal notranslate"><span class="pre">Neo4j.CountNodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.CountRelationships"><code class="docutils literal notranslate"><span class="pre">Neo4j.CountRelationships()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.CreateConstraint"><code class="docutils literal notranslate"><span class="pre">Neo4j.CreateConstraint()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.CreateIndex"><code class="docutils literal notranslate"><span class="pre">Neo4j.CreateIndex()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.DeleteNodes"><code class="docutils literal notranslate"><span class="pre">Neo4j.DeleteNodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.DeleteRelationships"><code class="docutils literal notranslate"><span class="pre">Neo4j.DeleteRelationships()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Execute"><code class="docutils literal notranslate"><span class="pre">Neo4j.Execute()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Info"><code class="docutils literal notranslate"><span class="pre">Neo4j.Info()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Labels"><code class="docutils literal notranslate"><span class="pre">Neo4j.Labels()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.MatchNodes"><code class="docutils literal notranslate"><span class="pre">Neo4j.MatchNodes()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.MergeGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.MergeGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Neighborhood"><code class="docutils literal notranslate"><span class="pre">Neo4j.Neighborhood()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Query"><code class="docutils literal notranslate"><span class="pre">Neo4j.Query()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.RelationshipTypes"><code class="docutils literal notranslate"><span class="pre">Neo4j.RelationshipTypes()</span></code></a></li>
 <li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Reset"><code class="docutils literal notranslate"><span class="pre">Neo4j.Reset()</span></code></a></li>
-<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.SetGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.SetGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Schema"><code class="docutils literal notranslate"><span class="pre">Neo4j.Schema()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Subgraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.Subgraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ToDataFrame"><code class="docutils literal notranslate"><span class="pre">Neo4j.ToDataFrame()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.ToGraph"><code class="docutils literal notranslate"><span class="pre">Neo4j.ToGraph()</span></code></a></li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.Neo4j.html#topologicpy.Neo4j.Neo4j.Validate"><code class="docutils literal notranslate"><span class="pre">Neo4j.Validate()</span></code></a></li>
 </ul>
 </li>
 </ul>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.20 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.21 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.20
+                0.9.21
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -2683,21 +2683,30 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The input list of topologies.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of topology to filter by. This can be one of “any”, “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, or “cluster”. It is case insensitive. Default is “any”.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of topology to filter by. This can be one of “any”, “vertex”,
+“edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, or “cluster”.
+It is case insensitive. Default is “any”.</p>
 </dd>
-<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can be one of “any”, “equal to”, “contains”, “starts with”, “ends with”, “not equal to”, “does not contain”. Default is “any”.</p>
+<dt><strong>searchType</strong><span class="classifier">str , optional</span></dt><dd><p>The type of search query to conduct in the topology’s dictionary. This can
+be one of “any”, “equal to”, “contains”, “starts with”, “ends with”,
+“not equal to”, or “does not contain”. It is case insensitive.
+Wildcard matching using shell-style patterns is supported in all search
+types through the use of “*” and “?”.
+Default is “any”.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. Default is None which means it will filter by topology type only.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to search within. Default is None which means it will
+filter by topology type only.</p>
 </dd>
-<dt><strong>value</strong><span class="classifier">str , optional</span></dt><dd><p>The value to search for at the specified key. Default is None which means it will filter by topology type only.</p>
+<dt><strong>value</strong><span class="classifier">any , optional</span></dt><dd><p>The value to search for at the specified key. Default is None which means
+it will filter by topology type only.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>A dictionary of filtered and other elements. The dictionary has two keys:
-- “filtered” The filtered topologies.
-- “other” The other topologies that did not meet the filter criteria.</p>
+<dt>dict</dt><dd><p>A dictionary with the following keys:
+- “filtered”: the filtered topologies.
+- “other”: the other topologies that did not meet the filter criteria.</p>
 </dd>
 </dl>
 </dd>
