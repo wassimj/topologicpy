@@ -2497,6 +2497,85 @@ class Vertex():
             print("Vertex.Quadrance - Error: Could not recognize the input topology. Returning None.")
             return None
 
+
+    @staticmethod
+    def RandomVertex(vertices, maxTries: int = 1000, pad: float = 0.0, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a random vertex within the bounding box of the input list of vertices,
+        ensuring that it is not coincident with any input vertex.
+
+        Parameters
+        ----------
+        vertices : list
+            The input list of vertices.
+        pad : float , optional
+            The desired additional distance to use outside the bounding box of the input list of vertices. Default is 0.0.
+        tolerance : float , optional
+            The desired tolerance for coincidence checking. The default is 0.0001.
+        maxTries : int , optional
+            The maximum number of attempts to generate a non-coincident random vertex.
+            The default is 1000.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        topologic_core.Vertex or None
+            A random vertex within the bounding box of the input vertices that is not
+            coincident with any of them. Returns None on failure.
+
+        """
+        import random
+        from topologicpy.BVH import AABB
+        from topologicpy.Topology import Topology
+
+        if not isinstance(vertices, list):
+            return None
+
+        vertex_list = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertex_list) < 1:
+            x = random.uniform(0, 100)
+            y = random.uniform(0, 100)
+            z = random.uniform(0, 100)
+            return Vertex.ByCoordinates(x, y, z)
+
+        if len(vertex_list) == 1:
+            existing_vert = vertex_list[0]
+            min_value = max(tolerance, 1)
+            max_value = min_value*100
+            x_offset = random.uniform(min_value, max_value)
+            y_offset = random.uniform(min_value, max_value)
+            z_offset = random.uniform(min_value, max_value)
+            return_vert = Topology.Translate(existing_vert, x_offset, y_offset, z_offset)
+            return return_vert    
+        
+        pts = [Vertex.Coordinates(v) for v in vertex_list]
+        aabb = AABB.from_points(pts=pts, pad=pad)
+
+        # Degenerate case: bounding box collapses to a single point
+        if abs(aabb.maxx - aabb.minx) <= tolerance and abs(aabb.maxy - aabb.miny) <= tolerance and abs(aabb.maxz - aabb.minz) <= tolerance:
+            if not silent:
+                print("Vertex.RandomVertex - Error: Degenerate bounding box. Returning None.")
+            return None
+
+        for _ in range(maxTries):
+            x = random.uniform(aabb.minx, aabb.maxx)
+            y = random.uniform(aabb.miny, aabb.maxy)
+            z = random.uniform(aabb.minz, aabb.maxz)
+            candidate = Vertex.ByCoordinates(x, y, z)
+
+            is_coincident = False
+            for v in vertex_list:
+                if Vertex.Distance(candidate, v) <= tolerance:
+                    is_coincident = True
+                    break
+
+            if not is_coincident:
+                return candidate
+        if not silent:
+            print("Vertex.RandomVertex - Warning: Could not generate a vertex within the allocated number of tries. Try increasing it. Returning None.")
+        return None
+    
     @staticmethod
     def Separate(*vertices, minDistance: float = 0.0001, iterations: int = 100, strength: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """

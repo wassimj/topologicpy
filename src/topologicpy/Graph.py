@@ -271,6 +271,38 @@ class Graph:
     # key: id(source_graph)
     # value: compiled routing graph dict
     _compiled_routing_registry = {}
+
+    @staticmethod
+    def AABB(graph, silent: bool = False, pad: float = 0.0):
+        """
+        Computes the bounding box (AABB) of the input graph.
+        
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        pad : float , optional
+            An additional padding to add to the bounding box. Default is 0.0.
+        
+        silent : bool, optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.BVH import AABB
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "graph"):
+            if not silent:
+                print("Graph.AABB - Error: The input graph paramter is not a valid Topologic Graph. Returning None.")
+            return None
+        
+        vertices = Graph.Vertices(graph)
+        if len(vertices) < 1:
+            if not silent:
+                print("Graph.AABB - Error: The input graph does not contain any valid vertices. Returning None.")
+            return None
+        return AABB.from_points(pts=[Vertex.Coordinates(v) for v in vertices], pad=pad)
+        
     
     @staticmethod
     def AccessibilityCentrality(graph, step: int = 2, normalize: bool = False, key: str = "accessibility_centrality", colorKey: str = "ac_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
@@ -525,6 +557,7 @@ class Graph:
 
         """
         from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
@@ -534,6 +567,11 @@ class Graph:
             if not silent:
                 print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
             return graph
+        
+        x, y, z = Vertex.Coordinates(vertex)
+        for existing_v in Graph.Vertices(graph) or []:
+            if Vertex.Distance(vertex, existing_v) <= tolerance:
+                vertex = Topology.Translate(vertex, tolerance*2, tolerance*2, tolerance*2)
 
         _ = graph.AddVertices([vertex], tolerance) # Hook to Core
         # --------------------------------------------------
@@ -546,11 +584,60 @@ class Graph:
         except Exception:
             pass
         return graph
+    
+    @staticmethod
+    def AddVertexByData(graph,
+                        dictionary = None,
+                        x: float = None,
+                        y: float = None,
+                        z: float = None,
+                        silent: bool = False):
+        """
+        Adds a vertex to the input graph, by the input data.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        dictionary : topologic_core.Dictionary , optional
+            The dictionary to be associated with this vertex. Default is None.
+        x : float , optional
+            The x-coordinate of the vertex. If not set, it will be randomly set between 0 and 100. Default is None.
+        y : float , optional
+            The y-coordinate of the vertex. If not set, it will be randomly set between 0 and 100. Default is None.
+        z : float , optional
+            The z-coordinate of the vertex. If not set, it will be randomly set between 0 and 100. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with the input vertex added to it.
+
+        """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        import random
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.AddVertexByData - Error: The input graph is not a valid graph. Returning None.")
+            return None
+        x = x or random.uniform(0, 100)
+        y = y or random.uniform(0, 100)
+        z = z or random.uniform(0, 100)
+
+        v = Vertex.ByCoordinates(x, y, z)
+        if not dictionary is None:
+            v = Topology.SetDictionary(v, d)
+        graph = Graph.AddVertex(graph, v)
+        return graph
 
     @staticmethod
     def AddVertices(graph, vertices, tolerance: float = 0.0001, silent: bool = False):
         """
-        Adds the input vertex to the input graph.
+        Adds the input list of vertices to the input graph.
 
         Parameters
         ----------
@@ -11112,7 +11199,7 @@ class Graph:
         return Graph.MetricDistance(graph, vertexA, vertexB, mantissa=mantissa, tolerance=tolerance)
     
     @staticmethod
-    def Edge(graph, vertexA, vertexB, tolerance=0.0001):
+    def Edge(graph, vertexA, vertexB, tolerance=0.0001, silent: bool = False):
         """
         Returns the edge in the input graph that connects in the input vertices.
 
@@ -11126,6 +11213,8 @@ class Graph:
             The second input Vertex.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, all errors and warnings are suppressed. Default is False.
 
         Returns
         -------
@@ -11177,7 +11266,6 @@ class Graph:
         reverse : bool , optional
             If set to True, the sorted list is reversed. This has no effect if the sortBy parameter is not set. Default is False.
         silent : bool, optional
-            Isilent : bool, optional
             If set to True, all errors and warnings are suppressed. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
@@ -19200,7 +19288,7 @@ class Graph:
         return graph
 
     @staticmethod
-    def RemoveVertex(graph, vertices, silent: bool = False):
+    def RemoveVertex(graph, vertex, silent: bool = False):
         """
         Removes the input vertex from the input graph.
 
@@ -19208,8 +19296,8 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
-        vertices : topologic_core.Vertex or list of vertices
-            The input vertex.
+        vertex : topologic_core.Vertex or list of vertices
+            The input vertex or list of vertices.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -19225,13 +19313,13 @@ class Graph:
             print("Graph.RemoveVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
         
-        if Topology.IsInstance(vertices, "vertex"):
-            vertices = [vertices]
-        if len(vertices) == 0:
+        if Topology.IsInstance(vertex, "vertex"):
+            vertex = [vertex]
+        if len(vertex) == 0:
             if not silent:
-                print("Graph.RemoveVertex - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
+                print("Graph.RemoveVertex - Error: The input vertex parameter does not contain any valid vertices. Returning None.")
             return None
-        vertexList = [Graph.NearestVertex(graph, v) for v in vertices]
+        vertexList = [Graph.NearestVertex(graph, v) for v in vertex]
         _ = graph.RemoveVertices(vertexList) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
@@ -19243,7 +19331,7 @@ class Graph:
         except Exception:
             pass
         return graph
-
+    
     @staticmethod
     def SetDictionary(graph, dictionary):
         """
@@ -21504,6 +21592,71 @@ class Graph:
         dictionary = {'vertices':[], 'edges':[]}
         dictionary = buildTree(graph, dictionary, vertex, None, tolerance=tolerance)
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
+    
+    @staticmethod
+    def VertexByKeyValue(graph, key: str = None, value=None, silent: bool = False):
+        """
+        Returns the first vertex in the input graph whose dictionary contains the
+        input key/value pair.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        key : str , optional
+            The dictionary key to search for. Default is None.
+        value : any , optional
+            The value to match. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Vertex
+            The matching vertex, or None if no match is found.
+        """
+        try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Topology import Topology
+            from topologicpy.Dictionary import Dictionary
+
+            if graph is None:
+                if not silent:
+                    print("Graph.VertexByKeyValue - Error: The input graph parameter is None. Returning None.")
+                return None
+
+            if key is None or not isinstance(key, str) or len(key.strip()) < 1:
+                if not silent:
+                    print("Graph.VertexByKeyValue - Error: The input key parameter is not a valid string. Returning None.")
+                return None
+
+            vertices = Graph.Vertices(graph)
+            if not isinstance(vertices, list):
+                if not silent:
+                    print("Graph.VertexByKeyValue - Error: Could not retrieve graph vertices. Returning None.")
+                return None
+
+            key = key.strip()
+            target = None if value is None else str(value).strip()
+
+            for vertex in vertices:
+                d = Topology.Dictionary(vertex)
+                if d is None:
+                    continue
+
+                current = Dictionary.ValueAtKey(d, key, None)
+                if current is None:
+                    continue
+
+                if str(current).strip() == target:
+                    return vertex
+
+            return None
+
+        except Exception as e:
+            if not silent:
+                print(f"Graph.VertexByKeyValue - Error: {e}. Returning None.")
+            return None
     
     @staticmethod
     def VertexDegree(graph, vertex, weightKey: str = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):

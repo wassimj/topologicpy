@@ -1,36 +1,183 @@
 from __future__ import annotations
-import threading, contextlib, time, json
-from typing import Dict, Any, List, Optional
 
+import contextlib
+import json
 import os
+import threading
+import time
 import warnings
+from typing import Any, Dict, List, Optional
 
 try:
     import kuzu
-except:
+except Exception:
     print("Kuzu - Installing required kuzu library.")
     try:
         os.system("pip install kuzu")
-    except:
+    except Exception:
         os.system("pip install kuzu --user")
     try:
         import kuzu
-    except:
+    except Exception:
         warnings.warn("Kuzu - Error: Could not import Kuzu.")
         kuzu = None
 
 
+# -----------------------------------------------------------------------------
+# Internal helpers
+# -----------------------------------------------------------------------------
+
+
+def _make_json_safe(value: Any) -> Any:
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if isinstance(value, dict):
+        return {str(k): _make_json_safe(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple, set)):
+        return [_make_json_safe(v) for v in value]
+    return str(value)
+
+
+def _json_dumps(value: Any) -> str:
+    try:
+        return json.dumps(value if value is not None else {}, ensure_ascii=False)
+    except Exception:
+        try:
+            return json.dumps(_make_json_safe(value), ensure_ascii=False)
+        except Exception:
+            return "{}"
+
+
+def _json_loads(value: Any, default: Any = None) -> Any:
+    if default is None:
+        default = {}
+    if value is None:
+        return default
+    if isinstance(value, (dict, list)):
+        return value
+    try:
+        return json.loads(value)
+    except Exception:
+        return default
+
+
+def _rows(result: Any) -> List[Dict[str, Any]]:
+    if result is None:
+        return []
+    try:
+        return result.rows_as_dict().get_all()
+    except Exception:
+        pass
+    try:
+        return result.get_all()
+    except Exception:
+        pass
+    if isinstance(result, list):
+        out = []
+        for row in result:
+            if isinstance(row, dict):
+                out.append(row)
+            else:
+                try:
+                    out.append(dict(row))
+                except Exception:
+                    out.append({"value": row})
+        return out
+    return []
+
+
+def _value_from_dict(dictionary: Any, key: str = None, default: Any = None) -> Any:
+    if key is None:
+        return default
+    try:
+        from topologicpy.Dictionary import Dictionary
+        return Dictionary.ValueAtKey(dictionary, key, default)
+    except Exception:
+        try:
+            return dictionary.get(key, default)
+        except Exception:
+            return default
+
+
+def _python_dictionary(dictionary: Any) -> Dict[str, Any]:
+    if dictionary is None:
+        return {}
+    if isinstance(dictionary, dict):
+        return dict(dictionary)
+    try:
+        from topologicpy.Dictionary import Dictionary
+        d = Dictionary.PythonDictionary(dictionary)
+        return dict(d or {})
+    except Exception:
+        return {}
+
+
+def _normalize_label(label: Any) -> str:
+    if label is None:
+        return ""
+    return str(label).strip()
+
+
+def _unique_preserve_order(values: List[Any]) -> List[Any]:
+    seen = set()
+    out = []
+    for value in values or []:
+        if value not in seen:
+            seen.add(value)
+            out.append(value)
+    return out
+
+
+def _object_to_dict(value: Any) -> Dict[str, Any]:
+    """Best-effort conversion of Kuzu node/rel values to dictionaries."""
+    if value is None:
+        return {}
+    if isinstance(value, dict):
+        return dict(value)
+    try:
+        return dict(value)
+    except Exception:
+        pass
+    out = {}
+    for name in ("id", "graph_id", "label", "x", "y", "z", "props"):
+        try:
+            out[name] = getattr(value, name)
+        except Exception:
+            try:
+                out[name] = value[name]
+            except Exception:
+                pass
+    try:
+        # Some Kuzu objects expose properties through _properties.
+        props = getattr(value, "_properties")
+        if isinstance(props, dict):
+            out.update(props)
+    except Exception:
+        pass
+    return out
+
+
+def _safe_local_id(raw: Any, fallback: Any) -> str:
+    raw = fallback if raw is None or str(raw).strip() == "" else raw
+    raw = str(raw).strip()
+    if raw == "":
+        raw = str(fallback)
+    return raw
+
+
 class _DBCache:
-    """
-    One kuzu.Database per path. Thread-safe and process-local.
-    """
     def __init__(self):
         self._lock = threading.RLock()
         self._cache: Dict[str, "kuzu.Database"] = {}
 
     def get(self, path: str) -> "kuzu.Database":
         if kuzu is None:
-            raise "Kuzu - Error: Kuzu is not available"
+            raise RuntimeError("Kuzu - Error: Kuzu is not available.")
+        if path is None:
+            raise ValueError("Kuzu - Error: The input path is None.")
+        path = os.path.abspath(os.path.expanduser(str(path)))
         with self._lock:
             db = self._cache.get(path)
             if db is None:
@@ -38,10 +185,8 @@ class _DBCache:
                 self._cache[path] = db
             return db
 
+
 class _WriteGate:
-    """
-    Serialize writes to avoid IO lock contention.
-    """
     def __init__(self):
         self._lock = threading.RLock()
 
@@ -50,13 +195,12 @@ class _WriteGate:
         with self._lock:
             yield
 
+
 _db_cache = _DBCache()
 _write_gate = _WriteGate()
 
+
 class _ConnectionPool:
-    """
-    Per-thread kuzu.Connection pool bound to a Database instance.
-    """
     def __init__(self, db: "kuzu.Database"):
         self.db = db
         self._local = threading.local()
@@ -67,31 +211,19 @@ class _ConnectionPool:
         return self._local.conn
 
     @contextlib.contextmanager
-    def connection(self, write: bool = False, retries: int = 5, backoff: float = 0.15):
+    def connection(self, write: bool = False):
         conn = self._ensure()
-        if not write:
+        if write:
+            with _write_gate.hold():
+                yield conn
+        else:
             yield conn
-            return
-        # Serialize writes and retry transient failures
-        with _write_gate.hold():
-            attempt = 0
-            while True:
-                try:
-                    yield conn
-                    break
-                except Exception as e:
-                    attempt += 1
-                    if attempt > retries:
-                        raise f"Kuzu write failed after {retries} retries: {e}"
-                    time.sleep(backoff * attempt)
+
 
 class _Mgr:
-    """
-    Lightweight facade (per-db-path) providing read/write execution and schema bootstrap.
-    """
     def __init__(self, db_path: str):
-        self.db_path = db_path
-        self._db = _db_cache.get(db_path)
+        self.db_path = os.path.abspath(os.path.expanduser(str(db_path)))
+        self._db = _db_cache.get(self.db_path)
         self._pool = _ConnectionPool(self._db)
 
     @contextlib.contextmanager
@@ -104,90 +236,71 @@ class _Mgr:
         with self._pool.connection(write=True) as c:
             yield c
 
-    def exec(self, query: str, params: Optional[dict] = None, write: bool = False):
-        with (self.write() if write else self.read()) as c:
-            with c.execute(query, parameters=params or {}) as res:
-                try:
-                    return res.rows_as_dict().get_all()
-                except Exception:
-                    return None
+    def exec(self, query: str, params: Optional[dict] = None, write: bool = False, retries: int = 5, backoff: float = 0.15):
+        params = params or {}
+        attempt = 0
+        while True:
+            try:
+                with (self.write() if write else self.read()) as c:
+                    res = c.execute(query, parameters=params)
+                    try:
+                        with res:
+                            return _rows(res)
+                    except Exception:
+                        return _rows(res)
+            except Exception:
+                attempt += 1
+                if (not write) or attempt > retries:
+                    raise
+                time.sleep(backoff * attempt)
 
     def ensure_schema(self):
-        # Node tables
-        self.exec("""
-        CREATE NODE TABLE IF NOT EXISTS Graph(
-            id STRING,
-            label STRING,
-            num_nodes INT64,
-            num_edges INT64,
-            props STRING,
-            PRIMARY KEY(id)
-        );
-        """, write=True)
-        self.exec("""
-        CREATE NODE TABLE IF NOT EXISTS Vertex(
-            id STRING,
-            graph_id STRING,
-            label STRING,
-            x DOUBLE,
-            y DOUBLE,
-            z DOUBLE,
-            props STRING,
-            PRIMARY KEY(id)
-        );
-        """, write=True)
-        
-        # Relationship tables
-        self.exec("""
-        CREATE REL TABLE IF NOT EXISTS Edge(FROM Vertex TO Vertex, label STRING, props STRING);
-        """, write=True)
-
-        # Figure out later if we need sessions and steps
-        # self.exec("""
-        # CREATE NODE TABLE IF NOT EXISTS Session(
-        #     id STRING,
-        #     title STRING,
-        #     created_at STRING,
-        #     PRIMARY KEY(id)
-        # );
-        # """, write=True)
-        # self.exec("""
-        # CREATE NODE TABLE IF NOT EXISTS Step(
-        #     id STRING,
-        #     session_id STRING,
-        #     idx INT64,
-        #     action STRING,
-        #     ok BOOL,
-        #     message STRING,
-        #     snapshot_before STRING,
-        #     snapshot_after STRING,
-        #     evidence STRING,
-        #     created_at STRING,
-        #     PRIMARY KEY(id)
-        # );
-        # """, write=True)
-        # self.exec("CREATE REL TABLE IF NOT EXISTS SessionHasStep(FROM Session TO Step);", write=True)
+        self.exec(
+            """
+            CREATE NODE TABLE IF NOT EXISTS Graph(
+                id STRING,
+                label STRING,
+                num_nodes INT64,
+                num_edges INT64,
+                props STRING,
+                PRIMARY KEY(id)
+            );
+            """,
+            write=True,
+        )
+        # Kuzu node tables currently require a single-column primary key. We keep
+        # Vertex.id as a backend-global storage key and preserve the local vertex id
+        # in props[vertexIDKey]. The storage key is normally "<graph_id>:<local_id>".
+        self.exec(
+            """
+            CREATE NODE TABLE IF NOT EXISTS Vertex(
+                id STRING,
+                graph_id STRING,
+                label STRING,
+                x DOUBLE,
+                y DOUBLE,
+                z DOUBLE,
+                props STRING,
+                PRIMARY KEY(id)
+            );
+            """,
+            write=True,
+        )
+        self.exec(
+            """
+            CREATE REL TABLE IF NOT EXISTS Edge(FROM Vertex TO Vertex, graph_id STRING, label STRING, props STRING);
+            """,
+            write=True,
+        )
 
 
 class Kuzu:
-    # ---------- Core (DB + Connection + Schema) ----------
+    # -------------------------------------------------------------------------
+    # Core
+    # -------------------------------------------------------------------------
+
     @staticmethod
     def EnsureSchema(manager, silent: bool = False) -> bool:
-        """
-        Ensures the required Kùzu schema exists in the database at `path`.
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            Path to the Kùzu database. It will be created if it does not exist.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        bool
-            True if successful, False otherwise.
-        """
         try:
             manager.ensure_schema()
             return True
@@ -198,21 +311,6 @@ class Kuzu:
 
     @staticmethod
     def Database(path: str, silent: bool = False):
-        """
-        Returns the underlying `kuzu.Database` instance for `path`.
-
-        Parameters
-        ----------
-        path : str
-            Path to the Kùzu database. It will be created if it does not exist.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        kuzu.Database
-            The Kuzu database found at the path.
-        """
         try:
             return _db_cache.get(path)
         except Exception as e:
@@ -222,143 +320,220 @@ class Kuzu:
 
     @staticmethod
     def Connection(manager, silent: bool = False):
-        """
-        Returns a `kuzu.Connection` bound to the database at `path`.
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The Manager to the Kùzu database.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        kuzu.Connection
-            The Kuzu live connection. Do NOT use across threads.
-        """
         try:
-            with manager.read() as c:
-                return c  # Note: returns a live connection (do not use across threads)
+            return manager._pool._ensure()
         except Exception as e:
             if not silent:
                 print(f"Kuzu.Connection - Error: {e}. Returning None.")
-            return None        
-    
+            return None
+
     @staticmethod
     def Manager(path: str, silent: bool = False):
-        """
-        Returns a lightweight manager bound to the database at `path`.
-        Parameters
-        ----------
-        path : str
-            Path to the Kùzu database. It will be created if it does not exist.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        Kuzu.Manager
-            The Kuzu Manager.
-        """
         try:
             return _Mgr(path)
         except Exception as e:
             if not silent:
                 print(f"Kuzu.Manager - Error: {e}. Returning None.")
-            return None 
+            return None
+
+    @staticmethod
+    def Execute(manager, query: str, parameters: dict = None, write: bool = False, silent: bool = False):
+        try:
+            return manager.exec(query, parameters or {}, write=write)
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.Execute - Error: {e}. Returning None.")
+            return None
+
+    @staticmethod
+    def Query(manager, query: str, parameters: dict = None, silent: bool = False):
+        return Kuzu.Execute(manager, query, parameters=parameters, write=False, silent=silent)
+
+    # -------------------------------------------------------------------------
+    # Persistence
+    # -------------------------------------------------------------------------
 
     @staticmethod
     def UpsertGraph(manager,
                     graph,
-                    graphIDKey: str = None,
-                    vertexIDKey: str = None,
-                    vertexLabelKey: str = None,
+                    graphIDKey: str = "id",
+                    vertexIDKey: str = "id",
+                    vertexLabelKey: str = "label",
+                    defaultVertexLabel: str = "Node",
+                    vertexCategoryKey: str = "category",
+                    defaultVertexCategory="Node",
+                    edgeLabelKey: str = "label",
+                    defaultEdgeLabel: str = "CONNECTED_TO",
+                    edgeCategoryKey: str = "category",
+                    defaultEdgeCategory="Edge",
+                    bidirectional: bool = True,
+                    overwrite: bool = False,
                     mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    database: str = None,
                     silent: bool = False) -> str:
         """
-        Upserts (deletes prior + inserts new) a TopologicPy graph.
+        Upserts a TopologicPy graph into Kuzu using the canonical GraphDB schema.
 
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The Kuzu database manager.
-        graph : topologicpy.Graph
-            The input TopologicPy graph.
-        graphIDKey : str , optional
-            The graph dictionary key under which the graph ID is stored. If None, a UUID is generated and stored under 'id'.
-        vertexIDKey : str , optional
-            The vertex dictionary key under which the vertex ID is stored. If None, a UUID is generated and stored under 'id'.
-        edgeIDKey : str , optional
-            The edge dictionary key under which the edge ID is stored. If None, a UUID is generated and stored under 'id'.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        str
-            The graph_id used.
+        The signature mirrors Neo4j.UpsertGraph. The database argument is accepted
+        for GraphDB compatibility and ignored because Kuzu database identity is the
+        manager/path.
         """
-        from topologicpy.Graph import Graph
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        d = Topology.Dictionary(graph)
-        if graphIDKey is None:
-            gid =  Topology.UUID(graph)
-        else:
-            gid = Dictionary.ValueAtKey(d, graphIDKey, Topology.UUID(graph))
-        g_props = Dictionary.PythonDictionary(d)
-        mesh_data = Graph.MeshData(graph, mantissa=mantissa)
-        verts = mesh_data['vertices']
-        v_props = mesh_data['vertexDictionaries']
-        edges = mesh_data['edges']
-        e_props = mesh_data['edgeDictionaries']
-        num_nodes = len(verts)
-        num_edges = len(edges)
         try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Topology import Topology
+
             manager.ensure_schema()
-            # Upsert Graph
-            manager.exec("MATCH (g:Graph) WHERE g.id = $id DELETE g;", {"id": gid}, write=True)
-            manager.exec("""
-                CREATE (g:Graph {id:$id, num_nodes:$num_nodes, num_edges: $num_edges, props:$props});
-            """, {"id": gid, "num_nodes": num_nodes, "num_edges": num_edges, "props": json.dumps(g_props)}, write=True)
 
-            # Remove existing vertices/edges for this graph_id
-            manager.exec("""
-                MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
-                WHERE a.graph_id = $gid AND b.graph_id = $gid
-                DELETE r;
-            """, {"gid": gid}, write=True)
-            manager.exec("MATCH (v:Vertex) WHERE v.graph_id = $gid DELETE v;", {"gid": gid}, write=True)
+            graph_dict = Topology.Dictionary(graph)
+            gid = _value_from_dict(graph_dict, graphIDKey, None) if graphIDKey is not None else None
+            if gid is None or str(gid).strip() == "":
+                gid = Topology.UUID(graph)
+            gid = str(gid).strip()
 
-            # Insert vertices
-            for i, v in enumerate(verts):
-                x,y,z = v
-                if vertexIDKey is None:
-                    vid = f"{gid}:{i}"
-                else:
-                    vid = v_props[i].get(vertexIDKey, f"{gid}:{i}")
-                if vertexLabelKey is None:
-                    label = str(i)
-                else:
-                    label = v_props[i].get(vertexIDKey, str(i))
-                manager.exec("""
+            exists_rows = manager.exec(
+                """
+                MATCH (g:Graph)
+                WHERE g.id = $gid
+                RETURN COUNT(g) > 0 AS exists;
+                """,
+                {"gid": gid},
+                write=False,
+            ) or []
+            exists = False
+            if exists_rows:
+                try:
+                    exists = bool(exists_rows[0].get("exists"))
+                except Exception:
+                    exists = False
+
+            if exists and not overwrite:
+                if not silent:
+                    print("Kuzu.UpsertGraph - Error: The graph already exists and overwrite is False. Returning None.")
+                return None
+
+            if overwrite:
+                Kuzu.DeleteGraph(manager, gid, silent=True)
+
+            g_props = _python_dictionary(graph_dict)
+            g_label = str(g_props.get("label", ""))
+
+            mesh_data = Graph.MeshData(graph, mantissa=mantissa)
+            verts = mesh_data.get("vertices", [])
+            v_props = mesh_data.get("vertexDictionaries", [])
+            edges = mesh_data.get("edges", [])
+            e_props = mesh_data.get("edgeDictionaries", [])
+
+            edge_count = len(edges) * (2 if bidirectional else 1)
+            manager.exec(
+                """
+                CREATE (g:Graph {id:$id, label:$label, num_nodes:$num_nodes, num_edges:$num_edges, props:$props});
+                """,
+                {
+                    "id": gid,
+                    "label": g_label,
+                    "num_nodes": int(len(verts)),
+                    "num_edges": int(edge_count),
+                    "props": _json_dumps(g_props),
+                },
+                write=True,
+            )
+
+            vertex_ids = []
+            used_storage_ids = set()
+            for i, xyz in enumerate(verts):
+                props = dict(v_props[i] or {}) if i < len(v_props) else {}
+                x, y, z = xyz
+
+                raw_vid = _safe_local_id(props.get(vertexIDKey, None) if vertexIDKey is not None else None, i)
+                if vertexIDKey is not None:
+                    props[vertexIDKey] = raw_vid
+                props["graph_id"] = gid
+
+                storage_id = raw_vid if raw_vid.startswith(f"{gid}:") else f"{gid}:{raw_vid}"
+                if storage_id in used_storage_ids:
+                    suffix = 2
+                    base = storage_id
+                    while storage_id in used_storage_ids:
+                        storage_id = f"{base}_{suffix}"
+                        suffix += 1
+                    # Preserve the modified local id when there was a duplicate inside one graph.
+                    if vertexIDKey is not None:
+                        props[vertexIDKey] = storage_id.split(":", 1)[-1]
+                used_storage_ids.add(storage_id)
+                props["_db_id"] = storage_id
+
+                label = props.get(vertexLabelKey, None) if vertexLabelKey is not None else None
+                if label is None or str(label).strip() == "":
+                    label = defaultVertexLabel if defaultVertexLabel is not None else str(i)
+                label = str(label).strip()
+
+                if vertexCategoryKey is not None:
+                    category = props.get(vertexCategoryKey, defaultVertexCategory)
+                    if category is not None:
+                        props[vertexCategoryKey] = category
+
+                vertex_ids.append(storage_id)
+                manager.exec(
+                    """
                     CREATE (v:Vertex {id:$id, graph_id:$gid, label:$label, props:$props, x:$x, y:$y, z:$z});
-                """, {"id": vid, "gid": gid, "label": label, "x": x, "y": y, "z": z,
-                        "props": json.dumps(v_props[i])}, write=True)
+                    """,
+                    {
+                        "id": storage_id,
+                        "gid": gid,
+                        "label": label,
+                        "x": float(x),
+                        "y": float(y),
+                        "z": float(z),
+                        "props": _json_dumps(props),
+                    },
+                    write=True,
+                )
 
-            # Insert edges
-            for i, e in enumerate(edges):
-                a_id = v_props[e[0]].get(vertexIDKey, f"{gid}:{e[0]}")
-                b_id = v_props[e[1]].get(vertexIDKey, f"{gid}:{e[1]}")
-                manager.exec("""
-                    MATCH (a:Vertex {id:$a}), (b:Vertex {id:$b})
-                    CREATE (a)-[:Edge {label:$label, props:$props}]->(b);
-                """, {"a": a_id, "b": b_id,
-                        "label": e_props[i].get("label", str(i)),
-                        "props": json.dumps(e_props[i])}, write=True)
+            for i, edge_indices in enumerate(edges):
+                try:
+                    a_index = int(edge_indices[0])
+                    b_index = int(edge_indices[1])
+                except Exception:
+                    continue
+                if a_index < 0 or b_index < 0 or a_index >= len(vertex_ids) or b_index >= len(vertex_ids):
+                    continue
 
+                props = dict(e_props[i] or {}) if i < len(e_props) else {}
+                label = props.get(edgeLabelKey, None) if edgeLabelKey is not None else None
+                if label is None or str(label).strip() == "":
+                    label = props.get("type", None)
+                if label is None or str(label).strip() == "":
+                    label = defaultEdgeLabel
+                label = str(label).strip()
+                if edgeLabelKey is not None:
+                    props[edgeLabelKey] = label
+                if edgeCategoryKey is not None:
+                    category = props.get(edgeCategoryKey, defaultEdgeCategory)
+                    if category is not None:
+                        props[edgeCategoryKey] = category
+                props["graph_id"] = gid
+
+                a_id = vertex_ids[a_index]
+                b_id = vertex_ids[b_index]
+                rel_rows = [(a_id, b_id)]
+                if bidirectional and a_id != b_id:
+                    rel_rows.append((b_id, a_id))
+                for start_id, end_id in rel_rows:
+                    manager.exec(
+                        """
+                        MATCH (a:Vertex {id:$a}), (b:Vertex {id:$b})
+                        CREATE (a)-[:Edge {graph_id:$gid, label:$label, props:$props}]->(b);
+                        """,
+                        {
+                            "a": start_id,
+                            "b": end_id,
+                            "gid": gid,
+                            "label": label,
+                            "props": _json_dumps(props),
+                        },
+                        write=True,
+                    )
             return gid
         except Exception as e:
             if not silent:
@@ -367,105 +542,98 @@ class Kuzu:
 
     @staticmethod
     def GraphByID(manager, graphID: str, silent: bool = False):
-        """
-        Constructs a TopologicPy graph from from Kùzu using the graphID input parameter.
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The manager of the Kùzu database.
-        graphID : str , optional
-            The graph ID to retrieve from Kùzu.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologicpy.Graph
-            A new TopologicPy Graph, or None on error.
-        """
-        import random
-        from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Topology import Topology
-
         try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Dictionary import Dictionary
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Edge import Edge
+            from topologicpy.Topology import Topology
+
             manager.ensure_schema()
-            # Read the Graph
-            g = manager.exec("""
-                    MATCH (g:Graph) WHERE g.id = $id
-                    RETURN g.id AS id, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
-                    ;
-                     """, {"id": graphID}, write=False) or None
-            if g is None:
+            graphID = str(graphID)
+            rows_g = manager.exec(
+                """
+                MATCH (g:Graph)
+                WHERE g.id = $id
+                RETURN g.id AS id, g.label AS label, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props;
+                """,
+                {"id": graphID},
+                write=False,
+            ) or []
+            if not rows_g:
                 return None
-            g = g[0]
-            g_dict = dict(json.loads(g.get("props") or "{}") or {})
-            g_dict = Dictionary.ByPythonDictionary(g_dict)
-            # Read vertices
-            rows_v = manager.exec("""
-                MATCH (v:Vertex) WHERE v.graph_id = $gid
+
+            g_row = rows_g[0]
+            g_props = dict(_json_loads(g_row.get("props"), {}))
+            if "label" not in g_props and g_row.get("label") is not None:
+                g_props["label"] = g_row.get("label")
+            g_dict = Dictionary.ByPythonDictionary(g_props)
+
+            rows_v = manager.exec(
+                """
+                MATCH (v:Vertex)
+                WHERE v.graph_id = $gid
                 RETURN v.id AS id, v.label AS label, v.x AS x, v.y AS y, v.z AS z, v.props AS props
-                ORDER BY id;
-            """, {"gid": graphID}, write=False) or []
+                ORDER BY v.id;
+                """,
+                {"gid": graphID},
+                write=False,
+            ) or []
 
             id_to_vertex = {}
             vertices = []
             for row in rows_v:
-                try:
-                    x = row.get("x", random.uniform(0,1000))
-                    y = row.get("y", random.uniform(0,1000))
-                    z = row.get("z", random.uniform(0,1000))
-                except:
-                    x = random.uniform(0,1000)
-                    y = random.uniform(0,1000)
-                    z = random.uniform(0,1000)
-                v = Vertex.ByCoordinates(x,y,z)
-                props = {}
-                try:
-                    props = json.loads(row.get("props") or "{}")
-                except Exception:
-                    props = {}
-                # Ensure 'label' key present
-                props = dict(props or {})
+                x = row.get("x") if row.get("x") is not None else 0.0
+                y = row.get("y") if row.get("y") is not None else 0.0
+                z = row.get("z") if row.get("z") is not None else 0.0
+                v = Vertex.ByCoordinates(float(x), float(y), float(z))
+                props = dict(_json_loads(row.get("props"), {}))
+                if "id" not in props:
+                    # If no local id was preserved, use the backend storage id.
+                    props["id"] = row.get("id")
                 if "label" not in props:
                     props["label"] = row.get("label") or ""
-                d = Dictionary.ByKeysValues(list(props.keys()), list(props.values()))
+                d = Dictionary.ByPythonDictionary(props)
                 v = Topology.SetDictionary(v, d)
-                id_to_vertex[row["id"]] = v
+                id_to_vertex[row.get("id")] = v
                 vertices.append(v)
 
-            # Read edges
-            rows_e = manager.exec("""
+            rows_e = manager.exec(
+                """
                 MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
                 WHERE a.graph_id = $gid AND b.graph_id = $gid
                 RETURN a.id AS a_id, b.id AS b_id, r.label AS label, r.props AS props;
-            """, {"gid": graphID}, write=False) or []
-            edges = []
+                """,
+                {"gid": graphID},
+                write=False,
+            ) or []
+
+            edges_out = []
+            seen_pairs = set()
             for row in rows_e:
-                va = id_to_vertex.get(row["a_id"])
-                vb = id_to_vertex.get(row["b_id"])
-                if not va or not vb:
+                a_id = row.get("a_id")
+                b_id = row.get("b_id")
+                # Suppress reverse duplicate edges caused by bidirectional storage.
+                pair_key = tuple(sorted([str(a_id), str(b_id)]))
+                if pair_key in seen_pairs:
+                    continue
+                seen_pairs.add(pair_key)
+                va = id_to_vertex.get(a_id)
+                vb = id_to_vertex.get(b_id)
+                if va is None or vb is None:
                     continue
                 e = Edge.ByStartVertexEndVertex(va, vb)
-                props = {}
-                try:
-                    props = json.loads(row.get("props") or "{}")
-                except Exception:
-                    props = {}
-                props = dict(props or {})
+                props = dict(_json_loads(row.get("props"), {}))
                 if "label" not in props:
                     props["label"] = row.get("label") or "connect"
-                d = Dictionary.ByKeysValues(list(props.keys()), list(props.values()))
+                d = Dictionary.ByPythonDictionary(props)
                 e = Topology.SetDictionary(e, d)
-                edges.append(e)
-            if len(vertices) > 0:
-                g = Graph.ByVerticesEdges(vertices, edges)
-                g = Topology.SetDictionary(g, g_dict)
-            else:
-                g = None
+                edges_out.append(e)
+
+            if not vertices:
+                return None
+            g = Graph.ByVerticesEdges(vertices, edges_out)
+            g = Topology.SetDictionary(g, g_dict)
             return g
         except Exception as e:
             if not silent:
@@ -473,66 +641,144 @@ class Kuzu:
             return None
 
     @staticmethod
-    def GraphsByQuery(
-        manager,
-        query: str,
-        params: dict = None,
-        silent: bool = False,
-    ):
+    def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, silent: bool = False):
         """
-        Executes a Kùzu Cypher query and returns a list of TopologicPy Graphs.
-
-        The method will:
-        1) run the query,
-        2) extract distinct graph IDs from the result set.
-        3) reconstruct each graph via Kuzu.GraphByID(...).
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The manager of the Kùzu database.
-        query : str
-            A valid Kùzu Cypher query.
-        params : dict , optional
-            Parameters to pass with the query.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list[topologic_core.Graph]
-            A list of reconstructed TopologicPy graphs.
-        
+        Executes a Kuzu query and returns a list containing a TopologicPy graph
+        constructed from the returned rows. If rows return graph_id/gid only,
+        full graphs are reconstructed using GraphByID.
         """
-
         try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Edge import Edge
+            from topologicpy.Topology import Topology
+            from topologicpy.Dictionary import Dictionary
+
             manager.ensure_schema()
-            rows = manager.exec(query, params or {}, write=False) or []
+            qparams = parameters if parameters is not None else (params or {})
+            rows = manager.exec(query, qparams, write=False) or []
+            if not rows:
+                return []
 
-            # Collect distinct graph IDs
+            # If the result only exposes graph ids, return full graph(s).
             gids = []
-            for r in rows:
-                gid = r.get('graph_id')
-
-                # Fallback: try to infer from common id fields like "<graph_id>:<i>"
-                if gid is None:
-                    for k in ("a_id", "b_id", "id"):
-                        v = r.get(k)
-                        if isinstance(v, str) and ":" in v:
-                            gid = v.split(":", 1)[0]
-                            break
-
-                if gid and gid not in gids:
+            has_graph_objects = False
+            for row in rows:
+                for value in row.values():
+                    if isinstance(value, dict) or hasattr(value, "_properties"):
+                        has_graph_objects = True
+                        break
+                gid = row.get("graph_id") or row.get("gid")
+                if gid is not None and gid not in gids:
                     gids.append(gid)
+            if gids and not has_graph_objects:
+                graphs = []
+                for gid in gids:
+                    g = Kuzu.GraphByID(manager, str(gid), silent=silent)
+                    if g is not None:
+                        graphs.append(g)
+                return graphs
 
-            # Reconstruct each graph
-            graphs = []
-            for gid in gids:
-                g = Kuzu.GraphByID(path, gid, silent=silent)
-                if g is not None:
-                    graphs.append(g)
-            return graphs
+            node_rows = {}
+            rel_rows = []
 
+            def _consume(value):
+                if value is None:
+                    return
+                if isinstance(value, dict):
+                    # Direct canonical vertex row.
+                    if "id" in value and ("x" in value or "label" in value or "graph_id" in value):
+                        node_rows[str(value.get("id"))] = dict(value)
+                        return
+                    for v in value.values():
+                        _consume(v)
+                    return
+                if isinstance(value, (list, tuple, set)):
+                    for v in value:
+                        _consume(v)
+                    return
+                obj = _object_to_dict(value)
+                if obj:
+                    if "id" in obj and ("x" in obj or "label" in obj or "graph_id" in obj):
+                        node_rows[str(obj.get("id"))] = obj
+                    elif "a_id" in obj or "b_id" in obj:
+                        rel_rows.append(obj)
+
+            for row in rows:
+                # Prefer explicit n/r/m style query outputs.
+                for value in row.values():
+                    _consume(value)
+                if "n" in row:
+                    _consume(row.get("n"))
+                if "m" in row:
+                    _consume(row.get("m"))
+                if "r" in row:
+                    rel_rows.append(_object_to_dict(row.get("r")) or row.get("r"))
+                if "a_id" in row and "b_id" in row:
+                    rel_rows.append(dict(row))
+
+            # Fallback for scalar canonical rows.
+            for row in rows:
+                if "id" in row and row.get("id") is not None:
+                    node_rows[str(row.get("id"))] = row
+
+            id_to_vertex = {}
+            vertices = []
+            for nid, row in node_rows.items():
+                props = dict(_json_loads(row.get("props"), {}))
+                if "id" not in props:
+                    props["id"] = row.get("id")
+                if "label" not in props and row.get("label") is not None:
+                    props["label"] = row.get("label")
+                x = row.get("x", 0.0)
+                y = row.get("y", 0.0)
+                z = row.get("z", 0.0)
+                try:
+                    x = float(x)
+                except Exception:
+                    x = 0.0
+                try:
+                    y = float(y)
+                except Exception:
+                    y = 0.0
+                try:
+                    z = float(z)
+                except Exception:
+                    z = 0.0
+                v = Vertex.ByCoordinates(x, y, z)
+                v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(props))
+                id_to_vertex[nid] = v
+                vertices.append(v)
+
+            edges_out = []
+            seen = set()
+            for rel in rel_rows:
+                if not isinstance(rel, dict):
+                    rel = _object_to_dict(rel)
+                a_id = rel.get("a_id") or rel.get("a") or rel.get("src") or rel.get("source")
+                b_id = rel.get("b_id") or rel.get("b") or rel.get("dst") or rel.get("target")
+                # Kuzu relationship objects may not expose endpoints, so queries that
+                # need edges should return a.id AS a_id and b.id AS b_id as well.
+                if a_id is None or b_id is None:
+                    continue
+                key = tuple(sorted([str(a_id), str(b_id)]))
+                if key in seen:
+                    continue
+                seen.add(key)
+                va = id_to_vertex.get(str(a_id))
+                vb = id_to_vertex.get(str(b_id))
+                if va is None or vb is None:
+                    continue
+                e = Edge.ByStartVertexEndVertex(va, vb)
+                props = dict(_json_loads(rel.get("props"), {}))
+                if "label" not in props and rel.get("label") is not None:
+                    props["label"] = rel.get("label")
+                e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(props))
+                edges_out.append(e)
+
+            if not vertices:
+                return []
+            return [Graph.ByVerticesEdges(vertices, edges_out)]
         except Exception as e:
             if not silent:
                 print(f"Kuzu.GraphsByQuery - Error: {e}. Returning None.")
@@ -540,72 +786,43 @@ class Kuzu:
 
     @staticmethod
     def DeleteGraph(manager, graphID: str, silent: bool = False) -> bool:
-        """
-        Deletes a graph (vertices, edges, and graphCard) by id.
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The manager of the Kùzu database.
-        graphID : str
-            The id of the graph to be deleted.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
-        Returns
-        -------
-        bool
-            True on success, False otherwise.
-        """
         try:
             manager.ensure_schema()
-            # Delete edges
-            manager.exec("""
-                MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
-                WHERE a.graph_id = $gid AND b.graph_id = $gid
-                DELETE r;
-            """, {"gid": graphID}, write=True)
-            # Delete vertices
+            graphID = str(graphID)
+            # Delete relationships first. Prefer r.graph_id, but keep endpoint fallback
+            # for databases created by older versions without Edge.graph_id.
+            try:
+                manager.exec(
+                    """
+                    MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
+                    WHERE r.graph_id = $gid
+                    DELETE r;
+                    """,
+                    {"gid": graphID},
+                    write=True,
+                )
+            except Exception:
+                manager.exec(
+                    """
+                    MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
+                    WHERE a.graph_id = $gid AND b.graph_id = $gid
+                    DELETE r;
+                    """,
+                    {"gid": graphID},
+                    write=True,
+                )
             manager.exec("MATCH (v:Vertex) WHERE v.graph_id = $gid DELETE v;", {"gid": graphID}, write=True)
-            # Delete card
             manager.exec("MATCH (g:Graph) WHERE g.id = $gid DELETE g;", {"gid": graphID}, write=True)
             return True
         except Exception as e:
             if not silent:
                 print(f"Kuzu.DeleteGraph - Error: {e}. Returning False.")
             return False
-    
+
     @staticmethod
     def EmptyDatabase(manager, dropSchema: bool = False, recreateSchema: bool = True, silent: bool = False) -> bool:
-        """
-        Empties the Kùzu database at `db_path`.
-
-        Two modes:
-        - Soft clear (default): delete ALL relationships, then ALL nodes across all tables.
-        - Hard reset (drop_schema=True): drop known node/rel tables, optionally recreate schema.
-
-        Parameters
-        ----------
-        manager : Kuzu Manager
-            The manager of the Kùzu database.
-        dropSchema : bool , optional
-            If True, DROP the known tables instead of deleting rows. Default False.
-        recreateSchema : bool , optional
-            If True and drop_schema=True, re-create the minimal schema after dropping. Default True.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        bool
-            True on success, False otherwise.
-        """
         try:
-            manager.ensure_schema()
-
             if dropSchema:
-                # Drop relationship tables FIRST (to release dependencies), then node tables.
-                # IF EXISTS is convenient; if your Kùzu version doesn't support it, remove and ignore exceptions.
                 for stmt in [
                     "DROP TABLE IF EXISTS Edge;",
                     "DROP TABLE IF EXISTS Vertex;",
@@ -613,21 +830,18 @@ class Kuzu:
                 ]:
                     try:
                         manager.exec(stmt, write=True)
-                    except Exception as _e:
+                    except Exception as e:
                         if not silent:
-                            print(f"Kuzu.EmptyDatabase - Warning dropping table: {_e}")
-
+                            print(f"Kuzu.EmptyDatabase - Warning: {e}")
                 if recreateSchema:
                     manager.ensure_schema()
                 return True
 
-            # Soft clear: remove all relationships, then all nodes (covers all labels/tables).
-            # Delete all edges (any direction)
+            manager.ensure_schema()
             manager.exec("MATCH (a)-[r]->(b) DELETE r;", write=True)
-            # Delete all nodes (from all node tables)
-            manager.exec("MATCH (n) DELETE n;", write=True)
+            manager.exec("MATCH (v:Vertex) DELETE v;", write=True)
+            manager.exec("MATCH (g:Graph) DELETE g;", write=True)
             return True
-
         except Exception as e:
             if not silent:
                 print(f"Kuzu.EmptyDatabase - Error: {e}. Returning False.")
@@ -635,316 +849,289 @@ class Kuzu:
 
     @staticmethod
     def ListGraphs(manager, where: dict = None, limit: int = 100, offset: int = 0, silent: bool = False) -> list[dict]:
-        """
-        Lists Graph metadata with simple filtering and pagination.
+        try:
+            manager.ensure_schema()
+            where = where or {}
+            conds = []
+            params = {}
+            if where.get("id"):
+                conds.append("g.id = $id")
+                params["id"] = str(where["id"])
+            if where.get("label"):
+                conds.append("g.label CONTAINS $label_sub")
+                params["label_sub"] = str(where["label"])
+            if where.get("props_contains"):
+                conds.append("g.props CONTAINS $props_sub")
+                params["props_sub"] = str(where["props_contains"])
+            if where.get("props_equals"):
+                conds.append("g.props = $props_equals")
+                params["props_equals"] = str(where["props_equals"])
+            if where.get("min_nodes") is not None:
+                conds.append("g.num_nodes >= $min_nodes")
+                params["min_nodes"] = int(where["min_nodes"])
+            if where.get("max_nodes") is not None:
+                conds.append("g.num_nodes <= $max_nodes")
+                params["max_nodes"] = int(where["max_nodes"])
+            if where.get("min_edges") is not None:
+                conds.append("g.num_edges >= $min_edges")
+                params["min_edges"] = int(where["min_edges"])
+            if where.get("max_edges") is not None:
+                conds.append("g.num_edges <= $max_edges")
+                params["max_edges"] = int(where["max_edges"])
+            where_clause = ("WHERE " + " AND ".join(conds)) if conds else ""
+            params["offset"] = max(0, int(offset or 0))
+            params["limit"] = max(0, int(limit or 100))
+            return manager.exec(
+                f"""
+                MATCH (g:Graph)
+                {where_clause}
+                RETURN g.id AS id, g.label AS label, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
+                ORDER BY g.id
+                SKIP $offset LIMIT $limit;
+                """,
+                params,
+                write=False,
+            ) or []
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.ListGraphs - Error: {e}. Returning None.")
+            return None
 
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            The manager of the Kùzu database.
-        where : dict , optional
-            The filter python dictionaries. Supported filters in `where` (all optional):
-            - id (exact match)
-            - label (substring match)
-            - props_contains (substring match against JSON/text in `props`)
-            - props_equals (exact string match against `props`)
-            - min_nodes / max_nodes (integers)
-            - min_edges / max_edges (integers)
-        limit : int , optional
-            The desired limit of returned Graphs. Default is 100.
-        offset : int , optional
-            The desired offset of the returned Graphs (skips the first number of Graphs specified by the offset and returns the remaining cards up to the specified limit). The offset is useful if pagination is needed. Default is 0.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of found Graph python dictionaries.
-
-        """
-
-        manager.ensure_schema()
-        where = where or {}
-
-        conds: list[str] = []
-        params: dict = {}
-
-        if "id" in where and where["id"]:
-            conds.append("g.id = $id")
-            params["id"] = str(where["id"])
-
-        if "label" in where and where["label"]:
-            # Cypher-style infix CONTAINS
-            conds.append("g.label CONTAINS $label_sub")
-            params["label_sub"] = str(where["label"])
-
-        if "props_contains" in where and where["props_contains"]:
-            conds.append("g.props CONTAINS $props_sub")
-            params["props_sub"] = str(where["props_contains"])
-
-        if "props_equals" in where and where["props_equals"]:
-            conds.append("g.props = $props_equals")
-            params["props_equals"] = str(where["props_equals"])
-
-        if "min_nodes" in where and where["min_nodes"] is not None:
-            conds.append("g.num_nodes >= $min_nodes")
-            params["min_nodes"] = int(where["min_nodes"])
-
-        if "max_nodes" in where and where["max_nodes"] is not None:
-            conds.append("g.num_nodes <= $max_nodes")
-            params["max_nodes"] = int(where["max_nodes"])
-
-        if "min_edges" in where and where["min_edges"] is not None:
-            conds.append("g.num_edges >= $min_edges")
-            params["min_edges"] = int(where["min_edges"])
-
-        if "max_edges" in where and where["max_edges"] is not None:
-            conds.append("g.num_edges <= $max_edges")
-            params["max_edges"] = int(where["max_edges"])
-
-        where_clause = ("WHERE " + " AND ".join(conds)) if conds else ""
-        q = f"""
-            MATCH (g:Graph)
-            {where_clause}
-            RETURN g.id AS id, g.label AS label,
-                g.num_nodes AS num_nodes, g.num_edges AS num_edges,
-                g.props AS props
-            ORDER BY id
-            SKIP $__offset LIMIT $__limit;
-        """
- 
-        params["__offset"] = max(0, int(offset or 0))
-        params["__limit"] = max(0, int(limit or 100))
-
-        return manager.exec(q, params, write=False) or []
-    
+    # -------------------------------------------------------------------------
+    # CSV import: Graph.ByCSVPath -> Kuzu.UpsertGraph
+    # -------------------------------------------------------------------------
 
     @staticmethod
     def ByCSVPath(
         manager,
-        path: str,
-        graphIDPrefix: str = "g",
-        graphIDHeader="graph_id",
-        graphLabelHeader="label",
-        edgeSRCHeader="src_id",
-        edgeDSTHeader="dst_id",
-        edgeLabelHeader="label",
-        nodeIDHeader="node_id",
-        nodeLabelHeader="label",
-        nodeXHeader="X",
-        nodeYHeader="Y",
-        nodeZHeader="Z",
-        silent: bool = False,
-    ) -> Dict[str, Any]:
-        """
-        Load node/edge/graph CSVs from a folder (using its .yaml meta) and upsert them
-        directly into Kùzu using the schema defined in Kuzu.py:
-
-        - NODE TABLE Graph(id STRING PRIMARY KEY, label STRING, num_nodes INT64, num_edges INT64, props STRING)
-        - NODE TABLE Vertex(id STRING PRIMARY KEY, graph_id STRING, label STRING, x DOUBLE, y DOUBLE, z DOUBLE, props STRING)
-        - REL  TABLE Edge(FROM Vertex TO Vertex, label STRING, props STRING)
-
-        Parameters
-        ----------
-        manager : Kuzu.Manager
-            An initialized Kùzu manager; must provide ensure_schema() and exec(query, params, write=True/False).
-        path : str
-            Folder containing a dataset YAML (e.g., meta.yaml) that points to nodes/edges/graphs CSVs.
-        graphIDPrefix : str
-            Prefix for materialized graph IDs (default "g"); e.g., graph 0 -> "g0".
-        graphIDHeader : str , optional
-            The column header string used to specify the graph id. Default is "graph_id".
-        graphLabelHeader : str , optional
-            The column header string used to specify the graph label. Default is "label".
-        edgeSRCHeader : str , optional
-            The column header string used to specify the source vertex id of edges. Default is "src_id".
-        edgeDSTHeader : str , optional
-            The column header string used to specify the destination vertex id of edges. Default is "dst_id".
-        edgeLabelHeader : str , optional
-            The column header string used to specify the label of edges. Default is "label".
-        nodeIDHeader : str , optional
-            The column header string used to specify the id of nodes. Default is "node_id".
-        nodeLabelHeader : str , optional
-            The column header string used to specify the label of nodes. Default is "label".
-        nodeXHeader : str , optional
-            The column header string used to specify the X coordinate of nodes. Default is "X".
-        nodeYHeader : str , optional
-            The column header string used to specify the Y coordinate of nodes. Default is "Y".
-        nodeZHeader : str , optional
-            The column header string used to specify the Z coordinate of nodes. Default is "Z".
-        silent : bool
-            If True, suppress warnings.
-
-        Returns
-        -------
-        dict
-            {"graphs_upserted": int, "graph_ids": [str, ...]}
-        """
-        import os
-        import glob
-        import json
-        import numbers
-        import pandas as pd
-        import yaml
-        import random
-
-        # ---------- Helpers (mirroring your CSV loader’s patterns) ----------
-        def _find_yaml_files(folder_path: str):
-            return glob.glob(os.path.join(folder_path, "*.yaml"))
-
-        def _read_yaml(file_path: str):
-            with open(file_path, "r", encoding="utf-8") as f:
-                data = yaml.safe_load(f) or {}
-            edge_data = data.get("edge_data", [])
-            node_data = data.get("node_data", [])
-            graph_data = data.get("graph_data", {})
-            edges_rel = edge_data[0].get("file_name") if edge_data else None
-            nodes_rel = node_data[0].get("file_name") if node_data else None
-            graphs_rel = graph_data.get("file_name")
-            return graphs_rel, edges_rel, nodes_rel
-
-        def _props_from_row(row: pd.Series, exclude: set) -> str:
-            d = {}
-            for k, v in row.items():
-                if k in exclude:
-                    continue
-                # normalize NaN -> None for clean JSON
-                if isinstance(v, float) and pd.isna(v):
-                    d[k] = None
-                else:
-                    d[k] = v
-            try:
-                return json.dumps(d, ensure_ascii=False)
-            except Exception:
-                # Fallback: stringify everything
-                return json.dumps({k: (None if v is None else str(v)) for k, v in d.items()}, ensure_ascii=False)
-
-        # ---------- Validate path and locate YAML/CSVs ----------
-        if not os.path.exists(path) or not os.path.isdir(path):
+        path,
+        graphIDHeader="graph_id", graphLabelHeader="label", graphFeaturesHeader="feat", graphFeaturesKeys=None,
+        edgeSRCHeader="src_id", edgeDSTHeader="dst_id", edgeLabelHeader="label",
+        edgeTrainMaskHeader="train_mask", edgeValidateMaskHeader="val_mask", edgeTestMaskHeader="test_mask",
+        edgeFeaturesHeader="feat", edgeFeaturesKeys=None,
+        nodeIDHeader="node_id", nodeLabelHeader="label",
+        nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
+        nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
+        nodeFeaturesKeys=None,
+        tolerance=0.0001, silent=False):
+        try:
+            from topologicpy.Graph import Graph
+            manager.ensure_schema()
+            graphs = Graph.ByCSVPath(
+                path=path,
+                graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
+                graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
+                edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
+                edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
+                edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
+                edgeFeaturesKeys=edgeFeaturesKeys,
+                nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
+                nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
+                nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
+                nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
+                nodeFeaturesKeys=nodeFeaturesKeys,
+                tolerance=tolerance, silent=silent)
+            if graphs is None:
+                if not silent:
+                    print("Kuzu.ByCSVPath - Error: Graph.ByCSVPath returned None. Returning None.")
+                return None
+            if not isinstance(graphs, list):
+                graphs = [graphs]
+            graph_ids = []
+            for graph in graphs:
+                gid = Kuzu.UpsertGraph(
+                    manager,
+                    graph,
+                    graphIDKey=graphIDHeader,
+                    vertexIDKey=nodeIDHeader,
+                    vertexLabelKey=nodeLabelHeader,
+                    edgeLabelKey=edgeLabelHeader,
+                    overwrite=True,
+                    bidirectional=True,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+                if gid is not None:
+                    graph_ids.append(gid)
+            return {"graphs_upserted": len(graph_ids), "graph_ids": graph_ids}
+        except Exception as e:
             if not silent:
-                print("ByCSVPath - Error: path must be an existing folder. Returning None.")
+                print(f"Kuzu.ByCSVPath - Error: {e}. Returning None.")
             return None
 
-        yaml_files = _find_yaml_files(path)
-        if len(yaml_files) < 1:
-            if not silent:
-                print("ByCSVPath - Error: no YAML file found in the folder. Returning None.")
-            return None
-        yaml_file = yaml_files[0]
-        graphs_rel, edges_rel, nodes_rel = _read_yaml(yaml_file)
+    # -------------------------------------------------------------------------
+    # Corpus analytics
+    # -------------------------------------------------------------------------
 
-        # Resolve CSV paths
-        graphs_csv = os.path.join(path, graphs_rel) if graphs_rel else None
-        edges_csv = os.path.join(path, edges_rel) if edges_rel else None
-        nodes_csv = os.path.join(path, nodes_rel) if nodes_rel else None
-
-        if not edges_csv or not os.path.exists(edges_csv):
-            if not silent:
-                print("ByCSVPath - Error: edges CSV not found. Returning None.")
-            return None
-        if not nodes_csv or not os.path.exists(nodes_csv):
-            if not silent:
-                print("ByCSVPath - Error: nodes CSV not found. Returning None.")
-            return None
-
-        # ---------- Load CSVs ----------
-        nodes_df = pd.read_csv(nodes_csv)
-        edges_df = pd.read_csv(edges_csv)
-        graphs_df = pd.read_csv(graphs_csv) if graphs_csv and os.path.exists(graphs_csv) else pd.DataFrame()
-
-        # Required columns
-        for req_cols, df_name, df in [
-            ({graphIDHeader, nodeIDHeader}, "nodes", nodes_df),
-            ({graphIDHeader, edgeSRCHeader, edgeDSTHeader}, "edges", edges_df),
-        ]:
-            missing = req_cols.difference(df.columns)
-            if missing:
-                raise ValueError(f"ByCSVPath - {df_name}.csv is missing required columns: {missing}")
-
-        # Graph IDs present in the data
-        gids = pd.Index([]).union(nodes_df[graphIDHeader].dropna().unique()).union(
-            edges_df[graphIDHeader].dropna().unique()
-        )
-
-        # Prepare graphs_df lookup if provided
-        graphs_by_gid = {}
-        if graphIDHeader in graphs_df.columns:
-            graphs_by_gid = {gid: g.iloc[0].to_dict() for gid, g in graphs_df.groupby(graphIDHeader, dropna=False)}
-
-        # ---------- Ensure schema ----------
-        manager.ensure_schema()  # Graph, Vertex, Edge
-
-        # ---------- Upsert per graph ----------
-        materialized_graph_ids = []
-        for raw_gid in gids:
-            gid_str = f"{graphIDPrefix}{int(raw_gid) if str(raw_gid).isdigit() else str(raw_gid)}"
-            materialized_graph_ids.append(gid_str)
-
-            nsub = nodes_df[nodes_df[graphIDHeader] == raw_gid].copy()
-            esub = edges_df[edges_df[graphIDHeader] == raw_gid].copy()
-
-            # Graph info
-            gcard_src = graphs_by_gid.get(raw_gid, {})
-            g_label = str(gcard_src.get(graphLabelHeader, "")) if gcard_src else ""
-            g_props = _props_from_row(pd.Series(gcard_src), exclude={graphIDHeader, graphLabelHeader}) if gcard_src else "{}"
-            num_nodes = int(nsub.shape[0])
-            num_edges = int(esub.shape[0])
-
-            # Remove any existing data for this graph id, then re-insert
-            manager.exec("""
+    @staticmethod
+    def FetchAllPairs(manager, undirected: bool = True, silent: bool = False) -> list[dict]:
+        try:
+            manager.ensure_schema()
+            rows = manager.exec(
+                """
                 MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
-                WHERE a.graph_id = $gid AND b.graph_id = $gid
-                DELETE r;
-            """, {"gid": gid_str}, write=True)
-            manager.exec("MATCH (v:Vertex) WHERE v.graph_id = $gid DELETE v;", {"gid": gid_str}, write=True)
-            manager.exec("MATCH (g:Graph) WHERE g.id = $gid DELETE g;", {"gid": gid_str}, write=True)
+                RETURN a.label AS a_label, b.label AS b_label, COUNT(*) AS count
+                ORDER BY count DESC;
+                """,
+                write=False,
+            ) or []
+            counts = {}
+            for row in rows:
+                a = _normalize_label(row.get("a_label"))
+                b = _normalize_label(row.get("b_label"))
+                if not a or not b:
+                    continue
+                key = tuple(sorted([a, b])) if undirected else (a, b)
+                counts[key] = counts.get(key, 0) + int(row.get("count", 0) or 0)
+            out = []
+            for key, count in sorted(counts.items(), key=lambda kv: kv[1], reverse=True):
+                a, b = key
+                out.append({"a_label": a, "b_label": b, "pair": [a, b], "count": int(count)})
+            return out
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.FetchAllPairs - Error: {e}. Returning None.")
+            return None
 
-            manager.exec("""
-                CREATE (g:Graph {id:$id, label:$label, num_nodes:$num_nodes, num_edges:$num_edges, props:$props});
-            """, {
-                "id": gid_str,
-                "label": g_label,
-                "num_nodes": num_nodes,
-                "num_edges": num_edges,
-                "props": g_props,
-            }, write=True)
+    @staticmethod
+    def CandidateCountsForLabels(manager, labels, excludeLabels=None, limit: int = 50, silent: bool = False) -> list[dict]:
+        try:
+            manager.ensure_schema()
+            if isinstance(labels, str):
+                labels = [labels]
+            labels = [_normalize_label(x) for x in (labels or []) if _normalize_label(x)]
+            exclude = set([_normalize_label(x) for x in (excludeLabels or []) if _normalize_label(x)])
+            if not labels:
+                return []
 
-            # Insert vertices
-            for _, row in nsub.iterrows():
-                node_id = row[nodeIDHeader]
-                vid = f"{gid_str}:{node_id}"
-                v_label = str(row[nodeLabelHeader]) if "label" in row and pd.notna(row[nodeLabelHeader]) else str(node_id)
+            rows = manager.exec(
+                """
+                MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
+                WHERE a.label IN $labels
+                RETURN b.label AS label, a.label AS attach_to, COUNT(*) AS count
+                UNION ALL
+                MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
+                WHERE b.label IN $labels
+                RETURN a.label AS label, b.label AS attach_to, COUNT(*) AS count;
+                """,
+                {"labels": labels},
+                write=False,
+            ) or []
 
-                # X/Y/Z may be missing or non-numeric; store a random numeric value in that case
-                def _num_or_none(val):
-                    try:
-                        return float(val)
-                    except Exception:
-                        return None
+            accum = {}
+            for row in rows:
+                label = _normalize_label(row.get("label"))
+                attach = _normalize_label(row.get("attach_to"))
+                if not label or label in exclude:
+                    continue
+                c = int(row.get("count", 0) or 0)
+                rec = accum.setdefault(label, {"label": label, "count": 0, "attach_to_counts": {}})
+                rec["count"] += c
+                if attach:
+                    rec["attach_to_counts"][attach] = rec["attach_to_counts"].get(attach, 0) + c
+            out = []
+            for rec in accum.values():
+                rec["attach_to_labels"] = [k for k, _ in sorted(rec["attach_to_counts"].items(), key=lambda kv: kv[1], reverse=True)]
+                out.append(rec)
+            out.sort(key=lambda r: r.get("count", 0), reverse=True)
+            return out[: max(1, int(limit or 50))]
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.CandidateCountsForLabels - Error: {e}. Returning None.")
+            return None
 
-                x = _num_or_none(row[nodeXHeader]) if nodeXHeader in row else random.uniform(0,1000)
-                y = _num_or_none(row[nodeYHeader]) if nodeYHeader in row else random.uniform(0,1000)
-                z = _num_or_none(row[nodeZHeader]) if nodeZHeader in row else random.uniform(0,1000)
+    @staticmethod
+    def MaxNeighborsForLabel(manager, label, silent: bool = False):
+        try:
+            manager.ensure_schema()
+            label = _normalize_label(label)
+            if not label:
+                return None
+            rows = manager.exec(
+                """
+                MATCH (v:Vertex)
+                WHERE v.label = $label
+                OPTIONAL MATCH (v)-[:Edge]-(n:Vertex)
+                WITH v, COUNT(DISTINCT n.id) AS degree
+                RETURN MAX(degree) AS max_neighbors;
+                """,
+                {"label": label},
+                write=False,
+            ) or []
+            if not rows:
+                return None
+            value = rows[0].get("max_neighbors")
+            return None if value is None else int(value)
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.MaxNeighborsForLabel - Error: {e}. Returning None.")
+            return None
 
-                props = _props_from_row(row, exclude={graphIDHeader, nodeIDHeader, nodeLabelHeader, nodeXHeader, nodeYHeader, nodeZHeader})
-                manager.exec("""
-                    CREATE (v:Vertex {id:$id, graph_id:$gid, label:$label, x:$x, y:$y, z:$z, props:$props});
-                """, {"id": vid, "gid": gid_str, "label": v_label, "x": x, "y": y, "z": z, "props": props}, write=True)
-
-            # Insert edges (Edge)
-            for _, row in esub.iterrows():
-                a_id = f"{gid_str}:{row[edgeSRCHeader]}"
-                b_id = f"{gid_str}:{row[edgeDSTHeader]}"
-                e_label = str(row[edgeLabelHeader]) if edgeLabelHeader in row and pd.notna(row[edgeLabelHeader]) else "connect"
-                e_props = _props_from_row(row, exclude={graphIDHeader, edgeSRCHeader, edgeDSTHeader, edgeLabelHeader})
-
-                manager.exec("""
-                    MATCH (a:Vertex {id:$a_id}), (b:Vertex {id:$b_id})
-                    CREATE (a)-[:Edge {label:$label, props:$props}]->(b);
-                """, {"a_id": a_id, "b_id": b_id, "label": e_label, "props": e_props}, write=True)
-
-        return {"graphs_upserted": len(materialized_graph_ids), "graph_ids": materialized_graph_ids}
-
-
-
+    @staticmethod
+    def FindBestExampleForLabel(manager, label, attachTo=None, silent: bool = False):
+        try:
+            manager.ensure_schema()
+            label = _normalize_label(label)
+            attachTo = _normalize_label(attachTo)
+            if not label:
+                return None
+            if attachTo:
+                rows = manager.exec(
+                    """
+                    MATCH (v:Vertex)-[:Edge]-(n:Vertex)
+                    WHERE v.label = $label AND n.label = $attach
+                    WITH v, COUNT(DISTINCT n.id) AS degree
+                    RETURN v.id AS id, v.id AS vertex_id, v.graph_id AS graph_id, v.label AS label,
+                           v.x AS x, v.y AS y, v.z AS z, v.props AS props, degree AS degree
+                    ORDER BY degree DESC
+                    LIMIT 1;
+                    """,
+                    {"label": label, "attach": attachTo},
+                    write=False,
+                ) or []
+            else:
+                rows = manager.exec(
+                    """
+                    MATCH (v:Vertex)
+                    WHERE v.label = $label
+                    OPTIONAL MATCH (v)-[:Edge]-(n:Vertex)
+                    WITH v, COUNT(DISTINCT n.id) AS degree
+                    RETURN v.id AS id, v.id AS vertex_id, v.graph_id AS graph_id, v.label AS label,
+                           v.x AS x, v.y AS y, v.z AS z, v.props AS props, degree AS degree
+                    ORDER BY degree DESC
+                    LIMIT 1;
+                    """,
+                    {"label": label},
+                    write=False,
+                ) or []
+            if not rows:
+                return None
+            row = dict(rows[0])
+            props = dict(_json_loads(row.get("props"), {}))
+            row["props"] = props
+            # Add neighbor labels/counts for the selected vertex.
+            neigh = manager.exec(
+                """
+                MATCH (v:Vertex)-[:Edge]-(n:Vertex)
+                WHERE v.id = $id
+                RETURN n.label AS label, COUNT(*) AS count
+                ORDER BY count DESC;
+                """,
+                {"id": row.get("id")},
+                write=False,
+            ) or []
+            counts = {}
+            for r in neigh:
+                lab = _normalize_label(r.get("label"))
+                if lab:
+                    counts[lab] = counts.get(lab, 0) + int(r.get("count", 0) or 0)
+            labels = list(counts.keys())
+            row["neighbour_labels"] = labels
+            row["neighbor_labels"] = labels
+            row["neighbour_counts"] = counts
+            row["neighbor_counts"] = counts
+            return row
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.FindBestExampleForLabel - Error: {e}. Returning None.")
+            return None
