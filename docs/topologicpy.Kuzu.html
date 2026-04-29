@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Kuzu module &mdash; topologicpy 0.9.21 documentation</title>
+  <title>topologicpy.Kuzu module &mdash; topologicpy 0.9.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -21,8 +21,8 @@
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="topologicpy.Honeybee module" href="topologicpy.Honeybee.html" />
-    <link rel="prev" title="topologicpy.Helper module" href="topologicpy.Helper.html" /> 
+    <link rel="next" title="topologicpy.LLM module" href="topologicpy.LLM.html" />
+    <link rel="prev" title="topologicpy.Honeybee module" href="topologicpy.Honeybee.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.21
+                0.9.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -63,10 +63,13 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphDB.html">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
-<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
@@ -153,352 +156,157 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.ByCSVPath" title="topologicpy.Kuzu.Kuzu.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(manager, path[, graphIDPrefix, ...])</p></td>
-<td><p>Load node/edge/graph CSVs from a folder (using its .yaml meta) and upsert them directly into Kùzu using the schema defined in Kuzu.py:</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="topologicpy.Kuzu.Kuzu.GraphsByQuery"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphsByQuery</span></code></a>(manager, query[, parameters, ...])</p></td>
+<td><p>Executes a Kuzu query and returns a list containing a TopologicPy graph constructed from the returned rows.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.Connection" title="topologicpy.Kuzu.Kuzu.Connection"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connection</span></code></a>(manager[, silent])</p></td>
-<td><p>Returns a <cite>kuzu.Connection</cite> bound to the database at <cite>path</cite>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="topologicpy.Kuzu.Kuzu.UpsertGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpsertGraph</span></code></a>(manager, graph[, graphIDKey, ...])</p></td>
+<td><p>Upserts a TopologicPy graph into Kuzu using the canonical GraphDB schema.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.Database" title="topologicpy.Kuzu.Kuzu.Database"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Database</span></code></a>(path[, silent])</p></td>
-<td><p>Returns the underlying <cite>kuzu.Database</cite> instance for <cite>path</cite>.</p></td>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 74%" />
+<col style="width: 26%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>ByCSVPath</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.DeleteGraph" title="topologicpy.Kuzu.Kuzu.DeleteGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeleteGraph</span></code></a>(manager, graphID[, silent])</p></td>
-<td><p>Deletes a graph (vertices, edges, and graphCard) by id.</p></td>
+<tr class="row-even"><td><p><strong>CandidateCountsForLabels</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.EmptyDatabase" title="topologicpy.Kuzu.Kuzu.EmptyDatabase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EmptyDatabase</span></code></a>(manager[, dropSchema, ...])</p></td>
-<td><p>Empties the Kùzu database at <cite>db_path</cite>.</p></td>
+<tr class="row-odd"><td><p><strong>Connection</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.EnsureSchema" title="topologicpy.Kuzu.Kuzu.EnsureSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsureSchema</span></code></a>(manager[, silent])</p></td>
-<td><p>Ensures the required Kùzu schema exists in the database at <cite>path</cite>.</p></td>
+<tr class="row-even"><td><p><strong>Database</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.GraphByID" title="topologicpy.Kuzu.Kuzu.GraphByID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphByID</span></code></a>(manager, graphID[, silent])</p></td>
-<td><p>Constructs a TopologicPy graph from from Kùzu using the graphID input parameter.</p></td>
+<tr class="row-odd"><td><p><strong>DeleteGraph</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="topologicpy.Kuzu.Kuzu.GraphsByQuery"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphsByQuery</span></code></a>(manager, query[, params, silent])</p></td>
-<td><p>Executes a Kùzu Cypher query and returns a list of TopologicPy Graphs.</p></td>
+<tr class="row-even"><td><p><strong>EmptyDatabase</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.ListGraphs" title="topologicpy.Kuzu.Kuzu.ListGraphs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListGraphs</span></code></a>(manager[, where, limit, offset, ...])</p></td>
-<td><p>Lists Graph metadata with simple filtering and pagination.</p></td>
+<tr class="row-odd"><td><p><strong>EnsureSchema</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.Manager" title="topologicpy.Kuzu.Kuzu.Manager"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Manager</span></code></a>(path[, silent])</p></td>
-<td><p>Returns a lightweight manager bound to the database at <cite>path</cite>. Parameters ---------- path : str     Path to the Kùzu database. It will be created if it does not exist. silent : bool , optional     If set to True, error and warning messages are suppressed. Default is False.</p></td>
+<tr class="row-even"><td><p><strong>Execute</strong></p></td>
+<td></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="topologicpy.Kuzu.Kuzu.UpsertGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpsertGraph</span></code></a>(manager, graph[, graphIDKey, ...])</p></td>
-<td><p>Upserts (deletes prior + inserts new) a TopologicPy graph.</p></td>
+<tr class="row-odd"><td><p><strong>FetchAllPairs</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>FindBestExampleForLabel</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>GraphByID</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ListGraphs</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Manager</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>MaxNeighborsForLabel</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Query</strong></p></td>
+<td></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.ByCSVPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDPrefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'g'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeSRCHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'src_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDSTHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dst_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'node_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeXHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeYHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeZHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.ByCSVPath" title="Permalink to this definition"></a></dt>
-<dd><p>Load node/edge/graph CSVs from a folder (using its .yaml meta) and upsert them
-directly into Kùzu using the schema defined in Kuzu.py:</p>
-<ul class="simple">
-<li><p>NODE TABLE Graph(id STRING PRIMARY KEY, label STRING, num_nodes INT64, num_edges INT64, props STRING)</p></li>
-<li><p>NODE TABLE Vertex(id STRING PRIMARY KEY, graph_id STRING, label STRING, x DOUBLE, y DOUBLE, z DOUBLE, props STRING)</p></li>
-<li><p>REL  TABLE Edge(FROM Vertex TO Vertex, label STRING, props STRING)</p></li>
-</ul>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>An initialized Kùzu manager; must provide ensure_schema() and exec(query, params, write=True/False).</p>
-</dd>
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Folder containing a dataset YAML (e.g., meta.yaml) that points to nodes/edges/graphs CSVs.</p>
-</dd>
-<dt><strong>graphIDPrefix</strong><span class="classifier">str</span></dt><dd><p>Prefix for materialized graph IDs (default “g”); e.g., graph 0 -&gt; “g0”.</p>
-</dd>
-<dt><strong>graphIDHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the graph id. Default is “graph_id”.</p>
-</dd>
-<dt><strong>graphLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the graph label. Default is “label”.</p>
-</dd>
-<dt><strong>edgeSRCHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the source vertex id of edges. Default is “src_id”.</p>
-</dd>
-<dt><strong>edgeDSTHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the destination vertex id of edges. Default is “dst_id”.</p>
-</dd>
-<dt><strong>edgeLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the label of edges. Default is “label”.</p>
-</dd>
-<dt><strong>nodeIDHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the id of nodes. Default is “node_id”.</p>
-</dd>
-<dt><strong>nodeLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the label of nodes. Default is “label”.</p>
-</dd>
-<dt><strong>nodeXHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the X coordinate of nodes. Default is “X”.</p>
-</dd>
-<dt><strong>nodeYHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the Y coordinate of nodes. Default is “Y”.</p>
-</dd>
-<dt><strong>nodeZHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The column header string used to specify the Z coordinate of nodes. Default is “Z”.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool</span></dt><dd><p>If True, suppress warnings.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>{“graphs_upserted”: int, “graph_ids”: [str, …]}</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeSRCHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'src_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDSTHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dst_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeTrainMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeValidateMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeTestMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'node_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTrainMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeValidateMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTestMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeXHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeYHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeZHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.ByCSVPath" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.CandidateCountsForLabels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CandidateCountsForLabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeLabels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.CandidateCountsForLabels" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Connection">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Connection</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Connection" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a <cite>kuzu.Connection</cite> bound to the database at <cite>path</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The Manager to the Kùzu database.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>kuzu.Connection</dt><dd><p>The Kuzu live connection. Do NOT use across threads.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Database">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Database" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the underlying <cite>kuzu.Database</cite> instance for <cite>path</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Path to the Kùzu database. It will be created if it does not exist.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>kuzu.Database</dt><dd><p>The Kuzu database found at the path.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.DeleteGraph">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeleteGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.DeleteGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Deletes a graph (vertices, edges, and graphCard) by id.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The manager of the Kùzu database.</p>
-</dd>
-<dt><strong>graphID</strong><span class="classifier">str</span></dt><dd><p>The id of the graph to be deleted.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True on success, False otherwise.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.EmptyDatabase">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EmptyDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropSchema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recreateSchema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.EmptyDatabase" title="Permalink to this definition"></a></dt>
-<dd><p>Empties the Kùzu database at <cite>db_path</cite>.</p>
-<p>Two modes:
-- Soft clear (default): delete ALL relationships, then ALL nodes across all tables.
-- Hard reset (drop_schema=True): drop known node/rel tables, optionally recreate schema.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu Manager</span></dt><dd><p>The manager of the Kùzu database.</p>
-</dd>
-<dt><strong>dropSchema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, DROP the known tables instead of deleting rows. Default False.</p>
-</dd>
-<dt><strong>recreateSchema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and drop_schema=True, re-create the minimal schema after dropping. Default True.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True on success, False otherwise.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.EnsureSchema">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EnsureSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.EnsureSchema" title="Permalink to this definition"></a></dt>
-<dd><p>Ensures the required Kùzu schema exists in the database at <cite>path</cite>.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>Path to the Kùzu database. It will be created if it does not exist.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if successful, False otherwise.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Execute">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Execute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.FetchAllPairs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FetchAllPairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">undirected</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.FetchAllPairs" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.FindBestExampleForLabel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FindBestExampleForLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attachTo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.FindBestExampleForLabel" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.GraphByID">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.GraphByID" title="Permalink to this definition"></a></dt>
-<dd><p>Constructs a TopologicPy graph from from Kùzu using the graphID input parameter.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The manager of the Kùzu database.</p>
-</dd>
-<dt><strong>graphID</strong><span class="classifier">str , optional</span></dt><dd><p>The graph ID to retrieve from Kùzu.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologicpy.Graph</dt><dd><p>A new TopologicPy Graph, or None on error.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.GraphsByQuery">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphsByQuery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="Permalink to this definition"></a></dt>
-<dd><p>Executes a Kùzu Cypher query and returns a list of TopologicPy Graphs.</p>
-<p>The method will:
-1) run the query,
-2) extract distinct graph IDs from the result set.
-3) reconstruct each graph via Kuzu.GraphByID(…).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The manager of the Kùzu database.</p>
-</dd>
-<dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>A valid Kùzu Cypher query.</p>
-</dd>
-<dt><strong>params</strong><span class="classifier">dict , optional</span></dt><dd><p>Parameters to pass with the query.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list[topologic_core.Graph]</dt><dd><p>A list of reconstructed TopologicPy graphs.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphsByQuery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">params</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.GraphsByQuery" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a Kuzu query and returns a list containing a TopologicPy graph
+constructed from the returned rows. If rows return graph_id/gid only,
+full graphs are reconstructed using GraphByID.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.ListGraphs">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ListGraphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.ListGraphs" title="Permalink to this definition"></a></dt>
-<dd><p>Lists Graph metadata with simple filtering and pagination.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The manager of the Kùzu database.</p>
-</dd>
-<dt><strong>where</strong><span class="classifier">dict , optional</span></dt><dd><p>The filter python dictionaries. Supported filters in <cite>where</cite> (all optional):
-- id (exact match)
-- label (substring match)
-- props_contains (substring match against JSON/text in <cite>props</cite>)
-- props_equals (exact string match against <cite>props</cite>)
-- min_nodes / max_nodes (integers)
-- min_edges / max_edges (integers)</p>
-</dd>
-<dt><strong>limit</strong><span class="classifier">int , optional</span></dt><dd><p>The desired limit of returned Graphs. Default is 100.</p>
-</dd>
-<dt><strong>offset</strong><span class="classifier">int , optional</span></dt><dd><p>The desired offset of the returned Graphs (skips the first number of Graphs specified by the offset and returns the remaining cards up to the specified limit). The offset is useful if pagination is needed. Default is 0.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of found Graph python dictionaries.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Manager">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Manager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Manager" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a lightweight manager bound to the database at <cite>path</cite>.
-Parameters
-———-
-path : str</p>
-<blockquote>
-<div><p>Path to the Kùzu database. It will be created if it does not exist.</p>
-</div></blockquote>
-<dl class="simple">
-<dt>silent<span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Returns</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>Kuzu.Manager</dt><dd><p>The Kuzu Manager.</p>
-</dd>
-</dl>
-</dd>
-</dl>
-</dd></dl>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.MaxNeighborsForLabel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MaxNeighborsForLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.MaxNeighborsForLabel" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.Query">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.Query" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Kuzu.Kuzu.UpsertGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpsertGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Upserts (deletes prior + inserts new) a TopologicPy graph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>manager</strong><span class="classifier">Kuzu.Manager</span></dt><dd><p>The Kuzu database manager.</p>
-</dd>
-<dt><strong>graph</strong><span class="classifier">topologicpy.Graph</span></dt><dd><p>The input TopologicPy graph.</p>
-</dd>
-<dt><strong>graphIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The graph dictionary key under which the graph ID is stored. If None, a UUID is generated and stored under ‘id’.</p>
-</dd>
-<dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The vertex dictionary key under which the vertex ID is stored. If None, a UUID is generated and stored under ‘id’.</p>
-</dd>
-<dt><strong>edgeIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge dictionary key under which the edge ID is stored. If None, a UUID is generated and stored under ‘id’.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The graph_id used.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpsertGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">manager</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexCategory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CONNECTED_TO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeCategory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Edge'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.Kuzu.Kuzu.UpsertGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Upserts a TopologicPy graph into Kuzu using the canonical GraphDB schema.</p>
+<p>The signature mirrors Neo4j.UpsertGraph. The database argument is accepted
+for GraphDB compatibility and ignored because Kuzu database identity is the
+manager/path.</p>
 </dd></dl>
 
 </dd></dl>
@@ -509,8 +317,8 @@ path : str</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="topologicpy.Helper.html" class="btn btn-neutral float-left" title="topologicpy.Helper module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
-        <a href="topologicpy.Honeybee.html" class="btn btn-neutral float-right" title="topologicpy.Honeybee module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+        <a href="topologicpy.Honeybee.html" class="btn btn-neutral float-left" title="topologicpy.Honeybee module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.LLM.html" class="btn btn-neutral float-right" title="topologicpy.LLM module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 
   <hr/>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.21 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.22 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.21
+                0.9.22
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -63,10 +63,13 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphDB.html">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
@@ -1300,15 +1303,17 @@ This is an experimental method with limited capabilities.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices in the form of [x, y, z]</p>
+<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices in the form of [x, y, z].</p>
 </dd>
 <dt><strong>edges</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of edges in the form of [i, j] where i and j are vertex indices.</p>
 </dd>
-<dt><strong>faces</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of faces in the form of [i, j, k, l, …] where the items in the list are vertex indices. The face is assumed to be closed to the last vertex is connected to the first vertex automatically.</p>
+<dt><strong>faces</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of faces in the form of [i, j, k, l, …] where the items in the list are vertex indices.
+The face is assumed to be closed, so the last vertex is connected to the first vertex automatically.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired highest topology type. The options are: “Vertex”, “Edge”, “Wire”, “Face”, “Shell”, “Cell”, “CellComplex”.
-It is case insensitive. If any of these options are selected, the returned topology will only contain this type either a single topology
-or as a Cluster of these types of topologies. If set to None, a “Cluster” will be returned of vertices, edges, and/or faces. Default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired highest topology type. The options are: “Vertex”, “Edge”, “Wire”, “Face”, “Shell”,
+“Cell”, “CellComplex”. It is case insensitive. If any of these options are selected, the returned
+topology will only contain this type either as a single topology or as a Cluster of these types of
+topologies. If set to None, a Cluster will be returned of vertices, edges, and/or faces. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -1318,7 +1323,7 @@ or as a Cluster of these types of topologies. If set to None, a “Cluster” wi
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The created topology. The topology will have a dictionary embedded in it that records the input attributes (color, id, lengthUnit, name, type)</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The created topology.</p>
 </dd>
 </dl>
 </dd>
@@ -1604,7 +1609,8 @@ This method is basic and does not support textures and vertex normals.</p>
 <p>Supported OBJ primitives
 - v   : vertices
 - l   : polylines (edges-only / wire-only models)
-- f   : faces (tri/quad/ngon; may be self-merged)</p>
+- f   : faces (tri/quad/ngon; may be self-merged)
+- p   : points</p>
 <p>Grouping
 - g / o : groups/objects become separate returned topologies (one per group/object)</p>
 <p>Materials
@@ -1616,28 +1622,33 @@ opacity : 0..1</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>objPath</strong><span class="classifier">str</span></dt><dd><p>The path to the OBJ file.</p>
+<dt><strong>objString</strong><span class="classifier">str</span></dt><dd><p>The OBJ file contents as a string.</p>
 </dd>
-<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file. Default is [255, 255, 255] (white).</p>
+<dt><strong>mtlString</strong><span class="classifier">str , optional</span></dt><dd><p>The MTL file contents as a string.</p>
 </dd>
-<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file. Default is 1.0 (fully opaque).</p>
+<dt><strong>defaultColor</strong><span class="classifier">list , optional</span></dt><dd><p>The default color to use if none is specified in the file.
+Default is [255, 255, 255].</p>
 </dd>
-<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the Z and Y axes are transposed. Otherwise, they are not. Default is True.</p>
+<dt><strong>defaultOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The default opacity to use if none is specified in the file.
+Default is 1.0.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is True.</p>
+<dt><strong>transposeAxes</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, converts OBJ coordinates from (x, y, z) to (x, -z, y).
+Default is True.</p>
 </dd>
-<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the faces of the imported topologies will each be self-merged to create higher-dimensional objects. Otherwise, they remain a cluster of faces. Default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are merged. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>selfMerge</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, imported face clusters are self-merged. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>One TopologicPy topology per OBJ group/object:
-- If a group has faces: returns (best effort) a merged topology (or a Cluster of faces).
+- If a group has faces: returns a Cluster of faces, or a self-merged topology.
 - Else if a group has polylines/edges: returns a Cluster of Wires/Edges.
 - Else if a group has only points: returns a Cluster of Vertices.
 - If mixed: returns a Cluster containing the appropriate mix.</p>

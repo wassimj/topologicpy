@@ -22,10 +22,13 @@ Submodules
    topologicpy.Face
    topologicpy.GA
    topologicpy.Graph
+   topologicpy.GraphDB
+   topologicpy.GraphRAG
    topologicpy.Grid
    topologicpy.Helper
-   topologicpy.Kuzu
    topologicpy.Honeybee
+   topologicpy.Kuzu
+   topologicpy.LLM
    topologicpy.Matrix
    topologicpy.Neo4j
    topologicpy.Plotly
