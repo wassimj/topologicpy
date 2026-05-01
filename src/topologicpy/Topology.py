@@ -829,7 +829,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.Analyze - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        return topologic.Topology.Analyze(topology)
+        return topologic.Topology.Analyze(topology) # Hook to Core
     
     @staticmethod
     def Apertures(topology, subTopologyType=None, silent: bool = False):
@@ -2019,10 +2019,10 @@ class Topology():
             return None
         st = None
         try:
-            st = topologic.Topology.String(topology, version)
+            st = topologic.Topology.String(topology, version) # Hook to Core
         except:
             try:
-                st = topologic.Topology.BREPString(topology, version)
+                st = topologic.Topology.BREPString(topology, version) # Hook to Core
             except:
                 st = None
         return st
@@ -2287,7 +2287,7 @@ class Topology():
                 return None
 
             try:
-                e = Edge_ByVertices([v1, v2], tolerance=tolerance)
+                e = Edge_ByVertices([v1, v2], tolerance=tolerance, silent=True)
             except Exception:
                 e = None
 
@@ -3075,126 +3075,70 @@ class Topology():
         return Topology.ByDXFFile(file, sides=sides, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def ByIFCFile(ifc_file, includeTypes=[], excludeTypes=[], transferDictionaries=False,
-                  removeCoplanarFaces=False,
-                  epsilon=0.0001, tolerance=0.0001, silent=False):
+    def ByIFCFile(file,
+                  includeTypes: list = [],
+                  excludeTypes: list = [],
+                  dictionaryMode: str = "basic",
+                  clean: bool = False,
+                  epsilon: float = 0.01,
+                  angTolerance: float = 0.1,
+                  tolerance: float = 0.0001,
+                  silent: bool = False
+                  ) -> list[Any]:
         """
-        Create a topology by importing it from an IFC file.
+        Import an IFC file into a list of TopologicPy topologies using the
+        Bonsai triangulation pipeline. See IFC.TopologiesByFile.
 
         Parameters
         ----------
-        ifc_file : file object
-            The input IFC file.
+        file : ifcopenshell.file
+            The input IFC file object.
         includeTypes : list , optional
-            The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].
+            IFC object types to include. Case-insensitive. Default is [].
         excludeTypes : list , optional
-            The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
-        removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
+            IFC object types to exclude. Case-insensitive. Default is [].
+        dictionaryMode : str , optional
+            Options are "none", "basic", or "psets". Default is "basic".
+        clean : bool , optional
+            If set to True, coplanar faces and collinear edges are removed. Default is False.
         epsilon : float , optional
             The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
+        angTolerance : float , optional
+            The desired angular tolerance for removing collinear edges. Default is 0.1.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            TopologicPy tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, warnings and progress messages are suppressed. Default is False.
+
         Returns
         -------
         list
-            The created list of topologies.
-        
+            The created TopologicPy topologies.
         """
-        import multiprocessing
-        import ifcopenshell
-        import ifcopenshell.geom
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        
-        # 1 Guard against including and excluding the same types
-        includeTypes = [s.lower() for s in includeTypes]
-        excludeTypes = [s.lower() for s in excludeTypes]
-        if len(includeTypes) > 0 and len(excludeTypes) > 0:
-            excludeTypes = [s for s in excludeTypes if s not in includeTypes]
-        # 2 Setup geometry settings
-        settings = ifcopenshell.geom.settings()
-        settings.set(settings.USE_WORLD_COORDS, True)
-        # A string representation of the OCC representation
-        settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.NATIVE)
-        # A string representation of the OCC representation
-        settings.set("iterator-output", ifcopenshell.ifcopenshell_wrapper.SERIALIZED)
-        
-        # 3 Create iterator
-        it = ifcopenshell.geom.iterator(settings, ifc_file, multiprocessing.cpu_count())
-        if not it.initialize():
-            if not silent:
-                print("Topology.ByIFCFile")
-            raise RuntimeError("Geometry iterator failed to initialize")
 
-        # 4) Loop over shapes
-        topologies = []
-
-        while True:
-            shape = it.get()
-            element = ifc_file.by_guid(shape.guid)
-            element_type = element.is_a().lower()
-            if ((element_type in includeTypes) or (len(includeTypes) == 0)) and ((not element_type in excludeTypes) or (len(excludeTypes) == 0)):
-                geom = shape.geometry
-                topology = Topology.ByBREPString(geom.brep_data)
-                faces = Topology.Faces(topology)
-                new_faces = []
-                for face in faces:
-                    eb = Face.ExternalBoundary(face)
-                    ib = Face.InternalBoundaries(face)
-                    f = Face.ByWires(eb, ib)
-                    new_faces.append(f)
-                topology = Topology.SelfMerge(Cluster.ByTopologies(new_faces))
-                if Topology.IsInstance(topology, "topology"):
-                    if removeCoplanarFaces:
-                        topology = Topology.RemoveCoplanarFaces(topology, epsilon=epsilon, tolerance=tolerance)
-                    if Topology.IsInstance(topology, "topology"):
-                        if transferDictionaries:
-                            element_dict = {
-                                "TOPOLOGIC_id": str(Topology.UUID(topology)),
-                                "TOPOLOGIC_name": getattr(element, 'Name', "Untitled"),
-                                "TOPOLOGIC_type": Topology.TypeAsString(topology),
-                                "IFC_global_id": getattr(element, 'GlobalId', 0),
-                                "IFC_name": getattr(element, 'Name', "Untitled"),
-                                "IFC_type": element_type
-                            }
-
-                            # Optionally add property sets
-                            psets = {}
-                            if hasattr(element, 'IsDefinedBy'):
-                                for rel in element.IsDefinedBy:
-                                    if rel.is_a('IfcRelDefinesByProperties'):
-                                        pdef = rel.RelatingPropertyDefinition
-                                        if pdef and pdef.is_a('IfcPropertySet'):
-                                            key = f"IFC_{pdef.Name}"
-                                            props = {}
-                                            for prop in pdef.HasProperties:
-                                                if prop.is_a('IfcPropertySingleValue') and prop.NominalValue:
-                                                    props[f"IFC_{prop.Name}"] = prop.NominalValue.wrappedValue
-                                            psets[key] = props
-
-                            final_dict = Dictionary.ByPythonDictionary(element_dict)
-                            if psets:
-                                pset_dict = Dictionary.ByPythonDictionary(psets)
-                                final_dict = Dictionary.ByMergedDictionaries([final_dict, pset_dict])
-                            
-                            topology = Topology.SetDictionary(topology, final_dict)
-                        topologies.append(topology)
-            if not it.next():
-                break
-
-        return topologies
+        from topologicpy.IFC import IFC
+        return IFC.TopologiesByFile(file,
+                             includeTypes=includeTypes,
+                             excludeTypes=excludeTypes,
+                             dictionaryMode=dictionaryMode,
+                             clean=clean,
+                             epsilon=epsilon,
+                             angTolerance=angTolerance,
+                             tolerance=tolerance,
+                             silent=silent)
 
     @staticmethod
-    def ByIFCPath(path, includeTypes=[], excludeTypes=[], transferDictionaries=False, removeCoplanarFaces=False, epsilon=0.0001, tolerance=0.0001):
+    def ByIFCPath(path: str,
+                  includeTypes: list = [],
+                  excludeTypes: list = [],
+                  dictionaryMode: str = "basic",
+                  clean: bool = False,
+                  epsilon: float = 0.0001,
+                  angTolerance: float = 0.1,
+                  tolerance: float = 0.0001,
+                  silent: bool = False) -> list[Any]:
         """
-        Create a topology by importing it from an IFC file path.
+        Imports the topologies from an IFC file path. See IFC.TopologiesByPath
 
         Parameters
         ----------
@@ -3204,34 +3148,37 @@ class Topology():
             The list of IFC object types to include. It is case insensitive. If set to an empty list, all types are included. Default is [].
         excludeTypes : list , optional
             The list of IFC object types to exclude. It is case insensitive. If set to an empty list, no types are excluded. Default is [].
-        transferDictionaries : bool , optional
-            If set to True, the dictionaries from the IFC file will be transferred to the topology. Otherwise, they won't. Default is False.
-        removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
+        dictionaryMode : str , optional
+            Options are "none", "basic", or "psets". Default is "basic".
+        clean : bool , optional
+            If set to True, coplanar faces and collinear edges are removed. Default is False.
         epsilon : float , optional
-            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.0001.
+            The desired epsilon (another form of tolerance) for finding if two faces are coplanar. Default is 0.01.
+        angTolerance : float , optional
+            The desired angular tolerance for removing collinear edges. Default is 0.1.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
         Returns
         -------
         list
             The created list of topologies.
         
         """
-        import ifcopenshell
+        
+        from topologicpy.IFC import IFC
+        return IFC.TopologiesByPath(path,
+                             includeTypes=includeTypes,
+                             excludeTypes=excludeTypes,
+                             dictionaryMode=dictionaryMode,
+                             clean=clean,
+                             epsilon=epsilon,
+                             angTolerance=angTolerance,
+                             tolerance=tolerance,
+                             silent=silent)
 
-        if not path:
-            print("Topology.ByIFCPath - Error: the input path parameter is not a valid path. Returning None.")
-            return None
-        try:
-            file = ifcopenshell.open(path)
-        except:
-            file = None
-        if not file:
-            print("Topology.ByIFCPath - Error: the input file parameter is not a valid file. Returning None.")
-            return None
-        return Topology.ByIFCFile(file, includeTypes=includeTypes, excludeTypes=excludeTypes, transferDictionaries=transferDictionaries, removeCoplanarFaces=removeCoplanarFaces, epsilon=epsilon, tolerance=tolerance)
-    
     '''
     @staticmethod
     def ByImportedIPFS(hash_, url, port):
@@ -4409,7 +4356,7 @@ class Topology():
             The created topology.
 
         """
-        return topologic.Topology.ByOcctShape(occtShape, "")
+        return topologic.Topology.ByOcctShape(occtShape, "") # Hook to Core
     
     @staticmethod
     def ByPDFFile(file, wires=False, faces=False, includeTypes=[], excludeTypes=[], edgeColorKey="edge_color", edgeWidthKey="edge_width", faceColorKey="face_color", faceOpacityKey="face_opacity", tolerance=0.0001, silent=False):
@@ -4751,7 +4698,7 @@ class Topology():
             return None
         returnTopology = None
         try:
-            returnTopology = topologic.Topology.ByString(string)
+            returnTopology = topologic.Topology.ByString(string) # Hook to Core
         except:
             print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
             returnTopology = None
@@ -7616,7 +7563,7 @@ class Topology():
             if top.IsClosed():
                 internalBoundaries = []
                 try:
-                    tempFace = topologic.Face.ByExternalInternalBoundaries(top, internalBoundaries)
+                    tempFace = topologic.Face.ByExternalInternalBoundaries(top, internalBoundaries) # Hook to Core
                     vst = Face.InternalVertex(tempFace, tolerance=tolerance, silent=silent)
                 except:
                     vst = Topology.Centroid(top)
@@ -10100,88 +10047,256 @@ class Topology():
         return topology.SelectSubtopology(selector, t)
 
     
+    # @staticmethod
+    # def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001):
+    #     """
+    #     Self merges the input topology to return the most logical topology type given the input data.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The self-merged topology.
+
+    #     """
+    #     from topologicpy.Cluster import Cluster
+
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         return None #return Silently
+    #     if not Topology.Type(topology) == Topology.TypeID("Cluster"):
+    #         topology = Cluster.ByTopologies([topology])
+    #     resultingTopologies = []
+    #     topCC = Topology.CellComplexes(topology)
+    #     topCells = Topology.Cells(topology)
+    #     topShells = Topology.Shells(topology)
+    #     topFaces = Topology.Faces(topology)
+    #     topWires = Topology.Wires(topology)
+    #     topEdges = Topology.Edges(topology)
+    #     topVertices = Topology.Vertices(topology, silent=True)
+    #     if len(topCC) == 1:
+    #         cc = topCC[0]
+    #         ccVertices = Topology.Vertices(cc)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(cc)
+    #     if len(topCC) == 0 and len(topCells) == 1:
+    #         cell = topCells[0]
+    #         ccVertices = Topology.Vertices(cell)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(cell)
+    #     if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
+    #         shell = topShells[0]
+    #         ccVertices = Topology.Vertices(shell)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(shell)
+    #     if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
+    #         face = topFaces[0]
+    #         ccVertices = Topology.Vertices(face)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(face)
+    #     if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
+    #         wire = topWires[0]
+    #         ccVertices = Topology.Vertices(wire)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(wire)
+    #     if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
+    #         edge = topEdges[0]
+    #         ccVertices = Topology.Vertices(edge)
+    #         if len(topVertices) == len(ccVertices):
+    #             resultingTopologies.append(edge)
+    #     if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
+    #         vertex = topVertices[0]
+    #         resultingTopologies.append(vertex)
+    #     if len(resultingTopologies) == 1:
+    #         return resultingTopologies[0]
+    #     try:
+    #         return_topology = topology.SelfMerge()
+    #     except:
+    #         return_topology = None
+    #     if Topology.IsInstance(return_topology, "CellComplex"):
+    #         cells = Topology.Cells(return_topology)
+    #         if isinstance(cells, list):
+    #             if len(cells) > 1:
+    #                 topA = cells[0]
+    #                 topB = Cluster.ByTopologies(cells[1:])
+    #                 return_topology = Topology.Merge(topA, topB, tolerance=tolerance)
+    #             else:
+    #                 return_topology = cells[0]
+    #     return return_topology
+
     @staticmethod
-    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001):
+    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
-        Self merges the input topology to return the most logical topology type given the input data.
+        Self merges the input topology to return the most logical topology type
+        given the input data.
+
+        This version uses a fast progressive singleton test before falling back to
+        the expensive core SelfMerge operation.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
+        transferDictionaries : bool , optional
+            If set to True, the dictionary of the input Cluster is transferred to
+            the returned singleton candidate when applicable. Default is False.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The self-merged topology.
-
         """
+
         from topologicpy.Cluster import Cluster
 
         if not Topology.IsInstance(topology, "Topology"):
-            return None #return Silently
-        if not Topology.Type(topology) == Topology.TypeID("Cluster"):
-            topology = Cluster.ByTopologies([topology])
-        resultingTopologies = []
-        topCC = Topology.CellComplexes(topology)
-        topCells = Topology.Cells(topology)
-        topShells = Topology.Shells(topology)
-        topFaces = Topology.Faces(topology)
-        topWires = Topology.Wires(topology)
-        topEdges = Topology.Edges(topology)
-        topVertices = Topology.Vertices(topology, silent=True)
-        if len(topCC) == 1:
-            cc = topCC[0]
-            ccVertices = Topology.Vertices(cc)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(cc)
-        if len(topCC) == 0 and len(topCells) == 1:
-            cell = topCells[0]
-            ccVertices = Topology.Vertices(cell)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(cell)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 1:
-            shell = topShells[0]
-            ccVertices = Topology.Vertices(shell)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(shell)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 1:
-            face = topFaces[0]
-            ccVertices = Topology.Vertices(face)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(face)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 1:
-            wire = topWires[0]
-            ccVertices = Topology.Vertices(wire)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(wire)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 1:
-            edge = topEdges[0]
-            ccVertices = Topology.Vertices(edge)
-            if len(topVertices) == len(ccVertices):
-                resultingTopologies.append(edge)
-        if len(topCC) == 0 and len(topCells) == 0 and len(topShells) == 0 and len(topFaces) == 0 and len(topWires) == 0 and len(topEdges) == 0 and len(topVertices) == 1:
-            vertex = topVertices[0]
-            resultingTopologies.append(vertex)
-        if len(resultingTopologies) == 1:
-            return resultingTopologies[0]
+            if not silent:
+                print("Topology.SelfMerge - Error: The input topology is not a valid topology. Returning None")
+            return None
+
+        # Non-cluster topologies are already single logical topologies.
+        if not Topology.IsInstance(topology, "Cluster"):
+            return topology
+
+        def _len_items(func, t):
+            try:
+                items = func(t, silent=True)
+                if isinstance(items, list):
+                    return len(items), items
+                return 0, []
+            except Exception:
+                return 0, []
+
+        def _vertices(t):
+            return Topology.Vertices(t, silent=True)
+
+        # ------------------------------------------------------------------
+        # 1. Fastest possible direct-child test.
+        # ------------------------------------------------------------------
+        # If Cluster.Topologies returns direct children and there is exactly one,
+        # we can unwrap immediately without scanning all subtopologies.
+        # try:
+        #     children = Cluster.Topologies(topology)
+        #     if isinstance(children, list) and len(children) == 1:
+        #         child = children[0]
+        #         if Topology.IsInstance(child, "Topology"):
+        #             if transferDictionaries:
+        #                 try:
+        #                     d = Topology.Dictionary(topology)
+        #                     if d:
+        #                         child = Topology.SetDictionary(child, d)
+        #                 except Exception:
+        #                     pass
+        #             return child
+        # except Exception:
+        #     pass
+
+        # ------------------------------------------------------------------
+        # 2. Progressive singleton test.
+        # ------------------------------------------------------------------
+        # Find the highest-dimensional candidate. Then compare the candidate and
+        # the cluster progressively. Stop as soon as a count differs.
+        #
+        # This is cheaper than computing a complete count signature for both.
+        # ------------------------------------------------------------------
+
+        levels = [
+            ("CellComplex", Topology.CellComplexes),
+            ("Cell",        Topology.Cells),
+            ("Shell",       Topology.Shells),
+            ("Face",        Topology.Faces),
+            ("Wire",        Topology.Wires),
+            ("Edge",        Topology.Edges),
+            ("Vertex",      _vertices),
+        ]
+
+        candidate = None
+        candidate_level_index = None
+
+        for i, (_, extractor) in enumerate(levels):
+            n, items = _len_items(extractor, topology)
+
+            if n == 0:
+                continue
+
+            if n > 1:
+                candidate = None
+                break
+
+            candidate = items[0]
+            candidate_level_index = i
+            break
+
+        if Topology.IsInstance(candidate, "Topology"):
+            is_singleton = True
+
+            # Compare only from the candidate's own level downward.
+            # For example, if the candidate is a Cell, do not compare CellComplexes.
+            for _, extractor in levels[candidate_level_index:]:
+                n_cluster, _ = _len_items(extractor, topology)
+                n_candidate, _ = _len_items(extractor, candidate)
+
+                if n_cluster != n_candidate:
+                    is_singleton = False
+                    break
+
+            if is_singleton:
+                if transferDictionaries:
+                    try:
+                        d = Topology.Dictionary(topology)
+                        if d:
+                            candidate = Topology.SetDictionary(candidate, d)
+                    except Exception:
+                        pass
+                return candidate
+
+        # ------------------------------------------------------------------
+        # 3. Expensive fallback.
+        # ------------------------------------------------------------------
+
         try:
             return_topology = topology.SelfMerge()
-        except:
+        except Exception:
             return_topology = None
-        if Topology.IsInstance(return_topology, "CellComplex"):
-            cells = Topology.Cells(return_topology)
-            if isinstance(cells, list):
-                if len(cells) > 1:
-                    topA = cells[0]
-                    topB = Cluster.ByTopologies(cells[1:])
-                    return_topology = Topology.Merge(topA, topB, tolerance=tolerance)
-                else:
-                    return_topology = cells[0]
-        return return_topology
 
+        if not Topology.IsInstance(return_topology, "Topology"):
+            return None
+
+        # ------------------------------------------------------------------
+        # 4. Minimal post-simplification only.
+        # ------------------------------------------------------------------
+        # Avoid Topology.Merge(cells[0], Cluster.ByTopologies(cells[1:])) here.
+        # That previous behaviour can be very expensive and should not be part of
+        # the fast SelfMerge path.
+        # ------------------------------------------------------------------
+
+        try:
+            if Topology.IsInstance(return_topology, "CellComplex"):
+                cells = Topology.Cells(return_topology)
+                if isinstance(cells, list) and len(cells) == 1:
+                    return cells[0]
+            if Topology.IsInstance(return_topology, "Shell"):
+                faces = Topology.Faces(return_topology)
+                if isinstance(faces, list) and len(faces) == 1:
+                    return faces[0]
+            if Topology.IsInstance(return_topology, "Wire"):
+                edges = Topology.Edges(return_topology)
+                if isinstance(edges, list) and len(edges) == 1:
+                    return edges[0]
+        except Exception:
+            pass
+
+        return return_topology
+    
     @staticmethod
     def SetDictionary(topology, dictionary, silent=False):
         """

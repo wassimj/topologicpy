@@ -1808,7 +1808,7 @@ class Shell():
         return shell
 
     @staticmethod
-    def RemoveCollinearEdges(shell, angTolerance: float = 0.1, tolerance: float = 0.0001):
+    def RemoveCollinearEdges(shell, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes any collinear edges in the input shell.
 
@@ -1820,6 +1820,8 @@ class Shell():
             The desired angular tolerance. Default is 0.1.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1832,10 +1834,11 @@ class Shell():
         import inspect
         
         if not Topology.IsInstance(shell, "Shell"):
-            print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
+            if not silent:
+                print("Shell.RemoveCollinearEdges - Error: The input shell parameter is not a valid shell. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         faces = Shell.Faces(shell)
         clean_faces = []
