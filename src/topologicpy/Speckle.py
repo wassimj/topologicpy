@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from specklepy.api.client import SpeckleClient
 from specklepy.api.wrapper import StreamWrapper
 from specklepy.api import operations

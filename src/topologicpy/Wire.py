@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 from binascii import a2b_base64
 from re import A
 import topologic_core as topologic

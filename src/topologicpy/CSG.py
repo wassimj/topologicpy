@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU Affero General Public License along with
 # this program. If not, see <https://www.gnu.org/licenses/>.
 
+from __future__ import annotations
+
 class CSG():
     @staticmethod
     def _unique_coords(used_coords=[], width=10, length=10, height=10, max_attempts=1000, mantissa=6, tolerance=0.0001):
