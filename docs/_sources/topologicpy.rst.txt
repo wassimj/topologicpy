@@ -27,6 +27,7 @@ Submodules
    topologicpy.Grid
    topologicpy.Helper
    topologicpy.Honeybee
+   topologicpy.IFC
    topologicpy.Kuzu
    topologicpy.LLM
    topologicpy.Matrix
