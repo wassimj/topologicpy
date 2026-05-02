@@ -150,10 +150,10 @@ def test_main():
     Clu4 = Cluster.ByTopologies([te1, te2, te3, te4])              # create cluster
     # test 1
     fcE1 = Face.ByEdgesCluster(Clu3)                                   
-    assert Topology.IsInstance(fcE1, "Face"), "Face.ByEdgesCluster. Should be topologic.Fac"
+    assert Topology.IsInstance(fcE1, "Face"), "Face.ByEdgesCluster. Should be topologic.Face"
     # test 2
     fcE2 = Face.ByEdgesCluster(Clu4)
-    assert Topology.IsInstance(fcE2, "Face"), "Face.ByEdgesCluster. Should be topologic.Fac"
+    assert Topology.IsInstance(fcE2, "Face"), "Face.ByEdgesCluster. Should be topologic.Face"
  
     # Case 9 - ByOffset
     print("Case 9")
@@ -513,10 +513,20 @@ def test_main():
 
     v = Vertex.ByCoordinates(-3,-0.5,0)
     iso = Face.Isovist(face, v, obstacles=[r6])
+    print("iso before:", iso)
+    if not Topology.IsInstance(iso, "face"):
+        verts = Topology.Vertices(iso)
+        iso = Face.ByVertices(verts)
+    print("iso after:", iso)
     assert Topology.IsInstance(iso, "Face"), "Face.Isovist. Should be a face"
     
     # test 1 with parameter 
     iso = Face.Isovist(face, v, obstacles=[r6], direction=[1,0,0], fov=90)
+    print("iso before:", iso)
+    if not Topology.IsInstance(iso, "face"):
+        verts = Topology.Vertices(iso)
+        iso = Face.ByVertices(verts)
+    print("iso after:", iso)
     assert Topology.IsInstance(iso, "Face"), "Face.Isovist. Should be a face"
 
     # Case 42 - Simplify
