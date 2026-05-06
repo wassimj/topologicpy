@@ -7551,23 +7551,23 @@ class Graph:
 
     @staticmethod
     def ByTopology(topology,
-                   direct: bool = True,
-                   directApertures: bool = False,
-                   viaSharedTopologies: bool = False,
-                   viaSharedApertures: bool = False,
-                   toExteriorTopologies: bool = False,
-                   toExteriorApertures: bool = False,
-                   toContents: bool = False,
-                   toOutposts: bool = False,
-                   idKey: str = "TOPOLOGIC_ID",
-                   outpostsKey: str = "outposts",
-                   vertexCategoryKey: str = "category",
-                   edgeCategoryKey : str = "category",
-                   useInternalVertex: bool = False,
-                   storeBREP: bool =False,
-                   mantissa: int = 6,
-                   tolerance: float = 0.0001,
-                   silent: float = False):
+                direct: bool = True,
+                directApertures: bool = False,
+                viaSharedTopologies: bool = False,
+                viaSharedApertures: bool = False,
+                toExteriorTopologies: bool = False,
+                toExteriorApertures: bool = False,
+                toContents: bool = False,
+                toOutposts: bool = False,
+                idKey: str = "TOPOLOGIC_ID",
+                outpostsKey: str = "outposts",
+                vertexCategoryKey: str = "category",
+                edgeCategoryKey : str = "category",
+                useInternalVertex: bool = False,
+                storeBREP: bool =False,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: float = False):
         """
         Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
 
@@ -7628,7 +7628,6 @@ class Graph:
         -------
         topologic_core.Graph
             The created graph.
-
         """
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vertex import Vertex
@@ -7636,1109 +7635,657 @@ class Graph:
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
         from topologicpy.Aperture import Aperture
-        
-        if not Topology.IsInstance(topology, "topology"):
+
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Graph.ByTopology - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
-        def _viaSharedTopologies(vt, sharedTops):
-            verts = []
-            eds = []
-            for sharedTopology in sharedTops:
-                if useInternalVertex == True:
-                    vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
-                else:
-                    vst = Topology.CenterOfMass(sharedTopology)
-                d1 = Topology.Dictionary(sharedTopology)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 1) # shared topology
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedTopology), Topology.Type(sharedTopology), Topology.TypeAsString(sharedTopology)])
-                vst = Topology.SetDictionary(vst, d1, silent=True)
-                verts.append(vst)
-                tempe = Edge.ByStartVertexEndVertex(vt, vst, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Topologies", 1])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
-        
-        def _viaSharedApertures(vt, sharedAps):
-            verts = []
-            eds = []
-            for sharedAp in sharedAps:
-                if useInternalVertex == True:
-                    vsa = Topology.InternalVertex(sharedAp, tolerance=tolerance)
-                else:
-                    vsa = Topology.CenterOfMass(sharedAp)
-                d1 = Topology.Dictionary(sharedAp)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 2) # shared aperture
-                vsa = Vertex.ByCoordinates(Vertex.X(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Y(vsa, mantissa=mantissa)+(tolerance*100), Vertex.Z(vsa, mantissa=mantissa)+(tolerance*100))
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(sharedAp), Topology.Type(sharedAp), Topology.TypeAsString(sharedAp)])
-                vsa = Topology.SetDictionary(vsa, d1, silent=True)
-                verts.append(vsa)
-                tempe = Edge.ByStartVertexEndVertex(vt, vsa, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["Via_Shared_Apertures", 2])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
-        
-        def _toExteriorTopologies(vt, exteriorTops):
-            verts = []
-            eds = []
-            for i, exteriorTop in enumerate(exteriorTops):
-                if useInternalVertex == True:
-                    vet = Topology.InternalVertex(exteriorTop, tolerance=tolerance)
-                else:
-                    vet = Topology.CenterOfMass(exteriorTop)
-                d1 = Topology.Dictionary(exteriorTop)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 3) # exterior topology
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(exteriorTop), Topology.Type(exteriorTop), Topology.TypeAsString(exteriorTop)])
-                vet = Topology.SetDictionary(vet, d1, silent=True)
-                verts.append(vet)
-                tempe = Edge.ByStartVertexEndVertex(vt, vet, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Topologies", 3])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
-        
-        def _toExteriorApertures(vt, exteriorAps):
-            verts = []
-            eds = []
-            for exAp in exteriorAps:
-                if useInternalVertex == True:
-                    vea = Topology.InternalVertex(exAp, tolerance=tolerance)
-                else:
-                    vea = Topology.CenterOfMass(exAp)
-                d1 = Topology.Dictionary(exAp)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 4) # exterior aperture
-                vea = Vertex.ByCoordinates(Vertex.X(vea, mantissa=mantissa)+(tolerance*100), Vertex.Y(vea, mantissa=mantissa)+(tolerance*100), Vertex.Z(vea, mantissa=mantissa)+(tolerance*100))
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(exAp), Topology.Type(exAp), Topology.TypeAsString(exAp)])
-                vea = Topology.SetDictionary(vea, d1, silent=True)
-                verts.append(vea)
-                tempe = Edge.ByStartVertexEndVertex(vt, vea, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Exterior_Apertures", 4])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
-        
-        def _toContents(vt, contents):
-            verts = []
-            eds = []
-            for content in contents:
-                if Topology.IsInstance(content, "Aperture"):
-                    content = Aperture.Topology(content)
-                if useInternalVertex == True:
-                    vct = Topology.InternalVertex(content, tolerance=tolerance)
-                else:
-                    vct = Topology.CenterOfMass(content)
-                vct = Vertex.ByCoordinates(Vertex.X(vct, mantissa=mantissa)+(tolerance*100), Vertex.Y(vct, mantissa=mantissa)+(tolerance*100), Vertex.Z(vct, mantissa=mantissa)+(tolerance*100))
-                d1 = Topology.Dictionary(content)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                vct = Topology.SetDictionary(vct, d1, silent=True)
-                verts.append(vct)
-                tempe = Edge.ByStartVertexEndVertex(vt, vct, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
 
-        def _toOutposts(vt, otherTops):
-            verts = []
-            eds = []
-            d = Topology.Dictionary(vt)
-            if not d == None:
-                keys = Dictionary.Keys(d)
-            else:
-                keys = []
-            k = None
-            for key in keys:
-                if key.lower() == outpostsKey.lower():
-                    k = key
-            if k:
-                ids = Dictionary.ValueAtKey(d,k)
-                outposts = outpostsByID(otherTops, ids, idKey)
-            else:
-                outposts = []
-            for outpost in outposts:
-                if useInternalVertex == True:
-                    vop = Topology.InternalVertex(outpost, tolerance=tolerance)   
-                else:
-                    vop = Topology.CenterOfMass(outpost)
+        graph_vertices = []
+        graph_edges = []
+        offset = tolerance * 100
 
-                d1 = Topology.Dictionary(vop)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 6) # outpost
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(outpost), Topology.Type(outpost), Topology.TypeAsString(outpost)])
-                vop = Topology.SetDictionary(vop, d1, silent=True)
-                verts.append(vop)
-                tempe = Edge.ByStartVertexEndVertex(vt, vop, tolerance=tolerance)
-                tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                eds.append(tempe)
-            return verts, eds
-        
-        def mergeDictionaries(sources):
-            if isinstance(sources, list) == False:
-                sources = [sources]
-            sinkKeys = []
-            sinkValues = []
-            d = Topology.Dictionary(sources[0])
-            if d != None:
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sinkKeys = d.Keys()
-                    sinkValues = Dictionary.Values(d)
-            for i in range(1,len(sources)):
-                d = Topology.Dictionary(sources[i])
-                if d == None:
-                    continue
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sourceKeys = d.Keys()
-                    for aSourceKey in sourceKeys:
-                        if aSourceKey not in sinkKeys:
-                            sinkKeys.append(aSourceKey)
-                            sinkValues.append("")
-                    for i in range(len(sourceKeys)):
-                        index = sinkKeys.index(sourceKeys[i])
-                        sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
-                        if sourceValue != None:
-                            if sinkValues[index] != "":
-                                if isinstance(sinkValues[index], list):
-                                    sinkValues[index].append(sourceValue)
-                                else:
-                                    sinkValues[index] = [sinkValues[index], sourceValue]
-                            else:
-                                sinkValues[index] = sourceValue
-            if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                return Dictionary.ByKeysValues(sinkKeys, sinkValues)
-            return None
+        dictionary_cache = {}
+        keys_cache = {}
+        values_cache = {}
+        brep_cache = {}
+        representative_cache = {}
+        apertures_cache = {}
+        contents_cache = {}
+        vertices_cache = {}
+        edges_cache = {}
+        faces_cache = {}
+        incidence_cache = {}
 
-        def mergeDictionaries2(sources):
-            if isinstance(sources, list) == False:
-                sources = [sources]
-            sinkKeys = []
-            sinkValues = []
-            d = sources[0]
-            if d != None:
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sinkKeys = d.Keys()
-                    sinkValues = Dictionary.Values(d)
-            for i in range(1,len(sources)):
-                d = sources[i]
-                if d == None:
-                    continue
-                stlKeys = d.Keys()
-                if len(stlKeys) > 0:
-                    sourceKeys = d.Keys()
-                    for aSourceKey in sourceKeys:
-                        if aSourceKey not in sinkKeys:
-                            sinkKeys.append(aSourceKey)
-                            sinkValues.append("")
-                    for i in range(len(sourceKeys)):
-                        index = sinkKeys.index(sourceKeys[i])
-                        sourceValue = Dictionary.ValueAtKey(d, sourceKeys[i])
-                        if sourceValue != None:
-                            if sinkValues[index] != "":
-                                if isinstance(sinkValues[index], list):
-                                    sinkValues[index].append(sourceValue)
-                                else:
-                                    sinkValues[index] = [sinkValues[index], sourceValue]
-                            else:
-                                sinkValues[index] = sourceValue
-            if len(sinkKeys) > 0 and len(sinkValues) > 0:
-                return Dictionary.ByKeysValues(sinkKeys, sinkValues)
-            return None
-        
-        def outpostsByID(topologies, ids, idKey="TOPOLOGIC_ID"):
-            returnList = []
-            idList = []
-            for t in topologies:
-                d = Topology.Dictionary(t)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == idKey.lower():
-                        k = key
-                if k:
-                    id = Dictionary.ValueAtKey(d, k)
-                else:
-                    id = ""
-                idList.append(id)
-            for id in ids:
+        T_IsInstance = Topology.IsInstance
+        T_SetDictionary = Topology.SetDictionary
+        T_CenterOfMass = Topology.CenterOfMass
+        T_InternalVertex = Topology.InternalVertex
+        T_Dictionary = Topology.Dictionary
+        T_Apertures = Topology.Apertures
+        T_Contents = Topology.Contents
+        T_Vertices = Topology.Vertices
+        T_Edges = Topology.Edges
+        T_Faces = Topology.Faces
+        T_Type = Topology.Type
+        T_TypeAsString = Topology.TypeAsString
+        T_BREPString = Topology.BREPString
+        E_ByStartVertexEndVertex = Edge.ByStartVertexEndVertex
+
+        def _id(t):
+            return id(t)
+
+        def _keys(d):
+            if d is None:
+                return []
+            did = id(d)
+            if did in keys_cache:
+                return keys_cache[did]
+            try:
+                ks = Dictionary.Keys(d) or []
+            except:
                 try:
-                    index = idList.index(id)
+                    ks = d.Keys() or []
                 except:
-                    index = None
-                if index:
-                    returnList.append(topologies[index])
-            return returnList
-                
-        def processCellComplex(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_vertices = []
-            graph_edges = []
-            cellmat = []
-            # Store all the vertices of the cells of the cellComplex
-            cells = Topology.Cells(topology)
-            for cell in cells:
-                if useInternalVertex == True:
-                    vCell = Topology.InternalVertex(cell, tolerance=tolerance)
-                else:
-                    vCell = Topology.CenterOfMass(cell)
-                d1 = Topology.Dictionary(cell)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                if storeBREP:
-                    d1 = Dictionary.SetValuesAtKeys(d1, ["brep", "brepType", "brepTypeString"], [Topology.BREPString(cell), Topology.Type(cell), Topology.TypeAsString(cell)])
-                vCell = Topology.SetDictionary(vCell, d1, silent=True)
-                graph_vertices.append(vCell)
-            if direct == True:
-                cells = Topology.Cells(topology)
-                # Create a matrix of zeroes
-                for i in range(len(cells)):
-                    cellRow = []
-                    for j in range(len(cells)):
-                        cellRow.append(0)
-                    cellmat.append(cellRow)
-                for i in range(len(cells)):
-                    for j in range(len(cells)):
-                        if (i != j) and cellmat[i][j] == 0:
-                            cellmat[i][j] = 1
-                            cellmat[j][i] = 1
-                            sharedt = Topology.SharedFaces(cells[i], cells[j])
-                            if len(sharedt) > 0:
-                                if useInternalVertex == True:
-                                    v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
-                                    v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
-                                else:
-                                    v1 = Topology.CenterOfMass(cells[i])
-                                    v2 = Topology.CenterOfMass(cells[j])
-                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                mDict = mergeDictionaries(sharedt)
-                                if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                else:
-                                    keys = ["relationship", edgeCategoryKey]
-                                    values = ["Direct", 0]
-                                mDict = Dictionary.ByKeysValues(keys, values)
-                                if mDict:
-                                    e = Topology.SetDictionary(e, mDict, silent=True)
-                                graph_edges.append(e)
-            if directApertures == True:
-                cellmat = []
-                cells = Topology.Cells(topology)
-                # Create a matrix of zeroes
-                for i in range(len(cells)):
-                    cellRow = []
-                    for j in range(len(cells)):
-                        cellRow.append(0)
-                    cellmat.append(cellRow)
-                for i in range(len(cells)):
-                    for j in range(len(cells)):
-                        if (i != j) and cellmat[i][j] == 0:
-                            cellmat[i][j] = 1
-                            cellmat[j][i] = 1
-                            sharedt = Topology.SharedFaces(cells[i], cells[j])
-                            if len(sharedt) > 0:
-                                apertureExists = False
-                                for x in sharedt:
-                                    apList = Topology.Apertures(x)
-                                    if len(apList) > 0:
-                                        apTopList = []
-                                        for ap in apList:
-                                            apTopList.append(ap)
-                                        apertureExists = True
-                                        break
-                                if apertureExists:
-                                    if useInternalVertex == True:
-                                        v1 = Topology.InternalVertex(cells[i], tolerance=tolerance)
-                                        v2 = Topology.InternalVertex(cells[j], tolerance=tolerance)
-                                    else:
-                                        v1 = Topology.CenterOfMass(cells[i])
-                                        v2 = Topology.CenterOfMass(cells[j])
-                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apTopList)
-                                    if not mDict == None:
-                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                    else:
-                                        keys = ["relationship", edgeCategoryKey]
-                                        values = ["Direct", 0]
-                                    mDict = Dictionary.ByKeysValues(keys, values)
-                                    if mDict:
-                                        e = Topology.SetDictionary(e, mDict, silent=True)
-                                    graph_edges.append(e)
-            cells = Topology.Cells(topology)
-            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
-                for aCell in cells:
-                    if useInternalVertex == True:
-                        vCell = Topology.InternalVertex(aCell, tolerance=tolerance)
+                    ks = []
+            keys_cache[did] = ks
+            return ks
+
+        def _values(d):
+            if d is None:
+                return []
+            did = id(d)
+            if did in values_cache:
+                return values_cache[did]
+            try:
+                vs = Dictionary.Values(d) or []
+            except:
+                vs = []
+            values_cache[did] = vs
+            return vs
+
+        def _value_at_key(d, key, defaultValue=None):
+            if d is None or key is None:
+                return defaultValue
+            try:
+                return Dictionary.ValueAtKey(d, key, defaultValue)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(d, key)
+                    return defaultValue if value is None else value
+                except:
+                    return defaultValue
+            except:
+                return defaultValue
+
+        def _case_key(d, key):
+            if d is None or key is None:
+                return None
+            key_l = str(key).lower()
+            for k in _keys(d):
+                if str(k).lower() == key_l:
+                    return k
+            return None
+
+        def _dictionary(t):
+            if t is None:
+                return None
+            tid = _id(t)
+            if tid in dictionary_cache:
+                return dictionary_cache[tid]
+            try:
+                d = T_Dictionary(t)
+            except:
+                d = None
+            dictionary_cache[tid] = d
+            return d
+
+        def _brep_data(t):
+            tid = _id(t)
+            if tid in brep_cache:
+                return brep_cache[tid]
+            data = [T_BREPString(t), T_Type(t), T_TypeAsString(t)]
+            brep_cache[tid] = data
+            return data
+
+        def _merge_dictionaries(items, items_are_dictionaries=False):
+            if not isinstance(items, list):
+                items = [items]
+
+            sink = {}
+            order = []
+
+            for item in items:
+                d = item if items_are_dictionaries else _dictionary(item)
+                if d is None:
+                    continue
+
+                for k in _keys(d):
+                    v = _value_at_key(d, k, None)
+                    if v is None:
+                        continue
+
+                    if k not in sink:
+                        sink[k] = v
+                        order.append(k)
                     else:
-                        vCell = Topology.CenterOfMass(aCell)
-                    d = Topology.Dictionary(aCell)
-                    vCell = Topology.SetDictionary(vCell, d, silent=True)
-                    faces = Topology.Faces(aCell)
-                    sharedTopologies = []
-                    exteriorTopologies = []
-                    sharedApertures = []
-                    exteriorApertures = []
-                    cell_contents = Topology.Contents(aCell)
-                    for aFace in faces:
-                        cells1 = Topology.SuperTopologies(aFace, topology, topologyType="Cell")
-                        if len(cells1) > 1:
-                            sharedTopologies.append(aFace)
-                            apertures = Topology.Apertures(aFace)
-                            for anAperture in apertures:
-                                sharedApertures.append(anAperture)
+                        if isinstance(sink[k], list):
+                            sink[k].append(v)
                         else:
-                            exteriorTopologies.append(aFace)
-                            apertures = Topology.Apertures(aFace)
-                            for anAperture in apertures:
-                                exteriorApertures.append(anAperture)
-                    if viaSharedTopologies:
-                        verts, eds = _viaSharedTopologies(vCell, sharedTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for sharedTopology in sharedTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
-                            else:
-                                vst = Topology.CenterOfMass(sharedTopology)
-                            d = Topology.Dictionary(sharedTopology)
-                            vst = Topology.SetDictionary(vst, d, silent=True)
-                            if toContents:
-                                shd_top_contents = Topology.Contents(sharedTopology)
-                                verts, eds = _toContents(vst, shd_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vst, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if viaSharedApertures:
-                        verts, eds = _viaSharedApertures(vCell, sharedApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toExteriorTopologies:
-                        verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                            else:
-                                vet = Topology.CenterOfMass(exteriorTopology)
-                            d = Topology.Dictionary(exteriorTopology)
-                            vet = Topology.SetDictionary(vet, d, silent=True)
-                            if toContents:
-                                ext_top_contents = Topology.Contents(exteriorTopology)
-                                verts, eds = _toContents(vet, ext_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vet, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if toExteriorApertures:
-                        verts, eds = _toExteriorApertures(vCell, exteriorApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toContents:
-                        verts, eds = _toContents(vCell, cell_contents)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toOutposts and others:
-                        verts, eds = toOutposts(vCell, others)
-                        graph_vertices += verts
-                        graph_edges += eds
-            return [graph_vertices, graph_edges]
+                            sink[k] = [sink[k], v]
 
-        def processCell(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_vertices = []
-            graph_edges = []
-            if useInternalVertex == True:
-                vCell = Topology.InternalVertex(topology, tolerance=tolerance)
+            if not order:
+                return None
+
+            return Dictionary.ByKeysValues(order, [sink[k] for k in order])
+
+        def _add_brep(d, t):
+            if not storeBREP:
+                return d
+            brep, brep_type, brep_type_string = _brep_data(t)
+            d_brep = Dictionary.ByKeysValues(
+                ["brep", "brepType", "brepTypeString"],
+                [brep, brep_type, brep_type_string]
+            )
+            return _merge_dictionaries([d, d_brep], items_are_dictionaries=True)
+
+        def _category_dictionary(t, category):
+            d = _dictionary(t)
+            d = Dictionary.SetValueAtKey(d, vertexCategoryKey, category)
+            return _add_brep(d, t)
+
+        def _topology_from_aperture(t):
+            if T_IsInstance(t, "Aperture"):
+                try:
+                    return Aperture.Topology(t)
+                except:
+                    return t
+            return t
+
+        def _representative_vertex(t, category=None, apply_offset=False, source_dictionary_topology=None):
+            t = _topology_from_aperture(t)
+            source = source_dictionary_topology if source_dictionary_topology is not None else t
+            key = (_id(t), category, apply_offset, _id(source) if source is not None else None)
+
+            if key in representative_cache:
+                return representative_cache[key]
+
+            if useInternalVertex:
+                v = T_InternalVertex(t, tolerance=tolerance)
             else:
-                vCell = Topology.CenterOfMass(topology)
-            d1 = Topology.Dictionary(topology)
-            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-            if storeBREP:
-                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                d3 = mergeDictionaries2([d1, d2])
-                vCell = Topology.SetDictionary(vCell, d3, silent=True)
-            else:
-                vCell = Topology.SetDictionary(vCell, d1, silent=True)
-            graph_vertices.append(vCell)
-            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
-                cell_contents = Topology.Contents(topology)
-                faces = Topology.Faces(topology)
-                exteriorTopologies = []
-                exteriorApertures = []
-                for aFace in faces:
-                    exteriorTopologies.append(aFace)
-                    apertures = Topology.Apertures(aFace)
-                    for anAperture in apertures:
-                        exteriorApertures.append(anAperture)
+                v = T_CenterOfMass(t)
+
+            if apply_offset:
+                v = Vertex.ByCoordinates(
+                    Vertex.X(v, mantissa=mantissa) + offset,
+                    Vertex.Y(v, mantissa=mantissa) + offset,
+                    Vertex.Z(v, mantissa=mantissa) + offset
+                )
+
+            if category is not None:
+                d = _category_dictionary(source, category)
+                v = T_SetDictionary(v, d, silent=True)
+
+            representative_cache[key] = v
+            return v
+
+        def _edge_dictionary(relationship, category, source_topologies=None):
+            if source_topologies:
+                d = _merge_dictionaries(source_topologies)
+                if d is not None:
+                    return Dictionary.ByKeysValues(
+                        _keys(d) + ["relationship", edgeCategoryKey],
+                        _values(d) + [relationship, category]
+                    )
+
+            return Dictionary.ByKeysValues(["relationship", edgeCategoryKey], [relationship, category])
+
+        def _append_edge(v1, v2, relationship, category, source_topologies=None):
+            e = E_ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
+            if e is None:
+                return
+            d = _edge_dictionary(relationship, category, source_topologies)
+            e = T_SetDictionary(e, d, silent=True)
+            graph_edges.append(e)
+
+        def _apertures(t):
+            tid = _id(t)
+            if tid in apertures_cache:
+                return apertures_cache[tid]
+            try:
+                aps = T_Apertures(t) or []
+            except:
+                aps = []
+            apertures_cache[tid] = aps
+            return aps
+
+        def _contents(t):
+            tid = _id(t)
+            if tid in contents_cache:
+                return contents_cache[tid]
+            try:
+                cs = T_Contents(t) or []
+            except:
+                cs = []
+            contents_cache[tid] = cs
+            return cs
+
+        def _vertices(t):
+            tid = _id(t)
+            if tid in vertices_cache:
+                return vertices_cache[tid]
+            try:
+                vs = T_Vertices(t, silent=True)
+            except TypeError:
+                try:
+                    vs = T_Vertices(t)
+                except:
+                    vs = []
+            vertices_cache[tid] = vs
+            return vs
+
+        def _edges(t):
+            tid = _id(t)
+            if tid in edges_cache:
+                return edges_cache[tid]
+            try:
+                es = T_Edges(t, silent=True)
+            except TypeError:
+                try:
+                    es = T_Edges(t)
+                except:
+                    es = []
+            edges_cache[tid] = es
+            return es
+
+        def _faces(t):
+            tid = _id(t)
+            if tid in faces_cache:
+                return faces_cache[tid]
+            try:
+                fs = T_Faces(t, silent=True)
+            except TypeError:
+                try:
+                    fs = T_Faces(t)
+                except:
+                    fs = []
+            faces_cache[tid] = fs
+            return fs
+
+        def _coord_key(v):
+            return (
+                round(Vertex.X(v, mantissa=mantissa), mantissa),
+                round(Vertex.Y(v, mantissa=mantissa), mantissa),
+                round(Vertex.Z(v, mantissa=mantissa), mantissa)
+            )
+
+        def _vertex_key(v):
+            return _coord_key(v)
+
+        def _edge_key(e):
+            return tuple(sorted([_coord_key(v) for v in _vertices(e)]))
+
+        def _face_key(f):
+            return tuple(sorted([_coord_key(v) for v in _vertices(f)]))
+
+        def _boundary_key(t, boundary_type):
+            if boundary_type == "Face":
+                return _face_key(t)
+            if boundary_type == "Edge":
+                return _edge_key(t)
+            if boundary_type == "Vertex":
+                return _vertex_key(t)
+            return _id(t)
+
+        def _children(t, child_type):
+            if child_type == "Face":
+                return _faces(t)
+            if child_type == "Edge":
+                return _edges(t)
+            if child_type == "Vertex":
+                return _vertices(t)
+            return []
+
+        def _subtopologies(t, topology_type, free=False):
+            if topology_type == "CellComplex":
+                try:
+                    return Topology.CellComplexes(t, silent=True)
+                except TypeError:
+                    return Topology.CellComplexes(t)
+            if topology_type == "Cell":
+                return Cluster.FreeCells(t, tolerance=tolerance) if free else Topology.Cells(t, silent=True)
+            if topology_type == "Shell":
+                return Cluster.FreeShells(t, tolerance=tolerance) if free else Topology.Shells(t, silent=True)
+            if topology_type == "Face":
+                return Cluster.FreeFaces(t, tolerance=tolerance) if free else Topology.Faces(t, silent=True)
+            if topology_type == "Wire":
+                return Cluster.FreeWires(t, tolerance=tolerance) if free else Topology.Wires(t, silent=True)
+            if topology_type == "Edge":
+                return Cluster.FreeEdges(t, tolerance=tolerance) if free else Topology.Edges(t, silent=True)
+            if topology_type == "Vertex":
+                return Cluster.FreeVertices(t, tolerance=tolerance) if free else Topology.Vertices(t, silent=True)
+            return []
+
+        def _build_incidence(host, owners, child_type):
+            key = (_id(host), tuple(_id(o) for o in owners), child_type)
+            if key in incidence_cache:
+                return incidence_cache[key]
+
+            boundary_to_owners = {}
+            boundary_to_refs = {}
+
+            for owner in owners:
+                for child in _children(owner, child_type):
+                    bk = _boundary_key(child, child_type)
+                    boundary_to_owners.setdefault(bk, []).append(owner)
+                    boundary_to_refs.setdefault(bk, []).append(child)
+
+            incidence_cache[key] = (boundary_to_owners, boundary_to_refs)
+            return boundary_to_owners, boundary_to_refs
+
+        def _add_related_vertices(v_from, related_topologies, vertex_category, relationship, edge_category, apply_offset=False):
+            for t in related_topologies:
+                v_to = _representative_vertex(t, vertex_category, apply_offset=apply_offset)
+                graph_vertices.append(v_to)
+                _append_edge(v_from, v_to, relationship, edge_category)
+
+        def _add_contents(v_from, contents):
+            for content in contents:
+                content = _topology_from_aperture(content)
+                v_to = _representative_vertex(content, 5, apply_offset=True)
+                graph_vertices.append(v_to)
+                _append_edge(v_from, v_to, "To_Contents", 5)
+
+        def _outpost_lookup(topologies):
+            lookup = {}
+            id_key_l = str(idKey).lower()
+
+            for t in topologies:
+                d = _dictionary(t)
+                k = None
+                for key in _keys(d):
+                    if str(key).lower() == id_key_l:
+                        k = key
+                        break
+
+                if k is None:
+                    continue
+
+                value = _value_at_key(d, k, None)
+                if value is not None and value not in lookup:
+                    lookup[value] = t
+
+            return lookup
+
+        def _add_outposts(v_from, outpost_lookup):
+            d = _dictionary(v_from)
+            k = _case_key(d, outpostsKey)
+            if k is None:
+                return
+
+            ids = _value_at_key(d, k, [])
+            if ids is None:
+                return
+            if not isinstance(ids, list):
+                ids = [ids]
+
+            for an_id in ids:
+                outpost = outpost_lookup.get(an_id, None)
+                if outpost is None:
+                    continue
+                v_to = _representative_vertex(outpost, 6)
+                graph_vertices.append(v_to)
+                _append_edge(v_from, v_to, "To_Outposts", 6)
+
+        def _classify_boundaries(owner, child_type, boundary_to_owners):
+            shared_tops = []
+            exterior_tops = []
+            shared_aps = []
+            exterior_aps = []
+
+            for child in _children(owner, child_type):
+                bk = _boundary_key(child, child_type)
+                aps = _apertures(child)
+
+                if len(boundary_to_owners.get(bk, [])) > 1:
+                    shared_tops.append(child)
+                    shared_aps.extend(aps)
+                else:
+                    exterior_tops.append(child)
+                    exterior_aps.extend(aps)
+
+            return shared_tops, exterior_tops, shared_aps, exterior_aps
+
+        def _add_direct_edges_from_incidence(owners, child_type, boundary_to_owners, boundary_to_refs, require_aperture=False):
+            owner_vertex = {}
+            for owner in owners:
+                owner_vertex[_id(owner)] = _representative_vertex(owner)
+
+            seen_pairs = set()
+
+            for bk, incident_owners in boundary_to_owners.items():
+                if len(incident_owners) < 2:
+                    continue
+
+                source_refs = boundary_to_refs.get(bk, [])
+                if require_aperture:
+                    source_refs = []
+                    for ref in boundary_to_refs.get(bk, []):
+                        source_refs.extend(_apertures(ref))
+                    if not source_refs:
+                        continue
+
+                n = len(incident_owners)
+                for i in range(n - 1):
+                    oi = incident_owners[i]
+                    oi_id = _id(oi)
+                    for j in range(i + 1, n):
+                        oj = incident_owners[j]
+                        oj_id = _id(oj)
+
+                        pair = (oi_id, oj_id) if oi_id <= oj_id else (oj_id, oi_id)
+                        if require_aperture:
+                            pair = pair + (bk, "aperture")
+                        else:
+                            pair = pair + (bk, "direct")
+
+                        if pair in seen_pairs:
+                            continue
+                        seen_pairs.add(pair)
+
+                        _append_edge(
+                            owner_vertex[oi_id],
+                            owner_vertex[oj_id],
+                            "Direct",
+                            0,
+                            source_refs
+                        )
+
+        def _process_collection(host, main_type, child_type, outpost_lookup):
+            owners = _subtopologies(host, main_type)
+            boundary_to_owners, boundary_to_refs = _build_incidence(host, owners, child_type)
+
+            for owner in owners:
+                graph_vertices.append(_representative_vertex(owner, 0))
+
+            if direct:
+                _add_direct_edges_from_incidence(
+                    owners,
+                    child_type,
+                    boundary_to_owners,
+                    boundary_to_refs,
+                    require_aperture=False
+                )
+
+            if directApertures:
+                _add_direct_edges_from_incidence(
+                    owners,
+                    child_type,
+                    boundary_to_owners,
+                    boundary_to_refs,
+                    require_aperture=True
+                )
+
+            if not any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+                return
+
+            for owner in owners:
+                v_owner = _representative_vertex(owner)
+                v_owner = T_SetDictionary(v_owner, _dictionary(owner), silent=True)
+
+                shared_tops, exterior_tops, shared_aps, exterior_aps = _classify_boundaries(
+                    owner,
+                    child_type,
+                    boundary_to_owners
+                )
+
+                if viaSharedTopologies:
+                    _add_related_vertices(v_owner, shared_tops, 1, "Via_Shared_Topologies", 1)
+
+                    if toContents or toOutposts:
+                        for shared_top in shared_tops:
+                            v_shared = _representative_vertex(shared_top)
+                            v_shared = T_SetDictionary(v_shared, _dictionary(shared_top), silent=True)
+
+                            if toContents:
+                                _add_contents(v_shared, _contents(shared_top))
+                            if toOutposts:
+                                _add_outposts(v_shared, outpost_lookup)
+
+                if viaSharedApertures:
+                    _add_related_vertices(v_owner, shared_aps, 2, "Via_Shared_Apertures", 2, apply_offset=True)
+
                 if toExteriorTopologies:
-                    verts, eds = _toExteriorTopologies(vCell, exteriorTopologies)
-                    graph_vertices += verts
-                    graph_edges += eds
-                    for exteriorTopology in exteriorTopologies:
-                        if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                        else:
-                            vet = Topology.CenterOfMass(exteriorTopology)
-                        d = Topology.Dictionary(exteriorTopology)
-                        vet = Topology.SetDictionary(vet, d, silent=True)
-                        if toContents:
-                            ext_top_contents = Topology.Contents(exteriorTopology)
-                            verts, eds = _toContents(vet, ext_top_contents)
-                            graph_vertices += verts
-                            graph_edges += eds
-                        if toOutposts and others:
-                            verts, eds = _toOutposts(vet, others)
-                            graph_vertices += verts
-                            graph_edges += eds
+                    _add_related_vertices(v_owner, exterior_tops, 3, "To_Exterior_Topologies", 3)
+
+                    if toContents or toOutposts:
+                        for exterior_top in exterior_tops:
+                            v_exterior = _representative_vertex(exterior_top)
+                            v_exterior = T_SetDictionary(v_exterior, _dictionary(exterior_top), silent=True)
+
+                            if toContents:
+                                _add_contents(v_exterior, _contents(exterior_top))
+                            if toOutposts:
+                                _add_outposts(v_exterior, outpost_lookup)
+
                 if toExteriorApertures:
-                    verts, eds = _toExteriorApertures(vCell, exteriorApertures)
-                    graph_vertices += verts
-                    graph_edges += eds
+                    _add_related_vertices(v_owner, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
+
                 if toContents:
-                    verts, eds = _toContents(vCell, cell_contents)
-                    graph_vertices += verts
-                    graph_edges += eds
-                if toOutposts and others:
-                    verts, eds = toOutposts(vCell, others)
-                    graph_vertices += verts
-                    graph_edges += eds
-            return [graph_vertices, graph_edges]
+                    _add_contents(v_owner, _contents(owner))
 
-        def processShell(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_edges = []
-            graph_vertices = []
-            facemat = []
-            # Store all the vertices of the cells of the cellComplex
-            faces = Topology.Faces(topology)
-            for face in faces:
-                if useInternalVertex == True:
-                    vFace = Topology.InternalVertex(face, tolerance=tolerance)
-                else:
-                    vFace = Topology.CenterOfMass(face)
-                d1 = Topology.Dictionary(face)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(face), Topology.Type(face), Topology.TypeAsString(face)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vFace = Topology.SetDictionary(vFace, d3, silent=True)
-                else:
-                    vFace = Topology.SetDictionary(vFace, d1, silent=True)
-                graph_vertices.append(vFace)
-            if direct == True:
-                faces = Topology.Faces(topology)
-                # Create a matrix of zeroes
-                for i in range(len(faces)):
-                    faceRow = []
-                    for j in range(len(faces)):
-                        faceRow.append(0)
-                    facemat.append(faceRow)
-                for i in range(len(faces)):
-                    for j in range(len(faces)):
-                        if (i != j) and facemat[i][j] == 0:
-                            facemat[i][j] = 1
-                            facemat[j][i] = 1
-                            sharedt = Topology.SharedEdges(faces[i], faces[j])
-                            if len(sharedt) > 0:
-                                if useInternalVertex == True:
-                                    v1 = Topology.InternalVertex(faces[i], tolerance=tolerance)
-                                    v2 = Topology.InternalVertex(faces[j], tolerance=tolerance)
-                                else:
-                                    v1 = Topology.CenterOfMass(faces[i])
-                                    v2 = Topology.CenterOfMass(faces[j])
-                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                mDict = mergeDictionaries(sharedt)
-                                if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                else:
-                                    keys = ["relationship", edgeCategoryKey]
-                                    values = ["Direct", 0]
-                                mDict = Dictionary.ByKeysValues(keys, values)
-                                if mDict:
-                                    e = Topology.SetDictionary(e, mDict, silent=True)
-                                graph_edges.append(e)
-            if directApertures == True:
-                facemat = []
-                faces = Topology.Faces(topology)
-                # Create a matrix of zeroes
-                for i in range(len(faces)):
-                    faceRow = []
-                    for j in range(len(faces)):
-                        faceRow.append(0)
-                    facemat.append(faceRow)
-                for i in range(len(faces)):
-                    for j in range(len(faces)):
-                        if (i != j) and facemat[i][j] == 0:
-                            facemat[i][j] = 1
-                            facemat[j][i] = 1
-                            sharedt = Topology.SharedEdges(faces[i], faces[j])
-                            if len(sharedt) > 0:
-                                apertureExists = False
-                                for x in sharedt:
-                                    apList = Topology.Apertures(x)
-                                    if len(apList) > 0:
-                                        apTopList = []
-                                        for ap in apList:
-                                            apTopList.append(ap)
-                                        apertureExists = True
-                                        break
-                                if apertureExists:
-                                    if useInternalVertex == True:
-                                        v1 = Topology.InternalVertex(faces[i], tolerance=tolerance)
-                                        v2 = Topology.InternalVertex(faces[j], tolerance=tolerance)
-                                    else:
-                                        v1 = Topology.CenterOfMass(faces[i])
-                                        v2 = Topology.CenterOfMass(faces[j])
-                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apTopList)
-                                    if not mDict == None:
-                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                    else:
-                                        keys = ["relationship", edgeCategoryKey]
-                                        values = ["Direct", 0]
-                                    mDict = Dictionary.ByKeysValues(keys, values)
-                                    if mDict:
-                                        e = Topology.SetDictionary(e, mDict, silent=True)
-                                    graph_edges.append(e)
-            faces = Topology.Faces(topology)
-            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
-                for aFace in faces:
-                    if useInternalVertex == True:
-                        vFace = Topology.InternalVertex(aFace, tolerance=tolerance)
-                    else:
-                        vFace = Topology.CenterOfMass(aFace)
-                    d = Topology.Dictionary(aFace)
-                    vFace = Topology.SetDictionary(vFace, d, silent=True)
-                    edges = Topology.Edges(aFace)
-                    sharedTopologies = []
-                    exteriorTopologies = []
-                    sharedApertures = []
-                    exteriorApertures = []
-                    face_contents = Topology.Contents(aFace)
-                    for anEdge in edges:
-                        faces1 = Topology.SuperTopologies(anEdge, hostTopology=topology, topologyType="Face")
-                        if len(faces1) > 1:
-                            sharedTopologies.append(anEdge)
-                            apertures = Topology.Apertures(anEdge)
-                            for anAperture in apertures:
-                                sharedApertures.append(anAperture)
-                        else:
-                            exteriorTopologies.append(anEdge)
-                            apertures = Topology.Apertures(anEdge)
-                            for anAperture in apertures:
-                                exteriorApertures.append(anAperture)
-                    if viaSharedTopologies:
-                        verts, eds = _viaSharedTopologies(vFace, sharedTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for sharedTopology in sharedTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
-                            else:
-                                vst = Topology.CenterOfMass(sharedTopology)
-                            d = Topology.Dictionary(sharedTopology)
-                            vst = Topology.SetDictionary(vst, d, silent=True)
-                            if toContents:
-                                shd_top_contents = Topology.Contents(sharedTopology)
-                                verts, eds = _toContents(vst, shd_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vst, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if viaSharedApertures:
-                        verts, eds = _viaSharedApertures(vFace, sharedApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toExteriorTopologies:
-                        verts, eds = _toExteriorTopologies(vFace, exteriorTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                            else:
-                                vet = Topology.CenterOfMass(exteriorTopology)
-                            d = Topology.Dictionary(exteriorTopology)
-                            vet = Topology.SetDictionary(vet, d, silent=True)
-                            if toContents:
-                                ext_top_contents = Topology.Contents(exteriorTopology)
-                                verts, eds = _toContents(vet, ext_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vet, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if toExteriorApertures:
-                        verts, eds = _toExteriorApertures(vFace, exteriorApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toContents:
-                        verts, eds = _toContents(vFace, face_contents)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toOutposts and others:
-                        verts, eds = toOutposts(vFace, others)
-                        graph_vertices += verts
-                        graph_edges += eds
-            return [graph_vertices, graph_edges]
+                if toOutposts:
+                    _add_outposts(v_owner, outpost_lookup)
 
-        def processFace(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_vertices = []
-            graph_edges = []
-            if useInternalVertex == True:
-                vFace = Topology.InternalVertex(topology, tolerance=tolerance)
-            else:
-                vFace = Topology.CenterOfMass(topology)
-            d1 = Topology.Dictionary(topology)
-            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-            if storeBREP:
-                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                d3 = mergeDictionaries2([d1, d2])
-                vFace = Topology.SetDictionary(vFace, d3, silent=True)
-            else:
-                vFace = Topology.SetDictionary(vFace, d1, silent=True)
-            graph_vertices.append(vFace)
-            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
-                face_contents = Topology.Contents(topology)
-                edges = Topology.Edges(topology)
-                exteriorTopologies = []
-                exteriorApertures = []
-                for anEdge in edges:
-                    exteriorTopologies.append(anEdge)
-                    apertures = Topology.Apertures(anEdge)
-                    for anAperture in apertures:
-                        exteriorApertures.append(anAperture)
-                if toExteriorTopologies:
-                    verts, eds = _toExteriorTopologies(vFace, exteriorTopologies)
-                    graph_vertices += verts
-                    graph_edges += eds
-                    for exteriorTopology in exteriorTopologies:
-                        if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                        else:
-                            vet = Topology.CenterOfMass(exteriorTopology)
-                        d = Topology.Dictionary(exteriorTopology)
-                        vet = Topology.SetDictionary(vet, d, silent=True)
+        def _process_single(t, child_type, outpost_lookup):
+            v = _representative_vertex(t, 0)
+            graph_vertices.append(v)
+
+            if not any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+                return
+
+            exterior_tops = _children(t, child_type)
+            exterior_aps = []
+            for exterior_top in exterior_tops:
+                exterior_aps.extend(_apertures(exterior_top))
+
+            if toExteriorTopologies:
+                _add_related_vertices(v, exterior_tops, 3, "To_Exterior_Topologies", 3)
+
+                if toContents or toOutposts:
+                    for exterior_top in exterior_tops:
+                        v_exterior = _representative_vertex(exterior_top)
+                        v_exterior = T_SetDictionary(v_exterior, _dictionary(exterior_top), silent=True)
+
                         if toContents:
-                            ext_top_contents = Topology.Contents(exteriorTopology)
-                            verts, eds = _toContents(vet, ext_top_contents)
-                            graph_vertices += verts
-                            graph_edges += eds
-                        if toOutposts and others:
-                            verts, eds = _toOutposts(vet, others)
-                            graph_vertices += verts
-                            graph_edges += eds
-                if toExteriorApertures:
-                    verts, eds = _toExteriorApertures(vFace, exteriorApertures)
-                    graph_vertices += verts
-                    graph_edges += eds
-                if toContents:
-                    verts, eds = _toContents(vFace, face_contents)
-                    graph_vertices += verts
-                    graph_edges += eds
-                if toOutposts and others:
-                    verts, eds = toOutposts(vFace, others)
-                    graph_vertices += verts
-                    graph_edges += eds
-            return [graph_vertices, graph_edges]
+                            _add_contents(v_exterior, _contents(exterior_top))
+                        if toOutposts:
+                            _add_outposts(v_exterior, outpost_lookup)
 
-
-
-        def processWire(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_vertices = []
-            graph_edges = []
-            edgemat = []
-            # Store all the vertices of the cells of the cellComplex
-            edges = Topology.Edges(topology)
-            for edge in edges:
-                if useInternalVertex == True:
-                    vEdge = Topology.InternalVertex(edge, tolerance=tolerance)
-                else:
-                    vEdge = Topology.CenterOfMass(edge)
-                d1 = Topology.Dictionary(edge)
-                d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-                if storeBREP:
-                    d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(edge), Topology.Type(edge), Topology.TypeAsString(edge)])
-                    d3 = mergeDictionaries2([d1, d2])
-                    vEdge = Topology.SetDictionary(vEdge, d3, silent=True)
-                else:
-                    vEdge = Topology.SetDictionary(vEdge, d1, silent=True)
-                graph_vertices.append(vEdge)
-            if direct == True:
-                edges = Topology.Edges(topology)
-                # Create a matrix of zeroes
-                for i in range(len(edges)):
-                    edgeRow = []
-                    for j in range(len(edges)):
-                        edgeRow.append(0)
-                    edgemat.append(edgeRow)
-                for i in range(len(edges)):
-                    for j in range(len(edges)):
-                        if (i != j) and edgemat[i][j] == 0:
-                            edgemat[i][j] = 1
-                            edgemat[j][i] = 1
-                            sharedt = Topology.SharedVertices(edges[i], edges[j])
-                            if len(sharedt) > 0:
-                                if useInternalVertex == True:
-                                    v1 = Topology.InternalVertex(edges[i], tolerance=tolerance)
-                                    v2 = Topology.InternalVertex(edges[j], tolerance=tolerance)
-                                else:
-                                    v1 = Topology.CenterOfMass(edges[i])
-                                    v2 = Topology.CenterOfMass(edges[j])
-                                e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                mDict = mergeDictionaries(sharedt)
-                                if not mDict == None:
-                                    keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                    values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                else:
-                                    keys = ["relationship", edgeCategoryKey]
-                                    values = ["Direct", 0]
-                                mDict = Dictionary.ByKeysValues(keys, values)
-                                if mDict:
-                                    e = Topology.SetDictionary(e, mDict, silent=True)
-                                graph_edges.append(e)
-            if directApertures == True:
-                edgemat = []
-                edges = Topology.Edges(topology)
-                # Create a matrix of zeroes
-                for i in range(len(edges)):
-                    cellRow = []
-                    for j in range(len(edges)):
-                        edgeRow.append(0)
-                    edgemat.append(edgeRow)
-                for i in range(len(edges)):
-                    for j in range(len(edges)):
-                        if (i != j) and edgemat[i][j] == 0:
-                            edgemat[i][j] = 1
-                            edgemat[j][i] = 1
-                            sharedt = Topology.SharedVertices(edges[i], edges[j])
-                            if len(sharedt) > 0:
-                                apertureExists = False
-                                for x in sharedt:
-                                    apList = Topology.Apertures(x)
-                                    if len(apList) > 0:
-                                        apTopList = []
-                                        for ap in apList:
-                                            apTopList.append(ap)
-                                        apertureExists = True
-                                        break
-                                if apertureExists:
-                                    if useInternalVertex == True:
-                                        v1 = Topology.InternalVertex(edges[i], tolerance=tolerance)
-                                        v2 = Topology.InternalVertex(edges[j], tolerance=tolerance)
-                                    else:
-                                        v1 = Topology.CenterOfMass(edges[i])
-                                        v2 = Topology.CenterOfMass(edges[j])
-                                    e = Edge.ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
-                                    mDict = mergeDictionaries(apTopList)
-                                    if not mDict == None:
-                                        keys = (Dictionary.Keys(mDict) or [])+["relationship", edgeCategoryKey]
-                                        values = (Dictionary.Values(mDict) or [])+["Direct", 0]
-                                    else:
-                                        keys = ["relationship", edgeCategoryKey]
-                                        values = ["Direct", 0]
-                                    mDict = Dictionary.ByKeysValues(keys, values)
-                                    if mDict:
-                                        e = Topology.SetDictionary(e, mDict, silent=True)
-                                    graph_edges.append(e)
-            edges = Topology.Edges(topology)
-            if any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents]):
-                for anEdge in edges:
-                    if useInternalVertex == True:
-                        vEdge = Topology.InternalVertex(anEdge, tolerance=tolerance)
-                    else:
-                        vEdge = Topology.CenterOfMass(anEdge)
-                    d = Topology.Dictionary(anEdge)
-                    vCell = Topology.SetDictionary(vEdge, d, silent=True)
-                    vertices = Topology.Vertices(anEdge)
-                    sharedTopologies = []
-                    exteriorTopologies = []
-                    sharedApertures = []
-                    exteriorApertures = []
-                    edge_contents = Topology.Contents(anEdge)
-                    for aVertex in vertices:
-                        edges1 = Topology.SuperTopologies(aVertex, topology, topologyType="Edge")
-                        if len(edges1) > 1:
-                            sharedTopologies.append(aVertex)
-                            apertures = Topology.Apertures(aVertex)
-                            for anAperture in apertures:
-                                sharedApertures.append(anAperture)
-                        else:
-                            exteriorTopologies.append(aVertex)
-                            apertures = Topology.Apertures(aVertex)
-                            for anAperture in apertures:
-                                exteriorApertures.append(anAperture)
-                    if viaSharedTopologies:
-                        verts, eds = _viaSharedTopologies(vEdge, sharedTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for sharedTopology in sharedTopologies:
-                            if useInternalVertex == True:
-                                vst = Topology.InternalVertex(sharedTopology, tolerance=tolerance)
-                            else:
-                                vst = Topology.CenterOfMass(sharedTopology)
-                            d = Topology.Dictionary(sharedTopology)
-                            vst = Topology.SetDictionary(vst, d, silent=True)
-                            if toContents:
-                                shd_top_contents = Topology.Contents(sharedTopology)
-                                verts, eds = _toContents(vst, shd_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vst, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if viaSharedApertures:
-                        verts, eds = _viaSharedApertures(vEdge, sharedApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toExteriorTopologies:
-                        verts, eds = _toExteriorTopologies(vEdge, exteriorTopologies)
-                        graph_vertices += verts
-                        graph_edges += eds
-                        for exteriorTopology in exteriorTopologies:
-                            if useInternalVertex == True:
-                                vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                            else:
-                                vet = Topology.CenterOfMass(exteriorTopology)
-                            d = Topology.Dictionary(exteriorTopology)
-                            vet = Topology.SetDictionary(vet, d, silent=True)
-                            if toContents:
-                                ext_top_contents = Topology.Contents(exteriorTopology)
-                                verts, eds = _toContents(vet, ext_top_contents)
-                                graph_vertices += verts
-                                graph_edges += eds
-                            if toOutposts and others:
-                                verts, eds = _toOutposts(vet, others)
-                                graph_vertices += verts
-                                graph_edges += eds
-                    if toExteriorApertures:
-                        verts, eds = _toExteriorApertures(vEdge, exteriorApertures)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toContents:
-                        verts, eds = _toContents(vEdge, edge_contents)
-                        graph_vertices += verts
-                        graph_edges += eds
-                    if toOutposts and others:
-                        verts, eds = toOutposts(vEdge, others)
-                        graph_vertices += verts
-                        graph_edges += eds
-            return [graph_vertices, graph_edges]
-
-        def processEdge(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            graph_vertices = []
-            graph_edges = []
-            if useInternalVertex == True:
-                vEdge = Topology.InternalVertex(topology, tolerance=tolerance)
-            else:
-                vEdge = Topology.CenterOfMass(topology)
-            d1 = Topology.Dictionary(topology)
-            d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 0) # main topology
-            if storeBREP:
-                d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(topology), Topology.Type(topology), Topology.TypeAsString(topology)])
-                d3 = mergeDictionaries2([d1, d2])
-                vEdge = Topology.SetDictionary(vEdge, d3, silent=True)
-            else:
-                vEdge = Topology.SetDictionary(vEdge, d1, silent=True)
-            graph_vertices.append(vEdge)
-            if any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
-                edge_contents = Topology.Contents(topology)
-                vertices = Topology.Vertices(topology)
-                exteriorTopologies = []
-                exteriorApertures = []
-                for aVertex in vertices:
-                    exteriorTopologies.append(aVertex)
-                    apertures = Topology.Apertures(aVertex)
-                    for anAperture in apertures:
-                        exteriorApertures.append(anAperture)
-                if toExteriorTopologies:
-                    verts, eds = _toExteriorTopologies(vEdge, exteriorTopologies)
-                    graph_vertices += verts
-                    graph_edges += eds
-                    for exteriorTopology in exteriorTopologies:
-                        if useInternalVertex == True:
-                            vet = Topology.InternalVertex(exteriorTopology, tolerance=tolerance)
-                        else:
-                            vet = Topology.CenterOfMass(exteriorTopology)
-                        d = Topology.Dictionary(exteriorTopology)
-                        vet = Topology.SetDictionary(vet, d, silent=True)
-                        if toContents:
-                            ext_top_contents = Topology.Contents(exteriorTopology)
-                            verts, eds = _toContents(vet, ext_top_contents)
-                            graph_vertices += verts
-                            graph_edges += eds
-                        if toOutposts and others:
-                            verts, eds = _toOutposts(vet, others)
-                            graph_vertices += verts
-                            graph_edges += eds
-                if toExteriorApertures:
-                    verts, eds = _toExteriorApertures(vEdge, exteriorApertures)
-                    graph_vertices += verts
-                    graph_edges += eds
-                if toContents:
-                    verts, eds = _toContents(vEdge, edge_contents)
-                    graph_vertices += verts
-                    graph_edges += eds
-                if toOutposts and others:
-                    verts, eds = toOutposts(vEdge, others)
-                    graph_vertices += verts
-                    graph_edges += eds
-            return [graph_vertices, graph_edges]
-
-        def processVertex(item):
-            topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance = item
-            vertices = [topology]
-            edges = []
+            if toExteriorApertures:
+                _add_related_vertices(v, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
 
             if toContents:
-                contents = Topology.Contents(topology)
-                for content in contents:
-                    if Topology.IsInstance(content, "Aperture"):
-                        content = Aperture.Topology(content)
-                    if useInternalVertex == True:
-                        vst = Topology.InternalVertex(content, tolerance=tolerance)
-                    else:
-                        vst = Topology.CenterOfMass(content)
-                    d1 = Topology.Dictionary(content)
-                    d1 = Dictionary.SetValueAtKey(d1, vertexCategoryKey, 5) # content
-                    vst = Vertex.ByCoordinates(Vertex.X(vst, mantissa=mantissa)+(tolerance*100), Vertex.Y(vst, mantissa=mantissa)+(tolerance*100), Vertex.Z(vst, mantissa=mantissa)+(tolerance*100))
-                    if storeBREP:
-                        d2 = Dictionary.ByKeysValues(["brep", "brepType", "brepTypeString"], [Topology.BREPString(content), Topology.Type(content), Topology.TypeAsString(content)])
-                        d3 = mergeDictionaries2([d1, d2])
-                        vst = Topology.SetDictionary(vst, d3, silent=True)
-                    else:
-                        vst = Topology.SetDictionary(vst, d1, silent=True)
-                    vertices.append(vst)
-                    tempe = Edge.ByStartVertexEndVertex(topology, vst, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Contents", 5])
-                    tempe = Topology.SetDictionary(tempe, tempd, silent=True)
-                    edges.append(tempe)
-            
-            if toOutposts and others:
-                d = Topology.Dictionary(topology)
-                if not d == None:
-                    keys = Dictionary.Keys(d)
-                else:
-                    keys = []
-                k = None
-                for key in keys:
-                    if key.lower() == outpostsKey.lower():
-                        k = key
-                if k:
-                    ids = Dictionary.ValueAtKey(d, k)
-                    outposts = outpostsByID(others, ids, idKey)
-                else:
-                    outposts = []
-                for outpost in outposts:
-                    if useInternalVertex == True:
-                        vop = Topology.InternalVertex(outpost, tolerance=tolerance)
-                    else:
-                        vop = Topology.CenterOfMass(outpost)
-                    tempe = Edge.ByStartVertexEndVertex(topology, vop, tolerance=tolerance)
-                    tempd = Dictionary.ByKeysValues(["relationship", edgeCategoryKey],["To_Outposts", 6])
-                    tempd = Topology.SetDictionary(tempe, tempd, silent=True)
-                    edges.append(tempe)
-            
-            return [vertices, edges]
+                _add_contents(v, _contents(t))
 
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Graph.ByTopology - Error: The input topology is not a valid topology. Returning None.")
-            return None
-        c_cellComplexes = Topology.CellComplexes(topology, silent=True)
-        c_cells = Topology.Cells(topology, silent=True)
-        c_shells = Topology.Shells(topology, silent=True)
-        c_faces = Topology.Faces(topology, silent=True)
-        c_wires = Topology.Wires(topology, silent=True)
-        c_edges = Topology.Edges(topology, silent=True)
-        c_vertices = Topology.Vertices(topology, silent=True)
-        others = c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
-        item = [topology, others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance]
-        vertices = []
-        edges = []
-        if Topology.IsInstance(topology, "CellComplex"):
-            vertices, edges = processCellComplex(item)
-        elif Topology.IsInstance(topology, "Cell"):
-            vertices, edges = processCell(item)
-        elif Topology.IsInstance(topology, "Shell"):
-            vertices, edges = processShell(item)
-        elif Topology.IsInstance(topology, "Face"):
-            vertices, edges = processFace(item)
-        elif Topology.IsInstance(topology, "Wire"):
-            vertices, edges = processWire(item)
-        elif Topology.IsInstance(topology, "Edge"):
-            vertices, edges = processEdge(item)
-        elif Topology.IsInstance(topology, "Vertex"):
-            vertices, edges = processVertex(item)
-        elif Topology.IsInstance(topology, "Cluster"):
-            c_cellComplexes = Topology.CellComplexes(topology)
+            if toOutposts:
+                _add_outposts(v, outpost_lookup)
+
+        def _process_vertex(t, outpost_lookup):
+            graph_vertices.append(t)
+
+            if toContents:
+                _add_contents(t, _contents(t))
+
+            if toOutposts:
+                _add_outposts(t, outpost_lookup)
+
+        def _all_subtopologies(t):
+            return (
+                Topology.CellComplexes(t, silent=True) +
+                Topology.Cells(t, silent=True) +
+                Topology.Shells(t, silent=True) +
+                Topology.Faces(t, silent=True) +
+                Topology.Wires(t, silent=True) +
+                Topology.Edges(t, silent=True) +
+                Topology.Vertices(t, silent=True)
+            )
+
+        others = _all_subtopologies(topology)
+        outposts = _outpost_lookup(others)
+
+        if T_IsInstance(topology, "CellComplex"):
+            _process_collection(topology, "Cell", "Face", outposts)
+
+        elif T_IsInstance(topology, "Cell"):
+            _process_single(topology, "Face", outposts)
+
+        elif T_IsInstance(topology, "Shell"):
+            _process_collection(topology, "Face", "Edge", outposts)
+
+        elif T_IsInstance(topology, "Face"):
+            _process_single(topology, "Edge", outposts)
+
+        elif T_IsInstance(topology, "Wire"):
+            _process_collection(topology, "Edge", "Vertex", outposts)
+
+        elif T_IsInstance(topology, "Edge"):
+            _process_single(topology, "Vertex", outposts)
+
+        elif T_IsInstance(topology, "Vertex"):
+            _process_vertex(topology, outposts)
+
+        elif T_IsInstance(topology, "Cluster"):
+            c_cellComplexes = Topology.CellComplexes(topology, silent=True)
             c_cells = Cluster.FreeCells(topology, tolerance=tolerance)
             c_shells = Cluster.FreeShells(topology, tolerance=tolerance)
             c_faces = Cluster.FreeFaces(topology, tolerance=tolerance)
             c_wires = Cluster.FreeWires(topology, tolerance=tolerance)
             c_edges = Cluster.FreeEdges(topology, tolerance=tolerance)
             c_vertices = Cluster.FreeVertices(topology, tolerance=tolerance)
-            others = others+c_cellComplexes+c_cells+c_shells+c_faces+c_wires+c_edges+c_vertices
-            parameters = [others, outpostsKey, idKey, direct, directApertures, viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts, useInternalVertex, storeBREP, tolerance]
+
+            others = others + c_cellComplexes + c_cells + c_shells + c_faces + c_wires + c_edges + c_vertices
+            outposts = _outpost_lookup(others)
 
             for t in c_cellComplexes:
-                v, e = processCellComplex([t]+parameters)
-                vertices += v
-                edges += e
+                _process_collection(t, "Cell", "Face", outposts)
             for t in c_cells:
-                v, e = processCell([t]+parameters)
-                vertices += v
-                edges += e
+                _process_single(t, "Face", outposts)
             for t in c_shells:
-                v, e = processShell([t]+parameters)
-                vertices += v
-                edges += e
+                _process_collection(t, "Face", "Edge", outposts)
             for t in c_faces:
-                v, e = processFace([t]+parameters)
-                vertices += v
-                edges += e
+                _process_single(t, "Edge", outposts)
             for t in c_wires:
-                v, e = processWire([t]+parameters)
-                vertices += v
-                edges += e
+                _process_collection(t, "Edge", "Vertex", outposts)
             for t in c_edges:
-                v, e = processEdge([t]+parameters)
-                vertices += v
-                edges += e
+                _process_single(t, "Vertex", outposts)
             for t in c_vertices:
-                v, e = processVertex([t]+parameters)
-                vertices += v
-                edges += e
+                _process_vertex(t, outposts)
+
         else:
             return None
-        return Graph.ByVerticesEdges(vertices, edges)
+
+        return Graph.ByVerticesEdges(graph_vertices, graph_edges)
     
     @staticmethod
     def ByVerticesEdges(vertices, edges):
