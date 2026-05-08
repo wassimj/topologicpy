@@ -472,7 +472,7 @@ class Vertex():
         
         vertex = None
         try:
-            vertex = Core.Vertex.ByCoordinates(x, y, z) # Hook to Core
+            vertex = Core.Vertex.ByCoordinates(x, y, z)
         except:
             vertex = None
             print("Vertex.ByCoordinates - Error: Could not create a topologic vertex. Returning None.")
@@ -1425,7 +1425,7 @@ class Vertex():
             # dist = Vertex.PerpendicularDistance(vtx, face)
             # if dist <= tol:
             #     vtx2 = Vertex.Project(vtx, face)
-            #     status = Core.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
+            #     status = Core.FaceUtility.IsInside(face, vtx2, tol)
             # else:
             #     status = False
             # return status
@@ -2778,80 +2778,74 @@ class Vertex():
         return Vertex.Fuse(vertices = vertices, mantissa = mantissa, tolerance = tolerance)
     
     @staticmethod
-    def X(vertex, mantissa: int = 6) -> float:
+    def X(vertex, mantissa: int = 6, silent: bool = False):
         """
         Returns the X coordinate of the input vertex.
-
-        Parameters
-        ----------
-        vertex : topologic_core.Vertex
-            The input vertex.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        float
-            The X coordinate of the input vertex.
-
         """
+        from topologicpy.Core import Core
+        from topologicpy.Topology import Topology
+        import inspect
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.X - Error: The input vertex parameter is not a valid vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+
         try:
-            return round(vertex.X(), mantissa) # Hook to Core
-        except:
-            try:
-                return round(vertex.x(), mantissa) # Hook to Core
-            except:
-                return None
+            return round(Core.InstanceCall(vertex, "X"), mantissa)
+        except Exception:
+            if not silent:
+                print("Vertex.X - Error: Could not retrieve the X coordinate. Returning None.")
+            return None
 
     @staticmethod
-    def Y(vertex, mantissa: int = 6) -> float:
+    def Y(vertex, mantissa: int = 6, silent: bool = False):
         """
         Returns the Y coordinate of the input vertex.
-
-        Parameters
-        ----------
-        vertex : topologic_core.Vertex
-            The input vertex.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        float
-            The Y coordinate of the input vertex.
-
         """
+        from topologicpy.Core import Core
+        from topologicpy.Topology import Topology
+        import inspect
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.Y - Error: The input vertex parameter is not a valid vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+
         try:
-            return round(vertex.Y(), mantissa) # Hook to Core
-        except:
-            try:
-                return round(vertex.y(), mantissa) # Hook to Core
-            except:
-                return None
+            return round(Core.InstanceCall(vertex, "Y"), mantissa)
+        except Exception:
+            if not silent:
+                print("Vertex.Y - Error: Could not retrieve the Y coordinate. Returning None.")
+            return None
 
     @staticmethod
-    def Z(vertex, mantissa: int = 6) -> float:
+    def Z(vertex, mantissa: int = 6, silent: bool = False):
         """
         Returns the Z coordinate of the input vertex.
-
-        Parameters
-        ----------
-        vertex : topologic_core.Vertex
-            The input vertex.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-
-        Returns
-        -------
-        float
-            The Z coordinate of the input vertex.
-
         """
+        from topologicpy.Core import Core
+        from topologicpy.Topology import Topology
+        import inspect
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.Z - Error: The input vertex parameter is not a valid vertex. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+
         try:
-            return round(vertex.Z(), mantissa) # Hook to Core
-        except:
-            try:
-                return round(vertex.z(), mantissa) # Hook to Core
-            except:
-                return None
+            return round(Core.InstanceCall(vertex, "Z"), mantissa)
+        except Exception:
+            if not silent:
+                print("Vertex.Z - Error: Could not retrieve the Z coordinate. Returning None.")
+            return None
            

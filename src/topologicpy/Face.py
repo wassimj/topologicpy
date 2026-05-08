@@ -163,7 +163,7 @@ class Face():
             return None
         area = None
         try:
-            area = round(Core.FaceUtility.Area(face), mantissa) # Hook to Core
+            area = round(Core.FaceUtility.Area(face), mantissa)
         except:
             area = None
         return area
@@ -887,7 +887,7 @@ class Face():
     #     fList = []
     #     if Topology.IsInstance(wire, "Wire"):
     #         try:
-    #             fList = Core.Face.ByExternalBoundary(wire) # Hook to Core
+    #             fList = Core.Face.ByExternalBoundary(wire)
     #         except:
     #             if not silent:
     #                 print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
@@ -905,7 +905,7 @@ class Face():
     #             wire = Face.ExternalBoundary(f)
     #             wire = Wire.Invert(wire)
     #             try:
-    #                 f = Core.Face.ByExternalBoundary(wire)  # Hook to Core
+    #                 f = Core.Face.ByExternalBoundary(wire)
     #                 returnList.append(f)
     #             except:
     #                 pass
@@ -969,7 +969,7 @@ class Face():
 
         def _face_by_external_boundary(a_wire):
             try:
-                return Core.Face.ByExternalBoundary(a_wire)  # Hook to Core
+                return Core.Face.ByExternalBoundary(a_wire)
             except Exception:
                 return None
 
@@ -1171,7 +1171,7 @@ class Face():
             ibList.append(ib)
         face = None
         try:
-            face = Core.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance) # Hook to Core
+            face = Core.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance)
         except:
             if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
@@ -3404,7 +3404,7 @@ class Face():
         
         return_normal = None
         try:
-            return_normal = list(Core.FaceUtility.NormalAtParameters(face, 0.5, 0.5)) # Hook to Core
+            return_normal = list(Core.FaceUtility.NormalAtParameters(face, 0.5, 0.5))
         except:
             vertices = Topology.Vertices(face)+Topology.Centroid(face)
             #v1 = Face.VertexByParameters(face, u=0, v=0)
@@ -4413,7 +4413,7 @@ class Face():
             shell_faces = []
             for i in range(0,5,1):
                 try:
-                    _ = Core.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces) # Hook to Core
+                    _ = Core.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces)
                     break
                 except:
                     continue
@@ -4470,7 +4470,7 @@ class Face():
             return None
         if not Topology.IsInstance(wire, "Wire"):
             return face
-        trimmed_face = Core.FaceUtility.TrimByWire(face, wire, False) # Hook to Core
+        trimmed_face = Core.FaceUtility.TrimByWire(face, wire, False)
         if reverse:
             trimmed_face = Topology.Difference(face, trimmed_face)
         return trimmed_face
@@ -4612,8 +4612,7 @@ class Face():
 
         if not Topology.IsInstance(face, "Face"):
             return None
-        return Core.FaceUtility.VertexAtParameters(face, u, v) # Hook to Core
-    
+        return Core.FaceUtility.VertexAtParameters(face, u, v)
     @staticmethod
     def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6) -> list:
         """
@@ -4642,7 +4641,7 @@ class Face():
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        params = Core.FaceUtility.ParametersAtVertex(face, vertex) # Hook to Core
+        params = Core.FaceUtility.ParametersAtVertex(face, vertex)
         u = round(params[0], mantissa)
         v = round(params[1], mantissa)
         outputType = list(outputType.lower())

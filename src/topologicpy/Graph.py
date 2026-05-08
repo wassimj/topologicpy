@@ -8315,8 +8315,7 @@ class Graph:
             return None
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
-        return Core.Graph.ByVerticesEdges(vertices, edges) # Hook to Core
-    
+        return Core.Graph.ByVerticesEdges(vertices, edges)
     @staticmethod
     def Choice(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "choice", colorKey="ch_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
@@ -21013,7 +21012,7 @@ class Graph:
             if len(paths) < 1:
                 return True
             for aPath in paths:
-                copyPath = Core.Topology.DeepCopy(aPath) # Hook to Core
+                copyPath = Core.Topology.DeepCopy(aPath)
                 dif = Topology.Difference(copyPath, path)
                 if dif == None:
                     return False

@@ -49,7 +49,7 @@ class Context:
         
         context = None
         try:
-            context = Core.Context.ByTopologyParameters(topology, u, v, w) # Hook to Core
+            context = Core.Context.ByTopologyParameters(topology, u, v, w)
         except:
             print("Context.ByTopologyParameters - Error: The operation failed. Returning None.")
             context = None

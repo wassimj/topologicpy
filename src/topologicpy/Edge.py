@@ -372,7 +372,7 @@ class Edge():
                 print('caller name:', calframe[1][3])
             return None
         try:
-            edge = Core.Edge.ByStartVertexEndVertex(vertexA, vertexB)  # Hook to Core
+            edge = Core.Edge.ByStartVertexEndVertex(vertexA, vertexB)
         except:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: Could not create an edge. Returning None.")
@@ -1173,7 +1173,7 @@ class Edge():
             return None
         length = None
         try:
-            length = Core.EdgeUtility.Length(edge)  # Hook to Core
+            length = Core.EdgeUtility.Length(edge)
         except:
             length = None
         if length == None:
@@ -1453,7 +1453,7 @@ class Edge():
             return None
         parameter = None
         try:
-            parameter = Core.EdgeUtility.ParameterAtPoint(edge, vertex)  # Hook to Core
+            parameter = Core.EdgeUtility.ParameterAtPoint(edge, vertex)
         except:
             return None #Return silently because topologic C++ returns a runtime error if point is not on curve.
         return round(parameter, mantissa)

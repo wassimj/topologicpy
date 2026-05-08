@@ -737,7 +737,7 @@ class Wire():
     #             print("Wire.ByEdges - Error: The input edges list does not contain any valid edges. Returning None.")
     #         return None
     #     if len(edgeList) == 1:
-    #         wire = Core.Wire.ByEdges(edgeList) # Hook to Core
+    #         wire = Core.Wire.ByEdges(edgeList)
     #     else:
     #         wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
     #     if not Topology.IsInstance(wire, "Wire"):
@@ -803,7 +803,7 @@ class Wire():
             return None
 
         if len(edgeList) == 1:
-            wire = Core.Wire.ByEdges(edgeList)  # Hook to Core
+            wire = Core.Wire.ByEdges(edgeList)
         else:
             wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
 
@@ -829,7 +829,7 @@ class Wire():
                         break
                 newEdges.append(updatedEdge)
 
-            rebuiltWire = Core.Wire.ByEdges(newEdges)  # Hook to Core
+            rebuiltWire = Core.Wire.ByEdges(newEdges)
             if Topology.IsInstance(rebuiltWire, "Wire"):
                 wire = rebuiltWire
 

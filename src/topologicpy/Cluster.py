@@ -346,7 +346,7 @@ class Cluster():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
-        cluster = Core.Cluster.ByTopologies(topologyList, False) # Hook to Core
+        cluster = Core.Cluster.ByTopologies(topologyList, False)
         dictionaries = []
         for t in topologyList:
             d = Topology.Dictionary(t)

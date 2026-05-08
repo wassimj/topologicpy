@@ -124,7 +124,7 @@ class Cell():
                 print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
                 return None
         # Try the default method
-        cell = Core.Cell.ByFaces(faceList, tolerance) # Hook to Core
+        cell = Core.Cell.ByFaces(faceList, tolerance)
         if Topology.IsInstance(cell, "Cell"):
             return cell
         
@@ -145,7 +145,7 @@ class Cell():
             if Topology.IsInstance(clean_face, "face"):
                 clean_faces.append(clean_face)
         # Try the default method again
-        cell = Core.Cell.ByFaces(clean_faces, tolerance) # Hook to Core
+        cell = Core.Cell.ByFaces(clean_faces, tolerance)
         if Topology.IsInstance(cell, "Cell"):
             return cell
         else:
@@ -180,7 +180,7 @@ class Cell():
         if planarize:
             planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
-            cell = Core.Cell.ByFaces(enlargedList, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(enlargedList, tolerance)
             faceList = Topology.SubTopologies(cell, subTopologyType="face")
             finalFaces = []
             for f in faceList:
@@ -203,7 +203,7 @@ class Cell():
                     finalFinalFaces.append(f1)
                 elif isinstance(f1, list):
                     finalFinalFaces += f1
-            cell = Core.Cell.ByFaces(finalFinalFaces, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(finalFinalFaces, tolerance)
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces 1 - Error: The operation failed. Returning None.")
@@ -211,7 +211,7 @@ class Cell():
             else:
                 return cell
         else:
-            cell = Core.Cell.ByFaces(faces, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(faces, tolerance)
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces 2 - Error: The operation failed. Returning None.")
@@ -1375,7 +1375,7 @@ class Cell():
             av_results = []
             for v in test_vertices:
                 
-                result  = Core.CellUtility.Contains(cell, v, tolerance) # Hook to Core
+                result  = Core.CellUtility.Contains(cell, v, tolerance)
                 if result == 0:
                     status = 0
                 elif result == 1:
@@ -2455,7 +2455,7 @@ class Cell():
                 print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
-            return Core.CellUtility.InternalVertex(cell, tolerance) # Hook to Core
+            return Core.CellUtility.InternalVertex(cell, tolerance)
         except:
             if not silent:
                 print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
@@ -4584,7 +4584,7 @@ class Cell():
             return None
         volume = None
         try:
-            volume = round(Core.CellUtility.Volume(cell), mantissa) # Hook to Core
+            volume = round(Core.CellUtility.Volume(cell), mantissa)
         except:
             print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None

@@ -249,22 +249,6 @@ class Core:
     def InstanceCall(obj, methodName: str, *args, **kwargs):
         """
         Calls an instance method on a backend-native object.
-
-        Parameters
-        ----------
-        obj : object
-            The backend-native object.
-        methodName : str
-            The instance method name.
-        *args : tuple
-            Positional arguments passed to the method.
-        **kwargs : dict
-            Keyword arguments passed to the method.
-
-        Returns
-        -------
-        object
-            The result of the instance method call.
         """
         if obj is None:
             raise ValueError("Core.InstanceCall - Error: obj cannot be None.")
@@ -274,6 +258,18 @@ class Core:
         if not callable(method):
             raise TypeError(f"Core.InstanceCall - Error: {methodName} is not callable.")
         return method(*args, **kwargs)
+
+
+    @staticmethod
+    def InstanceAttribute(obj, attributeName: str):
+        """
+        Returns an instance attribute from a backend-native object.
+        """
+        if obj is None:
+            raise ValueError("Core.InstanceAttribute - Error: obj cannot be None.")
+        if not isinstance(attributeName, str) or len(attributeName) == 0:
+            raise ValueError("Core.InstanceAttribute - Error: attributeName must be a non-empty string.")
+        return getattr(obj, attributeName)
 
     @staticmethod
     def SetBackend(backend: Any) -> Any:

@@ -368,7 +368,7 @@ class CellComplex():
                 print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
             return None
         try:
-            cellComplex = Core.CellComplex.ByFaces(faces, tolerance, False) # Hook to Core
+            cellComplex = Core.CellComplex.ByFaces(faces, tolerance, False)
         except:
             cellComplex = None
         if not cellComplex:
