@@ -56,9 +56,6 @@ Notes
 - It aims to be easy to read and modify by non-ML experts.
 
 """
-
-from __future__ import annotations
-
 from dataclasses import dataclass
 from typing import Dict, List, Optional, Tuple, Union, Literal
 

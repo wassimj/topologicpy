@@ -16,8 +16,6 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
-
 class ShapeGrammar:
     def __init__(self):
         self.title = "Untitled" # Stores the title of the topology grammar.

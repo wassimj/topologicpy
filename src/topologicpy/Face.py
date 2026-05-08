@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import math
 import os
 import warnings
@@ -163,7 +163,7 @@ class Face():
             return None
         area = None
         try:
-            area = round(topologic.FaceUtility.Area(face), mantissa) # Hook to Core
+            area = round(Core.FaceUtility.Area(face), mantissa) # Hook to Core
         except:
             area = None
         return area
@@ -887,7 +887,7 @@ class Face():
     #     fList = []
     #     if Topology.IsInstance(wire, "Wire"):
     #         try:
-    #             fList = topologic.Face.ByExternalBoundary(wire) # Hook to Core
+    #             fList = Core.Face.ByExternalBoundary(wire) # Hook to Core
     #         except:
     #             if not silent:
     #                 print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
@@ -905,7 +905,7 @@ class Face():
     #             wire = Face.ExternalBoundary(f)
     #             wire = Wire.Invert(wire)
     #             try:
-    #                 f = topologic.Face.ByExternalBoundary(wire)  # Hook to Core
+    #                 f = Core.Face.ByExternalBoundary(wire)  # Hook to Core
     #                 returnList.append(f)
     #             except:
     #                 pass
@@ -944,7 +944,7 @@ class Face():
         """
 
         try:
-            import topologic_core as topologic
+            from topologicpy.Core import Core
         except:
             import topologic
 
@@ -969,7 +969,7 @@ class Face():
 
         def _face_by_external_boundary(a_wire):
             try:
-                return topologic.Face.ByExternalBoundary(a_wire)  # Hook to Core
+                return Core.Face.ByExternalBoundary(a_wire)  # Hook to Core
             except Exception:
                 return None
 
@@ -1171,7 +1171,7 @@ class Face():
             ibList.append(ib)
         face = None
         try:
-            face = topologic.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance) # Hook to Core
+            face = Core.Face.ByExternalInternalBoundaries(externalBoundary, ibList, tolerance) # Hook to Core
         except:
             if not silent:
                 print("Face.ByWires - Error: The operation failed. Returning None.")
@@ -3124,87 +3124,238 @@ class Face():
         -------
         topologic_core.Wire
             The medial axis of the input face.
-
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Face import Face
 
-        def touchesEdge(vertex,edges, tolerance=0.0001):
+        def _warn(msg):
+            if not silent:
+                print("Face.MedialAxis - Warning:", msg)
+
+        def touchesEdge(vertex, edges, tolerance=0.0001):
             if not Topology.IsInstance(vertex, "Vertex"):
                 return False
+
             for edge in edges:
-                u = Edge.ParameterAtVertex(edge, vertex, mantissa=6)
-                if not u:
+                try:
+                    u = Edge.ParameterAtVertex(edge, vertex, mantissa=6)
+                except:
                     continue
-                if 0<u<1:
+
+                if u is None:
+                    continue
+
+                if tolerance < u < 1.0 - tolerance:
                     return True
+
             return False
+
+        def _edges(topology):
+            if topology is None:
+                return []
+
+            try:
+                edges = Topology.Edges(topology)
+                if isinstance(edges, list):
+                    return [e for e in edges if Topology.IsInstance(e, "Edge")]
+            except:
+                pass
+
+            if Topology.IsInstance(topology, "Edge"):
+                return [topology]
+
+            return []
+
+        def _vertices(topology):
+            if topology is None:
+                return []
+
+            try:
+                vertices = Topology.Vertices(topology)
+                if isinstance(vertices, list):
+                    return [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+            except:
+                pass
+
+            if Topology.IsInstance(topology, "Vertex"):
+                return [topology]
+
+            return []
+
+        def _safe_edge(v1, v2):
+            if not Topology.IsInstance(v1, "Vertex"):
+                return None
+            if not Topology.IsInstance(v2, "Vertex"):
+                return None
+
+            try:
+                if Vertex.Distance(v1, v2) <= tolerance:
+                    return None
+            except:
+                pass
+
+            try:
+                return Edge.ByVertices(v1, v2, tolerance=tolerance, silent=True)
+            except:
+                try:
+                    return Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True)
+                except:
+                    return None
+
+        if not Topology.IsInstance(face, "Face"):
+            if not silent:
+                print("Face.MedialAxis - Error: The input face parameter is not a valid face. Returning None.")
+            return None
 
         # Flatten the input face
         origin = Topology.Centroid(face)
         normal = Face.Normal(face)
         flatFace = Topology.Flatten(face, origin=origin, direction=normal)
 
-        # Create a Vertex at the world's origin (0, 0, 0)
-        world_origin = Vertex.Origin()
+        if not Topology.IsInstance(flatFace, "Face"):
+            if not silent:
+                print("Face.MedialAxis - Error: Could not flatten the input face. Returning None.")
+            return None
 
         faceEdges = Face.Edges(flatFace)
-        vertices = []
+
+        if not isinstance(faceEdges, list) or len(faceEdges) == 0:
+            if not silent:
+                print("Face.MedialAxis - Error: Could not retrieve the edges of the input face. Returning None.")
+            return None
+
+        # Convert user resolution 0..10 into sampling step.
         resolution = 10 - resolution
         resolution = min(max(resolution, 1), 10)
+
+        vertices = []
+
         for e in faceEdges:
             for n in range(resolution, 100, resolution):
-                vertices.append(Edge.VertexByParameter(e,n*0.01))
-        
+                v = Edge.VertexByParameter(e, n * 0.01)
+                if Topology.IsInstance(v, "Vertex"):
+                    vertices.append(v)
+
+        if len(vertices) < 4:
+            _warn("Not enough sampled vertices to compute a Voronoi diagram. Returning None.")
+            return None
+
         voronoi = Shell.Voronoi(vertices=vertices, face=flatFace)
-        voronoiEdges = Shell.Edges(voronoi)
+
+        if voronoi is None:
+            _warn("Could not compute the Voronoi diagram. Returning None.")
+            return None
+
+        voronoiEdges = _edges(voronoi)
+
+        if len(voronoiEdges) == 0:
+            _warn("The Voronoi diagram contains no valid edges. Returning None.")
+            return None
 
         medialAxisEdges = []
+
         for e in voronoiEdges:
             sv = Edge.StartVertex(e)
             ev = Edge.EndVertex(e)
+
             svTouchesEdge = touchesEdge(sv, faceEdges, tolerance=tolerance)
             evTouchesEdge = touchesEdge(ev, faceEdges, tolerance=tolerance)
+
             if not svTouchesEdge and not evTouchesEdge:
                 medialAxisEdges.append(e)
 
+        if len(medialAxisEdges) == 0:
+            _warn("No medial-axis edges were found. Returning None.")
+            return None
+
         extBoundary = Face.ExternalBoundary(flatFace)
-        extVertices = Topology.Vertices(extBoundary)
+        extVertices = _vertices(extBoundary)
 
-        intBoundaries = Face.InternalBoundaries(flatFace)
         intVertices = []
-        for ib in intBoundaries:
-            intVertices = intVertices+Topology.Vertices(ib)
-        
-        theVertices = []
-        if internalVertices:
-            theVertices = theVertices+intVertices
-        if externalVertices:
-            theVertices = theVertices+extVertices
 
-        tempWire = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
+        try:
+            intBoundaries = Face.InternalBoundaries(flatFace)
+        except:
+            intBoundaries = []
+
+        if isinstance(intBoundaries, list):
+            for ib in intBoundaries:
+                intVertices += _vertices(ib)
+
+        theVertices = []
+
+        if internalVertices:
+            theVertices += intVertices
+
+        if externalVertices:
+            theVertices += extVertices
+
+        temp = Cluster.ByTopologies(medialAxisEdges, silent=True)
+        tempWire = Topology.SelfMerge(temp, tolerance=tolerance)
+
+        if tempWire is None:
+            _warn("Could not merge the medial-axis edges. Returning None.")
+            return None
+
         if Topology.IsInstance(tempWire, "Wire") and angTolerance > 0:
             tempWire = Wire.RemoveCollinearEdges(tempWire, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        medialAxisEdges = Wire.Edges(tempWire)
-        for v in theVertices:
-            nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
 
-            if Topology.IsInstance(nv, "Vertex"):
+        medialAxisEdges = _edges(tempWire)
+
+        if len(medialAxisEdges) == 0:
+            _warn("The merged medial axis contains no valid edges. Returning None.")
+            return None
+
+        if len(theVertices) > 0:
+            for v in theVertices:
+                try:
+                    nv = Vertex.NearestVertex(v, tempWire, useKDTree=False)
+                except:
+                    nv = None
+
+                if not Topology.IsInstance(nv, "Vertex"):
+                    continue
+
                 if toLeavesOnly:
-                    adjVertices = Topology.AdjacentTopologies(nv, tempWire)
+                    try:
+                        adjVertices = Topology.AdjacentTopologies(nv, tempWire)
+                    except:
+                        adjVertices = []
+
                     if len(adjVertices) < 2:
-                        medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance, silent=silent))
+                        edge = _safe_edge(nv, v)
+                        if edge:
+                            medialAxisEdges.append(edge)
                 else:
-                    medialAxisEdges.append(Edge.ByVertices([nv, v], tolerance=tolerance, silent=silent))
-        medialAxis = Topology.SelfMerge(Cluster.ByTopologies(medialAxisEdges), tolerance=tolerance)
+                    edge = _safe_edge(nv, v)
+                    if edge:
+                        medialAxisEdges.append(edge)
+
+        medialAxis = Topology.SelfMerge(
+            Cluster.ByTopologies(medialAxisEdges, silent=True),
+            tolerance=tolerance
+        )
+
+        if medialAxis is None:
+            _warn("Could not create final medial axis. Returning None.")
+            return None
+
         if Topology.IsInstance(medialAxis, "Wire") and angTolerance > 0:
-            medialAxis = Topology.RemoveCollinearEdges(medialAxis, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
-        medialAxis = Topology.Unflatten(medialAxis, origin=origin,direction=normal)
+            medialAxis = Topology.RemoveCollinearEdges(
+                medialAxis,
+                angTolerance=angTolerance,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        medialAxis = Topology.Unflatten(medialAxis, origin=origin, direction=normal)
+
         return medialAxis
 
     @staticmethod
@@ -3253,7 +3404,7 @@ class Face():
         
         return_normal = None
         try:
-            return_normal = list(topologic.FaceUtility.NormalAtParameters(face, 0.5, 0.5)) # Hook to Core
+            return_normal = list(Core.FaceUtility.NormalAtParameters(face, 0.5, 0.5)) # Hook to Core
         except:
             vertices = Topology.Vertices(face)+Topology.Centroid(face)
             #v1 = Face.VertexByParameters(face, u=0, v=0)
@@ -4262,7 +4413,7 @@ class Face():
             shell_faces = []
             for i in range(0,5,1):
                 try:
-                    _ = topologic.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces) # Hook to Core
+                    _ = Core.FaceUtility.Triangulate(flatFace, float(i)*0.1, shell_faces) # Hook to Core
                     break
                 except:
                     continue
@@ -4319,9 +4470,9 @@ class Face():
             return None
         if not Topology.IsInstance(wire, "Wire"):
             return face
-        trimmed_face = topologic.FaceUtility.TrimByWire(face, wire, False) # Hook to Core
+        trimmed_face = Core.FaceUtility.TrimByWire(face, wire, False) # Hook to Core
         if reverse:
-            trimmed_face = face.Difference(trimmed_face)
+            trimmed_face = Topology.Difference(face, trimmed_face)
         return trimmed_face
     
     @staticmethod
@@ -4461,7 +4612,7 @@ class Face():
 
         if not Topology.IsInstance(face, "Face"):
             return None
-        return topologic.FaceUtility.VertexAtParameters(face, u, v) # Hook to Core
+        return Core.FaceUtility.VertexAtParameters(face, u, v) # Hook to Core
     
     @staticmethod
     def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6) -> list:
@@ -4491,7 +4642,7 @@ class Face():
             return None
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        params = topologic.FaceUtility.ParametersAtVertex(face, vertex) # Hook to Core
+        params = Core.FaceUtility.ParametersAtVertex(face, vertex) # Hook to Core
         u = round(params[0], mantissa)
         v = round(params[1], mantissa)
         outputType = list(outputType.lower())

@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import os
 import warnings
 from typing import Iterable, Callable, List
@@ -346,7 +346,7 @@ class Cluster():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
-        cluster = topologic.Cluster.ByTopologies(topologyList, False) # Hook to Core
+        cluster = Core.Cluster.ByTopologies(topologyList, False) # Hook to Core
         dictionaries = []
         for t in topologyList:
             d = Topology.Dictionary(t)

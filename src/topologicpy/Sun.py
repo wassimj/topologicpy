@@ -18,7 +18,7 @@ from __future__ import annotations
 
 import os
 import warnings
-import topologic_core as topologic
+
 try:
     import ephem
 except:

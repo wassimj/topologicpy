@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import shutil
 import math
 from collections import OrderedDict
@@ -194,7 +194,7 @@ class EnergyModel:
             if d is None or keyName is None:
                 return None
             try:
-                keys = d.Keys()
+                keys = Dictionary.Keys(d)
             except Exception:
                 return None
             for key in keys:
@@ -587,7 +587,7 @@ class EnergyModel:
                                 faceGlazingRatio = None
                                 if faceDictionary is not None:
                                     try:
-                                        keys = faceDictionary.Keys()
+                                        keys = Dictionary.Keys(faceDictionary)
                                         if 'TOPOLOGIC_glazing_ratio' in keys:
                                             faceGlazingRatio = Dictionary.ValueAtKey(faceDictionary, 'TOPOLOGIC_glazing_ratio')
                                     except Exception:
@@ -1289,7 +1289,7 @@ class EnergyModel:
             for aperture in apertures:
                 cen = Topology.CenterOfMass(aperture)
                 try:
-                    params = face.ParametersAtVertex(cen)
+                    params = Face.ParametersAtVertex(face, cen)
                     u = params[0]
                     v = params[1]
                     w = 0.5
@@ -1325,7 +1325,7 @@ class EnergyModel:
                     rotation31 = osMatrix[2, 0]
                     rotation32 = osMatrix[2, 1]
                     rotation33 = osMatrix[2, 2]
-                    shadingFace = topologic.TopologyUtility.Transform(shadingFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
+                    shadingFace = Core.TopologyUtility.Transform(shadingFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
             shadingFaces.append(shadingFace)
         
         for count, aSpace in enumerate(spaces):
@@ -1346,11 +1346,11 @@ class EnergyModel:
 
             for aSurface in surfaces:
                 aFace = surfaceToFace(aSurface)
-                aFace = topologic.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
+                aFace = Core.TopologyUtility.Transform(aFace, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
                 subSurfaces = aSurface.subSurfaces()
                 for aSubSurface in subSurfaces:
                     aperture = surfaceToFace(aSubSurface)
-                    aperture = topologic.TopologyUtility.Transform(aperture, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
+                    aperture = Core.TopologyUtility.Transform(aperture, osTranslation.x(), osTranslation.y(), osTranslation.z(), rotation11, rotation12, rotation13, rotation21, rotation22, rotation23, rotation31, rotation32, rotation33) # Hook to Core
                     apertures.append(aperture)
                 addApertures(aFace, apertures)
                 spaceFaces.append(aFace)

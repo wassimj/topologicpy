@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
     
 class Cell():
     @staticmethod
@@ -124,7 +124,7 @@ class Cell():
                 print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
                 return None
         # Try the default method
-        cell = topologic.Cell.ByFaces(faceList, tolerance) # Hook to Core
+        cell = Core.Cell.ByFaces(faceList, tolerance) # Hook to Core
         if Topology.IsInstance(cell, "Cell"):
             return cell
         
@@ -145,7 +145,7 @@ class Cell():
             if Topology.IsInstance(clean_face, "face"):
                 clean_faces.append(clean_face)
         # Try the default method again
-        cell = topologic.Cell.ByFaces(clean_faces, tolerance) # Hook to Core
+        cell = Core.Cell.ByFaces(clean_faces, tolerance) # Hook to Core
         if Topology.IsInstance(cell, "Cell"):
             return cell
         else:
@@ -180,7 +180,7 @@ class Cell():
         if planarize:
             planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
             enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
-            cell = topologic.Cell.ByFaces(enlargedList, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(enlargedList, tolerance) # Hook to Core
             faceList = Topology.SubTopologies(cell, subTopologyType="face")
             finalFaces = []
             for f in faceList:
@@ -203,7 +203,7 @@ class Cell():
                     finalFinalFaces.append(f1)
                 elif isinstance(f1, list):
                     finalFinalFaces += f1
-            cell = topologic.Cell.ByFaces(finalFinalFaces, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(finalFinalFaces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces 1 - Error: The operation failed. Returning None.")
@@ -211,7 +211,7 @@ class Cell():
             else:
                 return cell
         else:
-            cell = topologic.Cell.ByFaces(faces, tolerance) # Hook to Core
+            cell = Core.Cell.ByFaces(faces, tolerance) # Hook to Core
             if cell == None:
                 if not silent:
                     print("Cell.ByFaces 2 - Error: The operation failed. Returning None.")
@@ -1329,7 +1329,7 @@ class Cell():
                 cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
             shell = Cell.Shells(cone)[0]
-            shell = shell.Slice(cutting_planes_cluster)
+            shell = Topology.Slice(shell,cutting_planes_cluster)
             cone = Cell.ByShell(shell)
         cone = Topology.Orient(cone, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return cone
@@ -1364,7 +1364,7 @@ class Cell():
             print("Cell.ContainmentStatus - Error: The input vertex parameter is not a valid topologic vertex. Returning None.")
             return None
         
-        # topologic.CellUtility.Contains does not seem to respect the input tolerance. Thus we need to send eight additional vertices
+        # Core.CellUtility.Contains does not seem to respect the input tolerance. Thus we need to send eight additional vertices
         # to check if any are contained and take the average result.
         
         test_vertices = [vertex]
@@ -1375,7 +1375,7 @@ class Cell():
             av_results = []
             for v in test_vertices:
                 
-                result  = topologic.CellUtility.Contains(cell, v, tolerance) # Hook to Core
+                result  = Core.CellUtility.Contains(cell, v, tolerance) # Hook to Core
                 if result == 0:
                     status = 0
                 elif result == 1:
@@ -1828,6 +1828,7 @@ class Cell():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
         if not Topology.IsInstance(origin, "Vertex"):
@@ -1856,7 +1857,7 @@ class Cell():
                 tool_origin = Vertex.ByCoordinates(baseX, baseY, baseZ)
                 cutting_planes.append(Face.ByWire(Wire.Rectangle(origin=tool_origin, width=size, length=size), tolerance=tolerance))
             cutting_planes_cluster = Cluster.ByTopologies(cutting_planes)
-            cylinder = CellComplex.ExternalBoundary(cylinder.Slice(cutting_planes_cluster))
+            cylinder = CellComplex.ExternalBoundary(Topology.Slice(cylinder,cutting_planes_cluster))
 
         cylinder = Topology.Orient(cylinder, origin=origin, dirA=[0, 0, 1], dirB=direction)
         return cylinder
@@ -2454,7 +2455,7 @@ class Cell():
                 print("Cell.InternalVertex - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         try:
-            return topologic.CellUtility.InternalVertex(cell, tolerance) # Hook to Core
+            return Core.CellUtility.InternalVertex(cell, tolerance) # Hook to Core
         except:
             if not silent:
                 print("Cell.InternalVertex - Error: Could not create an internal vertex. Returning None.")
@@ -3592,7 +3593,7 @@ class Cell():
             cluster = cells[0]
             for i in range(1, len(cells)):
                 oldCluster = cluster
-                cluster = cluster.Union(cells[i])
+                cluster = Topology.Union(cluster, cells[i])
                 del oldCluster
             superCells = Topology.Cells(cluster)
         unused = []
@@ -3906,12 +3907,12 @@ class Cell():
             v0, v1, v2, v3 = vertices
 
             # Calculate midpoints of the edges
-            m01 = Vertex.ByCoordinates((v0.X() + v1.X()) / 2, (v0.Y() + v1.Y()) / 2, (v0.Z() + v1.Z()) / 2)
-            m02 = Vertex.ByCoordinates((v0.X() + v2.X()) / 2, (v0.Y() + v2.Y()) / 2, (v0.Z() + v2.Z()) / 2)
-            m03 = Vertex.ByCoordinates((v0.X() + v3.X()) / 2, (v0.Y() + v3.Y()) / 2, (v0.Z() + v3.Z()) / 2)
-            m12 = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, (v1.Z() + v2.Z()) / 2)
-            m13 = Vertex.ByCoordinates((v1.X() + v3.X()) / 2, (v1.Y() + v3.Y()) / 2, (v1.Z() + v3.Z()) / 2)
-            m23 = Vertex.ByCoordinates((v2.X() + v3.X()) / 2, (v2.Y() + v3.Y()) / 2, (v2.Z() + v3.Z()) / 2)
+            m01 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v1)) / 2, (Vertex.Y(v0) + Vertex.Y(v1)) / 2, (Vertex.Z(v0) + Vertex.Z(v1)) / 2)
+            m02 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v2)) / 2, (Vertex.Y(v0) + Vertex.Y(v2)) / 2, (Vertex.Z(v0) + Vertex.Z(v2)) / 2)
+            m03 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v3)) / 2, (Vertex.Y(v0) + Vertex.Y(v3)) / 2, (Vertex.Z(v0) + Vertex.Z(v3)) / 2)
+            m12 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v2)) / 2, (Vertex.Y(v1) + Vertex.Y(v2)) / 2, (Vertex.Z(v1) + Vertex.Z(v2)) / 2)
+            m13 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v3)) / 2, (Vertex.Y(v1) + Vertex.Y(v3)) / 2, (Vertex.Z(v1) + Vertex.Z(v3)) / 2)
+            m23 = Vertex.ByCoordinates((Vertex.X(v2) + Vertex.X(v3)) / 2, (Vertex.Y(v2) + Vertex.Y(v3)) / 2, (Vertex.Z(v2) + Vertex.Z(v3)) / 2)
 
             # Create smaller tetrahedra
             tetrahedra = [
@@ -4034,15 +4035,12 @@ class Cell():
         """
         # --- Imports kept inside to avoid cyclic dependencies in TopologicPy ---
         from math import cos, sin, pi, sqrt
-        try:
-            from topologicpy.Vertex import Vertex
-            from topologicpy.Face import Face
-            from topologicpy.Shell import Shell
-            from topologicpy.Cell import Cell
-            from topologicpy.Topology import Topology
-        except Exception:
-            # Fallback class names if imported as core modules in some setups
-            from topologic_core import Vertex, Face, Shell, Cell, Topology  # type: ignore
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Shell import Shell
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+        
 
         # --- Validation ---
         if majorRadius <= 0 or minorRadius <= 0:
@@ -4586,7 +4584,7 @@ class Cell():
             return None
         volume = None
         try:
-            volume = round(topologic.CellUtility.Volume(cell), mantissa) # Hook to Core
+            volume = round(Core.CellUtility.Volume(cell), mantissa) # Hook to Core
         except:
             print("Cell.Volume - Error: Could not compute the volume of the input cell. Returning None.")
             volume = None

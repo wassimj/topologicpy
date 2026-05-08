@@ -1029,6 +1029,8 @@ class GraphRAG:
         str
             "accept", "ignore", or "stop".
         """
+        from topologicpy.Vertex import Vertex
+
         message = json.dumps(action or {}, ensure_ascii=False, indent=2)
         if approvalFunction is not None:
             try:
@@ -1415,6 +1417,7 @@ class GraphRAG:
 
     @staticmethod
     def _vertex_xyz(vertex) -> Tuple[float, float, float]:
+        from topologicpy.Vertex import Vertex
         def _call(cls_name, method_name):
             try:
                 module = __import__(f"topologicpy.{cls_name}", fromlist=[cls_name])
@@ -1428,7 +1431,7 @@ class GraphRAG:
         if x is not None and y is not None and z is not None:
             return float(x), float(y), float(z)
         try:
-            return float(vertex.X()), float(vertex.Y()), float(vertex.Z())
+            return float(Vertex.X(vertex)), float(Vertex.Y(vertex)), float(Vertex.Z(vertex))
         except Exception:
             return 0.0, 0.0, 0.0
 
@@ -1439,7 +1442,7 @@ class GraphRAG:
             return Edge.StartVertex(edge)
         except Exception:
             try:
-                return edge.StartVertex()
+                return edge.StartVertex() # Hook to Core
             except Exception:
                 return None
 
@@ -1450,7 +1453,7 @@ class GraphRAG:
             return Edge.EndVertex(edge)
         except Exception:
             try:
-                return edge.EndVertex()
+                return edge.EndVertex() # Hook to Core
             except Exception:
                 return None
 

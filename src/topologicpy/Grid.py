@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 
 class Grid():
     @staticmethod
@@ -93,17 +93,17 @@ class Grid():
                 v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+vVector[0], Vertex.Y(v1, mantissa=mantissa)+vVector[1], Vertex.Z(v1, mantissa=mantissa)+vVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
                 if clip and Topology.IsInstance(face, "Face"):
-                    e = e.Intersect(face, False)
+                    e = Topology.Intersect(e,face)
                 if e:
                     if Topology.IsInstance(e, "Edge"):
                         d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                        e.SetDictionary(d)
+                        Topology.SetDictionary(e, d)
                         gridEdges.append(e)
                     elif Topology.Type(e) > Topology.TypeID("Edge"):
                         tempEdges = Topology.Edges(e)
                         for tempEdge in tempEdges:
                             d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                            tempEdge.SetDictionary(d)
+                            Topology.SetDictionary(tempEdge, d)
                             gridEdges.append(tempEdge)
         if len(vRange) > 0:
             vRange.sort()
@@ -114,17 +114,17 @@ class Grid():
                 v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+uVector[0], Vertex.Y(v1, mantissa=mantissa)+uVector[1], Vertex.Z(v1, mantissa=mantissa)+uVector[2])
                 e = Edge.ByVertices([v1, v2], tolerance=tolerance)
                 if clip and Topology.IsInstance(face, "Face"):
-                    e = e.Intersect(face, False)
+                    e = Topology.Intersect(e,face)
                 if e:
                     if Topology.IsInstance(e, "Edge"):
                         d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                        e.SetDictionary(d)
+                        Topology.SetDictionary(e, d)
                         gridEdges.append(e)
                     elif Topology.Type(e) > Topology.TypeID("Edge"):
                         tempEdges = Topology.Edges(e)
                         for tempEdge in tempEdges:
                             d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                            tempEdge.SetDictionary(d)
+                            Topology.SetDictionary(tempEdge, d)
                             gridEdges.append(tempEdge)
         grid = None
         if len(gridEdges) > 0:
@@ -180,28 +180,28 @@ class Grid():
             v2 = Face.VertexByParameters(face, u, 1)
             e = Edge.ByVertices([v1, v2], tolerance=tolerance)
             if clip and Topology.IsInstance(face, "Face"):
-                e = e.Intersect(face, False)
+                e = Topology.Intersect(e,face)
             if e:
                 if Topology.IsInstance(e, "Edge"):
                     d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                    e.SetDictionary(d)
+                    Topology.SetDictionary(e, d)
                     gridEdges.append(e)
                 elif Topology.Type(e) > Topology.TypeID("Edge"):
                     tempEdges = Topology.Edges(e)
                     for tempEdge in tempEdges:
                         d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                        tempEdge.SetDictionary(d)
+                        Topology.SetDictionary(tempEdge, d)
                         gridEdges.append(tempEdge)
         for v in vRange:
             v1 = Face.VertexByParameters(face, 0, v)
             v2 = Face.VertexByParameters(face, 1, v)
             e = Edge.ByVertices([v1, v2], tolerance=tolerance)
             if clip and Topology.IsInstance(face, "Face"):
-                e = e.Intersect(face, False)
+                e = Topology.Intersect(e,face)
             if e:
                 if Topology.IsInstance(e, "Edge"):
                     d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                    e.SetDictionary(d)
+                    Topology.SetDictionary(e, d)
                     gridEdges.append(e)
                 elif Topology.Type(e) > Topology.TypeID("Edge"):
                     tempEdges = Topology.Edges(e)
@@ -289,7 +289,7 @@ class Grid():
                     gridVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+uTempVec[0], Vertex.Y(origin, mantissa=mantissa)+vTempVec[1], Vertex.Z(origin, mantissa=mantissa)+uTempVec[2])
                     d = Dictionary.ByKeysValues(["u","v"],[u,v])
                     if d:
-                        gridVertex.SetDictionary(d)
+                        Topology.SetDictionary(gridVertex, d)
                     if clip and Topology.IsInstance(face, "Face"):
                         if Vertex.IsInternal(gridVertex, face):
                                 gridVertices.append(gridVertex)
@@ -545,7 +545,7 @@ class Grid():
                 for v in vRange:
                     gridVertex = Face.VertexByParameters(face, u, v)
                     d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                    gridVertex.SetDictionary(d)
+                    Topology.SetDictionary(gridVertex,d)
                     gridVertices.append(gridVertex)
         if clip:
             from topologicpy.Vector import Vector

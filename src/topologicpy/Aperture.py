@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 
 class Aperture():
     @staticmethod
@@ -39,7 +39,7 @@ class Aperture():
         if not Topology.IsInstance(aperture, "aperture"):
             print("Aperture.Topology - Error: The input aperture parameter is not a valid topologic aperture. Returning None.")
             return None
-        return topologic.Aperture.Topology(aperture) # Hook to Core
+        return Core.Aperture.Topology(aperture) # Hook to Core
 
     @staticmethod
     def ByTopologyContext(topology, context):
@@ -68,7 +68,7 @@ class Aperture():
             return None
         aperture = None
         try:
-            aperture = topologic.Aperture.ByTopologyContext(topology, context) # Hook to Core
+            aperture = Core.Aperture.ByTopologyContext(topology, context) # Hook to Core
         except:
             print("Aperture.ByTopologyContext - Error: The operation failed. Returning None.")
             aperture = None

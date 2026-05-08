@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 
 class Edge():
 
@@ -372,7 +372,7 @@ class Edge():
                 print('caller name:', calframe[1][3])
             return None
         try:
-            edge = topologic.Edge.ByStartVertexEndVertex(vertexA, vertexB)  # Hook to Core
+            edge = Core.Edge.ByStartVertexEndVertex(vertexA, vertexB)  # Hook to Core
         except:
             if not silent:
                 print("Edge.ByStartVertexEndVertex - Error: Could not create an edge. Returning None.")
@@ -615,7 +615,7 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.EndVertex() # Hook to core
+            vert = edge.EndVertex() # Hook to Core
         except:
             vert = None
         return vert
@@ -1173,7 +1173,7 @@ class Edge():
             return None
         length = None
         try:
-            length = topologic.EdgeUtility.Length(edge)  # Hook to Core
+            length = Core.EdgeUtility.Length(edge)  # Hook to Core
         except:
             length = None
         if length == None:
@@ -1301,7 +1301,7 @@ class Edge():
         """
         import numpy as np
         from numpy.linalg import norm
-        import topologic_core as topologic
+        from topologicpy.Core import Core
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
 
@@ -1453,7 +1453,7 @@ class Edge():
             return None
         parameter = None
         try:
-            parameter = topologic.EdgeUtility.ParameterAtPoint(edge, vertex)  # Hook to Core
+            parameter = Core.EdgeUtility.ParameterAtPoint(edge, vertex)  # Hook to Core
         except:
             return None #Return silently because topologic C++ returns a runtime error if point is not on curve.
         return round(parameter, mantissa)
@@ -1627,7 +1627,7 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.StartVertex() # Hook to core
+            vert = edge.StartVertex() # Hook to Core
         except:
             vert = None
         return vert

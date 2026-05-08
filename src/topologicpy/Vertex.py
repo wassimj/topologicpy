@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import collections
 import os
 import warnings
@@ -472,7 +472,7 @@ class Vertex():
         
         vertex = None
         try:
-            vertex = topologic.Vertex.ByCoordinates(x, y, z) # Hook to Core
+            vertex = Core.Vertex.ByCoordinates(x, y, z) # Hook to Core
         except:
             vertex = None
             print("Vertex.ByCoordinates - Error: Could not create a topologic vertex. Returning None.")
@@ -1425,7 +1425,7 @@ class Vertex():
             # dist = Vertex.PerpendicularDistance(vtx, face)
             # if dist <= tol:
             #     vtx2 = Vertex.Project(vtx, face)
-            #     status = topologic.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
+            #     status = Core.FaceUtility.IsInside(face, vtx2, tol) # Hook to Core
             # else:
             #     status = False
             # return status
@@ -2636,7 +2636,7 @@ class Vertex():
         n = len(vertexList)
 
         # Mutable coordinates
-        coords = [[vertexList[i].X(), vertexList[i].Y(), vertexList[i].Z()] for i in range(n)]
+        coords = [[Vertex.X(vertexList[i]), Vertex.Y(vertexList[i]), Vertex.Z(vertexList[i])] for i in range(n)]
         dicts  = [Topology.Dictionary(v) for v in vertexList]
 
         # --- Pre-seed coincident vertices so they can start moving ---

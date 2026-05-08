@@ -18,7 +18,7 @@ from __future__ import annotations
 
 from binascii import a2b_base64
 from re import A
-import topologic_core as topologic
+from topologicpy.Core import Core
 from topologicpy.Topology import Topology
 import math
 import itertools
@@ -737,7 +737,7 @@ class Wire():
     #             print("Wire.ByEdges - Error: The input edges list does not contain any valid edges. Returning None.")
     #         return None
     #     if len(edgeList) == 1:
-    #         wire = topologic.Wire.ByEdges(edgeList) # Hook to Core
+    #         wire = Core.Wire.ByEdges(edgeList) # Hook to Core
     #     else:
     #         wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
     #     if not Topology.IsInstance(wire, "Wire"):
@@ -803,7 +803,7 @@ class Wire():
             return None
 
         if len(edgeList) == 1:
-            wire = topologic.Wire.ByEdges(edgeList)  # Hook to Core
+            wire = Core.Wire.ByEdges(edgeList)  # Hook to Core
         else:
             wire = Topology.SelfMerge(Cluster.ByTopologies(edgeList), tolerance=tolerance)
 
@@ -829,7 +829,7 @@ class Wire():
                         break
                 newEdges.append(updatedEdge)
 
-            rebuiltWire = topologic.Wire.ByEdges(newEdges)  # Hook to Core
+            rebuiltWire = Core.Wire.ByEdges(newEdges)  # Hook to Core
             if Topology.IsInstance(rebuiltWire, "Wire"):
                 wire = rebuiltWire
 
@@ -860,8 +860,7 @@ class Wire():
         if not Topology.IsInstance(cluster, "Cluster"):
             print("Wire.ByEdges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
-        edges = []
-        _ = cluster.Edges(None, edges)
+        edges = Topology.Edges(cluster)
         return Wire.ByEdges(edges, tolerance=tolerance)
 
     @staticmethod
@@ -2917,8 +2916,7 @@ class Wire():
         # Build vertex + edge index structures
         # ------------------------------------------------------------------
 
-        tEdges = []
-        _ = wire.Edges(None, tEdges)
+        tEdges = Topology.Edges(wire)
         tVertices = Topology.Vertices(wire)
 
         graph = []
@@ -3001,7 +2999,7 @@ class Wire():
         if not Topology.IsInstance(wire, "Wire"):
             return None
         edges = []
-        _ = wire.Edges(None, edges)
+        _ = wire.Edges(None, edges) # Hook to Core
         return edges
 
     @staticmethod
@@ -4537,7 +4535,7 @@ class Wire():
         status = None
         if wire:
             if Topology.IsInstance(wire, "Wire"):
-                status = wire.IsClosed()
+                status = wire.IsClosed() # Hook to Core
         return status
     
     @staticmethod
@@ -4659,14 +4657,12 @@ class Wire():
                 normalizedLengths.append(aLength/minLength)
             return [x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None]
         
-        if (wireA.IsClosed() == False):
+        if (Wire.IsClosed(wireA) == False):
             return None
-        if (wireB.IsClosed() == False):
+        if (Wire.IsClosed(wireB) == False):
             return None
-        edgesA = []
-        _ = wireA.Edges(None, edgesA)
-        edgesB = []
-        _ = wireB.Edges(None, edgesB)
+        edgesA = Topology.Edges(wireA)
+        edgesB = Topology.Edges(wireB)
         if len(edgesA) != len(edgesB):
             return False
         repA = getRep(list(edgesA), tolerance=tolerance)
@@ -4978,8 +4974,7 @@ class Wire():
             return None
         totalLength = None
         try:
-            edges = []
-            _ = wire.Edges(None, edges)
+            edges = Topology.Edges(wire)
             totalLength = 0
             for anEdge in edges:
                 totalLength = totalLength + Edge.Length(anEdge)
@@ -5577,8 +5572,7 @@ class Wire():
         if not direction:
             direction = -1*Face.Normal(face, outputType="xyz", mantissa=mantissa)
         large_face = Topology.Scale(face, Topology.CenterOfMass(face), 500, 500, 500)
-        edges = []
-        _ = wire.Edges(None, edges)
+        edges = Topology.Edges(wire)
         projected_edges = []
 
         if large_face:
@@ -5745,7 +5739,7 @@ class Wire():
                     filtered_vertices.append(vertex)
 
             if len(filtered_vertices) > 2:
-                return Wire.ByVertices(filtered_vertices, close=wire.IsClosed(), tolerance=tolerance)
+                return Wire.ByVertices(filtered_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
             elif len(filtered_vertices) == 2:
                 return Edge.ByStartVertexEndVertex(filtered_vertices[0], filtered_vertices[1], tolerance=tolerance, silent=True)
             else:
@@ -6128,7 +6122,7 @@ class Wire():
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
-        import topologic_core as topologic
+        from topologicpy.Core import Core
         import math
 
         def subtrees_to_edges(subtrees, polygon, slope):

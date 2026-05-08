@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import math
 import os
 import warnings
@@ -297,7 +297,7 @@ class Shell():
         if len(faceList) == 0:
             print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
             return None
-        shell = topologic.Shell.ByFaces(faceList, tolerance) # Hook to Core
+        shell = Core.Shell.ByFaces(faceList, tolerance) # Hook to Core
         if not Topology.IsInstance(shell, "Shell"):
             shell = Topology.SelfMerge(shell, tolerance=tolerance)
             if Topology.IsInstance(shell, "Shell"):
@@ -753,7 +753,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         faces = []
-        _ = shell.Faces(None, faces)
+        _ = shell.Faces(None, faces) # Hook to Core
         return faces
 
     @staticmethod
@@ -1299,7 +1299,7 @@ class Shell():
             True if the input shell is closed. False otherwise.
 
         """
-        return shell.IsClosed()
+        return shell.IsClosed() # Hook to Core
 
     @staticmethod
     def IsOnBoundary(shell, vertex, tolerance: float = 0.0001) -> bool:
@@ -2008,8 +2008,7 @@ class Shell():
             int_boundaries = list(set(faces) - set([ext_boundary]))
             int_wires = []
             for int_boundary in int_boundaries:
-                temp_wires = []
-                _ = int_boundary.Wires(None, temp_wires)
+                temp_wires = Topology.Wires(int_boundary)
                 int_wires.append(Topology.RemoveCollinearEdges(temp_wires[0], angTolerance))
             temp_wires = Topology.Wire(ext_boundary)
             ext_wire = Topology.RemoveCollinearEdges(temp_wires[0], angTolerance)
@@ -2188,7 +2187,7 @@ class Shell():
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        import topologic_core as topologic
+        from topologicpy.Core import Core
         import math
 
         if not Topology.IsInstance(face, "Face"):
@@ -2307,7 +2306,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         vertices = []
-        _ = shell.Vertices(None, vertices) # Hook to core
+        _ = shell.Vertices(None, vertices) # Hook to Core
         return vertices
 
     @staticmethod
@@ -2445,7 +2444,7 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         wires = []
-        _ = shell.Wires(None, wires) # Hook to core
+        _ = shell.Wires(None, wires) # Hook to Core
         return wires
 
     

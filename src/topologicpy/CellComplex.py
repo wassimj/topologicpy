@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import math
 import os
 import warnings
@@ -368,7 +368,7 @@ class CellComplex():
                 print("CellComplex.ByFaces - Error: The input faces parameter does not contain any valid faces. Returning None.")
             return None
         try:
-            cellComplex = topologic.CellComplex.ByFaces(faces, tolerance, False) # Hook to Core
+            cellComplex = Core.CellComplex.ByFaces(faces, tolerance, False) # Hook to Core
         except:
             cellComplex = None
         if not cellComplex:
@@ -1682,7 +1682,7 @@ class CellComplex():
         f8 = Face.ByVertices([bottom,vb4,vb1])
         f9 = Face.ByVertices([vb1,vb2,vb3,vb4])
 
-        octahedron = CellComplex.ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9], tolerance=tolerance)
+        octahedron = CellComplex._ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9], tolerance=tolerance)
         octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
         if placement == "bottom":
             octahedron = Topology.Translate(octahedron, 0, 0, radius)
@@ -1807,7 +1807,7 @@ class CellComplex():
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default is True.
 
         Returns
         -------
@@ -1815,22 +1815,59 @@ class CellComplex():
             The created cellComplex without any collinear edges.
 
         """
-        from topologicpy.Cell import Cell
+
         from topologicpy.Topology import Topology
-        import inspect
-        
+
         if not Topology.IsInstance(cellComplex, "CellComplex"):
-            print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
-            print("CellComplex.RemoveCollinearEdges - Inspection:")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
+            if not silent:
+                import inspect
+                print("CellComplex.RemoveCollinearEdges - Error: The input cellComplex parameter is not a valid cellComplex. Returning None.")
+                print("CellComplex.RemoveCollinearEdges - Inspection:")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print("caller name:", calframe[1][3])
             return None
-        cells = CellComplex.Cells(cellComplex)
-        clean_cells = []
-        for cell in cells:
-            clean_cells.append(Cell.RemoveCollinearEdges(cell, angTolerance=angTolerance, tolerance=tolerance, silent=silent))
-        return CellComplex.ByCells(clean_cells, tolerance=tolerance)
+
+        faces = CellComplex.Faces(cellComplex)
+
+        if not isinstance(faces, list) or len(faces) == 0:
+            if not silent:
+                print("CellComplex.RemoveCollinearEdges - Error: Could not retrieve any faces from the input cellComplex. Returning None.")
+            return None
+
+        clean_faces = []
+
+        for face in faces:
+            try:
+                clean_face = Topology.RemoveCollinearEdges(
+                    face,
+                    angTolerance=angTolerance,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+            except TypeError:
+                try:
+                    clean_face = Topology.RemoveCollinearEdges(
+                        face,
+                        angTolerance=angTolerance,
+                        tolerance=tolerance
+                    )
+                except:
+                    clean_face = None
+            except:
+                clean_face = None
+
+            if Topology.IsInstance(clean_face, "Face"):
+                clean_faces.append(clean_face)
+            elif Topology.IsInstance(face, "Face"):
+                clean_faces.append(face)
+
+        if len(clean_faces) == 0:
+            if not silent:
+                print("CellComplex.RemoveCollinearEdges - Error: No valid faces remained after removing collinear edges. Returning None.")
+            return None
+
+        return CellComplex.ByFaces(clean_faces, tolerance=tolerance, silent=silent)
     
     @staticmethod
     def Shells(cellComplex) -> list:
@@ -1940,12 +1977,12 @@ class CellComplex():
             v0, v1, v2, v3 = vertices
 
             # Calculate midpoints of the edges
-            m01 = Vertex.ByCoordinates((v0.X() + v1.X()) / 2, (v0.Y() + v1.Y()) / 2, (v0.Z() + v1.Z()) / 2)
-            m02 = Vertex.ByCoordinates((v0.X() + v2.X()) / 2, (v0.Y() + v2.Y()) / 2, (v0.Z() + v2.Z()) / 2)
-            m03 = Vertex.ByCoordinates((v0.X() + v3.X()) / 2, (v0.Y() + v3.Y()) / 2, (v0.Z() + v3.Z()) / 2)
-            m12 = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, (v1.Z() + v2.Z()) / 2)
-            m13 = Vertex.ByCoordinates((v1.X() + v3.X()) / 2, (v1.Y() + v3.Y()) / 2, (v1.Z() + v3.Z()) / 2)
-            m23 = Vertex.ByCoordinates((v2.X() + v3.X()) / 2, (v2.Y() + v3.Y()) / 2, (v2.Z() + v3.Z()) / 2)
+            m01 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v1)) / 2, (Vertex.Y(v0) + Vertex.Y(v1)) / 2, (Vertex.Z(v0) + Vertex.Z(v1)) / 2)
+            m02 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v2)) / 2, (Vertex.Y(v0) + Vertex.Y(v2)) / 2, (Vertex.Z(v0) + Vertex.Z(v2)) / 2)
+            m03 = Vertex.ByCoordinates((Vertex.X(v0) + Vertex.X(v3)) / 2, (Vertex.Y(v0) + Vertex.Y(v3)) / 2, (Vertex.Z(v0) + Vertex.Z(v3)) / 2)
+            m12 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v2)) / 2, (Vertex.Y(v1) + Vertex.Y(v2)) / 2, (Vertex.Z(v1) + Vertex.Z(v2)) / 2)
+            m13 = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v3)) / 2, (Vertex.Y(v1) + Vertex.Y(v3)) / 2, (Vertex.Z(v1) + Vertex.Z(v3)) / 2)
+            m23 = Vertex.ByCoordinates((Vertex.X(v2) + Vertex.X(v3)) / 2, (Vertex.Y(v2) + Vertex.Y(v3)) / 2, (Vertex.Z(v2) + Vertex.Z(v3)) / 2)
 
             # Create smaller tetrahedra
             tetrahedra = [

@@ -55,18 +55,18 @@ _OriginalEdge = namedtuple("_OriginalEdge", "edge, bisector")
 Subtree = namedtuple("Subtree", "source, height, sinks")
 
 def distance(v1, v2):
-    return math.sqrt((v1.X() - v2.X())**2 + (v1.Y() - v2.Y())**2)
+    return math.sqrt((Vertex.X(v1) - Vertex.X(v2))**2 + (Vertex.Y(v1) - Vertex.Y(v2))**2)
 
 def bisector(v1, v2, v3):
     """Compute the bisector direction at vertex v2 formed by edges (v1-v2) and (v2-v3)."""
-    e1 = Vertex.ByCoordinates(v1.X() - v2.X(), v1.Y() - v2.Y(), 0)
-    e2 = Vertex.ByCoordinates(v3.X() - v2.X(), v3.Y() - v2.Y(), 0)
-    bisector = Vertex.ByCoordinates(e1.X() + e2.X(), e1.Y() + e2.Y(), 0)
+    e1 = Vertex.ByCoordinates(Vertex.X(v1) - Vertex.X(v2), Vertex.Y(v1) - Vertex.Y(v2), 0)
+    e2 = Vertex.ByCoordinates(Vertex.X(v3) - Vertex.X(v2), Vertex.Y(v3) - Vertex.Y(v2), 0)
+    bisector = Vertex.ByCoordinates(Vertex.X(e1) + Vertex.X(e2), Vertex.Y(e1) + Vertex.Y(e2), 0)
     return normalize(bisector)
 
 def normalize(v):
-    length = math.sqrt(v.X()**2 + v.Y()**2)
-    return Vertex.ByCoordinates(v.X()/length, v.Y()/length, 0) if length > 0 else v
+    length = math.sqrt(Vertex.X(v)**2 + Vertex.Y(v)**2)
+    return Vertex.ByCoordinates(Vertex.X(v)/length, Vertex.Y(v)/length, 0) if length > 0 else v
 
 class _EventQueue:
     def __init__(self):
@@ -90,8 +90,7 @@ def _window(lst):
 
 def _normalize_contour(contour):
     contour = [Vertex.ByCoordinates(float(x), float(y), 0) for x, y in contour]
-    return [point for prev, point, next in _window(contour) if not (point == next or (prev.X() == point.X() and prev.Y() == point.Y()))]
-
+    return [point for prev, point, next in _window(contour) if not (point == next or (Vertex.X(prev) == Vertex.X(point) and Vertex.Y(prev) == Vertex.Y(point)))]
 class _SLAV:
     def __init__(self, edges):
         self.edges = set(edges)
@@ -109,7 +108,7 @@ class _SLAV:
             v1, v2 = Edge.Vertices(edge)
             if v1 == v2:
                 continue  # Ignore degenerate edges
-            mid = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, 0)
+            mid = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v2)) / 2, (Vertex.Y(v1) + Vertex.Y(v2)) / 2, 0)
             events.append(_EdgeEvent(distance(v1, v2) / 2, mid, v1, v2))
         return events
     
@@ -181,7 +180,7 @@ def skeletonize(polygon, holes=None):
     # for i in range(len(output)):
     #     v1 = polygon[i]
     #     v2 = polygon[(i + 1) % len(polygon)]
-    #     mid = Vertex.ByCoordinates((v1.X() + v2.X()) / 2, (v1.Y() + v2.Y()) / 2, 0)
+    #     mid = Vertex.ByCoordinates((Vertex.X(v1) + Vertex.X(v2)) / 2, (Vertex.Y(v1) + Vertex.Y(v2)) / 2, 0)
     #     skeleton_edges.append(Edge.ByVertices([v1, mid]))
     
     # skeleton_wire = Topology.SelfMerge(Cluster.ByTopologies(skeleton_edges))

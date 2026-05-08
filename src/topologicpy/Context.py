@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 
 class Context:
     @staticmethod
@@ -49,7 +49,7 @@ class Context:
         
         context = None
         try:
-            context = topologic.Context.ByTopologyParameters(topology, u, v, w) # Hook to Core
+            context = Core.Context.ByTopologyParameters(topology, u, v, w) # Hook to Core
         except:
             print("Context.ByTopologyParameters - Error: The operation failed. Returning None.")
             context = None
@@ -78,7 +78,7 @@ class Context:
             return None
         topology = None
         try:
-            topology = context.Topology()
+            topology = context.Topology() # Hook to Core
         except:
             print("Context.Topology - Error: The operation failed. Returning None.")
             topology = None

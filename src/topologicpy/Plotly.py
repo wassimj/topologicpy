@@ -16,8 +16,6 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
-
 import os
 import warnings
 

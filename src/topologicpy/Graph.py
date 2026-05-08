@@ -16,7 +16,7 @@
 
 from __future__ import annotations
 
-import topologic_core as topologic
+from topologicpy.Core import Core
 import random
 import time
 import os
@@ -431,8 +431,8 @@ class Graph:
                     if transferVertexDictionaries == True:
                         gd = Topology.Dictionary(gv)
                         vd = Topology.Dictionary(vertex)
-                        gk = gd.Keys()
-                        vk = vd.Keys()
+                        gk = Dictionary.Keys(gd)
+                        vk = Dictionary.Keys(vd)
                         d = None
                         if (len(gk) > 0) and (len(vk) > 0):
                             d = Dictionary.ByMergedDictionaries([gd, vd])
@@ -7685,7 +7685,7 @@ class Graph:
                 ks = Dictionary.Keys(d) or []
             except:
                 try:
-                    ks = d.Keys() or []
+                    ks = d.Keys() or [] # Hook to Core
                 except:
                     ks = []
             keys_cache[did] = ks
@@ -8315,7 +8315,7 @@ class Graph:
             return None
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
-        return topologic.Graph.ByVerticesEdges(vertices, edges) # Hook to Core
+        return Core.Graph.ByVerticesEdges(vertices, edges) # Hook to Core
     
     @staticmethod
     def Choice(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "choice", colorKey="ch_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
@@ -11298,7 +11298,7 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
-        return graph.GetDictionary() # Hook to core library
+        return graph.GetDictionary() # Hook to Core
     
     @staticmethod
     def Distance(graph, vertexA, vertexB, type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
@@ -19507,7 +19507,7 @@ class Graph:
         if not Topology.IsInstance(dictionary, "Dictionary"):
             print("Graph.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
             return graph
-        if len(dictionary.Keys()) < 1:
+        if len(Dictionary.Keys(dictionary)) < 1:
             print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return graph
         _ = graph.SetDictionary(dictionary) # Hook to Core
@@ -21013,8 +21013,8 @@ class Graph:
             if len(paths) < 1:
                 return True
             for aPath in paths:
-                copyPath = topologic.Topology.DeepCopy(aPath) # Hook to Core
-                dif = copyPath.Difference(path, False)
+                copyPath = Core.Topology.DeepCopy(aPath) # Hook to Core
+                dif = Topology.Difference(copyPath, path)
                 if dif == None:
                     return False
             return True
