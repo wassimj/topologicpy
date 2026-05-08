@@ -431,10 +431,8 @@ class Graph:
                     if transferVertexDictionaries == True:
                         gd = Topology.Dictionary(gv)
                         vd = Topology.Dictionary(vertex)
-                        # gk = gd.Keys() # H to Core
-                        gk = Core.InstanceCall(gd, "Keys")
-                        # vk = vd.Keys() # H to Core
-                        vk = Core.InstanceCall(vd, "Keys")
+                        gk = Dictionary.Keys(gd)
+                        vk = Dictionary.Keys(vd)
                         d = None
                         if (len(gk) > 0) and (len(vk) > 0):
                             d = Dictionary.ByMergedDictionaries([gd, vd])
@@ -577,8 +575,7 @@ class Graph:
             if Vertex.Distance(vertex, existing_v) <= tolerance:
                 vertex = Topology.Translate(vertex, tolerance*2, tolerance*2, tolerance*2)
 
-        # _ = graph.AddVertices([vertex], tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "AddVertices", [vertex], tolerance)
+        _ = graph.AddVertices([vertex], tolerance) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -676,8 +673,7 @@ class Graph:
             if not silent:
                 print("Graph.AddVertices - Error: Could not find any valid vertices in the input list of vertices. Returning None.")
             return None
-        # _ = graph.AddVertices(vertices, tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "AddVertices", vertices, tolerance)
+        _ = graph.AddVertices(vertices, tolerance) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -1360,8 +1356,7 @@ class Graph:
                 print("Graph.AdjacentVertices - Error: The input vertex is not a valid vertex. Returning None.")
             return None
         vertices = []
-        # _ = graph.AdjacentVertices(vertex, vertices) # H to Core
-        _ = Core.InstanceCall(graph, "AdjacentVertices", vertex, vertices)
+        _ = graph.AdjacentVertices(vertex, vertices) # Hook to Core
         return list(vertices)
     
     @staticmethod
@@ -1515,8 +1510,7 @@ class Graph:
                 print("Graph.AllPaths - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
         paths = []
-        # _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths) # H to Core
-        _ = Core.InstanceCall(graph, "AllPaths", vertexA, vertexB, True, timeLimit, paths)
+        _ = graph.AllPaths(vertexA, vertexB, True, timeLimit, paths) # Hook to Core
         return paths
 
 
@@ -7691,8 +7685,7 @@ class Graph:
                 ks = Dictionary.Keys(d) or []
             except:
                 try:
-                    # ks = d.Keys() or [] # H to Core
-                    ks = Core.InstanceCall(d, "Keys") or []
+                    ks = d.Keys() or [] # Hook to Core
                 except:
                     ks = []
             keys_cache[did] = ks
@@ -8322,9 +8315,7 @@ class Graph:
             return None
         vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
         edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
-        # return topologic.Graph.ByVerticesEdges(vertices, edges) # H to Core
         return Core.Graph.ByVerticesEdges(vertices, edges)
-    
     @staticmethod
     def Choice(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "choice", colorKey="ch_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
@@ -10322,8 +10313,7 @@ class Graph:
         if not len(verticesA) == len(verticesB):
             print("Graph.Connect - Error: The input lists verticesA and verticesB have different lengths. Returning None.")
             return None
-        # _ = graph.Connect(verticesA, verticesB, tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "Connect", verticesA, verticesB, tolerance)
+        _ = graph.Connect(verticesA, verticesB, tolerance) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -10411,8 +10401,7 @@ class Graph:
         if not Topology.IsInstance(edge, "Edge"):
             print("Graph.ContainsEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        # return graph.ContainsEdge(edge, tolerance) # H to Core
-        return Core.InstanceCall(graph, "ContainsEdge", edge, tolerance)
+        return graph.ContainsEdge(edge, tolerance) # Hook to Core
     
     @staticmethod
     def ContainsVertex(graph, vertex, tolerance=0.0001):
@@ -10442,8 +10431,7 @@ class Graph:
         if not Topology.IsInstance(vertex, "Vertex"):
             print("Graph.ContainsVertex - Error: The input vertex is not a valid vertex. Returning None.")
             return None
-        # return graph.ContainsVertex(vertex, tolerance) # H to Core
-        return Core.InstanceCall(graph, "ContainsVertex", vertex, tolerance)
+        return graph.ContainsVertex(vertex, tolerance) # Hook to Core
 
     @staticmethod
     def CutVertices(graph, key: str = "cut", silent: bool = False):
@@ -11028,8 +11016,7 @@ class Graph:
             print("Graph.DegreeSequence - Error: The input graph is not a valid graph. Returning None.")
             return None
         sequence = []
-        # _ = graph.DegreeSequence(sequence) # H to Core
-        _ = Core.InstanceCall(graph, "DegreeSequence", sequence)
+        _ = graph.DegreeSequence(sequence) # Hook to Core
         return sequence
     
     @staticmethod
@@ -11053,8 +11040,7 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Density - Error: The input graph is not a valid graph. Returning None.")
             return None
-        # return graph.Density() # H to Core
-        return Core.InstanceCall(graph, "Density")
+        return graph.Density() # Hook to Core
     
     @staticmethod
     def Depth(graph, vertex = None, tolerance: float = 0.0001, silent: bool = False):
@@ -11311,7 +11297,7 @@ class Graph:
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.Dictionary - Error: the input graph parameter is not a valid graph. Returning None.")
             return None
-        return graph.GetDictionary() # Hook to core library
+        return graph.GetDictionary() # Hook to Core
     
     @staticmethod
     def Distance(graph, vertexA, vertexB, type: str = "topological", mantissa: int = 6, tolerance: float = 0.0001):
@@ -11392,8 +11378,7 @@ class Graph:
         if not Topology.IsInstance(vertexB, "Vertex"):
             print("Graph.Edge - Error: The input vertexB is not a valid vertex. Returning None.")
             return None
-        # return graph.Edge(vertexA, vertexB, tolerance) # H to Core
-        return Core.InstanceCall(graph, "Edge", vertexA, vertexB, tolerance)
+        return graph.Edge(vertexA, vertexB, tolerance) # Hook to Core
     
     @staticmethod
     def Edges(
@@ -11459,8 +11444,7 @@ class Graph:
             return []
 
         graph_edges = []
-        # _ = graph.Edges(graph_edges, tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "Edges", graph_edges, tolerance)
+        _ = graph.Edges(graph_edges, tolerance) # Hook to Core
         graph_edges = list(dict.fromkeys(graph_edges)) # remove duplicates
 
         if not graph_edges:
@@ -11524,7 +11508,7 @@ class Graph:
     #         return None
     #     if not vertices:
     #         edges = []
-    #         _ = graph.Edges(edges, tolerance) # H to Core
+    #         _ = graph.Edges(edges, tolerance) # Hook to Core
     #         if not edges:
     #             return []
     #         return list(dict.fromkeys(edges)) # remove duplicates
@@ -11534,7 +11518,7 @@ class Graph:
     #         print("Graph.Edges - Error: The input list of vertices does not contain any valid vertices. Returning None.")
     #         return None
     #     edges = []
-    #     _ = graph.Edges(vertices, tolerance, edges) # H to Core
+    #     _ = graph.Edges(vertices, tolerance, edges) # Hook to Core
     #     return list(dict.fromkeys(edges)) # remove duplicates
     
     @staticmethod
@@ -15926,8 +15910,7 @@ class Graph:
             print("Graph.IsolatedVertices - Error: The input graph is not a valid graph. Returning None.")
             return None
         vertices = []
-        # _ = graph.IsolatedVertices(vertices) # H to Core
-        _ = Core.InstanceCall(graph, "IsolatedVertices", vertices)
+        _ = graph.IsolatedVertices(vertices) # Hook to Core
         return vertices
 
     @staticmethod
@@ -19340,8 +19323,7 @@ class Graph:
             if not silent:
                 print("Graph.RemoveEdge - Error: The input edge is not a valid edge. Returning None.")
             return None
-        # _ = graph.RemoveEdges(edgeList, tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "RemoveEdges", edgeList, tolerance)
+        _ = graph.RemoveEdges(edgeList, tolerance) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -19438,8 +19420,7 @@ class Graph:
         vertices = Graph.Vertices(graph)
         isolated_vertices = [v for v in vertices if Graph.VertexDegree(graph, v) == 0]
         if len(isolated_vertices) > 0:
-            # _ = graph.RemoveVertices(isolated_vertices) # H to Core
-            _ = Core.InstanceCall(graph, "RemoveVertices", isolated_vertices)
+            _ = graph.RemoveVertices(isolated_vertices) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -19484,8 +19465,7 @@ class Graph:
                 print("Graph.RemoveVertex - Error: The input vertex parameter does not contain any valid vertices. Returning None.")
             return None
         vertexList = [Graph.NearestVertex(graph, v) for v in vertex]
-        # _ = graph.RemoveVertices(vertexList) # H to Core
-        _ = Core.InstanceCall(graph, "RemoveVertices", vertexList)
+        _ = graph.RemoveVertices(vertexList) # Hook to Core
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
@@ -19526,12 +19506,10 @@ class Graph:
         if not Topology.IsInstance(dictionary, "Dictionary"):
             print("Graph.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
             return graph
-        # if len(dictionary.Keys()) < 1: # H to Core
-        if len(Core.InstanceCall(dictionary, "Keys")) < 1:
+        if len(Dictionary.Keys(dictionary)) < 1:
             print("Graph.SetDictionary - Warning: the input dictionary parameter is empty. Returning original input.")
             return graph
-        # _ = graph.SetDictionary(dictionary) # H to Core
-        _ = Core.InstanceCall(graph, "SetDictionary", dictionary)
+        _ = graph.SetDictionary(dictionary) # Hook to Core
         return graph
     
     @staticmethod
@@ -21034,10 +21012,8 @@ class Graph:
             if len(paths) < 1:
                 return True
             for aPath in paths:
-                # copyPath = topologic.Topology.DeepCopy(aPath) # H to Core
                 copyPath = Core.Topology.DeepCopy(aPath)
-                # dif = copyPath.Difference(path, False) # H to Core
-                dif = Core.InstanceCall(copyPath, "Difference", path, False)
+                dif = Topology.Difference(copyPath, path)
                 if dif == None:
                     return False
             return True
@@ -21917,8 +21893,7 @@ class Graph:
         vertices = []
         if graph:
             try:
-                # _ = graph.Vertices(vertices) # H to Core
-                _ = Core.InstanceCall(graph, "Vertices", vertices)
+                _ = graph.Vertices(vertices) # Hook to Core
             except:
                 vertices = []
         if not sortBy == None:

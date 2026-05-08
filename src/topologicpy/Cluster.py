@@ -423,7 +423,11 @@ class Cluster():
                 print("Cluster.CellComplexes - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cellComplexes = []
-        _ = cluster.CellComplexes(None, cellComplexes) # Hook to Core
+        # _ = cluster.CellComplexes(None, cellComplexes) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "CellComplexes", None, cellComplexes)
+        except Exception:
+            cellComplexes = []
         return cellComplexes
 
     @staticmethod
@@ -451,7 +455,13 @@ class Cluster():
                 print("Cluster.Cells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = []
-        _ = cluster.Cells(None, cells) # Hook to Core
+        # _ = cluster.Cells(None, cells) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Cells", None, cells)
+        except Exception:
+            if not silent:
+                print("Cluster.Cells - Error: Could not fetch cells. Returning None.")
+            cells = None
         return cells
 
     @staticmethod
@@ -636,7 +646,7 @@ class Cluster():
         return tp_clusters, tp_noise
 
     @staticmethod
-    def Edges(cluster) -> list:
+    def Edges(cluster, silent: bool = False) -> list:
         """
         Returns the edges of the input cluster.
 
@@ -644,6 +654,8 @@ class Cluster():
         ----------
         cluster : topologic_core.Cluster
             The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -657,7 +669,13 @@ class Cluster():
             print("Cluster.Edges - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         edges = []
-        _ = cluster.Edges(None, edges) # Hook to Core
+        # _ = cluster.Edges(None, edges) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Edges", None, edges)
+        except Exception:
+            if not silent:
+                print("Cluster.Edges - Error: Could not fetch edges. Returning None.")
+            edges = None
         return edges
 
 
@@ -720,7 +738,7 @@ class Cluster():
         return cluster
 
     @staticmethod
-    def Faces(cluster) -> list:
+    def Faces(cluster, silent: bool = False) -> list:
         """
         Returns the faces of the input cluster.
 
@@ -728,6 +746,8 @@ class Cluster():
         ----------
         cluster : topologic_core.Cluster
             The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -741,7 +761,13 @@ class Cluster():
             print("Cluster.Faces - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = []
-        _ = cluster.Faces(None, faces) # Hook to Core
+        # _ = cluster.Faces(None, faces) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Faces", None, faces)
+        except Exception:
+            if not silent:
+                print("Cluster.Faces - Error: Could not fetch faces. Returning None.")
+            faces = None
         return faces
 
     @staticmethod
@@ -1680,7 +1706,7 @@ class Cluster():
         return Cluster.ByTopologies(edges)
     
     @staticmethod
-    def Shells(cluster) -> list:
+    def Shells(cluster, silent: bool = False) -> list:
         """
         Returns the shells of the input cluster.
 
@@ -1688,6 +1714,8 @@ class Cluster():
         ----------
         cluster : topologic_core.Cluster
             The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1701,7 +1729,13 @@ class Cluster():
             print("Cluster.Shells - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         shells = []
-        _ = cluster.Shells(None, shells) # Hook to Core
+        # _ = cluster.Shells(None, shells) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Shells", None, shells)
+        except Exception:
+            if not silent:
+                print("Cluster.Shells - Error: Could not fetch shells. Returning None.")
+            shells = None
         return shells
 
     @staticmethod
@@ -1838,7 +1872,7 @@ class Cluster():
         return cluster
 
     @staticmethod
-    def Vertices(cluster) -> list:
+    def Vertices(cluster, silent: bool = False) -> list:
         """
         Returns the vertices of the input cluster.
 
@@ -1846,6 +1880,8 @@ class Cluster():
         ----------
         cluster : topologic_core.Cluster
             The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1859,11 +1895,17 @@ class Cluster():
             print("Cluster.Vertices - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         vertices = []
-        _ = cluster.Vertices(None, vertices) # Hook to Core
+        # _ = cluster.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Vertices", None, vertices)
+        except Exception:
+            if not silent:
+                print("Cluster.Vertices - Error: Could not fetch vertices. Returning None.")
+            vertices = None
         return vertices
 
     @staticmethod
-    def Wires(cluster) -> list:
+    def Wires(cluster, silent: bool = False) -> list:
         """
         Returns the wires of the input cluster.
 
@@ -1871,6 +1913,8 @@ class Cluster():
         ----------
         cluster : topologic_core.Cluster
             The input cluster.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -1884,7 +1928,13 @@ class Cluster():
             print("Cluster.Wires - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         wires = []
-        _ = cluster.Wires(None, wires) # Hook to Core
+        # _ = cluster.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(cluster, "Wires", None, wires)
+        except Exception:
+            if not silent:
+                print("Cluster.Wires - Error: Could not fetch wires. Returning None.")
+            wires = None
         return wires
 
     

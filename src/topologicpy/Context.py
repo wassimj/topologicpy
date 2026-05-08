@@ -78,7 +78,8 @@ class Context:
             return None
         topology = None
         try:
-            topology = context.Topology() # Hook to Core
+            # topology = context.Topology() # H to Core
+            topology = Core.InstanceCall(context, "Topology")
         except:
             print("Context.Topology - Error: The operation failed. Returning None.")
             topology = None

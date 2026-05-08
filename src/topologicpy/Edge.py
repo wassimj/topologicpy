@@ -615,7 +615,8 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.EndVertex() # Hook to Core
+            #vert = edge.EndVertex() # H to Core
+            vert = Core.InstanceCall(edge, "EndVertex")
         except:
             vert = None
         return vert
@@ -1627,7 +1628,8 @@ class Edge():
             return None
         vert = None
         try:
-            vert = edge.StartVertex() # Hook to Core
+            # vert = edge.StartVertex() # H to Core
+            vert = Core.InstanceCall(edge, "StartVertex")
         except:
             vert = None
         return vert
@@ -1864,6 +1866,11 @@ class Edge():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
+        # vertices = []
+        # _ = edge.Vertices(None, vertices) # H to Core
         vertices = []
-        _ = edge.Vertices(None, vertices) # Hook to Core
+        try:
+            _ = Core.InstanceCall(edge, "Vertices", None, vertices)
+        except Exception:
+            vertices = None
         return vertices

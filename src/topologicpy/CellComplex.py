@@ -378,7 +378,8 @@ class CellComplex():
             for i in range(1,len(faces)):
                 newCellComplex = None
                 try:
-                    newCellComplex = cellComplex.Merge(faces[i], False, tolerance) # Hook to Core
+                    # newCellComplex = cellComplex.Merge(faces[i], False, tolerance) # H to Core
+                    newCellComplex = Core.InstanceCall(cellComplex, "Merge", faces[i], False, tolerance)
                 except:
                     if not silent:
                         print("CellComplex.ByFaces - Warning: Failed to merge face #"+str(i)+". Skipping.")
@@ -1342,7 +1343,11 @@ class CellComplex():
             print("CellComplex.Cells - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         cells = []
-        _ = cellComplex.Cells(None, cells) # Hook to Core
+        # _ = cellComplex.Cells(None, cells) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "Cells", None, cells)
+        except Exception:
+            cells = None
         return cells
 
     @staticmethod
@@ -1489,7 +1494,7 @@ class CellComplex():
         return cc
     
     @staticmethod
-    def Edges(cellComplex) -> list:
+    def Edges(cellComplex, silent: bool = False) -> list:
         """
         Returns the edges of the input cellComplex.
 
@@ -1497,6 +1502,8 @@ class CellComplex():
         ----------
         cellComplex : topologic_core.CellComplex
             The input cellComplex.
+        silent: bool , optional
+            if set to True, no error or warning messages are printed. Default is False.
 
         Returns
         -------
@@ -1510,7 +1517,14 @@ class CellComplex():
             print("CellComplex.Edges - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         edges = []
-        _ = cellComplex.Edges(None, edges) # Hook to Core
+        # _ = cellComplex.Edges(None, edges) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "Edges", None, edges)
+        except Exception:
+            if not silent:
+                Topology.Show(cellComplex, renderer="browser")
+                print(f"CellComplex.Edges - Error: Could not fetch edges. Returning None.")
+            edges = None
         return edges
 
     @staticmethod
@@ -1542,8 +1556,17 @@ class CellComplex():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None
-        cell = cellComplex.ExternalBoundary() # Hook to Core
-        return Topology.Shells(cell)[0]
+        #cell = cellComplex.ExternalBoundary() # H to Core
+        try:
+            cell = Core.InstanceCall(cellComplex,"ExternalBoundary")
+        except Exception:
+            cell = None
+        if cell is not None:
+            shells = Topology.Shells(cell)
+            if isinstance(shells, list):
+                if len(shells) > 0:
+                    return shells[0]
+        return None
     
     @staticmethod
     def ExternalFaces(cellComplex) -> list:
@@ -1587,7 +1610,11 @@ class CellComplex():
             print("CellComplex.Faces - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         faces = []
-        _ = cellComplex.Faces(None, faces) # Hook to Core
+        # _ = cellComplex.Faces(None, faces) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "Faces", None, faces)
+        except Exception:
+            faces = None
         return faces
 
     @staticmethod
@@ -1607,7 +1634,11 @@ class CellComplex():
 
         """
         faces = []
-        _ = cellComplex.InternalBoundaries(faces) # Hook to Core
+        # _ = cellComplex.InternalBoundaries(faces) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "InternalBoundaries", faces)
+        except Exception:
+            faces = []
         return faces
     
     @staticmethod
@@ -1627,7 +1658,11 @@ class CellComplex():
 
         """
         faces = []
-        _ = cellComplex.NonManifoldFaces(faces) # Hook to Core
+        # _ = cellComplex.NonManifoldFaces(faces) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "NonManifoldFaces", faces)
+        except Exception:
+            faces = None
         return faces
     
     @staticmethod
@@ -2147,7 +2182,11 @@ class CellComplex():
             print("CellComplex.Vertices - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         vertices = []
-        _ = cellComplex.Vertices(None, vertices) # Hook to Core
+        # _ = cellComplex.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "Vertices", None, vertices)
+        except Exception:
+            vertices = None
         return vertices
 
     @staticmethod
@@ -2287,6 +2326,10 @@ class CellComplex():
             print("CellComplex.Wires - Error: The input cellcomplex parameter is not a valid topologic cellcomplex. Returning None.")
             return None
         wires = []
-        _ = cellComplex.Wires(None, wires) # Hook to Core
+        # _ = cellComplex.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(cellComplex, "Wires", None, wires)
+        except Exception:
+            wires = None
         return wires
 

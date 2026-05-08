@@ -2425,7 +2425,11 @@ class Cell():
 
         """
         shells = []
-        _ = cell.InternalBoundaries(shells) # Hook to Core
+        # _ = cell.InternalBoundaries(shells) # H to Core
+        try:
+            Core.InstanceCall(cell, "InternalBoundaries", shells)
+        except Exception:
+            shells = []
         return shells
     
     @staticmethod
@@ -3633,7 +3637,11 @@ class Cell():
             print("Cell.Shells - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         shells = []
-        _ = cell.Shells(None, shells) # Hook to Core
+        # _ = cell.Shells(None, shells) # H to Core
+        try:
+            _ = Core.InstanceCall(cell, "Shells", None, shells)
+        except Exception:
+            shells = []
         return shells
 
     @staticmethod
@@ -4556,7 +4564,11 @@ class Cell():
             print("Cell.Vertices - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         vertices = []
-        _ = cell.Vertices(None, vertices) # Hook to Core
+        # _ = cell.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(cell, "Vertices", None, vertices)
+        except Exception:
+            vertices = None
         return vertices
 
     @staticmethod
@@ -4734,6 +4746,10 @@ class Cell():
             print("Cell.Wires - Error: The input cell parameter is not a valid topologic cell. Returning None.")
             return None
         wires = []
-        _ = cell.Wires(None, wires) # Hook to Core
+        # _ = cell.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(cell, "Wires", None, wires)
+        except Exception:
+            wires = None
         return wires
 

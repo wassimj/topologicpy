@@ -1695,7 +1695,11 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         edges = []
-        _ = face.Edges(None, edges) # Hook to Core
+        # _ = face.Edges(None, edges) # H to Core
+        try:
+            _ = Core.InstanceCall(face, "Edges", None, edges)
+        except Exception:
+            edges = None
         return edges
 
     @staticmethod
@@ -1862,7 +1866,8 @@ class Face():
             if not silent:
                 print("Face.ExternalBoundary - Error: The input face parameter is not a topologic face. Returning None.")
             return None
-        eb = face.ExternalBoundary() # Hook to Core
+        # eb = face.ExternalBoundary() # H to Core
+        eb = Core.InstanceCall(face, "ExternalBoundary")
         return eb
     
     @staticmethod
@@ -2071,8 +2076,12 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
-        _ = face.InternalBoundaries(wires) # Hook to Core
-        return list(wires)
+        # _ = face.InternalBoundaries(wires) # H to Core
+        try:
+            _ = Core.InstanceCall(face, "InternalBoundaries", wires)
+        except:
+            wires = None
+        return wires
 
     @staticmethod
     def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
@@ -4674,7 +4683,11 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         vertices = []
-        _ = face.Vertices(None, vertices) # Hook to Core
+        # _ = face.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(face, "Vertices", None, vertices)
+        except Exception:
+            vertices = None
         return vertices
     
     @staticmethod
@@ -4716,5 +4729,9 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         wires = []
-        _ = face.Wires(None, wires) # Hook to Core
+        # _ = face.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(face, "Wires", None, wires)
+        except:
+            wires = None
         return wires

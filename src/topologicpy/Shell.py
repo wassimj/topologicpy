@@ -682,7 +682,11 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         edges = []
-        _ = shell.Edges(None, edges) # Hook to Core
+        # _ = shell.Edges(None, edges) # H to Core
+        try:
+            _ = Core.InstanceCall(shell, "Edges", None, edges)
+        except Exception:
+            edges = None
         return edges
 
     @staticmethod
@@ -753,7 +757,11 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         faces = []
-        _ = shell.Faces(None, faces) # Hook to Core
+        # _ = shell.Faces(None, faces) # H to Core
+        try:
+            _ = Core.InstanceCall(shell, "Faces", None, faces)
+        except Exception:
+            faces = None
         return faces
 
     @staticmethod
@@ -1299,7 +1307,8 @@ class Shell():
             True if the input shell is closed. False otherwise.
 
         """
-        return shell.IsClosed() # Hook to Core
+        # return shell.IsClosed() # H to Core
+        return Core.InstanceCall(shell, "IsClosed")
 
     @staticmethod
     def IsOnBoundary(shell, vertex, tolerance: float = 0.0001) -> bool:
@@ -2306,7 +2315,11 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         vertices = []
-        _ = shell.Vertices(None, vertices) # Hook to Core
+        # _ = shell.Vertices(None, vertices) # H to Core
+        try:
+            _ = Core.InstanceCall(shell, "Vertices", None, vertices)
+        except Exception:
+            vertices = None
         return vertices
 
     @staticmethod
@@ -2444,7 +2457,11 @@ class Shell():
         if not Topology.IsInstance(shell, "Shell"):
             return None
         wires = []
-        _ = shell.Wires(None, wires) # Hook to Core
+        # _ = shell.Wires(None, wires) # H to Core
+        try:
+            _ = Core.InstanceCall(shell, "Wires", None, wires)
+        except Exception:
+            wires = None
         return wires
 
     

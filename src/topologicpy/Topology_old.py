@@ -352,14 +352,11 @@ class Topology():
         if subTopologyType.lower() == "self":
             context = Context.ByTopologyParameters(topology)
             for content in copy_contents:
-                # content.AddContext(context) # H to Core
-                Core.InstanceCall(content, 'AddContext', context)
-                # topology.AddContent(content) # H to Core
-                Core.InstanceCall(topology, 'AddContent', content)
+                content.AddContext(context) # Hook to Core
+                topology.AddContent(content) # Hook to Core
         else:
             t = Topology.TypeID(subTopologyType)
-            # topology.AddContents(copy_contents, t) # H to Core
-            Core.InstanceCall(topology, 'AddContents', copy_contents, t)
+            topology.AddContents(copy_contents, t) # Hook to Core
         return topology
     
     @staticmethod
@@ -390,13 +387,11 @@ class Topology():
             return None
         tDict = Topology.Dictionary(topology)
         if len(Dictionary.Keys(tDict)) < 1:
-            # _ = topology.SetDictionary(dictionary) # H to Core
-            _ = Core.InstanceCall(topology, 'SetDictionary', dictionary)
+            _ = topology.SetDictionary(dictionary) # Hook to Core
         else:
             newDict = Dictionary.ByMergedDictionaries([tDict, dictionary])
             if newDict:
-                # _ = topology.SetDictionary(newDict) # H to Core
-                _ = Core.InstanceCall(topology, 'SetDictionary', newDict)
+                _ = topology.SetDictionary(newDict) # Hook to Core
         return topology
     
     @staticmethod
@@ -444,12 +439,10 @@ class Topology():
                     adjacentTopologies = Graph.AdjacentVertices(hostTopology, topology)
                 else:
                     try:
-                        # _ = topology.AdjacentVertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'AdjacentVertices', hostTopology, adjacentTopologies)
+                        _ = topology.AdjacentVertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         try:
-                            # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                            _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                            _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                         except:
                             error = True
             elif topologyType.lower() == "edge":
@@ -461,8 +454,7 @@ class Topology():
                         _ = Core.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies)
                     except:
                         try:
-                            # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                            _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                            _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                         except:
                             error = True
             elif topologyType.lower() == "wire":
@@ -470,8 +462,7 @@ class Topology():
                     _ = Core.VertexUtility.AdjacentWires(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -479,8 +470,7 @@ class Topology():
                     _ = Core.VertexUtility.AdjacentFaces(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -488,8 +478,7 @@ class Topology():
                     _ = Core.VertexUtility.AdjacentShells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -497,8 +486,7 @@ class Topology():
                     _ = Core.VertexUtility.AdjacentCells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -506,15 +494,13 @@ class Topology():
                     _ = Core.VertexUtility.AdjacentCellComplexes(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "Edge"):
             if topologyType.lower() == "vertex":
                 try:
-                    # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                    _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "edge":
@@ -522,8 +508,7 @@ class Topology():
                     adjacentTopologies = Graph.AdjacentEdges(hostTopology, topology)
                 else:
                     try:
-                        # _ = topology.AdjacentEdges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'AdjacentEdges', hostTopology, adjacentTopologies)
+                        _ = topology.AdjacentEdges(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -531,8 +516,7 @@ class Topology():
                     _ = Core.EdgeUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -540,8 +524,7 @@ class Topology():
                     _ = Core.EdgeUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -549,8 +532,7 @@ class Topology():
                     _ = Core.EdgeUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -558,8 +540,7 @@ class Topology():
                     _ = Core.EdgeUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -567,8 +548,7 @@ class Topology():
                     _ = Core.EdgeUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "Wire"):
@@ -577,8 +557,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -586,8 +565,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -595,8 +573,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -604,8 +581,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -613,8 +589,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -622,8 +597,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -631,8 +605,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "Face"):
@@ -641,8 +614,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -650,8 +622,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -659,20 +630,17 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
-                # _ = topology.AdjacentFaces(hostTopology, adjacentTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'AdjacentFaces', hostTopology, adjacentTopologies)
+                _ = topology.AdjacentFaces(hostTopology, adjacentTopologies) # Hook to Core
             elif topologyType.lower() == "shell":
                 try:
                     _ = Core.FaceUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -680,8 +648,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -689,8 +656,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "Shell"):
@@ -699,8 +665,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -708,8 +673,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -717,8 +681,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -726,8 +689,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -735,8 +697,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -744,8 +705,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -753,8 +713,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "Cell"):
@@ -763,8 +722,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -772,8 +730,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -781,8 +738,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -790,8 +746,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -799,18 +754,15 @@ class Topology():
                     _ = Core.CellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cell":
                 try:
-                    # _ = topology.AdjacentCells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'AdjacentCells', hostTopology, adjacentTopologies)
+                    _ = topology.AdjacentCells(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -818,45 +770,38 @@ class Topology():
                     _ = Core.CellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = topology.CellComplexes(hostTopology, adjacentTopologies) # Hook to Core
                     except:
                         error = True
         elif Topology.IsInstance(topology, "CellComplex"):
             if topologyType.lower() == "vertex":
                 try:
-                    # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                    _ = topology.Vertices(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "edge":
                 try:
-                    # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                    _ = topology.Edges(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "wire":
                 try:
-                    # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                    _ = topology.Wires(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "face":
                 try:
-                    # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                    _ = topology.Faces(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "shell":
                 try:
-                    # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                    _ = topology.Shells(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "cell":
                 try:
-                    # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                    _ = topology.Cells(hostTopology, adjacentTopologies) # Hook to Core
                 except:
                     error = True
             elif topologyType.lower() == "cellcomplex":
@@ -924,8 +869,7 @@ class Topology():
         apertures = []
         subTopologies = []
         if not subTopologyType:
-            # _ = topology.Apertures(apertures) # H to Core
-            _ = Core.InstanceCall(topology, 'Apertures', apertures)
+            _ = topology.Apertures(apertures) # Hook to Core
             apertures = [Aperture.Topology(x) for x in apertures]
             contents = Topology.Contents(topology)
             for content in contents:
@@ -943,8 +887,7 @@ class Topology():
         elif subTopologyType.lower() == "cell":
             subTopologies = Topology.Cells(topology, silent=True)
         elif subTopologyType.lower() == "all":
-            # _ = topology.Apertures(apertures) # H to Core
-            _ = Core.InstanceCall(topology, 'Apertures', apertures)
+            _ = topology.Apertures(apertures) # Hook to Core
             apertures = [Aperture.Topology(x) for x in apertures]
             subTopologies = Topology.Vertices(topology, silent=True)
             subTopologies += Topology.Edges(topology, silent=True)
@@ -1524,8 +1467,7 @@ class Topology():
         
         for cellA in cellsA_2:
             for cellB in cellsB_2:
-                # cellC = cellA.Intersect(Topology.Copy(cellB)) # H to Core
-                cellC = Core.InstanceCall(cellA, 'Intersect', Topology.Copy(cellB))
+                cellC = cellA.Intersect(Topology.Copy(cellB)) # Hook to Core
                 results.append(cellC)
         results = [x for x in results if x is not None]
         if len(results) == 0:
@@ -1683,16 +1625,14 @@ class Topology():
             return None
         topologyC = None
         if operation.lower() == "union":
-            # topologyC = topologyA.Union(topologyB, False) # H to Core
-            topologyC = Core.InstanceCall(topologyA, 'Union', topologyB, False)
+            topologyC = topologyA.Union(topologyB, False) # Hook to Core
             if topologyC == None:
                 return special_case(topologyA, topologyB, "union")
         elif operation.lower() == "difference":
             if topologyA == topologyB or topologyB is None:
                 topologyC = None
             else:
-                # topologyC = topologyA.Difference(Topology.Copy(topologyB), False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Difference', Topology.Copy(topologyB), False)
+                topologyC = topologyA.Difference(Topology.Copy(topologyB), False) # Hook to Core
         elif operation.lower() == "intersect": #Intersect in Topologic (Core) is faulty. This is a workaround.
             #topologyC = topologyA.Intersect(topologyB, False)
             if topologyA == topologyB or topologyB is None:
@@ -1707,32 +1647,27 @@ class Topology():
             elif topologyA is None:
                 topologyC = topologyB
             else:
-                # topologyC = topologyA.XOR(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'XOR', topologyB, False)
+                topologyC = topologyA.XOR(topologyB, False) # Hook to Core
         elif operation.lower() == "merge":
             if topologyA == topologyB:
                 topologyC = topologyA
             else:
-                # topologyC = topologyA.Merge(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Merge', topologyB, False)
+                topologyC = topologyA.Merge(topologyB, False) # Hook to Core
         elif operation.lower() == "slice":
             if topologyA == topologyB:
                 topologyC = topologyA
             else:
-                # topologyC = topologyA.Slice(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Slice', topologyB, False)
+                topologyC = topologyA.Slice(topologyB, False) # Hook to Core
         elif operation.lower() == "impose":
             if topologyA == topologyB:
                 topologyC = topologyA
             else:
-                # topologyC = topologyA.Impose(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Impose', topologyB, False)
+                topologyC = topologyA.Impose(topologyB, False) # Hook to Core
         elif operation.lower() == "imprint":
             if topologyA == topologyB:
                 topologyC = topologyA
             else:
-                # topologyC = topologyA.Imprint(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Imprint', topologyB, False)
+                topologyC = topologyA.Imprint(topologyB, False) # Hook to Core
         else:
             print(f"Topology.{operation.capitalize()} - Error: the boolean operation failed. Returning None.")
             return None
@@ -5147,8 +5082,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.CenterofMass - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        # return topology.CenterOfMass() # H to Core
-        return Core.InstanceCall(topology, 'CenterOfMass')
+        return topology.CenterOfMass() # Hook to Core
     
     @staticmethod
     def Centroid(topology):
@@ -5172,10 +5106,8 @@ class Topology():
             print("Topology.Centroid - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         if Topology.IsInstance(topology, "Aperture"):
-            # return Aperture.Topology(topology).Centroid() # H to Core
-            return Core.InstanceCall(Aperture.Topology(topology), 'Centroid')
-        # return topology.Centroid() # H to Core
-        return Core.InstanceCall(topology, 'Centroid')
+            return Aperture.Topology(topology).Centroid() # Hook to Core
+        return topology.Centroid() # Hook to Core
 
     @staticmethod
     def ClusterByKeys(topologies, *keys, silent=False):
@@ -5445,8 +5377,7 @@ class Topology():
             print("Topology.Contents - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         contents = []
-        # _ = topology.Contents(contents) # H to Core
-        _ = Core.InstanceCall(topology, 'Contents', contents)
+        _ = topology.Contents(contents) # Hook to Core
         return contents
     
     @staticmethod
@@ -5469,8 +5400,7 @@ class Topology():
             print("Topology.Contexts - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
         contexts = []
-        # _ = topology.Contexts(contexts) # H to Core
-        _ = Core.InstanceCall(topology, 'Contexts', contexts)
+        _ = topology.Contexts(contexts) # Hook to Core
         return contexts
 
     @staticmethod
@@ -5796,8 +5726,7 @@ class Topology():
             if not silent:
                 print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        # return topology.GetDictionary() # H to Core
-        return Core.InstanceCall(topology, 'GetDictionary')
+        return topology.GetDictionary() # Hook to Core
     
     @staticmethod
     def Dimensionality(topology, silent: bool = False):
@@ -5878,8 +5807,7 @@ class Topology():
                 print("Topology.Divide - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
         try:
-            # _ = topologyA.Divide(topologyB, False) # Don't transfer dictionaries just yet # H to Core
-            _ = Core.InstanceCall(topologyA, 'Divide', topologyB, False)
+            _ = topologyA.Divide(topologyB, False) # Don't transfer dictionaries just yet # Hook to Core
         except:
             raise Exception("TopologyDivide - Error: Divide operation failed.")
         nestingDepth = "1"
@@ -8996,8 +8924,7 @@ class Topology():
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.OCCTShape - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        # return topology.GetOcctShape() # H to Core
-        return Core.InstanceCall(topology, 'GetOcctShape')
+        return topology.GetOcctShape() # Hook to Core
 
     @staticmethod
     def OpenFaces(topology):
@@ -9314,8 +9241,7 @@ class Topology():
         """
         if isinstance(contents, list) == False:
             contents = [contents]
-        # return topology.RemoveContents(contents) # H to Core
-        return Core.InstanceCall(topology, 'RemoveContents', contents)
+        return topology.RemoveContents(contents) # Hook to Core
     
     @staticmethod
     def RemoveCoplanarFaces(topology, epsilon=0.01, tolerance=0.0001, silent: bool = False):
@@ -10098,8 +10024,7 @@ class Topology():
             t = 32
         elif subTopologyType.lower() == "cellcomplex":
             t = 64
-        # return topology.SelectSubtopology(selector, t) # H to Core
-        return Core.InstanceCall(topology, 'SelectSubtopology', selector, t)
+        return topology.SelectSubtopology(selector, t) # Hook to Core
 
     
     # @staticmethod
@@ -10319,8 +10244,7 @@ class Topology():
         # ------------------------------------------------------------------
 
         try:
-            # return_topology = topology.SelfMerge() # H to Core
-            return_topology = Core.InstanceCall(topology, 'SelfMerge')
+            return_topology = topology.SelfMerge() # Hook to Core
         except Exception:
             return_topology = None
 
@@ -10392,8 +10316,7 @@ class Topology():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return topology
-        # _ = topology.SetDictionary(dictionary) # H to Core
-        _ = Core.InstanceCall(topology, 'SetDictionary', dictionary)
+        _ = topology.SetDictionary(dictionary) # Hook to Core
         return topology
     
     @staticmethod
@@ -10473,14 +10396,10 @@ class Topology():
         eOutput = []
         wOutput = []
         fOutput = []
-        # _ = topologyA.SharedTopologies(topologyB, 1, vOutput) # H to Core
-        _ = Core.InstanceCall(topologyA, 'SharedTopologies', topologyB, 1, vOutput)
-        # _ = topologyA.SharedTopologies(topologyB, 2, eOutput) # H to Core
-        _ = Core.InstanceCall(topologyA, 'SharedTopologies', topologyB, 2, eOutput)
-        # _ = topologyA.SharedTopologies(topologyB, 4, wOutput) # H to Core
-        _ = Core.InstanceCall(topologyA, 'SharedTopologies', topologyB, 4, wOutput)
-        # _ = topologyA.SharedTopologies(topologyB, 8, fOutput) # H to Core
-        _ = Core.InstanceCall(topologyA, 'SharedTopologies', topologyB, 8, fOutput)
+        _ = topologyA.SharedTopologies(topologyB, 1, vOutput) # Hook to Core
+        _ = topologyA.SharedTopologies(topologyB, 2, eOutput) # Hook to Core
+        _ = topologyA.SharedTopologies(topologyB, 4, wOutput) # Hook to Core
+        _ = topologyA.SharedTopologies(topologyB, 8, fOutput) # Hook to Core
         return {"vertices":vOutput, "edges":eOutput, "wires":wOutput, "faces":fOutput}
 
     @staticmethod
@@ -12886,32 +12805,23 @@ class Topology():
                 subTopologies += Topology.SubTopologies(wire, subTopologyType=subTopologyType)
         else:
             if subTopologyType.lower() == "vertex":
-                # _ = topology.Vertices(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Vertices', None, subTopologies)
+                _ = topology.Vertices(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "edge":
-                # _ = topology.Edges(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Edges', None, subTopologies)
+                _ = topology.Edges(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "wire":
-                # _ = topology.Wires(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Wires', None, subTopologies)
+                _ = topology.Wires(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "face":
-                # _ = topology.Faces(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Faces', None, subTopologies)
+                _ = topology.Faces(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "shell":
-                # _ = topology.Shells(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Shells', None, subTopologies)
+                _ = topology.Shells(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "cell":
-                # _ = topology.Cells(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Cells', None, subTopologies)
+                _ = topology.Cells(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "cellcomplex":
-                # _ = topology.CellComplexes(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'CellComplexes', None, subTopologies)
+                _ = topology.CellComplexes(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "cluster":
-                # _ = topology.Clusters(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Clusters', None, subTopologies)
+                _ = topology.Clusters(None, subTopologies) # Hook to Core
             elif subTopologyType.lower() == "aperture":
-                # _ = topology.Apertures(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Apertures', None, subTopologies)
+                _ = topology.Apertures(None, subTopologies) # Hook to Core
             if not subTopologies:
                 return [] # Make sure to return an empty list instead of None
         return subTopologies
@@ -12954,26 +12864,19 @@ class Topology():
             print("Topology.SuperTopologies - Error: The input topologyType parameter is not a valid type for a super topology of the input topology. Returning None.")
             return None #The user has asked for a topology type lower than the input topology
         elif typeID == Topology.TypeID("Edge"):
-            # topology.Edges(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Edges', hostTopology, superTopologies)
+            topology.Edges(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Wire"):
-            # topology.Wires(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Wires', hostTopology, superTopologies)
+            topology.Wires(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Face"):
-            # topology.Faces(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Faces', hostTopology, superTopologies)
+            topology.Faces(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Shell"):
-            # topology.Shells(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Shells', hostTopology, superTopologies)
+            topology.Shells(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Cell"):
-            # topology.Cells(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Cells', hostTopology, superTopologies)
+            topology.Cells(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("CellComplex"):
-            # topology.CellComplexes(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'CellComplexes', hostTopology, superTopologies)
+            topology.CellComplexes(hostTopology, superTopologies) # Hook to Core
         elif typeID == Topology.TypeID("Cluster"):
-            # topology.Cluster(hostTopology, superTopologies) # H to Core
-            Core.InstanceCall(topology, 'Cluster', hostTopology, superTopologies)
+            topology.Cluster(hostTopology, superTopologies) # Hook to Core
         else:
             print("Topology.SuperTopologies - Error: The input topologyType parameter is not a valid type for a super topology of the input topology. Returning None.")
             return None
@@ -13465,12 +13368,10 @@ class Topology():
             if tu is not None and hasattr(tu, "Transform"):
                 # Most core builds accept a flat 16-list or a 4x4; we try both safely.
                 try:
-                    # transformed = tu.Transform(topology, matrix) # H to Core
-                    transformed = Core.TopologyUtility.Transform(topology, matrix)
+                    transformed = tu.Transform(topology, matrix) # Hook to Core
                 except Exception:
                     flat = [matrix[i][j] for i in range(4) for j in range(4)]
-                    # transformed = tu.Transform(topology, flat) # H to Core
-                    transformed = Core.TopologyUtility.Transform(topology, flat)
+                    transformed = tu.Transform(topology, flat) # Hook to Core
 
                 if transformed is None:
                     if not silent:
@@ -13744,8 +13645,7 @@ class Topology():
                     print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
                 return topology
         topologyFaces = []
-        # _ = topology.Faces(None, topologyFaces) # H to Core
-        _ = Core.InstanceCall(topology, 'Faces', None, topologyFaces)
+        _ = topology.Faces(None, topologyFaces) # Hook to Core
         faceTriangles = []
         selectors = []
         for aFace in topologyFaces:
@@ -13795,8 +13695,7 @@ class Topology():
             The type of the input topology.
 
         """
-        # return topology.Type() # H to Core
-        return Core.InstanceCall(topology, 'Type')
+        return topology.Type() # Hook to Core
     
     @staticmethod
     def TypeAsString(topology, silent: bool = False):
@@ -13819,8 +13718,7 @@ class Topology():
         if Topology.IsInstance(topology, "Graph"):
             return "Graph"
         elif Topology.IsInstance(topology, "Topology"):
-            # return topology.GetTypeAsString() # H to Core
-            return Core.InstanceCall(topology, 'GetTypeAsString')
+            return topology.GetTypeAsString() # Hook to Core
         if not silent:
             print("Topology.TypeAsString - Error: The input topology parameter is not a valid topology or graph. Returning None.")
         return None
