@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CellComplex module &mdash; topologicpy 0.9.26 documentation</title>
+  <title>topologicpy.CellComplex module &mdash; topologicpy 0.9.27 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.26
+                0.9.27
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -57,6 +57,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Core.html">topologicpy.Core module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
@@ -196,7 +197,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Delaunay" title="topologicpy.CellComplex.CellComplex.Delaunay"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Delaunay</span></code></a>([vertices, tolerance])</p></td>
 <td><p>Triangulates the input vertices based on the Delaunay method.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Edges" title="topologicpy.CellComplex.CellComplex.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cellComplex)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.Edges" title="topologicpy.CellComplex.CellComplex.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(cellComplex[, silent])</p></td>
 <td><p>Returns the edges of the input cellComplex.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CellComplex.CellComplex.ExternalBoundary" title="topologicpy.CellComplex.CellComplex.ExternalBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExternalBoundary</span></code></a>(cellComplex[, silent])</p></td>
@@ -618,12 +619,14 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CellComplex.CellComplex.Edges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellComplex</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.CellComplex.CellComplex.Edges" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cellComplex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.CellComplex.CellComplex.Edges" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the edges of the input cellComplex.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>cellComplex</strong><span class="classifier">topologic_core.CellComplex</span></dt><dd><p>The input cellComplex.</p>
+</dd>
+<dt><strong>silent: bool , optional</strong></dt><dd><p>if set to True, no error or warning messages are printed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -819,7 +822,7 @@ if both are set to none, a unit cube centered around the origin is used.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is True.</p>
 </dd>
 </dl>
 </dd>

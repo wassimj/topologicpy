@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.Core module &mdash; topologicpy 0.9.27 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Dictionary module" href="topologicpy.Dictionary.html" />
+    <link rel="prev" title="topologicpy.Context module" href="topologicpy.Context.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.9.27
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphDB.html">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html">topologicpy.IFC module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.Core module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.Core.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.Core">
+<span id="topologicpy-core-module"></span><h1>topologicpy.Core module<a class="headerlink" href="#module-topologicpy.Core" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Core.Core">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">Core</span></span><a class="headerlink" href="#topologicpy.Core.Core" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Thin facade over the active topology kernel backend.</p>
+<p>The default backend is <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>. Use <code class="docutils literal notranslate"><span class="pre">Core.SetBackend</span></code> to
+replace it with another backend object that exposes the same namespace shape.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.Backend" title="topologicpy.Core.Core.Backend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Backend</span></code></a>()</p></td>
+<td><p>Returns the active backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.Call" title="topologicpy.Core.Core.Call"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Call</span></code></a>(namespace, attribute, *args, **kwargs)</p></td>
+<td><p>Dynamically calls a method or callable attribute on a backend namespace.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.HasAttribute" title="topologicpy.Core.Core.HasAttribute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasAttribute</span></code></a>(namespace, attribute)</p></td>
+<td><p>Returns True if the active backend namespace exposes the requested attribute.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.HasNamespace" title="topologicpy.Core.Core.HasNamespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">HasNamespace</span></code></a>(name)</p></td>
+<td><p>Returns True if the active backend exposes the requested namespace.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.InstanceAttribute" title="topologicpy.Core.Core.InstanceAttribute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InstanceAttribute</span></code></a>(obj, attributeName)</p></td>
+<td><p>Returns an instance attribute from a backend-native object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.InstanceCall" title="topologicpy.Core.Core.InstanceCall"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InstanceCall</span></code></a>(obj, methodName, *args, **kwargs)</p></td>
+<td><p>Calls an instance method on a backend-native object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.Namespace" title="topologicpy.Core.Core.Namespace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespace</span></code></a>(name)</p></td>
+<td><p>Returns a backend namespace by name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.Namespaces" title="topologicpy.Core.Core.Namespaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespaces</span></code></a>()</p></td>
+<td><p>Returns the public namespace names exposed by the active backend.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.RawModule" title="topologicpy.Core.Core.RawModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RawModule</span></code></a>()</p></td>
+<td><p>Returns the raw module of the active backend if available.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.ResetBackend" title="topologicpy.Core.Core.ResetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResetBackend</span></code></a>()</p></td>
+<td><p>Resets the active backend to a new <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code> instance.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.SetBackend" title="topologicpy.Core.Core.SetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetBackend</span></code></a>(backend)</p></td>
+<td><p>Sets the active Core backend.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 69%" />
+<col style="width: 31%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>Aperture</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Cell</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CellComplex</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>CellComplexUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>CellUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Cluster</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>ClusterUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Context</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Dictionary</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>DoubleAttribute</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Edge</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>EdgeUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Face</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>FaceUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Graph</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>GraphUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>IntAttribute</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ListAttribute</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Shell</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>ShellUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>StringAttribute</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Topology</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>TopologyUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Vertex</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>VertexUtility</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>Wire</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>WireUtility</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Aperture">
+<span class="sig-name descname"><span class="pre">Aperture</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Aperture&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Aperture" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Backend">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Backend" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the active backend. If none has been set, creates the default
+<code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Call">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Call</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Call" title="Permalink to this definition"></a></dt>
+<dd><p>Dynamically calls a method or callable attribute on a backend namespace.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Cell">
+<span class="sig-name descname"><span class="pre">Cell</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Cell&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Cell" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.CellComplex">
+<span class="sig-name descname"><span class="pre">CellComplex</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">CellComplex&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.CellComplex" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.CellComplexUtility">
+<span class="sig-name descname"><span class="pre">CellComplexUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">CellComplexUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.CellComplexUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.CellUtility">
+<span class="sig-name descname"><span class="pre">CellUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">CellUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.CellUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Cluster">
+<span class="sig-name descname"><span class="pre">Cluster</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Cluster&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Cluster" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.ClusterUtility">
+<span class="sig-name descname"><span class="pre">ClusterUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">ClusterUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.ClusterUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Context">
+<span class="sig-name descname"><span class="pre">Context</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Context&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Context" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Dictionary">
+<span class="sig-name descname"><span class="pre">Dictionary</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Dictionary&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Dictionary" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.DoubleAttribute">
+<span class="sig-name descname"><span class="pre">DoubleAttribute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">DoubleAttribute&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.DoubleAttribute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Edge">
+<span class="sig-name descname"><span class="pre">Edge</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Edge&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Edge" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.EdgeUtility">
+<span class="sig-name descname"><span class="pre">EdgeUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">EdgeUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.EdgeUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Face">
+<span class="sig-name descname"><span class="pre">Face</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Face&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Face" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.FaceUtility">
+<span class="sig-name descname"><span class="pre">FaceUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">FaceUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.FaceUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Graph">
+<span class="sig-name descname"><span class="pre">Graph</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Graph&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Graph" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.GraphUtility">
+<span class="sig-name descname"><span class="pre">GraphUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">GraphUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.GraphUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.HasAttribute">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasAttribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attribute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.HasAttribute" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the active backend namespace exposes the requested
+attribute.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.HasNamespace">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">HasNamespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.HasNamespace" title="Permalink to this definition"></a></dt>
+<dd><p>Returns True if the active backend exposes the requested namespace.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.InstanceAttribute">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InstanceAttribute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attributeName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Core.Core.InstanceAttribute" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an instance attribute from a backend-native object.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.InstanceCall">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InstanceCall</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">obj</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">methodName</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">args</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Core.Core.InstanceCall" title="Permalink to this definition"></a></dt>
+<dd><p>Calls an instance method on a backend-native object.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.IntAttribute">
+<span class="sig-name descname"><span class="pre">IntAttribute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">IntAttribute&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.IntAttribute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.ListAttribute">
+<span class="sig-name descname"><span class="pre">ListAttribute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">ListAttribute&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.ListAttribute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Namespace">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Namespace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Namespace" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a backend namespace by name.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Namespaces">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Namespaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Namespaces" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the public namespace names exposed by the active backend.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.RawModule">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">RawModule</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.RawModule" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the raw module of the active backend if available.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.ResetBackend">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResetBackend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.ResetBackend" title="Permalink to this definition"></a></dt>
+<dd><p>Resets the active backend to a new <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code> instance.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.SetBackend">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetBackend</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">backend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.SetBackend" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the active Core backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>backend</strong><span class="classifier">object</span></dt><dd><p>A backend object exposing topologic_core-like namespaces such as
+<code class="docutils literal notranslate"><span class="pre">Vertex</span></code>, <code class="docutils literal notranslate"><span class="pre">Edge</span></code>, <code class="docutils literal notranslate"><span class="pre">Wire</span></code>, <code class="docutils literal notranslate"><span class="pre">Face</span></code>, <code class="docutils literal notranslate"><span class="pre">TopologyUtility</span></code>, etc.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>object</dt><dd><p>The backend that was set.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Shell">
+<span class="sig-name descname"><span class="pre">Shell</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Shell&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Shell" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.ShellUtility">
+<span class="sig-name descname"><span class="pre">ShellUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">ShellUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.ShellUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.StringAttribute">
+<span class="sig-name descname"><span class="pre">StringAttribute</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">StringAttribute&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.StringAttribute" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Topology">
+<span class="sig-name descname"><span class="pre">Topology</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Topology&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Topology" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.TopologyUtility">
+<span class="sig-name descname"><span class="pre">TopologyUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">TopologyUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.TopologyUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Vertex">
+<span class="sig-name descname"><span class="pre">Vertex</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Vertex&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Vertex" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.VertexUtility">
+<span class="sig-name descname"><span class="pre">VertexUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">VertexUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.VertexUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.Wire">
+<span class="sig-name descname"><span class="pre">Wire</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">Wire&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.Wire" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Core.Core.WireUtility">
+<span class="sig-name descname"><span class="pre">WireUtility</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;Core</span> <span class="pre">namespace</span> <span class="pre">proxy:</span> <span class="pre">WireUtility&gt;</span></em><a class="headerlink" href="#topologicpy.Core.Core.WireUtility" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">TopologicCoreBackend</span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Default backend that exposes the <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> namespaces directly.</p>
+<p>This class deliberately mirrors <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> as closely as possible.
+Any missing namespaces are set to <code class="docutils literal notranslate"><span class="pre">None</span></code> so that Core can fail gracefully
+with a clear message when accessed.</p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.TopologicCoreBackend.Namespaces" title="topologicpy.Core.TopologicCoreBackend.Namespaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Namespaces</span></code></a>()</p></td>
+<td><p>Returns the public namespace names exposed by this backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.TopologicCoreBackend.RawModule" title="topologicpy.Core.TopologicCoreBackend.RawModule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RawModule</span></code></a>()</p></td>
+<td><p>Returns the raw imported <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> module.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend.Namespaces">
+<span class="sig-name descname"><span class="pre">Namespaces</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend.Namespaces" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the public namespace names exposed by this backend.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend.RawModule">
+<span class="sig-name descname"><span class="pre">RawModule</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend.RawModule" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the raw imported <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> module.</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Context.html" class="btn btn-neutral float-left" title="topologicpy.Context module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Dictionary.html" class="btn btn-neutral float-right" title="topologicpy.Dictionary module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
