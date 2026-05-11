@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.27 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.28 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.27
+                0.9.28
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -437,8 +437,8 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CenterOfMass" title="topologicpy.Topology.Topology.CenterOfMass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code></a>(topology)</p></td>
 <td><p>Returns the center of mass of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology)</p></td>
-<td><p>Returns the centroid of the vertices of the input topology.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology[, mode, mantissa, ...])</p></td>
+<td><p>Returns the true geometric centroid of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cleanup" title="topologicpy.Topology.Topology.Cleanup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code></a>([topology])</p></td>
 <td><p>Cleans up all resources in which are managed by topologic library.</p></td>
@@ -554,7 +554,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsPlanar" title="topologicpy.Topology.Topology.IsPlanar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsPlanar</span></code></a>(topology[, mantissa, tolerance])</p></td>
 <td><p>Returns True if all the vertices of the input topology are co-planar.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsSame" title="topologicpy.Topology.Topology.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(topologyA, topologyB)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsSame" title="topologicpy.Topology.Topology.IsSame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSame</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns True if the input topologies are the same topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.IsSimilar" title="topologicpy.Topology.Topology.IsSimilar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsSimilar</span></code></a>(topologyA, topologyB[, ...])</p></td>
@@ -770,13 +770,16 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Vertices" title="topologicpy.Topology.Topology.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the vertices of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.View3D" title="topologicpy.Topology.Topology.View3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">View3D</span></code></a>(*topologies[, uuid, nameKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.VerticesCentroid" title="topologicpy.Topology.Topology.VerticesCentroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesCentroid</span></code></a>(topology[, mantissa, silent])</p></td>
+<td><p>Returns the centroid of the vertices of the input topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.View3D" title="topologicpy.Topology.Topology.View3D"><code class="xref py py-obj docutils literal notranslate"><span class="pre">View3D</span></code></a>(*topologies[, uuid, nameKey, ...])</p></td>
 <td><p>Sends the input topologies to 3dviewer.net.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Wires" title="topologicpy.Topology.Topology.Wires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Wires</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the wires of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.XOR" title="topologicpy.Topology.Topology.XOR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">XOR</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>Returns the symmetric difference (XOR) of the input operand topologies.</p></td>
 </tr>
 </tbody>
@@ -1966,18 +1969,37 @@ and thus can give erroneous results. The transformation matrix may not yield an 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Centroid">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Centroid" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the centroid of the vertices of the input topology. See <a class="reference external" href="https://en.wikipedia.org/wiki/Centroid">https://en.wikipedia.org/wiki/Centroid</a>.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Centroid" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the true geometric centroid of the input topology.</p>
+<p>The centroid is computed by measure:
+- Cells / CellComplexes are evaluated by volume.
+- Faces / Shells are evaluated by area.
+- Wires / Edges are evaluated by length.
+- Vertices are evaluated by arithmetic mean.</p>
+<p>For mixed-dimensional topologies, only the highest-dimensional sub-topologies
+are used. For example, if a Cluster contains faces and edges, the centroid is
+computed from the faces because the edges have zero area.</p>
+<p>This method correctly accounts for holes in faces and voids in cells when
+those holes/voids are represented in the topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>If set to “basic” (case insensitive), the centroid will be computed as the average of the vertices of the input topology.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the output coordinates to.
+Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The centroid of the input topology.</p>
+<dt>topologic_core.Vertex or None</dt><dd><p>The centroid of the input topology.</p>
 </dd>
 </dl>
 </dd>
@@ -3007,7 +3029,7 @@ it will filter by topology type only.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.IsSame">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsSame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.IsSame" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsSame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.IsSame" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if the input topologies are the same topology. Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -3015,6 +3037,8 @@ it will filter by topology type only.</p>
 <dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The first input topology.</p>
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5342,6 +5366,34 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
 <dt>list</dt><dd><p>The list of vertices.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.VerticesCentroid">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesCentroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.VerticesCentroid" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the centroid of the vertices of the input topology.</p>
+<p>This method computes the arithmetic mean of the coordinates of all vertices
+found in the input topology. It does not compute the geometric centroid by
+length, area, or volume.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the output coordinates to.
+Default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Vertex or None</dt><dd><p>The centroid of the vertices of the input topology.</p>
 </dd>
 </dl>
 </dd>
