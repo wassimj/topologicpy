@@ -310,6 +310,42 @@ class Cell():
         return cell
     
     @staticmethod
+    def ByFacesCluster(cluster, planarize: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a cell by merging the faces within the input cluster.
+
+        Parameters
+        ----------
+        cluster : topologic_core.Cluster
+            The input cluster of faces.
+        planarize : bool, optional
+            If set to True, the input faces are planarized before building the cell. Otherwise, they are not.
+            Default is False.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created cell.
+            Otherwise, they are not. Default is False.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Cell
+            The created cell.
+
+        """
+
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Cell.ByFacesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            return None
+        faces = Topology.Faces(cluster)
+        return Cell.ByFaces(faces, planarize=planarize, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
+    
+    @staticmethod
     def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001):
         """
         Creates an offset cell from the input cell.

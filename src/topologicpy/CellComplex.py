@@ -161,7 +161,7 @@ class CellComplex():
         return cellComplex
     
     @staticmethod
-    def ByCellsCluster(cluster, tolerance: float = 0.0001):
+    def ByCellsCluster(cluster, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cellcomplex by merging the cells within the input cluster.
 
@@ -169,8 +169,13 @@ class CellComplex():
         ----------
         cluster : topologic_core.Cluster
             The input cluster of cells.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -182,10 +187,11 @@ class CellComplex():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
-            print("CellComplex.ByCellsCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+            if not silent:
+                print("CellComplex.ByCellsCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         cells = Topology.Cells(cluster)
-        return CellComplex.ByCells(cells, tolerance=tolerance)
+        return CellComplex.ByCells(cells, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ByDisjointedFaces(faces: list,
@@ -1180,7 +1186,7 @@ class CellComplex():
         return cc
 
     @staticmethod
-    def ByFacesCluster(cluster, tolerance: float = 0.0001, silent: bool = False):
+    def ByFacesCluster(cluster, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a cellcomplex by merging the faces within the input cluster.
 
@@ -1188,6 +1194,9 @@ class CellComplex():
         ----------
         cluster : topologic_core.Cluster
             The input cluster of faces.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -1206,7 +1215,7 @@ class CellComplex():
                 print("CellComplex.ByFacesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = Topology.Faces(cluster)
-        return CellComplex.ByFaces(faces, tolerance=tolerance, silent=silent)
+        return CellComplex.ByFaces(faces, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ByWires(wires: list, triangulate: bool = True, tolerance: float = 0.0001):

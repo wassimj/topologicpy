@@ -270,7 +270,7 @@ class Shell():
         return None
 
     @staticmethod
-    def ByFaces(faces: list, tolerance: float = 0.0001, silent=False):
+    def ByFaces(faces: list, transferDictionaries: bool = False, tolerance: float = 0.0001, silent=False):
         """
         Creates a shell from the input list of faces.
 
@@ -278,6 +278,9 @@ class Shell():
         ----------
         faces : list
             The input list of faces.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -289,7 +292,10 @@ class Shell():
             The created Shell.
 
         """
+        from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(faces, list):
             return None
@@ -306,11 +312,26 @@ class Shell():
                 if not silent:
                     print("Shell.ByFaces - Error: Could not create shell. Returning None.")
                 return None
-        else:
-            return shell
+        
+        if transferDictionaries:
+            shell_faces = Topology.Faces(shell)
+            source_cluster = Cluster.ByTopologies(faces)
+
+            for shell_face in shell_faces:
+                internal_vertex = Topology.InternalVertex(shell_face, tolerance=tolerance)
+                enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
+                                                        source_cluster,
+                                                        exclusive=False,
+                                                        tolerance=tolerance)
+
+                if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
+                    dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
+                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+                    shell_face = Topology.SetDictionary(shell_face, merged_dictionary)
+        return shell
 
     @staticmethod
-    def ByFacesCluster(cluster, tolerance: float = 0.0001):
+    def ByFacesCluster(cluster, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a shell from the input cluster of faces.
 
@@ -318,8 +339,13 @@ class Shell():
         ----------
         cluster : topologic_core.Cluster
             The input cluster of faces.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created Shell.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -330,9 +356,11 @@ class Shell():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
+            if not silent:
+                print("Shell.ByFacesCluster - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
             return None
         faces = Topology.Faces(cluster)
-        return Shell.ByFaces(faces, tolerance=tolerance)
+        return Shell.ByFaces(faces, transferDictionaries=transferDictionaries, tolerance=tolerance, silent=silent)
 
     @staticmethod
     def ByThickenedWire(wire, offsetA: float = 1.0, offsetB: float = 1.0, tolerance: float = 0.0001):

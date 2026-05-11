@@ -749,7 +749,7 @@ class Wire():
     #             wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
     #     return wire
     @staticmethod
-    def ByEdges(edges: list, orient: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def ByEdges(edges: list, orient: bool = False, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a wire from the input list of edges.
 
@@ -759,6 +759,9 @@ class Wire():
             The input list of edges.
         orient : bool , optional
             If set to True the edges are oriented head to tail. Otherwise, they are not. Default is False.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the edges are transferred to the edges of the created Wire.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -774,6 +777,7 @@ class Wire():
         from topologicpy.Topology import Topology
         from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
         import inspect
 
         def edgesMatch(e1, e2, tolerance=0.0001):
@@ -836,7 +840,22 @@ class Wire():
         if Wire.IsManifold(wire):
             if orient == True:
                 wire = Wire.OrientEdges(wire, Wire.StartVertex(wire), tolerance=tolerance)
+        
+        if transferDictionaries:
+            wire_edges = Topology.Edges(wire)
+            source_cluster = Cluster.ByTopologies(edges)
 
+            for wire_edge in wire_edges:
+                internal_vertex = Topology.InternalVertex(wire_edge, tolerance=tolerance)
+                enclosing_edges = Vertex.EnclosingEdges(internal_vertex,
+                                                        source_cluster,
+                                                        exclusive=False,
+                                                        tolerance=tolerance)
+
+                if isinstance(enclosing_edges, list) and len(enclosing_edges) > 0:
+                    dictionaries = [Topology.Dictionary(edge) for edge in enclosing_edges]
+                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+                    Topology.SetDictionary(wire_edge, merged_dictionary)
         return wire
     
     @staticmethod

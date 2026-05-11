@@ -848,7 +848,7 @@ class Vertex():
             return None
     
     @staticmethod
-    def EnclosingCells(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
+    def EnclosingCells(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
         Returns the list of Cells found in the input topology that enclose the input vertex.
 
@@ -864,6 +864,8 @@ class Vertex():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The tolerance for computing if the input vertex is enclosed in a cell. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -880,8 +882,12 @@ class Vertex():
         elif Topology.IsInstance(topology, "Cluster") or Topology.IsInstance(topology, "CellComplex"):
             cells = Topology.Cells(topology)
         else:
+            if not silent:
+                print("Vertex.EnclosingCells - Error: The input topology does not contain any cells. Returning None.")
             return None
         if len(cells) < 1:
+            if not silent:
+                print("Vertex.EnclosingCells - Error: The input topology does not contain any cells. Returning None.")
             return None
         
         bvh = BVH.ByTopologies(cells, tolerance=tolerance, silent=True)
@@ -896,7 +902,70 @@ class Vertex():
         return enclosingCells
     
     @staticmethod
-    def EnclosingFaces(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
+    def EnclosingEdges(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
+        """
+        Returns the list of Edges found in the input topology that enclose the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        topology : topologic_core.Topology
+            The input topology.
+        exclusive : bool , optional
+            If set to True, return only the first found enclosing face. Default is True.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is enclosed in a face. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of enclosing faces.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.BVH import BVH
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            return None
+
+        if Topology.IsInstance(topology, "Edge"):
+            edges = [topology]
+        elif Topology.IsInstance(topology, "Cluster") or \
+             Topology.IsInstance(topology, "Wire") or \
+            Topology.IsInstance(topology, "Shell") or \
+            Topology.IsInstance(topology, "Cell") or \
+            Topology.IsInstance(topology, "CellComplex"):
+            edges = Topology.Edges(topology)
+        else:
+            if not silent:
+                print("Vertex.EnclosingEdges - Error: The input topology does not contain any edges. Returning None.")
+            return None
+
+        if len(edges) < 1:
+            if not silent:
+                print("Vertex.EnclosingEdges - Error: The input topology does not contain any edges. Returning None.")
+            return None
+
+        bvh = BVH.ByTopologies(edges, tolerance=tolerance, silent=True)
+        candidates = BVH.Clashes(bvh, vertex, tolerance=tolerance)
+
+        enclosingEdges = []
+        for i in range(len(candidates)):
+            if Vertex.IsInternal(vertex, candidates[i], tolerance=tolerance):
+                if exclusive:
+                    return [candidates[i]]
+                else:
+                    enclosingEdges.append(candidates[i])
+
+        return enclosingEdges
+ 
+    @staticmethod
+    def EnclosingFaces(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False) -> list:
         """
         Returns the list of Faces found in the input topology that enclose the input vertex.
 
@@ -912,6 +981,8 @@ class Vertex():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The tolerance for computing if the input vertex is enclosed in a face. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------

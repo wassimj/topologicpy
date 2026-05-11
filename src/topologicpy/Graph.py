@@ -558,36 +558,116 @@ class Graph:
         -------
         topologic_core.Graph
             The input graph with the input vertex added to it.
-
         """
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+        from topologicpy.Graph import Graph
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
                 print("Graph.AddVertex - Error: The input graph is not a valid graph. Returning None.")
             return None
+
         if not Topology.IsInstance(vertex, "Vertex"):
             if not silent:
                 print("Graph.AddVertex - Error: The input vertex is not a valid vertex. Returning the input graph.")
             return graph
-        
-        x, y, z = Vertex.Coordinates(vertex)
-        for existing_v in Graph.Vertices(graph) or []:
-            if Vertex.Distance(vertex, existing_v) <= tolerance:
-                vertex = Topology.Translate(vertex, tolerance*2, tolerance*2, tolerance*2)
 
-        # _ = graph.AddVertices([vertex], tolerance) # H to Core
-        _ = Core.InstanceCall(graph, "AddVertices", [vertex], tolerance)
+        tolerance = max(float(tolerance or 0.0001), 1e-12)
+        existing_vertices = Graph.Vertices(graph) or []
+
+        def _is_clear(v):
+            for existing_v in existing_vertices:
+                try:
+                    if Vertex.Distance(v, existing_v) <= tolerance:
+                        return False
+                except Exception:
+                    continue
+            return True
+
+        # If another vertex already occupies this coordinate, move the new vertex
+        # just enough to make it geometrically distinct. This preserves the topology
+        # intent while avoiding a core-level duplicate-coordinate rejection.
+        if not _is_clear(vertex):
+            try:
+                base_x, base_y, base_z = Vertex.Coordinates(vertex)
+            except Exception:
+                base_x, base_y, base_z = 0.0, 0.0, 0.0
+
+            # Deterministic expanding search around the requested coordinate.
+            # The offsets are deliberately larger than tolerance so the new vertex
+            # cannot remain coincident with the occupied location.
+            step = tolerance * 10.0
+            candidate = None
+
+            directions = [
+                (1.0, 0.0, 0.0),
+                (0.0, 1.0, 0.0),
+                (0.0, 0.0, 1.0),
+                (-1.0, 0.0, 0.0),
+                (0.0, -1.0, 0.0),
+                (0.0, 0.0, -1.0),
+                (1.0, 1.0, 0.0),
+                (1.0, 0.0, 1.0),
+                (0.0, 1.0, 1.0),
+                (-1.0, -1.0, 0.0),
+                (-1.0, 0.0, -1.0),
+                (0.0, -1.0, -1.0),
+                (1.0, 1.0, 1.0),
+                (-1.0, -1.0, -1.0),
+            ]
+
+            for radius in range(1, 1001):
+                found = False
+                for dx, dy, dz in directions:
+                    try:
+                        test_vertex = Vertex.ByCoordinates(
+                            base_x + dx * step * radius,
+                            base_y + dy * step * radius,
+                            base_z + dz * step * radius,
+                        )
+
+                        # Preserve the dictionary of the original vertex.
+                        try:
+                            d = Topology.Dictionary(vertex)
+                            if d is not None:
+                                Topology.SetDictionary(test_vertex, d)
+                        except Exception:
+                            pass
+
+                        if _is_clear(test_vertex):
+                            candidate = test_vertex
+                            found = True
+                            break
+                    except Exception:
+                        continue
+
+                if found:
+                    break
+
+            if candidate is not None:
+                vertex = candidate
+            else:
+                if not silent:
+                    print("Graph.AddVertex - Warning: Could not find a non-coincident location for the vertex. Attempting to add the original vertex.")
+
+        try:
+            Core.InstanceCall(graph, "AddVertices", [vertex], tolerance)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.AddVertex - Error: Could not add the vertex. {e}. Returning the input graph.")
+            return graph
+
         # --------------------------------------------------
         # Invalidate compiled routing graph (if any)
         # --------------------------------------------------
         try:
-            gid = id(graph)  # or id(self) if instance-style
+            gid = id(graph)
             if gid in Graph._compiled_routing_registry:
                 del Graph._compiled_routing_registry[gid]
         except Exception:
             pass
+
         return graph
     
     @staticmethod
