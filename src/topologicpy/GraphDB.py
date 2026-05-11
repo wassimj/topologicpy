@@ -458,6 +458,18 @@ class GraphDB:
     @staticmethod
     def UpsertGraph(graphdb,
                     graph,
+                    graphIDKey: str = "graph_id",
+                    vertexIDKey: str = "id",
+                    vertexLabelKey: str = "label",
+                    defaultVertexLabel: str = "Node",
+                    vertexCategoryKey: str = "category",
+                    defaultVertexCategory: str = "Node",
+                    edgeLabelKey: str = "label",
+                    defaultEdgeLabel: str = "CONNECTED_TO",
+                    edgeCategoryKey: str = "category",
+                    defaultEdgeCategory: str = "Edge",
+                    bidirectional: bool = True,
+                    overwrite: bool = False,
                     mantissa: int = 6,
                     silent: bool = False) -> str:
         """
@@ -465,12 +477,36 @@ class GraphDB:
 
         Parameters
         ----------
-        graphDB: dict
+        graphdb : dict
             The graph database descriptor. See GraphDB.ByParameters(...).
-        graph: topologic_core.Graph
+        graph : topologic_core.Graph
             The graph to be upserted.
+        graphIDKey : str , optional
+            The dictionary key used to retrieve the graph id. Default is "id".
+        vertexIDKey : str , optional
+            The dictionary key used to retrieve each vertex id. Default is "id".
+        vertexLabelKey : str , optional
+            The dictionary key used to retrieve each vertex label. Default is "label".
+        defaultVertexLabel : str , optional
+            The default vertex label to use if no vertex label is found. Default is "Node".
+        vertexCategoryKey : str , optional
+            The dictionary key used to retrieve each vertex category. Default is "category".
+        defaultVertexCategory : str , optional
+            The default vertex category to use if no vertex category is found. Default is "Node".
+        edgeLabelKey : str , optional
+            The dictionary key used to retrieve each edge label. Default is "label".
+        defaultEdgeLabel : str , optional
+            The default edge label to use if no edge label is found. Default is "CONNECTED_TO".
+        edgeCategoryKey : str , optional
+            The dictionary key used to retrieve each edge category. Default is "category".
+        defaultEdgeCategory : str , optional
+            The default edge category to use if no edge category is found. Default is "Edge".
+        bidirectional : bool , optional
+            If set to True, edges are written bidirectionally where supported by the backend. Default is True.
+        overwrite : bool , optional
+            If set to True, an existing graph with the same graph id is overwritten where supported by the backend. Default is False.
         mantissa : int , optional
-            The number of decimal places to use when extracting mesh data. Default is 6.
+            The number of decimal places to use when extracting coordinate data. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -480,18 +516,25 @@ class GraphDB:
             The graph id used, or None on error.
         """
 
-        # Make sure your backend graph implementatation supports the following options.
-
         kwargs = {
             "graph": graph,
+            "graphIDKey": graphIDKey,
+            "vertexIDKey": vertexIDKey,
+            "vertexLabelKey": vertexLabelKey,
+            "defaultVertexLabel": defaultVertexLabel,
+            "vertexCategoryKey": vertexCategoryKey,
+            "defaultVertexCategory": defaultVertexCategory,
+            "edgeLabelKey": edgeLabelKey,
+            "defaultEdgeLabel": defaultEdgeLabel,
+            "edgeCategoryKey": edgeCategoryKey,
+            "defaultEdgeCategory": defaultEdgeCategory,
+            "bidirectional": bidirectional,
+            "overwrite": overwrite,
             "mantissa": mantissa,
             "silent": silent
         }
 
-        return GraphDB._call(graphdb,
-                             "UpsertGraph",
-                             **kwargs,
-        )
+        return GraphDB._call(graphdb, "UpsertGraph", **kwargs)
 
     @staticmethod
     def GraphByID(graphdb, graphID: str, silent: bool = False):

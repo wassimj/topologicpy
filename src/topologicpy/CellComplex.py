@@ -701,7 +701,7 @@ class CellComplex():
         return CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def ByFaces(faces, tolerance: float = 0.0001, silent: bool = False):
+    def ByFaces(faces, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a CellComplex from the input faces after using Shapely to remove
         coplanar face overlaps.
@@ -714,6 +714,9 @@ class CellComplex():
         ----------
         faces : list
             The input list of topologic_core.Face objects.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created CellComplex.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -744,6 +747,8 @@ class CellComplex():
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(faces, list):
             if not silent:
@@ -1151,7 +1156,28 @@ class CellComplex():
                 print("CellComplex.ByFacesShapely - Error: No valid faces remained after Shapely processing. Returning None.")
             return None
 
-        return CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
+        cc = CellComplex._ByFaces(cleaned_faces, tolerance=tolerance, silent=silent)
+        if not Topology.IsInstance(cc, "cellcomplex"):
+            if not silent:
+                print("CellComplex.ByFaces - Error: Could not create the CellComplex. Returning None.")
+            return None
+        
+        if transferDictionaries:
+            cc_faces = Topology.Faces(cc)
+            source_cluster = Cluster.ByTopologies(faces)
+
+            for cc_face in cc_faces:
+                internal_vertex = Topology.InternalVertex(cc_face, tolerance=tolerance)
+                enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
+                                                        source_cluster,
+                                                        exclusive=False,
+                                                        tolerance=tolerance)
+                print("Enclosing Faces:", len(enclosing_faces))
+                if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
+                    dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
+                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=True)
+                    Topology.SetDictionary(cc_face, merged_dictionary)
+        return cc
 
     @staticmethod
     def ByFacesCluster(cluster, tolerance: float = 0.0001, silent: bool = False):

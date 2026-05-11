@@ -88,7 +88,11 @@ class Cell():
                           direction=direction, placement=placement, tolerance=tolerance)
 
     @staticmethod
-    def ByFaces(faces: list, planarize: bool = False, tolerance: float = 0.0001, silent=False):
+    def ByFaces(faces: list,
+                planarize: bool = False,
+                transferDictionaries: bool = False,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
         Creates a cell from the input list of faces.
 
@@ -97,7 +101,11 @@ class Cell():
         faces : list
             The input list of faces.
         planarize : bool, optional
-            If set to True, the input faces are planarized before building the cell. Otherwise, they are not. Default is False.
+            If set to True, the input faces are planarized before building the cell. Otherwise, they are not.
+            Default is False.
+        transferDictionaries : bool , optional
+            If set to True, any dictionaries in the faces are transferred to the faces of the created Cell.
+            Otherwise, they are not. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -112,112 +120,195 @@ class Cell():
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
         from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def _fail(message):
+            if not silent:
+                print(message)
+            return None
 
         if not isinstance(faces, list):
-            if not silent:
-                print("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
-                return None
-        faceList = [x for x in faces if Topology.IsInstance(x, "Face")]
-        if len(faceList) < 3:
-            if not silent:
-                print("Cell.ByFaces - Error: The input faces parameter does not contain valid faces. Returning None.")
-                return None
-        # Try the default method
-        cell = Core.Cell.ByFaces(faceList, tolerance)
+            return _fail("Cell.ByFaces - Error: The input faces parameter is not a valid list. Returning None.")
+
+        face_list = [face for face in faces if Topology.IsInstance(face, "Face")]
+        if len(face_list) < 3:
+            return _fail("Cell.ByFaces - Error: The input faces parameter does not contain at least three valid faces. Returning None.")
+
+        # First attempt: use the input faces directly.
+        cell = Core.Cell.ByFaces(face_list, tolerance)
         if Topology.IsInstance(cell, "Cell"):
             return cell
-        
-        # Cleanup any non-manifold edges in faces
+
+        # Second attempt: rebuild each face from its closed external and internal boundaries.
         clean_faces = []
-        for face in faceList:
-            eb = Face.ExternalBoundary(face)
-            if not Wire.IsClosed(eb):
+        for face in face_list:
+            external_boundary = Face.ExternalBoundary(face)
+            if not Topology.IsInstance(external_boundary, "Wire") or not Wire.IsClosed(external_boundary):
                 continue
-            ibList = Face.InternalBoundaries(face)
-            closed_ibList = []
-            for ib in ibList:
-                if Wire.IsClosed(ib):
-                    closed_ibList.append(ib)
-                else:
-                    print("Found an open wire!")
-            clean_face = Face.ByWires(eb, closed_ibList)
-            if Topology.IsInstance(clean_face, "face"):
+
+            internal_boundaries = Face.InternalBoundaries(face)
+            closed_internal_boundaries = []
+
+            for internal_boundary in internal_boundaries:
+                if Topology.IsInstance(internal_boundary, "Wire") and Wire.IsClosed(internal_boundary):
+                    closed_internal_boundaries.append(internal_boundary)
+                elif not silent:
+                    print("Cell.ByFaces - Warning: Found an open internal boundary. Skipping it.")
+
+            clean_face = Face.ByWires(external_boundary, closed_internal_boundaries, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(clean_face, "Face"):
                 clean_faces.append(clean_face)
-        # Try the default method again
-        cell = Core.Cell.ByFaces(clean_faces, tolerance)
-        if Topology.IsInstance(cell, "Cell"):
-            return cell
-        else:
-            if not silent:
-                print("Cell.ByFaces - Error: Could not construct cell. Trying other methods.")
-        # Fuse all the vertices first and rebuild the faces
+            elif isinstance(clean_face, list):
+                clean_faces.extend([f for f in clean_face if Topology.IsInstance(f, "Face")])
+
+        if len(clean_faces) >= 3:
+            cell = Core.Cell.ByFaces(clean_faces, tolerance)
+            if Topology.IsInstance(cell, "Cell"):
+                return cell
+
+        if not silent:
+            print("Cell.ByFaces - Warning: Could not construct cell from cleaned faces. Trying vertex-fused reconstruction.")
+
+        # Third attempt: fuse all vertices and rebuild the faces with shared vertex instances.
         all_vertices = []
-        wires = []
-        for f in faceList:
-            w = Face.Wire(f)
-            if Wire.IsClosed(w):
-                wires.append(w)
-                all_vertices += Topology.Vertices(w)
-            all_vertices = Vertex.Fuse(all_vertices, tolerance=tolerance)
-        new_faces = []
-        for w in wires:
-            face_vertices = []
-            for v in Topology.Vertices(w):
-                index = Vertex.Index(v, all_vertices, tolerance=tolerance)
-                if not index == None:
-                    face_vertices.append(all_vertices[index])
-            new_w = Wire.ByVertices(face_vertices)
-            if Topology.IsInstance(new_w, "Wire"):
-                new_f = Face.ByWire(new_w, silent=True)
-                if Topology.IsInstance(new_f, "Face"):
-                    new_faces.append(new_f)
-                elif isinstance(new_f, list):
-                    new_faces += new_f
-        faceList = new_faces
-        planarizedList = []
-        enlargedList = []
+        closed_wires = []
+
+        source_faces = clean_faces if len(clean_faces) >= 3 else face_list
+
+        for face in source_faces:
+            wire = Face.Wire(face)
+            if Topology.IsInstance(wire, "Wire") and Wire.IsClosed(wire):
+                closed_wires.append(wire)
+                all_vertices.extend(Topology.Vertices(wire))
+
+        if len(closed_wires) < 3 or len(all_vertices) < 4:
+            return _fail("Cell.ByFaces - Error: Could not find enough closed face wires to construct a cell. Returning None.")
+
+        fused_vertices = Vertex.Fuse(all_vertices, tolerance=tolerance)
+        if not isinstance(fused_vertices, list) or len(fused_vertices) < 4:
+            return _fail("Cell.ByFaces - Error: Could not fuse enough vertices to construct a cell. Returning None.")
+
+        reconstructed_faces = []
+
+        for wire in closed_wires:
+            wire_vertices = Topology.Vertices(wire)
+            reconstructed_vertices = []
+
+            for vertex in wire_vertices:
+                vertex_index = Vertex.Index(vertex, fused_vertices, tolerance=tolerance)
+                if vertex_index is not None:
+                    reconstructed_vertices.append(fused_vertices[vertex_index])
+
+            if len(reconstructed_vertices) < 3:
+                continue
+
+            reconstructed_wire = Wire.ByVertices(reconstructed_vertices, close=True, tolerance=tolerance, silent=True)
+            if not Topology.IsInstance(reconstructed_wire, "Wire"):
+                continue
+
+            reconstructed_face = Face.ByWire(reconstructed_wire, tolerance=tolerance, silent=True)
+            if Topology.IsInstance(reconstructed_face, "Face"):
+                reconstructed_faces.append(reconstructed_face)
+            elif isinstance(reconstructed_face, list):
+                reconstructed_faces.extend([f for f in reconstructed_face if Topology.IsInstance(f, "Face")])
+
+        if len(reconstructed_faces) < 3:
+            return _fail("Cell.ByFaces - Error: Could not reconstruct enough valid faces. Returning None.")
+
+        face_list = reconstructed_faces
+
         if planarize:
-            planarizedList = [Face.Planarize(f, tolerance=tolerance) for f in faceList]
-            enlargedList = [Face.ByOffset(f, offset=-tolerance*10) for f in planarizedList]
-            cell = Core.Cell.ByFaces(enlargedList, tolerance)
-            faceList = Topology.SubTopologies(cell, subTopologyType="face")
-            finalFaces = []
-            for f in faceList:
-                centroid = Topology.Centroid(f)
-                n = Face.Normal(f)
-                v = Topology.Translate(centroid,
-                                       x = n[0]*0.01,
-                                       y = n[1]*0.01,
-                                       z = n[2]*0.01,
-                                       transferDictionaries = False,
-                                       silent=True)
-                if not Vertex.IsInternal(v, cell):
-                    finalFaces.append(f)
-            finalFinalFaces = []
-            for f in finalFaces:
-                vertices = Topology.Vertices(f)
-                w = Wire.Cycles(Face.ExternalBoundary(f), maxVertices=len(vertices))[0]
-                f1 = Face.ByWire(w, tolerance=tolerance, silent=True)
-                if Topology.IsInstance(f1, "Face"):
-                    finalFinalFaces.append(f1)
-                elif isinstance(f1, list):
-                    finalFinalFaces += f1
-            cell = Core.Cell.ByFaces(finalFinalFaces, tolerance)
-            if cell == None:
-                if not silent:
-                    print("Cell.ByFaces 1 - Error: The operation failed. Returning None.")
-                    return None
-            else:
-                return cell
+            planarized_faces = []
+
+            for face in face_list:
+                planarized_face = Face.Planarize(face, tolerance=tolerance)
+                if Topology.IsInstance(planarized_face, "Face"):
+                    planarized_faces.append(planarized_face)
+
+            if len(planarized_faces) < 3:
+                return _fail("Cell.ByFaces - Error: Could not planarize enough valid faces. Returning None.")
+
+            enlarged_faces = []
+
+            for face in planarized_faces:
+                enlarged_face = Face.ByOffset(face, offset=-tolerance * 10, tolerance=tolerance, silent=True)
+                if Topology.IsInstance(enlarged_face, "Face"):
+                    enlarged_faces.append(enlarged_face)
+                elif isinstance(enlarged_face, list):
+                    enlarged_faces.extend([f for f in enlarged_face if Topology.IsInstance(f, "Face")])
+
+            if len(enlarged_faces) < 3:
+                return _fail("Cell.ByFaces - Error: Could not enlarge enough valid faces. Returning None.")
+
+            cell = Core.Cell.ByFaces(enlarged_faces, tolerance)
+            if not Topology.IsInstance(cell, "Cell"):
+                return _fail("Cell.ByFaces - Error: The planarized cell construction failed. Returning None.")
+
+            candidate_faces = Topology.Faces(cell)
+            exterior_faces = []
+
+            for face in candidate_faces:
+                centroid = Topology.Centroid(face)
+                normal = Face.Normal(face)
+
+                test_vertex = Topology.Translate(centroid,
+                                                x=normal[0] * 0.01,
+                                                y=normal[1] * 0.01,
+                                                z=normal[2] * 0.01,
+                                                transferDictionaries=False,
+                                                silent=True)
+
+                if not Vertex.IsInternal(test_vertex, cell, tolerance=tolerance):
+                    exterior_faces.append(face)
+
+            final_faces = []
+
+            for face in exterior_faces:
+                external_boundary = Face.ExternalBoundary(face)
+                vertices = Topology.Vertices(face)
+                cycles = Wire.Cycles(external_boundary, maxVertices=len(vertices))
+
+                if not isinstance(cycles, list) or len(cycles) < 1:
+                    continue
+
+                final_face = Face.ByWire(cycles[0], tolerance=tolerance, silent=True)
+                if Topology.IsInstance(final_face, "Face"):
+                    final_faces.append(final_face)
+                elif isinstance(final_face, list):
+                    final_faces.extend([f for f in final_face if Topology.IsInstance(f, "Face")])
+
+            if len(final_faces) < 3:
+                return _fail("Cell.ByFaces - Error: Could not extract enough final faces after planarization. Returning None.")
+
+            cell = Core.Cell.ByFaces(final_faces, tolerance)
+            if not Topology.IsInstance(cell, "Cell"):
+                return _fail("Cell.ByFaces - Error: The final planarized cell construction failed. Returning None.")
+
         else:
-            cell = Core.Cell.ByFaces(faces, tolerance)
-            if cell == None:
-                if not silent:
-                    print("Cell.ByFaces 2 - Error: The operation failed. Returning None.")
-                    return None
-            else:
-                return cell
+            cell = Core.Cell.ByFaces(face_list, tolerance)
+            if not Topology.IsInstance(cell, "Cell"):
+                return _fail("Cell.ByFaces - Error: The operation failed. Returning None.")
+
+        if transferDictionaries:
+            cell_faces = Topology.Faces(cell)
+            source_cluster = Cluster.ByTopologies(faces)
+
+            for cell_face in cell_faces:
+                internal_vertex = Topology.InternalVertex(cell_face, tolerance=tolerance)
+                enclosing_faces = Vertex.EnclosingFaces(internal_vertex,
+                                                        source_cluster,
+                                                        exclusive=False,
+                                                        tolerance=tolerance)
+
+                if isinstance(enclosing_faces, list) and len(enclosing_faces) > 0:
+                    dictionaries = [Topology.Dictionary(face) for face in enclosing_faces]
+                    merged_dictionary = Dictionary.ByMergedDictionaries(dictionaries, silent=silent)
+                    Topology.SetDictionary(cell_face, merged_dictionary)
+
+        return cell
+    
     @staticmethod
     def ByOffset(cell, offset: float = 1.0, tolerance: float = 0.0001):
         """

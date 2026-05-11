@@ -38,110 +38,9 @@ class Dictionary():
         return method(*args, **kwargs)
 
     @staticmethod
-    def _IsDictionary(dictionary) -> bool:
-        """
-        Returns True if the input behaves like a supported dictionary.
-
-        Supported inputs are:
-        - native Python dictionaries;
-        - the active Core/topologic dictionary class;
-        - backend dictionary objects exposing Keys() and ValueAtKey(key);
-        - backend dictionary objects exposing PythonDictionary().
-        """
-        if dictionary is None:
-            return False
-
-        if isinstance(dictionary, dict):
-            return True
-
-        try:
-            DictionaryClass = Dictionary._CoreClass("Dictionary")
-            if isinstance(dictionary, DictionaryClass):
-                return True
-        except Exception:
-            pass
-
-        try:
-            from topologicpy.Topology import Topology
-            if Topology.IsInstance(dictionary, "Dictionary"):
-                return True
-        except Exception:
-            pass
-
-        try:
-            if callable(getattr(dictionary, "PythonDictionary", None)):
-                py_dict = dictionary.PythonDictionary()
-                return isinstance(py_dict, dict)
-        except Exception:
-            pass
-
-        return callable(getattr(dictionary, "Keys", None)) and callable(getattr(dictionary, "ValueAtKey", None))
-
-    @staticmethod
-    def _Keys(dictionary):
-        """
-        Returns dictionary keys without printing diagnostics.
-        """
-        if isinstance(dictionary, dict):
-            return list(dictionary.keys())
-
-        if dictionary is None:
-            return None
-
-        try:
-            if callable(getattr(dictionary, "PythonDictionary", None)):
-                py_dict = dictionary.PythonDictionary()
-                if isinstance(py_dict, dict):
-                    return list(py_dict.keys())
-        except Exception:
-            pass
-
-        try:
-            keys = Dictionary._CoreCall(dictionary, "Keys")
-            if keys is None:
-                return []
-            return list(keys)
-        except Exception:
-            pass
-
-        try:
-            keys = dictionary.Keys()
-            if keys is None:
-                return []
-            return list(keys)
-        except Exception:
-            return None
-
-    @staticmethod
-    def _RawValueAtKey(dictionary, key):
-        """
-        Returns a raw dictionary value or Core attribute without converting it.
-        """
-        if isinstance(dictionary, dict):
-            return dictionary.get(key, None)
-
-        try:
-            if callable(getattr(dictionary, "PythonDictionary", None)):
-                py_dict = dictionary.PythonDictionary()
-                if isinstance(py_dict, dict):
-                    return py_dict.get(key, None)
-        except Exception:
-            pass
-
-        try:
-            return Dictionary._CoreCall(dictionary, "ValueAtKey", key)
-        except Exception:
-            pass
-
-        try:
-            return dictionary.ValueAtKey(key)
-        except Exception:
-            return None
-
-    @staticmethod
     def _ConvertAttribute(attr):
         """
-        Converts a Topologic/Core attribute, Python value, or backend dictionary value into a Python value.
+        Converts a Topologic/Core attribute or Python value into the proper Python value.
         """
         from topologicpy.Topology import Topology
         import json
@@ -155,6 +54,9 @@ class Dictionary():
             except Exception:
                 return False
 
+        def json_to_python(json_string):
+            return json.loads(json_string)
+
         def topology_from_json_string(json_string):
             if not is_json_string(json_string):
                 return None
@@ -162,12 +64,14 @@ class Dictionary():
                 topologies = Topology.ByJSONString(json_string)
             except Exception:
                 return None
+
             if isinstance(topologies, list):
                 if len(topologies) == 0:
                     return None
                 if len(topologies) == 1:
                     return topologies[0]
                 return topologies
+
             if Topology.IsInstance(topologies, "Topology"):
                 return topologies
             return None
@@ -182,43 +86,53 @@ class Dictionary():
 
         if isinstance(attr, IntAttribute):
             return Dictionary._CoreCall(attr, "IntValue")
+
         if isinstance(attr, DoubleAttribute):
             return Dictionary._CoreCall(attr, "DoubleValue")
+
         if isinstance(attr, StringAttribute):
             temp_value = Dictionary._CoreCall(attr, "StringValue")
             if temp_value == "__NONE__":
                 return None
+
             topologies = topology_from_json_string(temp_value)
             if topologies is not None:
                 return topologies
+
             if is_json_string(temp_value):
-                return json.loads(temp_value)
+                return json_to_python(temp_value)
+
             return temp_value
+
         if isinstance(attr, ListAttribute):
             return Dictionary.ListAttributeValues(attr)
 
-        if isinstance(attr, bool):
-            return attr
         if isinstance(attr, (float, int)):
             return attr
+
         if isinstance(attr, str):
             if attr == "__NONE__":
                 return None
+
             topologies = topology_from_json_string(attr)
             if topologies is not None:
                 return topologies
+
             if is_json_string(attr):
-                return json.loads(attr)
+                return json_to_python(attr)
+
             return attr
+
         if isinstance(attr, tuple):
             return [Dictionary._ConvertAttribute(x) for x in list(attr)]
+
         if isinstance(attr, list):
             return [Dictionary._ConvertAttribute(x) for x in attr]
+
         if isinstance(attr, dict):
             return attr
-        if Dictionary._IsDictionary(attr):
-            return Dictionary.PythonDictionary(attr, silent=True)
-        return attr
+
+        return None
 
     @staticmethod
     def _ConvertValue(value):
@@ -238,23 +152,31 @@ class Dictionary():
 
         if value is None:
             return StringAttribute("__NONE__")
+
         if isinstance(value, bool):
             return IntAttribute(1 if value else 0)
+
         if isinstance(value, int):
             return IntAttribute(value)
+
         if isinstance(value, float):
             return DoubleAttribute(value)
+
         if Topology.IsInstance(value, "Topology"):
             return StringAttribute(Topology.JSONString(value))
-        if Dictionary._IsDictionary(value):
-            py_dict = Dictionary.PythonDictionary(value, silent=True)
-            return StringAttribute(dict_to_json(py_dict if isinstance(py_dict, dict) else {}))
+
+        if isinstance(value, dict):
+            return StringAttribute(dict_to_json(value))
+
         if isinstance(value, str):
             return StringAttribute(value)
+
         if isinstance(value, tuple):
             return ListAttribute([Dictionary._ConvertValue(v) for v in list(value)])
+
         if isinstance(value, list):
             return ListAttribute([Dictionary._ConvertValue(v) for v in value])
+
         return StringAttribute("__NONE__")
 
     @staticmethod
@@ -387,55 +309,121 @@ class Dictionary():
         """
         Booleans the keys/values of the dictionaries in the second list on the
         dictionaries in the first list based on a shared dictionary key/value and the boolean operation.
+
+        If a dictionary in the first list and a dictionary in second list have the same value
+        for the given dictionary key, the dictionary from the second list is imprinted the dictionary
+        in the first list.
+
+        Parameters
+        ----------
+        dictionariesA : list[topologic_core.Dictionary]
+            Target list of dictionaries to be updated.
+        dictionariesB : list[topologic_core.Dictionary]
+            Source list of dictionaries providing values.
+        key : str
+            Dictionary key used to match dictionaries.
+        operation : str , optional
+            the type of desired boolean operation. Options are:
+            - "union" / "merge"
+            - "difference"
+            - "intersection"
+            - "SymmetricDifference" / "SymDif" / "XOR"
+            - "Impose"
+            - "Imprint"
+            The options are case-insensitive. Default is "union"
+        exclusive: bool , optional
+            If set to True, only the first matching dictionary in the second list is applied.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list[topologic_core.Dictionary]
+            The updated first list of dictionaries
         """
-        dictionariesA = [d for d in dictionariesA if Dictionary._IsDictionary(d)] if isinstance(dictionariesA, list) else []
-        dictionariesB = [d for d in dictionariesB if Dictionary._IsDictionary(d)] if isinstance(dictionariesB, list) else []
+
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        dictionariesA = [d for d in dictionariesA if Topology.IsInstance(d, "Dictionary")]
         if len(dictionariesA) < 1:
             if not silent:
                 print("Dictionary.BooleanDictionariesByKey - Error: The dictionariesA input parameter does not contain any valid dictionaries. Returning None.")
             return None
+        
+        dictionariesB = [d for d in dictionariesB if Topology.IsInstance(d, "Dictionary")]
         if len(dictionariesB) < 1:
             if not silent:
                 print("Dictionary.BooleanDictionariesByKey - Error: The dictionariesB input parameter does not contain any valid dictionaries. Returning None.")
             return None
 
+        dictionariesC = []
         op = operation.lower()
-        if op not in ["union", "merge", "difference", "intersection", "symmetricdifference", "symdif", "xor", "impose", "imprint"]:
+        if not op in ["union", "merge", "difference", "intersection", "symmetricdifference", "symdif", "xor", "impose", "imprint"]:
             if not silent:
                 print("Dictionary.BooleanDictionariesByKey - Error: Unrecognized boolean operation. Returning None.")
             return None
-
-        def apply_op(dA, dB):
-            if op in ["union", "merge"]:
-                return Dictionary.Union(dA, dB, silent=silent)
-            if op == "difference":
-                return Dictionary.Difference(dA, dB, silent=silent)
-            if op == "intersection":
-                return Dictionary.Intersection(dA, dB, silent=silent)
-            if op in ["symmetricdifference", "symdif", "xor"]:
-                return Dictionary.SymmetricDifference(dA, dB, silent=silent)
-            if op == "impose":
-                return Dictionary.Impose(dA, dB, silent=silent)
-            if op == "imprint":
-                return Dictionary.Imprint(dA, dB, silent=silent)
-            return dA
-
-        dictionariesC = []
+        # Imprint dictionariesB unto dictionariesA
         if exclusive:
             lookup = {}
             for d in dictionariesB:
-                lookup[Dictionary.ValueAtKey(d, key, None, silent=silent)] = d
+                if d:
+                    v = Dictionary.ValueAtKey(d, key)
+                    lookup[v] = d
             for dA in dictionariesA:
-                vA = Dictionary.ValueAtKey(dA, key, None, silent=silent)
+                if not dA:
+                    continue
+                vA = Dictionary.ValueAtKey(dA, key, None)
                 dB = lookup.get(vA, None)
-                dictionariesC.append(apply_op(dA, dB) if dB else Dictionary.ByKeysValues([], [], silent=silent))
+                if dB:
+                    if op in ["union", "merge"]:
+                        dA = Dictionary.Union(dA, dB)
+                    elif op == "difference":
+                        dA = Dictionary.Difference(dA, dB)
+                    elif op == "intersection":
+                        dA = Dictionary.Intersection(dA, dB)
+                    elif op in ["symmetricdifference", "symdif", "xor"]:
+                        dA = Dictionary.SymmetricDifference(dA, dB)
+                    elif op == "impose":
+                        dA = Dictionary.Impose(dA, dB)
+                    elif op == "imprint":
+                        dA = Dictionary.Imprint(dA, dB)
+                    else:
+                        continue
+                    dictionariesC.append(dA)
+                else:
+                    if not silent:
+                        print(f"Dictionary.BooleanDictionariesByKey - Warning: No match found for {vA}. Assigning an empty dictionary.")
+                    dictionariesC.append(Dictionary.ByKeysValues([],[]))
         else:
             for dA in dictionariesA:
-                vA = Dictionary.ValueAtKey(dA, key, None, silent=silent)
-                for dB in dictionariesB:
-                    if vA == Dictionary.ValueAtKey(dB, key, None, silent=silent):
-                        dA = apply_op(dA, dB)
+                if not dA:
+                    continue
+                vA = Dictionary.ValueAtKey(dA, key, None)
+                if vA:
+                    for dB in dictionariesB:
+                        if not dB:
+                            continue
+                        vB = Dictionary.ValueAtKey(dB, key, None)
+                        if not vB:
+                            continue
+                        if vA == vB:
+                            if op in ["union", "merge"]:
+                                dA = Dictionary.Union(dA, dB)
+                            elif op == "difference":
+                                dA = Dictionary.Difference(dA, dB)
+                            elif op == "intersection":
+                                dA = Dictionary.Intersection(dA, dB)
+                            elif op in ["symmetricdifference", "symdif", "xor"]:
+                                dA = Dictionary.SymmetricDifference(dA, dB)
+                            elif op == "impose":
+                                dA = Dictionary.Impose(dA, dB)
+                            elif op == "imprint":
+                                dA = Dictionary.Imprint(dA, dB)
+                            else:
+                                continue
                 dictionariesC.append(dA)
+
         return dictionariesC
 
     @staticmethod
@@ -511,47 +499,93 @@ class Dictionary():
     def ByMergedDictionaries(*dictionaries, silent: bool = False):
         """
         Creates a dictionary by merging the list of input dictionaries.
+
+        Parameters
+        ----------
+        dictionaries : list or comma separated dictionaries
+            The input list of dictionaries to be merged.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The created dictionary.
+
         """
+        from topologicpy.Topology import Topology
         from topologicpy.Helper import Helper
 
         if isinstance(dictionaries, tuple):
             dictionaries = Helper.Flatten(list(dictionaries))
-        elif not isinstance(dictionaries, list):
-            dictionaries = [dictionaries]
-
-        dictionaries = [d for d in dictionaries if Dictionary._IsDictionary(d)]
-        if len(dictionaries) == 0:
+        if isinstance(dictionaries, list):
+            new_dictionaries = [d for d in dictionaries if Topology.IsInstance(d, "Dictionary")]
+        if len(new_dictionaries) == 0:
             if not silent:
                 print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
             return None
-        if len(dictionaries) == 1:
+        if len(new_dictionaries) == 1:
             if not silent:
-                print("Dictionary.ByMergedDictionaries - Warning: the input dictionaries parameter contains only one dictionary. Returning input dictionary.")
-            return dictionaries[0]
-
+                print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter contains only one dictionary. Returning input dictionary.")
+            return new_dictionaries[0]
+        if not isinstance(new_dictionaries, list):
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter is not a valid list. Returning None.")
+            return None
+        return_dictionaries = []
+        for d in new_dictionaries:
+            if Topology.IsInstance(d, "Dictionary"):
+                return_dictionaries.append(d)
+            elif isinstance(d, dict):
+                return_dictionaries.append(Dictionary.ByPythonDictionary(d))
+        if len(return_dictionaries) == 0:
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: The input dictionaries parameter does not contain valid dictionaries. Returning None.")
+            return None
+        elif len(return_dictionaries) == 1:
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Warning: The input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
+            return new_dictionaries[0]
+        else:
+            dictionaries = return_dictionaries
+        
         sinkKeys = []
         sinkValues = []
-        for d in dictionaries:
-            sourceKeys = Dictionary.Keys(d, silent=silent) or []
-            for sourceKey in sourceKeys:
-                sourceValue = Dictionary.ValueAtKey(d, sourceKey, silent=silent)
-                if sourceKey not in sinkKeys:
-                    sinkKeys.append(sourceKey)
-                    sinkValues.append(sourceValue)
+        d = dictionaries[0]
+        if d != None:
+            stlKeys = Dictionary.Keys(d)
+            if len(stlKeys) > 0:
+                sinkKeys = Dictionary.Keys(d)
+                sinkValues = Dictionary.Values(d)
+            for i in range(1,len(dictionaries)):
+                d = dictionaries[i]
+                if d == None:
                     continue
-                index = sinkKeys.index(sourceKey)
-                if sourceValue is None:
-                    continue
-                if sinkValues[index] is None or sinkValues[index] == "":
-                    sinkValues[index] = sourceValue
-                elif isinstance(sinkValues[index], list):
-                    if sourceValue not in sinkValues[index]:
-                        sinkValues[index].append(sourceValue)
-                elif sourceValue != sinkValues[index]:
-                    sinkValues[index] = [sinkValues[index], sourceValue]
-
-        return Dictionary.ByKeysValues(sinkKeys, sinkValues, silent=silent)
-
+                stlKeys = Dictionary.Keys(d)
+                if len(stlKeys) > 0:
+                    sourceKeys = Dictionary.Keys(d)
+                    for aSourceKey in sourceKeys:
+                        if aSourceKey not in sinkKeys:
+                            sinkKeys.append(aSourceKey)
+                            sinkValues.append("")
+                    for i in range(len(sourceKeys)):
+                        index = sinkKeys.index(sourceKeys[i])
+                        sourceValue = Dictionary.ValueAtKey(d,sourceKeys[i])
+                        if sourceValue != None:
+                            if sinkValues[index] != "":
+                                if isinstance(sinkValues[index], list):
+                                    if not sourceValue in sinkValues[index]:
+                                        sinkValues[index].append(sourceValue)
+                                else:
+                                    if not sourceValue == sinkValues[index]:
+                                        sinkValues[index] = [sinkValues[index], sourceValue]
+                            else:
+                                sinkValues[index] = sourceValue
+        if len(sinkKeys) > 0 and len(sinkValues) > 0:
+            newDict = Dictionary.ByKeysValues(sinkKeys, sinkValues)
+            return newDict
+        return None
+    '''
     @staticmethod
     def ByObjectProperties(bObject, keys, importAll):
         """
@@ -627,6 +661,7 @@ class Dictionary():
                         raise Exception("Dictionary.ByObjectProperties: Key \""+k+"\" does not exist in the properties of object \""+bObject.name+"\".")
 
         return Dictionary.ByKeysValues(dictKeys, dictValues)
+    '''
 
     @staticmethod
     def ByPythonDictionary(pythonDictionary, silent: bool = False):
@@ -660,206 +695,427 @@ class Dictionary():
     def Copy(dictionary, silent: bool = False):
         """
         Creates a copy of the input dictionary.
+
+        Parameters
+        ----------
+        dictionary : topologic_core.Dictionary
+            The input dictionary.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            A copy of the input dictionary.
+
         """
-        if not Dictionary._IsDictionary(dictionary):
+        from topologicpy.Topology import Topology
+        if not Topology.IsInstance(dictionary, "dictionary"):
             if not silent:
                 print("Dictionary.Copy - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
             return None
-        keys = Dictionary.Keys(dictionary, silent=silent)
-        values = Dictionary.Values(dictionary, silent=silent)
-        return Dictionary.ByKeysValues(keys, values, silent=silent)
+        keys = Dictionary.Keys(dictionary)
+        values = Dictionary.Values(dictionary)
+        return Dictionary.ByKeysValues(keys, values)
 
     @staticmethod
     def Difference(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the difference of dictionaryA and dictionaryB (A \\ B), based on keys.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary (minuend).
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary (subtrahend).
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting difference dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None:
             if not silent:
                 print("Dictionary.Difference - Warning: The dictionaryA input parameter is None. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.Difference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Difference - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.Difference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB]
-        out_vals = [Dictionary.ValueAtKey(dictionaryA, k, silent=silent) for k in out_keys]
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
 
+        out_keys = [k for k in keysA if k not in keysB]
+
+        if len(out_keys) == 0:
+            if not silent:
+                print("Dictionary.Difference - Warning: There are no keys in dictionaryA that are not in dictionaryB. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        out_vals = [Dictionary.ValueAtKey(dictionaryA, k) for k in out_keys]
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
+         
     @staticmethod
     def Filter(elements, dictionaries, searchType="any", key=None, value=None):
         """
         Filters the input list of dictionaries based on the input parameters.
+
+        Parameters
+        ----------
+        elements : list
+            The input list of elements to be filtered according to the input dictionaries.
+        dictionaries : list
+            The input list of dictionaries to be filtered.
+        searchType : str , optional
+            The type of search query to conduct in the topology's dictionary. This can be one of "any", "equal to", "contains", "starts with", "ends with", "not equal to", "does not contain". Default is "any".
+        key : str , optional
+            The dictionary key to search within. Default is None which means it will filter by topology type only.
+        value : str , optional
+            The value to search for at the specified key. Default is None which means it will filter by topology type only.
+
+        Returns
+        -------
+        dict
+            A dictionary of filtered and other elements. The dictionary has two keys:
+            - "filtered" The filtered dictionaries.
+            - "other" The other dictionaries that did not meet the filter criteria.
+            - "filteredIndices" The filtered indices of dictionaries.
+            - "otherIndices" The other indices of dictionaries that did not meet the filter criteria.
+
         """
+
+        from topologicpy.Topology import Topology
+
+        def listToString(item):
+            returnString = ""
+            if isinstance(item, list):
+                if len(item) < 2:
+                    return str(item[0])
+                else:
+                    returnString = item[0]
+                    for i in range(1, len(item)):
+                        returnString = returnString+str(item[i])
+            return returnString
+        
         filteredDictionaries = []
         otherDictionaries = []
         filteredElements = []
         otherElements = []
         filteredIndices = []
         otherIndices = []
-
         for i, aDictionary in enumerate(dictionaries):
-            if not Dictionary._IsDictionary(aDictionary):
+            if not Topology.IsInstance(aDictionary, "Dictionary"):
                 continue
-            if value == "" or key == "" or value is None or key is None:
+            if value == "" or key == "" or value == None or key == None:
                 filteredDictionaries.append(aDictionary)
                 filteredIndices.append(i)
-                if i < len(elements):
-                    filteredElements.append(elements[i])
-                continue
-
-            if isinstance(value, list):
-                value = sorted(value)
-            value_str = str(value).replace("*", ".+").lower()
-            v = Dictionary.ValueAtKey(aDictionary, key)
-            if v is None:
-                otherDictionaries.append(aDictionary)
-                otherIndices.append(i)
-                if i < len(elements):
-                    otherElements.append(elements[i])
-                continue
-
-            v_str = str(v).lower()
-            st = searchType.lower()
-            if st == "equal to":
-                searchResult = value_str == v_str
-            elif st == "contains":
-                searchResult = value_str in v_str
-            elif st == "starts with":
-                searchResult = value_str == v_str[:len(value_str)]
-            elif st == "ends with":
-                searchResult = value_str == v_str[-len(value_str):]
-            elif st == "not equal to":
-                searchResult = value_str != v_str
-            elif st == "does not contain":
-                searchResult = value_str not in v_str
             else:
-                searchResult = False
-
-            if searchResult:
-                filteredDictionaries.append(aDictionary)
-                filteredIndices.append(i)
-                if i < len(elements):
-                    filteredElements.append(elements[i])
-            else:
-                otherDictionaries.append(aDictionary)
-                otherIndices.append(i)
-                if i < len(elements):
+                if isinstance(value, list):
+                    value.sort()
+                value = str(value)
+                value.replace("*",".+")
+                value = value.lower()
+                v = Dictionary.ValueAtKey(aDictionary, key)
+                if v == None:
+                    otherDictionaries.append(aDictionary)
+                    otherIndices.append(i)
                     otherElements.append(elements[i])
-
+                else:
+                    v = str(v).lower()
+                    if searchType.lower() == "equal to":
+                        searchResult = (value == v)
+                    elif searchType.lower() == "contains":
+                        searchResult = (value in v)
+                    elif searchType.lower() == "starts with":
+                        searchResult = (value == v[0: len(value)])
+                    elif searchType.lower() == "ends with":
+                        searchResult = (value == v[len(v)-len(value):len(v)])
+                    elif searchType.lower() == "not equal to":
+                        searchResult = not (value == v)
+                    elif searchType.lower() == "does not contain":
+                        searchResult = not (value in v)
+                    else:
+                        searchResult = False
+                    if searchResult == True:
+                        filteredDictionaries.append(aDictionary)
+                        filteredIndices.append(i)
+                        filteredElements.append(elements[i])
+                    else:
+                        otherDictionaries.append(aDictionary)
+                        otherIndices.append(i)
+                        otherElements.append(elements[i])
         return {"filteredDictionaries": filteredDictionaries, "otherDictionaries": otherDictionaries, "filteredIndices": filteredIndices, "otherIndices": otherIndices, "filteredElements": filteredElements, "otherElements": otherElements}
+
 
     @staticmethod
     def Intersection(dictionaryA, dictionaryB, silent: bool = False):
         """
-        Returns the intersection of dictionaryA and dictionaryB, based on keys.
+        Returns the intersection of dA and dB, based on keys, using a two-step
+        construction and Dictionary.ByMergedDictionaries.
+        
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting intersection dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None or dictionaryB is None:
             if not silent:
-                print("Dictionary.Intersection - Warning: One or both of the input dictionaries is None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
-        if not Dictionary._IsDictionary(dictionaryA):
+                print("Dictionary.Intersection - Warning: One or both of the input dictionaries is None. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.Intersection - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.Intersection - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        common_keys = [k for k in keysA if k in keysB]
-        if len(common_keys) == 0:
-            return Dictionary.ByKeysValues([], [], silent=silent)
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
 
-        dA_1 = Dictionary.ByKeysValues(common_keys, [Dictionary.ValueAtKey(dictionaryA, k, silent=silent) for k in common_keys], silent=silent)
-        dB_1 = Dictionary.ByKeysValues(common_keys, [Dictionary.ValueAtKey(dictionaryB, k, silent=silent) for k in common_keys], silent=silent)
-        return Dictionary.ByMergedDictionaries(dA_1, dB_1, silent=silent)
+        common_keys = [k for k in keysA if k in keysB]
+
+        if len(common_keys) == 0:
+            if not silent:
+                print("Dictionary.Intersection - Warning: There are no common keys in the input dictionaries. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        a_vals = [Dictionary.ValueAtKey(dictionaryA, k) for k in common_keys]
+        b_vals = [Dictionary.ValueAtKey(dictionaryB, k) for k in common_keys]
+
+        dA_1 = Dictionary.ByKeysValues(common_keys, a_vals)
+        dB_1 = Dictionary.ByKeysValues(common_keys, b_vals)
+
+        return Dictionary.ByMergedDictionaries(dA_1, dB_1)
 
     @staticmethod
     def Impose(dictionaryA, dictionaryB, silent: bool = False):
         """
         Imposes dictionaryB onto dictionaryA.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary (base).
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary (imposed).
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting imposed dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None:
             if not silent:
                 print("Dictionary.Impose - Warning: The dictionaryA input parameter is None. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.Impose - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Impose - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.Impose - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        py = Dictionary.PythonDictionary(dictionaryA, silent=True) or {}
-        for k in Dictionary.Keys(dictionaryB, silent=silent) or []:
-            py[k] = Dictionary.ValueAtKey(dictionaryB, k, silent=silent)
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
+
+        # Preserve A order first
+        out_keys = list(keysA)
+        out_vals = [Dictionary.ValueAtKey(dictionaryA, k) for k in keysA]
+        index_map = {k: i for i, k in enumerate(out_keys)}
+
+        for k in keysB:
+            vB = Dictionary.ValueAtKey(dictionaryB, k)
+            if k in index_map:
+                out_vals[index_map[k]] = vB
+            else:
+                index_map[k] = len(out_keys)
+                out_keys.append(k)
+                out_vals.append(vB)
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
 
     @staticmethod
     def Imprint(dictionaryA, dictionaryB, silent: bool = False):
         """
         Imprints dictionaryB onto dictionaryA.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary (base).
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary (imprinted).
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting imprinted dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None:
             if not silent:
                 print("Dictionary.Imprint - Warning: The dictionaryA input parameter is None. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.Imprint - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Imprint - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.Imprint - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = set(Dictionary.Keys(dictionaryB, silent=silent) or [])
-        out_keys = list(keysA)
-        out_vals = [Dictionary.ValueAtKey(dictionaryB if k in keysB else dictionaryA, k, silent=silent) for k in out_keys]
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
 
+        keysB_set = set(keysB)
+
+        out_keys = list(keysA)
+        out_vals = []
+        for k in keysA:
+            if k in keysB_set:
+                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k))
+            else:
+                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k))
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
+
+    @staticmethod
+    def Intersection(dictionaryA, dictionaryB, silent: bool = False):
+        """
+        Returns the intersection of dA and dB, based on keys, using a two-step
+        construction and Dictionary.ByMergedDictionaries.
+        
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, warnings and errors are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting intersection dictionary.
+
+        """
+        
+        from topologicpy.Topology import Topology
+
+        if dictionaryA is None or dictionaryB is None:
+            if not silent:
+                print("Dictionary.Intersection - Warning: One or both of the input dictionaries is None. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
+            if not silent:
+                print("Dictionary.Intersection - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
+            return None
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
+            if not silent:
+                print("Dictionary.Intersection - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
+            return None
+        
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
+
+        common_keys = [k for k in keysA if k in keysB]
+
+        if len(common_keys) == 0:
+            if not silent:
+                print("Dictionary.Intersection - Warning: There are no common keys in the input dictionaries. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        a_vals = [Dictionary.ValueAtKey(dictionaryA, k) for k in common_keys]
+        b_vals = [Dictionary.ValueAtKey(dictionaryB, k) for k in common_keys]
+
+        dA_1 = Dictionary.ByKeysValues(common_keys, a_vals)
+        dB_1 = Dictionary.ByKeysValues(common_keys, b_vals)
+
+        return Dictionary.ByMergedDictionaries(dA_1, dB_1)
+    
     @staticmethod
     def Keys(dictionary, silent: bool = False):
         """
         Returns the keys of the input dictionary.
         """
+        from topologicpy.Topology import Topology
         import inspect
 
-        keys = Dictionary._Keys(dictionary)
-        if keys is not None:
-            return keys
+        if isinstance(dictionary, dict):
+            return list(dictionary.keys())
 
-        if not silent:
-            print("Dictionary.Keys - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
-            curframe = inspect.currentframe()
-            calframe = inspect.getouterframes(curframe, 2)
-            print('caller name:', calframe[1][3])
-        return None
+        if not Topology.IsInstance(dictionary, "Dictionary"):
+            if not silent:
+                print("Dictionary.Keys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
+            return None
+
+        try:
+            return list(Dictionary._CoreCall(dictionary, "Keys"))
+        except Exception:
+            return None
 
     @staticmethod
     def ListAttributeValues(listAttribute):
@@ -868,6 +1124,7 @@ class Dictionary():
         """
         if isinstance(listAttribute, (list, tuple)):
             return [Dictionary._ConvertAttribute(attr) for attr in listAttribute]
+
         listAttributes = Dictionary._CoreCall(listAttribute, "ListValue")
         return [Dictionary._ConvertAttribute(attr) for attr in listAttributes]
 
@@ -875,35 +1132,122 @@ class Dictionary():
     def Merge(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the merge (union) of dictionaryA and dictionaryB.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting merged dictionary.
+
         """
-        return Dictionary.Union(dictionaryA, dictionaryB, silent=silent)
+        from topologicpy.Topology import Topology
+
+        if dictionaryA is None and dictionaryB is None:
+            if not silent:
+                print("Dictionary.Merge - Warning: Both of the input dictionaries are None. Returning None.")
+            return None
+
+        if dictionaryA is None:
+            if not Topology.IsInstance(dictionaryB, "Dictionary"):
+                if not silent:
+                    print("Dictionary.Merge - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
+                return None
+            return dictionaryB
+
+        if dictionaryB is None:
+            if not Topology.IsInstance(dictionaryA, "Dictionary"):
+                if not silent:
+                    print("Dictionary.Merge - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
+                return None
+            return dictionaryA
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
+            if not silent:
+                print("Dictionary.Merge - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
+            return None
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
+            if not silent:
+                print("Dictionary.Merge - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
+            return None
+
+        return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB)
+
 
     @staticmethod
     def OneHotEncode(d, keys, categoriesByKey, silent=False):
         """
         One-hot encodes multiple categorical dictionary values in one pass. See https://en.wikipedia.org/wiki/One-hot
+
+        Parameters
+        ----------
+        d : topologic_core.Dictionary
+            The input dictionary.
+        keys : list
+            List of dictionary keys to one-hot encode.
+        categoriesByKey : dict
+            A dictionary mapping each key (str) to an ordered list of categories (list).
+            Example:
+                {
+                "room_type": ["Kitchen","Bedroom","WC"],
+                "zone": ["Public","Private"]
+                }
+        silent : bool , optional
+            If True, suppress warnings. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            A new dictionary where each original key in `keys` is removed (if present)
+            and replaced with one-hot encoded keys:
+                "<key>_0", "<key>_1", ...
         """
-        if not Dictionary._IsDictionary(d):
+
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(d, "Dictionary"):
             if not silent:
                 print("Dictionary.OneHotEncode - Error: Input is not a valid Dictionary.")
             return None
+
         if keys is None:
             if not silent:
                 print("Dictionary.OneHotEncode - Error: keys is None.")
             return None
+
         keys = list(keys)
         if len(keys) == 0:
             return d
+
         if not isinstance(categoriesByKey, dict):
             if not silent:
                 print("Dictionary.OneHotEncode - Error: categoriesByKey must be a dict mapping key -> categories.")
             return None
 
-        orig_keys = Dictionary.Keys(d, silent=silent) or []
-        orig_vals = [Dictionary.ValueAtKey(d, k, silent=silent) for k in orig_keys]
-        orig_index = {k: i for i, k in enumerate(orig_keys)}
-        values_by_key = {k: orig_vals[orig_index[k]] if k in orig_index else None for k in keys}
+        # Read original dictionary once
+        orig_keys = Dictionary.Keys(d)
+        orig_vals = [Dictionary.ValueAtKey(d, k) for k in orig_keys]
 
+        # Build a quick index for deletions/updates
+        orig_index = {k: i for i, k in enumerate(orig_keys)}
+
+        # Determine which keys to remove and capture their values
+        values_by_key = {}
+        for k in keys:
+            if k in orig_index:
+                values_by_key[k] = orig_vals[orig_index[k]]
+            else:
+                values_by_key[k] = None
+
+        # Remove requested keys (preserving order of remaining items)
         remove_set = set(keys)
         out_keys = []
         out_vals = []
@@ -912,41 +1256,37 @@ class Dictionary():
                 out_keys.append(k)
                 out_vals.append(v)
 
+        # Append one-hot encodings for each key in `keys`
         for k in keys:
             cats = categoriesByKey.get(k, None)
             if not isinstance(cats, (list, tuple)) or len(cats) == 0:
                 if not silent:
-                    print(f"Dictionary.OneHotEncode - Warning: No categories provided for key '{k}'. Skipping.")
+                    print(f"Dictionary.OneHotEncodeBatch - Warning: No categories provided for key '{k}'. Skipping.")
                 continue
+
             value = values_by_key.get(k, None)
             for i, cat in enumerate(cats):
                 out_keys.append(f"{k}_{i}")
                 out_vals.append(1 if value == cat else 0)
 
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        return Dictionary.ByKeysValues(out_keys, out_vals)
 
     @staticmethod
     def PythonDictionary(dictionary, silent: bool = False):
         """
         Returns the input dictionary as a python dictionary.
         """
+        from topologicpy.Topology import Topology
+
         if isinstance(dictionary, dict):
             if not silent:
                 print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning that dictionary.")
             return dictionary
 
-        if not Dictionary._IsDictionary(dictionary):
+        if not Topology.IsInstance(dictionary, "Dictionary"):
             if not silent:
-                print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic dictionary. Returning None.")
             return None
-
-        try:
-            if callable(getattr(dictionary, "PythonDictionary", None)):
-                py_dict = dictionary.PythonDictionary()
-                if isinstance(py_dict, dict):
-                    return dict(py_dict)
-        except Exception:
-            pass
 
         keys = Dictionary.Keys(dictionary, silent=silent)
         if keys is None:
@@ -954,8 +1294,11 @@ class Dictionary():
 
         pythonDict = {}
         for key in keys:
-            raw_value = Dictionary._RawValueAtKey(dictionary, key)
-            pythonDict[key] = Dictionary._ConvertAttribute(raw_value)
+            try:
+                attr = Dictionary._CoreCall(dictionary, "ValueAtKey", key)
+            except Exception:
+                raise Exception("Dictionary.PythonDictionary - Error: Could not retrieve a value at the specified key ("+str(key)+")")
+            pythonDict[key] = Dictionary._ConvertAttribute(attr)
         return pythonDict
 
     @staticmethod
@@ -963,36 +1306,64 @@ class Dictionary():
         """
         Removes the key and its associated value from the input dictionary.
         """
-        if not Dictionary._IsDictionary(dictionary):
+        from topologicpy.Topology import Topology
+
+        def processPythonDictionary(dictionary, key):
+            new_dict = {}
+            for k in dictionary.keys():
+                if not key.lower() == k.lower():
+                    new_dict[k] = dictionary[k]
+            return new_dict
+
+        def processTopologicDictionary(dictionary, key):
+            keys = Dictionary.Keys(dictionary) or []
+            new_keys = []
+            new_values = []
+            for k in keys:
+                if not key.lower() == k.lower():
+                    new_keys.append(k)
+                    new_values.append(Dictionary.ValueAtKey(dictionary, k))
+            return Dictionary.ByKeysValues(new_keys, new_values)
+
+        if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
             if not silent:
-                print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(key, str):
             if not silent:
                 print("Dictionary.RemoveKey - Error: The input key parameter is not a valid string. Returning None.")
             return None
 
-        py = Dictionary.PythonDictionary(dictionary, silent=True) or {}
-        remove_key = None
-        for k in py.keys():
-            if isinstance(k, str) and k.lower() == key.lower():
-                remove_key = k
-                break
-        if remove_key is not None:
-            py.pop(remove_key, None)
-
         if isinstance(dictionary, dict):
-            return py
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+            return processPythonDictionary(dictionary, key)
+        return processTopologicDictionary(dictionary, key)
 
     @staticmethod
     def SetValueAtKey(dictionary, key, value, silent: bool = False):
         """
         Creates or updates a key/value pair in the input dictionary.
         """
-        if not Dictionary._IsDictionary(dictionary):
+        from topologicpy.Topology import Topology
+
+        def processPythonDictionary(dictionary, key, value):
+            dictionary[key] = value
+            return dictionary
+
+        def processTopologicDictionary(dictionary, key, value):
+            keys = Dictionary.Keys(dictionary) or []
+            if key not in keys:
+                keys.append(key)
+            values = []
+            for k in keys:
+                if k == key:
+                    values.append(value)
+                else:
+                    values.append(Dictionary.ValueAtKey(dictionary, k))
+            return Dictionary.ByKeysValues(keys, values)
+
+        if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
             if not silent:
-                print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(key, str):
             if not silent:
@@ -1000,12 +1371,8 @@ class Dictionary():
             return None
 
         if isinstance(dictionary, dict):
-            dictionary[key] = value
-            return dictionary
-
-        py = Dictionary.PythonDictionary(dictionary, silent=True) or {}
-        py[key] = value
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+            return processPythonDictionary(dictionary, key, value)
+        return processTopologicDictionary(dictionary, key, value)
 
     @staticmethod
     def SetValuesAtKeys(dictionary, keys, values, silent: bool = False):
@@ -1049,158 +1416,251 @@ class Dictionary():
     def SymDif(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting symmetric difference dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None and dictionaryB is None:
             if not silent:
-                print("Dictionary.SymDif - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
+                print("Dictionary.SymDif - Warning: Both of the input dictionaries are None. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
         if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
+            if not Topology.IsInstance(dictionaryB, "Dictionary"):
                 if not silent:
                     print("Dictionary.SymDif - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryB
+
         if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
+            if not Topology.IsInstance(dictionaryA, "Dictionary"):
                 if not silent:
                     print("Dictionary.SymDif - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.SymDif - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.SymDif - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
-        out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
 
+        uniqueA = [k for k in keysA if k not in keysB]
+        uniqueB = [k for k in keysB if k not in keysA]
+
+        if len(uniqueA) == 0 and len(uniqueB) == 0:
+            if not silent:
+                print("Dictionary.SymDif - Warning: The input dictionaries have identical keys. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        out_keys = []
+        out_vals = []
+
+        for k in uniqueA:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryA, k))
+
+        for k in uniqueB:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryB, k))
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
+        
     @staticmethod
     def SymmetricDifference(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting symmetric difference dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None and dictionaryB is None:
             if not silent:
-                print("Dictionary.SymmetricDifference - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
+                print("Dictionary.SymmetricDifference - Warning: Both of the input dictionaries are None. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
         if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
+            if not Topology.IsInstance(dictionaryB, "Dictionary"):
                 if not silent:
                     print("Dictionary.SymmetricDifference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryB
+
         if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
+            if not Topology.IsInstance(dictionaryA, "Dictionary"):
                 if not silent:
                     print("Dictionary.SymmetricDifference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.SymmetricDifference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.SymmetricDifference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
+
+        uniqueA = [k for k in keysA if k not in keysB]
+        uniqueB = [k for k in keysB if k not in keysA]
+
+        if len(uniqueA) == 0 and len(uniqueB) == 0:
+            if not silent:
+                print("Dictionary.SymmetricDifference - Warning: The input dictionaries have identical keys. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        out_keys = []
         out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+
+        for k in uniqueA:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryA, k))
+
+        for k in uniqueB:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryB, k))
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
 
     @staticmethod
     def Union(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the union (merge) of dictionaryA and dictionaryB.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting union dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None and dictionaryB is None:
             if not silent:
                 print("Dictionary.Union - Warning: Both of the input dictionaries are None. Returning None.")
             return None
+
         if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
+            if not Topology.IsInstance(dictionaryB, "Dictionary"):
                 if not silent:
                     print("Dictionary.Union - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryB
+
         if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
+            if not Topology.IsInstance(dictionaryA, "Dictionary"):
                 if not silent:
                     print("Dictionary.Union - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.Union - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.Union - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
-        return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB, silent=silent)
 
+        return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB)
+    
     @staticmethod
     def ValueAtKey(dictionary, key, defaultValue=None, silent=False):
         """
         Returns the value at the input key in the input dictionary.
         If the dictionary or key is invalid, or the key does not exist, defaultValue is returned.
         """
+        from topologicpy.Topology import Topology
+
+        if isinstance(dictionary, dict):
+            if not isinstance(key, str):
+                if not silent:
+                    print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning defaultValue.")
+                return defaultValue
+            return dictionary.get(key, defaultValue)
+
+        if not Topology.IsInstance(dictionary, "Dictionary"):
+            if not silent:
+                print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning defaultValue.")
+            return defaultValue
+
         if not isinstance(key, str):
             if not silent:
                 print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning defaultValue.")
-            return defaultValue
-
-        if isinstance(dictionary, dict):
-            return dictionary.get(key, defaultValue)
-
-        if not Dictionary._IsDictionary(dictionary):
-            if not silent:
-                print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning defaultValue.")
             return defaultValue
 
         keys = Dictionary.Keys(dictionary, silent=True)
         if not isinstance(keys, list) or key not in keys:
             return defaultValue
 
-        raw_value = Dictionary._RawValueAtKey(dictionary, key)
-        if raw_value is None:
+        try:
+            attr = Dictionary._CoreCall(dictionary, "ValueAtKey", key)
+        except Exception:
             return defaultValue
 
-        value = Dictionary._ConvertAttribute(raw_value)
-        if value is None:
-            return defaultValue
-        return value
+        return Dictionary._ConvertAttribute(attr)
 
     @staticmethod
     def Values(dictionary, silent: bool = False):
         """
         Returns the list of values in the input dictionary.
         """
+        from topologicpy.Topology import Topology
+
         if isinstance(dictionary, dict):
             return list(dictionary.values())
 
-        if not Dictionary._IsDictionary(dictionary):
+        if not Topology.IsInstance(dictionary, "Dictionary"):
             if not silent:
-                print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
 
         keys = Dictionary.Keys(dictionary, silent=silent)
@@ -1215,7 +1675,7 @@ class Dictionary():
 
         Parameters
         ----------
-        dictionary : topologic_core.Dictionary, dict, or backend dictionary
+        dictionary : topologic_core.Dictionary or dict
             The input dictionary.
         keys : list
             The input list of keys.
@@ -1230,16 +1690,24 @@ class Dictionary():
             The list of values found at the input list of keys in the input dictionary.
 
         """
-        if not Dictionary._IsDictionary(dictionary):
-            if not silent:
-                print("Dictionary.ValuesAtKeys - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+        from topologicpy.Topology import Topology
+        
+        if not Topology.IsInstance(dictionary, "Dictionary") and not isinstance(dictionary, dict):
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input dictionary parameter is not a valid topologic or python dictionary. Returning None.")
             return None
         if not isinstance(keys, list):
-            if not silent:
+            if not silent == True:
                 print("Dictionary.ValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
             return None
-        if not all(isinstance(k, str) for k in keys):
-            if not silent:
+        
+        local_keys = [k for k in keys if isinstance(k, str)]
+        if len(local_keys) == 0:
+            if not silent == True:
+                print("Dictionary.ValuesAtKeys - Error: The input keys parameter does not contain valid key strings. Returning None.")
+            return None
+        if not len(local_keys) == len(keys):
+            if not silent == True:
                 print("Dictionary.ValuesAtKeys - Error: The input keys parameter contains invalid values. Returning None.")
             return None
         return [Dictionary.ValueAtKey(dictionary, key, defaultValue=defaultValue, silent=silent) for key in keys]
@@ -1247,41 +1715,74 @@ class Dictionary():
     @staticmethod
     def XOR(dictionaryA, dictionaryB, silent: bool = False):
         """
-        Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
+        Returns the XOR (symmetric difference) of dictionaryA and dictionaryB, based on keys.
+
+        Parameters
+        ----------
+        dictionaryA : topologic_core.Dictionary
+            The first input dictionary.
+        dictionaryB : topologic_core.Dictionary
+            The second input dictionary.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The resulting XOR (symmetric difference) dictionary.
+
         """
+        from topologicpy.Topology import Topology
+
         if dictionaryA is None and dictionaryB is None:
             if not silent:
-                print("Dictionary.XOR - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
+                print("Dictionary.XOR - Warning: Both of the input dictionaries are None. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
         if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
+            if not Topology.IsInstance(dictionaryB, "Dictionary"):
                 if not silent:
                     print("Dictionary.XOR - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryB
+
         if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
+            if not Topology.IsInstance(dictionaryA, "Dictionary"):
                 if not silent:
                     print("Dictionary.XOR - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
                 return None
             return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        if not Topology.IsInstance(dictionaryA, "Dictionary"):
             if not silent:
                 print("Dictionary.XOR - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if not Topology.IsInstance(dictionaryB, "Dictionary"):
             if not silent:
                 print("Dictionary.XOR - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
+        keysA = Dictionary.Keys(dictionaryA) or []
+        keysB = Dictionary.Keys(dictionaryB) or []
+
+        uniqueA = [k for k in keysA if k not in keysB]
+        uniqueB = [k for k in keysB if k not in keysA]
+
+        if len(uniqueA) == 0 and len(uniqueB) == 0:
+            if not silent:
+                print("Dictionary.XOR - Warning: The input dictionaries have identical keys. Returning and empty dictionary.")
+            return Dictionary.ByKeysValues([], [])
+
+        out_keys = []
         out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+
+        for k in uniqueA:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryA, k))
+
+        for k in uniqueB:
+            out_keys.append(k)
+            out_vals.append(Dictionary.ValueAtKey(dictionaryB, k))
+
+        return Dictionary.ByKeysValues(out_keys, out_vals)
 

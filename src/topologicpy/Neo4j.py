@@ -640,18 +640,18 @@ class Neo4j:
     def UpsertGraph(manager,
                     graph,
                     database: str = None,
-                    graphIDKey : str = "id",
-                    vertexIDKey : str  = "id",
-                    vertexLabelKey : str = "label", 
-                    defaultVertexLabel : str = "Node",
-                    vertexCategoryKey : str = "category",
-                    defaultVertexCategory : str = "Node",
-                    edgeLabelKey : str = "label",
-                    defaultEdgeLabel : str = "CONNECTED_TO",
-                    edgeCategoryKey : str = "category",
-                    defaultEdgeCategory : str = "Edge",
-                    bidirectional : bool = True,
-                    overwrite : bool = False,
+                    graphIDKey: str = "graph_id",
+                    vertexIDKey: str = "id",
+                    vertexLabelKey: str = "label",
+                    defaultVertexLabel: str = "Node",
+                    vertexCategoryKey: str = "category",
+                    defaultVertexCategory: str = "Node",
+                    edgeLabelKey: str = "label",
+                    defaultEdgeLabel: str = "CONNECTED_TO",
+                    edgeCategoryKey: str = "category",
+                    defaultEdgeCategory: str = "Edge",
+                    bidirectional: bool = True,
+                    overwrite: bool = False,
                     mantissa: int = 6,
                     silent: bool = False) -> str:
         """
@@ -659,12 +659,14 @@ class Neo4j:
 
         Parameters
         ----------
-        manager:
+        manager
             The graph database manager/driver.
         graph : topologic_core.Graph
             The input TopologicPy graph.
+        database : str , optional
+            The Neo4j database name. Default is None.
         graphIDKey : str , optional
-            The graph dictionary key under which the graph id is stored. Default is "id".
+            The graph dictionary key under which the graph id is stored. Default is "graph_id".
         vertexIDKey : str , optional
             The vertex dictionary key under which the vertex id is stored. Default is "id".
         vertexLabelKey : str , optional
@@ -684,9 +686,9 @@ class Neo4j:
         defaultEdgeCategory : any , optional
             The default edge category if none is found. Default is "Edge".
         bidirectional : bool , optional
-            If True, creates reverse edges where supported. Default is True.
+            If set to True, reverse edges are also written. Default is True.
         overwrite : bool , optional
-            If True, overwrites an existing graph with the same id where supported. Default is True.
+            If set to True, an existing graph with the same id is deleted before import. Default is False.
         mantissa : int , optional
             The number of decimal places to use when extracting mesh data. Default is 6.
         silent : bool , optional
@@ -697,111 +699,49 @@ class Neo4j:
         str
             The graph id used, or None on error.
         """
+
         from topologicpy.Dictionary import Dictionary
-        from topologicpy.Topology import Topology#
+        from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
         import re
-        def safe_vertex_id(graph,
-                   props: dict = None,
-                   vertexIDKey: str = "id",
-                   prefix: str = "n") -> str:
+
+        def _safe_string(value, default: str = "") -> str:
+            if value is None:
+                return default
+            value = str(value).strip()
+            return value if value != "" else default
+
+        def _safe_id(value, fallback: str) -> str:
             """
-            Returns a safe vertex id.
-
-            Rules:
-            - Uses the supplied id if valid.
-            - Removes unsafe characters.
-            - Prevents empty ids.
-            - Ensures uniqueness within the graph.
-            - Falls back to sequential ids: n1, n2, n3, ...
-
-            Parameters
-            ----------
-            graph : topologic_core.Graph
-                The host graph.
-            props : dict , optional
-                Vertex property dictionary.
-            vertexIDKey : str , optional
-                Dictionary key containing the candidate id.
-            prefix : str , optional
-                Prefix used when generating ids.
-
-            Returns
-            -------
-            str
-                A safe, unique vertex id.
+            Converts an arbitrary value into a Neo4j-safe local identifier.
+            The returned id is graph-local, not globally unique.
             """
+            value = _safe_string(value, fallback)
 
-            props = props or {}
+            value = re.sub(r"[^A-Za-z0-9_\-]", "_", value)
+            value = re.sub(r"_+", "_", value)
+            value = value.strip("_- ")
 
-            # ---------------------------
-            # Collect existing ids
-            # ---------------------------
-            existing_ids = set()
+            if value == "":
+                value = fallback
 
-            vertices = Graph.Vertices(graph) or []
-            for v in vertices:
-                d = Topology.Dictionary(v)
-                if d is None:
-                    continue
+            return value
 
-                vid = Dictionary.ValueAtKey(d, vertexIDKey, None)
-                if vid is not None:
-                    existing_ids.add(str(vid).strip())
-
-            # ---------------------------
-            # Candidate supplied id
-            # ---------------------------
-            candidate = props.get(vertexIDKey, None)
-
-            if candidate is not None:
-                candidate = str(candidate).strip()
-
-                # Remove unsafe characters
-                candidate = re.sub(r"[^A-Za-z0-9_\-]", "_", candidate)
-
-                # Collapse repeated underscores
-                candidate = re.sub(r"_+", "_", candidate)
-
-                # Remove leading/trailing separators
-                candidate = candidate.strip("_- ")
-
-                # Prevent empty
-                if len(candidate) > 0:
-
-                    # Ensure uniqueness
-                    if candidate not in existing_ids:
-                        return candidate
-
-                    # Add numeric suffix if duplicate
-                    i = 2
-                    while True:
-                        new_candidate = f"{candidate}_{i}"
-                        if new_candidate not in existing_ids:
-                            return new_candidate
-                        i += 1
-
-            # ---------------------------
-            # Sequential fallback
-            # ---------------------------
-            i = 1
-            while True:
-                candidate = f"{prefix}{i}"
-                if candidate not in existing_ids:
-                    return candidate
-                i += 1
         try:
-
             if not Neo4j.EnsureSchema(manager, database=database, silent=silent):
                 return None
 
             graph_dict = Topology.Dictionary(graph)
             gid = _value_from_dict(graph_dict, graphIDKey, None) if graphIDKey is not None else None
+
             if gid is None or str(gid).strip() == "":
                 gid = Topology.UUID(graph)
+
             gid = str(gid).strip()
 
+            # ------------------------------------------------------------
             # Check whether this graph already exists.
+            # ------------------------------------------------------------
             exists_result = Neo4j.Query(
                 manager,
                 """
@@ -828,17 +768,23 @@ class Neo4j:
             if exists and overwrite:
                 Neo4j.DeleteGraph(manager, gid, database=database, silent=True)
 
+            # ------------------------------------------------------------
+            # Extract graph data.
+            # ------------------------------------------------------------
             g_props = _python_dictionary(graph_dict)
             g_label = str(g_props.get("label", ""))
 
             mesh_data = Graph.MeshData(graph, mantissa=mantissa)
-            verts = mesh_data.get("vertices", [])
-            v_props = mesh_data.get("vertexDictionaries", [])
-            edges = mesh_data.get("edges", [])
-            e_props = mesh_data.get("edgeDictionaries", [])
+            verts = mesh_data.get("vertices", []) or []
+            v_props = mesh_data.get("vertexDictionaries", []) or []
+            edges = mesh_data.get("edges", []) or []
+            e_props = mesh_data.get("edgeDictionaries", []) or []
 
-            # Store graph card.
             edge_count = len(edges) * (2 if bidirectional else 1)
+
+            # ------------------------------------------------------------
+            # Store graph card.
+            # ------------------------------------------------------------
             result = Neo4j.Execute(
                 manager,
                 """
@@ -862,39 +808,67 @@ class Neo4j:
                 database=database,
                 silent=silent,
             )
+
             if result is None:
                 return None
 
+            # ------------------------------------------------------------
             # Build canonical vertices.
+            #
+            # Important:
+            # Vertex.id remains local to the graph.
+            # Vertex.uid is globally unique and should be used for robust
+            # database matching.
+            # ------------------------------------------------------------
             vertex_ids = []
+            vertex_uids = []
             vertex_rows = []
+            used_vertex_ids = set()
 
             for i, xyz in enumerate(verts):
                 props = dict(v_props[i] or {}) if i < len(v_props) else {}
-                x, y, z = xyz
 
-                vid = props.get(vertexIDKey, i) if vertexIDKey is not None else i
-                vid = str(vid).strip()
-                vid = safe_vertex_id(graph,
-                                     props = props,
-                                     vertexIDKey = vertexIDKey,
-                                     prefix = "n")
+                try:
+                    x, y, z = xyz
+                except Exception:
+                    if not silent:
+                        print(f"Neo4j.UpsertGraph - Warning: Invalid vertex coordinates at index {i}. Skipping vertex.")
+                    vertex_ids.append(None)
+                    vertex_uids.append(None)
+                    continue
 
-                # Neo4j canonical Vertex.id is graph-scoped to avoid collisions
-                # when different graphs reuse local ids such as n1, n2, etc.
-                # vid = raw_vid
-                # if not vid.startswith(f"{gid}:"):
-                #     vid = f"{gid}:{raw_vid}"
+                if vertexIDKey is not None:
+                    raw_vid = props.get(vertexIDKey, None)
+                else:
+                    raw_vid = None
+
+                fallback_vid = f"n{i + 1}"
+                vid = _safe_id(raw_vid, fallback_vid)
+
+                # Ensure uniqueness within this graph import.
+                base_vid = vid
+                counter = 2
+                while vid in used_vertex_ids:
+                    vid = f"{base_vid}_{counter}"
+                    counter += 1
+
+                used_vertex_ids.add(vid)
+
+                # Globally unique database id.
+                uid = f"{gid}:{vid}"
 
                 if vertexIDKey is not None:
                     props[vertexIDKey] = vid
-                props["_db_id"] = vid
+
+                props["_db_id"] = uid
+                props["_local_id"] = vid
                 props["graph_id"] = gid
 
                 label = props.get(vertexLabelKey, None) if vertexLabelKey is not None else None
-                if label is None or str(label).strip() == "":
-                    label = defaultVertexLabel if defaultVertexLabel is not None else str(i)
-                label = str(label).strip()
+                label = _safe_string(label, defaultVertexLabel if defaultVertexLabel is not None else str(i))
+
+                if vertexLabelKey is not None:
+                    props[vertexLabelKey] = label
 
                 if vertexCategoryKey is not None:
                     category = props.get(vertexCategoryKey, defaultVertexCategory)
@@ -902,7 +876,10 @@ class Neo4j:
                         props[vertexCategoryKey] = category
 
                 vertex_ids.append(vid)
+                vertex_uids.append(uid)
+
                 vertex_rows.append({
+                    "uid": uid,
                     "id": vid,
                     "graph_id": gid,
                     "label": label,
@@ -918,6 +895,7 @@ class Neo4j:
                     """
                     UNWIND $rows AS row
                     CREATE (:Vertex {
+                        uid: row.uid,
                         id: row.id,
                         graph_id: row.graph_id,
                         label: row.label,
@@ -932,10 +910,18 @@ class Neo4j:
                     database=database,
                     silent=silent,
                 )
+
                 if not ok:
                     return None
 
+            # ------------------------------------------------------------
             # Build canonical edges.
+            #
+            # Critical fix:
+            # Edges are matched by Vertex.uid, not by Vertex.id alone.
+            # This prevents cross-graph contamination when multiple graphs
+            # reuse local vertex ids such as n1, n2, door, 0, 1, etc.
+            # ------------------------------------------------------------
             edge_rows = []
 
             for i, edge_indices in enumerate(edges):
@@ -948,19 +934,28 @@ class Neo4j:
                 if (
                     a_index < 0 or
                     b_index < 0 or
-                    a_index >= len(vertex_ids) or
-                    b_index >= len(vertex_ids)
+                    a_index >= len(vertex_uids) or
+                    b_index >= len(vertex_uids)
                 ):
+                    continue
+
+                a_uid = vertex_uids[a_index]
+                b_uid = vertex_uids[b_index]
+
+                if a_uid is None or b_uid is None:
                     continue
 
                 props = dict(e_props[i] or {}) if i < len(e_props) else {}
 
                 label = props.get(edgeLabelKey, None) if edgeLabelKey is not None else None
+
                 if label is None or str(label).strip() == "":
                     label = props.get("type", None)
+
                 if label is None or str(label).strip() == "":
                     label = defaultEdgeLabel
-                label = str(label).strip()
+
+                label = _safe_string(label, defaultEdgeLabel)
 
                 if edgeLabelKey is not None:
                     props[edgeLabelKey] = label
@@ -970,21 +965,20 @@ class Neo4j:
                     if category is not None:
                         props[edgeCategoryKey] = category
 
-                a_id = vertex_ids[a_index]
-                b_id = vertex_ids[b_index]
+                props["graph_id"] = gid
 
                 edge_rows.append({
-                    "a": a_id,
-                    "b": b_id,
+                    "a_uid": a_uid,
+                    "b_uid": b_uid,
                     "graph_id": gid,
                     "label": label,
                     "props": _json_dumps(props),
                 })
 
-                if bidirectional and a_id != b_id:
+                if bidirectional and a_uid != b_uid:
                     edge_rows.append({
-                        "a": b_id,
-                        "b": a_id,
+                        "a_uid": b_uid,
+                        "b_uid": a_uid,
                         "graph_id": gid,
                         "label": label,
                         "props": _json_dumps(props),
@@ -995,7 +989,8 @@ class Neo4j:
                     manager,
                     """
                     UNWIND $rows AS row
-                    MATCH (a:Vertex {id: row.a}), (b:Vertex {id: row.b})
+                    MATCH (a:Vertex {uid: row.a_uid})
+                    MATCH (b:Vertex {uid: row.b_uid})
                     CREATE (a)-[:Edge {
                         graph_id: row.graph_id,
                         label: row.label,
@@ -1007,8 +1002,10 @@ class Neo4j:
                     database=database,
                     silent=silent,
                 )
+
                 if not ok:
                     return None
+
             return gid
 
         except Exception as ex:
@@ -1547,20 +1544,28 @@ class Neo4j:
             label = _normalize_label(label)
             if label == "":
                 return 0
+
             rows = _records_to_dicts(Neo4j.Query(
                 manager,
                 """
                 MATCH (v:Vertex)
                 WHERE v.label = $label
-                OPTIONAL MATCH (v)-[:Edge]-(o:Vertex)
-                RETURN v.id AS id, count(DISTINCT o) AS degree
+                OPTIONAL MATCH (v)-[e:Edge]-(o:Vertex)
+                WHERE v.graph_id = o.graph_id
+                AND e.graph_id = v.graph_id
+                WITH v, count(DISTINCT o) AS degree
+                RETURN coalesce(max(degree), 0) AS max_degree
                 """,
                 parameters={"label": label},
                 database=database,
                 silent=silent,
             ))
-            values = [int(row.get("degree") or 0) for row in rows]
-            return max(values) if values else 0
+
+            if not rows:
+                return 0
+
+            return int(rows[0].get("max_degree") or 0)
+
         except Exception as ex:
             if not silent:
                 print(f"Neo4j.MaxNeighborsForLabel - Error: {ex}. Returning 0.")

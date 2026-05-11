@@ -5151,31 +5151,677 @@ class Topology():
         return Core.InstanceCall(topology, 'CenterOfMass')
     
     @staticmethod
-    def Centroid(topology):
+    def VerticesCentroid(topology, mantissa: int = 6, silent: bool = False):
         """
-        Returns the centroid of the vertices of the input topology. See https://en.wikipedia.org/wiki/Centroid.
+        Returns the centroid of the vertices of the input topology.
+
+        This method computes the arithmetic mean of the coordinates of all vertices
+        found in the input topology. It does not compute the geometric centroid by
+        length, area, or volume.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
+        mantissa : int , optional
+            The number of decimal places to round the output coordinates to.
+            Default is 6.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Vertex
-            The centroid of the input topology.
-
+        topologic_core.Vertex or None
+            The centroid of the vertices of the input topology.
         """
-        from topologicpy.Aperture import Aperture
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.VerticesCentroid - Error: The input topology is not a valid topology. Returning None.")
+            return None
+
+        try:
+            vertices = Topology.Vertices(topology)
+        except:
+            vertices = []
+
+        if not isinstance(vertices, list) or len(vertices) == 0:
+            if not silent:
+                print("Topology.VerticesCentroid - Error: Could not retrieve any vertices from the input topology. Returning None.")
+            return None
+
+        x_sum = 0.0
+        y_sum = 0.0
+        z_sum = 0.0
+        n = 0
+
+        for vertex in vertices:
+            try:
+                x_sum += Vertex.X(vertex)
+                y_sum += Vertex.Y(vertex)
+                z_sum += Vertex.Z(vertex)
+                n += 1
+            except:
+                continue
+
+        if n == 0:
+            if not silent:
+                print("Topology.VerticesCentroid - Error: Could not retrieve valid coordinates from the input vertices. Returning None.")
+            return None
+
+        return Vertex.ByCoordinates(
+            round(x_sum / n, mantissa),
+            round(y_sum / n, mantissa),
+            round(z_sum / n, mantissa)
+        )
+    
+    @staticmethod
+    def Centroid(topology, mode: str = None, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns the true geometric centroid of the input topology.
+
+        The centroid is computed by measure:
+        - Cells / CellComplexes are evaluated by volume.
+        - Faces / Shells are evaluated by area.
+        - Wires / Edges are evaluated by length.
+        - Vertices are evaluated by arithmetic mean.
+
+        For mixed-dimensional topologies, only the highest-dimensional sub-topologies
+        are used. For example, if a Cluster contains faces and edges, the centroid is
+        computed from the faces because the edges have zero area.
+
+        This method correctly accounts for holes in faces and voids in cells when
+        those holes/voids are represented in the topology.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        mode : str , optional
+            If set to "basic" (case insensitive), the centroid will be computed as the average of the vertices of the input topology.
+        mantissa : int , optional
+            The number of decimal places to round the output coordinates to.
+            Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Vertex or None
+            The centroid of the input topology.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+        from topologicpy.Topology import Topology
+
+        import math
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Centroid - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology.Centroid - Error: The input topology is not a valid topology. Returning None.")
             return None
-        if Topology.IsInstance(topology, "Aperture"):
-            # return Aperture.Topology(topology).Centroid() # H to Core
-            return Core.InstanceCall(Aperture.Topology(topology), 'Centroid')
-        # return topology.Centroid() # H to Core
-        return Core.InstanceCall(topology, 'Centroid')
+        
+        if isinstance(mode, str):
+            if mode.lower() == "basic":
+                return Topology.VerticesCentroid(topology, mantissa = mantissa, silent = silent)
+
+        # -------------------------------------------------------------------------
+        # Basic vector helpers
+        # -------------------------------------------------------------------------
+
+        def _v_coords(v):
+            return [float(Vertex.X(v)), float(Vertex.Y(v)), float(Vertex.Z(v))]
+
+        def _add(a, b):
+            return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+        def _sub(a, b):
+            return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
+        def _mul(a, s):
+            return [a[0] * s, a[1] * s, a[2] * s]
+
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0]
+            ]
+
+        def _norm(a):
+            return math.sqrt(_dot(a, a))
+
+        def _dist(a, b):
+            return _norm(_sub(a, b))
+
+        def _round_point(p):
+            return Vertex.ByCoordinates(
+                round(p[0], mantissa),
+                round(p[1], mantissa),
+                round(p[2], mantissa)
+            )
+
+        def _safe_topologies(t, sub_type):
+            try:
+                result = Topology.SubTopologies(t, subTopologyType=sub_type, silent=True)
+                return result if isinstance(result, list) else []
+            except:
+                return []
+
+        def _safe_vertices(t):
+            try:
+                return Topology.Vertices(t, silent=True)
+            except:
+                return _safe_topologies(t, "vertex")
+
+        def _safe_edges(t):
+            try:
+                return Topology.Edges(t, silent=True)
+            except:
+                return _safe_topologies(t, "edge")
+
+        def _safe_faces(t):
+            try:
+                return Topology.Faces(t, silent=True)
+            except:
+                return _safe_topologies(t, "face")
+
+        def _safe_cells(t):
+            try:
+                return Topology.Cells(t, silent=True)
+            except:
+                return _safe_topologies(t, "cell")
+
+        # -------------------------------------------------------------------------
+        # 0D centroid
+        # -------------------------------------------------------------------------
+
+        def _vertices_centroid(vertices):
+            if not vertices:
+                return None, 0.0
+
+            p = [0.0, 0.0, 0.0]
+            n = 0
+
+            for v in vertices:
+                try:
+                    p = _add(p, _v_coords(v))
+                    n += 1
+                except:
+                    continue
+
+            if n == 0:
+                return None, 0.0
+
+            return _mul(p, 1.0 / n), float(n)
+
+        # -------------------------------------------------------------------------
+        # 1D centroid
+        # -------------------------------------------------------------------------
+
+        def _edge_centroid(edge):
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                a = _v_coords(sv)
+                b = _v_coords(ev)
+                length = _dist(a, b)
+
+                if length <= tolerance:
+                    return None, 0.0
+
+                return _mul(_add(a, b), 0.5), length
+            except:
+                return None, 0.0
+
+        def _edges_centroid(edges):
+            if not edges:
+                return None, 0.0
+
+            weighted = [0.0, 0.0, 0.0]
+            total_length = 0.0
+
+            for e in edges:
+                c, length = _edge_centroid(e)
+                if c is None or length <= tolerance:
+                    continue
+
+                weighted = _add(weighted, _mul(c, length))
+                total_length += length
+
+            if total_length <= tolerance:
+                return None, 0.0
+
+            return _mul(weighted, 1.0 / total_length), total_length
+
+        # -------------------------------------------------------------------------
+        # 2D centroid
+        # -------------------------------------------------------------------------
+
+        def _newell_normal(points):
+            n = [0.0, 0.0, 0.0]
+            count = len(points)
+
+            for i in range(count):
+                p = points[i]
+                q = points[(i + 1) % count]
+
+                n[0] += (p[1] - q[1]) * (p[2] + q[2])
+                n[1] += (p[2] - q[2]) * (p[0] + q[0])
+                n[2] += (p[0] - q[0]) * (p[1] + q[1])
+
+            return n
+
+        def _dominant_projection_axis(normal):
+            ax = abs(normal[0])
+            ay = abs(normal[1])
+            az = abs(normal[2])
+
+            if ax >= ay and ax >= az:
+                return 0 # project to YZ
+            if ay >= ax and ay >= az:
+                return 1 # project to XZ
+            return 2     # project to XY
+
+        def _project_point(p, drop_axis):
+            if drop_axis == 0:
+                return [p[1], p[2]]
+            if drop_axis == 1:
+                return [p[0], p[2]]
+            return [p[0], p[1]]
+
+        def _loop_vertices(wire):
+            try:
+                vertices = Wire.Vertices(wire)
+            except:
+                vertices = _safe_vertices(wire)
+
+            if not vertices:
+                return []
+
+            pts = [_v_coords(v) for v in vertices]
+
+            if len(pts) > 1 and _dist(pts[0], pts[-1]) <= tolerance:
+                pts = pts[:-1]
+
+            return pts
+
+        def _polygon_loop_centroid_area(points, drop_axis):
+            """
+            Returns centroid and signed area of a planar loop.
+            The centroid is returned in 3D by computing the weighted average
+            directly from the original 3D vertices using the projected shoelace
+            weights.
+            """
+
+            if len(points) < 3:
+                return None, 0.0
+
+            area2 = 0.0
+            weighted = [0.0, 0.0, 0.0]
+
+            for i in range(len(points)):
+                p3 = points[i]
+                q3 = points[(i + 1) % len(points)]
+
+                p = _project_point(p3, drop_axis)
+                q = _project_point(q3, drop_axis)
+
+                cross2 = p[0]*q[1] - q[0]*p[1]
+
+                area2 += cross2
+                weighted = _add(weighted, _mul(_add(p3, q3), cross2))
+
+            if abs(area2) <= tolerance:
+                return None, 0.0
+
+            centroid = _mul(weighted, 1.0 / (3.0 * area2))
+            area = 0.5 * area2
+
+            return centroid, area
+
+        def _face_boundaries(face):
+            external = None
+            internals = []
+
+            try:
+                external = Face.ExternalBoundary(face)
+            except:
+                external = None
+
+            try:
+                internals = Face.InternalBoundaries(face)
+                if internals is None:
+                    internals = []
+            except:
+                internals = []
+
+            return external, internals
+
+        def _face_centroid_by_boundaries(face):
+            """
+            Computes face centroid as:
+
+                centroid = (outer_area * outer_centroid
+                            - sum(hole_area * hole_centroid)) /
+                        (outer_area - sum(hole_area))
+
+            This explicitly subtracts holes.
+            """
+
+            external, internals = _face_boundaries(face)
+
+            if external is None:
+                return None, 0.0
+
+            outer_points = _loop_vertices(external)
+
+            if len(outer_points) < 3:
+                return None, 0.0
+
+            normal = _newell_normal(outer_points)
+
+            if _norm(normal) <= tolerance:
+                return None, 0.0
+
+            drop_axis = _dominant_projection_axis(normal)
+
+            outer_centroid, outer_area_signed = _polygon_loop_centroid_area(outer_points, drop_axis)
+
+            if outer_centroid is None:
+                return None, 0.0
+
+            outer_area = abs(outer_area_signed)
+
+            weighted = _mul(outer_centroid, outer_area)
+            total_area = outer_area
+
+            for hole in internals:
+                hole_points = _loop_vertices(hole)
+
+                if len(hole_points) < 3:
+                    continue
+
+                hole_centroid, hole_area_signed = _polygon_loop_centroid_area(hole_points, drop_axis)
+
+                if hole_centroid is None:
+                    continue
+
+                hole_area = abs(hole_area_signed)
+
+                weighted = _sub(weighted, _mul(hole_centroid, hole_area))
+                total_area -= hole_area
+
+            if total_area <= tolerance:
+                return None, 0.0
+
+            return _mul(weighted, 1.0 / total_area), total_area
+
+        def _triangulated_face_centroid(face):
+            """
+            Fallback method. This relies on Face.Triangulate respecting holes.
+            """
+
+            try:
+                triangles = Face.Triangulate(face)
+            except:
+                triangles = None
+
+            if triangles is None:
+                return None, 0.0
+
+            if not isinstance(triangles, list):
+                triangles = [triangles]
+
+            weighted = [0.0, 0.0, 0.0]
+            total_area = 0.0
+
+            for tri in triangles:
+                vertices = _safe_vertices(tri)
+
+                if len(vertices) < 3:
+                    continue
+
+                pts = [_v_coords(v) for v in vertices[:3]]
+
+                a = pts[0]
+                b = pts[1]
+                c = pts[2]
+
+                area = 0.5 * _norm(_cross(_sub(b, a), _sub(c, a)))
+
+                if area <= tolerance:
+                    continue
+
+                centroid = _mul(_add(_add(a, b), c), 1.0 / 3.0)
+
+                weighted = _add(weighted, _mul(centroid, area))
+                total_area += area
+
+            if total_area <= tolerance:
+                return None, 0.0
+
+            return _mul(weighted, 1.0 / total_area), total_area
+
+        def _face_centroid(face):
+            c, area = _face_centroid_by_boundaries(face)
+
+            if c is not None and area > tolerance:
+                return c, area
+
+            return _triangulated_face_centroid(face)
+
+        def _faces_centroid(faces):
+            if not faces:
+                return None, 0.0
+
+            weighted = [0.0, 0.0, 0.0]
+            total_area = 0.0
+
+            for f in faces:
+                c, area = _face_centroid(f)
+
+                if c is None or area <= tolerance:
+                    continue
+
+                weighted = _add(weighted, _mul(c, area))
+                total_area += area
+
+            if total_area <= tolerance:
+                return None, 0.0
+
+            return _mul(weighted, 1.0 / total_area), total_area
+
+        # -------------------------------------------------------------------------
+        # 3D centroid
+        # -------------------------------------------------------------------------
+
+        def _triangles_from_face(face):
+            try:
+                triangles = Face.Triangulate(face)
+            except:
+                triangles = None
+
+            if triangles is None:
+                return []
+
+            if not isinstance(triangles, list):
+                triangles = [triangles]
+
+            result = []
+
+            for tri in triangles:
+                vertices = _safe_vertices(tri)
+
+                if len(vertices) < 3:
+                    continue
+
+                pts = [_v_coords(v) for v in vertices[:3]]
+
+                if _norm(_cross(_sub(pts[1], pts[0]), _sub(pts[2], pts[0]))) <= tolerance:
+                    continue
+
+                result.append(pts)
+
+            return result
+
+        def _cell_reference_point(cell):
+            """
+            Attempts to get a point that is internal to the cell.
+            Falls back to the vertex-average point if the internal vertex method
+            is unavailable.
+            """
+
+            try:
+                iv = Cell.InternalVertex(cell, tolerance=tolerance)
+                if iv is not None:
+                    return _v_coords(iv)
+            except:
+                pass
+
+            vertices = _safe_vertices(cell)
+            c, _ = _vertices_centroid(vertices)
+
+            if c is not None:
+                return c
+
+            return [0.0, 0.0, 0.0]
+
+        def _cell_centroid(cell):
+            """
+            Computes the volume centroid using a signed tetrahedral decomposition
+            of the closed cell boundary.
+
+            Each boundary triangle forms a tetrahedron with the origin. The signed
+            volume is:
+
+                V = dot(a, cross(b, c)) / 6
+
+            and the tetrahedron centroid is:
+
+                (a + b + c) / 4
+
+            The final centroid is the volume-weighted sum of tetrahedron centroids.
+            """
+
+            faces = _safe_faces(cell)
+
+            if not faces:
+                return None, 0.0
+
+            ref = _cell_reference_point(cell)
+
+            signed_volume_sum = 0.0
+            weighted = [0.0, 0.0, 0.0]
+
+            for face in faces:
+                triangles = _triangles_from_face(face)
+
+                for tri in triangles:
+                    a = tri[0]
+                    b = tri[1]
+                    c = tri[2]
+
+                    # Orient the triangle consistently relative to an internal
+                    # reference point. This is important when triangulation loses
+                    # or reverses face orientation.
+                    tri_centroid = _mul(_add(_add(a, b), c), 1.0 / 3.0)
+                    normal = _cross(_sub(b, a), _sub(c, a))
+
+                    if _dot(normal, _sub(tri_centroid, ref)) < 0.0:
+                        b, c = c, b
+
+                    signed_volume = _dot(a, _cross(b, c)) / 6.0
+
+                    if abs(signed_volume) <= tolerance:
+                        continue
+
+                    tetra_centroid = _mul(_add(_add(a, b), c), 0.25)
+
+                    signed_volume_sum += signed_volume
+                    weighted = _add(weighted, _mul(tetra_centroid, signed_volume))
+
+            if abs(signed_volume_sum) <= tolerance:
+                return None, 0.0
+
+            centroid = _mul(weighted, 1.0 / signed_volume_sum)
+            volume = abs(signed_volume_sum)
+
+            return centroid, volume
+
+        def _cells_centroid(cells):
+            if not cells:
+                return None, 0.0
+
+            weighted = [0.0, 0.0, 0.0]
+            total_volume = 0.0
+
+            for cell in cells:
+                c, volume = _cell_centroid(cell)
+
+                if c is None or volume <= tolerance:
+                    continue
+
+                weighted = _add(weighted, _mul(c, volume))
+                total_volume += volume
+
+            if total_volume <= tolerance:
+                return None, 0.0
+
+            return _mul(weighted, 1.0 / total_volume), total_volume
+
+        # -------------------------------------------------------------------------
+        # Dispatch by highest available dimension
+        # -------------------------------------------------------------------------
+
+        cells = _safe_cells(topology)
+
+        if cells:
+            c, measure = _cells_centroid(cells)
+
+            if c is not None and measure > tolerance:
+                return _round_point(c)
+
+        faces = _safe_faces(topology)
+
+        if faces:
+            c, measure = _faces_centroid(faces)
+
+            if c is not None and measure > tolerance:
+                return _round_point(c)
+
+        edges = _safe_edges(topology)
+
+        if edges:
+            c, measure = _edges_centroid(edges)
+
+            if c is not None and measure > tolerance:
+                return _round_point(c)
+
+        vertices = _safe_vertices(topology)
+
+        if vertices:
+            c, measure = _vertices_centroid(vertices)
+
+            if c is not None and measure > 0:
+                return _round_point(c)
+
+        if not silent:
+            print("Topology.Centroid - Error: Could not compute a valid centroid. Returning None.")
+
+        return None
 
     @staticmethod
     def ClusterByKeys(topologies, *keys, silent=False):
@@ -7797,7 +8443,7 @@ class Topology():
         return result
     
     @staticmethod
-    def IsSame(topologyA, topologyB):
+    def IsSame(topologyA, topologyB, silent: bool = False):
         """
         Returns True if the input topologies are the same topology. Returns False otherwise.
 
@@ -7807,6 +8453,8 @@ class Topology():
             The first input topology.
         topologyB : topologic_core.Topology
             The second input topology.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -7814,13 +8462,23 @@ class Topology():
             True of the input topologies are the same topology. False otherwise.
 
         """
-        if not Topology.IsInstance(topologyA, "Topology"):
-            print("Topology.IsSame - Error: the input topologyA parameter is not a valid topology. Returning None.")
+        valid_types = [
+            "Vertex", "Edge", "Wire", "Face", "Shell",
+            "Cell", "CellComplex", "Cluster", "Aperture", "Graph"
+        ]
+
+        if not any(Topology.IsInstance(topologyA, t) for t in valid_types):
+            if not silent:
+                print("Topology.IsSame - Error: the input topologyA parameter is not a valid topology. Returning None.")
             return None
-        if not Topology.IsInstance(topologyB, "Topology"):
-            print("Topology.IsSame - Error: the input topologyB parameter is not a valid topology. Returning None.")
+
+        if not any(Topology.IsInstance(topologyB, t) for t in valid_types):
+            if not silent:
+                print("Topology.IsSame - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
+        
         return Core.Topology.IsSame(topologyA, topologyB)
+
     @staticmethod
     def IsSimilar(topologyA, topologyB, removeCoplanarFaces: bool = False, mantissa: int = 6, epsilon: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """

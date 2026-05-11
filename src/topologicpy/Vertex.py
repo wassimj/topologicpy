@@ -894,6 +894,62 @@ class Vertex():
                 else:
                     enclosingCells.append(candidates[i])
         return enclosingCells
+    
+    @staticmethod
+    def EnclosingFaces(vertex, topology, exclusive: bool = True, mantissa: int = 6, tolerance: float = 0.0001) -> list:
+        """
+        Returns the list of Faces found in the input topology that enclose the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        topology : topologic_core.Topology
+            The input topology.
+        exclusive : bool , optional
+            If set to True, return only the first found enclosing face. Default is True.
+        mantissa : int , optional
+            The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The tolerance for computing if the input vertex is enclosed in a face. Default is 0.0001.
+
+        Returns
+        -------
+        list
+            The list of enclosing faces.
+
+        """
+        from topologicpy.Topology import Topology
+        from topologicpy.BVH import BVH
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            return None
+
+        if Topology.IsInstance(topology, "Face"):
+            faces = [topology]
+        elif Topology.IsInstance(topology, "Cluster") or \
+            Topology.IsInstance(topology, "Shell") or \
+            Topology.IsInstance(topology, "Cell") or \
+            Topology.IsInstance(topology, "CellComplex"):
+            faces = Topology.Faces(topology)
+        else:
+            return None
+
+        if len(faces) < 1:
+            return None
+
+        bvh = BVH.ByTopologies(faces, tolerance=tolerance, silent=True)
+        candidates = BVH.Clashes(bvh, vertex, tolerance=tolerance)
+
+        enclosingFaces = []
+        for i in range(len(candidates)):
+            if Vertex.IsInternal(vertex, candidates[i], tolerance=tolerance):
+                if exclusive:
+                    return [candidates[i]]
+                else:
+                    enclosingFaces.append(candidates[i])
+
+        return enclosingFaces
 
     @staticmethod
     def ExternalBoundary(vertex, tolerance: float = 0.0001, silent: bool = False):

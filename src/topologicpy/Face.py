@@ -2103,29 +2103,242 @@ class Face():
             The created vertex.
 
         """
+
+        import math
         from topologicpy.Vertex import Vertex
-        from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
-        from topologicpy.BVH import BVH
         from topologicpy.Topology import Topology
 
-        centroid = Topology.Centroid(face)
-        if Vertex.IsInternal(centroid, face):
-            return centroid
+        def _warn(message):
+            if not silent:
+                print("Face.InternalVertex - Warning:", message)
 
-        shell = Topology.Triangulate(face)
-        # ib = Shell.InternalEdges(shell)
-        # centroids = [Topology.Centroid(t) for t in ib]
-        faces = Topology.Faces(shell)
-        centroids = [Topology.Centroid(t) for t in faces]
-        cluster = Cluster.ByTopologies(centroids)
-        return Vertex.NearestVertex(centroid, cluster)
-        cluster = Cluster.ByTopologies(ib)
-        edges = Topology.Edges(cluster)
-        bvh = BVH.ByTopologies(edges, tolerance=tolerance, silent=True)
-        nearest_edge = BVH.Nearest(bvh, centroid)
-        return Topology.Centroid(nearest_edge)
+        def _is_internal(v):
+            if v is None:
+                return False
+            try:
+                return Vertex.IsInternal(v, face, tolerance=tolerance)
+            except TypeError:
+                return Vertex.IsInternal(v, face)
 
+        def _coords(v):
+            return [
+                Vertex.X(v, mantissa=12),
+                Vertex.Y(v, mantissa=12),
+                Vertex.Z(v, mantissa=12),
+            ]
+
+        def _vertex(c):
+            return Vertex.ByCoordinates(c[0], c[1], c[2])
+
+        def _sub(a, b):
+            return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
+        def _add(a, b):
+            return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+        def _mul(a, s):
+            return [a[0] * s, a[1] * s, a[2] * s]
+
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0],
+            ]
+
+        def _length(a):
+            return math.sqrt(_dot(a, a))
+
+        def _distance(a, b):
+            return _length(_sub(a, b))
+
+        def _normalize(a):
+            length = _length(a)
+            if length <= tolerance:
+                return None
+            return [a[0] / length, a[1] / length, a[2] / length]
+
+        def _deduplicate_coords(coords):
+            unique = []
+            for c in coords:
+                duplicate = False
+                for u in unique:
+                    if _distance(c, u) <= tolerance:
+                        duplicate = True
+                        break
+                if not duplicate:
+                    unique.append(c)
+            return unique
+
+        def _distance_to_boundary(v, boundary):
+            try:
+                return Vertex.Distance(v, boundary)
+            except Exception:
+                return 0
+
+        if not Topology.IsInstance(face, "Face"):
+            _warn("The input face is not a valid topologic face. Returning None.")
+            return None
+
+        # 1. Try the face centroid first.
+        try:
+            centroid = Topology.Centroid(face)
+            if _is_internal(centroid):
+                return centroid
+        except Exception:
+            centroid = None
+
+        # 2. Try verified centroids of triangulated sub-faces.
+        candidates = []
+
+        try:
+            shell = Topology.Triangulate(face)
+            tri_faces = Topology.Faces(shell)
+
+            for tri_face in tri_faces:
+                try:
+                    tri_centroid = Topology.Centroid(tri_face)
+                    if _is_internal(tri_centroid):
+                        candidates.append(tri_centroid)
+                except Exception:
+                    continue
+        except Exception:
+            tri_faces = []
+
+        if candidates:
+            try:
+                boundary = Cluster.ByTopologies(Topology.Edges(face))
+                candidates.sort(
+                    key=lambda v: _distance_to_boundary(v, boundary),
+                    reverse=True
+                )
+            except Exception:
+                pass
+            return candidates[0]
+
+        # 3. Fallback: construct a robust local coordinate system.
+        try:
+            vertices = Topology.Vertices(face)
+        except Exception:
+            vertices = []
+
+        if not vertices or len(vertices) < 3:
+            _warn("Could not extract enough vertices from the input face. Returning None.")
+            return None
+
+        coords = _deduplicate_coords([_coords(v) for v in vertices])
+
+        if len(coords) < 3:
+            _warn("The input face has fewer than three unique vertices. Returning None.")
+            return None
+
+        # Use the two furthest-apart vertices as the first local axis.
+        max_dist = -1
+        origin = None
+        axis_point = None
+
+        for i in range(len(coords)):
+            for j in range(i + 1, len(coords)):
+                d = _distance(coords[i], coords[j])
+                if d > max_dist:
+                    max_dist = d
+                    origin = coords[i]
+                    axis_point = coords[j]
+
+        if origin is None or axis_point is None or max_dist <= tolerance:
+            _warn("Could not construct a local coordinate system for the face. Returning None.")
+            return None
+
+        e1 = _normalize(_sub(axis_point, origin))
+
+        if e1 is None:
+            _warn("Could not construct a valid first local axis. Returning None.")
+            return None
+
+        # Find the point furthest from the first axis to define a stable normal.
+        normal = None
+        max_area = -1
+
+        for c in coords:
+            v = _sub(c, origin)
+            n = _cross(e1, v)
+            area = _length(n)
+
+            if area > max_area:
+                max_area = area
+                normal = n
+
+        normal = _normalize(normal)
+
+        if normal is None:
+            _warn("Could not determine a valid face normal. Returning None.")
+            return None
+
+        e2 = _normalize(_cross(normal, e1))
+
+        if e2 is None:
+            _warn("Could not construct a valid second local axis. Returning None.")
+            return None
+
+        # Project face vertices to local 2D coordinates.
+        uv_coords = []
+
+        for c in coords:
+            v = _sub(c, origin)
+            uv_coords.append([_dot(v, e1), _dot(v, e2)])
+
+        min_u = min(uv[0] for uv in uv_coords)
+        max_u = max(uv[0] for uv in uv_coords)
+        min_v = min(uv[1] for uv in uv_coords)
+        max_v = max(uv[1] for uv in uv_coords)
+
+        if abs(max_u - min_u) <= tolerance or abs(max_v - min_v) <= tolerance:
+            _warn("The face has a degenerate local bounding box. Returning None.")
+            return None
+
+        try:
+            boundary = Cluster.ByTopologies(Topology.Edges(face))
+        except Exception:
+            boundary = None
+
+        best_vertex = None
+        best_distance = -1
+
+        # 4. Sample the face plane. Return only a point verified as internal.
+        for resolution in [3, 5, 9, 17, 33, 65, 129]:
+            du = (max_u - min_u) / resolution
+            dv = (max_v - min_v) / resolution
+
+            for i in range(resolution):
+                u = min_u + (i + 0.5) * du
+
+                for j in range(resolution):
+                    v = min_v + (j + 0.5) * dv
+
+                    p = _add(origin, _add(_mul(e1, u), _mul(e2, v)))
+                    candidate = _vertex(p)
+
+                    if not _is_internal(candidate):
+                        continue
+
+                    if boundary:
+                        d = _distance_to_boundary(candidate, boundary)
+                    else:
+                        d = 0
+
+                    if d > best_distance:
+                        best_vertex = candidate
+                        best_distance = d
+
+            if best_vertex:
+                return best_vertex
+
+        _warn("Could not find an internal vertex for the input face. Returning None.")
+        return None
 
     @staticmethod
     def Invert(face, tolerance: float = 0.0001, silent: bool = False):
@@ -2162,6 +2375,7 @@ class Face():
         else:
             inverted_face = Face.ByWires(inverted_wire, internal_boundaries, tolerance=tolerance, silent=silent)
         return inverted_face
+    
     @staticmethod
     def IsConvex(face, mantissa: int = 6, silent: bool = False) -> bool:
         """
