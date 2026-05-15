@@ -9,7 +9,6 @@
 from __future__ import annotations
 
 import json
-import re
 import uuid
 from dataclasses import dataclass
 from typing import Any, Callable, Dict, List, Optional
@@ -139,6 +138,8 @@ class GraphRAG:
             label = str(label).strip()
             if not label:
                 return None
+
+            # Convert common LLM variants to corpus-style labels.
             label = re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", label)
             label = label.lower()
             label = label.replace("-", "_")
@@ -148,23 +149,17 @@ class GraphRAG:
             label = label.strip("_")
             return label if label else None
 
-        def _label_signature(label):
-            """
-            Separator-insensitive label signature.
-
-            Examples
-            --------
-            'front door' -> 'frontdoor'
-            'front_door' -> 'frontdoor'
-            'Front-Door' -> 'frontdoor'
-            """
-            if label is None:
-                return ""
-            label = str(label).strip().lower()
-            label = re.sub(r"[^a-z0-9]+", "", label)
-            return label
-
         def _extract_label_from_best_example(best_example, fallback=None):
+            """
+            Accepts several plausible return formats from GraphDB.FindBestExampleForLabel:
+            - "living_room"
+            - {"label": "living_room", ...}
+            - {"best_label": "living_room", ...}
+            - {"node": {"label": "living_room"}, ...}
+            - {"example": {"label": "living_room"}, ...}
+            - tuple/list where one item is a dict containing a label
+            """
+
             if best_example is None:
                 return fallback
 
@@ -196,6 +191,9 @@ class GraphRAG:
             return fallback
 
         def _manager_from_grag(grag):
+            """
+            Tries common names without assuming the internal structure of grag.
+            """
             for key in ("manager", "graphDB", "graphDb", "graphdb", "db", "database"):
                 value = _get_value(grag, key, None)
                 if value is not None:
@@ -203,8 +201,14 @@ class GraphRAG:
             return grag
 
         def _find_best_example_for_label(grag, label, silent=False):
+            """
+            Calls GraphDB.FindBestExampleForLabel defensively, because the exact
+            implementation/signature may vary between GraphDB backends.
+            """
+
             manager = _manager_from_grag(grag)
 
+            # Prefer a directly attached graphDB object if available.
             graph_db = None
             for key in ("GraphDB", "graphDB", "graphDb", "graphdb"):
                 graph_db = _get_value(grag, key, None)
@@ -216,6 +220,7 @@ class GraphRAG:
             if graph_db is not None and hasattr(graph_db, "FindBestExampleForLabel"):
                 candidates.append(graph_db.FindBestExampleForLabel)
 
+            # Fall back to a globally/imported GraphDB class.
             try:
                 from topologicpy.GraphDB import GraphDB
                 if hasattr(GraphDB, "FindBestExampleForLabel"):
@@ -250,39 +255,15 @@ class GraphRAG:
 
             return None
 
-        def _working_graph_label(grag, graph, label):
+        def _resolve_label_with_best_example(grag, label, silent=False):
             """
-            Resolves a proposed existing-node label against the current working graph.
-            Returns the exact label stored in the graph if found.
+            Resolves an LLM-proposed label to a corpus label using:
+            1. Raw label.
+            2. Normalised label.
+            3. Simple synonym fallback.
+            4. FindBestExampleForLabel.
             """
-            if label is None or graph is None:
-                return None
 
-            try:
-                from topologicpy.Graph import Graph
-                from topologicpy.Topology import Topology
-                from topologicpy.Dictionary import Dictionary
-
-                vertex_label_key = getattr(grag, "vertexLabelKey", "label")
-                target_signature = _label_signature(label)
-
-                for vertex in Graph.Vertices(graph) or []:
-                    d = Topology.Dictionary(vertex)
-                    existing_label = Dictionary.ValueAtKey(d, vertex_label_key, None)
-                    if existing_label is None:
-                        continue
-                    if _label_signature(existing_label) == target_signature:
-                        return str(existing_label)
-            except Exception:
-                return None
-
-            return None
-
-        def _resolve_corpus_label(grag, label, silent=False):
-            """
-            Resolves a label against corpus examples. Returns the exact corpus label
-            when a match is found. If no match is found, returns None.
-            """
             raw_label = label
             normalised_label = _normalise_label(label)
 
@@ -325,33 +306,64 @@ class GraphRAG:
                 if isinstance(resolved_label, str) and resolved_label.strip():
                     return resolved_label, raw_label, best_example
 
-            return None, raw_label, None
+            return normalised_label, raw_label, None
 
-        def _resolve_action_labels(grag, graph, action, silent=False):
-            """
-            Resolves labels in the LLM action.
 
-            New-node labels are resolved against the corpus.
-            Existing-node labels are resolved against the working graph first, then
-            against the corpus as a fallback.
+        def _enrich_action_labels_from_state(state, action):
             """
+            Adds a_label and b_label to connect/remove_edge actions when the action
+            identifies nodes by id only.
+
+            This is for clarity, validation, logging, and downstream corpus checks.
+            """
+            if not isinstance(state, dict) or not isinstance(action, dict):
+                return action
+
+            action = dict(action)
+            action_name = str(action.get("action", "")).strip().lower()
+
+            if action_name not in ("connect", "remove_edge"):
+                return action
+
+            ids = state.get("ids", []) or []
+            labels = state.get("labels", []) or []
+
+            id_to_label = {}
+            for i, node_id in enumerate(ids):
+                if i < len(labels):
+                    id_to_label[str(node_id)] = labels[i]
+
+            a_id = action.get("a_id") or action.get("src") or action.get("source") or action.get("from") or action.get("id")
+            b_id = action.get("b_id") or action.get("dst") or action.get("target") or action.get("to") or action.get("attach_to_id")
+
+            if a_id is not None and not action.get("a_label"):
+                action["a_label"] = id_to_label.get(str(a_id))
+
+            if b_id is not None and not action.get("b_label"):
+                action["b_label"] = id_to_label.get(str(b_id))
+
+            return action
+
+
+        def _resolve_action_labels(grag, action, silent=False):
+            """
+            Resolves all plausible label-bearing fields in an LLM action before
+            approval and before ApplyAction.
+
+            This prevents raw LLM labels such as 'Living' from reaching the graph
+            database when the corpus uses canonical labels such as 'living_room'.
+            """
+
+
             if not isinstance(action, dict):
                 return action
 
-            resolved_action = dict(action)
-            resolved_labels = {}
+            resolved_action = GraphRAG.NormalizeAction(action)
 
-            new_node_label_keys = (
+            label_keys = (
                 "label",
-                "new_label",
-                "node_label",
-                "vertex_label",
-            )
-
-            existing_node_label_keys = (
                 "a_label",
                 "b_label",
-                "attach_to_label",
                 "source_label",
                 "target_label",
                 "src_label",
@@ -360,9 +372,14 @@ class GraphRAG:
                 "to_label",
                 "neighbor_label",
                 "neighbour_label",
+                "node_label",
+                "vertex_label",
+                "new_label",
             )
 
-            for key in new_node_label_keys:
+            resolved_labels = {}
+
+            for key in label_keys:
                 if key not in resolved_action:
                     continue
 
@@ -370,7 +387,7 @@ class GraphRAG:
                 if not isinstance(value, str) or not value.strip():
                     continue
 
-                resolved_label, raw_label, best_example = _resolve_corpus_label(
+                resolved_label, raw_label, best_example = _resolve_label_with_best_example(
                     grag,
                     value,
                     silent=silent,
@@ -381,42 +398,6 @@ class GraphRAG:
                     resolved_labels[key] = {
                         "raw": raw_label,
                         "resolved": resolved_label,
-                        "source": "corpus",
-                        "best_example": best_example,
-                    }
-
-            for key in existing_node_label_keys:
-                if key not in resolved_action:
-                    continue
-
-                value = resolved_action.get(key, None)
-                if not isinstance(value, str) or not value.strip():
-                    continue
-
-                working_label = _working_graph_label(grag, graph, value)
-
-                if isinstance(working_label, str) and working_label.strip():
-                    resolved_action[key] = working_label
-                    resolved_labels[key] = {
-                        "raw": value,
-                        "resolved": working_label,
-                        "source": "working_graph",
-                        "best_example": None,
-                    }
-                    continue
-
-                resolved_label, raw_label, best_example = _resolve_corpus_label(
-                    grag,
-                    value,
-                    silent=silent,
-                )
-
-                if isinstance(resolved_label, str) and resolved_label.strip():
-                    resolved_action[key] = resolved_label
-                    resolved_labels[key] = {
-                        "raw": raw_label,
-                        "resolved": resolved_label,
-                        "source": "corpus",
                         "best_example": best_example,
                     }
 
@@ -474,108 +455,45 @@ class GraphRAG:
             )
 
             if not isinstance(raw_action, dict) or not raw_action:
-                stagnant += 1
-
+                status = "llm_failed"
                 records.append({
                     "step": step,
                     "ok": False,
-                    "status": "ignored_bad_llm_response",
+                    "status": status,
                     "action": raw_action,
-                    "raw_action": raw_action,
-                    "message": "LLM returned no usable action. Ignoring this response and continuing.",
+                    "message": "LLM returned no usable action.",
                     "summary_before": summary_before,
                     "summary_after": summary_before,
                     "evidence": evidence,
                 })
-
-                if verbose and not effective_silent:
-                    print(f"STEP: {step}")
-                    print("→ Ignoring malformed or unusable LLM response.")
-
-                if stagnant >= max(1, int(patience or 1)):
-                    status = "patience_exhausted"
-                    if verbose and not effective_silent:
-                        print("→ Stopping because patience was exhausted.")
-                    break
-
-                continue
+                break
 
             action = _resolve_action_labels(
                 grag,
-                graph,
                 raw_action,
                 silent=effective_silent,
             )
-
-            if not isinstance(action, dict) or not action:
-                stagnant += 1
-
-                records.append({
-                    "step": step,
-                    "ok": False,
-                    "status": "ignored_bad_resolved_action",
-                    "action": action,
-                    "raw_action": raw_action,
-                    "message": "Resolved action was not usable. Ignoring this response and continuing.",
-                    "summary_before": summary_before,
-                    "summary_after": summary_before,
-                    "evidence": evidence,
-                })
-
-                if verbose and not effective_silent:
-                    print(f"STEP: {step}")
-                    print("→ Ignoring unusable resolved action.")
-
-                if stagnant >= max(1, int(patience or 1)):
-                    status = "patience_exhausted"
-                    if verbose and not effective_silent:
-                        print("→ Stopping because patience was exhausted.")
-                    break
-
-                continue
-
-            action_name = str(action.get("action", "")).strip().lower()
-
-            if action_name not in ("add_node", "connect", "stop", "done", "finish"):
-                stagnant += 1
-
-                records.append({
-                    "step": step,
-                    "ok": False,
-                    "status": "ignored_invalid_action",
-                    "action": action,
-                    "raw_action": raw_action,
-                    "message": f"Invalid action '{action_name}'. Ignoring this response and continuing.",
-                    "summary_before": summary_before,
-                    "summary_after": summary_before,
-                    "evidence": evidence,
-                })
-
-                if verbose and not effective_silent:
-                    print(f"STEP: {step}")
-                    print(f"→ Ignoring invalid action: {action_name}")
-
-                if stagnant >= max(1, int(patience or 1)):
-                    status = "patience_exhausted"
-                    if verbose and not effective_silent:
-                        print("→ Stopping because patience was exhausted.")
-                    break
-
-                continue
+            action = _enrich_action_labels_from_state(state, action)
 
             if verbose and not effective_silent:
                 print(f"STEP: {step}")
                 print("json_action:", action.get("action") if isinstance(action, dict) else None)
                 print("json_label:", action.get("label") if isinstance(action, dict) else None)
+                print("json_id:", action.get("id") if isinstance(action, dict) else None)
+                print("json_a_id:", action.get("a_id") if isinstance(action, dict) else None)
+                print("json_b_id:", action.get("b_id") if isinstance(action, dict) else None)
+                print("json_attach_to_id:", action.get("attach_to_id") if isinstance(action, dict) else None)
                 print("json_a_label:", action.get("a_label") if isinstance(action, dict) else None)
                 print("json_b_label:", action.get("b_label") if isinstance(action, dict) else None)
                 print("json_attach_to_label:", action.get("attach_to_label") if isinstance(action, dict) else None)
+                print("json_edge_label:", action.get("edge_label") if isinstance(action, dict) else None)
                 if isinstance(action, dict) and action.get("_resolved_labels"):
                     print("resolved_labels:", action.get("_resolved_labels"))
 
+            action_name = str(action.get("action", "stop")).strip().lower()
+
             if action_name in ("stop", "done", "finish"):
                 status = "stopped"
-
                 records.append({
                     "step": step,
                     "ok": True,
@@ -601,7 +519,6 @@ class GraphRAG:
 
             if decision == "stop":
                 status = "stopped_by_user"
-
                 records.append({
                     "step": step,
                     "ok": True,
@@ -613,12 +530,10 @@ class GraphRAG:
                     "summary_after": summary_before,
                     "evidence": evidence,
                 })
-
                 break
 
             if decision == "ignore":
                 stagnant += 1
-
                 records.append({
                     "step": step,
                     "ok": True,
@@ -630,64 +545,55 @@ class GraphRAG:
                     "summary_after": summary_before,
                     "evidence": evidence,
                 })
+            else:
+                apply_result = GraphRAG.ApplyAction(
+                    grag,
+                    graph,
+                    action,
+                    silent=effective_silent,
+                )
 
-                if stagnant >= max(1, int(patience or 1)):
-                    status = "patience_exhausted"
-                    if verbose and not effective_silent:
-                        print("→ Stopping because patience was exhausted.")
-                    break
+                if not isinstance(apply_result, dict):
+                    apply_result = {
+                        "ok": False,
+                        "graph": graph,
+                        "message": "GraphRAG.ApplyAction returned no usable result.",
+                    }
 
-                continue
+                if apply_result.get("graph") is not None:
+                    graph = apply_result.get("graph")
 
-            apply_result = GraphRAG.ApplyAction(
-                grag,
-                graph,
-                action,
-                silent=effective_silent,
-            )
+                summary_after = GraphRAG.SummarizeGraph(
+                    grag,
+                    graph,
+                    silent=effective_silent,
+                )
 
-            if not isinstance(apply_result, dict):
-                apply_result = {
-                    "ok": False,
-                    "graph": graph,
-                    "message": "GraphRAG.ApplyAction returned no usable result.",
-                }
+                changed = bool(apply_result.get("ok")) and (summary_after != summary_before)
+                stagnant = 0 if changed else stagnant + 1
 
-            if apply_result.get("graph") is not None:
-                graph = apply_result.get("graph")
+                records.append({
+                    "step": step,
+                    "ok": bool(apply_result.get("ok")),
+                    "status": "applied" if apply_result.get("ok") else "failed",
+                    "action": action,
+                    "raw_action": raw_action,
+                    "message": apply_result.get("message", ""),
+                    "summary_before": summary_before,
+                    "summary_after": summary_after,
+                    "evidence": evidence,
+                })
 
-            summary_after = GraphRAG.SummarizeGraph(
-                grag,
-                graph,
-                silent=effective_silent,
-            )
-
-            changed = bool(apply_result.get("ok")) and (summary_after != summary_before)
-            stagnant = 0 if changed else stagnant + 1
-
-            records.append({
-                "step": step,
-                "ok": bool(apply_result.get("ok")),
-                "status": "applied" if apply_result.get("ok") else "failed",
-                "action": action,
-                "raw_action": raw_action,
-                "message": apply_result.get("message", ""),
-                "summary_before": summary_before,
-                "summary_after": summary_after,
-                "evidence": evidence,
-            })
-
-            if verbose and not effective_silent:
-                print("→", apply_result.get("message", ""))
-                print("Latest Number of Nodes:", summary_after.get("num_nodes"))
-                print("Latest Labels:", [n.get("label") for n in summary_after.get("nodes", [])])
+                if verbose and not effective_silent:
+                    print("→", apply_result.get("message", ""))
+                    print("Latest Number of Nodes:", summary_after.get("num_nodes"))
+                    print("Latest Labels:", [n.get("label") for n in summary_after.get("nodes", [])])
 
             if stagnant >= max(1, int(patience or 1)):
                 status = "patience_exhausted"
                 if verbose and not effective_silent:
                     print("→ Stopping because patience was exhausted.")
                 break
-
         else:
             status = "max_steps_reached"
 
@@ -915,7 +821,7 @@ Allowed action values are only:
         effective_silent = GraphRAG._effective_silent(grag, silent)
         labels = [n.get("label") for n in (graphSummary or {}).get("nodes", []) if n.get("label")]
         labels = GraphRAG._unique(labels)
-        evidence = {"candidate_counts": [], "max_neighbors": {}, "pairs": [], "expandable_nodes": [], "label_resolution": {}}
+        evidence = {"candidate_counts": [], "max_neighbors": {}, "pairs": [], "expandable_nodes": []}
 
         graphdb = getattr(grag, "graphdb", None)
         if graphdb is None:
@@ -928,27 +834,10 @@ Allowed action values are only:
                 print(f"GraphRAG.Evidence - Error importing GraphDB: {e}.")
             return evidence
 
-        resolved_labels = []
-        for label in labels:
-            resolved_label, best_example = GraphRAG._resolve_corpus_label(
-                grag,
-                label,
-                fallback=label,
-                return_example=True,
-                silent=effective_silent,
-            )
-            resolved_label = resolved_label or label
-            evidence["label_resolution"][label] = {
-                "resolved": resolved_label,
-                "best_example": best_example,
-            }
-            resolved_labels.append(resolved_label)
-        resolved_labels = GraphRAG._unique(resolved_labels)
-
         try:
             evidence["candidate_counts"] = GraphDB.CandidateCountsForLabels(
                 graphdb,
-                resolved_labels,
+                labels,
                 limit=getattr(grag, "maxCandidates", 12),
                 silent=effective_silent,
             ) or []
@@ -958,21 +847,13 @@ Allowed action values are only:
                 print(f"GraphRAG.Evidence - Warning: CandidateCountsForLabels failed: {e}")
 
         for label in labels:
-            resolved_label = (evidence.get("label_resolution", {}).get(label, {}) or {}).get("resolved") or label
-            value = None
             try:
-                value = GraphDB.MaxNeighborsForLabel(graphdb, resolved_label, silent=effective_silent)
+                evidence["max_neighbors"][label] = GraphDB.MaxNeighborsForLabel(graphdb, label, silent=effective_silent)
             except Exception:
-                value = None
-            if GraphRAG._max_neighbor_value(value) is None and resolved_label != label:
-                try:
-                    value = GraphDB.MaxNeighborsForLabel(graphdb, label, silent=effective_silent)
-                except Exception:
-                    value = None
-            evidence["max_neighbors"][label] = value
+                evidence["max_neighbors"][label] = None
 
         candidate_labels = GraphRAG._candidate_labels(evidence.get("candidate_counts", []))
-        all_labels = GraphRAG._unique(labels + resolved_labels + candidate_labels)[: max(1, getattr(grag, "maxCandidates", 12) * 2)]
+        all_labels = GraphRAG._unique(labels + candidate_labels)[: max(1, getattr(grag, "maxCandidates", 12) * 2)]
         try:
             pairs = GraphDB.FetchAllPairs(graphdb, undirected=True, silent=effective_silent) or []
             evidence["pairs"] = GraphRAG._filter_pairs_by_labels(pairs, all_labels, limit=getattr(grag, "maxPairs", 40))
@@ -1136,31 +1017,155 @@ Allowed action values are only:
     @staticmethod
     def NormalizeAction(action: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Normalizes common action aliases.
+        Normalizes common action aliases and field aliases.
         """
         if not isinstance(action, dict):
             return {}
+
         out = dict(action)
+
         name = str(out.get("action", "stop")).strip().lower()
         aliases = {
             "add": "add_node",
             "add_vertex": "add_node",
+            "add vertex": "add_node",
             "node": "add_node",
+
+            "connect_vertices": "connect",
+            "connect vertices": "connect",
             "connect_nodes": "connect",
+            "connect nodes": "connect",
             "add_edge": "connect",
+            "add edge": "connect",
             "edge": "connect",
+            "link": "connect",
+            "join": "connect",
+
+            "remove": "remove_node",
+            "delete": "remove_node",
+            "delete_node": "remove_node",
+            "delete node": "remove_node",
+            "remove_vertex": "remove_node",
+            "remove vertex": "remove_node",
+            "delete_vertex": "remove_node",
+            "delete vertex": "remove_node",
+
+            "remove_edge": "remove_edge",
+            "remove edge": "remove_edge",
+            "delete_edge": "remove_edge",
+            "delete edge": "remove_edge",
+            "unlink": "remove_edge",
+            "disconnect": "remove_edge",
+
             "finish": "stop",
             "done": "stop",
         }
         out["action"] = aliases.get(name, name)
-        if "label" not in out and "b_label" in out and out["action"] == "add_node":
-            out["label"] = out.get("b_label")
-        if "attach_to_id" not in out and "a_id" in out and out["action"] == "add_node":
-            out["attach_to_id"] = out.get("a_id")
-        if "attach_to_label" not in out and "a_label" in out and out["action"] == "add_node":
-            out["attach_to_label"] = out.get("a_label")
-        return out
 
+        # --------------------------------------------------
+        # add_node aliases
+        # --------------------------------------------------
+        if out["action"] == "add_node":
+            if "label" not in out:
+                for key in ("b_label", "new_label", "node_label", "vertex_label"):
+                    if key in out and out.get(key) is not None:
+                        out["label"] = out.get(key)
+                        break
+
+            if "attach_to_id" not in out:
+                for key in ("a_id", "src", "source", "from", "from_id", "source_id", "start", "start_id"):
+                    if key in out and out.get(key) is not None:
+                        out["attach_to_id"] = out.get(key)
+                        break
+
+            if "attach_to_label" not in out:
+                for key in ("a_label", "src_label", "source_label", "from_label", "start_label"):
+                    if key in out and out.get(key) is not None:
+                        out["attach_to_label"] = out.get(key)
+                        break
+
+        # --------------------------------------------------
+        # connect aliases
+        # --------------------------------------------------
+        if out["action"] == "connect":
+            # The LLM often returns add_node-shaped fields for connect.
+            if "a_id" not in out:
+                for key in ("a_id", "src", "source", "from", "from_id", "source_id", "start", "start_id", "id"):
+                    if key in out and out.get(key) is not None:
+                        out["a_id"] = out.get(key)
+                        break
+
+            if "b_id" not in out:
+                for key in ("b_id", "dst", "target", "to", "to_id", "target_id", "end", "end_id", "attach_to_id"):
+                    if key in out and out.get(key) is not None:
+                        out["b_id"] = out.get(key)
+                        break
+
+            if "a_label" not in out:
+                for key in ("a_label", "src_label", "source_label", "from_label", "start_label"):
+                    if key in out and out.get(key) is not None:
+                        out["a_label"] = out.get(key)
+                        break
+
+            if "b_label" not in out:
+                for key in ("b_label", "dst_label", "target_label", "to_label", "end_label", "attach_to_label"):
+                    if key in out and out.get(key) is not None:
+                        out["b_label"] = out.get(key)
+                        break
+
+            # In connect actions, "label" is commonly the edge label, not a node label.
+            if "edge_label" not in out and out.get("label") is not None:
+                out["edge_label"] = out.get("label")
+
+            # Prevent later label-resolution code from treating this as a node label.
+            if "label" in out:
+                out["_raw_label"] = out.get("label")
+                out.pop("label", None)
+
+        # --------------------------------------------------
+        # remove_node aliases
+        # --------------------------------------------------
+        if out["action"] == "remove_node":
+            if "id" not in out:
+                for key in ("node_id", "vertex_id", "a_id", "src", "source", "target"):
+                    if key in out and out.get(key) is not None:
+                        out["id"] = out.get(key)
+                        break
+
+            if "label" not in out:
+                for key in ("node_label", "vertex_label", "a_label", "src_label", "source_label", "target_label"):
+                    if key in out and out.get(key) is not None:
+                        out["label"] = out.get(key)
+                        break
+
+        # --------------------------------------------------
+        # remove_edge aliases
+        # --------------------------------------------------
+        if out["action"] == "remove_edge":
+            if "a_id" not in out:
+                for key in ("src", "source", "from", "from_id", "source_id", "start", "start_id", "id"):
+                    if key in out and out.get(key) is not None:
+                        out["a_id"] = out.get(key)
+                        break
+
+            if "b_id" not in out:
+                for key in ("dst", "target", "to", "to_id", "target_id", "end", "end_id", "attach_to_id"):
+                    if key in out and out.get(key) is not None:
+                        out["b_id"] = out.get(key)
+                        break
+
+            if "a_label" not in out:
+                for key in ("src_label", "source_label", "from_label", "start_label"):
+                    if key in out and out.get(key) is not None:
+                        out["a_label"] = out.get(key)
+                        break
+
+            if "b_label" not in out:
+                for key in ("dst_label", "target_label", "to_label", "end_label", "attach_to_label"):
+                    if key in out and out.get(key) is not None:
+                        out["b_label"] = out.get(key)
+                        break
+        return out
     @staticmethod
     def ApproveAction(action: Dict[str, Any], approvalFunction: Callable[[Dict[str, Any], str], str] = None, silent: bool = False) -> str:
         """
@@ -1186,241 +1191,6 @@ Allowed action values are only:
         if value in ("s", "stop", "q", "quit"):
             return "stop"
         return "ignore"
-
-    # ---------------------------------------------------------------------
-    # Label resolution helpers
-    # ---------------------------------------------------------------------
-    @staticmethod
-    def _label_signature(label) -> str:
-        """
-        Returns a separator-insensitive label signature used only for matching.
-        """
-        if label is None:
-            return ""
-        label = str(label).strip().lower()
-        label = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", label)
-        return re.sub(r"[^a-z0-9]+", "", label)
-
-    @staticmethod
-    def _label_variants(label) -> List[str]:
-        """
-        Returns conservative search variants for a label without choosing one as canonical.
-        """
-        if label is None:
-            return []
-        raw = str(label).strip()
-        if not raw:
-            return []
-        spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", raw).strip().lower()
-        spaced = re.sub(r"[_\-]+", " ", spaced)
-        spaced = re.sub(r"\s+", " ", spaced).strip()
-        underscored = re.sub(r"\s+", "_", spaced)
-        compact = GraphRAG._label_signature(raw)
-        synonyms = {
-            "living": ["living_room", "living room", "lounge", "sitting_room", "sitting room"],
-            "lounge": ["living_room", "living room"],
-            "sittingroom": ["living_room", "living room"],
-            "sitting": ["living_room", "living room"],
-            "dining": ["dining_room", "dining room"],
-            "bed": ["bedroom"],
-            "bath": ["bathroom"],
-            "wc": ["toilet", "water_closet", "water closet"],
-            "entry": ["entrance", "entryway"],
-            "entryway": ["entrance"],
-            "hall": ["corridor", "hallway"],
-            "hallway": ["corridor", "hall"],
-        }
-        variants = [raw, spaced, underscored, compact]
-        variants += synonyms.get(compact, [])
-        return GraphRAG._unique([v for v in variants if isinstance(v, str) and v.strip()])
-
-    @staticmethod
-    def _extract_label_from_best_example(best_example, fallback=None):
-        """
-        Extracts the corpus label from common FindBestExampleForLabel return shapes.
-        """
-        if best_example is None:
-            return fallback
-        if isinstance(best_example, str):
-            return best_example
-        if isinstance(best_example, dict):
-            for key in ("label", "best_label", "canonical_label", "resolved_label", "node_label", "vertex_label"):
-                value = best_example.get(key)
-                if isinstance(value, str) and value.strip():
-                    return value
-            for key in ("node", "vertex", "example", "best_example", "source", "target"):
-                value = best_example.get(key)
-                if isinstance(value, dict):
-                    label = GraphRAG._extract_label_from_best_example(value, fallback=None)
-                    if isinstance(label, str) and label.strip():
-                        return label
-            for value in best_example.values():
-                if isinstance(value, (dict, list, tuple)):
-                    label = GraphRAG._extract_label_from_best_example(value, fallback=None)
-                    if isinstance(label, str) and label.strip():
-                        return label
-            return fallback
-        if isinstance(best_example, (list, tuple)):
-            for item in best_example:
-                label = GraphRAG._extract_label_from_best_example(item, fallback=None)
-                if isinstance(label, str) and label.strip():
-                    return label
-        return fallback
-
-    @staticmethod
-    def _find_best_example_for_label(grag, label, silent: bool = False):
-        """
-        Calls GraphDB.FindBestExampleForLabel using the configured graph database.
-        """
-        graphdb = getattr(grag, "graphdb", None)
-        if graphdb is None or label is None:
-            return None
-        try:
-            from topologicpy.GraphDB import GraphDB
-        except Exception:
-            return None
-        candidates = []
-        if hasattr(GraphDB, "FindBestExampleForLabel"):
-            candidates.append(GraphDB.FindBestExampleForLabel)
-        if hasattr(graphdb, "FindBestExampleForLabel"):
-            candidates.append(graphdb.FindBestExampleForLabel)
-        last_error = None
-        for fn in candidates:
-            for args, kwargs in (
-                ((graphdb, label), {"silent": silent}),
-                ((graphdb, label), {}),
-                ((label,), {"silent": silent}),
-                ((label,), {}),
-            ):
-                try:
-                    return fn(*args, **kwargs)
-                except TypeError as e:
-                    last_error = e
-                    continue
-                except Exception as e:
-                    last_error = e
-                    break
-        if not silent and last_error is not None:
-            print(f"GraphRAG._find_best_example_for_label - Warning: Could not resolve '{label}': {last_error}")
-        return None
-
-    @staticmethod
-    def _resolve_corpus_label(grag, label, fallback=None, return_example: bool = False, silent: bool = False):
-        """
-        Resolves a label to the actual label used in the corpus. The returned label
-        is never the underscore/space-normalised variant unless that is what the
-        corpus returns.
-        """
-        if label is None:
-            return (fallback, None) if return_example else fallback
-        for candidate in GraphRAG._label_variants(label):
-            best_example = GraphRAG._find_best_example_for_label(grag, candidate, silent=silent)
-            resolved = GraphRAG._extract_label_from_best_example(best_example, fallback=None)
-            if isinstance(resolved, str) and resolved.strip():
-                return (resolved, best_example) if return_example else resolved
-        return (fallback, None) if return_example else fallback
-
-    @staticmethod
-    def _working_label_for_value(grag, graph, value, silent: bool = False):
-        """
-        Returns the exact label stored in the working graph that best matches value.
-        """
-        if value is None or graph is None:
-            return None
-        try:
-            from topologicpy.Graph import Graph
-            from topologicpy.Topology import Topology
-            from topologicpy.Dictionary import Dictionary
-            key = getattr(grag, "vertexLabelKey", "label")
-            value_text = str(value).strip()
-            value_sig = GraphRAG._label_signature(value_text)
-            value_corpus = GraphRAG._resolve_corpus_label(grag, value_text, fallback=value_text, silent=silent)
-            value_corpus_sig = GraphRAG._label_signature(value_corpus)
-            vertices = Graph.Vertices(graph) or []
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is None:
-                    continue
-                label_text = str(label).strip()
-                if label_text.lower() == value_text.lower():
-                    return label_text
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is None:
-                    continue
-                label_text = str(label).strip()
-                if GraphRAG._label_signature(label_text) == value_sig:
-                    return label_text
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is None:
-                    continue
-                label_text = str(label).strip()
-                label_corpus = GraphRAG._resolve_corpus_label(grag, label_text, fallback=label_text, silent=silent)
-                if GraphRAG._label_signature(label_corpus) == value_corpus_sig:
-                    return label_text
-        except Exception:
-            return None
-        return None
-
-    @staticmethod
-    def ResolveActionLabels(grag, graph, action: Dict[str, Any], silent: bool = False) -> Dict[str, Any]:
-        """
-        Resolves labels in an LLM action against both the working graph and corpus.
-        Existing-node labels are first matched to exact working-graph labels.
-        New-node labels are matched to actual corpus labels.
-        """
-        if not isinstance(action, dict):
-            return {}
-        out = GraphRAG.NormalizeAction(action)
-        action_name = str(out.get("action", "stop")).strip().lower()
-        resolved = {}
-
-        def set_resolved(key, value, target):
-            if not isinstance(value, str) or not value.strip() or value == target:
-                return
-            resolved[key] = {"raw": value, "resolved": target}
-
-        if action_name == "add_node":
-            if isinstance(out.get("label"), str) and out.get("label").strip():
-                raw = out.get("label")
-                corpus_label, best_example = GraphRAG._resolve_corpus_label(
-                    grag, raw, fallback=raw, return_example=True, silent=silent
-                )
-                out["label"] = corpus_label or raw
-                resolved["label"] = {"raw": raw, "resolved": out["label"], "best_example": best_example}
-            for key in ("attach_to_label", "a_label"):
-                if isinstance(out.get(key), str) and out.get(key).strip():
-                    raw = out.get(key)
-                    working_label = GraphRAG._working_label_for_value(grag, graph, raw, silent=silent)
-                    if working_label is None:
-                        working_label = GraphRAG._resolve_corpus_label(grag, raw, fallback=raw, silent=silent)
-                    out[key] = working_label or raw
-                    set_resolved(key, raw, out[key])
-            if "attach_to_label" not in out and "a_label" in out:
-                out["attach_to_label"] = out.get("a_label")
-
-        elif action_name == "connect":
-            for key in ("a_label", "b_label", "source_label", "target_label", "src_label", "dst_label", "from_label", "to_label"):
-                if isinstance(out.get(key), str) and out.get(key).strip():
-                    raw = out.get(key)
-                    working_label = GraphRAG._working_label_for_value(grag, graph, raw, silent=silent)
-                    if working_label is None:
-                        working_label = GraphRAG._resolve_corpus_label(grag, raw, fallback=raw, silent=silent)
-                    out[key] = working_label or raw
-                    set_resolved(key, raw, out[key])
-
-        else:
-            for key in ("label", "a_label", "b_label", "attach_to_label", "source_label", "target_label", "src_label", "dst_label", "from_label", "to_label", "neighbor_label", "neighbour_label", "node_label", "vertex_label", "new_label"):
-                if isinstance(out.get(key), str) and out.get(key).strip():
-                    raw = out.get(key)
-                    corpus_label = GraphRAG._resolve_corpus_label(grag, raw, fallback=raw, silent=silent)
-                    out[key] = corpus_label or raw
-                    set_resolved(key, raw, out[key])
-
-        if resolved:
-            out["_resolved_labels"] = resolved
-        return out
 
     # ---------------------------------------------------------------------
     # Local workflow helpers retained outside Graph API by design
@@ -1472,6 +1242,14 @@ Allowed action values are only:
 
             label = str(action.get("label") or action.get("b_label") or "Node")
             vid = GraphRAG._unique_action_id(graph, action.get("id"), prefix="n", key=vertex_id_key, silent=silent)
+            x = float(action.get("x", 0.0) or 0.0)
+            y = float(action.get("y", 0.0) or 0.0)
+            z = float(action.get("z", 0.0) or 0.0)
+
+            vertex = Vertex.ByCoordinates(x, y, z)
+            d = Dictionary.ByKeysValues([vertex_id_key, vertex_label_key], [vid, label])
+            vertex = Topology.SetDictionary(vertex, d)
+            graph = Graph.AddVertex(graph, vertex, tolerance=tolerance, silent=silent)
 
             attach_vertex = None
             attach_id = action.get("attach_to_id") or action.get("a_id")
@@ -1481,82 +1259,13 @@ Allowed action values are only:
             if attach_vertex is None and attach_label:
                 attach_vertex = GraphRAG._find_vertex_by_label(grag, graph, attach_label)
 
-            def _has_coordinate(action, key):
-                value = action.get(key, None)
-                return value is not None and str(value).strip() != ""
-
-            def _is_duplicate_coordinate(px, py, pz):
-                try:
-                    for existing_vertex in Graph.Vertices(graph) or []:
-                        ex, ey, ez = GraphRAG._vertex_xyz(existing_vertex)
-                        if ex is None or ey is None or ez is None:
-                            continue
-                        dx = float(px) - float(ex)
-                        dy = float(py) - float(ey)
-                        dz = float(pz) - float(ez)
-                        if ((dx * dx) + (dy * dy) + (dz * dz)) ** 0.5 <= tolerance:
-                            return True
-                except Exception:
-                    return False
-                return False
-
-            has_explicit_coordinates = _has_coordinate(action, "x") or _has_coordinate(action, "y") or _has_coordinate(action, "z")
-
-            if has_explicit_coordinates:
-                x = float(action.get("x", 0.0) or 0.0)
-                y = float(action.get("y", 0.0) or 0.0)
-                z = float(action.get("z", 0.0) or 0.0)
-            else:
-                # Coordinates are optional in the LLM action, but Topologic graph
-                # vertices must not coincide within tolerance. If the LLM omits
-                # coordinates, place the new vertex near its attachment point, or
-                # otherwise at a safe offset from the current graph.
-                offset = max(1.0, tolerance * 10.0)
-                if attach_vertex is not None:
-                    ax, ay, az = GraphRAG._vertex_xyz(attach_vertex)
-                    x = float(ax or 0.0) + offset
-                    y = float(ay or 0.0)
-                    z = float(az or 0.0)
-                else:
-                    count = len(Graph.Vertices(graph) or [])
-                    x = float(count + 1) * offset
-                    y = 0.0
-                    z = 0.0
-
-            # If the chosen/generated coordinates coincide with an existing
-            # vertex, keep shifting until Graph.AddVertex can add a distinct
-            # vertex under the configured tolerance.
-            offset = max(1.0, tolerance * 10.0)
-            guard = 0
-            while _is_duplicate_coordinate(x, y, z) and guard < 100:
-                guard += 1
-                x += offset
-
-            vertex = Vertex.ByCoordinates(x, y, z)
-            if vertex is None:
-                return {"ok": False, "graph": graph, "message": "Could not create vertex."}
-
-            d = Dictionary.ByKeysValues([vertex_id_key, vertex_label_key], [vid, label])
-            # Topology.SetDictionary modifies the topology in place in TopologicPy.
-            # Do not assign its return value, because some backends return None.
-            Topology.SetDictionary(vertex, d)
-            graph = Graph.AddVertex(graph, vertex, tolerance=tolerance, silent=silent)
-
-            added_vertex = GraphRAG._find_vertex_by_id(grag, graph, vid)
-            if added_vertex is None:
-                added_vertex = GraphRAG._find_vertex_by_label(grag, graph, label)
-            if added_vertex is None:
-                return {"ok": False, "graph": graph, "vertex": vertex, "message": f"Failed to add node '{label}' with id '{vid}' at coordinates ({x}, {y}, {z})."}
-            vertex = added_vertex
-
             if attach_vertex is not None:
                 if not GraphRAG._can_add_connection(grag, graph, attach_vertex, silent=silent):
                     return {"ok": False, "graph": graph, "vertex": vertex, "message": GraphRAG._degree_limit_message(grag, graph, attach_vertex)}
                 edge = Edge.ByVertices([attach_vertex, vertex], tolerance=tolerance, silent=True)
                 if edge is not None:
                     ed = Dictionary.ByKeysValues([edge_label_key], [action.get("edge_label") or getattr(grag, "defaultEdgeLabel", "suggested")])
-                    # Topology.SetDictionary modifies the edge in place in TopologicPy.
-                    Topology.SetDictionary(edge, ed)
+                    edge = Topology.SetDictionary(edge, ed)
                     graph = Graph.AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=tolerance, silent=silent)
 
             return {"ok": True, "graph": graph, "vertex": vertex, "message": f"Added node '{label}' with id '{vid}'."}
@@ -1593,8 +1302,7 @@ Allowed action values are only:
             if edge is None:
                 return {"ok": False, "graph": graph, "message": "Could not create edge."}
             ed = Dictionary.ByKeysValues([edge_label_key], [action.get("edge_label") or getattr(grag, "defaultEdgeLabel", "suggested")])
-            # Topology.SetDictionary modifies the edge in place in TopologicPy.
-            Topology.SetDictionary(edge, ed)
+            edge = Topology.SetDictionary(edge, ed)
             graph = Graph.AddEdge(graph, edge, transferVertexDictionaries=False, transferEdgeDictionaries=False, tolerance=tolerance, silent=silent)
             return {"ok": True, "graph": graph, "edge": edge, "message": "Connected vertices."}
         except Exception as e:
@@ -1611,9 +1319,9 @@ Allowed action values are only:
             from topologicpy.Topology import Topology
             from topologicpy.Dictionary import Dictionary
             key = getattr(grag, "vertexIDKey", "id")
-            needle = str(value).strip()
+            needle = str(value)
             for v in Graph.Vertices(graph) or []:
-                if str(Dictionary.ValueAtKey(Topology.Dictionary(v), key, "")).strip() == needle:
+                if str(Dictionary.ValueAtKey(Topology.Dictionary(v), key, "")) == needle:
                     return v
         except Exception:
             return None
@@ -1628,28 +1336,9 @@ Allowed action values are only:
             from topologicpy.Topology import Topology
             from topologicpy.Dictionary import Dictionary
             key = getattr(grag, "vertexLabelKey", "label")
-            needle = str(value).strip()
-            needle_sig = GraphRAG._label_signature(needle)
-            needle_corpus = GraphRAG._resolve_corpus_label(grag, needle, fallback=needle, silent=True)
-            needle_corpus_sig = GraphRAG._label_signature(needle_corpus)
-            vertices = Graph.Vertices(graph) or []
-
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is not None and str(label).strip().lower() == needle.lower():
-                    return v
-
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is not None and GraphRAG._label_signature(label) == needle_sig:
-                    return v
-
-            for v in vertices:
-                label = Dictionary.ValueAtKey(Topology.Dictionary(v), key, None)
-                if label is None:
-                    continue
-                label_corpus = GraphRAG._resolve_corpus_label(grag, label, fallback=label, silent=True)
-                if GraphRAG._label_signature(label_corpus) == needle_corpus_sig:
+            needle = str(value).lower()
+            for v in Graph.Vertices(graph) or []:
+                if str(Dictionary.ValueAtKey(Topology.Dictionary(v), key, "")).lower() == needle:
                     return v
         except Exception:
             return None
@@ -1669,19 +1358,9 @@ Allowed action values are only:
             if label is None:
                 return True
             current_degree = len(Graph.AdjacentVertices(graph, vertex) or [])
-            corpus_label = GraphRAG._resolve_corpus_label(grag, label, fallback=label, silent=silent)
-            max_value = None
-            for query_label in GraphRAG._unique([corpus_label, label]):
-                try:
-                    max_value = GraphDB.MaxNeighborsForLabel(graphdb, query_label, silent=silent)
-                except Exception:
-                    max_value = None
-                max_degree = GraphRAG._max_neighbor_value(max_value)
-                if max_degree is not None:
-                    break
-            else:
-                max_degree = None
-            if max_degree is None or max_degree <= 0:
+            max_degree = GraphDB.MaxNeighborsForLabel(graphdb, label, silent=silent)
+            max_degree = GraphRAG._max_neighbor_value(max_degree)
+            if max_degree is None:
                 return True
             return current_degree < max_degree
         except Exception:
@@ -1697,19 +1376,9 @@ Allowed action values are only:
             label = Dictionary.ValueAtKey(Topology.Dictionary(vertex), getattr(grag, "vertexLabelKey", "label"), "Unknown")
             current_degree = len(Graph.AdjacentVertices(graph, vertex) or [])
             max_degree = None
-            corpus_label = label
             graphdb = getattr(grag, "graphdb", None)
             if graphdb is not None:
-                corpus_label = GraphRAG._resolve_corpus_label(grag, label, fallback=label, silent=True)
-                for query_label in GraphRAG._unique([corpus_label, label]):
-                    try:
-                        max_degree = GraphRAG._max_neighbor_value(GraphDB.MaxNeighborsForLabel(graphdb, query_label, silent=True))
-                    except Exception:
-                        max_degree = None
-                    if max_degree is not None:
-                        break
-            if corpus_label != label:
-                return f"Degree limit reached for '{label}' matched to corpus label '{corpus_label}': current degree = {current_degree}, corpus max degree = {max_degree}."
+                max_degree = GraphRAG._max_neighbor_value(GraphDB.MaxNeighborsForLabel(graphdb, label, silent=True))
             return f"Degree limit reached for '{label}': current degree = {current_degree}, corpus max degree = {max_degree}."
         except Exception:
             return "Degree limit reached."
@@ -1881,6 +1550,750 @@ Allowed action values are only:
                 seen.add(value)
                 out.append(value)
         return out
+
+
+    # ---------------------------------------------------------------------
+    # Matrix-backed generation helpers
+    # ---------------------------------------------------------------------
+    @staticmethod
+    def _matrix_label_signature(label) -> str:
+        """
+        Returns a separator-insensitive label signature for matching labels.
+        """
+        if label is None:
+            return ""
+        import re
+        label = str(label).strip().lower()
+        label = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", label)
+        return re.sub(r"[^a-z0-9]+", "", label)
+
+    @staticmethod
+    def _matrix_label_variants(label) -> List[str]:
+        """
+        Returns conservative label variants for corpus lookup.
+        """
+        if label is None:
+            return []
+        import re
+        raw = str(label).strip()
+        if not raw:
+            return []
+        spaced = re.sub(r"([a-z0-9])([A-Z])", r"\1 \2", raw).strip().lower()
+        spaced = re.sub(r"[_\-]+", " ", spaced)
+        spaced = re.sub(r"\s+", " ", spaced).strip()
+        underscored = re.sub(r"\s+", "_", spaced)
+        compact = GraphRAG._matrix_label_signature(raw)
+        synonyms = {
+            "living": ["living room", "living_room", "lounge", "sitting room", "sitting_room"],
+            "lounge": ["living room", "living_room"],
+            "sitting": ["living room", "living_room"],
+            "sittingroom": ["living room", "living_room"],
+            "dining": ["dining room", "dining_room"],
+            "bed": ["bedroom"],
+            "bath": ["bathroom"],
+            "wc": ["toilet", "water closet", "water_closet"],
+            "entry": ["entrance", "entryway", "front door", "front_door"],
+            "entryway": ["entrance"],
+            "frontdoor": ["front door", "front_door", "entrance"],
+            "hall": ["corridor", "hallway"],
+            "hallway": ["corridor", "hall"],
+        }
+        variants = [raw, spaced, underscored, compact]
+        variants += synonyms.get(compact, [])
+        return GraphRAG._unique([v for v in variants if isinstance(v, str) and v.strip()])
+
+    @staticmethod
+    def _matrix_extract_label_from_best_example(best_example, fallback=None):
+        """
+        Extracts a label from common GraphDB.FindBestExampleForLabel return shapes.
+        """
+        if best_example is None:
+            return fallback
+        if isinstance(best_example, str):
+            return best_example
+        if isinstance(best_example, dict):
+            for key in ("label", "best_label", "canonical_label", "resolved_label", "node_label", "vertex_label"):
+                value = best_example.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value
+            for key in ("node", "vertex", "example", "best_example", "source", "target"):
+                value = best_example.get(key)
+                if isinstance(value, dict):
+                    label = GraphRAG._matrix_extract_label_from_best_example(value, fallback=None)
+                    if isinstance(label, str) and label.strip():
+                        return label
+            for value in best_example.values():
+                if isinstance(value, (dict, list, tuple)):
+                    label = GraphRAG._matrix_extract_label_from_best_example(value, fallback=None)
+                    if isinstance(label, str) and label.strip():
+                        return label
+            return fallback
+        if isinstance(best_example, (list, tuple)):
+            for item in best_example:
+                label = GraphRAG._matrix_extract_label_from_best_example(item, fallback=None)
+                if isinstance(label, str) and label.strip():
+                    return label
+        return fallback
+
+    @staticmethod
+    def _matrix_find_best_example_for_label(grag, label, silent: bool = False):
+        """
+        Calls GraphDB.FindBestExampleForLabel on the configured graph database.
+        """
+        graphdb = getattr(grag, "graphdb", None)
+        if graphdb is None or label is None:
+            return None
+        try:
+            from topologicpy.GraphDB import GraphDB
+        except Exception:
+            try:
+                from GraphDB import GraphDB
+            except Exception:
+                return None
+        try:
+            return GraphDB.FindBestExampleForLabel(graphdb, label, silent=silent)
+        except TypeError:
+            try:
+                return GraphDB.FindBestExampleForLabel(graphdb, label)
+            except Exception:
+                return None
+        except Exception:
+            return None
+
+    @staticmethod
+    def _matrix_resolve_corpus_label(grag, label, fallback=None, return_example: bool = False, silent: bool = False):
+        """
+        Resolves a label to the actual corpus label when possible.
+        """
+        if label is None:
+            return (fallback, None) if return_example else fallback
+        for candidate in GraphRAG._matrix_label_variants(label):
+            best_example = GraphRAG._matrix_find_best_example_for_label(grag, candidate, silent=silent)
+            resolved = GraphRAG._matrix_extract_label_from_best_example(best_example, fallback=None)
+            if isinstance(resolved, str) and resolved.strip():
+                return (resolved, best_example) if return_example else resolved
+        return (fallback, None) if return_example else fallback
+
+    @staticmethod
+    def _matrix_pair_values(pair) -> List[Any]:
+        """
+        Extracts plausible endpoint labels from a corpus pair record.
+        """
+        if isinstance(pair, dict):
+            candidates = [
+                (pair.get("a"), pair.get("b")),
+                (pair.get("src"), pair.get("dst")),
+                (pair.get("source"), pair.get("target")),
+                (pair.get("labelA"), pair.get("labelB")),
+                (pair.get("label_a"), pair.get("label_b")),
+                (pair.get("a_label"), pair.get("b_label")),
+                (pair.get("source_label"), pair.get("target_label")),
+                (pair.get("src_label"), pair.get("dst_label")),
+            ]
+            for a, b in candidates:
+                if a is not None and b is not None:
+                    return [a, b]
+            values = []
+            for key in ("labels", "pair"):
+                value = pair.get(key)
+                if isinstance(value, (list, tuple)) and len(value) >= 2:
+                    return [value[0], value[1]]
+            return values
+        if isinstance(pair, (list, tuple)) and len(pair) >= 2:
+            return [pair[0], pair[1]]
+        return []
+
+    @staticmethod
+    def _matrix_corpus_pair_supported(grag, label_a, label_b, pairs=None, silent: bool = False) -> bool:
+        """
+        Returns True if a label pair is found in the corpus pair evidence.
+        """
+        graphdb = getattr(grag, "graphdb", None)
+        if graphdb is None or label_a is None or label_b is None:
+            return False
+        if pairs is None:
+            try:
+                from topologicpy.GraphDB import GraphDB
+            except Exception:
+                try:
+                    from GraphDB import GraphDB
+                except Exception:
+                    return False
+            try:
+                pairs = GraphDB.FetchAllPairs(graphdb, undirected=True, silent=silent) or []
+            except Exception:
+                pairs = []
+        sig_a = GraphRAG._matrix_label_signature(label_a)
+        sig_b = GraphRAG._matrix_label_signature(label_b)
+        if not sig_a or not sig_b:
+            return False
+        for pair in pairs or []:
+            values = GraphRAG._matrix_pair_values(pair)
+            if len(values) < 2:
+                continue
+            pa = GraphRAG._matrix_label_signature(values[0])
+            pb = GraphRAG._matrix_label_signature(values[1])
+            if (pa == sig_a and pb == sig_b) or (pa == sig_b and pb == sig_a):
+                return True
+        return False
+
+    @staticmethod
+    def _matrix_seed_state(grag, graph, silent: bool = False) -> Dict[str, Any]:
+        """
+        Converts a TopologicPy graph into an editable Python matrix state.
+        """
+        summary = GraphRAG.SummarizeGraph(grag, graph, silent=silent)
+        nodes = []
+        seen_ids = set()
+        for i, node in enumerate((summary or {}).get("nodes", []) or []):
+            nid = str(node.get("id") if node.get("id") is not None else f"n{i}")
+            if nid in seen_ids:
+                nid = GraphRAG._matrix_unique_id({"nodes": nodes}, suggested_id=nid, prefix="n")
+            seen_ids.add(nid)
+            props = dict(node.get("props") or {})
+            nodes.append({
+                "id": nid,
+                "label": str(node.get("label") if node.get("label") is not None else nid),
+                "x": node.get("x"),
+                "y": node.get("y"),
+                "z": node.get("z"),
+                "props": props,
+            })
+        id_to_index = {node["id"]: i for i, node in enumerate(nodes)}
+        n = len(nodes)
+        matrix = [[0 for _ in range(n)] for _ in range(n)]
+        edge_labels = {}
+        for edge in (summary or {}).get("edges", []) or []:
+            src = edge.get("src")
+            dst = edge.get("dst")
+            if src in id_to_index and dst in id_to_index and src != dst:
+                i = id_to_index[src]
+                j = id_to_index[dst]
+                matrix[i][j] = 1
+                matrix[j][i] = 1
+                edge_labels[tuple(sorted((src, dst)))] = str(edge.get("label") or getattr(grag, "defaultEdgeLabel", "suggested"))
+        return {"nodes": nodes, "matrix": matrix, "edge_labels": edge_labels}
+
+    @staticmethod
+    def _matrix_summary(state: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Summarises an editable matrix state using the same shape as SummarizeGraph.
+        """
+        nodes = []
+        matrix = state.get("matrix", []) or []
+        for i, node in enumerate(state.get("nodes", []) or []):
+            degree = 0
+            if i < len(matrix):
+                degree = sum(1 for v in matrix[i] if bool(v))
+            props = dict(node.get("props") or {})
+            nodes.append({
+                "id": str(node.get("id")),
+                "label": str(node.get("label")),
+                "degree": int(degree),
+                "x": node.get("x"),
+                "y": node.get("y"),
+                "z": node.get("z"),
+                "props": props,
+            })
+        edges = []
+        edge_labels = state.get("edge_labels", {}) or {}
+        for i in range(len(nodes)):
+            for j in range(i + 1, len(nodes)):
+                try:
+                    if matrix[i][j]:
+                        src = nodes[i]["id"]
+                        dst = nodes[j]["id"]
+                        label = edge_labels.get(tuple(sorted((src, dst))), "connect")
+                        edges.append({"src": src, "dst": dst, "label": label, "props": {}})
+                except Exception:
+                    continue
+        return {"nodes": nodes, "edges": edges, "num_nodes": len(nodes), "num_edges": len(edges)}
+
+    @staticmethod
+    def _matrix_unique_id(state: Dict[str, Any], suggested_id=None, prefix: str = "n") -> str:
+        """
+        Returns a unique node id in the editable matrix state.
+        """
+        existing = {str(n.get("id")) for n in state.get("nodes", []) or [] if n.get("id") is not None}
+        suggested = str(suggested_id or "").strip()
+        if suggested and suggested not in existing:
+            return suggested
+        i = 1
+        while True:
+            candidate = f"{prefix}{i}"
+            if candidate not in existing:
+                return candidate
+            i += 1
+
+    @staticmethod
+    def _matrix_find_index_by_id(state: Dict[str, Any], value) -> Optional[int]:
+        """
+        Finds a node index by id.
+        """
+        if value is None:
+            return None
+        needle = str(value).strip()
+        for i, node in enumerate(state.get("nodes", []) or []):
+            if str(node.get("id")).strip() == needle:
+                return i
+        return None
+
+    @staticmethod
+    def _matrix_find_index_by_label(state: Dict[str, Any], value) -> Optional[int]:
+        """
+        Finds a node index by separator-insensitive label.
+        """
+        if value is None:
+            return None
+        sig = GraphRAG._matrix_label_signature(value)
+        if not sig:
+            return None
+        for i, node in enumerate(state.get("nodes", []) or []):
+            if GraphRAG._matrix_label_signature(node.get("label")) == sig:
+                return i
+        return None
+
+    @staticmethod
+    def _matrix_degree(state: Dict[str, Any], index: int) -> int:
+        """
+        Returns the degree of a node in the editable matrix state.
+        """
+        matrix = state.get("matrix", []) or []
+        if index is None or index < 0 or index >= len(matrix):
+            return 0
+        return sum(1 for v in matrix[index] if bool(v))
+
+    @staticmethod
+    def _matrix_max_degree_for_label(grag, label, silent: bool = False):
+        """
+        Returns the corpus maximum degree for a label after resolving it to a corpus label.
+        """
+        graphdb = getattr(grag, "graphdb", None)
+        if graphdb is None or label is None:
+            return None
+        try:
+            from topologicpy.GraphDB import GraphDB
+        except Exception:
+            try:
+                from GraphDB import GraphDB
+            except Exception:
+                return None
+        resolved = GraphRAG._matrix_resolve_corpus_label(grag, label, fallback=label, silent=silent)
+        candidates = GraphRAG._unique([resolved, label] + GraphRAG._matrix_label_variants(label))
+        for candidate in candidates:
+            try:
+                value = GraphDB.MaxNeighborsForLabel(graphdb, candidate, silent=silent)
+                max_degree = GraphRAG._max_neighbor_value(value)
+                if max_degree is not None:
+                    return max_degree
+            except Exception:
+                continue
+        return None
+
+    @staticmethod
+    def _matrix_can_add_connection(grag, state: Dict[str, Any], index: int, silent: bool = False) -> bool:
+        """
+        Checks whether a node can accept one more connection according to corpus max degree.
+        """
+        if index is None:
+            return False
+        nodes = state.get("nodes", []) or []
+        if index < 0 or index >= len(nodes):
+            return False
+        label = nodes[index].get("label")
+        max_degree = GraphRAG._matrix_max_degree_for_label(grag, label, silent=silent)
+        if max_degree is None:
+            return True
+        if max_degree <= 0:
+            return True
+        return GraphRAG._matrix_degree(state, index) < max_degree
+
+    @staticmethod
+    def _matrix_degree_limit_message(grag, state: Dict[str, Any], index: int, silent: bool = False) -> str:
+        """
+        Reports why a node cannot accept another connection.
+        """
+        try:
+            node = (state.get("nodes", []) or [])[index]
+            label = node.get("label", "Unknown")
+            current_degree = GraphRAG._matrix_degree(state, index)
+            max_degree = GraphRAG._matrix_max_degree_for_label(grag, label, silent=silent)
+            return f"Degree limit reached for '{label}': current degree = {current_degree}, corpus max degree = {max_degree}."
+        except Exception:
+            return "Degree limit reached."
+
+    @staticmethod
+    def _matrix_connect_indices(grag, state: Dict[str, Any], i: int, j: int, edge_label: str = None, silent: bool = False):
+        """
+        Adds an undirected edge to the editable matrix state.
+        """
+        nodes = state.get("nodes", []) or []
+        matrix = state.get("matrix", []) or []
+        if i is None or j is None or i < 0 or j < 0 or i >= len(nodes) or j >= len(nodes):
+            return {"ok": False, "message": "Could not find both nodes to connect."}
+        if i == j:
+            return {"ok": False, "message": "Cannot connect a node to itself."}
+        if matrix[i][j]:
+            return {"ok": False, "message": "The requested edge already exists."}
+        if not GraphRAG._matrix_can_add_connection(grag, state, i, silent=silent):
+            return {"ok": False, "message": GraphRAG._matrix_degree_limit_message(grag, state, i, silent=silent)}
+        if not GraphRAG._matrix_can_add_connection(grag, state, j, silent=silent):
+            return {"ok": False, "message": GraphRAG._matrix_degree_limit_message(grag, state, j, silent=silent)}
+        matrix[i][j] = 1
+        matrix[j][i] = 1
+        key = tuple(sorted((str(nodes[i].get("id")), str(nodes[j].get("id")))))
+        state.setdefault("edge_labels", {})[key] = str(edge_label or getattr(grag, "defaultEdgeLabel", "suggested"))
+        return {"ok": True, "message": "Connected nodes."}
+
+    @staticmethod
+    def _matrix_apply_action(grag, state: Dict[str, Any], action: Dict[str, Any], evidence=None, silent: bool = False) -> Dict[str, Any]:
+        """
+        Applies a graph-edit action to the editable matrix state.
+        """
+        action = GraphRAG.NormalizeAction(action)
+        name = str(action.get("action", "stop")).strip().lower()
+        if name in ("stop", "done", "finish"):
+            return {"ok": True, "state": state, "message": "No graph edit was applied."}
+
+        if name == "add_node":
+            label = str(action.get("label") or action.get("b_label") or "Node").strip() or "Node"
+            resolved_label = GraphRAG._matrix_resolve_corpus_label(grag, label, fallback=label, silent=silent)
+            label = resolved_label or label
+            vid = GraphRAG._matrix_unique_id(state, action.get("id"), prefix="n")
+            node = {"id": str(vid), "label": str(label), "x": action.get("x"), "y": action.get("y"), "z": action.get("z"), "props": {"id": str(vid), "label": str(label)}}
+            state.setdefault("nodes", []).append(node)
+            for row in state.setdefault("matrix", []):
+                row.append(0)
+            state["matrix"].append([0 for _ in range(len(state["nodes"]))])
+            new_index = len(state["nodes"]) - 1
+
+            attach_id = action.get("attach_to_id") or action.get("a_id") or action.get("src") or action.get("source") or action.get("from")
+            attach_label = action.get("attach_to_label") or action.get("a_label") or action.get("src_label") or action.get("source_label") or action.get("from_label")
+            attach_index = GraphRAG._matrix_find_index_by_id(state, attach_id)
+            if attach_index is None and attach_label:
+                attach_index = GraphRAG._matrix_find_index_by_label(state, attach_label)
+            if attach_index is not None:
+                connect_result = GraphRAG._matrix_connect_indices(grag, state, attach_index, new_index, action.get("edge_label"), silent=silent)
+                if not connect_result.get("ok"):
+                    return {"ok": True, "state": state, "message": f"Added node '{label}' with id '{vid}', but did not connect it. {connect_result.get('message', '')}"}
+            return {"ok": True, "state": state, "message": f"Added node '{label}' with id '{vid}'."}
+
+        if name == "connect":
+            a_id = action.get("a_id") or action.get("src") or action.get("source") or action.get("from") or action.get("from_id") or action.get("source_id") or action.get("start") or action.get("start_id")
+            b_id = action.get("b_id") or action.get("dst") or action.get("target") or action.get("to") or action.get("to_id") or action.get("target_id") or action.get("end") or action.get("end_id")
+            a_label = action.get("a_label") or action.get("src_label") or action.get("source_label") or action.get("from_label") or action.get("start_label")
+            b_label = action.get("b_label") or action.get("dst_label") or action.get("target_label") or action.get("to_label") or action.get("end_label")
+            i = GraphRAG._matrix_find_index_by_id(state, a_id)
+            j = GraphRAG._matrix_find_index_by_id(state, b_id)
+            if i is None and a_label:
+                i = GraphRAG._matrix_find_index_by_label(state, a_label)
+            if j is None and b_label:
+                j = GraphRAG._matrix_find_index_by_label(state, b_label)
+            result = GraphRAG._matrix_connect_indices(grag, state, i, j, action.get("edge_label"), silent=silent)
+            return {"ok": bool(result.get("ok")), "state": state, "message": result.get("message", "")}
+
+        if name in ("remove_edge", "delete_edge"):
+            pairs = (evidence or {}).get("all_pairs") or (evidence or {}).get("pairs")
+            a_id = action.get("a_id") or action.get("src") or action.get("source") or action.get("from") or action.get("from_id") or action.get("source_id") or action.get("start") or action.get("start_id")
+            b_id = action.get("b_id") or action.get("dst") or action.get("target") or action.get("to") or action.get("to_id") or action.get("target_id") or action.get("end") or action.get("end_id")
+            a_label = action.get("a_label") or action.get("src_label") or action.get("source_label") or action.get("from_label") or action.get("start_label")
+            b_label = action.get("b_label") or action.get("dst_label") or action.get("target_label") or action.get("to_label") or action.get("end_label")
+            i = GraphRAG._matrix_find_index_by_id(state, a_id)
+            j = GraphRAG._matrix_find_index_by_id(state, b_id)
+            if i is None and a_label:
+                i = GraphRAG._matrix_find_index_by_label(state, a_label)
+            if j is None and b_label:
+                j = GraphRAG._matrix_find_index_by_label(state, b_label)
+            nodes = state.get("nodes", []) or []
+            matrix = state.get("matrix", []) or []
+            if i is None or j is None or i >= len(nodes) or j >= len(nodes):
+                return {"ok": False, "state": state, "message": "Could not find both nodes for remove_edge."}
+            if not matrix[i][j]:
+                return {"ok": False, "state": state, "message": "The requested edge does not exist."}
+            label_i = nodes[i].get("label")
+            label_j = nodes[j].get("label")
+            if GraphRAG._matrix_corpus_pair_supported(grag, label_i, label_j, pairs=pairs, silent=silent):
+                return {"ok": False, "state": state, "message": f"Refused to remove corpus-supported edge '{label_i}' - '{label_j}'."}
+            matrix[i][j] = 0
+            matrix[j][i] = 0
+            state.get("edge_labels", {}).pop(tuple(sorted((str(nodes[i].get("id")), str(nodes[j].get("id"))))), None)
+            return {"ok": True, "state": state, "message": f"Removed unsupported edge '{label_i}' - '{label_j}'."}
+
+        if name in ("remove_node", "delete_node"):
+            node_id = action.get("id") or action.get("node_id") or action.get("a_id") or action.get("src")
+            node_label = action.get("label") or action.get("node_label") or action.get("a_label") or action.get("src_label")
+            i = GraphRAG._matrix_find_index_by_id(state, node_id)
+            if i is None and node_label:
+                i = GraphRAG._matrix_find_index_by_label(state, node_label)
+            nodes = state.get("nodes", []) or []
+            matrix = state.get("matrix", []) or []
+            if i is None or i < 0 or i >= len(nodes):
+                return {"ok": False, "state": state, "message": "Could not find node for remove_node."}
+            label = nodes[i].get("label")
+            supported = GraphRAG._matrix_resolve_corpus_label(grag, label, fallback=None, silent=silent)
+            if supported is not None:
+                return {"ok": False, "state": state, "message": f"Refused to remove corpus-supported node '{label}'."}
+            removed_id = str(nodes[i].get("id"))
+            removed_label = str(label)
+            nodes.pop(i)
+            matrix.pop(i)
+            for row in matrix:
+                if i < len(row):
+                    row.pop(i)
+            # Rebuild edge label keys because node ids may have been removed.
+            valid_ids = {str(node.get("id")) for node in nodes}
+            edge_labels = {}
+            for key, value in (state.get("edge_labels", {}) or {}).items():
+                if isinstance(key, tuple) and len(key) == 2 and key[0] in valid_ids and key[1] in valid_ids:
+                    edge_labels[key] = value
+            state["edge_labels"] = edge_labels
+            return {"ok": True, "state": state, "message": f"Removed unsupported node '{removed_label}' with id '{removed_id}'."}
+
+        return {"ok": False, "state": state, "message": f"Unsupported action: {name}."}
+
+    @staticmethod
+    def _matrix_materialise_graph(grag, state: Dict[str, Any], silent: bool = False):
+        """
+        Converts the editable matrix state to a TopologicPy graph at the end of generation.
+        """
+        try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Dictionary import Dictionary
+            vertex_id_key = getattr(grag, "vertexIDKey", "id")
+            vertex_label_key = getattr(grag, "vertexLabelKey", "label")
+            dictionaries = []
+            for node in state.get("nodes", []) or []:
+                props = dict(node.get("props") or {})
+                props[vertex_id_key] = str(node.get("id"))
+                props[vertex_label_key] = str(node.get("label"))
+                props.setdefault("id", str(node.get("id")))
+                props.setdefault("label", str(node.get("label")))
+                try:
+                    d = Dictionary.ByKeysValues(list(props.keys()), list(props.values()))
+                except Exception:
+                    d = Dictionary.ByKeysValues([vertex_id_key, vertex_label_key], [str(node.get("id")), str(node.get("label"))])
+                dictionaries.append(d)
+            matrix = state.get("matrix", []) or []
+            graph = Graph.ByAdjacencyMatrix(
+                matrix,
+                dictionaries=dictionaries,
+                edgeKeyFwd="weightFwd",
+                edgeKeyBwd="weightBwd",
+                xMin=-0.5,
+                yMin=-0.5,
+                zMin=-0.5,
+                xMax=0.5,
+                yMax=0.5,
+                zMax=0.5,
+                silent=silent,
+            )
+            return graph
+        except Exception as e:
+            if not silent:
+                print(f"GraphRAG._matrix_materialise_graph - Error: {e}. Returning None.")
+            return None
+
+    @staticmethod
+    def Generate(
+        grag,
+        graph,
+        description: str = "",
+        maxSteps: int = 10,
+        patience: int = 4,
+        automatic: bool = False,
+        approvalFunction: Callable[[Dict[str, Any], str], str] = None,
+        verbose: bool = True,
+        silent: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Iteratively grows or edits the input graph using corpus evidence and an LLM.
+
+        This implementation edits a temporary Python adjacency-matrix state and
+        materialises a TopologicPy graph only once, at the end of generation. This
+        avoids allowing geometric coincidence or core graph mutation behaviour to
+        block the intended topological edits.
+        """
+        effective_silent = GraphRAG._effective_silent(grag, silent)
+        records = []
+        stagnant = 0
+        status = "completed"
+
+        if grag is None:
+            return {"ok": False, "status": "error", "message": "The input grag object is None.", "graph": graph, "steps": []}
+        if graph is None:
+            return {"ok": False, "status": "error", "message": "The input graph is None.", "graph": graph, "steps": []}
+
+        state = GraphRAG._matrix_seed_state(grag, graph, silent=effective_silent)
+        final_graph = graph
+
+        allowed_actions = ("add_node", "connect", "remove_node", "delete_node", "remove_edge", "delete_edge", "stop", "done", "finish")
+
+        for step in range(1, max(1, int(maxSteps or 1)) + 1):
+            summary_before = GraphRAG._matrix_summary(state)
+            evidence = GraphRAG.Evidence(grag, summary_before, silent=effective_silent)
+
+            raw_action = GraphRAG.PickAction(grag, summary_before, evidence, description=description, silent=effective_silent)
+
+            if not isinstance(raw_action, dict) or not raw_action:
+                stagnant += 1
+                records.append({
+                    "step": step,
+                    "ok": False,
+                    "status": "ignored_bad_llm_response",
+                    "action": raw_action,
+                    "raw_action": raw_action,
+                    "message": "LLM returned no usable action. Ignoring this response and continuing.",
+                    "summary_before": summary_before,
+                    "summary_after": summary_before,
+                    "evidence": evidence,
+                })
+                if verbose and not effective_silent:
+                    print(f"STEP: {step}")
+                    print("→ Ignoring malformed or unusable LLM response.")
+                if stagnant >= max(1, int(patience or 1)):
+                    status = "patience_exhausted"
+                    if verbose and not effective_silent:
+                        print("→ Stopping because patience was exhausted.")
+                    break
+                continue
+
+            action = GraphRAG.NormalizeAction(raw_action)
+            action_name = str(action.get("action", "")).strip().lower()
+
+            if action_name not in allowed_actions:
+                stagnant += 1
+                records.append({
+                    "step": step,
+                    "ok": False,
+                    "status": "ignored_invalid_action",
+                    "action": action,
+                    "raw_action": raw_action,
+                    "message": f"Invalid action '{action_name}'. Ignoring this response and continuing.",
+                    "summary_before": summary_before,
+                    "summary_after": summary_before,
+                    "evidence": evidence,
+                })
+                if verbose and not effective_silent:
+                    print(f"STEP: {step}")
+                    print(f"→ Ignoring invalid action: {action_name}")
+                if stagnant >= max(1, int(patience or 1)):
+                    status = "patience_exhausted"
+                    if verbose and not effective_silent:
+                        print("→ Stopping because patience was exhausted.")
+                    break
+                continue
+
+            if verbose and not effective_silent:
+                print(f"STEP: {step}")
+                print("json_action:", action.get("action") if isinstance(action, dict) else None)
+                print("json_label:", action.get("label") if isinstance(action, dict) else None)
+                print("json_a_label:", action.get("a_label") if isinstance(action, dict) else None)
+                print("json_b_label:", action.get("b_label") if isinstance(action, dict) else None)
+                print("json_attach_to_label:", action.get("attach_to_label") if isinstance(action, dict) else None)
+
+            if action_name in ("stop", "done", "finish"):
+                status = "stopped"
+                records.append({
+                    "step": step,
+                    "ok": True,
+                    "status": status,
+                    "action": action,
+                    "raw_action": raw_action,
+                    "message": action.get("reason", "The LLM chose to stop."),
+                    "summary_before": summary_before,
+                    "summary_after": summary_before,
+                    "evidence": evidence,
+                })
+                if verbose and not effective_silent:
+                    print("→ The process stopped.")
+                break
+
+            decision = "accept" if automatic else GraphRAG.ApproveAction(action, approvalFunction=approvalFunction, silent=effective_silent)
+
+            if decision == "stop":
+                status = "stopped_by_user"
+                records.append({
+                    "step": step,
+                    "ok": True,
+                    "status": status,
+                    "action": action,
+                    "raw_action": raw_action,
+                    "message": "Stopped by user.",
+                    "summary_before": summary_before,
+                    "summary_after": summary_before,
+                    "evidence": evidence,
+                })
+                break
+
+            if decision == "ignore":
+                stagnant += 1
+                records.append({
+                    "step": step,
+                    "ok": True,
+                    "status": "ignored",
+                    "action": action,
+                    "raw_action": raw_action,
+                    "message": "Action ignored.",
+                    "summary_before": summary_before,
+                    "summary_after": summary_before,
+                    "evidence": evidence,
+                })
+                if stagnant >= max(1, int(patience or 1)):
+                    status = "patience_exhausted"
+                    if verbose and not effective_silent:
+                        print("→ Stopping because patience was exhausted.")
+                    break
+                continue
+
+            apply_result = GraphRAG._matrix_apply_action(grag, state, action, evidence=evidence, silent=effective_silent)
+            if not isinstance(apply_result, dict):
+                apply_result = {"ok": False, "state": state, "message": "GraphRAG._matrix_apply_action returned no usable result."}
+            if isinstance(apply_result.get("state"), dict):
+                state = apply_result.get("state")
+
+            summary_after = GraphRAG._matrix_summary(state)
+            changed = bool(apply_result.get("ok")) and (summary_after != summary_before)
+            stagnant = 0 if changed else stagnant + 1
+
+            records.append({
+                "step": step,
+                "ok": bool(apply_result.get("ok")),
+                "status": "applied" if apply_result.get("ok") else "failed",
+                "action": action,
+                "raw_action": raw_action,
+                "message": apply_result.get("message", ""),
+                "summary_before": summary_before,
+                "summary_after": summary_after,
+                "evidence": evidence,
+            })
+
+            if verbose and not effective_silent:
+                print("→", apply_result.get("message", ""))
+                print("Latest Number of Nodes:", summary_after.get("num_nodes"))
+                print("Latest Labels:", [n.get("label") for n in summary_after.get("nodes", [])])
+
+            if stagnant >= max(1, int(patience or 1)):
+                status = "patience_exhausted"
+                if verbose and not effective_silent:
+                    print("→ Stopping because patience was exhausted.")
+                break
+        else:
+            status = "max_steps_reached"
+
+        materialised = GraphRAG._matrix_materialise_graph(grag, state, silent=effective_silent)
+        if materialised is not None:
+            final_graph = materialised
+        else:
+            status = "materialisation_failed" if status == "completed" else status
+
+        return {
+            "ok": materialised is not None,
+            "status": status,
+            "graph": final_graph,
+            "steps": records,
+            "num_steps": len(records),
+            "matrix_state": state,
+        }
 
     @staticmethod
     def _effective_silent(grag, silent: bool = False) -> bool:
