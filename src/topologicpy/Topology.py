@@ -3342,6 +3342,226 @@ class Topology():
             return None
         return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
     
+    # @staticmethod
+    # def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Imports the topology from a JSON dictionary.
+
+    #     Parameters
+    #     ----------
+    #     jsonDictionary : dict
+    #         The input JSON dictionary.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
+
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Wire import Wire
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Shell import Shell
+    #     from topologicpy.Cell import Cell
+    #     from topologicpy.CellComplex import CellComplex
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Dictionary import Dictionary
+
+    #     # Containers for created entities
+    #     vertices = {}
+    #     edges = {}
+    #     wires = {}
+    #     faces = {}
+    #     shells = {}
+    #     cells = {}
+    #     cell_complexes = {}
+
+    #     vertex_apertures = []
+    #     edge_apertures = []
+    #     face_apertures = []
+    #     for entity in jsonDictionary:
+    #         entity_type = entity['type']
+    #         entity_dict = Dictionary.ByKeysValues(keys=list(entity['dictionary'].keys()),
+    #                                             values=list(entity['dictionary'].values()))
+
+    #         parent_entity = None
+
+    #         # Create basic topological entities
+    #         if entity_type == 'Vertex':
+    #             parent_entity = Vertex.ByCoordinates(*entity['coordinates'])
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
+    #             vertices[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'Edge':
+    #             vertex1 = vertices[entity['vertices'][0]]
+    #             vertex2 = vertices[entity['vertices'][1]]
+    #             parent_entity = Edge.ByVertices([vertex1, vertex2], tolerance=tolerance, silent=silent)
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
+    #             edges[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'Wire':
+    #             wire_edges = [edges[uuid] for uuid in entity['edges']]
+    #             parent_entity = Wire.ByEdges(wire_edges, tolerance=tolerance, silent=silent)
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
+    #             wires[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'Face':
+    #             face_wires = [wires[uuid] for uuid in entity['wires']]
+    #             if len(face_wires) > 1:
+    #                 parent_entity = Face.ByWires(face_wires[0], face_wires[1:], tolerance=tolerance, silent=silent)
+    #             else:
+    #                 parent_entity = Face.ByWire(face_wires[0], tolerance=tolerance, silent=silent)
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
+    #             faces[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'Shell':
+    #             shell_faces = [faces[uuid] for uuid in entity['faces']]
+    #             parent_entity = Shell.ByFaces(shell_faces, tolerance=tolerance, silent=silent)
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
+    #             shells[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'Cell':
+    #             cell_shells = [shells[uuid] for uuid in entity['shells']]
+    #             if len(cell_shells) > 1:
+    #                 parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:], tolerance=tolerance, silent=silent)
+    #             else:
+    #                 parent_entity = Cell.ByShell(cell_shells[0])
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+    #             cells[entity['uuid']] = parent_entity
+
+    #         elif entity_type == 'CellComplex':
+    #             complex_cells = [cells[uuid] for uuid in entity['cells']]
+    #             parent_entity = CellComplex.ByCells(complex_cells)
+    #             parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
+    #             cell_complexes[entity['uuid']] = parent_entity
+
+    #         # Step 3: Handle apertures within each entity
+    #         if 'apertures' in entity:
+    #             # Containers for created entities
+    #             ap_vertices = {}
+    #             ap_edges = {}
+    #             ap_wires = {}
+    #             ap_faces = {}
+    #             for aperture_list in entity['apertures']:
+    #                 types = [aperture_data['type'] for aperture_data in aperture_list]
+    #                 save_vertex = False
+    #                 save_edge = False
+    #                 save_wire = False
+    #                 save_face = False
+
+    #                 if 'Face' in types:
+    #                     save_face = True
+    #                 elif 'Wire' in types:
+    #                     save_wire = True
+    #                 elif 'Edge' in types:
+    #                     save_edge = True
+    #                 elif 'Vertex' in types:
+    #                     save_vertex = True
+
+    #                 apertures = []
+    #                 for aperture_data in aperture_list:
+    #                     aperture_type = aperture_data['type']
+    #                     aperture_dict = Dictionary.ByKeysValues(keys=list(aperture_data['dictionary'].keys()),
+    #                                                             values=list(aperture_data['dictionary'].values()))
+                        
+    #                     if aperture_type == 'Vertex':
+    #                         aperture_entity = Vertex.ByCoordinates(*aperture_data['coordinates'])
+    #                         aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+    #                         ap_vertices[aperture_data['uuid']] = aperture_entity
+    #                         if save_vertex == True:
+    #                             apertures.append(aperture_entity)
+                        
+    #                     elif aperture_type == 'Edge':
+    #                         vertex1 = ap_vertices[aperture_data['vertices'][0]]
+    #                         vertex2 = ap_vertices[aperture_data['vertices'][1]]
+    #                         aperture_entity = Edge.ByVertices([vertex1, vertex2])
+    #                         aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+    #                         ap_edges[aperture_data['uuid']] = aperture_entity
+    #                         if save_edge == True:
+    #                             apertures.append(aperture_entity)
+
+    #                     elif aperture_type == 'Wire':
+    #                         wire_edges = [ap_edges[uuid] for uuid in aperture_data['edges']]
+    #                         aperture_entity = Wire.ByEdges(wire_edges)
+    #                         aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+    #                         ap_wires[aperture_data['uuid']] = aperture_entity
+    #                         if save_wire == True:
+    #                             apertures.append(aperture_entity)
+
+    #                     elif aperture_type == 'Face':
+    #                         face_wires = [ap_wires[uuid] for uuid in aperture_data['wires']]
+    #                         if len(face_wires) > 1:
+    #                             aperture_entity = Face.ByWires(face_wires[0], face_wires[1:])
+    #                         else:
+    #                             aperture_entity = Face.ByWire(face_wires[0])
+    #                         aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
+    #                         ap_faces[aperture_data['uuid']] = aperture_entity
+    #                         if save_face == True:
+    #                             apertures.append(aperture_entity)
+                            
+    #                 # Assign the built apertures to the parent entity
+    #                 if len(apertures) > 0:
+    #                     if entity_type == "Face":
+    #                         face_apertures += apertures
+    #                     elif entity_type == 'Edge':
+    #                         edge_apertures += apertures
+    #                     elif entity_type == 'Vertex':
+    #                         vertex_apertures += apertures
+
+    #             # Update the parent entity in its respective container
+    #             if entity_type == 'Vertex':
+    #                 vertices[entity['uuid']] = parent_entity
+    #             elif entity_type == 'Edge':
+    #                 edges[entity['uuid']] = parent_entity
+    #             elif entity_type == 'Wire':
+    #                 wires[entity['uuid']] = parent_entity
+    #             elif entity_type == 'Face':
+    #                 faces[entity['uuid']] = parent_entity
+    #             elif entity_type == 'Shell':
+    #                 shells[entity['uuid']] = parent_entity
+    #             elif entity_type == 'Cell':
+    #                 cells[entity['uuid']] = parent_entity
+    #             elif entity_type == 'CellComplex':
+    #                 cell_complexes[entity['uuid']] = parent_entity
+            
+    #         d = Topology.Dictionary(parent_entity)
+    #         top_level = Dictionary.ValueAtKey(d, "toplevel")
+    #     tp_vertices = list(vertices.values())
+    #     tp_edges = list(edges.values())
+    #     tp_wires = list(wires.values())
+    #     tp_faces = list(faces.values())
+    #     tp_shells = list(shells.values())
+    #     tp_cells = list(cells.values())
+    #     tp_cell_complexes = list(cell_complexes.values())
+    #     everything = tp_vertices + tp_edges + tp_wires + tp_faces + tp_shells + tp_cells + tp_cell_complexes
+    #     top_level_list = []
+    #     for entity in everything:
+    #         d = Topology.Dictionary(entity)
+    #         top_level = Dictionary.ValueAtKey(d, "toplevel")
+    #         if top_level == 1:
+    #             if len(face_apertures) > 0:
+    #                 entity = Topology.AddApertures(entity, face_apertures, subTopologyType="Face", tolerance=tolerance)
+    #             if len(edge_apertures) > 0:
+    #                 entity = Topology.AddApertures(entity, edge_apertures, subTopologyType="Edge", tolerance=0.001)
+    #             if len(vertex_apertures) > 0:
+    #                 entity = Topology.AddApertures(entity, vertex_apertures, subTopologyType="Vertex", tolerance=0.001)
+    #             top_level_list.append(entity)
+    #     bins, counts = Topology.BinByDictionaryKey(top_level_list, key="__cluster__")
+    #     return_topologies = []
+    #     keys = bins.keys()
+    #     for key in keys:
+    #         if key == "__MISSING__":
+    #             return_topologies += bins[key]
+    #         else:
+    #             cluster = Cluster.ByTopologies(bins[key])
+    #             return_topologies.append(cluster)
+    #     return return_topologies
+
     @staticmethod
     def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -3359,9 +3579,11 @@ class Topology():
         Returns
         -------
         list
-            The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)
-
+            The list of imported topologies. The list can contain 0, 1, or many topologies,
+            but this method always returns a list.
         """
+        from collections import defaultdict, deque
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
@@ -3372,7 +3594,97 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
 
-        # Containers for created entities
+        if not isinstance(jsonDictionary, list):
+            if not silent:
+                print("Topology.ByJSONDictionary - Error: The input JSON dictionary is not a valid list. Returning [].")
+            return []
+
+        records = jsonDictionary
+        records_by_uuid = {}
+        top_level_uuids = set()
+        cluster_key_by_uuid = {}
+
+        # Reverse dependency map:
+        # child_uuid -> set(parent_uuid)
+        parents_by_child = defaultdict(set)
+
+        for record in records:
+            uuid = record.get("uuid", None)
+            if uuid is None:
+                continue
+
+            records_by_uuid[uuid] = record
+
+            raw_dictionary = record.get("dictionary", {}) or {}
+            if raw_dictionary.get("toplevel", None) == 1:
+                top_level_uuids.add(uuid)
+
+            cluster_key_by_uuid[uuid] = raw_dictionary.get("__cluster__", "__MISSING__")
+
+            entity_type = record.get("type", None)
+
+            if entity_type == "Edge":
+                for child_uuid in record.get("vertices", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+            elif entity_type == "Wire":
+                for child_uuid in record.get("edges", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+            elif entity_type == "Face":
+                for child_uuid in record.get("wires", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+            elif entity_type == "Shell":
+                for child_uuid in record.get("faces", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+            elif entity_type == "Cell":
+                for child_uuid in record.get("shells", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+            elif entity_type == "CellComplex":
+                for child_uuid in record.get("cells", []):
+                    parents_by_child[child_uuid].add(uuid)
+
+        def _dictionary_from_json(raw_dictionary):
+            if not isinstance(raw_dictionary, dict):
+                raw_dictionary = {}
+            return Dictionary.ByKeysValues(
+                keys=list(raw_dictionary.keys()),
+                values=list(raw_dictionary.values())
+            )
+
+        def _set_dictionary(topology, raw_dictionary):
+            dictionary = _dictionary_from_json(raw_dictionary)
+            return Topology.SetDictionary(topology, dictionary, silent=silent)
+
+        def _top_level_ancestors(uuid):
+            """
+            Returns the top-level ancestor UUIDs for the supplied UUID.
+            If the UUID itself is top-level, it is returned directly.
+            """
+            if uuid in top_level_uuids:
+                return [uuid]
+
+            result = []
+            visited = set()
+            queue = deque([uuid])
+
+            while queue:
+                current_uuid = queue.popleft()
+                if current_uuid in visited:
+                    continue
+                visited.add(current_uuid)
+
+                for parent_uuid in parents_by_child.get(current_uuid, []):
+                    if parent_uuid in top_level_uuids:
+                        result.append(parent_uuid)
+                    else:
+                        queue.append(parent_uuid)
+
+            return result
+
         vertices = {}
         edges = {}
         wires = {}
@@ -3380,186 +3692,223 @@ class Topology():
         shells = {}
         cells = {}
         cell_complexes = {}
+        created_by_uuid = {}
 
-        vertex_apertures = []
-        edge_apertures = []
-        face_apertures = []
-        for entity in jsonDictionary:
-            entity_type = entity['type']
-            entity_dict = Dictionary.ByKeysValues(keys=list(entity['dictionary'].keys()),
-                                                values=list(entity['dictionary'].values()))
+        # top_level_uuid -> aperture subtopology type -> list of apertures
+        apertures_by_top_level = defaultdict(lambda: defaultdict(list))
+
+        def _build_aperture_group(aperture_list, ap_vertices, ap_edges, ap_wires, ap_faces):
+            """
+            Builds one aperture group and returns only the highest-dimensional aperture
+            entities in that group, matching the behaviour of the original method.
+            """
+            types = {aperture_data.get("type", None) for aperture_data in aperture_list}
+
+            if "Face" in types:
+                save_type = "Face"
+            elif "Wire" in types:
+                save_type = "Wire"
+            elif "Edge" in types:
+                save_type = "Edge"
+            elif "Vertex" in types:
+                save_type = "Vertex"
+            else:
+                return []
+
+            apertures = []
+
+            for aperture_data in aperture_list:
+                aperture_type = aperture_data.get("type", None)
+                aperture_uuid = aperture_data.get("uuid", None)
+                raw_dictionary = aperture_data.get("dictionary", {}) or {}
+
+                if aperture_type == "Vertex":
+                    aperture_entity = Vertex.ByCoordinates(*aperture_data["coordinates"])
+                    aperture_entity = _set_dictionary(aperture_entity, raw_dictionary)
+                    ap_vertices[aperture_uuid] = aperture_entity
+
+                elif aperture_type == "Edge":
+                    vertex1 = ap_vertices[aperture_data["vertices"][0]]
+                    vertex2 = ap_vertices[aperture_data["vertices"][1]]
+                    aperture_entity = Edge.ByVertices([vertex1, vertex2], tolerance=tolerance, silent=silent)
+                    aperture_entity = _set_dictionary(aperture_entity, raw_dictionary)
+                    ap_edges[aperture_uuid] = aperture_entity
+
+                elif aperture_type == "Wire":
+                    aperture_edges = [ap_edges[edge_uuid] for edge_uuid in aperture_data["edges"]]
+                    aperture_entity = Wire.ByEdges(aperture_edges, tolerance=tolerance, silent=silent)
+                    aperture_entity = _set_dictionary(aperture_entity, raw_dictionary)
+                    ap_wires[aperture_uuid] = aperture_entity
+
+                elif aperture_type == "Face":
+                    aperture_wires = [ap_wires[wire_uuid] for wire_uuid in aperture_data["wires"]]
+                    if len(aperture_wires) > 1:
+                        aperture_entity = Face.ByWires(
+                            aperture_wires[0],
+                            aperture_wires[1:],
+                            tolerance=tolerance,
+                            silent=silent
+                        )
+                    else:
+                        aperture_entity = Face.ByWire(
+                            aperture_wires[0],
+                            tolerance=tolerance,
+                            silent=silent
+                        )
+                    aperture_entity = _set_dictionary(aperture_entity, raw_dictionary)
+                    ap_faces[aperture_uuid] = aperture_entity
+
+                else:
+                    continue
+
+                if aperture_type == save_type:
+                    apertures.append(aperture_entity)
+
+            return apertures
+
+        for entity in records:
+            entity_type = entity.get("type", None)
+            uuid = entity.get("uuid", None)
+            raw_dictionary = entity.get("dictionary", {}) or {}
 
             parent_entity = None
 
-            # Create basic topological entities
-            if entity_type == 'Vertex':
-                parent_entity = Vertex.ByCoordinates(*entity['coordinates'])
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
-                vertices[entity['uuid']] = parent_entity
+            if entity_type == "Vertex":
+                parent_entity = Vertex.ByCoordinates(*entity["coordinates"])
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                vertices[uuid] = parent_entity
 
-            elif entity_type == 'Edge':
-                vertex1 = vertices[entity['vertices'][0]]
-                vertex2 = vertices[entity['vertices'][1]]
+            elif entity_type == "Edge":
+                vertex1 = vertices[entity["vertices"][0]]
+                vertex2 = vertices[entity["vertices"][1]]
                 parent_entity = Edge.ByVertices([vertex1, vertex2], tolerance=tolerance, silent=silent)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
-                edges[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                edges[uuid] = parent_entity
 
-            elif entity_type == 'Wire':
-                wire_edges = [edges[uuid] for uuid in entity['edges']]
+            elif entity_type == "Wire":
+                wire_edges = [edges[edge_uuid] for edge_uuid in entity["edges"]]
                 parent_entity = Wire.ByEdges(wire_edges, tolerance=tolerance, silent=silent)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
-                wires[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                wires[uuid] = parent_entity
 
-            elif entity_type == 'Face':
-                face_wires = [wires[uuid] for uuid in entity['wires']]
+            elif entity_type == "Face":
+                face_wires = [wires[wire_uuid] for wire_uuid in entity["wires"]]
                 if len(face_wires) > 1:
                     parent_entity = Face.ByWires(face_wires[0], face_wires[1:], tolerance=tolerance, silent=silent)
                 else:
                     parent_entity = Face.ByWire(face_wires[0], tolerance=tolerance, silent=silent)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
-                faces[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                faces[uuid] = parent_entity
 
-            elif entity_type == 'Shell':
-                shell_faces = [faces[uuid] for uuid in entity['faces']]
+            elif entity_type == "Shell":
+                shell_faces = [faces[face_uuid] for face_uuid in entity["faces"]]
                 parent_entity = Shell.ByFaces(shell_faces, tolerance=tolerance, silent=silent)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict, silent=silent)
-                shells[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                shells[uuid] = parent_entity
 
-            elif entity_type == 'Cell':
-                cell_shells = [shells[uuid] for uuid in entity['shells']]
+            elif entity_type == "Cell":
+                cell_shells = [shells[shell_uuid] for shell_uuid in entity["shells"]]
                 if len(cell_shells) > 1:
                     parent_entity = Cell.ByShells(cell_shells[0], cell_shells[1:], tolerance=tolerance, silent=silent)
                 else:
                     parent_entity = Cell.ByShell(cell_shells[0])
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
-                cells[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                cells[uuid] = parent_entity
 
-            elif entity_type == 'CellComplex':
-                complex_cells = [cells[uuid] for uuid in entity['cells']]
+            elif entity_type == "CellComplex":
+                complex_cells = [cells[cell_uuid] for cell_uuid in entity["cells"]]
                 parent_entity = CellComplex.ByCells(complex_cells)
-                parent_entity = Topology.SetDictionary(parent_entity, entity_dict)
-                cell_complexes[entity['uuid']] = parent_entity
+                parent_entity = _set_dictionary(parent_entity, raw_dictionary)
+                cell_complexes[uuid] = parent_entity
 
-            # Step 3: Handle apertures within each entity
-            if 'apertures' in entity:
-                # Containers for created entities
-                ap_vertices = {}
-                ap_edges = {}
-                ap_wires = {}
-                ap_faces = {}
-                for aperture_list in entity['apertures']:
-                    types = [aperture_data['type'] for aperture_data in aperture_list]
-                    save_vertex = False
-                    save_edge = False
-                    save_wire = False
-                    save_face = False
-
-                    if 'Face' in types:
-                        save_face = True
-                    elif 'Wire' in types:
-                        save_wire = True
-                    elif 'Edge' in types:
-                        save_edge = True
-                    elif 'Vertex' in types:
-                        save_vertex = True
-
-                    apertures = []
-                    for aperture_data in aperture_list:
-                        aperture_type = aperture_data['type']
-                        aperture_dict = Dictionary.ByKeysValues(keys=list(aperture_data['dictionary'].keys()),
-                                                                values=list(aperture_data['dictionary'].values()))
-                        
-                        if aperture_type == 'Vertex':
-                            aperture_entity = Vertex.ByCoordinates(*aperture_data['coordinates'])
-                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
-                            ap_vertices[aperture_data['uuid']] = aperture_entity
-                            if save_vertex == True:
-                                apertures.append(aperture_entity)
-                        
-                        elif aperture_type == 'Edge':
-                            vertex1 = ap_vertices[aperture_data['vertices'][0]]
-                            vertex2 = ap_vertices[aperture_data['vertices'][1]]
-                            aperture_entity = Edge.ByVertices([vertex1, vertex2])
-                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
-                            ap_edges[aperture_data['uuid']] = aperture_entity
-                            if save_edge == True:
-                                apertures.append(aperture_entity)
-
-                        elif aperture_type == 'Wire':
-                            wire_edges = [ap_edges[uuid] for uuid in aperture_data['edges']]
-                            aperture_entity = Wire.ByEdges(wire_edges)
-                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
-                            ap_wires[aperture_data['uuid']] = aperture_entity
-                            if save_wire == True:
-                                apertures.append(aperture_entity)
-
-                        elif aperture_type == 'Face':
-                            face_wires = [ap_wires[uuid] for uuid in aperture_data['wires']]
-                            if len(face_wires) > 1:
-                                aperture_entity = Face.ByWires(face_wires[0], face_wires[1:])
-                            else:
-                                aperture_entity = Face.ByWire(face_wires[0])
-                            aperture_entity = Topology.SetDictionary(aperture_entity, aperture_dict)
-                            ap_faces[aperture_data['uuid']] = aperture_entity
-                            if save_face == True:
-                                apertures.append(aperture_entity)
-                            
-                    # Assign the built apertures to the parent entity
-                    if len(apertures) > 0:
-                        if entity_type == "Face":
-                            face_apertures += apertures
-                        elif entity_type == 'Edge':
-                            edge_apertures += apertures
-                        elif entity_type == 'Vertex':
-                            vertex_apertures += apertures
-
-                # Update the parent entity in its respective container
-                if entity_type == 'Vertex':
-                    vertices[entity['uuid']] = parent_entity
-                elif entity_type == 'Edge':
-                    edges[entity['uuid']] = parent_entity
-                elif entity_type == 'Wire':
-                    wires[entity['uuid']] = parent_entity
-                elif entity_type == 'Face':
-                    faces[entity['uuid']] = parent_entity
-                elif entity_type == 'Shell':
-                    shells[entity['uuid']] = parent_entity
-                elif entity_type == 'Cell':
-                    cells[entity['uuid']] = parent_entity
-                elif entity_type == 'CellComplex':
-                    cell_complexes[entity['uuid']] = parent_entity
-            
-            d = Topology.Dictionary(parent_entity)
-            top_level = Dictionary.ValueAtKey(d, "toplevel")
-        tp_vertices = list(vertices.values())
-        tp_edges = list(edges.values())
-        tp_wires = list(wires.values())
-        tp_faces = list(faces.values())
-        tp_shells = list(shells.values())
-        tp_cells = list(cells.values())
-        tp_cell_complexes = list(cell_complexes.values())
-        everything = tp_vertices + tp_edges + tp_wires + tp_faces + tp_shells + tp_cells + tp_cell_complexes
-        top_level_list = []
-        for entity in everything:
-            d = Topology.Dictionary(entity)
-            top_level = Dictionary.ValueAtKey(d, "toplevel")
-            if top_level == 1:
-                if len(face_apertures) > 0:
-                    entity = Topology.AddApertures(entity, face_apertures, subTopologyType="Face", tolerance=tolerance)
-                if len(edge_apertures) > 0:
-                    entity = Topology.AddApertures(entity, edge_apertures, subTopologyType="Edge", tolerance=0.001)
-                if len(vertex_apertures) > 0:
-                    entity = Topology.AddApertures(entity, vertex_apertures, subTopologyType="Vertex", tolerance=0.001)
-                top_level_list.append(entity)
-        bins, counts = Topology.BinByDictionaryKey(top_level_list, key="__cluster__")
-        return_topologies = []
-        keys = bins.keys()
-        for key in keys:
-            if key == "__MISSING__":
-                return_topologies += bins[key]
             else:
-                cluster = Cluster.ByTopologies(bins[key])
+                continue
+
+            created_by_uuid[uuid] = parent_entity
+
+            # Build apertures, but do not globally apply them to every top-level topology.
+            if "apertures" in entity:
+                if entity_type in ("Vertex", "Edge", "Face"):
+                    sub_topology_type = entity_type
+                    owner_top_level_uuids = _top_level_ancestors(uuid)
+
+                    if owner_top_level_uuids:
+                        ap_vertices = {}
+                        ap_edges = {}
+                        ap_wires = {}
+                        ap_faces = {}
+
+                        for aperture_list in entity["apertures"]:
+                            apertures = _build_aperture_group(
+                                aperture_list,
+                                ap_vertices,
+                                ap_edges,
+                                ap_wires,
+                                ap_faces
+                            )
+
+                            if apertures:
+                                for top_level_uuid in owner_top_level_uuids:
+                                    apertures_by_top_level[top_level_uuid][sub_topology_type].extend(apertures)
+
+        # Apply apertures once, and only to the top-level topology that owns them.
+        top_level_topologies_by_uuid = {}
+
+        for uuid in top_level_uuids:
+            topology = created_by_uuid.get(uuid, None)
+            if topology is None:
+                continue
+
+            aperture_groups = apertures_by_top_level.get(uuid, None)
+
+            if aperture_groups:
+                face_apertures = aperture_groups.get("Face", [])
+                edge_apertures = aperture_groups.get("Edge", [])
+                vertex_apertures = aperture_groups.get("Vertex", [])
+
+                if face_apertures:
+                    topology = Topology.AddApertures(
+                        topology,
+                        face_apertures,
+                        subTopologyType="Face",
+                        tolerance=tolerance
+                    )
+
+                if edge_apertures:
+                    topology = Topology.AddApertures(
+                        topology,
+                        edge_apertures,
+                        subTopologyType="Edge",
+                        tolerance=0.001
+                    )
+
+                if vertex_apertures:
+                    topology = Topology.AddApertures(
+                        topology,
+                        vertex_apertures,
+                        subTopologyType="Vertex",
+                        tolerance=0.001
+                    )
+
+            top_level_topologies_by_uuid[uuid] = topology
+
+        # Group directly from the raw JSON dictionary instead of traversing Topologic
+        # dictionaries again through Topology.BinByDictionaryKey.
+        bins = defaultdict(list)
+
+        for uuid, topology in top_level_topologies_by_uuid.items():
+            cluster_key = cluster_key_by_uuid.get(uuid, "__MISSING__")
+            bins[cluster_key].append(topology)
+
+        return_topologies = []
+
+        for key, topologies in bins.items():
+            if key == "__MISSING__":
+                return_topologies.extend(topologies)
+            else:
+                cluster = Cluster.ByTopologies(topologies)
                 return_topologies.append(cluster)
+
         return return_topologies
     
     @staticmethod
@@ -7057,6 +7406,7 @@ class Topology():
         json_string = json.dumps(json_data, indent=4, sort_keys=False)
         return json_string
     
+
     @staticmethod
     def _OBJString(topology, color, vertexIndex, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -13998,70 +14348,105 @@ class Topology():
         return Topology._Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def UUID(topology, namespace="topologicpy", silent: bool = False):
+    def UUID(topology, namespace: str = "topologicpy", uuidKey: str = "uuid", deterministic: bool = False, silent: bool = False):
         """
-        Generate a UUID v5 based on the provided content and a fixed namespace.
-        
+        Returns the UUID of the input topology.
+
+        If deterministic is False, this method returns an existing UUID stored in the
+        topology dictionary. If no UUID exists, a new UUID v4 is created, stored in
+        the topology dictionary, and returned. This is the fast path.
+
+        If deterministic is True, this method computes a UUID v5 from the topology's
+        geometry and dictionaries. This is slower because it traverses the full
+        topology.
+
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology
+        topology : topologic_core.Topology or topologicpy.Graph
+            The input topology or graph.
         namespace : str , optional
-            The base namescape to use for generating the UUID.
+            The namespace string to use when deterministic is True. Default is "topologicpy".
+        uuidKey : str , optional
+            The dictionary key under which the UUID is stored. Default is "uuid".
+        deterministic : bool , optional
+            If set to True, compute a deterministic content-derived UUID. If set to
+            False, return or create a persistent stored UUID. Default is False.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        UUID
-            The uuid of the input topology.
+        str
+            The UUID string of the input topology.
 
         """
-        import uuid
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Graph import Graph
-        import inspect
 
-        if not Topology.IsInstance(topology, "topology") and not Topology.IsInstance(topology, "graph"):
+        import uuid
+
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
-                print("Topology.UUID - Error: The input topology parameter is not a valid topology. Returning None.")
-                print("The input topology was:", topology)
-                print("Topology:", topology)
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("Topology.UUID - Error: The input topology parameter is not a valid topology or graph. Returning None.")
             return None
 
-        predefined_namespace_dns = uuid.UUID('6ba7b810-9dad-11d1-80b4-00c04fd430c8')
+        # Fast path: dictionary lookup, then create and store a UUID if missing.
+        if not deterministic:
+            d = Topology.Dictionary(topology)
+            uuid_value = Dictionary.ValueAtKey(d, uuidKey, None)
+
+            if uuid_value is None:
+                uuid_value = str(uuid.uuid4())
+                d = Dictionary.SetValueAtKey(d, uuidKey, uuid_value)
+                topology = Topology.SetDictionary(topology, d, silent=silent)
+
+            return str(uuid_value)
+
+        # Slow path: deterministic UUID based on current topology content.
+        predefined_namespace_dns = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
-        if Topology.IsInstance(topology, "graph"):
+
+        if Topology.IsInstance(topology, "Graph"):
+            from topologicpy.Graph import Graph
+
             mesh_data = Graph.MeshData(topology)
-            verts_str = str(mesh_data["vertices"])
-            edges_str = str(mesh_data["edges"])
-            dict_str = str(mesh_data['vertexDictionaries']+mesh_data["edgeDictionaries"])
-            final_str = verts_str+edges_str+dict_str
-            uuid_str = uuid.uuid5(namespace_uuid, final_str)
-        else:
-            cellComplexes = Topology.CellComplexes(topology, silent=True) or []
-            cells = Topology.Cells(topology, silent=True) or []
-            shells = Topology.Shells(topology, silent=True) or []
-            faces = Topology.Faces(topology, silent=True) or []
-            wires = Topology.Wires(topology, silent=True) or []
-            edges = Topology.Edges(topology, silent=True) or []
-            vertices = Topology.Vertices(topology, silent=True) or []
-            apertures = Topology.Apertures(topology, subTopologyType="all") or []
-            subTopologies = cellComplexes+cells+shells+faces+wires+edges+vertices+apertures
-            dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
-            dictionaries += [Dictionary.PythonDictionary(Topology.Dictionary(s)) for s in subTopologies]
-            dict_str = str(dictionaries)
-            top_geom = Topology.Geometry(topology, mantissa=6)
-            verts_str = str(top_geom['vertices'])
-            edges_str = str(top_geom['edges'])
-            faces_str = str(top_geom['faces'])
-            geo_str = verts_str+edges_str+faces_str
-            final_str = geo_str+dict_str
-            uuid_str = uuid.uuid5(namespace_uuid, final_str)
-        return str(uuid_str)
+
+            final_str = (
+                str(mesh_data.get("vertices", [])) +
+                str(mesh_data.get("edges", [])) +
+                str(mesh_data.get("vertexDictionaries", [])) +
+                str(mesh_data.get("edgeDictionaries", []))
+            )
+
+            return str(uuid.uuid5(namespace_uuid, final_str))
+
+        cellComplexes = Topology.CellComplexes(topology, silent=True) or []
+        cells = Topology.Cells(topology, silent=True) or []
+        shells = Topology.Shells(topology, silent=True) or []
+        faces = Topology.Faces(topology, silent=True) or []
+        wires = Topology.Wires(topology, silent=True) or []
+        edges = Topology.Edges(topology, silent=True) or []
+        vertices = Topology.Vertices(topology, silent=True) or []
+        apertures = Topology.Apertures(topology, subTopologyType="all", silent=True) or []
+
+        subTopologies = cellComplexes + cells + shells + faces + wires + edges + vertices + apertures
+
+        dictionaries = [Dictionary.PythonDictionary(Topology.Dictionary(topology))]
+        dictionaries.extend(
+            Dictionary.PythonDictionary(Topology.Dictionary(subTopology))
+            for subTopology in subTopologies
+        )
+
+        top_geom = Topology.Geometry(topology, mantissa=6)
+
+        final_str = (
+            str(top_geom.get("vertices", [])) +
+            str(top_geom.get("edges", [])) +
+            str(top_geom.get("faces", [])) +
+            str(dictionaries)
+        )
+
+        return str(uuid.uuid5(namespace_uuid, final_str))
     
     @staticmethod
     def View3D(*topologies, uuid = None, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
