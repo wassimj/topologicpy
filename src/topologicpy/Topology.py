@@ -6944,28 +6944,8 @@ class Topology():
 
         def getApertureData(topology, topLevel="False", uuidKey="uuid"):
             json_data = []
-            if Topology.IsInstance(topology, "Vertex"):
-                d = getVertex(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Edge"):
-                d = getEdge(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Wire"):
-                d = getWire(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Face"):
-                d = getFace(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Shell"):
-                d = getShell(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Cell"):
-                d = getCell(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "CellComplex"):
-                d = getCellComplex(topology, uuidKey=uuidKey)
-            d['dictionary']['toplevel'] = topLevel
             json_data += getSubTopologyData(topology, uuidKey=uuidKey)
-            apertures = Topology.Apertures(topology)
-            aperture_data = []
-            for ap in apertures:
-                aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
-            d['apertures'] = aperture_data
-            json_data.append(d)
+            json_data[-1]['dictionary']['toplevel'] = topLevel
             return json_data
 
         def getSubTopologyData(topology, uuidKey="uuid"):
@@ -7044,31 +7024,8 @@ class Topology():
 
         def getJSONData(topology, topLevel=False, uuidKey="uuid"):
             json_data = []
-            if Topology.IsInstance(topology, "Vertex"):
-                d = getVertex(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Edge"):
-                d = getEdge(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Wire"):
-                d = getWire(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Face"):
-                d = getFace(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Shell"):
-                d = getShell(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "Cell"):
-                d = getCell(topology, uuidKey=uuidKey)
-            elif Topology.IsInstance(topology, "CellComplex"):
-                d = getCellComplex(topology, uuidKey=uuidKey)
-            else:
-                print("Topology.JSONString - Error: Unknown topology type:", topology, ". Returning None.")
-                return None
-            d['dictionary']['toplevel'] = topLevel
             json_data += getSubTopologyData(topology, uuidKey=uuidKey)
-            apertures = Topology.Apertures(topology)
-            aperture_data = []
-            for ap in apertures:
-                aperture_data.append(getApertureData(ap, topLevel=False, uuidKey=uuidKey))
-            d['apertures'] = aperture_data
-            json_data.append(d)
+            json_data[-1]['dictionary']['toplevel'] = topLevel #assign top level to the last topology
             return json_data
         
         def addClusterKey(cluster):
