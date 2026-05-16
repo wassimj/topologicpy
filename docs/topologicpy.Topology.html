@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.29 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.30 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.29
+                0.9.30
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -437,7 +437,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CenterOfMass" title="topologicpy.Topology.Topology.CenterOfMass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CenterOfMass</span></code></a>(topology)</p></td>
 <td><p>Returns the center of mass of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology[, mode, mantissa, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Centroid" title="topologicpy.Topology.Topology.Centroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Centroid</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the true geometric centroid of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Cleanup" title="topologicpy.Topology.Topology.Cleanup"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Cleanup</span></code></a>([topology])</p></td>
@@ -758,8 +758,8 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeID" title="topologicpy.Topology.Topology.TypeID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code></a>([name])</p></td>
 <td><p>Returns the type id of the input name string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.UUID" title="topologicpy.Topology.Topology.UUID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code></a>(topology[, namespace, silent])</p></td>
-<td><p>Generate a UUID v5 based on the provided content and a fixed namespace.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.UUID" title="topologicpy.Topology.Topology.UUID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code></a>(topology[, namespace, uuidKey, ...])</p></td>
+<td><p>Returns the UUID of the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Unflatten" title="topologicpy.Topology.Topology.Unflatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code></a>(topology[, origin, direction, ...])</p></td>
 <td><p>Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.</p></td>
@@ -1425,7 +1425,8 @@ Bonsai triangulation pipeline. See IFC.TopologiesByFile.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of imported topologies (Warning: the list could contain 0, 1, or many topologies, but this method will always return a list)</p>
+<dt>list</dt><dd><p>The list of imported topologies. The list can contain 0, 1, or many topologies,
+but this method always returns a list.</p>
 </dd>
 </dl>
 </dd>
@@ -1969,29 +1970,12 @@ and thus can give erroneous results. The transformation matrix may not yield an 
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Centroid">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Centroid" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the true geometric centroid of the input topology.</p>
-<p>The centroid is computed by measure:
-- Cells / CellComplexes are evaluated by volume.
-- Faces / Shells are evaluated by area.
-- Wires / Edges are evaluated by length.
-- Vertices are evaluated by arithmetic mean.</p>
-<p>For mixed-dimensional topologies, only the highest-dimensional sub-topologies
-are used. For example, if a Cluster contains faces and edges, the centroid is
-computed from the faces because the edges have zero area.</p>
-<p>This method correctly accounts for holes in faces and voids in cells when
-those holes/voids are represented in the topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Centroid" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the true geometric centroid of the input topology. This is an alias for Topology.CenterOfMass().</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
-</dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>If set to “basic” (case insensitive), the centroid will be computed as the average of the vertices of the input topology.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the output coordinates to.
-Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5272,14 +5256,25 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.UUID">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UUID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'topologicpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.UUID" title="Permalink to this definition"></a></dt>
-<dd><p>Generate a UUID v5 based on the provided content and a fixed namespace.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UUID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topologicpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'uuid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deterministic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.UUID" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the UUID of the input topology.</p>
+<p>If deterministic is False, this method returns an existing UUID stored in the
+topology dictionary. If no UUID exists, a new UUID v4 is created, stored in
+the topology dictionary, and returned. This is the fast path.</p>
+<p>If deterministic is True, this method computes a UUID v5 from the topology’s
+geometry and dictionaries. This is slower because it traverses the full
+topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.Graph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
-<dt><strong>namespace</strong><span class="classifier">str , optional</span></dt><dd><p>The base namescape to use for generating the UUID.</p>
+<dt><strong>namespace</strong><span class="classifier">str , optional</span></dt><dd><p>The namespace string to use when deterministic is True. Default is “topologicpy”.</p>
+</dd>
+<dt><strong>uuidKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the UUID is stored. Default is “uuid”.</p>
+</dd>
+<dt><strong>deterministic</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, compute a deterministic content-derived UUID. If set to
+False, return or create a persistent stored UUID. Default is False.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5287,7 +5282,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>UUID</dt><dd><p>The uuid of the input topology.</p>
+<dt>str</dt><dd><p>The UUID string of the input topology.</p>
 </dd>
 </dl>
 </dd>

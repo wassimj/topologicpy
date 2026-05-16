@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.9.29 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.9.30 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.29
+                0.9.30
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -222,7 +222,7 @@
 <td><p>Returns the incoming edges connected to a vertex.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.Index" title="topologicpy.Vertex.Vertex.Index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Index</span></code></a>(vertex, vertices[, strict, tolerance])</p></td>
-<td><p>Returns index of the input vertex in the input list of vertices</p></td>
+<td><p>Returns the index of the input vertex in the input list of vertices.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="topologicpy.Vertex.Vertex.InterpolateValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolateValue</span></code></a>(vertex, vertices[, n, key, ...])</p></td>
 <td><p>Interpolates the value of the input vertex based on the values of the <em>n</em> nearest vertices.</p></td>
@@ -829,7 +829,10 @@ coincident with the input vertex.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.Index">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">int</span></span></span><a class="headerlink" href="#topologicpy.Vertex.Vertex.Index" title="Permalink to this definition"></a></dt>
-<dd><p>Returns index of the input vertex in the input list of vertices</p>
+<dd><p>Returns the index of the input vertex in the input list of vertices.</p>
+<p>This implementation avoids rebuilding the input list and uses a fast
+coordinate pre-check before falling back to Topology.IsSame or
+Vertex.Distance.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -837,9 +840,11 @@ coincident with the input vertex.</p>
 </dd>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
-<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.</p>
+<dt><strong>strict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex must be strictly identical to the one found
+in the list. Otherwise, a distance comparison is used. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is identical to a vertex from the list. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is identical to a vertex
+from the list. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>

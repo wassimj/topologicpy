@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.GraphRAG module &mdash; topologicpy 0.9.29 documentation</title>
+  <title>topologicpy.GraphRAG module &mdash; topologicpy 0.9.30 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.29
+                0.9.30
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -191,7 +191,7 @@ result = GraphRAG.Generate(grag, graph, description=”…”)</p>
 <td><p>Iteratively grows or edits the input graph using corpus evidence and an LLM.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.NormalizeAction" title="topologicpy.GraphRAG.GraphRAG.NormalizeAction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">NormalizeAction</span></code></a>(action)</p></td>
-<td><p>Normalizes common action aliases.</p></td>
+<td><p>Normalizes common action aliases and field aliases.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.PickAction" title="topologicpy.GraphRAG.GraphRAG.PickAction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PickAction</span></code></a>(grag, graphSummary[, evidence, ...])</p></td>
 <td><p>Asks the configured LLM to select the next graph-edit action.</p></td>
@@ -199,16 +199,13 @@ result = GraphRAG.Generate(grag, graph, description=”…”)</p>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.Prompt" title="topologicpy.GraphRAG.GraphRAG.Prompt"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Prompt</span></code></a>(grag, graphSummary[, evidence, ...])</p></td>
 <td><p>Builds the prompt used for graph-edit action selection.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.ResolveActionLabels" title="topologicpy.GraphRAG.GraphRAG.ResolveActionLabels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResolveActionLabels</span></code></a>(grag, graph, action[, ...])</p></td>
-<td><p>Resolves labels in an LLM action against both the working graph and corpus.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.SummarizeGraph" title="topologicpy.GraphRAG.GraphRAG.SummarizeGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummarizeGraph</span></code></a>(grag, graph[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.SummarizeGraph" title="topologicpy.GraphRAG.GraphRAG.SummarizeGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummarizeGraph</span></code></a>(grag, graph[, silent])</p></td>
 <td><p>Summarises the current working graph as JSON-friendly nodes and edges.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.list_working_nodes_edges" title="topologicpy.GraphRAG.GraphRAG.list_working_nodes_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_working_nodes_edges</span></code></a>(grag, graph[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.list_working_nodes_edges" title="topologicpy.GraphRAG.GraphRAG.list_working_nodes_edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">list_working_nodes_edges</span></code></a>(grag, graph[, silent])</p></td>
 <td><p>Returns the current graph nodes and edges.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.unique_id" title="topologicpy.GraphRAG.GraphRAG.unique_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unique_id</span></code></a>([graph, prefix, key, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphRAG.GraphRAG.unique_id" title="topologicpy.GraphRAG.GraphRAG.unique_id"><code class="xref py py-obj docutils literal notranslate"><span class="pre">unique_id</span></code></a>([graph, prefix, key, silent])</p></td>
 <td><p>Returns a unique vertex ID for the input graph.</p></td>
 </tr>
 </tbody>
@@ -253,6 +250,10 @@ result = GraphRAG.Generate(grag, graph, description=”…”)</p>
 <dt class="sig sig-object py" id="topologicpy.GraphRAG.GraphRAG.Generate">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Generate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSteps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patience</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">automatic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approvalFunction</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verbose</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.GraphRAG.GraphRAG.Generate" title="Permalink to this definition"></a></dt>
 <dd><p>Iteratively grows or edits the input graph using corpus evidence and an LLM.</p>
+<p>This implementation edits a temporary Python adjacency-matrix state and
+materialises a TopologicPy graph only once, at the end of generation. This
+avoids allowing geometric coincidence or core graph mutation behaviour to
+block the intended topological edits.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -264,7 +265,7 @@ result = GraphRAG.Generate(grag, graph, description=”…”)</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.GraphRAG.GraphRAG.NormalizeAction">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NormalizeAction</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.GraphRAG.GraphRAG.NormalizeAction" title="Permalink to this definition"></a></dt>
-<dd><p>Normalizes common action aliases.</p>
+<dd><p>Normalizes common action aliases and field aliases.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -277,14 +278,6 @@ result = GraphRAG.Generate(grag, graph, description=”…”)</p>
 <dt class="sig sig-object py" id="topologicpy.GraphRAG.GraphRAG.Prompt">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Prompt</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSummary</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">evidence</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">description</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.GraphRAG.GraphRAG.Prompt" title="Permalink to this definition"></a></dt>
 <dd><p>Builds the prompt used for graph-edit action selection.</p>
-</dd></dl>
-
-<dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.GraphRAG.GraphRAG.ResolveActionLabels">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResolveActionLabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">grag</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">action</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.GraphRAG.GraphRAG.ResolveActionLabels" title="Permalink to this definition"></a></dt>
-<dd><p>Resolves labels in an LLM action against both the working graph and corpus.
-Existing-node labels are first matched to exact working-graph labels.
-New-node labels are matched to actual corpus labels.</p>
 </dd></dl>
 
 <dl class="py method">

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Graph module &mdash; topologicpy 0.9.29 documentation</title>
+  <title>topologicpy.Graph module &mdash; topologicpy 0.9.30 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.29
+                0.9.30
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -288,9 +288,9 @@
 <td><p>Creates a graph of the spatial relationships of the input topologies according to OGC / ISO 19107 / DE-9IM / RCC-8</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByTopology" title="topologicpy.Graph.Graph.ByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByTopology</span></code></a>(topology[, direct, ...])</p></td>
-<td><p>Creates a graph.See <a class="reference external" href="https://en.wikipedia.org/wiki/Graph_(discrete_mathematics">https://en.wikipedia.org/wiki/Graph_(discrete_mathematics</a>).</p></td>
+<td><p>Creates a graph from the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="topologicpy.Graph.Graph.ByVerticesEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesEdges</span></code></a>(vertices, edges)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="topologicpy.Graph.Graph.ByVerticesEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByVerticesEdges</span></code></a>(vertices, edges[, index])</p></td>
 <td><p>Creates a graph from the input list of vertices and edges.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Graph.Graph.Choice" title="topologicpy.Graph.Graph.Choice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Choice</span></code></a>(graph[, method, weightKey, ...])</p></td>
@@ -733,6 +733,9 @@
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.AddEdge">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddEdge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferVertexDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferEdgeDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.AddEdge" title="Permalink to this definition"></a></dt>
 <dd><p>Adds the input edge to the input Graph.</p>
+<p>The added edge is assigned “src” and “dst” dictionary keys corresponding to
+the “index” values of its start and end vertices in the resulting graph.
+If a vertex does not already have an “index” key, one is assigned.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -2112,9 +2115,11 @@ Default is None.</p>
 </dd>
 <dt><strong>zMax</strong><span class="classifier">float , optional</span></dt><dd><p>Desired maximum Z coordinate for topology layout. Default is 0.5.</p>
 </dd>
-<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired vertex dictionary key name under which to store the calculated color. Default is “color”</p>
+<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired vertex dictionary key name under which to store the calculated color.
+Default is “color”.</p>
 </dd>
-<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired edge dictionary key name under which to store the calculated color. Default is “color”</p>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired edge dictionary key name under which to store the calculated color.
+Default is “color”.</p>
 </dd>
 <dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired colorscale name to use for colors. The default is “viridis”.</p>
 </dd>
@@ -2135,6 +2140,10 @@ Default is None.</p>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This implementation avoids reparsing the IFC file for colour assignment.
+Element and relationship colour palettes are derived from dictionaries
+already created during graph construction.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2484,7 +2493,11 @@ Otherwise, its centroid will be used. Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ByTopology">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">direct</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaSharedTopologies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaSharedApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toExteriorTopologies</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toExteriorApertures</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toContents</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">toOutposts</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">idKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TOPOLOGIC_ID'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outpostsKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'outposts'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useInternalVertex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storeBREP</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByTopology" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a graph.See <a class="reference external" href="https://en.wikipedia.org/wiki/Graph_(discrete_mathematics">https://en.wikipedia.org/wiki/Graph_(discrete_mathematics</a>).</p>
+<dd><p>Creates a graph from the input topology.</p>
+<p>This version assigns a stable integer “index” key to every graph vertex
+when it is added to the graph_vertices list, and assigns “src” and “dst”
+keys to every graph edge when it is created. This avoids later reliance on
+Vertex.Index in Graph.ByVerticesEdges or downstream graph processing.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -2510,29 +2523,15 @@ Otherwise, its centroid will be used. Default is False.</p>
 </dd>
 <dt><strong>outpostsKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key to use to find the list of outposts. It is case insensitive. Default is “outposts”.</p>
 </dd>
-<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to store the node type. Node categories are:
-0 : main topology
-1 : shared topology
-2 : shared aperture
-3 : exterior topology
-4 : exterior aperture
-5 : content
-6 : outpost
-The default is “category”.</p>
+<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to store the node category. Default is “category”.</p>
 </dd>
-<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to store the node type. Edge categories are:
-0 : direct
-1 : via shared topology
-2 : via shared aperture
-3 : to exterior topology
-4 : to exterior aperture
-5 : to content
-6 : to outpost
-The default is “category”.</p>
+<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to store the edge category. Default is “category”.</p>
 </dd>
 <dt><strong>useInternalVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.</p>
 </dd>
 <dt><strong>storeBREP</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, store the BRep of the subtopology in its representative vertex. Default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -2551,7 +2550,7 @@ The default is “category”.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.ByVerticesEdges">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVerticesEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByVerticesEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.ByVerticesEdges" title="Permalink to this definition"></a></dt>
 <dd><p>Creates a graph from the input list of vertices and edges.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -2559,6 +2558,8 @@ The default is “category”.</p>
 <dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
 </dd>
 <dt><strong>edges</strong><span class="classifier">list</span></dt><dd><p>The input list of edges.</p>
+</dd>
+<dt><strong>index</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertices and edges are indexed. Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -2906,7 +2907,10 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Complement">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Complement</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Complement" title="Permalink to this definition"></a></dt>
-<dd><p>Creates the complement graph of the input graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Complement_graph">https://en.wikipedia.org/wiki/Complement_graph</a></p>
+<dd><p>Creates the complement graph of the input graph.
+See <a class="reference external" href="https://en.wikipedia.org/wiki/Complement_graph">https://en.wikipedia.org/wiki/Complement_graph</a></p>
+<p>This version assigns an “index” key to each returned vertex and assigns
+“src” and “dst” keys to each created complement edge.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -5687,13 +5691,20 @@ If two of the input vertices are the end points of the same edge, that edge is d
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.MinimumSpanningTree">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MinimumSpanningTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.MinimumSpanningTree" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the minimum spanning tree of the input graph. See <a class="reference external" href="https://en.wikipedia.org/wiki/Minimum_spanning_tree">https://en.wikipedia.org/wiki/Minimum_spanning_tree</a>.</p>
+<dd><p>Returns the minimum spanning tree of the input graph.
+See <a class="reference external" href="https://en.wikipedia.org/wiki/Minimum_spanning_tree">https://en.wikipedia.org/wiki/Minimum_spanning_tree</a>.</p>
+<p>This implementation uses Kruskal’s algorithm with a disjoint-set union
+structure. It avoids repeated Graph.Path and Graph.NearestVertex calls.</p>
+<p>The returned vertices are assigned an “index” key, and the returned edges
+are assigned “src” and “dst” keys corresponding to those vertex indices.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
-<dt><strong>edgeKey</strong><span class="classifier">string , optional</span></dt><dd><p>If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. Default is None</p>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set, the value of the edgeKey will be used as the edge weight.
+The value associated with edgeKey must be numerical. If not set,
+edge length is used. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -6820,14 +6831,14 @@ This is used in weighted graphs. if weightKey is set to “Length” or “Dista
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Graph.Graph.Vertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Vertices" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sortBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'index'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reverse</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Graph.Graph.Vertices" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the list of vertices in the input graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
 </dd>
-<dt><strong>sortBy</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use for sorting the returned edges. Special strings include “length” and “distance” to sort by the length of the edge. Default is None.</p>
+<dt><strong>sortBy</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use for sorting the returned edges. Special strings include “length” and “distance” to sort by the length of the edge. Default is “index”.</p>
 </dd>
 <dt><strong>reverse</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the sorted list is reversed. This has no effect if the sortBy parameter is not set. Default is False.</p>
 </dd>
