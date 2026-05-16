@@ -1167,7 +1167,11 @@ class Vertex():
     @staticmethod
     def Index(vertex, vertices: list, strict: bool = False, tolerance: float = 0.0001) -> int:
         """
-        Returns index of the input vertex in the input list of vertices
+        Returns the index of the input vertex in the input list of vertices.
+
+        This implementation avoids rebuilding the input list and uses a fast
+        coordinate pre-check before falling back to Topology.IsSame or
+        Vertex.Distance.
 
         Parameters
         ----------
@@ -1176,33 +1180,76 @@ class Vertex():
         vertices : list
             The input list of vertices.
         strict : bool , optional
-            If set to True, the vertex must be strictly identical to the one found in the list. Otherwise, a distance comparison is used. Default is False.
+            If set to True, the vertex must be strictly identical to the one found
+            in the list. Otherwise, a distance comparison is used. Default is False.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is identical to a vertex from the list. Default is 0.0001.
+            The tolerance for computing if the input vertex is identical to a vertex
+            from the list. Default is 0.0001.
 
         Returns
         -------
         int
             The index of the input vertex in the input list of vertices.
-
         """
+
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(vertex, "Vertex"):
             return None
-        if not isinstance(vertices, list):
+
+        if not isinstance(vertices, list) or len(vertices) == 0:
             return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) == 0:
+
+        try:
+            x = vertex.X()
+            y = vertex.Y()
+            z = vertex.Z()
+        except Exception:
             return None
-        for i in range(len(vertices)):
-            if strict:
-                if Topology.IsSame(vertex, vertices[i]):
-                    return i
-            else:
-                d = Vertex.Distance(vertex, vertices[i])
-                if d <= tolerance:
-                    return i
+
+        tol = abs(tolerance) if isinstance(tolerance, (int, float)) else 0.0001
+        tol2 = tol * tol
+
+        for i, v in enumerate(vertices):
+            if v is None:
+                continue
+
+            # Fast coordinate path first. This is much cheaper than Vertex.Distance.
+            try:
+                dx = x - v.X()
+                if abs(dx) > tol:
+                    continue
+
+                dy = y - v.Y()
+                if abs(dy) > tol:
+                    continue
+
+                dz = z - v.Z()
+                if abs(dz) > tol:
+                    continue
+
+                if strict:
+                    if Topology.IsSame(vertex, v):
+                        return i
+                else:
+                    if (dx * dx + dy * dy + dz * dz) <= tol2:
+                        return i
+
+            except Exception:
+                # Fallback for unusual vertex objects.
+                try:
+                    if not Topology.IsInstance(v, "Vertex"):
+                        continue
+
+                    if strict:
+                        if Topology.IsSame(vertex, v):
+                            return i
+                    else:
+                        if Vertex.Distance(vertex, v) <= tol:
+                            return i
+                except Exception:
+                    continue
+
         return None
 
     @staticmethod

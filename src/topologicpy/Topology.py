@@ -3595,9 +3595,10 @@ class Topology():
         from topologicpy.Dictionary import Dictionary
 
         if not isinstance(jsonDictionary, list):
-            if not silent:
-                print("Topology.ByJSONDictionary - Error: The input JSON dictionary is not a valid list. Returning [].")
-            return []
+            records = [jsonDictionary]
+            # if not silent:
+            #     print("Topology.ByJSONDictionary - Error: The input JSON dictionary is not a valid list. Returning [].")
+            # return []
 
         records = jsonDictionary
         records_by_uuid = {}
@@ -6206,9 +6207,14 @@ class Topology():
             The dictionary of the input topology.
 
         """
+        import inspect
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
                 print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology:", topology)
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         # return topology.GetDictionary() # H to Core
         return Core.InstanceCall(topology, 'GetDictionary')

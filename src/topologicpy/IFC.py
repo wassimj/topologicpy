@@ -1379,8 +1379,8 @@ class IFC:
             return None
         type_counts = {}
         for element in entities.values():
-            element_type = IFC._display_type(element.type)
-            if element_type.startswith("IfcRel"):
+            element_type = element.is_a()
+            if element_type.lower().startswith("ifcrel"):
                 type_counts[element_type] = type_counts.get(element_type, 0) + 1
         if includeCounts:
             return [{"type": key, "count": type_counts[key]} for key in sorted(type_counts.keys(), key=lambda x: x.lower())]

@@ -1144,7 +1144,7 @@ class Face():
         # Make sure all internal wires are actually inside the external wire.
         ibList = []
         for ib in internalBoundaries:
-            if not Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib):
+            if not (Topology.IsInstance(ib, "Wire") and Wire.IsClosed(ib)):
                 if not silent:
                     print("Face.ByWires - Warning: One of the internal wires is not a valid closed wire. Ignoring.")
                     curframe = inspect.currentframe()
@@ -3014,7 +3014,7 @@ class Face():
             if not silent:
                 print("Face.Isovist - Error: Could not create isovist. Returning None.")
             return None
-        simpler_face = Face.RemoveCollinearEdges(return_face, angTolerance=0.1, tolerance=tolerance, silent=silent)
+        simpler_face = Topology.RemoveCollinearEdges(return_face, angTolerance=0.1, tolerance=tolerance, silent=silent)
         if Topology.IsInstance(simpler_face, "face"):
             if transferDictionaries == True or metrics == True:
                 j_edges = [Topology.Edges(t) for t in obstacles]

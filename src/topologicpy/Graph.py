@@ -397,6 +397,10 @@ class Graph:
         """
         Adds the input edge to the input Graph.
 
+        The added edge is assigned "src" and "dst" dictionary keys corresponding to
+        the "index" values of its start and end vertices in the resulting graph.
+        If a vertex does not already have an "index" key, one is assigned.
+
         Parameters
         ----------
         graph : topologic_core.Graph
@@ -416,65 +420,165 @@ class Graph:
         -------
         topologic_core.Graph
             The input graph with the input edge added to it.
-
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        def addIfUnique(graph_vertices, vertex, tolerance=0.0001):
-            unique = True
-            returnVertex = vertex
-            for gv in graph_vertices:
-                if (Vertex.Distance(vertex, gv) <= tolerance):
-                    if transferVertexDictionaries == True:
-                        gd = Topology.Dictionary(gv)
-                        vd = Topology.Dictionary(vertex)
-                        # gk = gd.Keys() # H to Core
-                        gk = Core.InstanceCall(gd, "Keys")
-                        # vk = vd.Keys() # H to Core
-                        vk = Core.InstanceCall(vd, "Keys")
-                        d = None
-                        if (len(gk) > 0) and (len(vk) > 0):
-                            d = Dictionary.ByMergedDictionaries([gd, vd])
-                        elif (len(gk) > 0) and (len(vk) < 1):
-                            d = gd
-                        elif (len(gk) < 1) and (len(vk) > 0):
-                            d = vd
-                        if d:
-                            _ = Topology.SetDictionary(gv, d, silent=True)
-                    unique = False
-                    returnVertex = gv
-                    break
-            if unique:
-                graph_vertices.append(vertex)
-            return [graph_vertices, returnVertex]
+        indexKey = "index"
+        srcKey = "src"
+        dstKey = "dst"
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
                 print("Graph.AddEdge - Error: The input graph is not a valid graph. Returning None.")
             return None
+
         if not Topology.IsInstance(edge, "Edge"):
             if not silent:
                 print("Graph.AddEdge - Error: The input edge is not a valid edge. Returning the input graph.")
             return graph
+
+        def _dictionary(topology):
+            try:
+                return Topology.Dictionary(topology)
+            except Exception:
+                return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                try:
+                    keys = Core.InstanceCall(dictionary, "Keys")
+                    return keys if isinstance(keys, list) else []
+                except Exception:
+                    return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _set_value(dictionary, key, value):
+            if dictionary is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(dictionary, key, value)
+
+        def _merge_dictionaries(d1, d2):
+            k1 = _keys(d1)
+            k2 = _keys(d2)
+
+            if len(k1) > 0 and len(k2) > 0:
+                return Dictionary.ByMergedDictionaries([d1, d2])
+            if len(k1) > 0:
+                return d1
+            if len(k2) > 0:
+                return d2
+            return None
+
+        def _set_vertex_index(vertex, index):
+            d = _dictionary(vertex)
+            current = _value(d, indexKey, None)
+            if current is None:
+                d = _set_value(d, indexKey, index)
+                Topology.SetDictionary(vertex, d, silent=True)
+            return vertex
+
+        def _vertex_index(vertex):
+            d = _dictionary(vertex)
+            value = _value(d, indexKey, None)
+            if isinstance(value, int):
+                return value
+            try:
+                if isinstance(value, str) and value.strip().isdigit():
+                    return int(value)
+            except Exception:
+                pass
+            return None
+
+        def _find_or_add_vertex(graph_vertices, vertex):
+            for i, gv in enumerate(graph_vertices):
+                if Vertex.Distance(vertex, gv) <= tolerance:
+                    if transferVertexDictionaries:
+                        gd = _dictionary(gv)
+                        vd = _dictionary(vertex)
+                        md = _merge_dictionaries(gd, vd)
+                        if md is not None:
+                            md = _set_value(md, indexKey, i)
+                            Topology.SetDictionary(gv, md, silent=True)
+                        else:
+                            _set_vertex_index(gv, i)
+                    else:
+                        _set_vertex_index(gv, i)
+
+                    return graph_vertices, gv, i
+
+            index = len(graph_vertices)
+            _set_vertex_index(vertex, index)
+            graph_vertices.append(vertex)
+            return graph_vertices, vertex, index
+
         graph_vertices = Graph.Vertices(graph)
+        if not isinstance(graph_vertices, list):
+            graph_vertices = []
+
+        for i, gv in enumerate(graph_vertices):
+            _set_vertex_index(gv, i)
+
         graph_edges = Graph.Edges(graph, graph_vertices, tolerance=tolerance)
+        if not isinstance(graph_edges, list):
+            graph_edges = []
+
         vertices = Topology.Vertices(edge)
-        new_vertices = []
-        for vertex in vertices:
-            graph_vertices, nv = addIfUnique(graph_vertices, vertex, tolerance=tolerance)
-            new_vertices.append(nv)
-        new_edge = Edge.ByVertices([new_vertices[0], new_vertices[1]], tolerance=tolerance, silent=silent)
-        if transferEdgeDictionaries == True:
-            d = Topology.Dictionary(edge)
-            keys = Dictionary.Keys(d)
-            if isinstance(keys, list):
-                if len(keys) > 0:
-                    _ = Topology.SetDictionary(new_edge, d, silent=True)
+        if not isinstance(vertices, list) or len(vertices) < 2:
+            if not silent:
+                print("Graph.AddEdge - Error: The input edge does not contain two valid vertices. Returning the input graph.")
+            return graph
+
+        graph_vertices, start_vertex, src = _find_or_add_vertex(graph_vertices, vertices[0])
+        graph_vertices, end_vertex, dst = _find_or_add_vertex(graph_vertices, vertices[1])
+
+        new_edge = Edge.ByVertices([start_vertex, end_vertex], tolerance=tolerance, silent=silent)
+        if new_edge is None:
+            if not silent:
+                print("Graph.AddEdge - Error: Could not create the new edge. Returning the input graph.")
+            return graph
+
+        edge_dictionary = None
+
+        if transferEdgeDictionaries:
+            d = _dictionary(edge)
+            if len(_keys(d)) > 0:
+                edge_dictionary = d
+
+        if edge_dictionary is None:
+            edge_dictionary = _dictionary(new_edge)
+
+        edge_dictionary = _set_value(edge_dictionary, srcKey, src)
+        edge_dictionary = _set_value(edge_dictionary, dstKey, dst)
+
+        Topology.SetDictionary(new_edge, edge_dictionary, silent=True)
+
         graph_edges.append(new_edge)
-        new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+
+        graph_dict = Topology.Dictionary(graph)
+        new_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False)
+        new_graph = Topology.SetDictionary(new_graph, graph_dict)
         return new_graph
     
     @staticmethod
@@ -501,6 +605,7 @@ class Graph:
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
@@ -535,6 +640,9 @@ class Graph:
         edge = Edge.ByVertices(sv, ev)
         if dictionary:
             edge = Topology.SetDictionary(edge, dictionary)
+        d = Topology.Dictionary(edge)
+        d = Dictionary.SetValuesAtKeys(d, ["src", "dst"], [index[0], index[1]])
+        edge = Topology.SetDictionary(edge, d)
         graph = Graph.AddEdge(graph,edge)
         return graph
 
@@ -4033,7 +4141,9 @@ class Graph:
             x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
             v = Vertex.ByCoordinates(x, y, z)
             if isinstance(dictionaries, list):
-                v = Topology.SetDictionary(v, dictionaries[i])
+                d = dictionaries[i]
+                d = Dictionary.SetValueAtKey(d, "index", i)
+                v = Topology.SetDictionary(v, d)
             vertices.append(v)
 
         # Create the graph using vertices and edges
@@ -4049,13 +4159,13 @@ class Graph:
                 if not i == j:
                     if (adjacencyMatrix[i][j] != 0 or adjacencyMatrix[j][i] != 0) and not (i,j) in visited:
                         edge = Edge.ByVertices([vertices[i], vertices[j]]) # Create only one edge
-                        d = Dictionary.ByKeysValues([edgeKeyFwd, edgeKeyBwd], [adjacencyMatrix[i][j], adjacencyMatrix[j][i]])
+                        d = Dictionary.ByKeysValues([edgeKeyFwd, edgeKeyBwd, "src", "dst"], [adjacencyMatrix[i][j], adjacencyMatrix[j][i], i, j])
                         edge = Topology.SetDictionary(edge, d)
                         edges.append(edge)
                         visited.append((i,j))
                         visited.append((j,i))
         
-        return Graph.ByVerticesEdges(vertices, edges)
+        return Graph.ByVerticesEdges(vertices, edges, index=False)
 
     @staticmethod
     def ByBOTGraph(botGraph,
@@ -4167,7 +4277,7 @@ class Graph:
 
         vertices = []
         dic = {}
-        for node in nodes:
+        for i, node in enumerate(nodes):
             x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
             d_keys = ["bot_id"]
             d_values = [str(node)]
@@ -4192,6 +4302,8 @@ class Graph:
                         d_keys.append(key_type.lower())
                         d_values.append(value_by_string(attributes[key].split("#")[-1]))
 
+            d_keys.append("index")
+            d_values.append(i)
             d = Dictionary.ByKeysValues(d_keys, d_values)
             v = Vertex.ByCoordinates(x,y,z)
             v = Topology.SetDictionary(v, d)
@@ -4207,11 +4319,13 @@ class Graph:
                 sv = dic[subj]
                 ev = dic[obj]
                 e = Edge.ByVertices([sv,ev], tolerance=tolerance)
-                d = Dictionary.ByKeyValue("type", predicate)
+                src = Vertex.Index(sv, vertices)
+                dst = Vertex.Index(ev, vertices)
+                d = Dictionary.ByKeyValue(["type", "src", "dst"], [predicate, src, dst])
                 e = Topology.SetDictionary(e, d)
                 edges.append(e)
 
-        return Graph.ByVerticesEdges(vertices, edges)
+        return Graph.ByVerticesEdges(vertices, edges, index=False)
 
     @staticmethod
     def ByBOTPath(path,
@@ -4479,8 +4593,8 @@ class Graph:
                     except:
                         feat_vals.append(0.0)
 
-                node_keys = [nodeIDHeader, nodeLabelHeader, "mask"] + node_feat_keys
-                node_vals = [node_id, v_label, mask] + feat_vals
+                node_keys = ["index", nodeIDHeader, nodeLabelHeader, "mask"] + node_feat_keys
+                node_vals = [node_id, node_id, v_label, mask] + feat_vals
                 d = Dictionary.ByKeysValues(node_keys, node_vals)
                 if Topology.IsInstance(d, "Dictionary"):
                     v = Topology.SetDictionary(v, d)
@@ -4535,8 +4649,8 @@ class Graph:
                     except:
                         feat_vals.append(0.0)
 
-                edge_keys = [edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, "mask"] + edge_feat_keys
-                edge_vals = [src_id, dst_id, e_label, mask] + feat_vals
+                edge_keys = ["src", "dst", edgeSRCHeader, edgeDSTHeader, edgeLabelHeader, "mask"] + edge_feat_keys
+                edge_vals = [src_id, dst_id, src_id, dst_id, e_label, mask] + feat_vals
                 d = Dictionary.ByKeysValues(edge_keys, edge_vals)
                 if Topology.IsInstance(d, "Dictionary"):
                     e = Topology.SetDictionary(e, d)
@@ -4563,7 +4677,7 @@ class Graph:
                 _warn(f"Graph.ByCSVPath - Warning: Graph id {gid} has no vertices. Skipping.")
                 continue
 
-            g = Graph.ByVerticesEdges(verts, eds)
+            g = Graph.ByVerticesEdges(verts, eds, index=False)
             if not Topology.IsInstance(g, "Graph"):
                 _warn(f"Graph.ByCSVPath - Warning: Failed to create graph id {gid}. Skipping.")
                 continue
@@ -5143,6 +5257,10 @@ class Graph:
         for i, v in enumerate(vertices):
             vd = vertexDictionaries[i]
             name_to_vertex[vd[vertexKey]] = v
+            # Set the index value
+            d = Topology.Dictionary(v)
+            d = Dictionary.SetValueAtKey(d, "index", i)
+            v = Topology.SetDictionary(v, d)
 
         # Create adjacency edges (undirected: one edge per pair)
         edges = []
@@ -5162,45 +5280,1119 @@ class Graph:
                 if not silent:
                     print(f"Graph.ByDictionaries - Warning: vertex '{b}' is missing. Could not create an edge between '{a}' and '{b}'.")
                 continue
-            e = Edge.ByStartVertexEndVertex(va, vb, silent=True)
+            i_a = Dictionary.ValueAtKey(Vertex.Dictionary(va), "index")
+            i_b = Dictionary.ValueAtKey(Vertex.Dictionary(vb), "index")
+            
+            
             if not e:
                 if not silent:
                     print(f"Graph.ByDictionaries - Warning: Could not create an edge between '{a}' and '{b}'. Check if the distance betwen '{a}' and '{b}' is kess than the input tolerance.")
                 continue
+            d = Dictionary.ByKeysValues(["src", "dst"], [i_a, i_b])
+            e = Edge.ByStartVertexEndVertex(va, vb, silent=True)
+            e = Topology.SetDictionary(e, d)
             edges.append(e)
         # Build graph
-        g = Graph.ByVerticesEdges(vertices, edges)
+        g = Graph.ByVerticesEdges(vertices, edges, index=False)
 
         # Attach graph-level metadata
         if graphDictionary:
             _set_dict(g, graphDictionary)
         return g
 
+    # @staticmethod
+    # def ByIFCFile(file,
+    #               importMode: str = "topology",
+    #               clean: bool = False,
+    #               storeBREP: bool = False,
+    #               useInternalVertex: bool = False,
+    #               includeTypes: list = None,
+    #               excludeTypes: list = None,
+    #               includeRels: list = None,
+    #               excludeRels: list = None,
+    #               dictionaryMode: str = "basic",
+    #               xMin: float = -0.5,
+    #               yMin: float = -0.5,
+    #               zMin: float = -0.5,
+    #               xMax: float = 0.5,
+    #               yMax: float = 0.5,
+    #               zMax: float = 0.5,
+    #               vertexColorKey = "color",
+    #               edgeColorKey = "color",
+    #               colorScale = "viridis",
+    #               epsilon: float = 0.01,
+    #               angTolerance: float = 0.1,
+    #               tolerance: float = 0.0001,
+    #               silent: bool = False,
+    #              ):
+    #     """
+    #     Creates a Graph from an IFC file.
+
+    #     Supported relationship extraction is convention-based and includes IFC
+    #     relationships with Relating* and Related* attributes, including but not
+    #     limited to:
+
+    #     - IfcRelConnectsPorts
+    #     - IfcRelConnectsPortToElement
+    #     - IfcRelAggregates
+    #     - IfcRelNests
+    #     - IfcRelAssignsToGroup
+    #     - IfcRelConnectsPathElements
+    #     - IfcRelConnectsStructuralMember
+    #     - IfcRelContainedInSpatialStructure
+    #     - IfcRelFillsElement
+    #     - IfcRelSpaceBoundary
+    #     - IfcRelVoidsElement
+    #     - IfcRelDefinesByProperties
+    #     - IfcRelAssociatesMaterial
+    #     - IfcRelDefinesByType
+
+    #     Parameters
+    #     ----------
+    #     file : ifcopenshell.file or str
+    #         The input IFC file object or path to an IFC file.
+    #     importMode : str , optional
+    #         Import mode. Options are:
+    #         - "topology": build representative vertices directly from IFC entities.
+    #         - "geometry": build representative vertices from imported Topologic geometry.
+    #         Default is "topology".
+    #     clean : bool , optional
+    #         If set to True, coplanar faces and collinear edges are removed.
+    #         Default is False.
+    #     storeBREP : bool , optional
+    #         In geometry mode, if set to True, stores the BREP of the element in its
+    #         representative vertex dictionary under the key "BREP". Default is False.
+    #     useInternalVertex : bool , optional
+    #         In geometry mode, if set to True, uses an internal vertex to represent
+    #         the subtopology. Otherwise, uses its centroid. Default is False.
+    #     includeTypes : list , optional
+    #         A list of IFC entity types to include as primary graph vertices.
+    #         Default is None, which means all supported object types are included.
+    #     excludeTypes : list , optional
+    #         A list of IFC entity types to exclude from the graph.
+    #         Default is None.
+    #     includeRels : list , optional
+    #         A list of IFC relationship types to include.
+    #         Default is None, which means all relationship types are included.
+    #     excludeRels : list , optional
+    #         A list of IFC relationship types to exclude.
+    #         Default is None.
+    #     dictionaryMode : str , optional
+    #         Options are "none", "basic", or "psets". Default is "basic".
+    #     xMin : float , optional
+    #         Desired minimum X coordinate for topology layout. Default is -0.5.
+    #     yMin : float , optional
+    #         Desired minimum Y coordinate for topology layout. Default is -0.5.
+    #     zMin : float , optional
+    #         Desired minimum Z coordinate for topology layout. Default is -0.5.
+    #     xMax : float , optional
+    #         Desired maximum X coordinate for topology layout. Default is 0.5.
+    #     yMax : float , optional
+    #         Desired maximum Y coordinate for topology layout. Default is 0.5.
+    #     zMax : float , optional
+    #         Desired maximum Z coordinate for topology layout. Default is 0.5.
+    #     vertexColorKey : str , optional
+    #         The desired vertex dictionary key name under which to store the calculated color. Default is "color"
+    #     edgeColorKey : str , optional
+    #         The desired edge dictionary key name under which to store the calculated color. Default is "color"
+    #     colorScale : str , optional
+    #         The desired colorscale name to use for colors. The default is "viridis".
+    #     epsilon : float , optional
+    #         Desired tolerance for removing coplanar faces. Default is 0.01.
+    #     angTolerance : float , optional
+    #         Angular tolerance removing collinear edges. Default is 0.1.
+    #     tolerance : float , optional
+    #         Desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+        
+
+    #     Returns
+    #     -------
+    #     topologic_core.Graph
+    #         The created graph.
+    #     """
+
+    #     import math
+
+    #     from topologicpy.Graph import Graph
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.IFC import IFC
+    #     from topologicpy.Color import Color
+
+    #     try:
+    #         from topologicpy.Edge import Edge
+    #     except Exception:
+    #         Edge = None
+
+    #     # Check colorscale is legitimate before proceeding
+    #     color_scales = ['aggrnyl', 'agsunset', 'algae', 'amp', 'armyrose', 'balance',
+    #          'blackbody', 'bluered', 'blues', 'blugrn', 'bluyl', 'brbg',
+    #          'brwnyl', 'bugn', 'bupu', 'burg', 'burgyl', 'cividis', 'curl',
+    #          'darkmint', 'deep', 'delta', 'dense', 'earth', 'edge', 'electric',
+    #          'emrld', 'fall', 'geyser', 'gnbu', 'gray', 'greens', 'greys',
+    #          'haline', 'hot', 'hsv', 'ice', 'icefire', 'inferno', 'jet',
+    #          'magenta', 'magma', 'matter', 'mint', 'mrybm', 'mygbm', 'oranges',
+    #          'orrd', 'oryel', 'oxy', 'peach', 'phase', 'picnic', 'pinkyl',
+    #          'piyg', 'plasma', 'plotly3', 'portland', 'prgn', 'pubu', 'pubugn',
+    #          'puor', 'purd', 'purp', 'purples', 'purpor', 'rainbow', 'rdbu',
+    #          'rdgy', 'rdpu', 'rdylbu', 'rdylgn', 'redor', 'reds', 'solar',
+    #          'spectral', 'speed', 'sunset', 'sunsetdark', 'teal', 'tealgrn',
+    #          'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
+    #          'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
+    #          'ylorrd']
+    #     color_scales_r = [s+"_r" for s in color_scales]
+    #     color_scales += color_scales_r
+    #     if not isinstance(colorScale, str):
+    #         colorScale = "viridis"
+    #     colorScale = colorScale.lower()
+    #     if colorScale not in color_scales:
+    #         if not silent:
+    #             print(f"Graph.ByIFCFile - Error: Unknown Plotly colorscale ({colorScale}). Choose one of {color_scales}.Returning None.")
+    #         return None
+
+    #     # -------------------------------------------------------------------------
+    #     # Input normalisation
+    #     # -------------------------------------------------------------------------
+
+    #     includeTypes = includeTypes or []
+    #     excludeTypes = excludeTypes or []
+    #     includeRels = includeRels or []
+    #     excludeRels = excludeRels or []
+
+    #     importMode = (importMode or "topology").lower().strip()
+
+    #     if importMode not in ["geometry", "topology"]:
+    #         if not silent:
+    #             print(f"Graph.ByIFCFile - Warning: Unsupported mode '{importMode}'. Falling back to 'topology'.")
+    #         importMode = "topology"
+
+    #     # Allow either an ifcopenshell.file object or a file path.
+    #     if isinstance(file, str):
+    #         try:
+    #             import ifcopenshell
+    #             file = ifcopenshell.open(file)
+    #         except Exception as e:
+    #             if not silent:
+    #                 print(f"Graph.ByIFCFile - Error: Could not open IFC file. {e} Returning None.")
+    #             return None
+
+    #     if file is None:
+    #         if not silent:
+    #             print("Graph.ByIFCFile - Error: The input file is None. Returning None.")
+    #         return None
+
+    #     include_type_set = {str(s).lower() for s in includeTypes}
+    #     exclude_type_set = {str(s).lower() for s in excludeTypes}
+    #     include_rel_set = {str(s).lower() for s in includeRels}
+    #     exclude_rel_set = {str(s).lower() for s in excludeRels}
+
+    #     # -------------------------------------------------------------------------
+    #     # Basic IFC helpers
+    #     # -------------------------------------------------------------------------
+
+    #     def _entity_global_id(entity):
+    #         try:
+    #             gid = getattr(entity, "GlobalId", None)
+    #             return gid if gid not in ["", None] else None
+    #         except Exception:
+    #             return None
+
+    #     def _entity_type(entity):
+    #         try:
+    #             return entity.is_a()
+    #         except Exception:
+    #             return None
+
+    #     def _entity_name(entity):
+    #         try:
+    #             name = getattr(entity, "Name", None)
+    #             return name if name not in ["", None] else None
+    #         except Exception:
+    #             return None
+
+    #     def _entity_id(entity):
+    #         try:
+    #             return entity.id()
+    #         except Exception:
+    #             return None
+
+    #     def _entity_key(entity):
+    #         """
+    #         Returns a stable key for any IFC entity.
+
+    #         Preference:
+    #         1. GlobalId
+    #         2. STEP id fallback, encoded as "#123"
+    #         """
+
+    #         gid = _entity_global_id(entity)
+    #         if gid:
+    #             return str(gid)
+
+    #         eid = _entity_id(entity)
+    #         if eid is not None:
+    #             try:
+    #                 return f"#{int(eid)}"
+    #             except Exception:
+    #                 return f"#{eid}"
+
+    #         return None
+
+    #     def _passes_type_filter(entity, include_set=None, exclude_set=None):
+    #         include_set = include_set if include_set is not None else include_type_set
+    #         exclude_set = exclude_set if exclude_set is not None else exclude_type_set
+
+    #         et = _entity_type(entity)
+    #         if not et:
+    #             return False
+
+    #         et_l = et.lower()
+
+    #         if et_l in exclude_set:
+    #             return False
+
+    #         if include_set and et_l not in include_set:
+    #             return False
+
+    #         return True
+
+    #     def _dictionary_from_ifc_entity(entity):
+    #         keys = []
+    #         values = []
+
+    #         gid = _entity_global_id(entity)
+    #         if gid is not None:
+    #             keys.append("IFC_global_id")
+    #             values.append(gid)
+
+    #         eid = _entity_id(entity)
+    #         if eid is not None:
+    #             keys.append("IFC_id")
+    #             values.append(eid)
+
+    #         key = _entity_key(entity)
+    #         if key is not None:
+    #             keys.append("IFC_key")
+    #             values.append(key)
+
+    #         ename = _entity_name(entity)
+    #         if ename is not None:
+    #             keys.append("IFC_name")
+    #             values.append(ename)
+
+    #         etype = _entity_type(entity)
+    #         if etype is not None:
+    #             keys.append("IFC_type")
+    #             values.append(etype)
+
+    #         try:
+    #             return Dictionary.ByKeysValues(keys, values)
+    #         except Exception:
+    #             return None
+
+    #     def _relationship_dictionary(ifc_rel):
+    #         keys = []
+    #         values = []
+
+    #         try:
+    #             rel_gid = getattr(ifc_rel, "GlobalId", None)
+    #         except Exception:
+    #             rel_gid = None
+
+    #         try:
+    #             rel_id = ifc_rel.id()
+    #         except Exception:
+    #             rel_id = None
+
+    #         try:
+    #             rel_name = getattr(ifc_rel, "Name", None)
+    #         except Exception:
+    #             rel_name = None
+
+    #         try:
+    #             rel_type = ifc_rel.is_a()
+    #         except Exception:
+    #             rel_type = None
+
+    #         if rel_gid is not None:
+    #             keys.append("IFC_global_id")
+    #             values.append(rel_gid)
+
+    #         if rel_id is not None:
+    #             keys.append("IFC_id")
+    #             values.append(rel_id)
+
+    #         if rel_name is not None:
+    #             keys.append("IFC_name")
+    #             values.append(rel_name)
+
+    #         if rel_type is not None:
+    #             keys.append("IFC_type")
+    #             values.append(rel_type)
+
+    #         try:
+    #             return Dictionary.ByKeysValues(keys, values)
+    #         except Exception:
+    #             return None
+
+    #     # -------------------------------------------------------------------------
+    #     # Relationship extraction
+    #     # -------------------------------------------------------------------------
+
+    #     def _relationship_endpoints(ifc_rel):
+    #         """
+    #         Returns relationship endpoints using the IFC Relating*/Related* pattern.
+
+    #         Returns
+    #         -------
+    #         tuple
+    #             (source_entity, destination_entities)
+    #         """
+
+    #         if ifc_rel is None:
+    #             return None, []
+
+    #         try:
+    #             rel_type = ifc_rel.is_a()
+    #         except Exception:
+    #             return None, []
+
+    #         # Important special case: singular RelatedPort, not RelatedPorts.
+    #         if rel_type == "IfcRelConnectsPorts":
+    #             src = getattr(ifc_rel, "RelatingPort", None)
+    #             dst = getattr(ifc_rel, "RelatedPort", None)
+    #             return src, [dst] if dst is not None else []
+
+    #         # Robust generic IFC pattern.
+    #         try:
+    #             info = ifc_rel.get_info()
+    #             attr_names = list(info.keys())
+    #         except Exception:
+    #             attr_names = []
+
+    #         relating_attrs = []
+    #         related_attrs = []
+
+    #         for attr_name in attr_names:
+    #             if not isinstance(attr_name, str):
+    #                 continue
+
+    #             if attr_name.startswith("Relating"):
+    #                 relating_attrs.append(attr_name)
+    #             elif attr_name.startswith("Related"):
+    #                 related_attrs.append(attr_name)
+
+    #         source = None
+
+    #         for attr_name in relating_attrs:
+    #             try:
+    #                 value = getattr(ifc_rel, attr_name, None)
+    #             except Exception:
+    #                 value = None
+
+    #             if value is not None:
+    #                 source = value
+    #                 break
+
+    #         destinations = []
+
+    #         for attr_name in related_attrs:
+    #             try:
+    #                 value = getattr(ifc_rel, attr_name, None)
+    #             except Exception:
+    #                 value = None
+
+    #             if value is None:
+    #                 continue
+
+    #             if isinstance(value, (list, tuple)):
+    #                 destinations.extend([v for v in value if v is not None])
+    #             else:
+    #                 destinations.append(value)
+
+    #         return source, destinations
+
+    #     def _get_relationships(ifc_file):
+    #         relationships = []
+
+    #         try:
+    #             rels = ifc_file.by_type("IfcRelationship")
+    #         except Exception:
+    #             rels = []
+
+    #         for rel in rels:
+    #             try:
+    #                 rel_type = rel.is_a()
+    #                 rel_type_l = rel_type.lower()
+    #             except Exception:
+    #                 continue
+
+    #             if rel_type_l in exclude_rel_set:
+    #                 continue
+
+    #             if include_rel_set and rel_type_l not in include_rel_set:
+    #                 continue
+
+    #             relationships.append(rel)
+
+    #         return relationships
+
+    #     def _is_vertex_candidate(entity):
+    #         """
+    #         Returns True if the IFC entity can reasonably be represented as a graph vertex.
+    #         """
+
+    #         if entity is None:
+    #             return False
+
+    #         et = _entity_type(entity)
+    #         if not et:
+    #             return False
+
+    #         # If it has a GlobalId, it is usually safe and useful to represent.
+    #         if _entity_global_id(entity):
+    #             return True
+
+    #         # Important useful IFC entities often do not have GlobalIds.
+    #         allowed_without_guid = {
+    #             "IfcMaterial",
+    #             "IfcMaterialLayer",
+    #             "IfcMaterialLayerSet",
+    #             "IfcMaterialLayerSetUsage",
+    #             "IfcMaterialProfile",
+    #             "IfcMaterialProfileSet",
+    #             "IfcMaterialProfileSetUsage",
+    #             "IfcMaterialConstituent",
+    #             "IfcMaterialConstituentSet",
+    #             "IfcMaterialList",
+    #             "IfcPropertySingleValue",
+    #             "IfcPropertyEnumeratedValue",
+    #             "IfcPropertyListValue",
+    #             "IfcPropertyTableValue",
+    #             "IfcPropertyBoundedValue",
+    #             "IfcPropertyReferenceValue",
+    #             "IfcPhysicalQuantity",
+    #             "IfcQuantityArea",
+    #             "IfcQuantityCount",
+    #             "IfcQuantityLength",
+    #             "IfcQuantityNumber",
+    #             "IfcQuantityTime",
+    #             "IfcQuantityVolume",
+    #             "IfcQuantityWeight",
+    #             "IfcRepresentationMap",
+    #             "IfcClassification",
+    #             "IfcClassificationReference",
+    #             "IfcExternalReference",
+    #             "IfcDocumentReference",
+    #             "IfcLibraryReference",
+    #         }
+
+    #         if et in allowed_without_guid:
+    #             return True
+
+    #         return False
+
+    #     # -------------------------------------------------------------------------
+    #     # Synthetic layout
+    #     # -------------------------------------------------------------------------
+
+    #     def _synthetic_coordinates(index, total_count):
+    #         """
+    #         Deterministic topology layout.
+
+    #         Places vertices on a regular 2D grid spanning [xMin, xMax] x [yMin, yMax].
+    #         Z is set to zMin.
+    #         """
+
+    #         if total_count <= 1:
+    #             return (
+    #                 0.5 * (xMin + xMax),
+    #                 0.5 * (yMin + yMax),
+    #                 zMin
+    #             )
+
+    #         cols = max(1, int(math.ceil(math.sqrt(total_count))))
+    #         rows = max(1, int(math.ceil(float(total_count) / float(cols))))
+
+    #         col = index % cols
+    #         row = index // cols
+
+    #         x = xMin if cols == 1 else xMin + (float(col) / float(cols - 1)) * (xMax - xMin)
+    #         y = yMin if rows == 1 else yMin + (float(row) / float(rows - 1)) * (yMax - yMin)
+    #         z = zMin
+
+    #         return x, y, z
+
+    #     # -------------------------------------------------------------------------
+    #     # Topology mode
+    #     # -------------------------------------------------------------------------
+
+    #     def _collect_topology_entities():
+    #         """
+    #         Collects graph vertices from:
+    #         1. Primary IFC object-like entities.
+    #         2. All relationship endpoints.
+
+    #         Relationship endpoints are deliberately collected even when includeTypes
+    #         is narrow. Otherwise, for example, IfcWallStandardCase nodes cannot be
+    #         connected to storeys, spaces, openings, materials, types, or property sets.
+    #         """
+
+    #         entity_by_key = {}
+
+    #         def _add_entity(entity, respect_include_filter=True):
+    #             if not _is_vertex_candidate(entity):
+    #                 return
+
+    #             et = _entity_type(entity)
+    #             if et and et.lower() in exclude_type_set:
+    #                 return
+
+    #             if respect_include_filter:
+    #                 if not _passes_type_filter(entity):
+    #                     return
+
+    #             key = _entity_key(entity)
+    #             if key is None:
+    #                 return
+
+    #             entity_by_key[key] = entity
+
+    #         primary_types = [
+    #             "IfcObjectDefinition",
+    #             "IfcObject",
+    #             "IfcProduct",
+    #             "IfcElement",
+    #             "IfcSpatialElement",
+    #             "IfcSpatialStructureElement",
+    #             "IfcPort",
+    #             "IfcGroup",
+    #             "IfcSystem",
+    #             "IfcTypeObject",
+    #             "IfcElementType",
+    #         ]
+
+    #         for t in primary_types:
+    #             try:
+    #                 for entity in file.by_type(t):
+    #                     _add_entity(entity, respect_include_filter=True)
+    #             except Exception:
+    #                 continue
+
+    #         relationships = _get_relationships(file)
+
+    #         for ifc_rel in relationships:
+    #             source, destinations = _relationship_endpoints(ifc_rel)
+
+    #             if source is not None:
+    #                 _add_entity(source, respect_include_filter=False)
+
+    #             for destination in destinations or []:
+    #                 _add_entity(destination, respect_include_filter=False)
+
+    #         return list(entity_by_key.values())
+    
+    #     def _add_key_aliases(key_to_index, index, entity=None, gid=None, step_id=None, explicit_key=None):
+    #         """
+    #         Adds all common key variants for one IFC entity to key_to_index.
+    #         This keeps GlobalId-based and STEP-id-based lookups equivalent.
+    #         """
+
+    #         keys = []
+
+    #         if explicit_key is not None:
+    #             keys.append(str(explicit_key))
+
+    #         if entity is not None:
+    #             try:
+    #                 e_key = _entity_key(entity)
+    #                 if e_key is not None:
+    #                     keys.append(str(e_key))
+    #             except Exception:
+    #                 pass
+
+    #             try:
+    #                 e_gid = _entity_global_id(entity)
+    #                 if e_gid:
+    #                     keys.append(str(e_gid))
+    #             except Exception:
+    #                 pass
+
+    #             try:
+    #                 e_step_id = _entity_id(entity)
+    #                 if e_step_id is not None:
+    #                     keys.append(str(e_step_id))
+    #                     keys.append(f"#{e_step_id}")
+    #             except Exception:
+    #                 pass
+
+    #         if gid:
+    #             keys.append(str(gid))
+
+    #         if step_id is not None:
+    #             keys.append(str(step_id))
+    #             keys.append(f"#{step_id}")
+
+    #         for key in keys:
+    #             if key:
+    #                 key_to_index[key] = index
+
+    #         return key_to_index
+
+    #     def _dictionary_value(dictionary, key, default=None):
+    #         try:
+    #             return Dictionary.ValueAtKey(dictionary, key, default)
+    #         except TypeError:
+    #             try:
+    #                 value = Dictionary.ValueAtKey(dictionary, key)
+    #                 return default if value is None else value
+    #             except Exception:
+    #                 return default
+    #         except Exception:
+    #             return default
+
+    #     def _dictionary_from_topology(topology):
+    #         try:
+    #             return Topology.Dictionary(topology)
+    #         except Exception:
+    #             return None
+
+    #     def _topology_entity_key(topology):
+    #         """
+    #         Returns the IFC key encoded in a topology dictionary.
+    #         """
+
+    #         td = _dictionary_from_topology(topology)
+    #         if td is None:
+    #             return None, None, None
+
+    #         gid = _dictionary_value(td, "IFC_global_id", None)
+    #         step_id = _dictionary_value(td, "IFC_id", None)
+    #         explicit_key = _dictionary_value(td, "IFC_key", None)
+
+    #         key = None
+    #         if explicit_key not in [None, "", 0, "0"]:
+    #             key = str(explicit_key)
+    #         elif gid not in [None, "", 0, "0"]:
+    #             key = str(gid)
+    #         elif step_id not in [None, "", 0, "0"]:
+    #             key = f"#{step_id}"
+
+    #         return key, gid, step_id
+
+    #     def _collect_graph_entities():
+    #         """
+    #         Collects the canonical IFC entity set used by both topology and geometry modes.
+
+    #         This is the key isomorphism guarantee: both modes see the same vertices
+    #         and the same relationship endpoints. The only difference is coordinate
+    #         assignment: topology mode uses synthetic coordinates, while geometry mode
+    #         replaces coordinates for entities with successfully imported geometry.
+    #         """
+
+    #         entity_by_key = {}
+
+    #         def _add_entity(entity, respect_include_filter=True):
+    #             if not _is_vertex_candidate(entity):
+    #                 return
+
+    #             et = _entity_type(entity)
+    #             if et and et.lower() in exclude_type_set:
+    #                 return
+
+    #             if respect_include_filter and not _passes_type_filter(entity):
+    #                 return
+
+    #             key = _entity_key(entity)
+    #             if key is None:
+    #                 return
+
+    #             if key not in entity_by_key:
+    #                 entity_by_key[key] = entity
+
+    #         primary_types = [
+    #             "IfcObjectDefinition",
+    #             "IfcObject",
+    #             "IfcProduct",
+    #             "IfcElement",
+    #             "IfcSpatialElement",
+    #             "IfcSpatialStructureElement",
+    #             "IfcPort",
+    #             "IfcGroup",
+    #             "IfcSystem",
+    #             "IfcTypeObject",
+    #             "IfcElementType",
+    #         ]
+
+    #         for t in primary_types:
+    #             try:
+    #                 for entity in file.by_type(t):
+    #                     _add_entity(entity, respect_include_filter=True)
+    #             except Exception:
+    #                 continue
+
+    #         for ifc_rel in _get_relationships(file):
+    #             source, destinations = _relationship_endpoints(ifc_rel)
+
+    #             if source is not None:
+    #                 _add_entity(source, respect_include_filter=False)
+
+    #             for destination in destinations or []:
+    #                 _add_entity(destination, respect_include_filter=False)
+
+    #         return list(entity_by_key.values())
+
+    #     def _initialise_mesh_data_from_entities(entities):
+    #         """
+    #         Creates the canonical mesh-data vertex arrays from IFC entities.
+    #         """
+
+    #         vertices = []
+    #         vertex_dictionaries = []
+    #         key_to_index = {}
+
+    #         total_count = max(len(entities), 1)
+
+    #         for i, entity in enumerate(entities):
+    #             key = _entity_key(entity)
+    #             if key is None:
+    #                 continue
+
+    #             x, y, z = _synthetic_coordinates(i, total_count)
+
+    #             try:
+    #                 v = Vertex.ByCoordinates(x, y, z)
+    #             except Exception:
+    #                 if not silent:
+    #                     print(f"Graph.ByIFCFile - Warning: Could not create a representative vertex for entity {key}. Skipping.")
+    #                 continue
+
+    #             d = _dictionary_from_ifc_entity(entity)
+
+    #             if d is not None:
+    #                 try:
+    #                     v = Topology.SetDictionary(v, d)
+    #                 except Exception:
+    #                     pass
+
+    #             index = len(vertices)
+    #             vertices.append(Vertex.Coordinates(v))
+    #             vertex_dictionaries.append(d)
+    #             _add_key_aliases(key_to_index, index, entity=entity, explicit_key=key)
+
+    #         return vertices, vertex_dictionaries, key_to_index
+
+    #     def _add_missing_entity_vertex(entity, vertices, vertex_dictionaries, key_to_index):
+    #         """
+    #         Adds a deterministic synthetic vertex for an endpoint not already in the
+    #         canonical entity set. This should be rare because relationship endpoints
+    #         are collected up front, but it makes the function robust to unusual IFCs.
+    #         """
+
+    #         key = _entity_key(entity)
+    #         if key is None:
+    #             return None
+
+    #         index = key_to_index.get(key)
+    #         if index is not None:
+    #             return index
+
+    #         x, y, z = _synthetic_coordinates(len(vertices), len(vertices) + 1)
+
+    #         try:
+    #             v = Vertex.ByCoordinates(x, y, z)
+    #         except Exception:
+    #             return None
+
+    #         d = _dictionary_from_ifc_entity(entity)
+    #         if d is not None:
+    #             try:
+    #                 v = Topology.SetDictionary(v, d)
+    #             except Exception:
+    #                 pass
+
+    #         try:
+    #             coords = Vertex.Coordinates(v)
+    #         except Exception:
+    #             coords = [x, y, z]
+
+    #         index = len(vertices)
+    #         vertices.append(coords)
+    #         vertex_dictionaries.append(d)
+    #         _add_key_aliases(key_to_index, index, entity=entity, explicit_key=key)
+
+    #         return index
+
+    #     def _apply_geometry_coordinates(vertices, vertex_dictionaries, key_to_index):
+    #         """
+    #         Replaces synthetic coordinates with centroid/internal-vertex coordinates
+    #         for IFC entities that were successfully imported as Topologic geometry.
+    #         The vertex set itself is not changed, preserving graph isomorphism with
+    #         topology mode.
+    #         """
+
+    #         topologies = IFC.TopologiesByFile(file,
+    #                                 includeTypes=includeTypes,
+    #                                 excludeTypes=excludeTypes,
+    #                                 dictionaryMode=dictionaryMode,
+    #                                 clean=clean,
+    #                                 epsilon=epsilon,
+    #                                 angTolerance=angTolerance,
+    #                                 tolerance=tolerance,
+    #                                 silent=silent)
+
+    #         if not isinstance(topologies, list):
+    #             topologies = [topologies]
+
+    #         for topology in topologies:
+    #             if not Topology.IsInstance(topology, "Topology"):
+    #                 continue
+
+    #             key, gid, step_id = _topology_entity_key(topology)
+    #             if key is None:
+    #                 continue
+
+    #             index = key_to_index.get(key)
+    #             if index is None:
+    #                 index = len(vertices)
+    #                 vertices.append(None)
+    #                 vertex_dictionaries.append(None)
+    #                 _add_key_aliases(key_to_index, index, gid=gid, step_id=step_id, explicit_key=key)
+
+    #             try:
+    #                 v = Topology.InternalVertex(topology) if useInternalVertex else Topology.Centroid(topology)
+    #             except Exception:
+    #                 v = None
+
+    #             if not Topology.IsInstance(v, "Vertex"):
+    #                 if not silent:
+    #                     print(f"Graph.ByIFCFile - Warning: Could not create a geometry-mode representative vertex for entity {key}. Keeping synthetic coordinates.")
+    #                 continue
+
+    #             td = _dictionary_from_topology(topology)
+
+    #             if storeBREP:
+    #                 try:
+    #                     td = Dictionary.SetValueAtKey(td, "BREP", Topology.BREPString(topology))
+    #                 except Exception:
+    #                     if not silent:
+    #                         print("Graph.ByIFCFile - Warning: Could not store BREP string for one topology. Continuing.")
+
+    #             if td is not None:
+    #                 try:
+    #                     v = Topology.SetDictionary(v, td)
+    #                 except Exception:
+    #                     pass
+
+    #             try:
+    #                 vertices[index] = Vertex.Coordinates(v)
+    #             except Exception:
+    #                 if not silent:
+    #                     print(f"Graph.ByIFCFile - Warning: Could not extract geometry-mode coordinates for entity {key}. Keeping synthetic coordinates.")
+    #                 continue
+
+    #             if td is not None:
+    #                 vertex_dictionaries[index] = td
+
+    #             _add_key_aliases(key_to_index, index, gid=gid, step_id=step_id, explicit_key=key)
+
+    #         for i, coords in enumerate(vertices):
+    #             if coords is None:
+    #                 vertices[i] = list(_synthetic_coordinates(i, max(len(vertices), 1)))
+
+    #         return vertices, vertex_dictionaries, key_to_index
+
+    #     def _build_edges_from_relationships(vertices, vertex_dictionaries, key_to_index):
+    #         """
+    #         Builds edge index pairs from IFC relationships. Used by both import modes.
+    #         """
+
+    #         edges = []
+    #         edge_dictionaries = []
+    #         seen_edges = set()
+
+    #         for ifc_rel in _get_relationships(file):
+    #             source, destinations = _relationship_endpoints(ifc_rel)
+
+    #             if source is None or not destinations:
+    #                 continue
+
+    #             source_key = _entity_key(source)
+    #             if source_key is None:
+    #                 continue
+
+    #             si = key_to_index.get(source_key)
+    #             if si is None:
+    #                 si = _add_missing_entity_vertex(source, vertices, vertex_dictionaries, key_to_index)
+
+    #             if si is None:
+    #                 if not silent:
+    #                     try:
+    #                         rel_label = f"{ifc_rel.is_a()} #{ifc_rel.id()}"
+    #                     except Exception:
+    #                         rel_label = str(ifc_rel)
+    #                     print(f"Graph.ByIFCFile - Warning: Source endpoint not found as graph vertex. Relationship: {rel_label}.")
+    #                 continue
+
+    #             rel_dict = _relationship_dictionary(ifc_rel)
+
+    #             try:
+    #                 rel_type = ifc_rel.is_a()
+    #             except Exception:
+    #                 rel_type = "IfcRelationship"
+
+    #             for destination in destinations:
+    #                 if destination is None:
+    #                     continue
+
+    #                 dest_key = _entity_key(destination)
+    #                 if dest_key is None:
+    #                     continue
+
+    #                 ei = key_to_index.get(dest_key)
+    #                 if ei is None:
+    #                     ei = _add_missing_entity_vertex(destination, vertices, vertex_dictionaries, key_to_index)
+
+    #                 if ei is None:
+    #                     if not silent:
+    #                         try:
+    #                             rel_label = f"{ifc_rel.is_a()} #{ifc_rel.id()}"
+    #                         except Exception:
+    #                             rel_label = str(ifc_rel)
+    #                         print(f"Graph.ByIFCFile - Warning: Destination endpoint not found as graph vertex. Relationship: {rel_label}.")
+    #                     continue
+
+    #                 if si == ei:
+    #                     continue
+
+    #                 edge_key = (si, ei, rel_type)
+    #                 if edge_key in seen_edges:
+    #                     continue
+
+    #                 seen_edges.add(edge_key)
+    #                 edges.append([si, ei])
+    #                 edge_dictionaries.append(rel_dict)
+
+    #         return edges, edge_dictionaries
+
+    #     def _get_mesh_data_by_mode(mode):
+    #         """
+    #         Unified IFC graph construction path.
+    #         """
+
+    #         entities = _collect_graph_entities()
+    #         vertices, vertex_dictionaries, key_to_index = _initialise_mesh_data_from_entities(entities)
+
+    #         if mode == "geometry":
+    #             vertices, vertex_dictionaries, key_to_index = _apply_geometry_coordinates(
+    #                 vertices,
+    #                 vertex_dictionaries,
+    #                 key_to_index,
+    #             )
+
+    #         edges, edge_dictionaries = _build_edges_from_relationships(
+    #             vertices,
+    #             vertex_dictionaries,
+    #             key_to_index,
+    #         )
+
+    #         return vertices, edges, vertex_dictionaries, edge_dictionaries
+
+    #     # -------------------------------------------------------------------------
+    #     # Execute
+    #     # -------------------------------------------------------------------------
+
+    #     vertices, edges, vertex_dictionaries, edge_dictionaries = _get_mesh_data_by_mode(importMode)
+        
+    #     # Assign the colors:
+    #     element_types  = IFC.ElementTypes(file, includeCounts = False, silent = silent)
+    #     element_types = [e_t.lower() for e_t in element_types]
+    #     rel_types = IFC.RelationshipTypes(file, includeCounts = False, silent = False)
+    #     rel_types = [r.lower() for r in rel_types]
+
+    #     v_dicts = []
+    #     for v_d in vertex_dictionaries:
+    #         if v_d is None:
+    #             try:
+    #                 v_d = Dictionary.ByKeysValues([], [])
+    #             except Exception:
+    #                 v_d = None
+    #         ifc_type = _dictionary_value(v_d, "IFC_type", "Unknown")
+    #         ifc_type = str(ifc_type).lower() if ifc_type is not None else "unknown"
+    #         try:
+    #             index = element_types.index(ifc_type)
+    #         except Exception:
+    #             index = 0
+    #         maxValue = max(len(element_types) - 1, 1)
+    #         vertexColor = Color.AnyToHex(Color.ByValueInRange(index, minValue=0, maxValue=maxValue, colorScale=colorScale))
+    #         try:
+    #             v_d = Dictionary.SetValueAtKey(v_d, vertexColorKey, vertexColor)
+    #         except Exception:
+    #             pass
+    #         v_dicts.append(v_d)
+        
+    #     e_dicts = []
+    #     for e_d in edge_dictionaries:
+    #         if e_d is None:
+    #             try:
+    #                 e_d = Dictionary.ByKeysValues([], [])
+    #             except Exception:
+    #                 e_d = None
+    #         ifc_rel = _dictionary_value(e_d, "IFC_type", "IfcRelationship")
+    #         ifc_rel = str(ifc_rel).lower() if ifc_rel is not None else "ifcrelationship"
+    #         try:
+    #             index = rel_types.index(ifc_rel)
+    #         except Exception:
+    #             index = 0
+    #         maxValue = max(len(rel_types) - 1, 1)
+    #         edgeColor = Color.AnyToHex(Color.ByValueInRange(index, minValue=0, maxValue=maxValue, colorScale=colorScale))
+    #         try:
+    #             e_d = Dictionary.SetValueAtKey(e_d, edgeColorKey, edgeColor)
+    #         except Exception:
+    #             pass
+    #         e_dicts.append(e_d)
+
+    #     try:
+    #         return Graph.ByMeshData(
+    #             vertices,
+    #             edges,
+    #             vertexDictionaries=v_dicts,
+    #             edgeDictionaries=e_dicts,
+    #             tolerance=tolerance
+    #         )
+    #     except Exception as e:
+    #         if not silent:
+    #             print(f"Graph.ByIFCFile - Error: Could not create graph in {importMode} mode. {e} Returning None.")
+    #         return None
+
+
     @staticmethod
     def ByIFCFile(file,
-                  importMode: str = "topology",
-                  clean: bool = False,
-                  storeBREP: bool = False,
-                  useInternalVertex: bool = False,
-                  includeTypes: list = None,
-                  excludeTypes: list = None,
-                  includeRels: list = None,
-                  excludeRels: list = None,
-                  dictionaryMode: str = "basic",
-                  xMin: float = -0.5,
-                  yMin: float = -0.5,
-                  zMin: float = -0.5,
-                  xMax: float = 0.5,
-                  yMax: float = 0.5,
-                  zMax: float = 0.5,
-                  vertexColorKey = "color",
-                  edgeColorKey = "color",
-                  colorScale = "viridis",
-                  epsilon: float = 0.01,
-                  angTolerance: float = 0.1,
-                  tolerance: float = 0.0001,
-                  silent: bool = False,
-                 ):
+                importMode: str = "topology",
+                clean: bool = False,
+                storeBREP: bool = False,
+                useInternalVertex: bool = False,
+                includeTypes: list = None,
+                excludeTypes: list = None,
+                includeRels: list = None,
+                excludeRels: list = None,
+                dictionaryMode: str = "basic",
+                xMin: float = -0.5,
+                yMin: float = -0.5,
+                zMin: float = -0.5,
+                xMax: float = 0.5,
+                yMax: float = 0.5,
+                zMax: float = 0.5,
+                vertexColorKey="color",
+                edgeColorKey="color",
+                colorScale="viridis",
+                epsilon: float = 0.01,
+                angTolerance: float = 0.1,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
         Creates a Graph from an IFC file.
 
@@ -5268,9 +6460,11 @@ class Graph:
         zMax : float , optional
             Desired maximum Z coordinate for topology layout. Default is 0.5.
         vertexColorKey : str , optional
-            The desired vertex dictionary key name under which to store the calculated color. Default is "color"
+            The desired vertex dictionary key name under which to store the calculated color.
+            Default is "color".
         edgeColorKey : str , optional
-            The desired edge dictionary key name under which to store the calculated color. Default is "color"
+            The desired edge dictionary key name under which to store the calculated color.
+            Default is "color".
         colorScale : str , optional
             The desired colorscale name to use for colors. The default is "viridis".
         epsilon : float , optional
@@ -5281,12 +6475,17 @@ class Graph:
             Desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
-        
 
         Returns
         -------
         topologic_core.Graph
             The created graph.
+
+        Notes
+        -----
+        This implementation avoids reparsing the IFC file for colour assignment.
+        Element and relationship colour palettes are derived from dictionaries
+        already created during graph construction.
         """
 
         import math
@@ -5303,30 +6502,38 @@ class Graph:
         except Exception:
             Edge = None
 
-        # Check colorscale is legitimate before proceeding
-        color_scales = ['aggrnyl', 'agsunset', 'algae', 'amp', 'armyrose', 'balance',
-             'blackbody', 'bluered', 'blues', 'blugrn', 'bluyl', 'brbg',
-             'brwnyl', 'bugn', 'bupu', 'burg', 'burgyl', 'cividis', 'curl',
-             'darkmint', 'deep', 'delta', 'dense', 'earth', 'edge', 'electric',
-             'emrld', 'fall', 'geyser', 'gnbu', 'gray', 'greens', 'greys',
-             'haline', 'hot', 'hsv', 'ice', 'icefire', 'inferno', 'jet',
-             'magenta', 'magma', 'matter', 'mint', 'mrybm', 'mygbm', 'oranges',
-             'orrd', 'oryel', 'oxy', 'peach', 'phase', 'picnic', 'pinkyl',
-             'piyg', 'plasma', 'plotly3', 'portland', 'prgn', 'pubu', 'pubugn',
-             'puor', 'purd', 'purp', 'purples', 'purpor', 'rainbow', 'rdbu',
-             'rdgy', 'rdpu', 'rdylbu', 'rdylgn', 'redor', 'reds', 'solar',
-             'spectral', 'speed', 'sunset', 'sunsetdark', 'teal', 'tealgrn',
-             'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
-             'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
-             'ylorrd']
-        color_scales_r = [s+"_r" for s in color_scales]
-        color_scales += color_scales_r
+        # -------------------------------------------------------------------------
+        # Validate colorscale
+        # -------------------------------------------------------------------------
+
+        color_scales = [
+            'aggrnyl', 'agsunset', 'algae', 'amp', 'armyrose', 'balance',
+            'blackbody', 'bluered', 'blues', 'blugrn', 'bluyl', 'brbg',
+            'brwnyl', 'bugn', 'bupu', 'burg', 'burgyl', 'cividis', 'curl',
+            'darkmint', 'deep', 'delta', 'dense', 'earth', 'edge', 'electric',
+            'emrld', 'fall', 'geyser', 'gnbu', 'gray', 'greens', 'greys',
+            'haline', 'hot', 'hsv', 'ice', 'icefire', 'inferno', 'jet',
+            'magenta', 'magma', 'matter', 'mint', 'mrybm', 'mygbm', 'oranges',
+            'orrd', 'oryel', 'oxy', 'peach', 'phase', 'picnic', 'pinkyl',
+            'piyg', 'plasma', 'plotly3', 'portland', 'prgn', 'pubu', 'pubugn',
+            'puor', 'purd', 'purp', 'purples', 'purpor', 'rainbow', 'rdbu',
+            'rdgy', 'rdpu', 'rdylbu', 'rdylgn', 'redor', 'reds', 'solar',
+            'spectral', 'speed', 'sunset', 'sunsetdark', 'teal', 'tealgrn',
+            'tealrose', 'tempo', 'temps', 'thermal', 'tropic', 'turbid',
+            'turbo', 'twilight', 'viridis', 'ylgn', 'ylgnbu', 'ylorbr',
+            'ylorrd'
+        ]
+
+        color_scales += [s + "_r" for s in color_scales]
+
         if not isinstance(colorScale, str):
             colorScale = "viridis"
+
         colorScale = colorScale.lower()
+
         if colorScale not in color_scales:
             if not silent:
-                print(f"Graph.ByIFCFile - Error: Unknown Plotly colorscale ({colorScale}). Choose one of {color_scales}.Returning None.")
+                print(f"Graph.ByIFCFile - Error: Unknown Plotly colorscale ({colorScale}). Choose one of {color_scales}. Returning None.")
             return None
 
         # -------------------------------------------------------------------------
@@ -5345,7 +6552,6 @@ class Graph:
                 print(f"Graph.ByIFCFile - Warning: Unsupported mode '{importMode}'. Falling back to 'topology'.")
             importMode = "topology"
 
-        # Allow either an ifcopenshell.file object or a file path.
         if isinstance(file, str):
             try:
                 import ifcopenshell
@@ -5378,9 +6584,30 @@ class Graph:
 
         def _entity_type(entity):
             try:
-                return entity.is_a()
+                if hasattr(entity, "is_a") and callable(entity.is_a):
+                    return entity.is_a()
             except Exception:
-                return None
+                pass
+
+            try:
+                et = getattr(entity, "type", None)
+                if et is not None:
+                    return et() if callable(et) else et
+            except Exception:
+                pass
+
+            if isinstance(entity, dict):
+                try:
+                    return (
+                        entity.get("type")
+                        or entity.get("Type")
+                        or entity.get("ifc_type")
+                        or entity.get("IfcType")
+                    )
+                except Exception:
+                    pass
+
+            return None
 
         def _entity_name(entity):
             try:
@@ -5391,9 +6618,19 @@ class Graph:
 
         def _entity_id(entity):
             try:
-                return entity.id()
+                if hasattr(entity, "id") and callable(entity.id):
+                    return entity.id()
             except Exception:
-                return None
+                pass
+
+            try:
+                eid = getattr(entity, "id", None)
+                if eid is not None:
+                    return eid() if callable(eid) else eid
+            except Exception:
+                pass
+
+            return None
 
         def _entity_key(entity):
             """
@@ -5401,7 +6638,7 @@ class Graph:
 
             Preference:
             1. GlobalId
-            2. STEP id fallback, encoded as "#123"
+            2. STEP id fallback encoded as "#123"
             """
 
             gid = _entity_global_id(entity)
@@ -5425,7 +6662,7 @@ class Graph:
             if not et:
                 return False
 
-            et_l = et.lower()
+            et_l = str(et).lower()
 
             if et_l in exclude_set:
                 return False
@@ -5462,7 +6699,7 @@ class Graph:
             etype = _entity_type(entity)
             if etype is not None:
                 keys.append("IFC_type")
-                values.append(etype)
+                values.append(str(etype))
 
             try:
                 return Dictionary.ByKeysValues(keys, values)
@@ -5507,10 +6744,28 @@ class Graph:
 
             if rel_type is not None:
                 keys.append("IFC_type")
-                values.append(rel_type)
+                values.append(str(rel_type))
 
             try:
                 return Dictionary.ByKeysValues(keys, values)
+            except Exception:
+                return None
+
+        def _dictionary_value(dictionary, key, default=None):
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _dictionary_from_topology(topology):
+            try:
+                return Topology.Dictionary(topology)
             except Exception:
                 return None
 
@@ -5542,7 +6797,6 @@ class Graph:
                 dst = getattr(ifc_rel, "RelatedPort", None)
                 return src, [dst] if dst is not None else []
 
-            # Robust generic IFC pattern.
             try:
                 info = ifc_rel.get_info()
                 attr_names = list(info.keys())
@@ -5592,6 +6846,12 @@ class Graph:
             return source, destinations
 
         def _get_relationships(ifc_file):
+            """
+            Returns filtered IFC relationships once.
+
+            This avoids repeated calls to by_type("IfcRelationship") in later stages.
+            """
+
             relationships = []
 
             try:
@@ -5602,7 +6862,7 @@ class Graph:
             for rel in rels:
                 try:
                     rel_type = rel.is_a()
-                    rel_type_l = rel_type.lower()
+                    rel_type_l = str(rel_type).lower()
                 except Exception:
                     continue
 
@@ -5666,7 +6926,7 @@ class Graph:
                 "IfcLibraryReference",
             }
 
-            if et in allowed_without_guid:
+            if str(et) in allowed_without_guid:
                 return True
 
             return False
@@ -5687,7 +6947,7 @@ class Graph:
                 return (
                     0.5 * (xMin + xMax),
                     0.5 * (yMin + yMax),
-                    zMin
+                    zMin,
                 )
 
             cols = max(1, int(math.ceil(math.sqrt(total_count))))
@@ -5703,18 +6963,17 @@ class Graph:
             return x, y, z
 
         # -------------------------------------------------------------------------
-        # Topology mode
+        # Graph entity collection
         # -------------------------------------------------------------------------
 
-        def _collect_topology_entities():
+        def _collect_graph_entities(relationships):
             """
-            Collects graph vertices from:
-            1. Primary IFC object-like entities.
-            2. All relationship endpoints.
+            Collects the canonical IFC entity set used by both topology and geometry modes.
 
-            Relationship endpoints are deliberately collected even when includeTypes
-            is narrow. Otherwise, for example, IfcWallStandardCase nodes cannot be
-            connected to storeys, spaces, openings, materials, types, or property sets.
+            This is the key isomorphism guarantee: both modes see the same vertices
+            and the same relationship endpoints. The only difference is coordinate
+            assignment: topology mode uses synthetic coordinates, while geometry mode
+            replaces coordinates for entities with successfully imported geometry.
             """
 
             entity_by_key = {}
@@ -5724,18 +6983,18 @@ class Graph:
                     return
 
                 et = _entity_type(entity)
-                if et and et.lower() in exclude_type_set:
+                if et and str(et).lower() in exclude_type_set:
                     return
 
-                if respect_include_filter:
-                    if not _passes_type_filter(entity):
-                        return
+                if respect_include_filter and not _passes_type_filter(entity):
+                    return
 
                 key = _entity_key(entity)
                 if key is None:
                     return
 
-                entity_by_key[key] = entity
+                if key not in entity_by_key:
+                    entity_by_key[key] = entity
 
             primary_types = [
                 "IfcObjectDefinition",
@@ -5758,8 +7017,6 @@ class Graph:
                 except Exception:
                     continue
 
-            relationships = _get_relationships(file)
-
             for ifc_rel in relationships:
                 source, destinations = _relationship_endpoints(ifc_rel)
 
@@ -5770,10 +7027,11 @@ class Graph:
                     _add_entity(destination, respect_include_filter=False)
 
             return list(entity_by_key.values())
-    
+
         def _add_key_aliases(key_to_index, index, entity=None, gid=None, step_id=None, explicit_key=None):
             """
             Adds all common key variants for one IFC entity to key_to_index.
+
             This keeps GlobalId-based and STEP-id-based lookups equivalent.
             """
 
@@ -5818,24 +7076,6 @@ class Graph:
 
             return key_to_index
 
-        def _dictionary_value(dictionary, key, default=None):
-            try:
-                return Dictionary.ValueAtKey(dictionary, key, default)
-            except TypeError:
-                try:
-                    value = Dictionary.ValueAtKey(dictionary, key)
-                    return default if value is None else value
-                except Exception:
-                    return default
-            except Exception:
-                return default
-
-        def _dictionary_from_topology(topology):
-            try:
-                return Topology.Dictionary(topology)
-            except Exception:
-                return None
-
         def _topology_entity_key(topology):
             """
             Returns the IFC key encoded in a topology dictionary.
@@ -5858,68 +7098,6 @@ class Graph:
                 key = f"#{step_id}"
 
             return key, gid, step_id
-
-        def _collect_graph_entities():
-            """
-            Collects the canonical IFC entity set used by both topology and geometry modes.
-
-            This is the key isomorphism guarantee: both modes see the same vertices
-            and the same relationship endpoints. The only difference is coordinate
-            assignment: topology mode uses synthetic coordinates, while geometry mode
-            replaces coordinates for entities with successfully imported geometry.
-            """
-
-            entity_by_key = {}
-
-            def _add_entity(entity, respect_include_filter=True):
-                if not _is_vertex_candidate(entity):
-                    return
-
-                et = _entity_type(entity)
-                if et and et.lower() in exclude_type_set:
-                    return
-
-                if respect_include_filter and not _passes_type_filter(entity):
-                    return
-
-                key = _entity_key(entity)
-                if key is None:
-                    return
-
-                if key not in entity_by_key:
-                    entity_by_key[key] = entity
-
-            primary_types = [
-                "IfcObjectDefinition",
-                "IfcObject",
-                "IfcProduct",
-                "IfcElement",
-                "IfcSpatialElement",
-                "IfcSpatialStructureElement",
-                "IfcPort",
-                "IfcGroup",
-                "IfcSystem",
-                "IfcTypeObject",
-                "IfcElementType",
-            ]
-
-            for t in primary_types:
-                try:
-                    for entity in file.by_type(t):
-                        _add_entity(entity, respect_include_filter=True)
-                except Exception:
-                    continue
-
-            for ifc_rel in _get_relationships(file):
-                source, destinations = _relationship_endpoints(ifc_rel)
-
-                if source is not None:
-                    _add_entity(source, respect_include_filter=False)
-
-                for destination in destinations or []:
-                    _add_entity(destination, respect_include_filter=False)
-
-            return list(entity_by_key.values())
 
         def _initialise_mesh_data_from_entities(entities):
             """
@@ -5955,7 +7133,13 @@ class Graph:
                         pass
 
                 index = len(vertices)
-                vertices.append(Vertex.Coordinates(v))
+                d = Dictionary.SetValueAtKey(d, "index", index)
+
+                try:
+                    vertices.append(Vertex.Coordinates(v))
+                except Exception:
+                    vertices.append([x, y, z])
+
                 vertex_dictionaries.append(d)
                 _add_key_aliases(key_to_index, index, entity=entity, explicit_key=key)
 
@@ -5984,6 +7168,7 @@ class Graph:
                 return None
 
             d = _dictionary_from_ifc_entity(entity)
+
             if d is not None:
                 try:
                     v = Topology.SetDictionary(v, d)
@@ -6006,19 +7191,22 @@ class Graph:
             """
             Replaces synthetic coordinates with centroid/internal-vertex coordinates
             for IFC entities that were successfully imported as Topologic geometry.
+
             The vertex set itself is not changed, preserving graph isomorphism with
             topology mode.
             """
 
-            topologies = IFC.TopologiesByFile(file,
-                                    includeTypes=includeTypes,
-                                    excludeTypes=excludeTypes,
-                                    dictionaryMode=dictionaryMode,
-                                    clean=clean,
-                                    epsilon=epsilon,
-                                    angTolerance=angTolerance,
-                                    tolerance=tolerance,
-                                    silent=silent)
+            topologies = IFC.TopologiesByFile(
+                file,
+                includeTypes=includeTypes,
+                excludeTypes=excludeTypes,
+                dictionaryMode=dictionaryMode,
+                clean=clean,
+                epsilon=epsilon,
+                angTolerance=angTolerance,
+                tolerance=tolerance,
+                silent=silent,
+            )
 
             if not isinstance(topologies, list):
                 topologies = [topologies]
@@ -6032,6 +7220,7 @@ class Graph:
                     continue
 
                 index = key_to_index.get(key)
+
                 if index is None:
                     index = len(vertices)
                     vertices.append(None)
@@ -6081,7 +7270,7 @@ class Graph:
 
             return vertices, vertex_dictionaries, key_to_index
 
-        def _build_edges_from_relationships(vertices, vertex_dictionaries, key_to_index):
+        def _build_edges_from_relationships(relationships, vertices, vertex_dictionaries, key_to_index):
             """
             Builds edge index pairs from IFC relationships. Used by both import modes.
             """
@@ -6090,7 +7279,7 @@ class Graph:
             edge_dictionaries = []
             seen_edges = set()
 
-            for ifc_rel in _get_relationships(file):
+            for ifc_rel in relationships:
                 source, destinations = _relationship_endpoints(ifc_rel)
 
                 if source is None or not destinations:
@@ -6144,7 +7333,7 @@ class Graph:
                     if si == ei:
                         continue
 
-                    edge_key = (si, ei, rel_type)
+                    edge_key = (si, ei, str(rel_type))
                     if edge_key in seen_edges:
                         continue
 
@@ -6157,9 +7346,14 @@ class Graph:
         def _get_mesh_data_by_mode(mode):
             """
             Unified IFC graph construction path.
+
+            Relationships are collected once and reused for endpoint collection and
+            edge construction.
             """
 
-            entities = _collect_graph_entities()
+            relationships = _get_relationships(file)
+
+            entities = _collect_graph_entities(relationships)
             vertices, vertex_dictionaries, key_to_index = _initialise_mesh_data_from_entities(entities)
 
             if mode == "geometry":
@@ -6170,6 +7364,7 @@ class Graph:
                 )
 
             edges, edge_dictionaries = _build_edges_from_relationships(
+                relationships,
                 vertices,
                 vertex_dictionaries,
                 key_to_index,
@@ -6177,58 +7372,102 @@ class Graph:
 
             return vertices, edges, vertex_dictionaries, edge_dictionaries
 
+        def _unique_sorted_types_from_dictionaries(dictionaries, default_type=None):
+            """
+            Returns sorted lower-case IFC_type values from a list of Topologic dictionaries.
+            """
+
+            type_set = set()
+
+            for d in dictionaries:
+                ifc_type = _dictionary_value(d, "IFC_type", None)
+                if ifc_type not in [None, ""]:
+                    type_set.add(str(ifc_type).lower())
+
+            if not type_set and default_type:
+                type_set.add(str(default_type).lower())
+
+            return sorted(type_set)
+
         # -------------------------------------------------------------------------
         # Execute
         # -------------------------------------------------------------------------
 
         vertices, edges, vertex_dictionaries, edge_dictionaries = _get_mesh_data_by_mode(importMode)
-        
-        # Assign the colors:
-        element_types  = IFC.ElementTypes(file, includeCounts = False, silent = silent)
-        element_types = [e_t.lower() for e_t in element_types]
-        rel_types = IFC.RelationshipTypes(file, includeCounts = False, silent = False)
-        rel_types = [r.lower() for r in rel_types]
+
+        # -------------------------------------------------------------------------
+        # Assign colours without reparsing the IFC file
+        # -------------------------------------------------------------------------
+
+        element_types = _unique_sorted_types_from_dictionaries(vertex_dictionaries, default_type="Unknown")
+        rel_types = _unique_sorted_types_from_dictionaries(edge_dictionaries, default_type="IfcRelationship")
 
         v_dicts = []
+
         for v_d in vertex_dictionaries:
             if v_d is None:
                 try:
                     v_d = Dictionary.ByKeysValues([], [])
                 except Exception:
                     v_d = None
+
             ifc_type = _dictionary_value(v_d, "IFC_type", "Unknown")
             ifc_type = str(ifc_type).lower() if ifc_type is not None else "unknown"
+
             try:
                 index = element_types.index(ifc_type)
             except Exception:
                 index = 0
+
             maxValue = max(len(element_types) - 1, 1)
-            vertexColor = Color.AnyToHex(Color.ByValueInRange(index, minValue=0, maxValue=maxValue, colorScale=colorScale))
+
             try:
+                vertexColor = Color.AnyToHex(
+                    Color.ByValueInRange(
+                        index,
+                        minValue=0,
+                        maxValue=maxValue,
+                        colorScale=colorScale,
+                    )
+                )
                 v_d = Dictionary.SetValueAtKey(v_d, vertexColorKey, vertexColor)
             except Exception:
                 pass
+
             v_dicts.append(v_d)
-        
+
         e_dicts = []
+
         for e_d in edge_dictionaries:
             if e_d is None:
                 try:
                     e_d = Dictionary.ByKeysValues([], [])
                 except Exception:
                     e_d = None
+
             ifc_rel = _dictionary_value(e_d, "IFC_type", "IfcRelationship")
             ifc_rel = str(ifc_rel).lower() if ifc_rel is not None else "ifcrelationship"
+
             try:
                 index = rel_types.index(ifc_rel)
             except Exception:
                 index = 0
+
             maxValue = max(len(rel_types) - 1, 1)
-            edgeColor = Color.AnyToHex(Color.ByValueInRange(index, minValue=0, maxValue=maxValue, colorScale=colorScale))
+
             try:
+                edgeColor = Color.AnyToHex(
+                    Color.ByValueInRange(
+                        index,
+                        minValue=0,
+                        maxValue=maxValue,
+                        colorScale=colorScale,
+                    )
+                )
                 e_d = Dictionary.SetValueAtKey(e_d, edgeColorKey, edgeColor)
             except Exception:
                 pass
+
             e_dicts.append(e_d)
 
         try:
@@ -6237,13 +7476,12 @@ class Graph:
                 edges,
                 vertexDictionaries=v_dicts,
                 edgeDictionaries=e_dicts,
-                tolerance=tolerance
+                tolerance=tolerance,
             )
         except Exception as e:
             if not silent:
                 print(f"Graph.ByIFCFile - Error: Could not create graph in {importMode} mode. {e} Returning None.")
             return None
-
     @staticmethod
     def ByIFCPath(path,
                   importMode: str = "topology",
@@ -6543,6 +7781,7 @@ class Graph:
         # --- Build vertices ---
         id_to_vertex = {}
         vertex_list = []
+        index = 0
         for v_id, v_rec in verts.items():
             x = _round_num(v_rec.get(xKey, 0.0), mantissa)
             y = _round_num(v_rec.get(yKey, 0.0), mantissa)
@@ -6560,7 +7799,9 @@ class Graph:
                 v_dict_py[vertexIDKey] = v_id
             v_dict = _dict_from(v_dict_py, drop_keys={xKey, yKey, zKey})
             if v_dict:
+                v_dict = Dictionary.SetValueAtKey(v_dict, "index", index)
                 v = Topology.SetDictionary(v, v_dict)
+                index += 1
 
             id_to_vertex[str(v_id)] = v
             vertex_list.append(v)
@@ -6582,6 +7823,8 @@ class Graph:
                 continue
             u = id_to_vertex[s_id]
             v = id_to_vertex[t_id]
+            src = Dictionary.ValueAtKey(Topology.Dictionary(u), "index")
+            dst = Dictionary.ValueAtKey(Topology.Dictionary(v), "index")
             try:
                 e = Edge.ByVertices(u, v)
             except Exception as ee:
@@ -6592,17 +7835,17 @@ class Graph:
             # Attach full edge record as dictionary (including source/target keys)
             e_dict = _dict_from(dict(e_rec), drop_keys=())
             if edgeIDKey:
-                Dictionary.SetValueAtKey(e_dict, edgeIDKey, e_id)
+                Dictionary.SetValuesAtKeys(e_dict, [edgeIDKey, "src", "dst"], [e_id, src, dst])
             if e_dict:
                 e = Topology.SetDictionary(e, e_dict)
             edge_list.append(e)
 
         # --- Assemble graph ---
         try:
-            g = Graph.ByVerticesEdges(vertex_list, edge_list)
+            g = Graph.ByVerticesEdges(vertex_list, edge_list, index=False)
         except Exception:
             # Fallback: create empty, then add
-            g = Graph.ByVerticesEdges([], [])
+            g = Graph.ByVerticesEdges([], [], index=False)
             for v in vertex_list:
                 try:
                     g = Graph.AddVertex(g, v)
@@ -6822,14 +8065,17 @@ class Graph:
                 else:
                     d = vertexDictionaries[i]
                 if not d == None:
+                    d = Dictionary.SetValueAtKey(d, "index", i)
                     if len(Dictionary.Keys(d)) > 0:
                         g_v = Topology.SetDictionary(g_v, d)
             g_vertices.append(g_v)
             
         g_edges = []
         for i, e in enumerate(edges):
-            sv = g_vertices[e[0]]
-            ev = g_vertices[e[1]]
+            src = e[0]
+            dst = e[1]
+            sv = g_vertices[src]
+            ev = g_vertices[dst]
             g_e = Edge.ByVertices([sv, ev], tolerance=tolerance)
             if not edgeDictionaries == None:
                 if isinstance(edgeDictionaries[i], dict):
@@ -6837,10 +8083,11 @@ class Graph:
                 else:
                     d = edgeDictionaries[i]
                 if not d == None:
+                    d = Dictionary.SetValuesAtKeys(d, ["src", "dst"], [src, dst])
                     if len(Dictionary.Keys(d)) > 0:
                         g_e = Topology.SetDictionary(g_e, d)
             g_edges.append(g_e)
-        return Graph.ByVerticesEdges(g_vertices, g_edges)
+        return Graph.ByVerticesEdges(g_vertices, g_edges, index=False)
 
     @staticmethod
     def ByNetworkXGraph(nxGraph, vertexID="id", xKey="x", yKey="y", zKey="z", coordsKey='coords', randomRange=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
@@ -7083,7 +8330,7 @@ class Graph:
 
             # Build and attach TopologicPy dictionary
             node_dict = Dictionary.ByKeysValues(cleaned_keys, cleaned_values)
-            node_dict = Dictionary.SetValueAtKey(node_dict, vertexID, node)
+            node_dict = Dictionary.SetValuesAtKeys(node_dict, [vertexID, "index"], [node, i])
             vertex = Topology.SetDictionary(vertex, node_dict)
 
             #nx_to_topologic_vertex[node] = vertex
@@ -7104,13 +8351,17 @@ class Graph:
             for k, v in data.items():
                 cleaned_keys.append(str(k))
                 cleaned_values.append(clean_value(v, mantissa))
+            cleaned_keys.append("src")
+            cleaned_keys.append("dst")
+            cleaned_values.append(u_index)
+            cleaned_values.append(v_index)
             edge_dict = Dictionary.ByKeysValues(cleaned_keys, cleaned_values)
             edge = Edge.ByVertices([start_vertex, end_vertex], tolerance=tolerance)
             edge = Topology.SetDictionary(edge, edge_dict)
             edges.append(edge)
 
         # Create and return the TopologicPy graph
-        topologic_graph = Graph.ByVerticesEdges(vertices, edges)
+        topologic_graph = Graph.ByVerticesEdges(vertices, edges, index=False)
         return topologic_graph
 
     @staticmethod
@@ -7468,7 +8719,7 @@ class Graph:
                     if label is None:
                         continue
 
-                    e_keys = ["distance", "proximity", "range_max", "source_index", "target_index"]
+                    e_keys = ["distance", "proximity", "range_max", "src", "dst"]
                     e_values = [float(d), str(label), float(range_max), i, j]
                     d = Dictionary.ByKeysValues(e_keys, e_values)
                     edges.append(d)
@@ -7650,12 +8901,17 @@ class Graph:
                 vertexCategoryKey: str = "category",
                 edgeCategoryKey : str = "category",
                 useInternalVertex: bool = False,
-                storeBREP: bool =False,
+                storeBREP: bool = False,
                 mantissa: int = 6,
                 tolerance: float = 0.0001,
                 silent: float = False):
         """
-        Creates a graph.See https://en.wikipedia.org/wiki/Graph_(discrete_mathematics).
+        Creates a graph from the input topology.
+
+        This version assigns a stable integer "index" key to every graph vertex
+        when it is added to the graph_vertices list, and assigns "src" and "dst"
+        keys to every graph edge when it is created. This avoids later reliance on
+        Vertex.Index in Graph.ByVerticesEdges or downstream graph processing.
 
         Parameters
         ----------
@@ -7682,29 +8938,15 @@ class Graph:
         outpostsKey : str , optional
             The key to use to find the list of outposts. It is case insensitive. Default is "outposts".
         vertexCategoryKey : str , optional
-            The key under which to store the node type. Node categories are:
-            0 : main topology
-            1 : shared topology
-            2 : shared aperture
-            3 : exterior topology
-            4 : exterior aperture
-            5 : content
-            6 : outpost
-            The default is "category".
+            The key under which to store the node category. Default is "category".
         edgeCategoryKey : str , optional
-            The key under which to store the node type. Edge categories are:
-            0 : direct
-            1 : via shared topology
-            2 : via shared aperture
-            3 : to exterior topology
-            4 : to exterior aperture
-            5 : to content
-            6 : to outpost
-            The default is "category".
+            The key under which to store the edge category. Default is "category".
         useInternalVertex : bool , optional
             If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
             If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
+        mantissa : int , optional
+            The number of decimal places. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -7715,6 +8957,7 @@ class Graph:
         topologic_core.Graph
             The created graph.
         """
+
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
@@ -7729,6 +8972,13 @@ class Graph:
 
         graph_vertices = []
         graph_edges = []
+
+        vertexIndexKey = "index"
+        edgeSrcKey = "src"
+        edgeDstKey = "dst"
+
+        vertex_index_by_object_id = {}
+
         offset = tolerance * 100
 
         dictionary_cache = {}
@@ -7771,7 +9021,6 @@ class Graph:
                 ks = Dictionary.Keys(d) or []
             except:
                 try:
-                    # ks = d.Keys() or [] # H to Core
                     ks = Core.InstanceCall(d, "Keys") or []
                 except:
                     ks = []
@@ -7805,6 +9054,11 @@ class Graph:
             except:
                 return defaultValue
 
+        def _set_value_at_key(d, key, value):
+            if d is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(d, key, value)
+
         def _case_key(d, key):
             if d is None or key is None:
                 return None
@@ -7826,6 +9080,15 @@ class Graph:
                 d = None
             dictionary_cache[tid] = d
             return d
+
+        def _set_topology_value(t, key, value):
+            if t is None:
+                return None
+            d = _dictionary(t)
+            d = _set_value_at_key(d, key, value)
+            t = T_SetDictionary(t, d, silent=True)
+            dictionary_cache[_id(t)] = d
+            return t
 
         def _brep_data(t):
             tid = _id(t)
@@ -7889,6 +9152,30 @@ class Graph:
                     return t
             return t
 
+        def _append_vertex(v):
+            if v is None:
+                return None
+
+            vid = _id(v)
+            if vid in vertex_index_by_object_id:
+                return vertex_index_by_object_id[vid]
+
+            d = _dictionary(v)
+            existing_index = _value_at_key(d, vertexIndexKey, None)
+
+            if isinstance(existing_index, int):
+                index = existing_index
+            else:
+                index = len(graph_vertices)
+                d = _set_value_at_key(d, vertexIndexKey, index)
+                v = T_SetDictionary(v, d, silent=True)
+                dictionary_cache[_id(v)] = d
+
+            vertex_index_by_object_id[_id(v)] = index
+            graph_vertices.append(v)
+
+            return index
+
         def _representative_vertex(t, category=None, apply_offset=False, source_dictionary_topology=None):
             t = _topology_from_aperture(t)
             source = source_dictionary_topology if source_dictionary_topology is not None else t
@@ -7912,7 +9199,9 @@ class Graph:
             if category is not None:
                 d = _category_dictionary(source, category)
                 v = T_SetDictionary(v, d, silent=True)
+                dictionary_cache[_id(v)] = d
 
+            _append_vertex(v)
             representative_cache[key] = v
             return v
 
@@ -7928,11 +9217,26 @@ class Graph:
             return Dictionary.ByKeysValues(["relationship", edgeCategoryKey], [relationship, category])
 
         def _append_edge(v1, v2, relationship, category, source_topologies=None):
+            src = _append_vertex(v1)
+            dst = _append_vertex(v2)
+
+            if src is None or dst is None:
+                return
+
             e = E_ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
             if e is None:
                 return
+
             d = _edge_dictionary(relationship, category, source_topologies)
+
+            if _value_at_key(d, edgeSrcKey, None) is None:
+                d = _set_value_at_key(d, edgeSrcKey, src)
+
+            if _value_at_key(d, edgeDstKey, None) is None:
+                d = _set_value_at_key(d, edgeDstKey, dst)
+
             e = T_SetDictionary(e, d, silent=True)
+            dictionary_cache[_id(e)] = d
             graph_edges.append(e)
 
         def _apertures(t):
@@ -8071,16 +9375,16 @@ class Graph:
             return boundary_to_owners, boundary_to_refs
 
         def _add_related_vertices(v_from, related_topologies, vertex_category, relationship, edge_category, apply_offset=False):
+            _append_vertex(v_from)
             for t in related_topologies:
                 v_to = _representative_vertex(t, vertex_category, apply_offset=apply_offset)
-                graph_vertices.append(v_to)
                 _append_edge(v_from, v_to, relationship, edge_category)
 
         def _add_contents(v_from, contents):
+            _append_vertex(v_from)
             for content in contents:
                 content = _topology_from_aperture(content)
                 v_to = _representative_vertex(content, 5, apply_offset=True)
-                graph_vertices.append(v_to)
                 _append_edge(v_from, v_to, "To_Contents", 5)
 
         def _outpost_lookup(topologies):
@@ -8105,6 +9409,7 @@ class Graph:
             return lookup
 
         def _add_outposts(v_from, outpost_lookup):
+            _append_vertex(v_from)
             d = _dictionary(v_from)
             k = _case_key(d, outpostsKey)
             if k is None:
@@ -8121,7 +9426,6 @@ class Graph:
                 if outpost is None:
                     continue
                 v_to = _representative_vertex(outpost, 6)
-                graph_vertices.append(v_to)
                 _append_edge(v_from, v_to, "To_Outposts", 6)
 
         def _classify_boundaries(owner, child_type, boundary_to_owners):
@@ -8146,7 +9450,9 @@ class Graph:
         def _add_direct_edges_from_incidence(owners, child_type, boundary_to_owners, boundary_to_refs, require_aperture=False):
             owner_vertex = {}
             for owner in owners:
-                owner_vertex[_id(owner)] = _representative_vertex(owner)
+                v_owner = _representative_vertex(owner, 0)
+                _append_vertex(v_owner)
+                owner_vertex[_id(owner)] = v_owner
 
             seen_pairs = set()
 
@@ -8193,7 +9499,7 @@ class Graph:
             boundary_to_owners, boundary_to_refs = _build_incidence(host, owners, child_type)
 
             for owner in owners:
-                graph_vertices.append(_representative_vertex(owner, 0))
+                _append_vertex(_representative_vertex(owner, 0))
 
             if direct:
                 _add_direct_edges_from_incidence(
@@ -8217,8 +9523,8 @@ class Graph:
                 return
 
             for owner in owners:
-                v_owner = _representative_vertex(owner)
-                v_owner = T_SetDictionary(v_owner, _dictionary(owner), silent=True)
+                v_owner = _representative_vertex(owner, 0)
+                _append_vertex(v_owner)
 
                 shared_tops, exterior_tops, shared_aps, exterior_aps = _classify_boundaries(
                     owner,
@@ -8231,8 +9537,8 @@ class Graph:
 
                     if toContents or toOutposts:
                         for shared_top in shared_tops:
-                            v_shared = _representative_vertex(shared_top)
-                            v_shared = T_SetDictionary(v_shared, _dictionary(shared_top), silent=True)
+                            v_shared = _representative_vertex(shared_top, 1)
+                            _append_vertex(v_shared)
 
                             if toContents:
                                 _add_contents(v_shared, _contents(shared_top))
@@ -8247,8 +9553,8 @@ class Graph:
 
                     if toContents or toOutposts:
                         for exterior_top in exterior_tops:
-                            v_exterior = _representative_vertex(exterior_top)
-                            v_exterior = T_SetDictionary(v_exterior, _dictionary(exterior_top), silent=True)
+                            v_exterior = _representative_vertex(exterior_top, 3)
+                            _append_vertex(v_exterior)
 
                             if toContents:
                                 _add_contents(v_exterior, _contents(exterior_top))
@@ -8266,7 +9572,7 @@ class Graph:
 
         def _process_single(t, child_type, outpost_lookup):
             v = _representative_vertex(t, 0)
-            graph_vertices.append(v)
+            _append_vertex(v)
 
             if not any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
                 return
@@ -8281,8 +9587,8 @@ class Graph:
 
                 if toContents or toOutposts:
                     for exterior_top in exterior_tops:
-                        v_exterior = _representative_vertex(exterior_top)
-                        v_exterior = T_SetDictionary(v_exterior, _dictionary(exterior_top), silent=True)
+                        v_exterior = _representative_vertex(exterior_top, 3)
+                        _append_vertex(v_exterior)
 
                         if toContents:
                             _add_contents(v_exterior, _contents(exterior_top))
@@ -8299,7 +9605,7 @@ class Graph:
                 _add_outposts(v, outpost_lookup)
 
         def _process_vertex(t, outpost_lookup):
-            graph_vertices.append(t)
+            _append_vertex(t)
 
             if toContents:
                 _add_contents(t, _contents(t))
@@ -8372,10 +9678,10 @@ class Graph:
         else:
             return None
 
-        return Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        return Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False)
     
     @staticmethod
-    def ByVerticesEdges(vertices, edges):
+    def ByVerticesEdges(vertices, edges, index: bool = True):
         """
         Creates a graph from the input list of vertices and edges.
 
@@ -8385,6 +9691,8 @@ class Graph:
             The input list of vertices.
         edges : list
             The input list of edges.
+        index : bool , optional
+            If set to True, the vertices and edges are indexed. Default is False.
 
         Returns
         -------
@@ -8392,7 +9700,10 @@ class Graph:
             The created graph.
 
         """
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not isinstance(vertices, list):
             print("Graph.ByVerticesEdges - Error: The input list of vertices is not a valid list. Returning None.")
@@ -8400,8 +9711,24 @@ class Graph:
         if not isinstance(edges, list):
             print("Graph.ByVerticesEdges - Error: The input list of edges is not a valid list. Returning None.")
             return None
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+        
+        if index == True:
+            for i, v in enumerate(vertices):
+                d = Topology.Dictionary(v)
+                d = Dictionary.SetValueAtKey(d, "index", i)
+                v = Topology.SetDictionary(v, d)
+
+            for edge in edges:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+                d = Topology.Dictionary(edge)
+                svi = Vertex.Index(sv, vertices)
+                evi = Vertex.Index(ev, vertices)
+                d = Topology.Dictionary(edge)
+                d = Dictionary.SetValuesAtKeys(d, ["src", "dst"], [svi, evi])
+                edge = Topology.SetDictionary(edge, d)
+                
+
         # return topologic.Graph.ByVerticesEdges(vertices, edges) # H to Core
         return Core.Graph.ByVerticesEdges(vertices, edges)
     
@@ -8993,7 +10320,11 @@ class Graph:
     @staticmethod
     def Complement(graph, tolerance=0.0001, silent=False):
         """
-        Creates the complement graph of the input graph. See https://en.wikipedia.org/wiki/Complement_graph
+        Creates the complement graph of the input graph.
+        See https://en.wikipedia.org/wiki/Complement_graph
+
+        This version assigns an "index" key to each returned vertex and assigns
+        "src" and "dst" keys to each created complement edge.
 
         Parameters
         ----------
@@ -9002,69 +10333,150 @@ class Graph:
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologicpy.Graph
             The created complement topologic graph.
-
         """
-        def complement_graph(adj_dict):
-            """
-            Creates the complement graph from an input adjacency dictionary.
 
-            Parameters:
-                adj_dict (dict): The adjacency dictionary where keys are nodes and 
-                                values are lists of connected nodes.
-
-            Returns:
-                list of tuples: A list of edge index tuples representing the complement graph.
-            """
-            # Get all nodes in the graph
-            nodes = list(adj_dict.keys())
-            # Initialize a set to store edges of the complement graph
-            complement_edges = set()
-            # Convert adjacency dictionary to a set of existing edges
-            existing_edges = set()
-            for node, neighbors in adj_dict.items():
-                for neighbor in neighbors:
-                    # Add the edge as an ordered tuple to ensure no duplicates
-                    existing_edges.add(tuple(sorted((node, neighbor))))
-            # Generate all possible edges and check if they exist in the original graph
-            for i, node1 in enumerate(nodes):
-                for j in range(i + 1, len(nodes)):
-                    node2 = nodes[j]
-                    edge = tuple(sorted((node1, node2)))
-                    # Add the edge if it's not in the original graph
-                    if edge not in existing_edges:
-                        complement_edges.add(edge)
-            # Return the complement edges as a sorted list of tuples
-            return sorted(complement_edges)
-    
         from topologicpy.Graph import Graph
         from topologicpy.Edge import Edge
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        indexKey = "index"
+        srcKey = "src"
+        dstKey = "dst"
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.Complement - Error: The input graph parameter is not a valid topologic graph. Returning None.")
             return None
-        adj_dict = Graph.AdjacencyDictionary(graph)
-        py_edges = complement_graph(adj_dict)
+
+        def _dictionary(topology):
+            try:
+                return Topology.Dictionary(topology)
+            except Exception:
+                return None
+
+        def _value_at_key(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _set_value_at_key(dictionary, key, value):
+            if dictionary is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(dictionary, key, value)
+
+        def _set_topology_value(topology, key, value):
+            d = _dictionary(topology)
+            d = _set_value_at_key(d, key, value)
+            Topology.SetDictionary(topology, d, silent=True)
+            return topology
+
+        def _ensure_vertex_indices(vertices):
+            result = []
+            for i, vertex in enumerate(vertices):
+                if not Topology.IsInstance(vertex, "vertex"):
+                    continue
+
+                d = _dictionary(vertex)
+                existing_index = _value_at_key(d, indexKey, None)
+
+                if existing_index is None:
+                    vertex = _set_topology_value(vertex, indexKey, i)
+                else:
+                    try:
+                        if int(existing_index) != i:
+                            vertex = _set_topology_value(vertex, indexKey, i)
+                    except Exception:
+                        vertex = _set_topology_value(vertex, indexKey, i)
+
+                result.append(vertex)
+
+            return result
+
+        def _edge_key(i, j):
+            return (i, j) if i <= j else (j, i)
+
         vertices = Graph.Vertices(graph)
+        if not isinstance(vertices, list):
+            vertices = []
+
         adjusted_vertices = Vertex.Separate(vertices, minDistance=tolerance)
-        edges = []
-        for py_edge in py_edges:
-            start, end = py_edge
-            sv = adjusted_vertices[int(start)]
-            ev = adjusted_vertices[int(end)]
-            edge = Edge.ByVertices(sv, ev, tolerance=tolerance, silent=silent)
-            if Topology.IsInstance(edge, "edge"):
-                edges.append(edge)    
-        return_graph = Graph.ByVerticesEdges(adjusted_vertices, edges)
-        return return_graph
+        if not isinstance(adjusted_vertices, list):
+            adjusted_vertices = []
+
+        adjusted_vertices = _ensure_vertex_indices(adjusted_vertices)
+
+        order = len(adjusted_vertices)
+        if order < 2:
+            return Graph.ByVerticesEdges(adjusted_vertices, [])
+
+        existing_edges = set()
+
+        # Prefer indexed src/dst metadata if available.
+        graph_edges = Graph.Edges(graph)
+        if not isinstance(graph_edges, list):
+            graph_edges = []
+
+        for edge in graph_edges:
+            d = _dictionary(edge)
+            src = _value_at_key(d, srcKey, None)
+            dst = _value_at_key(d, dstKey, None)
+
+            try:
+                src = int(src)
+                dst = int(dst)
+                if 0 <= src < order and 0 <= dst < order and src != dst:
+                    existing_edges.add(_edge_key(src, dst))
+                    continue
+            except Exception:
+                pass
+
+            # Fallback for legacy graphs without src/dst.
+            try:
+                edge_vertices = Topology.Vertices(edge)
+                if isinstance(edge_vertices, list) and len(edge_vertices) >= 2:
+                    src = Vertex.Index(edge_vertices[0], vertices, tolerance=tolerance)
+                    dst = Vertex.Index(edge_vertices[1], vertices, tolerance=tolerance)
+                    if src is not None and dst is not None and src != dst:
+                        existing_edges.add(_edge_key(int(src), int(dst)))
+            except Exception:
+                continue
+
+        complement_edges = []
+
+        for i in range(order - 1):
+            for j in range(i + 1, order):
+                if (i, j) in existing_edges:
+                    continue
+
+                edge = Edge.ByVertices(adjusted_vertices[i], adjusted_vertices[j], tolerance=tolerance, silent=silent)
+                if not Topology.IsInstance(edge, "edge"):
+                    continue
+
+                d = _dictionary(edge)
+                d = _set_value_at_key(d, srcKey, i)
+                d = _set_value_at_key(d, dstKey, j)
+                Topology.SetDictionary(edge, d, silent=True)
+
+                complement_edges.append(edge)
+
+        return Graph.ByVerticesEdges(adjusted_vertices, complement_edges, index=False)
 
     @staticmethod
     def Complete(graph, silent: bool = False):
@@ -9087,6 +10499,7 @@ class Graph:
         """
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graph, "Graph"):
             if not silent:
@@ -9097,16 +10510,29 @@ class Graph:
         edges = Graph.Edges(graph)
         visited = set()
         new_edges = []
-        for sv in vertices:
-            for ev in vertices:
+        for i, sv in enumerate(vertices):
+            d = Topology.Dictionary(sv)
+            d = Dictionary.SetValueAtKey(d, "index", i)
+            sv = Topology.SetDictionary(sv, d)
+            for j, ev in enumerate(vertices):
                 if sv != ev and not (sv, ev) in visited:
                     visited.add((sv, ev))
                     visited.add((ev,sv))
                     edge = Graph.Edge(graph, sv, ev)
                     if edge == None:
-                        new_edges.append(Edge.ByVertices(sv, ev))
-        edges += new_edges
-        return Graph.ByVerticesEdges(vertices, edges)
+                        new_edge = Edge.ByVertices(sv, ev)
+                        d = Dictionary.ByKeysValues(["src", "dst"], [i,j])
+                        new_edge = Topology.SetDictionary(new_edge, d)
+                    else:
+                        d = Topology.Dictionary(edge)
+                        d = Dictionary.SetValuesArKeys(d, ["src", "dst"], [i,j])
+                        new_edge = Topology.SetDictionary(edge, d)
+                    new_edges.append(new_edge)
+        
+        graph_dict = Topology.Dictionary(graph)
+        new_graph = Graph.ByVerticesEdges(vertices, new_edges, index=False)
+        new_graph = Topology.SetDictionary(new_graph, graph_dict)
+        return new_graph
 
     @staticmethod
     def ConnectedComponents(graph, key: str = "component", tolerance: float = 0.0001, silent: bool = False):
@@ -9189,7 +10615,7 @@ class Graph:
                     d = Dictionary.SetValueAtKey(d, key, i+1)
                     i_edge = Topology.SetDictionary(i_edge, d)
                 lengths.append(len(i_verts))
-                g_component = Graph.ByVerticesEdges(i_verts, i_edges)
+                g_component = Graph.ByVerticesEdges(i_verts, i_edges, index=True)
                 return_components.append(g_component)
         if len(return_components) > 0:
             return_components = Helper.Sort(return_components, lengths)
@@ -13747,7 +15173,7 @@ class Graph:
             return None
         connected_vertices = [v for v in valid_vertices if Graph.VertexDegree(graph, v) > 0]
         edges = Graph.Edges(graph, connected_vertices, strict=strict, tolerance=tolerance)
-        return Graph.ByVerticesEdges(valid_vertices, edges)
+        return Graph.ByVerticesEdges(valid_vertices, edges, index=True)
 
     @staticmethod
     def IsEmpty(graph, silent: bool = False):
@@ -14821,6 +16247,8 @@ class Graph:
                 print("Graph.Reshape - Error: The input graph is not a valid topologic graph. Returning None.")
             return None
         
+        graph_dict = Topology.Dictionary(graph)
+        
         vertices = Graph.Vertices(graph)
         if len(vertices) < 2:
             if not silent:
@@ -15352,6 +16780,7 @@ class Graph:
         # Add dictionaries to each vertex
         for i, t in enumerate(all_topos):
             d = Topology.Dictionary(t)
+            d = Dictionary.SetValueAtKey(d, "index", i)
             if storeBREP == True:
                 d = Dictionary.SetValueAtKey(d,"brep", Topology.BREPString(t))
             graph_vertices[i] = Topology.SetDictionary(graph_vertices[i], d)
@@ -15371,12 +16800,20 @@ class Graph:
                         if topDown:
                             sv = graph_vertices[parent_id]
                             ev = graph_vertices[child_id]
+                            src = parent_id
+                            dst = child_id
                         else:
                             sv = graph_vertices[child_id]
                             ev = graph_vertices[parent_id]
-                        graph_edges.append(Edge.ByVertices(sv, ev, tolerance=tolerance, silent=silent))
+                            src = child_id
+                            dst = parent_id
+                        new_edge = Edge.ByVertices(sv, ev, tolerance=tolerance, silent=silent)
+                        if new_edge:
+                            d = Dictionary.ByKeysValues(["src", "dst"], [src, dst])
+                            new_edge = Topology.SetDictionary(new_edge, d)
+                            graph_edges.append(new_edge)
 
-        return_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        return_graph = Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False)
         return_graph = Graph.SetDictionary(return_graph, Topology.Dictionary(topology))
         return return_graph
 
@@ -16726,7 +18163,7 @@ class Graph:
                 sub_edges.append(e)
 
         try:
-            return Graph.ByVerticesEdges(sub_vertices, sub_edges)
+            return Graph.ByVerticesEdges(sub_vertices, sub_edges, index=True)
         except Exception:
             # As a fallback, some environments accept edges alone
             try:
@@ -16922,94 +18359,159 @@ class Graph:
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
                 print("Graph.LineGraph - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
 
+        indexKey = "index"
+        srcKey = "src"
+        dstKey = "dst"
+
+        def _dictionary(topology):
+            try:
+                return Topology.Dictionary(topology)
+            except Exception:
+                return None
+
+        def _value_at_key(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _set_value_at_key(dictionary, key, value):
+            if dictionary is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(dictionary, key, value)
+
+        def _set_index(vertex, index):
+            d = _dictionary(vertex)
+            d = _set_value_at_key(d, indexKey, index)
+            return Topology.SetDictionary(vertex, d, silent=silent)
+
+        def _set_src_dst(edge, src, dst):
+            d = _dictionary(edge)
+            d = _set_value_at_key(d, srcKey, src)
+            d = _set_value_at_key(d, dstKey, dst)
+            return Topology.SetDictionary(edge, d, silent=silent)
+
         graph_vertices = Graph.Vertices(graph)
         graph_edges = Graph.Edges(graph)
 
-        # ---- 1) Cache edge centroids once
+        if not isinstance(graph_vertices, list):
+            graph_vertices = []
+        if not isinstance(graph_edges, list):
+            graph_edges = []
+
+        # ---- 1) Cache edge centroids once. Each original graph edge becomes one
+        #         vertex in the line graph. Its index is the original edge index.
         edge_to_centroid = {}
         lg_vertices = []
-        if transferEdgeDictionaries:
-            for e in graph_edges:
-                c = Topology.Centroid(e)
-                c = Topology.SetDictionary(c, Topology.Dictionary(e), silent=silent)
-                edge_to_centroid[e] = c
-                lg_vertices.append(c)
-        else:
-            for e in graph_edges:
-                c = Topology.Centroid(e)
-                edge_to_centroid[e] = c
-                lg_vertices.append(c)
 
-        # ---- 2) Stable vertex keying by rounded coordinates
-        # Convert tolerance into a rounding "grid". This makes keys consistent.
+        for i, e in enumerate(graph_edges):
+            c = Topology.Centroid(e)
+
+            if transferEdgeDictionaries:
+                d = _dictionary(e)
+                d = _set_value_at_key(d, indexKey, i)
+                c = Topology.SetDictionary(c, d, silent=silent)
+            else:
+                c = _set_index(c, i)
+
+            edge_to_centroid[e] = c
+            lg_vertices.append(c)
+
+        # ---- 2) Stable vertex keying by rounded coordinates.
         if tolerance <= 0:
             tol = 1e-9
         else:
             tol = tolerance
 
         def vkey(v):
-            # Quantize coordinates onto a tolerance grid
-            x = Vertex.X(v); y = Vertex.Y(v); z = Vertex.Z(v)
+            x = Vertex.X(v)
+            y = Vertex.Y(v)
+            z = Vertex.Z(v)
             return (round(x / tol), round(y / tol), round(z / tol))
 
-        # Map each original vertex to its key (and keep its dictionary if needed)
         v_to_key = {}
-        key_to_vertex = {}  # representative vertex for dictionary transfer
+        key_to_vertex = {}
+
         for v in graph_vertices:
             k = vkey(v)
             v_to_key[v] = k
-            # keep first representative
             if k not in key_to_vertex:
                 key_to_vertex[k] = v
 
-        # Build incident edges per vertex key in ONE pass
+        # ---- 3) Build incident edge references by original vertex key.
+        #         Store tuples: (original_edge, line_graph_vertex_index).
         incident = {k: [] for k in key_to_vertex.keys()}
-        for e in graph_edges:
+
+        for edge_index, e in enumerate(graph_edges):
             sv = Edge.StartVertex(e)
             ev = Edge.EndVertex(e)
+
             k1 = vkey(sv)
             k2 = vkey(ev)
 
-            # If the graph is well-formed, these keys should exist. If not, add them.
             if k1 not in incident:
                 incident[k1] = []
                 key_to_vertex[k1] = key_to_vertex.get(k1, sv)
+
             if k2 not in incident:
                 incident[k2] = []
                 key_to_vertex[k2] = key_to_vertex.get(k2, ev)
 
-            incident[k1].append(e)
-            incident[k2].append(e)
+            incident[k1].append((e, edge_index))
+            incident[k2].append((e, edge_index))
 
-        # ---- 3) Create line-graph edges: connect every pair of incident edges at each vertex
+        # ---- 4) Create line-graph edges. An edge in the line graph connects two
+        #         original edges that are incident at a common original vertex.
+        #         Therefore src/dst are the indices of the corresponding line-graph
+        #         vertices, i.e. the original edge indices.
         lg_edges = []
-        if transferVertexDictionaries:
-            for k, inc in incident.items():
-                m = len(inc)
-                if m > 1:
-                    d = Topology.Dictionary(key_to_vertex[k])
-                    centroids = [edge_to_centroid[e] for e in inc]
-                    for i in range(m - 1):
-                        ci = centroids[i]
-                        for j in range(i + 1, m):
-                            lg_e = Edge.ByVertices([ci, centroids[j]], tolerance=tolerance, silent=silent)
-                            lg_edges.append(Topology.SetDictionary(lg_e, d, silent=silent))
-        else:
-            for inc in incident.values():
-                m = len(inc)
-                if m > 1:
-                    centroids = [edge_to_centroid[e] for e in inc]
-                    for i in range(m - 1):
-                        ci = centroids[i]
-                        for j in range(i + 1, m):
-                            lg_edges.append(Edge.ByVertices([ci, centroids[j]], tolerance=tolerance, silent=silent))
-        return Graph.ByVerticesEdges(lg_vertices, lg_edges)
+
+        for k, inc in incident.items():
+            m = len(inc)
+            if m <= 1:
+                continue
+
+            vertex_dictionary = _dictionary(key_to_vertex[k]) if transferVertexDictionaries else None
+
+            for i in range(m - 1):
+                edge_i, src = inc[i]
+                ci = edge_to_centroid[edge_i]
+
+                for j in range(i + 1, m):
+                    edge_j, dst = inc[j]
+                    cj = edge_to_centroid[edge_j]
+
+                    lg_e = Edge.ByVertices([ci, cj], tolerance=tolerance, silent=silent)
+                    if not Topology.IsInstance(lg_e, "edge"):
+                        continue
+
+                    if transferVertexDictionaries and vertex_dictionary is not None:
+                        d = vertex_dictionary
+                    else:
+                        d = _dictionary(lg_e)
+
+                    d = _set_value_at_key(d, srcKey, src)
+                    d = _set_value_at_key(d, dstKey, dst)
+                    lg_e = Topology.SetDictionary(lg_e, d, silent=silent)
+
+                    lg_edges.append(lg_e)
+
+        return Graph.ByVerticesEdges(lg_vertices, lg_edges, index=False)
 
     @staticmethod
     def LocalClusteringCoefficient(graph, vertices: list = None, key: str = "lcc", mantissa: int = 6, tolerance: float = 0.0001):
@@ -17746,7 +19248,7 @@ class Graph:
                 new_edges.append(new_edge)
 
         all_vertices.append(merged_vertex)
-        return Graph.ByVerticesEdges(all_vertices, new_edges)
+        return Graph.ByVerticesEdges(all_vertices, new_edges, index=True)
 
     @staticmethod
     def MeshData(graph, mantissa: int = 6, tolerance: float = 0.0001):
@@ -17874,14 +19376,23 @@ class Graph:
     @staticmethod
     def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001):
         """
-        Returns the minimum spanning tree of the input graph. See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
+        Returns the minimum spanning tree of the input graph.
+        See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
+
+        This implementation uses Kruskal's algorithm with a disjoint-set union
+        structure. It avoids repeated Graph.Path and Graph.NearestVertex calls.
+
+        The returned vertices are assigned an "index" key, and the returned edges
+        are assigned "src" and "dst" keys corresponding to those vertex indices.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
-        edgeKey : string , optional
-            If set, the value of the edgeKey will be used as the weight and the tree will minimize the weight. The value associated with the edgeKey must be numerical. If the key is not set, the edges will be sorted by their length. Default is None
+        edgeKey : str , optional
+            If set, the value of the edgeKey will be used as the edge weight.
+            The value associated with edgeKey must be numerical. If not set,
+            edge length is used. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -17889,51 +19400,223 @@ class Graph:
         -------
         topologic_core.Graph
             The minimum spanning tree.
-
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        def vertexInList(vertex, vertexList, tolerance=0.0001):
-            for v in vertexList:
-                if Vertex.Distance(v, vertex) <= tolerance:
-                    return True
-            return False
-        
+        indexKey = "index"
+        srcKey = "src"
+        dstKey = "dst"
+
         if not Topology.IsInstance(graph, "Graph"):
             print("Graph.MinimumSpanningTree - Error: The input graph is not a valid graph. Returning None.")
             return None
-        edges = Graph.Edges(graph)
+
+        def _dictionary(topology):
+            try:
+                return Topology.Dictionary(topology)
+            except Exception:
+                return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                try:
+                    keys = Core.InstanceCall(dictionary, "Keys")
+                    return keys if isinstance(keys, list) else []
+                except Exception:
+                    return []
+
+        def _value_at_key(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _set_value_at_key(dictionary, key, value):
+            if dictionary is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(dictionary, key, value)
+
+        def _set_topology_value(topology, key, value):
+            d = _dictionary(topology)
+            d = _set_value_at_key(d, key, value)
+            return Topology.SetDictionary(topology, d, silent=True)
+
+        def _set_vertex_index(vertex, index):
+            d = _dictionary(vertex)
+            current = _value_at_key(d, indexKey, None)
+            try:
+                if current is not None and int(current) == index:
+                    return vertex
+            except Exception:
+                pass
+
+            d = _set_value_at_key(d, indexKey, index)
+            return Topology.SetDictionary(vertex, d, silent=True)
+
+        def _set_edge_src_dst(edge, src, dst):
+            d = _dictionary(edge)
+            d = _set_value_at_key(d, srcKey, src)
+            d = _set_value_at_key(d, dstKey, dst)
+            return Topology.SetDictionary(edge, d, silent=True)
+
+        def _coord_key(vertex):
+            return (
+                round(Vertex.X(vertex) / tolerance),
+                round(Vertex.Y(vertex) / tolerance),
+                round(Vertex.Z(vertex) / tolerance),
+            )
+
+        def _numeric(value):
+            if isinstance(value, bool):
+                return None
+            if isinstance(value, (int, float)):
+                return float(value)
+            try:
+                return float(value)
+            except Exception:
+                return None
+
         vertices = Graph.Vertices(graph)
-        values = []
-        if isinstance(edgeKey, str):
-            for edge in edges:
-                d = Dictionary.Dictionary(edge)
-                value = Dictionary.ValueAtKey(d, edgeKey)
-                if value == None or not isinstance(value, int) or not isinstance(value, float):
-                    return None
-                values.append(value)
-        else:
-            for edge in edges:
-                value = Edge.Length(edge)
-                values.append(value)
-        keydict = dict(zip(edges, values))
-        edges.sort(key=keydict.get)
-        mst = Graph.ByVerticesEdges(vertices,[])
+        edges = Graph.Edges(graph)
+
+        if not isinstance(vertices, list):
+            vertices = []
+        if not isinstance(edges, list):
+            edges = []
+
+        if len(vertices) == 0:
+            return Graph.ByVerticesEdges([], [])
+
+        # Assign stable indices to the returned vertex list.
+        indexed_vertices = []
+        vertex_key_to_index = {}
+
+        for i, vertex in enumerate(vertices):
+            vertex = _set_vertex_index(vertex, i)
+            indexed_vertices.append(vertex)
+            vertex_key_to_index[_coord_key(vertex)] = i
+
+        # Prepare weighted edge records once.
+        edge_records = []
+
         for edge in edges:
-            sv = Edge.StartVertex(edge)
-            ev = Edge.EndVertex(edge)
-            if len(Graph.Vertices(mst)) > 0:
-                if not Graph.Path(mst, Graph.NearestVertex(mst, sv), Graph.NearestVertex(mst, ev)):
-                    d = Topology.Dictionary(edge)
-                    if len(Dictionary.Keys(d)) > 0:
-                        tranEdgeDicts = True
-                    else:
-                        tranEdgeDicts = False
-                    mst = Graph.AddEdge(mst, edge, transferVertexDictionaries=False, transferEdgeDictionaries=tranEdgeDicts)
-        return mst
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src = None
+            dst = None
+
+            # Prefer existing src/dst metadata if present and valid.
+            d = _dictionary(edge)
+            src_value = _value_at_key(d, srcKey, None)
+            dst_value = _value_at_key(d, dstKey, None)
+
+            try:
+                src_i = int(src_value)
+                dst_i = int(dst_value)
+                if 0 <= src_i < len(indexed_vertices) and 0 <= dst_i < len(indexed_vertices):
+                    src = src_i
+                    dst = dst_i
+            except Exception:
+                pass
+
+            # Fallback to coordinate key lookup. This avoids Vertex.Index.
+            if src is None or dst is None:
+                src = vertex_key_to_index.get(_coord_key(sv), None)
+                dst = vertex_key_to_index.get(_coord_key(ev), None)
+
+            if src is None or dst is None or src == dst:
+                continue
+
+            if isinstance(edgeKey, str):
+                weight = _numeric(_value_at_key(d, edgeKey, None))
+                if weight is None:
+                    return None
+            else:
+                try:
+                    weight = float(Edge.Length(edge))
+                except Exception:
+                    continue
+
+            edge_records.append((weight, src, dst, edge))
+
+        edge_records.sort(key=lambda item: item[0])
+
+        # Kruskal disjoint-set union.
+        parent = list(range(len(indexed_vertices)))
+        rank = [0] * len(indexed_vertices)
+
+        def _find(x):
+            while parent[x] != x:
+                parent[x] = parent[parent[x]]
+                x = parent[x]
+            return x
+
+        def _union(a, b):
+            ra = _find(a)
+            rb = _find(b)
+
+            if ra == rb:
+                return False
+
+            if rank[ra] < rank[rb]:
+                parent[ra] = rb
+            elif rank[ra] > rank[rb]:
+                parent[rb] = ra
+            else:
+                parent[rb] = ra
+                rank[ra] += 1
+
+            return True
+
+        mst_edges = []
+
+        for weight, src, dst, edge in edge_records:
+            if not _union(src, dst):
+                continue
+
+            new_edge = Edge.ByVertices(
+                indexed_vertices[src],
+                indexed_vertices[dst],
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if not Topology.IsInstance(new_edge, "Edge"):
+                continue
+
+            source_d = _dictionary(edge)
+
+            if source_d is not None and len(_keys(source_d)) > 0:
+                new_edge = Topology.SetDictionary(new_edge, source_d, silent=True)
+
+            new_edge = _set_edge_src_dst(new_edge, src, dst)
+            mst_edges.append(new_edge)
+
+            if len(mst_edges) == len(indexed_vertices) - 1:
+                break
+
+        return Graph.ByVerticesEdges(indexed_vertices, mst_edges, index=False)
 
     @staticmethod
     def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, numWorkers=None):
@@ -18041,7 +19724,7 @@ class Graph:
             final_edges += holes_edges
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
-            g = Graph.ByVerticesEdges(final_vertices, final_edges)
+            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True)
             return g
         return None
 
@@ -19384,7 +21067,7 @@ class Graph:
                 continue
 
 
-        return Graph.ByVerticesEdges(group_vertices, edges)
+        return Graph.ByVerticesEdges(group_vertices, edges, index=True)
 
     @staticmethod
     def RemoveEdge(graph, *edges, tolerance=0.0001, silent: bool = False):
@@ -21144,7 +22827,7 @@ class Graph:
                 vertices = Graph.Vertices(graph)
                 random.shuffle(vertices)
                 edges = Graph.Edges(graph)
-                graph = Graph.ByVerticesEdges(vertices, edges)
+                graph = Graph.ByVerticesEdges(vertices, edges, index=True)
         return shortestPaths
 
     @staticmethod
@@ -21462,7 +23145,7 @@ class Graph:
                 d = Dictionary.SetValueAtKey(d, edgeKey, cutEdge)
                 edge = Topology.SetDictionary(edge, d)
                 final_edges.append(edge)
-        return_graph = Graph.ByVerticesEdges(vertex_list, final_edges)
+        return_graph = Graph.ByVerticesEdges(vertex_list, final_edges, index=True)
         graph_vertices = Graph.Vertices(return_graph)
         # Any vertex in the final graph that does not have a vertexCut of 0 is a new vertex and as such needs to have a vertexCut of 1.
         for v in graph_vertices:
@@ -21689,7 +23372,7 @@ class Graph:
         graph_edges.append(Edge.ByVertices(v7, v11))
         graph_edges.append(Edge.ByVertices(v11, v1))
         graph_edges = [Edge.Reverse(e) for e in graph_edges] #This makes them look better when sagitta is applied.
-        graph = Graph.ByVerticesEdges(graph_vertices, graph_edges)
+        graph = Graph.ByVerticesEdges(graph_vertices, graph_edges, index=True)
         return graph
 
     @staticmethod
@@ -21840,7 +23523,7 @@ class Graph:
             vertex = Graph.NearestVertex(graph, vertex)
         dictionary = {'vertices':[], 'edges':[]}
         dictionary = buildTree(graph, dictionary, vertex, None, tolerance=tolerance)
-        return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'])
+        return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'], index=True)
     
     @staticmethod
     def VertexByKeyValue(graph, key: str = None, value=None, silent: bool = False):
@@ -21964,7 +23647,7 @@ class Graph:
         return round(degree, mantissa)
     
     @staticmethod
-    def Vertices(graph, sortBy: str = None, reverse: bool = False, silent: bool = False):
+    def Vertices(graph, sortBy: str = "index", reverse: bool = False, silent: bool = False):
         """
         Returns the list of vertices in the input graph.
 
@@ -21973,7 +23656,7 @@ class Graph:
         graph : topologic_core.Graph
             The input graph.
         sortBy : str , optional
-            The dictionary key to use for sorting the returned edges. Special strings include "length" and "distance" to sort by the length of the edge. Default is None.
+            The dictionary key to use for sorting the returned edges. Special strings include "length" and "distance" to sort by the length of the edge. Default is "index".
         reverse : bool , optional
             If set to True, the sorted list is reversed. This has no effect if the sortBy parameter is not set. Default is False.
         silent : bool, optional
@@ -22005,9 +23688,12 @@ class Graph:
             vertex_values = []
             for v in vertices:
                 d = Topology.Dictionary(v)
-                value = str(Dictionary.ValueAtKey(d, sortBy, "0"))
+                value = Dictionary.ValueAtKey(d, sortBy, None)
                 vertex_values.append(value)
-            vertices = Helper.Sort(vertices, vertex_values)
+            try:
+                vertices = Helper.Sort(vertices, vertex_values)
+            except:
+                pass
             if reverse == True:
                 vertices.reverse()
         return vertices
@@ -22061,7 +23747,7 @@ class Graph:
             return None
         viewpointsB = [v for v in viewpointsB if Topology.IsInstance(v, "Vertex")]
         if len(viewpointsB) < 1: #Nothing to look at, so return a graph made of viewpointsA
-            return Graph.ByVerticesEdges(viewpointsA, [])
+            return Graph.ByVerticesEdges(viewpointsA, [], index=True)
         
         i_boundaries = Face.InternalBoundaries(face)
         obstacles = []
@@ -22096,7 +23782,7 @@ class Graph:
                         final_edges.append(edge)
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
-            g = Graph.ByVerticesEdges(final_vertices, final_edges)
+            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True)
             return g
         return None
 
@@ -22346,7 +24032,7 @@ class Graph:
             if not i == j:
                 _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
 
-        return Graph.ByVerticesEdges(union_vertices, union_edges)
+        return Graph.ByVerticesEdges(union_vertices, union_edges, index=True)
     
     @staticmethod
     def Impose(graphA, graphB, vertexKeys=None, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -22469,7 +24155,7 @@ class Graph:
             if not i == j:
                 _add_edge(i, j, Dictionary.ByPythonDictionary(edges_b_dicts[idx]))
 
-        return Graph.ByVerticesEdges(union_vertices, union_edges)
+        return Graph.ByVerticesEdges(union_vertices, union_edges, index=True)
     
     @staticmethod
     def Imprint(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -22578,7 +24264,7 @@ class Graph:
             else:
                 final_edges.append(topo_edges_a[i])
 
-        return Graph.ByVerticesEdges(final_vertices, final_edges)
+        return Graph.ByVerticesEdges(final_vertices, final_edges, index=True)
 
     @staticmethod
     def Intersect(graphA, graphB, vertexKeys, vertexColorKey="color", useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -22687,7 +24373,7 @@ class Graph:
                 # Add the final edge to the list
                 common_edges.append(final_edge)
 
-        return Graph.ByVerticesEdges(common_vertices, common_edges)
+        return Graph.ByVerticesEdges(common_vertices, common_edges, index=True)
 
     @staticmethod
     def Difference(graphA, graphB, vertexKeys, useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -22766,7 +24452,7 @@ class Graph:
                     # Add the final edge to the list
                     diff_edges.append(final_edge)
 
-        return Graph.ByVerticesEdges(diff_vertices, diff_edges)
+        return Graph.ByVerticesEdges(diff_vertices, diff_edges, index=True)
 
     @staticmethod
     def Merge(graphA, graphB, vertexKeys=None, vertexColorKey="color", useCentroid: bool = False, tolerance: float = 0.0001, silent: bool = False):
