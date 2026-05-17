@@ -84,7 +84,7 @@ class Color:
             if color.lower() in [x.lower() for x in Color.CSSNamedColors()]:
                 rgb = Color.ByCSSNamedColor(color.lower())
                 return_hex = Color.RGBToHex(rgb)
-            else: # Probably alread a HEX or other Plotly-compatible string
+            else: # Probably already a HEX or other Plotly-compatible string
                 return_hex = color
 
         if not isinstance(return_hex, str):

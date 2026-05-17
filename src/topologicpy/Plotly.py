@@ -702,7 +702,7 @@ class Plotly:
                 d_color = color
                 d_arrowSize = arrowSize
                 d_dash = dash
-                d = dict_clusters[j][0] # All dicitonaries have same values in dictionaries, so take first one.
+                d = dict_clusters[j][0] # All dictionaries have same values in dictionaries, so take first one.
                 if d:
                     if not colorKey == None:
                         d_color = Color.AnyToHex(Dictionary.ValueAtKey(d, key=colorKey, defaultValue=color))

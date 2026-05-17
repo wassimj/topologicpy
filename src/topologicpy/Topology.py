@@ -4891,7 +4891,7 @@ class Topology():
         in_types_1, ex_types_1 = remove_overlap(in_types, ex_types)
         if not len(in_types_1) == len(in_types) or not len(ex_types_1) == len(ex_types):
             if not silent:
-                print("Topology.ByPDFFile - Warning: Ther includeTypes and excludeTypes input parameters contain overlapping elements. These have been excluded.")
+                print("Topology.ByPDFFile - Warning: The includeTypes and excludeTypes input parameters contain overlapping elements. These have been excluded.")
         in_types = in_types_1
 
         topologic_entities = []
@@ -7857,7 +7857,7 @@ class Topology():
         face_dicts = []
         if not Topology.IsInstance(topology, "topology"):
             if not silent:
-                print("Topology.Geometry - Error: The input topology parameter is not a valid topology. Retruning None.")
+                print("Topology.Geometry - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         topVerts = []
         if Topology.Type(topology) == Topology.TypeID("Vertex"): #input is a vertex, just add it and process it
@@ -13317,7 +13317,7 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         hostTopology : topologic_core.Topology
-            The host to topology in which to search for ther supertopologies.
+            The host to topology in which to search for their supertopologies.
         topologyType : str , optional
             The topology type to search for. This can be any of "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. If set to None, the immediate supertopology type is searched for. Default is None.
 
@@ -13611,7 +13611,7 @@ class Topology():
 
         if not Topology.IsInstance(topology, "topology"):
             if not silent:
-                print("Topology.Trasnform - Error: The input topology parameter is not a valid topology. Returning None.")
+                print("Topology.Transform - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         
         try:

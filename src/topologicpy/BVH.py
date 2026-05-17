@@ -497,7 +497,7 @@ class BVH:
             return None
         if bvh._root is None or not bvh.items:
             if not silent:
-                print("BVH.Nearest - Warning: The input bhv tree is empty. Returning None.")
+                print("BVH.Nearest - Warning: The input BVH tree is empty. Returning None.")
             return None
 
         best_idx = -1

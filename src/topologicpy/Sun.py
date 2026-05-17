@@ -64,7 +64,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.WinterSolstice - Infromation: ephem library installed correctly.")
+                print("Sun.WinterSolstice - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.WinterSolstice - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -107,7 +107,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.SummerSolstice - Infromation: ephem library installed correctly.")
+                print("Sun.SummerSolstice - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.SummerSolstice - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -147,7 +147,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.SpringEquinox - Infromation: ephem library installed correctly.")
+                print("Sun.SpringEquinox - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.SpringEquinox - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -187,7 +187,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.AutumnEquinox - Infromation: ephem library installed correctly.")
+                print("Sun.AutumnEquinox - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.AutumnEquinox - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -230,7 +230,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.Azimuth - Infromation: ephem library installed correctly.")
+                print("Sun.Azimuth - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.Azimuth - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -277,7 +277,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.Altitude - Infromation: ephem library installed correctly.")
+                print("Sun.Altitude - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.Altitude - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -323,7 +323,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.Sunrise - Infromation: ephem library installed correctly.")
+                print("Sun.Sunrise - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.Sunrise - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None
@@ -368,7 +368,7 @@ class Sun():
                 os.system("pip install ephem --user")
             try:
                 import ephem
-                print("Sun.Sunset - Infromation: ephem library installed correctly.")
+                print("Sun.Sunset - Information: ephem library installed correctly.")
             except:
                 warnings.warn("Sun.Sunset - Error: Could not import ephem. Please try to install ephem manually. Returning None.")
                 return None

@@ -85,7 +85,7 @@ class Matrix:
             return None
         if not isinstance(target, list):
             if not silent:
-                print("Matrix.ByCoordinateSystems - Error: The taget input parameter is not a valid list. Returning None.")
+                print("Matrix.ByCoordinateSystems - Error: The target input parameter is not a valid list. Returning None.")
             return None
         
         # Convert to numpy arrays

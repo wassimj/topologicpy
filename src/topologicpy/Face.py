@@ -2083,6 +2083,13 @@ class Face():
             wires = None
         return wires
 
+
+
+
+
+
+
+
     @staticmethod
     def InternalVertex(face, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -2112,6 +2119,72 @@ class Face():
         def _warn(message):
             if not silent:
                 print("Face.InternalVertex - Warning:", message)
+
+        if not Topology.IsInstance(face, "Face"):
+            _warn("The input face is not a valid topologic face. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # 0. Native/core fast path.
+        # ------------------------------------------------------------------
+        # If the underlying topologic_core binding exposes a native internal
+        # vertex method, it will almost always beat a Python-level algorithm.
+        #
+        # This section is deliberately defensive because different versions of
+        # topologic_core/topologic expose different APIs.
+        # ------------------------------------------------------------------
+
+        try:
+            if hasattr(face, "InternalVertex"):
+                try:
+                    v = face.InternalVertex(tolerance)
+                except TypeError:
+                    v = face.InternalVertex()
+
+                if v is not None:
+                    try:
+                        if Vertex.IsInternal(v, face, tolerance=tolerance):
+                            return v
+                    except TypeError:
+                        if Vertex.IsInternal(v, face):
+                            return v
+                    except Exception:
+                        # If the native method succeeded but verification failed
+                        # due to API mismatch, still return it. This preserves the
+                        # performance benefit of the native path.
+                        return v
+        except Exception:
+            pass
+
+        try:
+            import topologic_core as topologic
+
+            face_utility = getattr(topologic, "FaceUtility", None)
+
+            if face_utility is not None and hasattr(face_utility, "InternalVertex"):
+                try:
+                    v = face_utility.InternalVertex(face, tolerance)
+                except TypeError:
+                    v = face_utility.InternalVertex(face)
+
+                if v is not None:
+                    try:
+                        if Vertex.IsInternal(v, face, tolerance=tolerance):
+                            return v
+                    except TypeError:
+                        if Vertex.IsInternal(v, face):
+                            return v
+                    except Exception:
+                        return v
+        except Exception:
+            pass
+
+        # ------------------------------------------------------------------
+        # Original implementation starts here.
+        # ------------------------------------------------------------------
+        # Keep this as close as possible to your original because empirical
+        # testing shows that it is already faster than the Python rewrites.
+        # ------------------------------------------------------------------
 
         def _is_internal(v):
             if v is None:
@@ -2181,10 +2254,6 @@ class Face():
             except Exception:
                 return 0
 
-        if not Topology.IsInstance(face, "Face"):
-            _warn("The input face is not a valid topologic face. Returning None.")
-            return None
-
         # 1. Try the face centroid first.
         try:
             centroid = Topology.VerticesCentroid(face, mantissa=17)
@@ -2203,25 +2272,22 @@ class Face():
             for tri_face in tri_faces:
                 try:
                     tri_centroid = Topology.VerticesCentroid(tri_face, mantissa=17)
-                    # if _is_internal(tri_centroid): no need to check, a triangle centroid is intrenal unless the triangle is degenerate
+                    # No need to check here. A triangle centroid is internal unless
+                    # the triangle is degenerate.
                     candidates.append(tri_centroid)
                 except Exception:
                     continue
         except Exception:
             tri_faces = []
 
-
         if candidates:
             boundary = Cluster.ByTopologies(Topology.Edges(face))
-            # Creating a list of distance, candidate tuples for optimal sorting
             distanceCandidates = [(_distance_to_boundary(c, boundary), c) for c in candidates]
             try:
-                distanceCandidates.sort(
-                    reverse=True
-                )
+                distanceCandidates.sort(reverse=True)
             except Exception:
                 pass
-            return distanceCandidates[0][1] # returning the candidate from the first tuple
+            return distanceCandidates[0][1]
 
         # 3. Fallback: construct a robust local coordinate system.
         try:

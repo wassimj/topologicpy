@@ -295,7 +295,7 @@ class Graph:
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.AABB - Error: The input graph paramter is not a valid Topologic Graph. Returning None.")
+                print("Graph.AABB - Error: The input graph parameter is not a valid Topologic Graph. Returning None.")
             return None
         
         vertices = Graph.Vertices(graph)
@@ -346,7 +346,7 @@ class Graph:
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.AccessibilityCentrality - Error: The input graph paramter is not a valid Topologic Graph. Returning None.")
+                print("Graph.AccessibilityCentrality - Error: The input graph parameter is not a valid Topologic Graph. Returning None.")
             return None
         vertices = Graph.Vertices(graph)
         n = len(vertices)
@@ -3844,7 +3844,7 @@ class Graph:
     #             os.system("pip install networkx --user")
     #         try:
     #             import networkx as nx
-    #             print("Graph.BetwennessCentrality - Infromation: networkx library installed correctly.")
+    #             print("Graph.BetwennessCentrality - Information: networkx library installed correctly.")
     #         except:
     #             warnings.warn("Graph.BetwennessCentrality - Error: Could not import networkx. Please try to install networkx manually. Returning None.")
     #             return None
@@ -5286,7 +5286,7 @@ class Graph:
             
             if not e:
                 if not silent:
-                    print(f"Graph.ByDictionaries - Warning: Could not create an edge between '{a}' and '{b}'. Check if the distance betwen '{a}' and '{b}' is kess than the input tolerance.")
+                    print(f"Graph.ByDictionaries - Warning: Could not create an edge between '{a}' and '{b}'. Check if the distance between '{a}' and '{b}' is less than the input tolerance.")
                 continue
             d = Dictionary.ByKeysValues(["src", "dst"], [i_a, i_b])
             e = Edge.ByStartVertexEndVertex(va, vb, silent=True)
@@ -11675,7 +11675,7 @@ class Graph:
 
         """
         if not silent:
-            print("Graph.Community - Warning: This method is deprectated. Please use Graph.CommunityPartition instead.")
+            print("Graph.Community - Warning: This method is deprecated. Please use Graph.CommunityPartition instead.")
         return Graph.CommunityPartition(graph=graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
     
     @staticmethod
@@ -12704,7 +12704,7 @@ class Graph:
         vertexList = [v for v in vertexList if Topology.IsInstance(v, "vertex")]
         if len(vertexList) == 0:
             if not silent:
-                print("Graph.DetachVertex - Error: The input vertice parameter does not contain any valid vertices. Returning None.")
+                print("Graph.DetachVertex - Error: The input vertices parameter does not contain any valid vertices. Returning None.")
             return None
         vertexList = [Graph.NearestVertex(graph, v) for v in vertexList]
         edges = Graph.Edges(graph, vertexList)
@@ -13085,7 +13085,7 @@ class Graph:
 
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.EigenVectorCentrality - Error: The input graph is not a valie Topologic Graph. Returning None.")
+                print("Graph.EigenVectorCentrality - Error: The input graph is not a valid Topologic Graph. Returning None.")
             return None
         adjacency_matrix = Graph.AdjacencyMatrix(graph)
         vertices = Graph.Vertices(graph)
@@ -16252,7 +16252,7 @@ class Graph:
         vertices = Graph.Vertices(graph)
         if len(vertices) < 2:
             if not silent:
-                print("Graph.Reshape - Warning: The graph has less than two vertices. It cannot be rehsaped. Returning the original input graph.")
+                print("Graph.Reshape - Warning: The graph has less than two vertices. It cannot be reshaped. Returning the original input graph.")
             return graph
         
         if 'circ' in shape.lower():
@@ -17272,7 +17272,7 @@ class Graph:
             # queue for BFS storing {vertex , colour}
             q = []
 
-            #loop incase graph is not connected
+            #loop in case graph is not connected
             for i in range(V):
     
                 # if not coloured
@@ -17384,7 +17384,7 @@ class Graph:
         
         if vertexA == vertexB:
             if not silent:
-                print("Graph.IsConnected - Warrning: The two input vertices are the same vertex. Returning False.")
+                print("Graph.IsConnected - Warning: The two input vertices are the same vertex. Returning False.")
             return False
         shortest_path = Graph.ShortestPath(graph, vertexA, vertexB)
         if shortest_path == None:
