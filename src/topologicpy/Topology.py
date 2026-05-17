@@ -1469,11 +1469,11 @@ class Topology():
 
         if not Topology.IsInstance(topologyA, "topology"):
             if not silent:
-                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Reteruning None.")
+                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Returning None.")
             return None
         if not Topology.IsInstance(topologyB, "topology"):
             if not silent:
-                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Reteruning None.")
+                print("Topology.Intersect - Error: The topologyB input parameter is not a valid Topology. Returning None.")
             return None
         
         from topologicpy.Vertex import Vertex
