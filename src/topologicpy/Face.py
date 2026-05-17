@@ -2117,7 +2117,8 @@ class Face():
             if v is None:
                 return False
             try:
-                return Vertex.IsInternal(v, face, tolerance=tolerance)
+                if Topology.Intersect(v, face, tolerance=tolerance):
+                    return not Topology.Intersect(v, Cluster.ByTopologies(Topology.Edges(face)), tolerance=tolerance)
             except TypeError:
                 return Vertex.IsInternal(v, face)
 
@@ -2186,7 +2187,7 @@ class Face():
 
         # 1. Try the face centroid first.
         try:
-            centroid = Topology.Centroid(face)
+            centroid = Topology.VerticesCentroid(face, mantissa=17)
             if _is_internal(centroid):
                 return centroid
         except Exception:
@@ -2201,24 +2202,26 @@ class Face():
 
             for tri_face in tri_faces:
                 try:
-                    tri_centroid = Topology.Centroid(tri_face)
-                    if _is_internal(tri_centroid):
-                        candidates.append(tri_centroid)
+                    tri_centroid = Topology.VerticesCentroid(tri_face, mantissa=17)
+                    # if _is_internal(tri_centroid): no need to check, a triangle centroid is intrenal unless the triangle is degenerate
+                    candidates.append(tri_centroid)
                 except Exception:
                     continue
         except Exception:
             tri_faces = []
 
+
         if candidates:
+            boundary = Cluster.ByTopologies(Topology.Edges(face))
+            # Creating a list of distance, candidate tuples for optimal sorting
+            distanceCandidates = [(_distance_to_boundary(c, boundary), c) for c in candidates]
             try:
-                boundary = Cluster.ByTopologies(Topology.Edges(face))
-                candidates.sort(
-                    key=lambda v: _distance_to_boundary(v, boundary),
+                distanceCandidates.sort(
                     reverse=True
                 )
             except Exception:
                 pass
-            return candidates[0]
+            return distanceCandidates[0][1] # returning the candidate from the first tuple
 
         # 3. Fallback: construct a robust local coordinate system.
         try:
