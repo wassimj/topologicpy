@@ -506,9 +506,116 @@ class Dictionary():
                 stl_keys.append(str(keys[i]))
             stl_values.append(Dictionary._ConvertValue(values[i]))
         return Core.Dictionary.ByKeysValues(stl_keys, stl_values)
-    
+
     @staticmethod
     def ByMergedDictionaries(*dictionaries, silent: bool = False):
+        """
+        Creates a dictionary by merging the list of input dictionaries.
+
+        Parameters
+        ----------
+        dictionaries : list or comma separated dictionaries
+            The input list of dictionaries to be merged.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Dictionary
+            The created dictionary.
+
+        """
+        from topologicpy.Helper import Helper
+        from topologicpy.Topology import Topology
+
+        if isinstance(dictionaries, tuple):
+            dictionaries = Helper.Flatten(list(dictionaries))
+        elif not isinstance(dictionaries, list):
+            dictionaries = [dictionaries]
+
+        valid_dictionaries = []
+
+        for d in dictionaries:
+            if Topology.IsInstance(d, "Dictionary"):
+                valid_dictionaries.append(d)
+            elif isinstance(d, dict):
+                try:
+                    valid_dictionaries.append(Dictionary.ByPythonDictionary(d))
+                except Exception:
+                    continue
+
+        if len(valid_dictionaries) == 0:
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
+            return None
+
+        if len(valid_dictionaries) == 1:
+            if not silent:
+                print("Dictionary.ByMergedDictionaries - Warning: the input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
+            return valid_dictionaries[0]
+
+        first_dictionary = valid_dictionaries[0]
+
+        try:
+            sinkKeys = Dictionary.Keys(first_dictionary)
+            sinkValues = Dictionary.Values(first_dictionary)
+        except Exception:
+            sinkKeys = []
+            sinkValues = []
+
+        if sinkKeys is None:
+            sinkKeys = []
+        if sinkValues is None:
+            sinkValues = []
+
+        key_to_index = {key: i for i, key in enumerate(sinkKeys)}
+
+        for d in valid_dictionaries[1:]:
+            if d is None:
+                continue
+
+            try:
+                sourceKeys = Dictionary.Keys(d)
+            except Exception:
+                sourceKeys = []
+
+            if not sourceKeys:
+                continue
+
+            for sourceKey in sourceKeys:
+                try:
+                    sourceValue = Dictionary.ValueAtKey(d, sourceKey, None)
+                except Exception:
+                    sourceValue = None
+
+                if sourceValue is None:
+                    continue
+
+                index = key_to_index.get(sourceKey)
+
+                if index is None:
+                    key_to_index[sourceKey] = len(sinkKeys)
+                    sinkKeys.append(sourceKey)
+                    sinkValues.append(sourceValue)
+                    continue
+
+                sinkValue = sinkValues[index]
+
+                if sinkValue is None or sinkValue == "":
+                    sinkValues[index] = sourceValue
+                elif isinstance(sinkValue, list):
+                    if sourceValue not in sinkValue:
+                        sinkValue.append(sourceValue)
+                elif sourceValue != sinkValue:
+                    sinkValues[index] = [sinkValue, sourceValue]
+
+        if len(sinkKeys) > 0 and len(sinkValues) > 0:
+            return Dictionary.ByKeysValues(sinkKeys, sinkValues)
+
+        return None
+
+    @staticmethod
+    def ByMergedDictionaries_old(*dictionaries, silent: bool = False):
         """
         Creates a dictionary by merging the list of input dictionaries.
         """

@@ -1428,9 +1428,517 @@ class Vertex():
                 print("Vertex.IsExternal - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
         return not (Vertex.IsPeripheral(vertex, topology, tolerance=tolerance, silent=silent) or Vertex.IsInternal(vertex, topology, tolerance=tolerance, silent=silent))
-    
+
+
+
+
     @staticmethod
     def IsInternal(
+        vertex,
+        topology,
+        maxLeafSize: int = 4,
+        identify: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Returns True if the input vertex lies inside the input topology.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex.
+        topology : topologic_core.Topology
+            The input topology.
+        maxLeafSize: int , optional
+            Retained for backward compatibility. This implementation avoids building
+            a BVH for every call because that is expensive for single-point queries.
+            Default is 4.
+        identify: bool, optional
+            If set to True, a tuple is returned where the identified subTopology is
+            returned (e.g. (True, edge)). Default is False.
+        tolerance : float, optional
+            The desired tolerance. Default 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool or tuple
+            True/False, or (True/False, topology) if identify is True.
+        """
+
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Cell import Cell
+
+        def _return(status, item=None):
+            if identify:
+                return (status, item)
+            return status
+
+        def _warn(message):
+            if not silent:
+                print("Vertex.IsInternal - Warning:", message)
+
+        if not Topology.IsInstance(vertex, "Vertex"):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input vertex is not a valid vertex. Returning False.")
+            return _return(False, None)
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Vertex.IsInternal - Error: The input topology is not a valid topology. Returning False.")
+            return _return(False, None)
+
+        try:
+            vertex_coords = Vertex.Coordinates(vertex)
+        except Exception:
+            vertex_coords = None
+
+        if vertex_coords is None:
+            return _return(False, None)
+
+        # ------------------------------------------------------------------
+        # Small vector helpers
+        # ------------------------------------------------------------------
+
+        def _dot(a, b):
+            return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
+
+        def _cross(a, b):
+            return (
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0],
+            )
+
+        def _sub(a, b):
+            return (
+                a[0] - b[0],
+                a[1] - b[1],
+                a[2] - b[2],
+            )
+
+        def _length(a):
+            return (_dot(a, a))**0.5
+
+        def _dominant_axis(n):
+            ax = abs(n[0])
+            ay = abs(n[1])
+            az = abs(n[2])
+
+            if ax >= ay and ax >= az:
+                return 0
+            if ay >= ax and ay >= az:
+                return 1
+            return 2
+
+        def _project_2d(p, drop_axis):
+            if drop_axis == 0:
+                return (p[1], p[2])
+            if drop_axis == 1:
+                return (p[0], p[2])
+            return (p[0], p[1])
+
+        def _ring_area_2d(ring):
+            if not ring or len(ring) < 3:
+                return 0.0
+
+            area = 0.0
+            n = len(ring)
+
+            for i in range(n):
+                x1, y1 = ring[i]
+                x2, y2 = ring[(i + 1) % n]
+                area += x1*y2 - x2*y1
+
+            return 0.5 * area
+
+        def _point_on_segment_2d(p, a, b, tol):
+            px, py = p
+            ax, ay = a
+            bx, by = b
+
+            minx = min(ax, bx) - tol
+            maxx = max(ax, bx) + tol
+            miny = min(ay, by) - tol
+            maxy = max(ay, by) + tol
+
+            if px < minx or px > maxx or py < miny or py > maxy:
+                return False
+
+            abx = bx - ax
+            aby = by - ay
+            apx = px - ax
+            apy = py - ay
+
+            cross = apx*aby - apy*abx
+            if abs(cross) > tol:
+                return False
+
+            return True
+
+        def _point_in_ring_2d(point, ring, tol):
+            if not ring or len(ring) < 3:
+                return False
+
+            x, y = point
+            inside = False
+            n = len(ring)
+
+            for i in range(n):
+                a = ring[i]
+                b = ring[(i + 1) % n]
+
+                if _point_on_segment_2d(point, a, b, tol):
+                    return True
+
+                x1, y1 = a
+                x2, y2 = b
+
+                if (y1 > y) != (y2 > y):
+                    xinters = ((x2 - x1) * (y - y1) / ((y2 - y1) + 1e-300)) + x1
+                    if x <= xinters + tol:
+                        inside = not inside
+
+            return inside
+
+        def _topology_vertices(topo):
+            try:
+                return Topology.Vertices(topo, silent=True) or []
+            except TypeError:
+                try:
+                    return Topology.Vertices(topo) or []
+                except Exception:
+                    return []
+            except Exception:
+                return []
+
+        def _topology_edges(topo):
+            try:
+                return Topology.Edges(topo, silent=True) or []
+            except TypeError:
+                try:
+                    return Topology.Edges(topo) or []
+                except Exception:
+                    return []
+            except Exception:
+                return []
+
+        def _topology_faces(topo):
+            try:
+                return Topology.Faces(topo, silent=True) or []
+            except TypeError:
+                try:
+                    return Topology.Faces(topo) or []
+                except Exception:
+                    return []
+            except Exception:
+                return []
+
+        def _topology_cells(topo):
+            try:
+                return Topology.Cells(topo, silent=True) or []
+            except TypeError:
+                try:
+                    return Topology.Cells(topo) or []
+                except Exception:
+                    return []
+            except Exception:
+                return []
+
+        # ------------------------------------------------------------------
+        # Primitive containment tests
+        # ------------------------------------------------------------------
+
+        def _point_in_vertex(vtx, other_vertex):
+            try:
+                return Vertex.Distance(vtx, other_vertex) <= tolerance
+            except Exception:
+                return False
+
+        def _point_in_edge(vtx, edge):
+            try:
+                return Vertex.Distance(vtx, edge) <= tolerance
+            except Exception:
+                return False
+
+        def _point_in_cell(vtx, cell):
+            try:
+                return Cell.ContainmentStatus(cell, vtx, tolerance=tolerance) == 0
+            except TypeError:
+                try:
+                    return Cell.ContainmentStatus(cell, vtx) == 0
+                except Exception:
+                    return False
+            except Exception:
+                return False
+
+        def _face_rings(face):
+            wires = []
+
+            try:
+                external_boundary = Face.ExternalBoundary(face)
+                if external_boundary is not None:
+                    wires.append(external_boundary)
+            except Exception:
+                pass
+
+            try:
+                internal_boundaries = Face.InternalBoundaries(face)
+                if internal_boundaries:
+                    wires.extend([w for w in internal_boundaries if w is not None])
+            except Exception:
+                pass
+
+            if not wires:
+                try:
+                    wires = Topology.Wires(face, silent=True) or []
+                except TypeError:
+                    try:
+                        wires = Topology.Wires(face) or []
+                    except Exception:
+                        wires = []
+                except Exception:
+                    wires = []
+
+            rings = []
+
+            for wire in wires:
+                verts = _topology_vertices(wire)
+                if len(verts) < 3:
+                    continue
+
+                coords = []
+
+                for v in verts:
+                    try:
+                        c = Vertex.Coordinates(v)
+                        if c is not None:
+                            coords.append(c)
+                    except Exception:
+                        continue
+
+                if len(coords) >= 3:
+                    rings.append(coords)
+
+            return rings
+
+        def _point_in_face_fast(vtx, face):
+            # First reject non-coplanar points.
+            try:
+                if Vertex.PerpendicularDistance(vtx, face) > tolerance:
+                    return False
+            except Exception:
+                pass
+
+            try:
+                projected_vertex = Vertex.Project(vtx, face)
+                if projected_vertex is not None:
+                    point_3d = Vertex.Coordinates(projected_vertex)
+                else:
+                    point_3d = Vertex.Coordinates(vtx)
+            except Exception:
+                point_3d = Vertex.Coordinates(vtx)
+
+            if point_3d is None:
+                return False
+
+            try:
+                normal = Face.Normal(face)
+            except Exception:
+                normal = None
+
+            if normal is None or len(normal) < 3 or _length(normal) <= tolerance:
+                return _point_in_face_fallback(vtx, face)
+
+            drop_axis = _dominant_axis(normal)
+            point_2d = _project_2d(point_3d, drop_axis)
+
+            rings_3d = _face_rings(face)
+            if not rings_3d:
+                return _point_in_face_fallback(vtx, face)
+
+            rings_2d = []
+
+            for ring_3d in rings_3d:
+                ring_2d = [_project_2d(p, drop_axis) for p in ring_3d]
+                area = abs(_ring_area_2d(ring_2d))
+
+                if area > tolerance * tolerance:
+                    rings_2d.append((area, ring_2d))
+
+            if not rings_2d:
+                return _point_in_face_fallback(vtx, face)
+
+            # Largest ring is treated as the external boundary.
+            rings_2d.sort(key=lambda item: item[0], reverse=True)
+
+            outer = rings_2d[0][1]
+            holes = [item[1] for item in rings_2d[1:]]
+
+            if not _point_in_ring_2d(point_2d, outer, tolerance):
+                return False
+
+            for hole in holes:
+                if _point_in_ring_2d(point_2d, hole, tolerance):
+                    return False
+
+            return True
+
+        def _point_in_face_fallback(vtx, face):
+            # Original transform-based method retained as a safety fallback.
+            try:
+                from topologicpy.Vector import Vector
+
+                v = Vertex.ByCoordinates(Vertex.Coordinates(vtx))
+
+                if Vertex.PerpendicularDistance(v, face) > tolerance:
+                    return False
+
+                v = Vertex.Project(v, face)
+                centroid = Topology.Centroid(face)
+
+                x_tran = -Vertex.X(centroid)
+                y_tran = -Vertex.Y(centroid)
+                z_tran = -Vertex.Z(centroid)
+
+                face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
+                vertex_2 = Topology.Translate(v, x_tran, y_tran, z_tran)
+
+                face_normal = Face.Normal(face_2)
+                up = [0, 0, 1]
+                tran_mat = Vector.TransformationMatrix(face_normal, up)
+
+                flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
+                flat_vertex = Topology.Transform(vertex_2, tran_mat)
+                flat_vertex = Topology.Translate(flat_vertex, 0, 0, -Vertex.Z(flat_vertex))
+
+                return Vertex.IsInternal2D(flat_vertex, flat_face)
+            except Exception:
+                return False
+
+        # ------------------------------------------------------------------
+        # Fast direct paths.
+        # These avoid AABB construction, primitive collection, BVH construction,
+        # BVH querying, and candidate sorting for simple topologies.
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(topology, "Vertex"):
+            return _return(_point_in_vertex(vertex, topology), topology if _point_in_vertex(vertex, topology) else None)
+
+        if Topology.IsInstance(topology, "Edge"):
+            status = _point_in_edge(vertex, topology)
+            return _return(status, topology if status else None)
+
+        if Topology.IsInstance(topology, "Face"):
+            status = _point_in_face_fast(vertex, topology)
+            return _return(status, topology if status else None)
+
+        if Topology.IsInstance(topology, "Cell"):
+            status = _point_in_cell(vertex, topology)
+            return _return(status, topology if status else None)
+
+        # ------------------------------------------------------------------
+        # Composite topology path.
+        # Avoid building a BVH per call. For a single vertex query, direct
+        # iteration is usually faster than constructing a temporary BVH.
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(topology, "Cluster"):
+            vertices = _topology_vertices(topology)
+            edges = _topology_edges(topology)
+            faces = _topology_faces(topology)
+            cells = _topology_cells(topology)
+        else:
+            cells = _topology_cells(topology)
+
+            if cells:
+                vertices = []
+                edges = []
+                faces = []
+            else:
+                faces = _topology_faces(topology)
+
+                if faces:
+                    vertices = []
+                    edges = []
+                else:
+                    edges = _topology_edges(topology)
+
+                    if edges:
+                        vertices = []
+                    else:
+                        vertices = _topology_vertices(topology)
+
+        if not vertices and not edges and not faces and not cells:
+            return _return(False, None)
+
+        # Optional coarse AABB rejection for composite topologies only.
+        # This is much cheaper than building a BVH and helps reject obvious misses.
+        all_vertices = []
+
+        if vertices:
+            all_vertices = vertices
+        else:
+            all_vertices = _topology_vertices(topology)
+
+        if all_vertices:
+            try:
+                xs = []
+                ys = []
+                zs = []
+
+                for v in all_vertices:
+                    c = Vertex.Coordinates(v)
+                    if c is None:
+                        continue
+                    xs.append(c[0])
+                    ys.append(c[1])
+                    zs.append(c[2])
+
+                if xs and ys and zs:
+                    x, y, z = vertex_coords
+
+                    if (
+                        x < min(xs) - tolerance or x > max(xs) + tolerance or
+                        y < min(ys) - tolerance or y > max(ys) + tolerance or
+                        z < min(zs) - tolerance or z > max(zs) + tolerance
+                    ):
+                        return _return(False, None)
+            except Exception:
+                pass
+
+        # Priority: vertices, edges, faces, cells.
+        # This preserves the intent of the original sorted candidate loop without
+        # calling Helper.Sort or repeatedly querying Topology.Type.
+        for candidate in vertices:
+            if _point_in_vertex(vertex, candidate):
+                return _return(True, candidate)
+
+        for candidate in edges:
+            if _point_in_edge(vertex, candidate):
+                return _return(True, candidate)
+
+        for candidate in faces:
+            if _point_in_face_fast(vertex, candidate):
+                return _return(True, candidate)
+
+        for candidate in cells:
+            if _point_in_cell(vertex, candidate):
+                return _return(True, candidate)
+
+        return _return(False, None)
+
+
+
+
+
+
+    @staticmethod
+    def IsInternal_old(
         vertex,
         topology,
         maxLeafSize: int = 4,
