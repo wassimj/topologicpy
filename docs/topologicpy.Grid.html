@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Grid module &mdash; topologicpy 0.9.33 documentation</title>
+  <title>topologicpy.Grid module &mdash; topologicpy 0.9.34 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.33
+                0.9.34
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -151,6 +151,7 @@
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Grid.</span></span><span class="sig-name descname"><span class="pre">Grid</span></span><a class="headerlink" href="#topologicpy.Grid.Grid" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Utility methods for creating edge and vertex grids.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -159,42 +160,44 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.EdgesByDistances" title="topologicpy.Grid.Grid.EdgesByDistances"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EdgesByDistances</span></code></a>([face, uOrigin, vOrigin, ...])</p></td>
-<td><p>Creates a grid (cluster of edges).</p></td>
+<td><p>Creates a grid of edges by distance offsets.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.EdgesByParameters" title="topologicpy.Grid.Grid.EdgesByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EdgesByParameters</span></code></a>(face[, uRange, vRange, ...])</p></td>
-<td><p>Creates a grid (cluster of edges).</p></td>
+<td><p>Creates a grid of edges by face parameters.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.VerticesByDistances" title="topologicpy.Grid.Grid.VerticesByDistances"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByDistances</span></code></a>([face, origin, uRange, ...])</p></td>
-<td><p>Creates a grid (cluster of vertices).</p></td>
+<td><p>Creates a grid of vertices by distance offsets.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.VerticesByDistances_old" title="topologicpy.Grid.Grid.VerticesByDistances_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByDistances_old</span></code></a>([face, origin, ...])</p></td>
-<td><p>Creates a grid (cluster of vertices).</p></td>
+<td><p>Deprecated compatibility wrapper for VerticesByDistances.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Grid.Grid.VerticesByParameters" title="topologicpy.Grid.Grid.VerticesByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByParameters</span></code></a>([face, uRange, vRange, ...])</p></td>
-<td><p>Creates a grid (cluster of vertices).</p></td>
+<td><p>Creates a grid of vertices by face parameters.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid.EdgesByDistances">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EdgesByDistances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uOrigin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vOrigin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.EdgesByDistances" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a grid (cluster of edges).</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EdgesByDistances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uOrigin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vOrigin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.EdgesByDistances" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a grid of edges by distance offsets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid is created on the XY plane. Default is None.</p>
 </dd>
-<dt><strong>uOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>u</em> grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. Default is None.</p>
+<dt><strong>uOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin used for <em>u</em> offsets. If None, it is set to the face’s (0,0) parameter vertex
+or to the world origin when face is None. Default is None.</p>
 </dd>
-<dt><strong>vOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the <em>v</em> grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. Default is None.</p>
+<dt><strong>vOrigin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin used for <em>v</em> offsets. If None, it is set to the face’s (0,0) parameter vertex
+or to the world origin when face is None. Default is None.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distance offsets in the <em>u</em> direction. Default is [-0.5,-0.25,0,0.25,0.5].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distance offsets in the <em>v</em> direction. Default is [-0.5,-0.25,0,0.25,0.5].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the grid is clipped by the input face. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -202,7 +205,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created grid. Edges in the grid have an identifying dictionary with two keys: “dir” and “offset”. The “dir” key can have one of two values: “u” or “v”, the “offset” key contains the offset distance of that grid edge from the specified origin.</p>
+<dt>topologic_core.Cluster</dt><dd><p>The created grid. Edges in the grid have a dictionary with keys “dir” and “offset”.</p>
 </dd>
 </dl>
 </dd>
@@ -211,18 +214,18 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid.EdgesByParameters">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EdgesByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0.25,</span> <span class="pre">0.5,</span> <span class="pre">0.75,</span> <span class="pre">1.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0.25,</span> <span class="pre">0.5,</span> <span class="pre">0.75,</span> <span class="pre">1.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.EdgesByParameters" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a grid (cluster of edges).</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EdgesByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.EdgesByParameters" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a grid of edges by face parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines. Default is [0,0.25,0.5, 0.75, 1.0].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines. Default is [0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines. Default is [0,0.25,0.5, 0.75, 1.0].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines. Default is [0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the grid is clipped by the input face. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -230,7 +233,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created grid. Edges in the grid have an identifying dictionary with two keys: “dir” and “offset”. The “dir” key can have one of two values: “u” or “v”, the “offset” key contains the offset parameter of that grid edge.</p>
+<dt>topologic_core.Cluster</dt><dd><p>The created grid. Edges in the grid have a dictionary with keys “dir” and “offset”.</p>
 </dd>
 </dl>
 </dd>
@@ -239,24 +242,23 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid.VerticesByDistances">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDistances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByDistances" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a grid (cluster of vertices).</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDistances</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByDistances" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a grid of vertices by distance offsets.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid is created on the XY plane. Default is None.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the grid vertices. If set to None: if the face is set, the origin will be set to
-vertex at the face’s 0,0 parameter. If the face is set to None, the origin will be set to (0, 0, 0).
-Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the grid vertices. If None, it is set to the face’s (0,0) parameter vertex
+or to the world origin when face is None. Default is None.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distance offsets in the <em>u</em> direction. Default is [-0.5,-0.25,0,0.25,0.5].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distance offsets in the <em>v</em> direction. Default is [-0.5,-0.25,0,0.25,0.5].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, vertices outside the input face are removed. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -266,9 +268,7 @@ Default is None.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created grid (Cluster of Vertices). Vertices in the grid have an identifying dictionary
-with two keys: “u” and “v” that contain the <em>u</em> and <em>v</em> offset distances of that grid vertex
-from the specified origin.</p>
+<dt>topologic_core.Cluster</dt><dd><p>The created grid. Vertices in the grid have a dictionary with keys “u” and “v”.</p>
 </dd>
 </dl>
 </dd>
@@ -277,50 +277,24 @@ from the specified origin.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid.VerticesByDistances_old">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDistances_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[-0.5,</span> <span class="pre">-0.25,</span> <span class="pre">0,</span> <span class="pre">0.25,</span> <span class="pre">0.5]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByDistances_old" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a grid (cluster of vertices).</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
-</dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face’s 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). Default is None.</p>
-</dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>u</em> grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
-</dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of distances for the <em>v</em> grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].</p>
-</dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
-</dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created grid. Vertices in the grid have an identifying dictionary with two keys: “u” and “v”. The “dir” key can have one of two values: “u” or “v” that contain the <em>u</em> and <em>v</em> offset distances of that grid vertex from the specified origin.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByDistances_old</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByDistances_old" title="Permalink to this definition"></a></dt>
+<dd><p>Deprecated compatibility wrapper for VerticesByDistances.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Grid.Grid.VerticesByParameters">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.0,</span> <span class="pre">0.25,</span> <span class="pre">0.5,</span> <span class="pre">0.75,</span> <span class="pre">1.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0.0,</span> <span class="pre">0.25,</span> <span class="pre">0.5,</span> <span class="pre">0.75,</span> <span class="pre">1.0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByParameters" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a grid (cluster of vertices).</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vRange</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clip</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Grid.Grid.VerticesByParameters" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a grid of vertices by face parameters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">topologic_core.Face , optional</span></dt><dd><p>The input face. If set to None, the grid will be created on the XY plane. Default is None.</p>
+<dt><strong>face</strong><span class="classifier">topologic_core.Face</span></dt><dd><p>The input face.</p>
 </dd>
-<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters for the <em>u</em> grid lines from the uOrigin. Default is [0.0,0.25,0.5,0.75,1.0].</p>
+<dt><strong>uRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>u</em> parameters. Default is [0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters for the <em>v</em> grid lines from the vOrigin. Default is [0.0,0.25,0.5,0.75,1.0].</p>
+<dt><strong>vRange</strong><span class="classifier">list , optional</span></dt><dd><p>A list of <em>v</em> parameters. Default is [0,0.25,0.5,0.75,1.0].</p>
 </dd>
-<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True the grid will be clipped by the shape of the input face. Default is False.</p>
+<dt><strong>clip</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, vertices outside the input face are removed. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -330,7 +304,7 @@ from the specified origin.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created grid. Vertices in the grid have an identifying dictionary with two keys: “u” and “v”. The “dir” key can have one of two values: “u” or “v” that contain the <em>u</em> and <em>v</em> offset distances of that grid vertex from the specified origin.</p>
+<dt>topologic_core.Cluster</dt><dd><p>The created grid. Vertices in the grid have a dictionary with keys “u” and “v”.</p>
 </dd>
 </dl>
 </dd>
