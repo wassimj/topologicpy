@@ -16,320 +16,428 @@
 
 from __future__ import annotations
 
-from topologicpy.Core import Core
 
-class Grid():
+class Grid:
+    """Utility methods for creating edge and vertex grids."""
+
+    # -------------------------------------------------------------------------
+    # Private helpers
+    # -------------------------------------------------------------------------
     @staticmethod
-    def EdgesByDistances(face=None, uOrigin=None, vOrigin=None, uRange=[-0.5,-0.25,0, 0.25,0.5], vRange=[-0.5,-0.25,0, 0.25,0.5], clip=False, mantissa: int = 6, tolerance=0.0001):
+    def _IsFace(face) -> bool:
+        from topologicpy.Topology import Topology
+        return Topology.IsInstance(face, "Face")
+
+    @staticmethod
+    def _IsVertex(vertex) -> bool:
+        from topologicpy.Topology import Topology
+        return Topology.IsInstance(vertex, "Vertex")
+
+    @staticmethod
+    def _DefaultDistanceRange():
+        return [-0.5, -0.25, 0.0, 0.25, 0.5]
+
+    @staticmethod
+    def _DefaultParameterRange():
+        return [0.0, 0.25, 0.5, 0.75, 1.0]
+
+    @staticmethod
+    def _FloatList(values, default=None):
+        if values is None:
+            values = default
+        if values is None:
+            return None
+        if not isinstance(values, (list, tuple)):
+            return None
+        try:
+            return sorted([float(v) for v in values])
+        except Exception:
+            return None
+
+    @staticmethod
+    def _ParameterList(values, default=None):
+        values = Grid._FloatList(values, default)
+        if values is None:
+            return None
+        if len(values) < 1:
+            return values
+        if min(values) < 0.0 or max(values) > 1.0:
+            return None
+        return values
+
+    @staticmethod
+    def _Coordinates(vertex, mantissa=6):
+        from topologicpy.Vertex import Vertex
+        return [
+            Vertex.X(vertex, mantissa=mantissa),
+            Vertex.Y(vertex, mantissa=mantissa),
+            Vertex.Z(vertex, mantissa=mantissa),
+        ]
+
+    @staticmethod
+    def _Subtract(a, b):
+        return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+
+    @staticmethod
+    def _Add(a, b):
+        return [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+
+    @staticmethod
+    def _Scale(v, s):
+        return [v[0] * s, v[1] * s, v[2] * s]
+
+    @staticmethod
+    def _Magnitude(v):
+        return (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]) ** 0.5
+
+    @staticmethod
+    def _Normalize(v, tolerance=0.0001):
+        mag = Grid._Magnitude(v)
+        if mag <= max(float(tolerance), 1e-12):
+            return None
+        return [v[0] / mag, v[1] / mag, v[2] / mag]
+
+    @staticmethod
+    def _Point(origin, u_dir, v_dir, u=0.0, v=0.0, mantissa=6):
+        from topologicpy.Vertex import Vertex
+        p = Grid._Add(origin, Grid._Add(Grid._Scale(u_dir, u), Grid._Scale(v_dir, v)))
+        return Vertex.ByCoordinates(round(p[0], mantissa), round(p[1], mantissa), round(p[2], mantissa))
+
+    @staticmethod
+    def _Origin(face=None, origin=None, mantissa=6):
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        if Grid._IsVertex(origin):
+            return origin
+        if Grid._IsFace(face):
+            return Face.VertexByParameters(face, 0, 0)
+        return Vertex.ByCoordinates(0, 0, 0)
+
+    @staticmethod
+    def _Basis(face=None, mantissa=6, tolerance=0.0001):
+        """Return normalized u and v basis vectors for a face or the world XY plane."""
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+
+        if Grid._IsFace(face):
+            p00 = Face.VertexByParameters(face, 0, 0)
+            p10 = Face.VertexByParameters(face, 1, 0)
+            p01 = Face.VertexByParameters(face, 0, 1)
+            c00 = Grid._Coordinates(p00, mantissa=mantissa)
+            c10 = Grid._Coordinates(p10, mantissa=mantissa)
+            c01 = Grid._Coordinates(p01, mantissa=mantissa)
+            u_vec = Grid._Subtract(c10, c00)
+            v_vec = Grid._Subtract(c01, c00)
+        else:
+            u_vec = [1.0, 0.0, 0.0]
+            v_vec = [0.0, 1.0, 0.0]
+
+        u_dir = Grid._Normalize(u_vec, tolerance=tolerance)
+        v_dir = Grid._Normalize(v_vec, tolerance=tolerance)
+        return u_dir, v_dir
+
+    @staticmethod
+    def _Span(values):
+        """Return a usable [min, max] span. Avoid a degenerate span for one-value ranges."""
+        if values is None or len(values) < 1:
+            return None
+        a = min(values)
+        b = max(values)
+        if abs(b - a) <= 1e-12:
+            # A single offset still needs a finite line. Use a symmetric unit span.
+            return [a - 0.5, a + 0.5]
+        return [a, b]
+
+    @staticmethod
+    def _SetDictionary(topology, keys, values):
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        d = Dictionary.ByKeysValues(keys, values)
+        if d:
+            Topology.SetDictionary(topology, d)
+        return topology
+
+    @staticmethod
+    def _AppendEdgeResult(result, grid_edges, direction, offset):
+        from topologicpy.Topology import Topology
+        if not result:
+            return
+        if Topology.IsInstance(result, "Edge"):
+            Grid._SetDictionary(result, ["dir", "offset"], [direction, offset])
+            grid_edges.append(result)
+            return
+        try:
+            if Topology.Type(result) > Topology.TypeID("Edge"):
+                for edge in Topology.Edges(result):
+                    if Topology.IsInstance(edge, "Edge"):
+                        Grid._SetDictionary(edge, ["dir", "offset"], [direction, offset])
+                        grid_edges.append(edge)
+        except Exception:
+            return
+
+    @staticmethod
+    def _FlattenFor2D(face, cluster, tolerance=0.0001):
+        """Flatten a face and a cluster to the XY plane without relying on Topology.Centroid."""
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Vector import Vector
+
+        ref = Face.VertexByParameters(face, 0, 0)
+        x_tran = -Vertex.X(ref)
+        y_tran = -Vertex.Y(ref)
+        z_tran = -Vertex.Z(ref)
+
+        face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
+        cluster_2 = Topology.Translate(cluster, x_tran, y_tran, z_tran)
+
+        face_normal = Face.Normal(face_2)
+        if not isinstance(face_normal, list) or len(face_normal) != 3:
+            return None, None
+
+        tran_mat = Vector.TransformationMatrix(face_normal, [0, 0, 1])
+        flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
+        flat_cluster = Topology.Transform(cluster_2, tran_mat, transferDictionaries=False)
+        return flat_face, flat_cluster
+
+    @staticmethod
+    def _FilterVerticesByFace(vertices, face, tolerance=0.0001):
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+
+        if not vertices:
+            return []
+        if not Grid._IsFace(face):
+            return vertices
+
+        cluster = Cluster.ByTopologies(vertices)
+        if not cluster:
+            return []
+
+        try:
+            flat_face, flat_cluster = Grid._FlattenFor2D(face, cluster, tolerance=tolerance)
+            if not flat_face or not flat_cluster:
+                return []
+            flat_vertices = Topology.Vertices(flat_cluster)
+            status_list = Vertex.IsInternal2D(flat_vertices, flat_face)
+            if not isinstance(status_list, list) or len(status_list) != len(vertices):
+                return []
+            return [v for i, v in enumerate(vertices) if status_list[i] is True]
+        except Exception:
+            # Safe but slower fallback for unusual face/transform cases.
+            filtered = []
+            for v in vertices:
+                try:
+                    if Vertex.IsInternal(v, face, tolerance=tolerance):
+                        filtered.append(v)
+                except TypeError:
+                    if Vertex.IsInternal(v, face):
+                        filtered.append(v)
+            return filtered
+
+    # -------------------------------------------------------------------------
+    # Public methods
+    # -------------------------------------------------------------------------
+    @staticmethod
+    def EdgesByDistances(face=None,
+                         uOrigin=None,
+                         vOrigin=None,
+                         uRange=None,
+                         vRange=None,
+                         clip=False,
+                         mantissa: int = 6,
+                         tolerance=0.0001):
         """
-        Creates a grid (cluster of edges).
+        Creates a grid of edges by distance offsets.
 
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. Default is None.
+            The input face. If set to None, the grid is created on the XY plane. Default is None.
         uOrigin : topologic_core.Vertex , optional
-            The origin of the *u* grid lines. If set to None: if the face is set, the uOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the uOrigin will be set to the origin. Default is None.
+            The origin used for *u* offsets. If None, it is set to the face's (0,0) parameter vertex
+            or to the world origin when face is None. Default is None.
         vOrigin : topologic_core.Vertex , optional
-            The origin of the *v* grid lines. If set to None: if the face is set, the vOrigin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the vOrigin will be set to the origin. Default is None.
+            The origin used for *v* offsets. If None, it is set to the face's (0,0) parameter vertex
+            or to the world origin when face is None. Default is None.
         uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distance offsets in the *u* direction. Default is [-0.5,-0.25,0,0.25,0.5].
         vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distance offsets in the *v* direction. Default is [-0.5,-0.25,0,0.25,0.5].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. Default is False.
+            If True, the grid is clipped by the input face. Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round coordinates to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
         topologic_core.Cluster
-            The created grid. Edges in the grid have an identifying dictionary with two keys: "dir" and "offset". The "dir" key can have one of two values: "u" or "v", the "offset" key contains the offset distance of that grid edge from the specified origin.
-
+            The created grid. Edges in the grid have a dictionary with keys "dir" and "offset".
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vector import Vector
 
-        if len(uRange) < 1 or len(vRange) < 1:
+        u_vals = Grid._FloatList(uRange, Grid._DefaultDistanceRange())
+        v_vals = Grid._FloatList(vRange, Grid._DefaultDistanceRange())
+        if u_vals is None or v_vals is None:
             return None
-        if not uOrigin:
-            if not Topology.IsInstance(face, "Face"):
-                uOrigin = Vertex.ByCoordinates(0, 0, 0)
-            else:
-                uOrigin = Face.VertexByParameters(face, 0, 0)
-        if not vOrigin:
-            if not Topology.IsInstance(face, "Face"):
-                vOrigin = Vertex.ByCoordinates(0, 0, 0)
-            else:
-                vOrigin = Face.VertexByParameters(face, 0, 0)
-        
-        if Topology.IsInstance(face, "Face"):
-            v1 = Face.VertexByParameters(face, 0, 0)
-            v2 = Face.VertexByParameters(face, 1, 0)
-            v3 = Face.VertexByParameters(face, 0, 0)
-            v4 = Face.VertexByParameters(face, 0, 1)
-        else:
-            v1 = Vertex.ByCoordinates(0, 0, 0)
-            v2 = Vertex.ByCoordinates(max(uRange),0,0)
-            v3 = Vertex.ByCoordinates(0, 0, 0)
-            v4 = Vertex.ByCoordinates(0,max(vRange),0)
+        if len(u_vals) < 1 and len(v_vals) < 1:
+            return None
 
-        uVector = [Vertex.X(v2, mantissa=mantissa)-Vertex.X(v1, mantissa=mantissa), Vertex.Y(v2, mantissa=mantissa)-Vertex.Y(v1, mantissa=mantissa),Vertex.Z(v2, mantissa=mantissa)-Vertex.Z(v1, mantissa=mantissa)]
-        vVector = [Vertex.X(v4, mantissa=mantissa)-Vertex.X(v3, mantissa=mantissa), Vertex.Y(v4, mantissa=mantissa)-Vertex.Y(v3, mantissa=mantissa),Vertex.Z(v4, mantissa=mantissa)-Vertex.Z(v3, mantissa=mantissa)]
-        gridEdges = []
-        if len(uRange) > 0:
-            uRange.sort()
-            uuVector = Vector.Normalize(uVector)
-            for u in uRange:
-                tempVec = Vector.Multiply(uuVector, u, tolerance=tolerance)
-                v1 = Vertex.ByCoordinates(Vertex.X(uOrigin, mantissa=mantissa)+tempVec[0], Vertex.Y(uOrigin, mantissa=mantissa)+tempVec[1], Vertex.Z(uOrigin, mantissa=mantissa)+tempVec[2])
-                v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+vVector[0], Vertex.Y(v1, mantissa=mantissa)+vVector[1], Vertex.Z(v1, mantissa=mantissa)+vVector[2])
-                e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-                if clip and Topology.IsInstance(face, "Face"):
-                    e = Topology.Intersect(e,face)
-                if e:
-                    if Topology.IsInstance(e, "Edge"):
-                        d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                        Topology.SetDictionary(e, d)
-                        gridEdges.append(e)
-                    elif Topology.Type(e) > Topology.TypeID("Edge"):
-                        tempEdges = Topology.Edges(e)
-                        for tempEdge in tempEdges:
-                            d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                            Topology.SetDictionary(tempEdge, d)
-                            gridEdges.append(tempEdge)
-        if len(vRange) > 0:
-            vRange.sort()
-            uvVector = Vector.Normalize(vVector)
-            for v in vRange:
-                tempVec = Vector.Multiply(uvVector, v, tolerance=tolerance)
-                v1 = Vertex.ByCoordinates(Vertex.X(vOrigin, mantissa=mantissa)+tempVec[0], Vertex.Y(vOrigin, mantissa=mantissa)+tempVec[1], Vertex.Z(vOrigin, mantissa=mantissa)+tempVec[2])
-                v2 = Vertex.ByCoordinates(Vertex.X(v1, mantissa=mantissa)+uVector[0], Vertex.Y(v1, mantissa=mantissa)+uVector[1], Vertex.Z(v1, mantissa=mantissa)+uVector[2])
-                e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-                if clip and Topology.IsInstance(face, "Face"):
-                    e = Topology.Intersect(e,face)
-                if e:
-                    if Topology.IsInstance(e, "Edge"):
-                        d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                        Topology.SetDictionary(e, d)
-                        gridEdges.append(e)
-                    elif Topology.Type(e) > Topology.TypeID("Edge"):
-                        tempEdges = Topology.Edges(e)
-                        for tempEdge in tempEdges:
-                            d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                            Topology.SetDictionary(tempEdge, d)
-                            gridEdges.append(tempEdge)
-        grid = None
-        if len(gridEdges) > 0:
-            grid = Cluster.ByTopologies(gridEdges)
-        return grid
-    
+        u_dir, v_dir = Grid._Basis(face=face, mantissa=mantissa, tolerance=tolerance)
+        if u_dir is None or v_dir is None:
+            return None
+
+        u_origin = Grid._Origin(face=face, origin=uOrigin, mantissa=mantissa)
+        v_origin = Grid._Origin(face=face, origin=vOrigin, mantissa=mantissa)
+        u_origin_coords = Grid._Coordinates(u_origin, mantissa=mantissa)
+        v_origin_coords = Grid._Coordinates(v_origin, mantissa=mantissa)
+
+        u_span = Grid._Span(u_vals)
+        v_span = Grid._Span(v_vals)
+        if u_span is None or v_span is None:
+            return None
+
+        has_face = Grid._IsFace(face)
+        grid_edges = []
+
+        # Constant-u lines, parallel to the v direction and spanning vRange.
+        for u in u_vals:
+            start = Grid._Point(u_origin_coords, u_dir, v_dir, u, v_span[0], mantissa=mantissa)
+            end = Grid._Point(u_origin_coords, u_dir, v_dir, u, v_span[1], mantissa=mantissa)
+            edge = Edge.ByVertices([start, end], tolerance=tolerance)
+            if edge and clip and has_face:
+                edge = Topology.Intersect(edge, face)
+            Grid._AppendEdgeResult(edge, grid_edges, "u", u)
+
+        # Constant-v lines, parallel to the u direction and spanning uRange.
+        for v in v_vals:
+            start = Grid._Point(v_origin_coords, u_dir, v_dir, u_span[0], v, mantissa=mantissa)
+            end = Grid._Point(v_origin_coords, u_dir, v_dir, u_span[1], v, mantissa=mantissa)
+            edge = Edge.ByVertices([start, end], tolerance=tolerance)
+            if edge and clip and has_face:
+                edge = Topology.Intersect(edge, face)
+            Grid._AppendEdgeResult(edge, grid_edges, "v", v)
+
+        if len(grid_edges) < 1:
+            return None
+        return Cluster.ByTopologies(grid_edges)
+
     @staticmethod
-    def EdgesByParameters(face, uRange=[0,0.25,0.5,0.75,1.0], vRange=[0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001):
+    def EdgesByParameters(face,
+                          uRange=None,
+                          vRange=None,
+                          clip=False,
+                          tolerance=0.0001):
         """
-        Creates a grid (cluster of edges).
+        Creates a grid of edges by face parameters.
 
         Parameters
         ----------
         face : topologic_core.Face
             The input face.
         uRange : list , optional
-            A list of *u* parameters for the *u* grid lines. Default is [0,0.25,0.5, 0.75, 1.0].
+            A list of *u* parameters for the *u* grid lines. Default is [0,0.25,0.5,0.75,1.0].
         vRange : list , optional
-            A list of *v* parameters for the *v* grid lines. Default is [0,0.25,0.5, 0.75, 1.0].
+            A list of *v* parameters for the *v* grid lines. Default is [0,0.25,0.5,0.75,1.0].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. Default is False.
+            If True, the grid is clipped by the input face. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        
+
         Returns
         -------
         topologic_core.Cluster
-            The created grid. Edges in the grid have an identifying dictionary with two keys: "dir" and "offset". The "dir" key can have one of two values: "u" or "v", the "offset" key contains the offset parameter of that grid edge.
-
+            The created grid. Edges in the grid have a dictionary with keys "dir" and "offset".
         """
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
 
-        if not Topology.IsInstance(face, "Face"):
+        if not Grid._IsFace(face):
             return None
-        if len(uRange) < 1 and len(vRange) < 1:
-            return None
-        if len(uRange) > 0:
-            if (min(uRange) < 0) or (max(uRange) > 1):
-                return None
-        if len(vRange) > 0:
-            if (min(vRange) < 0) or (max(vRange) > 1):
-                return None
 
-        uRange.sort()
-        vRange.sort()
-        gridEdges = []
-        for u in uRange:
-            v1 = Face.VertexByParameters(face, u, 0)
-            v2 = Face.VertexByParameters(face, u, 1)
-            e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-            if clip and Topology.IsInstance(face, "Face"):
-                e = Topology.Intersect(e,face)
-            if e:
-                if Topology.IsInstance(e, "Edge"):
-                    d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                    Topology.SetDictionary(e, d)
-                    gridEdges.append(e)
-                elif Topology.Type(e) > Topology.TypeID("Edge"):
-                    tempEdges = Topology.Edges(e)
-                    for tempEdge in tempEdges:
-                        d = Dictionary.ByKeysValues(["dir", "offset"],["u",u])
-                        Topology.SetDictionary(tempEdge, d)
-                        gridEdges.append(tempEdge)
-        for v in vRange:
-            v1 = Face.VertexByParameters(face, 0, v)
-            v2 = Face.VertexByParameters(face, 1, v)
-            e = Edge.ByVertices([v1, v2], tolerance=tolerance)
-            if clip and Topology.IsInstance(face, "Face"):
-                e = Topology.Intersect(e,face)
-            if e:
-                if Topology.IsInstance(e, "Edge"):
-                    d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                    Topology.SetDictionary(e, d)
-                    gridEdges.append(e)
-                elif Topology.Type(e) > Topology.TypeID("Edge"):
-                    tempEdges = Topology.Edges(e)
-                    for tempEdge in tempEdges:
-                        d = Dictionary.ByKeysValues(["dir", "offset"],["v",v])
-                        tempEdge = Topology.SetDictionary(tempEdge, d)
-                        gridEdges.append(tempEdge)
-        grid = None
-        if len(gridEdges) > 0:
-            grid = Cluster.ByTopologies(gridEdges)
-        return grid
+        u_vals = Grid._ParameterList(uRange, Grid._DefaultParameterRange())
+        v_vals = Grid._ParameterList(vRange, Grid._DefaultParameterRange())
+        if u_vals is None or v_vals is None:
+            return None
+        if len(u_vals) < 1 and len(v_vals) < 1:
+            return None
+
+        grid_edges = []
+
+        for u in u_vals:
+            start = Face.VertexByParameters(face, u, 0)
+            end = Face.VertexByParameters(face, u, 1)
+            edge = Edge.ByVertices([start, end], tolerance=tolerance)
+            if edge and clip:
+                edge = Topology.Intersect(edge, face)
+            Grid._AppendEdgeResult(edge, grid_edges, "u", u)
+
+        for v in v_vals:
+            start = Face.VertexByParameters(face, 0, v)
+            end = Face.VertexByParameters(face, 1, v)
+            edge = Edge.ByVertices([start, end], tolerance=tolerance)
+            if edge and clip:
+                edge = Topology.Intersect(edge, face)
+            Grid._AppendEdgeResult(edge, grid_edges, "v", v)
+
+        if len(grid_edges) < 1:
+            return None
+        return Cluster.ByTopologies(grid_edges)
 
     @staticmethod
     def VerticesByDistances_old(face=None,
-                            origin=None,
-                            uRange: list = [-0.5,-0.25,0, 0.25,0.5],
-                            vRange: list = [-0.5,-0.25,0,0.25,0.5],
-                            clip: bool = False,
-                            mantissa: int = 6,
-                            tolerance: float = 0.0001):
+                                origin=None,
+                                uRange=None,
+                                vRange=None,
+                                clip: bool = False,
+                                mantissa: int = 6,
+                                tolerance: float = 0.0001):
         """
-        Creates a grid (cluster of vertices).
-
-        Parameters
-        ----------
-        face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. Default is None.
-        origin : topologic_core.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to vertex at the face's 0,0 paratmer. If the face is set to None, the origin will be set to (0, 0, 0). Default is None.
-        uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
-        vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
-        clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. Default is False.
-        mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Cluster
-            The created grid. Vertices in the grid have an identifying dictionary with two keys: "u" and "v". The "dir" key can have one of two values: "u" or "v" that contain the *u* and *v* offset distances of that grid vertex from the specified origin.
-
+        Deprecated compatibility wrapper for VerticesByDistances.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
-        from topologicpy.Face import Face
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vector import Vector
-
-        if len(uRange) < 1 or len(vRange) < 1:
-            return None
-        if not Topology.IsInstance(origin, "Vertex"):
-            if not Topology.IsInstance(face, "Face"):
-                origin = Vertex.ByCoordinates(0, 0, 0)
-            else:
-                origin = Face.VertexByParameters(face, 0, 0)
-        
-        print("ORIGIN:", Vertex.Coordinates(origin))
-        
-        if Topology.IsInstance(face, "Face"):
-            v2 = Face.VertexByParameters(face, 1, 0)
-            v3 = Face.VertexByParameters(face, 0, 0)
-            v4 = Face.VertexByParameters(face, 0, 1)
-        else:
-            v2 = Vertex.ByCoordinates(max(uRange),0,0)
-            v3 = Vertex.ByCoordinates(0, 0, 0)
-            v4 = Vertex.ByCoordinates(0,max(vRange),0)
-
-        uVector = [Vertex.X(v2, mantissa=mantissa)-Vertex.X(origin, mantissa=mantissa), Vertex.Y(v2, mantissa=mantissa)-Vertex.Y(origin, mantissa=mantissa),Vertex.Z(v2, mantissa=mantissa)-Vertex.Z(origin, mantissa=mantissa)]
-        vVector = [Vertex.X(v4, mantissa=mantissa)-Vertex.X(v3, mantissa=mantissa), Vertex.Y(v4, mantissa=mantissa)-Vertex.Y(v3, mantissa=mantissa),Vertex.Z(v4, mantissa=mantissa)-Vertex.Z(v3, mantissa=mantissa)]
-        gridVertices = []
-        if len(uRange) > 0:
-            uRange.sort()
-            uuVector = Vector.Normalize(uVector)
-            uvVector = Vector.Normalize(vVector)
-            for u in uRange:
-                for v in vRange:
-                    uTempVec = Vector.Multiply(uuVector, u, tolerance=tolerance)
-                    vTempVec = Vector.Multiply(uvVector, v, tolerance=tolerance)
-                    gridVertex = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa)+uTempVec[0], Vertex.Y(origin, mantissa=mantissa)+vTempVec[1], Vertex.Z(origin, mantissa=mantissa)+uTempVec[2])
-                    d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                    if d:
-                        Topology.SetDictionary(gridVertex, d)
-                    if clip and Topology.IsInstance(face, "Face"):
-                        if Vertex.IsInternal(gridVertex, face):
-                                gridVertices.append(gridVertex)
-                    else:
-                        gridVertices.append(gridVertex)
-
-        grid = None
-        if len(gridVertices) > 0:
-            grid = Cluster.ByTopologies(gridVertices)
-        return grid
-
+        return Grid.VerticesByDistances(face=face,
+                                        origin=origin,
+                                        uRange=uRange,
+                                        vRange=vRange,
+                                        clip=clip,
+                                        mantissa=mantissa,
+                                        tolerance=tolerance,
+                                        silent=True)
 
     @staticmethod
     def VerticesByDistances(face=None,
                             origin=None,
-                            uRange: list = [-0.5, -0.25, 0, 0.25, 0.5],
-                            vRange: list = [-0.5, -0.25, 0, 0.25, 0.5],
+                            uRange=None,
+                            vRange=None,
                             clip: bool = False,
                             mantissa: int = 6,
                             tolerance: float = 0.0001,
                             silent: bool = False):
         """
-        Creates a grid (cluster of vertices).
+        Creates a grid of vertices by distance offsets.
 
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. Default is None.
+            The input face. If set to None, the grid is created on the XY plane. Default is None.
         origin : topologic_core.Vertex , optional
-            The origin of the grid vertices. If set to None: if the face is set, the origin will be set to
-            vertex at the face's 0,0 parameter. If the face is set to None, the origin will be set to (0, 0, 0).
-            Default is None.
+            The origin of the grid vertices. If None, it is set to the face's (0,0) parameter vertex
+            or to the world origin when face is None. Default is None.
         uRange : list , optional
-            A list of distances for the *u* grid lines from the uOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distance offsets in the *u* direction. Default is [-0.5,-0.25,0,0.25,0.5].
         vRange : list , optional
-            A list of distances for the *v* grid lines from the vOrigin. Default is [-0.5,-0.25,0, 0.25,0.5].
+            A list of distance offsets in the *v* direction. Default is [-0.5,-0.25,0,0.25,0.5].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. Default is False.
+            If True, vertices outside the input face are removed. Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round coordinates to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -338,168 +446,60 @@ class Grid():
         Returns
         -------
         topologic_core.Cluster
-            The created grid (Cluster of Vertices). Vertices in the grid have an identifying dictionary
-            with two keys: "u" and "v" that contain the *u* and *v* offset distances of that grid vertex
-            from the specified origin.
+            The created grid. Vertices in the grid have a dictionary with keys "u" and "v".
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vector import Vector
-        import math
 
-        # -----------------------------
-        # Helpers
-        # -----------------------------
-        def _round(x: float) -> float:
-            return round(float(x), int(mantissa))
-
-        def _vec_mag(v):
-            return math.sqrt(v[0]*v[0] + v[1]*v[1] + v[2]*v[2])
-
-        def _safe_normalize(v):
-            m = _vec_mag(v)
-            if m <= max(tolerance, 1e-12):
-                return None
-            return [v[0]/m, v[1]/m, v[2]/m]
-
-        # -----------------------------
-        # Validate ranges
-        # -----------------------------
-        if not isinstance(uRange, list) or not isinstance(vRange, list):
-            return None
-        if len(uRange) < 1 or len(vRange) < 1:
+        u_vals = Grid._FloatList(uRange, Grid._DefaultDistanceRange())
+        v_vals = Grid._FloatList(vRange, Grid._DefaultDistanceRange())
+        if u_vals is None or v_vals is None or len(u_vals) < 1 or len(v_vals) < 1:
+            if not silent:
+                print("Grid.VerticesByDistances - Error: The input uRange or vRange parameter is not valid. Returning None.")
             return None
 
-        # Do NOT mutate caller's lists
-        u_vals = sorted([float(x) for x in uRange])
-        v_vals = sorted([float(x) for x in vRange])
-
-        has_face = Topology.IsInstance(face, "Face")
-
-        # -----------------------------
-        # Resolve origin
-        # -----------------------------
-        if not Topology.IsInstance(origin, "Vertex"):
-            if has_face:
-                origin = Face.VertexByParameters(face, 0, 0)
-            else:
-                origin = Vertex.ByCoordinates(0, 0, 0)
-
-        # For faces: build a consistent local basis relative to the param point of the origin
-        # If we can't recover parameters at origin, fall back to (0,0).
-        if has_face:
-            u0 = 0.0
-            v0 = 0.0
-            try:
-                # If available in your Face API, this keeps the basis local to the provided origin.
-                uv = Face.ParametersAtVertex(face, origin)  # expected (u, v)
-                if isinstance(uv, (list, tuple)) and len(uv) >= 2:
-                    u0 = float(uv[0])
-                    v0 = float(uv[1])
-            except Exception:
-                # fallback: treat origin as (0,0) param reference
-                u0, v0 = 0.0, 0.0
-
-            # Use the face param point as the geometric reference for basis construction
-            ref = Face.VertexByParameters(face, u0, v0)
-
-            # Basis directions from the SAME reference point
-            vU = Face.VertexByParameters(face, u0 + 1.0, v0)
-            vV = Face.VertexByParameters(face, u0, v0 + 1.0)
-
-            uVector = [
-                Vertex.X(vU, mantissa=mantissa) - Vertex.X(ref, mantissa=mantissa),
-                Vertex.Y(vU, mantissa=mantissa) - Vertex.Y(ref, mantissa=mantissa),
-                Vertex.Z(vU, mantissa=mantissa) - Vertex.Z(ref, mantissa=mantissa)
-            ]
-            vVector = [
-                Vertex.X(vV, mantissa=mantissa) - Vertex.X(ref, mantissa=mantissa),
-                Vertex.Y(vV, mantissa=mantissa) - Vertex.Y(ref, mantissa=mantissa),
-                Vertex.Z(vV, mantissa=mantissa) - Vertex.Z(ref, mantissa=mantissa)
-            ]
-
-            # Use the provided origin as the translation anchor (but keep basis local to ref)
-            ox = Vertex.X(origin, mantissa=mantissa)
-            oy = Vertex.Y(origin, mantissa=mantissa)
-            oz = Vertex.Z(origin, mantissa=mantissa)
-        else:
-            # XY plane basis
-            uVector = [1.0, 0.0, 0.0]
-            vVector = [0.0, 1.0, 0.0]
-            ox = Vertex.X(origin, mantissa=mantissa)
-            oy = Vertex.Y(origin, mantissa=mantissa)
-            oz = Vertex.Z(origin, mantissa=mantissa)
-
-        uu = _safe_normalize(uVector)
-        vv = _safe_normalize(vVector)
-        if uu is None or vv is None:
+        u_dir, v_dir = Grid._Basis(face=face, mantissa=mantissa, tolerance=tolerance)
+        if u_dir is None or v_dir is None:
+            if not silent:
+                print("Grid.VerticesByDistances - Error: Could not derive a valid grid basis. Returning None.")
             return None
 
-        # -----------------------------
-        # Build grid vertices
-        # -----------------------------
-        gridVertices = []
+        origin_vertex = Grid._Origin(face=face, origin=origin, mantissa=mantissa)
+        origin_coords = Grid._Coordinates(origin_vertex, mantissa=mantissa)
+
+        grid_vertices = []
         for u in u_vals:
             for v in v_vals:
-                uTempVec = Vector.Multiply(uu, u, tolerance=tolerance)
-                vTempVec = Vector.Multiply(vv, v, tolerance=tolerance)
+                vertex = Grid._Point(origin_coords, u_dir, v_dir, u, v, mantissa=mantissa)
+                Grid._SetDictionary(vertex, ["u", "v"], [u, v])
+                grid_vertices.append(vertex)
 
-                # Correct: origin + u*û + v*ṽ (component-wise)
-                x = _round(ox + uTempVec[0] + vTempVec[0])
-                y = _round(oy + uTempVec[1] + vTempVec[1])
-                z = _round(oz + uTempVec[2] + vTempVec[2])
+        if clip and Grid._IsFace(face):
+            grid_vertices = Grid._FilterVerticesByFace(grid_vertices, face, tolerance=tolerance)
 
-                gv = Vertex.ByCoordinates(x, y, z)
-
-                d = Dictionary.ByKeysValues(["u", "v"], [u, v])
-                if d:
-                    # Prefer TopologicPy's consistent pattern
-                    Topology.SetDictionary(gv, d)
-
-                gridVertices.append(gv)
-        
-        if clip and has_face:
-            from topologicpy.Vector import Vector
-            cluster = Cluster.ByTopologies(gridVertices)
-            centroid = Topology.Centroid(face)
-            x_tran = -Vertex.X(centroid)
-            y_tran = -Vertex.Y(centroid)
-            z_tran = -Vertex.Z(centroid)
-            face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
-            cluster_2 = Topology.Translate(cluster, x_tran, y_tran, z_tran)
-
-            face_normal = Face.Normal(face_2)
-            up = [0,0,1]
-            tran_mat = Vector.TransformationMatrix(face_normal, up)
-            flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
-            flat_cluster = Topology.Transform(cluster_2, tran_mat)
-            # flat_cluster = Topology.Translate(flat_cluster, 0, 0, -Vertex.Z(flat_vertex))
-            status_list = Vertex.IsInternal2D(Topology.Vertices(flat_cluster), flat_face)
-            gridVertices = [v for i, v in enumerate(gridVertices) if status_list[i] == True]
-
-        if len(gridVertices) < 1:
+        if len(grid_vertices) < 1:
             return None
-
-        return Cluster.ByTopologies(gridVertices)
+        return Cluster.ByTopologies(grid_vertices)
 
     @staticmethod
-    def VerticesByParameters(face=None, uRange=[0.0,0.25,0.5,0.75,1.0], vRange=[0.0,0.25,0.5,0.75,1.0], clip=False, tolerance=0.0001, silent: bool = False):
+    def VerticesByParameters(face=None,
+                             uRange=None,
+                             vRange=None,
+                             clip=False,
+                             tolerance=0.0001,
+                             silent: bool = False):
         """
-        Creates a grid (cluster of vertices).
+        Creates a grid of vertices by face parameters.
 
         Parameters
         ----------
-        face : topologic_core.Face , optional
-            The input face. If set to None, the grid will be created on the XY plane. Default is None.
+        face : topologic_core.Face
+            The input face.
         uRange : list , optional
-            A list of *u* parameters for the *u* grid lines from the uOrigin. Default is [0.0,0.25,0.5,0.75,1.0].
+            A list of *u* parameters. Default is [0,0.25,0.5,0.75,1.0].
         vRange : list , optional
-            A list of *v* parameters for the *v* grid lines from the vOrigin. Default is [0.0,0.25,0.5,0.75,1.0].
+            A list of *v* parameters. Default is [0,0.25,0.5,0.75,1.0].
         clip : bool , optional
-            If True the grid will be clipped by the shape of the input face. Default is False.
+            If True, vertices outside the input face are removed. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -508,64 +508,33 @@ class Grid():
         Returns
         -------
         topologic_core.Cluster
-            The created grid. Vertices in the grid have an identifying dictionary with two keys: "u" and "v". The "dir" key can have one of two values: "u" or "v" that contain the *u* and *v* offset distances of that grid vertex from the specified origin.
-
+            The created grid. Vertices in the grid have a dictionary with keys "u" and "v".
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        from topologicpy.Vector import Vector
 
-        if not Topology.IsInstance(face, "Face"):
+        if not Grid._IsFace(face):
             if not silent:
                 print("Grid.VerticesByParameters - Error: The input face parameter is not a valid face. Returning None.")
             return None
-        if len(uRange) < 1 or len(vRange) < 1:
+
+        u_vals = Grid._ParameterList(uRange, Grid._DefaultParameterRange())
+        v_vals = Grid._ParameterList(vRange, Grid._DefaultParameterRange())
+        if u_vals is None or v_vals is None or len(u_vals) < 1 or len(v_vals) < 1:
             if not silent:
-                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
-            return None
-        if (min(uRange) < 0) or (max(uRange) > 1):
-            if not silent:
-                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
-            return None
-        if (min(vRange) < 0) or (max(vRange) > 1):
-            if not silent:
-                print("Grid.VerticesByParameters - Error: The input uRange or VRange parameter is not valid. Returning None.")
+                print("Grid.VerticesByParameters - Error: The input uRange or vRange parameter is not valid. Returning None.")
             return None
 
-        uRange.sort()
-        vRange.sort()
-        gridVertices = []
-        if len(uRange) > 0:
-            uRange.sort()
-            for u in uRange:
-                for v in vRange:
-                    gridVertex = Face.VertexByParameters(face, u, v)
-                    d = Dictionary.ByKeysValues(["u","v"],[u,v])
-                    Topology.SetDictionary(gridVertex,d)
-                    gridVertices.append(gridVertex)
+        grid_vertices = []
+        for u in u_vals:
+            for v in v_vals:
+                vertex = Face.VertexByParameters(face, u, v)
+                Grid._SetDictionary(vertex, ["u", "v"], [u, v])
+                grid_vertices.append(vertex)
+
         if clip:
-            from topologicpy.Vector import Vector
-            cluster = Cluster.ByTopologies(gridVertices)
-            centroid = Topology.Centroid(face)
-            x_tran = -Vertex.X(centroid)
-            y_tran = -Vertex.Y(centroid)
-            z_tran = -Vertex.Z(centroid)
-            face_2 = Topology.Translate(face, x_tran, y_tran, z_tran)
-            cluster_2 = Topology.Translate(cluster, x_tran, y_tran, z_tran)
+            grid_vertices = Grid._FilterVerticesByFace(grid_vertices, face, tolerance=tolerance)
 
-            face_normal = Face.Normal(face_2)
-            up = [0,0,1]
-            tran_mat = Vector.TransformationMatrix(face_normal, up)
-            flat_face = Topology.Transform(face_2, tran_mat, transferDictionaries=False)
-            flat_cluster = Topology.Transform(cluster_2, tran_mat)
-            status_list = Vertex.IsInternal2D(Topology.Vertices(flat_cluster), flat_face)
-            gridVertices = [v for i, v in enumerate(gridVertices) if status_list[i] == True]
-        
-        if len(gridVertices) < 1:
+        if len(grid_vertices) < 1:
             return None
-
-        return Cluster.ByTopologies(gridVertices)
+        return Cluster.ByTopologies(grid_vertices)
