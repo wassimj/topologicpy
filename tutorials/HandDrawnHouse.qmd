@@ -1,0 +1,135 @@
+---
+title: Hand Drawn House
+author: jgunstone
+abstract: |
+  Experiment to try and draw a house "by-hand" using the Topologic python api.
+jupyter:
+  jupytext:
+    text_representation:
+      extension: .qmd
+      format_name: quarto
+      format_version: '1.0'
+      jupytext_version: 1.19.1
+  kernelspec:
+    display_name: Python 3 (ipykernel)
+    language: python
+    name: python3
+---
+
+
+```{python}
+from topologicpy.Vertex import Vertex
+from topologicpy.Edge import Edge
+from topologicpy.Wire import Wire
+from topologicpy.Face import Face
+from topologicpy.Shell import Shell
+from topologicpy.Cell import Cell
+from topologicpy.CellComplex import CellComplex
+from topologicpy.Cluster import Cluster
+from topologicpy.Topology import Topology
+from topologicpy.Graph import Graph
+from topologicpy.Dictionary import Dictionary
+```
+
+```{python}
+import ipywidgets as w
+
+file = open("../resources/typical-house-plan-GF.png", "rb")
+w.Image(
+    value=file.read(),
+    format='png',
+    # width=300,
+    # height=400,
+)
+```
+
+## Input Data
+
+```{python}
+x0, x1, x2, x3, x4, x5, x6, x7 = 0, 1, 2.5, 3, 3.65, 5.45, 6.1, 6.7 
+y0, y1, y2, y3, y4, y5, y6 = 0, 0.8, 2.4, 4.7, 5.6, 9.4, 10
+z0, z1, z2, z3 = 0, 3.4, 6.8, 10.2
+
+hall_plan = [
+    (x0, y1),
+    (x0, y2),
+    (x1, y2),
+    (x1, y4),
+    (x2, y4),
+    (x2, y1),
+]
+
+stairs_plan = [
+    (x0, y2),
+    (x0, y4),
+    (x1, y4),
+    (x1, y2),
+]
+
+kitchen_plan = [
+    (x0, y4),
+    (x0, y5),
+    (x2, y5),
+    (x2, y4),
+]
+
+
+frontLR_plan = [
+    (x2, y1),
+    (x2, y3),
+    (x7, y3),
+    (x7, y1),
+    (x6, y1),
+    (x5, y0),
+    (x4, y0),
+    (x3, y1),
+] 
+
+
+backLR_plan = [
+    (x2, y3),
+    (x2, y5),
+    (x3, y5),
+    (x4, y6),
+    (x5, y6),
+    (x6, y5),
+    (x7, y5),
+    (x7, y3),
+]
+```
+
+## Draw Plan
+
+```{python}
+plan_2d = Cluster.ByTopologies(
+    Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in hall_plan]),
+    Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in stairs_plan]),
+    Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in kitchen_plan]),
+    Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in frontLR_plan]),
+    Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in backLR_plan]),
+)
+Topology.Show(plan_2d)
+```
+
+## Draw 3D Cells
+
+```{python}
+def cell_from_plan(plan, z0, z1):
+    return Cell.ByWires([
+        Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z0]) for x in plan]),
+        Wire.ByVertices([Vertex.ByCoordinates(*list(x) + [z1]) for x in plan]),
+    ])
+
+    
+hall = cell_from_plan(hall_plan, z0, z1)
+stairs = cell_from_plan(stairs_plan, z0, z2)
+kitchen = cell_from_plan(kitchen_plan, z0, z1)
+frontLR = cell_from_plan(frontLR_plan, z0, z1)
+backLR = cell_from_plan(backLR_plan, z0, z1)
+plan = Cluster.ByTopologies(stairs, hall, kitchen, frontLR, backLR)
+Topology.Show(plan)
+```
+
+## Add windows
+
+... I think I've approached this wrong... the walls must be made up of walls and windows... 
