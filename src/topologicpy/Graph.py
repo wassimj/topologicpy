@@ -6423,6 +6423,8 @@ class Graph:
             Import mode. Options are:
             - "topology": build representative vertices directly from IFC entities.
             - "geometry": build representative vertices from imported Topologic geometry.
+            - "triples": build the graph from IFC RDF-like triplets extracted from IFC relationships.
+            - "semantic": alias for "triples" reserved for future semantic enrichment workflows.
             Default is "topology".
         clean : bool , optional
             If set to True, coplanar faces and collinear edges are removed.
@@ -6486,6 +6488,16 @@ class Graph:
         This implementation avoids reparsing the IFC file for colour assignment.
         Element and relationship colour palettes are derived from dictionaries
         already created during graph construction.
+
+        IMPORTANT
+        ---------
+        "topology"/"geometry" modes create representative-entity graphs.
+
+        "triples"/"semantic" modes create RDF-like semantic graphs from
+        IFC relationship triplets.
+
+        These graph constructions are conceptually related but are not
+        guaranteed to be strictly isomorphic.
         """
 
         import math
@@ -6545,12 +6557,34 @@ class Graph:
         includeRels = includeRels or []
         excludeRels = excludeRels or []
 
-        importMode = (importMode or "topology").lower().strip()
+        mode_aliases = {
+            "relationship": "topology",
+            "relationships": "topology",
+            "rel": "topology",
+            "rels": "topology",
+            "topological": "topology",
+            "entity": "topology",
+            "entities": "topology",
+            "geom": "geometry",
+            "geometric": "geometry",
+            "triple": "triples",
+            "triples": "triples",
+            "rdf": "triples",
+            "semantic": "semantic",
+            "semantics": "semantic",
+            "knowledge": "semantic",
+            "kg": "semantic",
+        }
 
-        if importMode not in ["geometry", "topology"]:
+        importMode = (importMode or "topology").lower().strip()
+        importMode = mode_aliases.get(importMode, importMode)
+
+        if importMode not in ["geometry", "topology", "triples", "semantic"]:
             if not silent:
                 print(f"Graph.ByIFCFile - Warning: Unsupported mode '{importMode}'. Falling back to 'topology'.")
             importMode = "topology"
+
+        original_file = None
 
         if isinstance(file, str):
             try:
@@ -6561,11 +6595,88 @@ class Graph:
                     print(f"Graph.ByIFCFile - Error: Could not open IFC file. {e} Returning None.")
                 return None
 
+            original_file = file
+
+        else:
+            original_file = file
+
         if file is None:
             if not silent:
                 print("Graph.ByIFCFile - Error: The input file is None. Returning None.")
             return None
 
+        # -------------------------------------------------------------------------
+        # RDF-like triples / semantic graph modes
+        # -------------------------------------------------------------------------
+
+        if importMode in ["triples", "semantic"]:
+
+            try:
+                triples = IFC.Triples(
+                    original_file,
+                    includeRels=includeRels,
+                    excludeRels=excludeRels,
+                    includeMetadata=True,
+                    silent=silent,
+                )
+
+            except TypeError:
+                try:
+                    triples = IFC.Triples(
+                        original_file,
+                        includeRels=includeRels,
+                        excludeRels=excludeRels,
+                        silent=silent,
+                    )
+                except Exception as e:
+                    if not silent:
+                        print(f"Graph.ByIFCFile - Error: Could not extract IFC triples. {e} Returning None.")
+                    return None
+
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ByIFCFile - Error: Could not extract IFC triples. {e} Returning None.")
+                return None
+
+            if not isinstance(triples, list):
+                if not silent:
+                    print("Graph.ByIFCFile - Error: IFC.Triples did not return a valid list. Returning None.")
+                return None
+
+            if len(triples) < 1:
+                if not silent:
+                    print("Graph.ByIFCFile - Warning: IFC.Triples returned an empty list.")
+
+            try:
+                graph = Graph.ByTriples(
+                    triples,
+                    subjectKey="subject",
+                    predicateKey="predicate",
+                    objectKey="object",
+                    vertexIDKey="id",
+                    vertexLabelKey="label",
+                    vertexTypeKey="type",
+                    edgePredicateKey="predicate",
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ByIFCFile - Error: Could not create graph from IFC triples. {e} Returning None.")
+                return None
+
+            if not Topology.IsInstance(graph, "Graph"):
+                if not silent:
+                    print("Graph.ByIFCFile - Error: Graph.ByTriples did not return a valid graph. Returning None.")
+                return None
+
+            return graph
+
+    # -------------------------------------------------------------------------
+    # Existing topology/geometry implementation continues unchanged below
+    # -------------------------------------------------------------------------
+        
         include_type_set = {str(s).lower() for s in includeTypes}
         exclude_type_set = {str(s).lower() for s in excludeTypes}
         include_rel_set = {str(s).lower() for s in includeRels}
@@ -6996,19 +7107,20 @@ class Graph:
                 if key not in entity_by_key:
                     entity_by_key[key] = entity
 
-            primary_types = [
-                "IfcObjectDefinition",
-                "IfcObject",
-                "IfcProduct",
-                "IfcElement",
-                "IfcSpatialElement",
-                "IfcSpatialStructureElement",
-                "IfcPort",
-                "IfcGroup",
-                "IfcSystem",
-                "IfcTypeObject",
-                "IfcElementType",
-            ]
+            # primary_types = [
+            #     "IfcObjectDefinition",
+            #     "IfcObject",
+            #     "IfcProduct",
+            #     "IfcElement",
+            #     "IfcSpatialElement",
+            #     "IfcSpatialStructureElement",
+            #     "IfcPort",
+            #     "IfcGroup",
+            #     "IfcSystem",
+            #     "IfcTypeObject",
+            #     "IfcElementType",
+            # ]
+            primary_types = ["IfcRoot"]
 
             for t in primary_types:
                 try:
@@ -7208,9 +7320,11 @@ class Graph:
                 silent=silent,
             )
 
-            if not isinstance(topologies, list):
+            if topologies is None:
+                topologies = []
+            elif not isinstance(topologies, list):
                 topologies = [topologies]
-
+            
             for topology in topologies:
                 if not Topology.IsInstance(topology, "Topology"):
                     continue
@@ -7482,6 +7596,7 @@ class Graph:
             if not silent:
                 print(f"Graph.ByIFCFile - Error: Could not create graph in {importMode} mode. {e} Returning None.")
             return None
+
     @staticmethod
     def ByIFCPath(path,
                   importMode: str = "topology",
@@ -9681,6 +9796,302 @@ class Graph:
         return Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False)
     
     @staticmethod
+    def ByTriples(triples,
+                  subjectKey: str = "subject",
+                  predicateKey: str = "predicate",
+                  objectKey: str = "object",
+                  vertexIDKey: str = "id",
+                  vertexLabelKey: str = "label",
+                  vertexTypeKey: str = "type",
+                  edgePredicateKey: str = "predicate",
+                  xSpacing: float = 1.0,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
+        """
+        Creates a TopologicPy Graph from RDF-style triples.
+
+        Parameters
+        ----------
+        triples : list
+            A list of dictionaries containing subject, predicate, and object keys.
+        subjectKey : str , optional
+            The key used to identify the triple subject. Default is "subject".
+        predicateKey : str , optional
+            The key used to identify the triple predicate. Default is "predicate".
+        objectKey : str , optional
+            The key used to identify the triple object. Default is "object".
+        vertexIDKey : str , optional
+            The dictionary key used to store the vertex id. Default is "id".
+        vertexLabelKey : str , optional
+            The dictionary key used to store the vertex label. Default is "label".
+        vertexTypeKey : str , optional
+            The dictionary key used to store the vertex type. Default is "type".
+        edgePredicateKey : str , optional
+            The dictionary key used to store the edge predicate. Default is "predicate".
+        xSpacing : float , optional
+            The spacing between generated vertices. Default is 1.0.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            A graph whose vertices represent unique subjects/objects and whose
+            edges represent triples.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+        from topologicpy.Graph import Graph
+
+        if not isinstance(triples, list):
+            if not silent:
+                print("Graph.ByTriples - Error: The input triples parameter is not a valid list. Returning None.")
+            return None
+
+        def _safe_value(value):
+            if value is None:
+                return ""
+            if isinstance(value, (str, int, float, bool)):
+                return value
+            if isinstance(value, (list, tuple, set)):
+                return ", ".join([str(v) for v in value])
+            if isinstance(value, dict):
+                return str(value)
+            return str(value)
+
+        def _dictionary(keys, values):
+            clean_keys = []
+            clean_values = []
+
+            for k, v in zip(keys, values):
+                if k is None:
+                    continue
+                clean_keys.append(str(k))
+                clean_values.append(_safe_value(v))
+
+            if len(clean_keys) < 1:
+                return None
+
+            try:
+                return Dictionary.ByKeysValues(clean_keys, clean_values)
+            except Exception:
+                d = None
+                for k, v in zip(clean_keys, clean_values):
+                    try:
+                        if d is None:
+                            d = Dictionary.ByKeyValue(k, v)
+                        else:
+                            d = Dictionary.SetValueAtKey(d, k, v)
+                    except Exception:
+                        pass
+                return d
+
+        def _triple_value(triple, key, default=None):
+            if not isinstance(triple, dict):
+                return default
+            value = triple.get(key, default)
+            if value in [None, ""]:
+                return default
+            return value
+
+        def _metadata_from_triple(triple, prefix):
+            """
+            Extracts useful IFC metadata generated by IFC.Triples.
+            """
+            if not isinstance(triple, dict):
+                return {}
+
+            data = {}
+
+            for suffix in ["id", "key", "type", "name", "global_id"]:
+                k = f"{prefix}_{suffix}"
+                if k in triple and triple[k] not in [None, ""]:
+                    data[k] = triple[k]
+
+            return data
+
+        # --------------------------------------------------------------
+        # Create one vertex per unique subject/object.
+        # --------------------------------------------------------------
+
+        node_data = {}
+        edge_rows = []
+
+        for triple in triples:
+            if not isinstance(triple, dict):
+                continue
+
+            subject = _triple_value(triple, subjectKey)
+            predicate = _triple_value(triple, predicateKey)
+            obj = _triple_value(triple, objectKey)
+
+            if subject is None or obj is None:
+                continue
+
+            subject = str(subject)
+            obj = str(obj)
+            predicate = "" if predicate is None else str(predicate)
+
+            if subject not in node_data:
+                node_data[subject] = {}
+
+            if obj not in node_data:
+                node_data[obj] = {}
+
+            subject_metadata = _metadata_from_triple(triple, "subject")
+            object_metadata = _metadata_from_triple(triple, "object")
+
+            node_data[subject].update(subject_metadata)
+            node_data[obj].update(object_metadata)
+
+            edge_rows.append((subject, predicate, obj, triple))
+
+        if len(node_data) < 1:
+            if not silent:
+                print("Graph.ByTriples - Warning: No valid triples were found. Returning None.")
+            return None
+
+        vertices = []
+        key_to_vertex = {}
+        key_to_index = {}
+
+        for i, node_key in enumerate(sorted(node_data.keys())):
+            try:
+                vertex = Vertex.ByCoordinates(float(i) * float(xSpacing), 0.0, 0.0)
+            except Exception:
+                vertex = Vertex.ByCoordinates(float(i), 0.0, 0.0)
+
+            metadata = node_data.get(node_key, {})
+
+            label = (
+                metadata.get("subject_name") or
+                metadata.get("object_name") or
+                metadata.get("subject_type") or
+                metadata.get("object_type") or
+                node_key
+            )
+
+            node_type = (
+                metadata.get("subject_type") or
+                metadata.get("object_type") or
+                ""
+            )
+
+            keys = [
+                "index",
+                vertexIDKey,
+                vertexLabelKey,
+                vertexTypeKey,
+                "key",
+            ]
+            values = [
+                i,
+                node_key,
+                label,
+                node_type,
+                node_key,
+            ]
+
+            for k, v in metadata.items():
+                if k not in keys:
+                    keys.append(k)
+                    values.append(v)
+
+            d = _dictionary(keys, values)
+
+            try:
+                vertex = Topology.SetDictionary(vertex, d, silent=True)
+            except TypeError:
+                vertex = Topology.SetDictionary(vertex, d)
+            except Exception:
+                pass
+
+            vertices.append(vertex)
+            key_to_vertex[node_key] = vertex
+            key_to_index[node_key] = i
+
+        # --------------------------------------------------------------
+        # Create one edge per triple.
+        # --------------------------------------------------------------
+
+        edges = []
+
+        for edge_index, (subject, predicate, obj, triple) in enumerate(edge_rows):
+            if subject not in key_to_vertex or obj not in key_to_vertex:
+                continue
+
+            sv = key_to_vertex[subject]
+            ev = key_to_vertex[obj]
+
+            try:
+                edge = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
+            except TypeError:
+                try:
+                    edge = Edge.ByVertices(sv, ev)
+                except Exception:
+                    edge = None
+            except Exception:
+                edge = None
+
+            if edge is None:
+                continue
+
+            keys = [
+                "index",
+                "src",
+                "dst",
+                subjectKey,
+                predicateKey,
+                objectKey,
+                edgePredicateKey,
+                "label",
+                "weight",
+            ]
+
+            values = [
+                edge_index,
+                key_to_index[subject],
+                key_to_index[obj],
+                subject,
+                predicate,
+                obj,
+                predicate,
+                predicate,
+                1.0,
+            ]
+
+            if isinstance(triple, dict):
+                for k, v in triple.items():
+                    if k not in keys:
+                        keys.append(k)
+                        values.append(v)
+
+            d = _dictionary(keys, values)
+
+            try:
+                edge = Topology.SetDictionary(edge, d, silent=True)
+            except TypeError:
+                edge = Topology.SetDictionary(edge, d)
+            except Exception:
+                pass
+
+            edges.append(edge)
+
+        try:
+            graph = Graph.ByVerticesEdges(vertices, edges, index=True)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.ByTriples - Error: Could not create graph. {e} Returning None.")
+            return None
+
+        return graph
+
+    @staticmethod
     def ByVerticesEdges(vertices, edges, index: bool = True):
         """
         Creates a graph from the input list of vertices and edges.
@@ -9731,7 +10142,239 @@ class Graph:
 
         # return topologic.Graph.ByVerticesEdges(vertices, edges) # H to Core
         return Core.Graph.ByVerticesEdges(vertices, edges)
-    
+
+    @staticmethod
+    def CardinalityReport(graph,
+                          vertexKey: str = "id",
+                          edgeKey: str = "predicate",
+                          predicates: list = None,
+                          direction: str = "both",
+                          includeZero: bool = True,
+                          tolerance: float = 0.0001,
+                          silent: bool = False):
+        """
+        Returns a cardinality report for vertices in a graph.
+
+        This method counts how many incident edges of each selected predicate are
+        connected to each vertex. It is useful for diagnostics such as:
+
+        - how many spaces a door connects,
+        - how many openings a wall has,
+        - how many instances are defined by a type,
+        - how many classifications are attached to an element.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexKey : str , optional
+            Vertex dictionary key used to identify each vertex. Default is "id".
+        edgeKey : str , optional
+            Edge dictionary key used to identify the relationship/predicate.
+            Default is "predicate".
+        predicates : list , optional
+            If provided, only edges whose predicate is in this list are counted.
+            Matching is case-insensitive. Default is None.
+        direction : str , optional
+            The edge direction to count. Options are "in", "out", or "both".
+            Default is "both".
+        includeZero : bool , optional
+            If True, include vertices with zero matching edges. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppress error and warning messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries. Each row reports the matching edge count for
+            one vertex.
+        """
+
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.CardinalityReport - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        direction = str(direction or "both").strip().lower()
+        if direction not in ["in", "out", "both"]:
+            if not silent:
+                print("Graph.CardinalityReport - Error: The direction parameter must be 'in', 'out', or 'both'. Returning None.")
+            return None
+
+        if predicates is None:
+            predicate_set = None
+        else:
+            if not isinstance(predicates, list):
+                predicates = [predicates]
+            predicate_set = set([str(p).strip().lower() for p in predicates if p not in [None, ""]])
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _dictionary_to_dict(dictionary):
+            data = {}
+            for key in _keys(dictionary):
+                data[key] = _value(dictionary, key, None)
+            return data
+
+        def _vertex_identifier(vertex, fallback_index):
+            d = Topology.Dictionary(vertex)
+            value = _value(d, vertexKey, None)
+
+            if value not in [None, ""]:
+                return value
+
+            for fallback_key in ["id", "key", "IFC_global_id", "global_id", "IFC_key", "label"]:
+                value = _value(d, fallback_key, None)
+                if value not in [None, ""]:
+                    return value
+
+            return str(fallback_index)
+
+        def _vertex_label(vertex):
+            d = Topology.Dictionary(vertex)
+            for key in ["label", "name", "IFC_name", "global_id", "IFC_key", "key", "id"]:
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return value
+            return None
+
+        def _vertex_type(vertex):
+            d = Topology.Dictionary(vertex)
+            for key in ["type", "IFC_type", "ifc_type", "category"]:
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return value
+            return None
+
+        def _edge_predicate(edge):
+            d = Topology.Dictionary(edge)
+            value = _value(d, edgeKey, None)
+            if value in [None, ""]:
+                value = _value(d, "predicate", None)
+            if value in [None, ""]:
+                value = _value(d, "relationship_type", None)
+            if value in [None, ""]:
+                value = _value(d, "label", None)
+            if value in [None, ""]:
+                value = "related_to"
+            return str(value)
+
+        vertices = Graph.Vertices(graph) or []
+        edges = Graph.Edges(graph) or []
+
+        rows_by_index = {}
+
+        for i, vertex in enumerate(vertices):
+            d = Topology.Dictionary(vertex)
+            rows_by_index[i] = {
+                "index": i,
+                "vertex": _vertex_identifier(vertex, i),
+                "vertex_label": _vertex_label(vertex),
+                "vertex_type": _vertex_type(vertex),
+                "count": 0,
+                "in_count": 0,
+                "out_count": 0,
+                "predicates": {},
+                "in_predicates": {},
+                "out_predicates": {},
+                "edge_indices": [],
+                "neighbor_indices": [],
+                "neighbors": [],
+                "vertex_dictionary": _dictionary_to_dict(d),
+            }
+
+        for edge_index, edge in enumerate(edges):
+            if not Topology.IsInstance(edge, "Edge"):
+                continue
+
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src_index = Vertex.Index(sv, vertices, tolerance=tolerance)
+            dst_index = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+            if src_index is None or dst_index is None:
+                continue
+
+            predicate = _edge_predicate(edge)
+            predicate_norm = predicate.strip().lower()
+
+            if predicate_set is not None and predicate_norm not in predicate_set:
+                continue
+
+            def _increment(row_index, neighbor_index, incoming=False, outgoing=False):
+                row = rows_by_index.get(row_index)
+                if row is None:
+                    return
+
+                row["count"] += 1
+                row["edge_indices"].append(edge_index)
+
+                if neighbor_index not in row["neighbor_indices"]:
+                    row["neighbor_indices"].append(neighbor_index)
+                    row["neighbors"].append(rows_by_index[neighbor_index]["vertex"])
+
+                row["predicates"][predicate] = row["predicates"].get(predicate, 0) + 1
+
+                if incoming:
+                    row["in_count"] += 1
+                    row["in_predicates"][predicate] = row["in_predicates"].get(predicate, 0) + 1
+
+                if outgoing:
+                    row["out_count"] += 1
+                    row["out_predicates"][predicate] = row["out_predicates"].get(predicate, 0) + 1
+
+            if direction in ["out", "both"]:
+                _increment(src_index, dst_index, incoming=False, outgoing=True)
+
+            if direction in ["in", "both"]:
+                _increment(dst_index, src_index, incoming=True, outgoing=False)
+
+        rows = []
+
+        for i in sorted(rows_by_index.keys()):
+            row = rows_by_index[i]
+
+            row["edge_indices"] = sorted(list(set(row["edge_indices"])))
+            row["neighbor_indices"] = sorted(list(set(row["neighbor_indices"])))
+
+            if includeZero or row["count"] > 0:
+                rows.append(row)
+
+        return rows
+
     @staticmethod
     def Choice(graph, method: str = "vertex", weightKey="length", normalize: bool = False, nxCompatible: bool = False, key: str = "choice", colorKey="ch_color", colorScale="viridis", mantissa: int = 6, tolerance: float = 0.001, silent: bool = False):
         """
@@ -11678,110 +12321,325 @@ class Graph:
             print("Graph.Community - Warning: This method is deprecated. Please use Graph.CommunityPartition instead.")
         return Graph.CommunityPartition(graph=graph, key=key, mantissa=mantissa, tolerance=tolerance, silent=silent)
     
+    # @staticmethod
+    # def CommunityPartition(graph,
+    #                        key: str = "community",
+    #                        colorKey: str = "cp_color",
+    #                        colorScale: str = "viridis",
+    #                        mantissa: int = 6,
+    #                        tolerance: float = 0.0001,
+    #                        silent: bool = False):
+    #     """
+    #     Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
+
+    #     Parameters
+    #     ----------
+    #     graph : topologicp.Graph
+    #         The input topologic graph.
+    #     key : str , optional
+    #         The dictionary key under which to store the community partition number. Default is "community".
+    #      colorKey : str , optional
+    #         The desired dictionary key name under which to store the calculated color. Default is "cp_color"
+    #     colorScale : str , optional
+    #         The desired colorscale name to use for colors. The default is "viridis".
+    #     mantissa : int , optional
+    #         The number of decimal places to round the result to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #             If set to True, error and warning messages are suppressed. Default is False.
+    #     Returns
+    #     -------
+    #     list
+    #         The list of partitions ordered the same as the graph vertices.
+
+    #     """
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Color import Color
+    #     import os
+    #     import warnings
+        
+    #     try:
+    #         import igraph as ig
+    #     except:
+    #         print("Graph.Community - Installing required pyhon-igraph library.")
+    #         try:
+    #             os.system("pip install python-igraph")
+    #         except:
+    #             os.system("pip install python-igraph --user")
+    #         try:
+    #             import igraph as ig
+    #             print("Graph.Community - python-igraph library installed correctly.")
+    #         except:
+    #             warnings.warn("Graph.Community - Error: Could not import python-igraph. Please install manually.")
+        
+    #     if not Topology.IsInstance(graph, "graph"):
+    #         if not silent:
+    #             print("Graph.Community - Error: The input graph parameter is not a valid topologic graph. Returning None")
+    #         return None
+        
+    #     mesh_data = Graph.MeshData(graph)
+    #     # Create an igraph graph from the edge list
+    #     ig_graph = ig.Graph(edges=mesh_data['edges'])
+
+    #     # Detect communities using Louvain method
+    #     communities = ig_graph.community_multilevel()
+
+    #     # Get the list of communities sorted same as vertices
+    #     partition_list = communities.membership
+    #     max_value = max(partition_list)
+    #     min_value = min(partition_list)
+    #     vertices = Graph.Vertices(graph)
+    #     for i, v in enumerate(vertices):
+    #         d = Topology.Dictionary(v)
+    #         color = Color.AnyToHex(Color.ByValueInRange(partition_list[i], minValue=min_value, maxValue=max_value, colorScale=colorScale))
+    #         d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
+    #         v = Topology.SetDictionary(v, d)
+    #     edges = Graph.Edges(graph)
+    #     if not edges == None:
+    #         for edge in edges:
+    #             sv = Edge.StartVertex(edge)
+    #             ev = Edge.EndVertex(edge)
+    #             status_1 = False
+    #             status_2 = False
+    #             partition_1 = 0
+    #             partition_2 = 0
+    #             for i, v in enumerate(vertices):
+    #                 if Vertex.IsCoincident(sv, v, tolerance=tolerance):
+    #                     status_1 = True
+    #                     partition_1 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+    #                     break
+    #             for i, v in enumerate(vertices):
+    #                 if Vertex.IsCoincident(ev, v, tolerance=tolerance):
+    #                     status_2 = True
+    #                     partition_2 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
+    #                     break
+    #             partition = 0
+    #             if status_1 and status_2:
+    #                 if partition_1 == partition_2:
+    #                     partition = partition_1
+    #             d = Topology.Dictionary(edge)
+    #             color = Color.AnyToHex(Color.ByValueInRange(partition, minValue=min_value, maxValue=max_value, colorScale=colorScale))
+    #             d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
+    #             edge = Topology.SetDictionary(edge, d)
+    #     return partition_list
+
     @staticmethod
     def CommunityPartition(graph,
-                           key: str = "community",
-                           colorKey: str = "cp_color",
-                           colorScale: str = "viridis",
-                           mantissa: int = 6,
-                           tolerance: float = 0.0001,
-                           silent: bool = False):
+                        key: str = "community",
+                        colorKey: str = "cp_color",
+                        colorScale: str = "viridis",
+                        mantissa: int = 6,
+                        tolerance: float = 0.0001,
+                        silent: bool = False):
         """
-        Computes the best community partition of the input graph based on the Louvain method. See https://en.wikipedia.org/wiki/Louvain_method.
+        Computes the best community partition of the input graph using the Louvain method.
 
         Parameters
         ----------
-        graph : topologicp.Graph
-            The input topologic graph.
+        graph : topologic_core.Graph
+            The input graph.
         key : str , optional
             The dictionary key under which to store the community partition number. Default is "community".
-         colorKey : str , optional
-            The desired dictionary key name under which to store the calculated color. Default is "cp_color"
+        colorKey : str , optional
+            The desired dictionary key name under which to store the calculated color. Default is "cp_color".
         colorScale : str , optional
-            The desired colorscale name to use for colors. The default is "viridis".
+            The desired colorscale name to use for colors. Default is "viridis".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired tolerance. Included for API compatibility. Default is 0.0001.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         list
-            The list of partitions ordered the same as the graph vertices.
-
+            The list of community partition numbers ordered the same as the graph vertices.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Edge import Edge
+
+        import os
+        import warnings
+
+        from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
-        import os
-        import warnings
-        
+
         try:
             import igraph as ig
-        except:
-            print("Graph.Community - Installing required pyhon-igraph library.")
+        except Exception:
+            if not silent:
+                print("Graph.CommunityPartition - Installing required python-igraph library.")
             try:
                 os.system("pip install python-igraph")
-            except:
+            except Exception:
                 os.system("pip install python-igraph --user")
             try:
                 import igraph as ig
-                print("Graph.Community - python-igraph library installed correctly.")
-            except:
-                warnings.warn("Graph.Community - Error: Could not import python-igraph. Please install manually.")
-        
+                if not silent:
+                    print("Graph.CommunityPartition - python-igraph library installed correctly.")
+            except Exception:
+                warnings.warn("Graph.CommunityPartition - Error: Could not import python-igraph. Please install it manually.")
+                return None
+
         if not Topology.IsInstance(graph, "graph"):
             if not silent:
-                print("Graph.Community - Error: The input graph parameter is not a valid topologic graph. Returning None")
+                print("Graph.CommunityPartition - Error: The input graph parameter is not a valid graph. Returning None.")
             return None
-        
+
+        vertices = Graph.Vertices(graph) or []
+        n_vertices = len(vertices)
+
+        if n_vertices == 0:
+            return []
+
         mesh_data = Graph.MeshData(graph)
-        # Create an igraph graph from the edge list
-        ig_graph = ig.Graph(edges=mesh_data['edges'])
 
-        # Detect communities using Louvain method
-        communities = ig_graph.community_multilevel()
+        if not isinstance(mesh_data, dict):
+            if not silent:
+                print("Graph.CommunityPartition - Error: Could not extract mesh data from the graph. Returning None.")
+            return None
 
-        # Get the list of communities sorted same as vertices
-        partition_list = communities.membership
-        max_value = max(partition_list)
+        raw_edges = mesh_data.get("edges", []) or []
+
+        # ------------------------------------------------------------------
+        # Build an igraph graph using integer vertex indices.
+        # Aggregate duplicate undirected edges as weights.
+        # This is faster and usually more accurate for IFC semantic graphs,
+        # where repeated relations between the same pair should strengthen
+        # the connection rather than create repeated expensive lookups.
+        # ------------------------------------------------------------------
+
+        edge_weight_map = {}
+
+        for e in raw_edges:
+            if not isinstance(e, (list, tuple)) or len(e) < 2:
+                continue
+
+            try:
+                a = int(e[0])
+                b = int(e[1])
+            except Exception:
+                continue
+
+            if a < 0 or b < 0 or a >= n_vertices or b >= n_vertices:
+                continue
+
+            if a == b:
+                continue
+
+            u, v = (a, b) if a <= b else (b, a)
+            edge_weight_map[(u, v)] = edge_weight_map.get((u, v), 0.0) + 1.0
+
+        ig_edges = list(edge_weight_map.keys())
+        weights = [edge_weight_map[e] for e in ig_edges]
+
+        if len(ig_edges) == 0:
+            partition_list = [0 for _ in range(n_vertices)]
+        else:
+            ig_graph = ig.Graph(n=n_vertices, edges=ig_edges, directed=False)
+            communities = ig_graph.community_multilevel(weights=weights)
+            partition_list = list(communities.membership)
+
+        if len(partition_list) != n_vertices:
+            if not silent:
+                print("Graph.CommunityPartition - Error: Community detection returned an invalid partition list. Returning None.")
+            return None
+
         min_value = min(partition_list)
-        vertices = Graph.Vertices(graph)
+        max_value = max(partition_list)
+
+        # Avoid divide-by-zero or invalid colour range for a single community.
+        if min_value == max_value:
+            color_min = min_value
+            color_max = min_value + 1
+        else:
+            color_min = min_value
+            color_max = max_value
+
+        # ------------------------------------------------------------------
+        # Write community IDs and colours to vertices once.
+        # ------------------------------------------------------------------
+
         for i, v in enumerate(vertices):
-            d = Topology.Dictionary(v)
-            color = Color.AnyToHex(Color.ByValueInRange(partition_list[i], minValue=min_value, maxValue=max_value, colorScale=colorScale))
-            d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
-            v = Topology.SetDictionary(v, d)
-        edges = Graph.Edges(graph)
-        if not edges == None:
-            for edge in edges:
-                sv = Edge.StartVertex(edge)
-                ev = Edge.EndVertex(edge)
-                status_1 = False
-                status_2 = False
-                partition_1 = 0
-                partition_2 = 0
-                for i, v in enumerate(vertices):
-                    if Vertex.IsCoincident(sv, v, tolerance=tolerance):
-                        status_1 = True
-                        partition_1 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
-                        break
-                for i, v in enumerate(vertices):
-                    if Vertex.IsCoincident(ev, v, tolerance=tolerance):
-                        status_2 = True
-                        partition_2 = Dictionary.ValueAtKey(Topology.Dictionary(v), key)
-                        break
-                partition = 0
-                if status_1 and status_2:
-                    if partition_1 == partition_2:
-                        partition = partition_1
+            try:
+                d = Topology.Dictionary(v)
+                community = partition_list[i]
+                color = Color.AnyToHex(
+                    Color.ByValueInRange(
+                        community,
+                        minValue=color_min,
+                        maxValue=color_max,
+                        colorScale=colorScale
+                    )
+                )
+                d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [community, color])
+                Topology.SetDictionary(v, d)
+            except Exception:
+                continue
+
+        # ------------------------------------------------------------------
+        # Write edge community data.
+        # This avoids the old O(E*V) coincident-vertex search.
+        # An edge receives the community ID only if both endpoints are in the
+        # same community. Otherwise it is marked as inter-community.
+        # ------------------------------------------------------------------
+
+        edges = Graph.Edges(graph) or []
+
+        edge_count = min(len(edges), len(raw_edges))
+
+        for edge_index in range(edge_count):
+            edge = edges[edge_index]
+            e = raw_edges[edge_index]
+
+            if not isinstance(e, (list, tuple)) or len(e) < 2:
+                continue
+
+            try:
+                a = int(e[0])
+                b = int(e[1])
+            except Exception:
+                continue
+
+            if a < 0 or b < 0 or a >= n_vertices or b >= n_vertices:
+                continue
+
+            community_a = partition_list[a]
+            community_b = partition_list[b]
+
+            if community_a == community_b:
+                edge_community = community_a
+                edge_color_value = community_a
+                inter_community = False
+            else:
+                edge_community = -1
+                edge_color_value = color_min
+                inter_community = True
+
+            try:
                 d = Topology.Dictionary(edge)
-                color = Color.AnyToHex(Color.ByValueInRange(partition, minValue=min_value, maxValue=max_value, colorScale=colorScale))
-                d = Dictionary.SetValuesAtKeys(d, [key, colorKey], [partition_list[i], color])
-                edge = Topology.SetDictionary(edge, d)
+                color = Color.AnyToHex(
+                    Color.ByValueInRange(
+                        edge_color_value,
+                        minValue=color_min,
+                        maxValue=color_max,
+                        colorScale=colorScale
+                    )
+                )
+                d = Dictionary.SetValuesAtKeys(
+                    d,
+                    [key, colorKey, "inter_community"],
+                    [edge_community, color, inter_community]
+                )
+                Topology.SetDictionary(edge, d)
+            except Exception:
+                continue
+
         return partition_list
 
     @staticmethod
@@ -17753,6 +18611,424 @@ class Graph:
         return False
 
     @staticmethod
+    def ExportToRDF(graph,
+                    path: str,
+                    subjectKey: str = "id",
+                    predicateKey: str = "predicate",
+                    objectKey: str = "id",
+                    baseIRI: str = "https://topologic.app/resource/",
+                    ontologyIRI: str = "https://topologic.app/ontology/",
+                    includeMetadata: bool = True,
+                    format: str = "turtle",
+                    overwrite: bool = True,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
+        """
+        Exports a TopologicPy Graph to an RDF/Turtle file.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        path : str
+            The output file path. A .ttl extension is recommended.
+        subjectKey : str , optional
+            Vertex dictionary key used to identify RDF subjects. Default is "id".
+        predicateKey : str , optional
+            Edge dictionary key used to identify RDF predicates. Default is "predicate".
+        objectKey : str , optional
+            Vertex dictionary key used to identify RDF objects. Default is "id".
+        baseIRI : str , optional
+            Base IRI for generated resources. Default is "https://topologic.app/resource/".
+        ontologyIRI : str , optional
+            Base IRI for generated predicates/classes. Default is "https://topologic.app/ontology/".
+        includeMetadata : bool , optional
+            If True, vertex labels, types, and selected dictionary values are exported.
+            Default is True.
+        format : str , optional
+            Currently only "turtle" is supported. Default is "turtle".
+        overwrite : bool , optional
+            If True, overwrite an existing output file. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        str
+            The output file path if export succeeds. Returns None otherwise.
+        """
+
+        import os
+
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ExportToRDF - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        if not isinstance(path, str) or len(path.strip()) < 1:
+            if not silent:
+                print("Graph.ExportToRDF - Error: The input path parameter is not a valid string. Returning None.")
+            return None
+
+        path = path.strip()
+
+        if str(format).strip().lower() in ["ttl", "turtle"]:
+            if not path.lower().endswith(".ttl"):
+                path += ".ttl"
+        else:
+            if not silent:
+                print("Graph.ExportToRDF - Error: Only Turtle format is currently supported. Returning None.")
+            return None
+
+        if os.path.exists(path) and not overwrite:
+            if not silent:
+                print("Graph.ExportToRDF - Error: The output file already exists and overwrite is False. Returning None.")
+            return None
+
+        folder = os.path.dirname(path)
+        if folder:
+            try:
+                os.makedirs(folder, exist_ok=True)
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ExportToRDF - Error: Could not create output folder. {e} Returning None.")
+                return None
+
+        ttl = Graph.RDFString(
+            graph,
+            subjectKey=subjectKey,
+            predicateKey=predicateKey,
+            objectKey=objectKey,
+            baseIRI=baseIRI,
+            ontologyIRI=ontologyIRI,
+            includeMetadata=includeMetadata,
+            format=format,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if ttl is None:
+            if not silent:
+                print("Graph.ExportToRDF - Error: Could not generate RDF string. Returning None.")
+            return None
+
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(ttl)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.ExportToRDF - Error: Could not write RDF file. {e} Returning None.")
+            return None
+
+        return path
+
+    @staticmethod
+    def ExportToWiki(graph,
+                     path: str,
+                     vertexKey: str = "id",
+                     vertexLabelKey: str = "label",
+                     vertexTypeKey: str = "type",
+                     edgeKey: str = "predicate",
+                     titleKey: str = None,
+                     includeDictionaries: bool = True,
+                     includeBacklinks: bool = True,
+                     overwrite: bool = True,
+                     tolerance: float = 0.0001,
+                     silent: bool = False):
+        """
+        Exports a TopologicPy Graph as an Obsidian-style markdown wiki.
+
+        Each graph vertex is exported as one markdown file. Graph edges are exported
+        as wikilinks between the generated markdown files.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        path : str
+            The folder path where markdown files will be written.
+        vertexKey : str , optional
+            Vertex dictionary key used as the stable page identifier. Default is "id".
+        vertexLabelKey : str , optional
+            Vertex dictionary key used as the human-readable label. Default is "label".
+        vertexTypeKey : str , optional
+            Vertex dictionary key used as the entity type. Default is "type".
+        edgeKey : str , optional
+            Edge dictionary key used as the relationship/predicate label. Default is "predicate".
+        titleKey : str , optional
+            Optional vertex dictionary key to use as the page title. If None, the
+            title is derived from vertexLabelKey, vertexKey, or index. Default is None.
+        includeDictionaries : bool , optional
+            If True, vertex dictionaries are written as property sections.
+            Default is True.
+        includeBacklinks : bool , optional
+            If True, incoming relations are also listed. Default is True.
+        overwrite : bool , optional
+            If True, existing markdown files with matching names are overwritten.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of written markdown file paths. Returns None if export fails.
+        """
+
+        import os
+        import re
+
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.ExportToWiki - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        if not isinstance(path, str) or len(path.strip()) < 1:
+            if not silent:
+                print("Graph.ExportToWiki - Error: The input path parameter is not a valid string. Returning None.")
+            return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _safe_text(value):
+            if value is None:
+                return ""
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            if isinstance(value, (int, float)):
+                return str(value)
+            if isinstance(value, (list, tuple, set)):
+                return ", ".join([_safe_text(v) for v in value])
+            if isinstance(value, dict):
+                return str(value)
+            return str(value)
+
+        def _safe_filename(value, fallback):
+            text = _safe_text(value).strip()
+            if not text:
+                text = str(fallback)
+
+            text = re.sub(r"[\[\]#|<>:\"/\\?*]+", "_", text)
+            text = re.sub(r"\s+", " ", text).strip()
+            text = text.rstrip(" .")
+
+            if not text:
+                text = str(fallback)
+
+            return text
+
+        def _vertex_title(vertex, index):
+            d = Topology.Dictionary(vertex)
+
+            for key in [titleKey, vertexLabelKey, vertexKey, "IFC_name", "name", "IFC_global_id", "global_id", "IFC_key", "key"]:
+                if key is None:
+                    continue
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return _safe_filename(value, f"Vertex_{index}")
+
+            return f"Vertex_{index}"
+
+        def _vertex_value(vertex, key, fallback=None):
+            d = Topology.Dictionary(vertex)
+            value = _value(d, key, None)
+            return fallback if value in [None, ""] else value
+
+        def _edge_predicate(edge):
+            d = Topology.Dictionary(edge)
+            for key in [edgeKey, "predicate", "relationship_type", "label", "IFC_type", "type"]:
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return _safe_text(value)
+            return "related_to"
+
+        def _dictionary_items(dictionary):
+            items = []
+            for key in sorted(_keys(dictionary)):
+                value = _value(dictionary, key, None)
+                if value in [None, ""]:
+                    continue
+                items.append((key, value))
+            return items
+
+        def _page_string(index, vertex, titles, outgoing, incoming):
+            d = Topology.Dictionary(vertex)
+
+            title = titles[index]
+            label = _vertex_value(vertex, vertexLabelKey, title)
+            vtype = _vertex_value(vertex, vertexTypeKey, "")
+
+            lines = []
+            lines.append(f"# {title}")
+            lines.append("")
+
+            lines.append("## Summary")
+            lines.append("")
+            lines.append(f"- **ID:** `{_safe_text(_vertex_value(vertex, vertexKey, index))}`")
+            if label not in [None, ""]:
+                lines.append(f"- **Label:** {_safe_text(label)}")
+            if vtype not in [None, ""]:
+                lines.append(f"- **Type:** {_safe_text(vtype)}")
+            lines.append("")
+
+            if includeDictionaries:
+                items = _dictionary_items(d)
+                if len(items) > 0:
+                    lines.append("## Properties")
+                    lines.append("")
+                    for key, value in items:
+                        lines.append(f"- **{key}:** {_safe_text(value)}")
+                    lines.append("")
+
+            if len(outgoing.get(index, [])) > 0:
+                lines.append("## Relations")
+                lines.append("")
+                for item in outgoing[index]:
+                    target_title = titles[item["target"]]
+                    lines.append(f"- **{item['predicate']}** → [[{target_title}]]")
+                lines.append("")
+
+            if includeBacklinks and len(incoming.get(index, [])) > 0:
+                lines.append("## Backlinks")
+                lines.append("")
+                for item in incoming[index]:
+                    source_title = titles[item["source"]]
+                    lines.append(f"- [[{source_title}]] → **{item['predicate']}**")
+                lines.append("")
+
+            return "\n".join(lines).strip() + "\n"
+
+        vertices = Graph.Vertices(graph) or []
+        edges = Graph.Edges(graph) or []
+
+        try:
+            os.makedirs(path, exist_ok=True)
+        except Exception as e:
+            if not silent:
+                print(f"Graph.ExportToWiki - Error: Could not create output folder. {e} Returning None.")
+            return None
+
+        titles = {}
+        used_titles = set()
+
+        for i, vertex in enumerate(vertices):
+            title = _vertex_title(vertex, i)
+            base = title
+            counter = 2
+
+            while title in used_titles:
+                title = f"{base} {counter}"
+                counter += 1
+
+            titles[i] = title
+            used_titles.add(title)
+
+        outgoing = {i: [] for i in range(len(vertices))}
+        incoming = {i: [] for i in range(len(vertices))}
+
+        for edge_index, edge in enumerate(edges):
+            if not Topology.IsInstance(edge, "Edge"):
+                continue
+
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src = Vertex.Index(sv, vertices, tolerance=tolerance)
+            dst = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+            if src is None or dst is None:
+                continue
+
+            predicate = _edge_predicate(edge)
+
+            outgoing[src].append({
+                "target": dst,
+                "predicate": predicate,
+                "edge_index": edge_index,
+            })
+
+            incoming[dst].append({
+                "source": src,
+                "predicate": predicate,
+                "edge_index": edge_index,
+            })
+
+        written_paths = []
+
+        for i, vertex in enumerate(vertices):
+            filename = titles[i] + ".md"
+            file_path = os.path.join(path, filename)
+
+            if os.path.exists(file_path) and not overwrite:
+                if not silent:
+                    print(f"Graph.ExportToWiki - Warning: File already exists and overwrite is False: {file_path}")
+                continue
+
+            page = _page_string(i, vertex, titles, outgoing, incoming)
+
+            try:
+                with open(file_path, "w", encoding="utf-8") as f:
+                    f.write(page)
+                written_paths.append(file_path)
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ExportToWiki - Warning: Could not write file {file_path}. {e}")
+
+        # Optional index file.
+        index_path = os.path.join(path, "_Index.md")
+        if overwrite or not os.path.exists(index_path):
+            try:
+                lines = ["# Index", ""]
+                for i in sorted(titles.keys(), key=lambda k: titles[k].lower()):
+                    lines.append(f"- [[{titles[i]}]]")
+                lines.append("")
+                with open(index_path, "w", encoding="utf-8") as f:
+                    f.write("\n".join(lines))
+                written_paths.append(index_path)
+            except Exception as e:
+                if not silent:
+                    print(f"Graph.ExportToWiki - Warning: Could not write index file. {e}")
+
+        return written_paths
+
+    @staticmethod
     def JSONData(graph,
                  propertiesKey: str = "properties",
                  verticesKey: str = "vertices",
@@ -20250,6 +21526,254 @@ class Graph:
             path = Wire.OrientEdges(path, Wire.StartVertex(path), tolerance=tolerance)
         return path
 
+    @staticmethod
+    def PropagateValues(graph,
+                        sourceVertexKey: str = "id",
+                        targetVertexKey: str = "id",
+                        edgeKey: str = "predicate",
+                        predicates: list = None,
+                        sourceKeys: list = None,
+                        targetKeys: list = None,
+                        direction: str = "out",
+                        overwrite: bool = False,
+                        prefix: str = "",
+                        suffix: str = "",
+                        tolerance: float = 0.0001,
+                        silent: bool = False):
+        """
+        Propagates dictionary values from source vertices to target vertices along
+        selected graph edges.
+
+        This is useful for workflows such as propagating properties from IFC type
+        nodes to instance nodes through IfcRelDefinesByType relationships, or
+        propagating classifications/materials through semantic graph relations.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        sourceVertexKey : str , optional
+            Vertex dictionary key used to identify source vertices. Default is "id".
+        targetVertexKey : str , optional
+            Vertex dictionary key used to identify target vertices. Default is "id".
+        edgeKey : str , optional
+            Edge dictionary key used to identify the relationship/predicate.
+            Default is "predicate".
+        predicates : list , optional
+            If provided, values are propagated only along edges whose predicate is
+            in this list. Matching is case-insensitive. Default is None.
+        sourceKeys : list , optional
+            Dictionary keys to copy from source vertices. If None, all source
+            dictionary keys except index/key/id metadata are considered.
+            Default is None.
+        targetKeys : list , optional
+            Dictionary keys to write to target vertices. If None, sourceKeys are
+            used with optional prefix/suffix. Default is None.
+        direction : str , optional
+            Direction of propagation. Options are:
+            - "out": from edge start vertex to edge end vertex
+            - "in": from edge end vertex to edge start vertex
+            - "both": propagate in both directions
+            Default is "out".
+        overwrite : bool , optional
+            If True, existing target values are overwritten. If False, only empty
+            or missing target values are written. Default is False.
+        prefix : str , optional
+            Prefix added to target keys when targetKeys is None. Default is "".
+        suffix : str , optional
+            Suffix added to target keys when targetKeys is None. Default is "".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The input graph with propagated values written into vertex dictionaries.
+        """
+
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.PropagateValues - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        direction = str(direction or "out").strip().lower()
+        if direction not in ["out", "in", "both"]:
+            if not silent:
+                print("Graph.PropagateValues - Error: The direction parameter must be 'out', 'in', or 'both'. Returning None.")
+            return None
+
+        if predicates is None:
+            predicate_set = None
+        else:
+            if not isinstance(predicates, list):
+                predicates = [predicates]
+            predicate_set = set([str(p).strip().lower() for p in predicates if p not in [None, ""]])
+
+        if sourceKeys is not None and not isinstance(sourceKeys, list):
+            sourceKeys = [sourceKeys]
+
+        if targetKeys is not None and not isinstance(targetKeys, list):
+            targetKeys = [targetKeys]
+
+        if sourceKeys is not None and targetKeys is not None and len(sourceKeys) != len(targetKeys):
+            if not silent:
+                print("Graph.PropagateValues - Error: sourceKeys and targetKeys must have the same length. Returning None.")
+            return None
+
+        reserved_keys = {
+            "index",
+            "src",
+            "dst",
+            "id",
+            "key",
+            "label",
+            "type",
+            "category",
+            "IFC_id",
+            "IFC_key",
+            "IFC_global_id",
+            "global_id",
+        }
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _set_value(dictionary, key, value):
+            if dictionary is None:
+                return Dictionary.ByKeyValue(key, value)
+            return Dictionary.SetValueAtKey(dictionary, key, value)
+
+        def _is_empty(value):
+            return value in [None, "", [], {}, ()]
+
+        def _edge_predicate(edge):
+            d = Topology.Dictionary(edge)
+            value = _value(d, edgeKey, None)
+            if value in [None, ""]:
+                value = _value(d, "predicate", None)
+            if value in [None, ""]:
+                value = _value(d, "relationship_type", None)
+            if value in [None, ""]:
+                value = _value(d, "label", None)
+            if value in [None, ""]:
+                value = "related_to"
+            return str(value)
+
+        def _target_key_for(source_key, index):
+            if targetKeys is not None:
+                return targetKeys[index]
+            return f"{prefix}{source_key}{suffix}"
+
+        def _copy_values(source_vertex, target_vertex):
+            sd = Topology.Dictionary(source_vertex)
+            td = Topology.Dictionary(target_vertex)
+
+            keys_to_copy = sourceKeys
+            if keys_to_copy is None:
+                keys_to_copy = [
+                    k for k in _keys(sd)
+                    if k not in reserved_keys
+                ]
+
+            changed = False
+
+            for i, skey in enumerate(keys_to_copy):
+                value = _value(sd, skey, None)
+
+                if _is_empty(value):
+                    continue
+
+                tkey = _target_key_for(skey, i)
+                current_value = _value(td, tkey, None)
+
+                if overwrite or _is_empty(current_value):
+                    td = _set_value(td, tkey, value)
+                    changed = True
+
+            if changed:
+                try:
+                    Topology.SetDictionary(target_vertex, td, silent=True)
+                except TypeError:
+                    Topology.SetDictionary(target_vertex, td)
+                except Exception:
+                    pass
+
+            return changed
+
+        vertices = Graph.Vertices(graph) or []
+        edges = Graph.Edges(graph) or []
+
+        propagated_count = 0
+
+        for edge in edges:
+            if not Topology.IsInstance(edge, "Edge"):
+                continue
+
+            predicate = _edge_predicate(edge).strip().lower()
+
+            if predicate_set is not None and predicate not in predicate_set:
+                continue
+
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src_index = Vertex.Index(sv, vertices, tolerance=tolerance)
+            dst_index = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+            if src_index is None or dst_index is None:
+                continue
+
+            source_vertex = vertices[src_index]
+            target_vertex = vertices[dst_index]
+
+            if direction in ["out", "both"]:
+                if _copy_values(source_vertex, target_vertex):
+                    propagated_count += 1
+
+            if direction in ["in", "both"]:
+                if _copy_values(target_vertex, source_vertex):
+                    propagated_count += 1
+
+        # Store summary on graph dictionary.
+        try:
+            gd = Topology.Dictionary(graph)
+            gd = _set_value(gd, "propagated_value_count", propagated_count)
+            Topology.SetDictionary(graph, gd, silent=True)
+        except Exception:
+            pass
+
+        return graph
 
     @staticmethod
     def PyvisGraph(graph, path,
@@ -21068,6 +22592,229 @@ class Graph:
 
 
         return Graph.ByVerticesEdges(group_vertices, edges, index=True)
+
+    @staticmethod
+    def RDFString(graph,
+                  subjectKey: str = "id",
+                  predicateKey: str = "predicate",
+                  objectKey: str = "id",
+                  baseIRI: str = "https://topologic.app/resource/",
+                  ontologyIRI: str = "https://topologic.app/ontology/",
+                  includeMetadata: bool = True,
+                  format: str = "turtle",
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
+        """
+        Returns an RDF/Turtle string representation of a TopologicPy Graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        subjectKey : str , optional
+            Vertex dictionary key used to identify RDF subjects. Default is "id".
+        predicateKey : str , optional
+            Edge dictionary key used to identify RDF predicates. Default is "predicate".
+        objectKey : str , optional
+            Vertex dictionary key used to identify RDF objects. Default is "id".
+        baseIRI : str , optional
+            Base IRI for generated resources. Default is "https://topologic.app/resource/".
+        ontologyIRI : str , optional
+            Base IRI for generated predicates/classes. Default is "https://topologic.app/ontology/".
+        includeMetadata : bool , optional
+            If True, vertex labels, types, and selected dictionary values are exported.
+            Default is True.
+        format : str , optional
+            Currently only "turtle" is supported. Default is "turtle".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        str
+            RDF/Turtle representation of the input graph.
+        """
+
+        import re
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.RDFString - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        if str(format).strip().lower() not in ["ttl", "turtle"]:
+            if not silent:
+                print("Graph.RDFString - Error: Only Turtle format is currently supported. Returning None.")
+            return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _safe_fragment(value, fallback="resource"):
+            text = "" if value is None else str(value)
+            text = text.strip()
+
+            if not text:
+                text = str(fallback)
+
+            text = text.replace("#", "ifc_")
+            text = re.sub(r"[^A-Za-z0-9_\-\.]", "_", text)
+            text = re.sub(r"_+", "_", text).strip("_")
+
+            if not text:
+                text = str(fallback)
+
+            if re.match(r"^[0-9]", text):
+                text = "r_" + text
+
+            return text
+
+        def _escape_literal(value):
+            text = "" if value is None else str(value)
+            text = text.replace("\\", "\\\\")
+            text = text.replace("\"", "\\\"")
+            text = text.replace("\n", "\\n")
+            text = text.replace("\r", "\\r")
+            return text
+
+        def _literal(value):
+            if isinstance(value, bool):
+                return f"\"{str(value).lower()}\"^^xsd:boolean"
+            if isinstance(value, int) and not isinstance(value, bool):
+                return f"\"{value}\"^^xsd:integer"
+            if isinstance(value, float):
+                return f"\"{value}\"^^xsd:double"
+            return f"\"{_escape_literal(value)}\""
+
+        def _iri_resource(value, fallback="resource"):
+            return f"topo:{_safe_fragment(value, fallback)}"
+
+        def _iri_ontology(value, fallback="predicate"):
+            return f"tpo:{_safe_fragment(value, fallback)}"
+
+        def _metadata_literal_allowed(value):
+            if value is None:
+                return False
+            if isinstance(value, (str, int, float, bool)):
+                return True
+            return False
+
+        triples = Graph.Triples(
+            graph,
+            subjectKey=subjectKey,
+            predicateKey=predicateKey,
+            objectKey=objectKey,
+            includeMetadata=True,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if triples is None:
+            return None
+
+        baseIRI = str(baseIRI or "https://topologic.app/resource/")
+        ontologyIRI = str(ontologyIRI or "https://topologic.app/ontology/")
+
+        if not baseIRI.endswith(("/", "#")):
+            baseIRI += "/"
+
+        if not ontologyIRI.endswith(("/", "#")):
+            ontologyIRI += "/"
+
+        lines = []
+        lines.append("@prefix topo: <" + baseIRI + "> .")
+        lines.append("@prefix tpo: <" + ontologyIRI + "> .")
+        lines.append("@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .")
+        lines.append("@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .")
+        lines.append("@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .")
+        lines.append("")
+
+        ttl_triples = []
+        emitted = set()
+
+        def _emit(subject, predicate, obj):
+            statement = f"{subject} {predicate} {obj} ."
+            if statement not in emitted:
+                emitted.add(statement)
+                ttl_triples.append(statement)
+
+        for triple in triples:
+            subject = triple.get("subject")
+            predicate = triple.get("predicate")
+            obj = triple.get("object")
+
+            s_iri = _iri_resource(subject, "subject")
+            p_iri = _iri_ontology(predicate, "related_to")
+            o_iri = _iri_resource(obj, "object")
+
+            _emit(s_iri, p_iri, o_iri)
+
+            if not includeMetadata:
+                continue
+
+            subject_label = triple.get("subject_label")
+            object_label = triple.get("object_label")
+            subject_type = triple.get("subject_type")
+            object_type = triple.get("object_type")
+
+            if subject_label not in [None, ""]:
+                _emit(s_iri, "rdfs:label", _literal(subject_label))
+
+            if object_label not in [None, ""]:
+                _emit(o_iri, "rdfs:label", _literal(object_label))
+
+            if subject_type not in [None, ""]:
+                _emit(s_iri, "rdf:type", _iri_ontology(subject_type, "Entity"))
+
+            if object_type not in [None, ""]:
+                _emit(o_iri, "rdf:type", _iri_ontology(object_type, "Entity"))
+
+            subject_dictionary = triple.get("subject_dictionary", {})
+            object_dictionary = triple.get("object_dictionary", {})
+
+            if isinstance(subject_dictionary, dict):
+                for key, value in subject_dictionary.items():
+                    if key in [subjectKey, "id", "key", "label", "type", "index"]:
+                        continue
+                    if _metadata_literal_allowed(value):
+                        _emit(s_iri, _iri_ontology(key, "property"), _literal(value))
+
+            if isinstance(object_dictionary, dict):
+                for key, value in object_dictionary.items():
+                    if key in [objectKey, "id", "key", "label", "type", "index"]:
+                        continue
+                    if _metadata_literal_allowed(value):
+                        _emit(o_iri, _iri_ontology(key, "property"), _literal(value))
+
+        lines.extend(sorted(ttl_triples))
+        lines.append("")
+
+        return "\n".join(lines)
 
     @staticmethod
     def RemoveEdge(graph, *edges, tolerance=0.0001, silent: bool = False):
@@ -23526,6 +25273,170 @@ class Graph:
         return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'], index=True)
     
     @staticmethod
+    def Triples(graph,
+                subjectKey: str = "id",
+                predicateKey: str = "predicate",
+                objectKey: str = "id",
+                includeMetadata: bool = True,
+                tolerance: float = 0.0001,
+                silent: bool = False):
+        """
+        Returns RDF-style triples from a TopologicPy Graph.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        subjectKey : str , optional
+            Vertex dictionary key used to identify the subject. Default is "id".
+        predicateKey : str , optional
+            Edge dictionary key used to identify the predicate. Default is "predicate".
+        objectKey : str , optional
+            Vertex dictionary key used to identify the object. Default is "id".
+        includeMetadata : bool , optional
+            If set to True, vertex and edge metadata are included in each triple.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries in the form:
+            {
+                "subject": ...,
+                "predicate": ...,
+                "object": ...
+            }
+        """
+
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.Triples - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _dictionary_to_dict(dictionary):
+            data = {}
+            for key in _keys(dictionary):
+                data[key] = _value(dictionary, key, None)
+            return data
+
+        def _vertex_identifier(vertex, key, fallback_index):
+            d = Topology.Dictionary(vertex)
+            value = _value(d, key, None)
+
+            if value not in [None, ""]:
+                return value
+
+            for fallback_key in ["id", "key", "IFC_global_id", "global_id", "IFC_key", "label"]:
+                value = _value(d, fallback_key, None)
+                if value not in [None, ""]:
+                    return value
+
+            return str(fallback_index)
+
+        vertices = Graph.Vertices(graph)
+        edges = Graph.Edges(graph)
+
+        if not isinstance(vertices, list):
+            vertices = []
+        if not isinstance(edges, list):
+            edges = []
+
+        triples = []
+
+        for edge_index, edge in enumerate(edges):
+            if not Topology.IsInstance(edge, "Edge"):
+                continue
+
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src_index = Vertex.Index(sv, vertices, tolerance=tolerance)
+            dst_index = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+            if src_index is None or dst_index is None:
+                continue
+
+            subject_vertex = vertices[src_index]
+            object_vertex = vertices[dst_index]
+
+            sd = Topology.Dictionary(subject_vertex)
+            od = Topology.Dictionary(object_vertex)
+            ed = Topology.Dictionary(edge)
+
+            subject = _vertex_identifier(subject_vertex, subjectKey, src_index)
+            obj = _vertex_identifier(object_vertex, objectKey, dst_index)
+
+            predicate = _value(ed, predicateKey, None)
+            if predicate in [None, ""]:
+                predicate = _value(ed, "label", None)
+            if predicate in [None, ""]:
+                predicate = _value(ed, "relationship_type", None)
+            if predicate in [None, ""]:
+                predicate = "related_to"
+
+            triple = {
+                "subject": subject,
+                "predicate": predicate,
+                "object": obj,
+            }
+
+            if includeMetadata:
+                triple.update({
+                    "subject_index": src_index,
+                    "object_index": dst_index,
+                    "edge_index": edge_index,
+                    "subject_label": _value(sd, "label", None),
+                    "object_label": _value(od, "label", None),
+                    "subject_type": _value(sd, "type", _value(sd, "IFC_type", None)),
+                    "object_type": _value(od, "type", _value(od, "IFC_type", None)),
+                    "edge_label": _value(ed, "label", None),
+                    "edge_type": _value(ed, "type", _value(ed, "IFC_type", None)),
+                    "subject_dictionary": _dictionary_to_dict(sd),
+                    "object_dictionary": _dictionary_to_dict(od),
+                    "edge_dictionary": _dictionary_to_dict(ed),
+                })
+
+            triples.append(triple)
+
+        return triples
+
+    @staticmethod
     def VertexByKeyValue(graph, key: str = None, value=None, silent: bool = False):
         """
         Returns the first vertex in the input graph whose dictionary contains the
@@ -23867,6 +25778,245 @@ class Graph:
         denominator = sum(max(weights1.get(k, 0), weights2.get(k, 0)) for k in keys)
 
         return round(numerator / denominator, mantissa) if denominator != 0 else 0.0
+
+    @staticmethod
+    def WikiString(graph,
+                   vertexKey: str = "id",
+                   vertexLabelKey: str = "label",
+                   vertexTypeKey: str = "type",
+                   edgeKey: str = "predicate",
+                   titleKey: str = None,
+                   includeDictionaries: bool = True,
+                   includeBacklinks: bool = True,
+                   pageSeparator: str = "\n\n---\n\n",
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
+        """
+        Returns a markdown wiki string representation of a TopologicPy Graph.
+
+        Each vertex becomes one markdown page. Edges become explicit wikilinks
+        between pages. This is useful for Obsidian-style graph viewing and for
+        LLM/GraphRAG-ready building knowledge corpora.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        vertexKey : str , optional
+            Vertex dictionary key used as the stable page identifier. Default is "id".
+        vertexLabelKey : str , optional
+            Vertex dictionary key used as the human-readable label. Default is "label".
+        vertexTypeKey : str , optional
+            Vertex dictionary key used as the entity type. Default is "type".
+        edgeKey : str , optional
+            Edge dictionary key used as the relationship/predicate label. Default is "predicate".
+        titleKey : str , optional
+            Optional vertex dictionary key to use as the page title. If None, the
+            title is derived from vertexLabelKey, vertexKey, or index. Default is None.
+        includeDictionaries : bool , optional
+            If True, vertex dictionaries are written as property sections.
+            Default is True.
+        includeBacklinks : bool , optional
+            If True, incoming relations are also listed. Default is True.
+        pageSeparator : str , optional
+            String used to separate pages in the returned markdown. Default is "\\n\\n---\\n\\n".
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        str
+            A markdown string containing one wiki-style page per graph vertex.
+        """
+
+        import re
+        from topologicpy.Graph import Graph
+        from topologicpy.Edge import Edge
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if not Topology.IsInstance(graph, "Graph"):
+            if not silent:
+                print("Graph.WikiString - Error: The input graph parameter is not a valid graph. Returning None.")
+            return None
+
+        def _keys(dictionary):
+            if dictionary is None:
+                return []
+            try:
+                keys = Dictionary.Keys(dictionary)
+                return keys if isinstance(keys, list) else []
+            except Exception:
+                return []
+
+        def _value(dictionary, key, default=None):
+            if dictionary is None or key is None:
+                return default
+            try:
+                return Dictionary.ValueAtKey(dictionary, key, default)
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(dictionary, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _safe_text(value):
+            if value is None:
+                return ""
+            if isinstance(value, bool):
+                return "true" if value else "false"
+            if isinstance(value, (int, float)):
+                return str(value)
+            if isinstance(value, (list, tuple, set)):
+                return ", ".join([_safe_text(v) for v in value])
+            if isinstance(value, dict):
+                return str(value)
+            return str(value)
+
+        def _slug(value, fallback):
+            text = _safe_text(value).strip()
+            if not text:
+                text = str(fallback)
+            text = re.sub(r"[\[\]#|<>:\"/\\?*]+", "_", text)
+            text = re.sub(r"\s+", " ", text).strip()
+            return text if text else str(fallback)
+
+        def _vertex_identifier(vertex, index):
+            d = Topology.Dictionary(vertex)
+
+            for key in [titleKey, vertexLabelKey, vertexKey, "IFC_name", "name", "IFC_global_id", "global_id", "IFC_key", "key"]:
+                if key is None:
+                    continue
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return _slug(value, f"Vertex_{index}")
+
+            return f"Vertex_{index}"
+
+        def _vertex_value(vertex, key, fallback=None):
+            d = Topology.Dictionary(vertex)
+            value = _value(d, key, None)
+            return fallback if value in [None, ""] else value
+
+        def _edge_predicate(edge):
+            d = Topology.Dictionary(edge)
+            for key in [edgeKey, "predicate", "relationship_type", "label", "IFC_type", "type"]:
+                value = _value(d, key, None)
+                if value not in [None, ""]:
+                    return _safe_text(value)
+            return "related_to"
+
+        def _dictionary_items(dictionary):
+            items = []
+            for key in sorted(_keys(dictionary)):
+                value = _value(dictionary, key, None)
+                if value in [None, ""]:
+                    continue
+                items.append((key, value))
+            return items
+
+        vertices = Graph.Vertices(graph) or []
+        edges = Graph.Edges(graph) or []
+
+        titles = {}
+        for i, vertex in enumerate(vertices):
+            title = _vertex_identifier(vertex, i)
+            base = title
+            counter = 2
+            while title in titles.values():
+                title = f"{base} {counter}"
+                counter += 1
+            titles[i] = title
+
+        outgoing = {i: [] for i in range(len(vertices))}
+        incoming = {i: [] for i in range(len(vertices))}
+
+        for edge_index, edge in enumerate(edges):
+            if not Topology.IsInstance(edge, "Edge"):
+                continue
+
+            try:
+                sv = Edge.StartVertex(edge)
+                ev = Edge.EndVertex(edge)
+            except Exception:
+                continue
+
+            src = Vertex.Index(sv, vertices, tolerance=tolerance)
+            dst = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+            if src is None or dst is None:
+                continue
+
+            predicate = _edge_predicate(edge)
+
+            outgoing[src].append({
+                "target": dst,
+                "predicate": predicate,
+                "edge_index": edge_index,
+            })
+
+            incoming[dst].append({
+                "source": src,
+                "predicate": predicate,
+                "edge_index": edge_index,
+            })
+
+        pages = []
+
+        for i, vertex in enumerate(vertices):
+            d = Topology.Dictionary(vertex)
+
+            title = titles[i]
+            label = _vertex_value(vertex, vertexLabelKey, title)
+            vtype = _vertex_value(vertex, vertexTypeKey, "")
+
+            lines = []
+            lines.append(f"# {title}")
+            lines.append("")
+
+            lines.append("## Summary")
+            lines.append("")
+            lines.append(f"- **ID:** `{_safe_text(_vertex_value(vertex, vertexKey, i))}`")
+            if label not in [None, ""]:
+                lines.append(f"- **Label:** {_safe_text(label)}")
+            if vtype not in [None, ""]:
+                lines.append(f"- **Type:** {_safe_text(vtype)}")
+            lines.append("")
+
+            if includeDictionaries:
+                items = _dictionary_items(d)
+                if len(items) > 0:
+                    lines.append("## Properties")
+                    lines.append("")
+                    for key, value in items:
+                        lines.append(f"- **{key}:** {_safe_text(value)}")
+                    lines.append("")
+
+            if len(outgoing.get(i, [])) > 0:
+                lines.append("## Relations")
+                lines.append("")
+                for item in outgoing[i]:
+                    target_title = titles[item["target"]]
+                    lines.append(f"- **{item['predicate']}** → [[{target_title}]]")
+                lines.append("")
+
+            if includeBacklinks and len(incoming.get(i, [])) > 0:
+                lines.append("## Backlinks")
+                lines.append("")
+                for item in incoming[i]:
+                    source_title = titles[item["source"]]
+                    lines.append(f"- [[{source_title}]] → **{item['predicate']}**")
+                lines.append("")
+
+            pages.append("\n".join(lines).strip())
+
+        return pageSeparator.join(pages)
 
     @staticmethod
     def _vertex_is_same(v1, v2, keys=None, tolerance=0.0001):

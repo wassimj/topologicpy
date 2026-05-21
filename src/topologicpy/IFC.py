@@ -36,6 +36,8 @@ Ref = Tuple[str, int]
 Call = Tuple[str, str, list]
 
 
+
+
 @dataclass(slots=True)
 class IFCFastEntity:
     id: int
@@ -50,6 +52,244 @@ class IFCFastEntity:
     def __repr__(self):
         return f"#{self.id}={self.type}(...)"
 
+class IFCEntity:
+    """
+    Lightweight dynamic wrapper around an IFCFastEntity.
+
+    This class exposes IFC root attributes, extracted properties,
+    quantities, classifications, materials, and type information
+    through Python attribute access.
+
+    Example
+    -------
+    wall = IFC.Object(file, globalId)
+
+    print(wall.GlobalId)
+    print(wall.Name)
+    print(wall.FireRating)
+    print(wall.Materials)
+    """
+
+    _ROOT_ATTRS = {
+        "GlobalId": 0,
+        "OwnerHistory": 1,
+        "Name": 2,
+        "Description": 3,
+    }
+
+    def __init__(self, entity, entities=None, properties=None):
+        self._entity = entity
+        self._entities = entities or {}
+        self._properties = properties or {}
+
+    def __repr__(self):
+        gid = self.GlobalId or ""
+        return f"<{self.IFCType} #{self.IFCId} {gid}>"
+
+    @property
+    def IFCId(self):
+        return self._entity.id if self._entity is not None else None
+
+    @property
+    def IFCKey(self):
+        return f"#{self._entity.id}" if self._entity is not None else None
+
+    @property
+    def IFCType(self):
+        if self._entity is None:
+            return None
+
+        t = self._entity.type
+
+        if str(t).upper().startswith("IFC"):
+            return "Ifc" + str(t)[3:].lower().title().replace("_", "")
+
+        return t
+
+    @property
+    def Entity(self):
+        """
+        Returns the wrapped IFCFastEntity.
+        """
+        return self._entity
+
+    @property
+    def Properties(self):
+        return self._properties.get("properties", {})
+
+    @property
+    def TypeProperties(self):
+        return self._properties.get("type_properties", {})
+
+    @property
+    def Quantities(self):
+        return self._properties.get("quantities", {})
+
+    @property
+    def TypeQuantities(self):
+        return self._properties.get("type_quantities", {})
+
+    @property
+    def Classifications(self):
+        return self._properties.get("classifications", [])
+
+    @property
+    def Materials(self):
+        return self._properties.get("materials", [])
+
+    @property
+    def Type(self):
+        return self._properties.get("type", None)
+
+    def is_a(self, name=None):
+        if self._entity is None:
+            return None if name is None else False
+
+        return self._entity.is_a(name)
+
+    def Attribute(self, name, default=None):
+        """
+        Returns an attribute/property safely.
+        """
+
+        try:
+            return getattr(self, name)
+        except Exception:
+            return default
+
+    def ToDict(self):
+        """
+        Returns a serializable dictionary representation.
+        """
+
+        return {
+            "ifc_id": self.IFCId,
+            "ifc_key": self.IFCKey,
+            "ifc_type": self.IFCType,
+            "global_id": self.GlobalId,
+            "name": self.Name,
+            "description": self.Description,
+            "properties": self.Properties,
+            "type_properties": self.TypeProperties,
+            "quantities": self.Quantities,
+            "type_quantities": self.TypeQuantities,
+            "classifications": self.Classifications,
+            "materials": self.Materials,
+            "type": self.Type,
+        }
+
+    def _normalise_name(self, value):
+        if value is None:
+            return ""
+
+        return "".join(
+            ch for ch in str(value).strip().lower()
+            if ch.isalnum()
+        )
+
+    def _lookup_in_grouped_dict(self, grouped, name):
+        """
+        Searches grouped property dictionaries.
+
+        Supports:
+        - FireRating
+        - Pset_WallCommon.FireRating
+        """
+
+        target = self._normalise_name(name)
+
+        if not isinstance(grouped, dict):
+            return None
+
+        # Direct property search.
+        for group_name, values in grouped.items():
+            if not isinstance(values, dict):
+                continue
+
+            for key, value in values.items():
+                if self._normalise_name(key) == target:
+                    return value
+
+        # Qualified search.
+        if "." in str(name):
+            group_part, key_part = str(name).split(".", 1)
+
+            group_target = self._normalise_name(group_part)
+            key_target = self._normalise_name(key_part)
+
+            for group_name, values in grouped.items():
+                if self._normalise_name(group_name) != group_target:
+                    continue
+
+                if not isinstance(values, dict):
+                    continue
+
+                for key, value in values.items():
+                    if self._normalise_name(key) == key_target:
+                        return value
+
+        return None
+
+    def __getattr__(self, name):
+        """
+        Dynamic IFC-style attribute lookup.
+
+        Lookup order:
+        1. IFC root attributes
+        2. instance properties
+        3. type properties
+        4. instance quantities
+        5. type quantities
+        """
+
+        # IFC root attributes.
+        if name in IFCEntity._ROOT_ATTRS:
+            index = IFCEntity._ROOT_ATTRS[name]
+
+            try:
+                return IFCFastTopology._root_attr(self._entity, index)
+            except Exception:
+                return None
+
+        # Instance properties.
+        value = self._lookup_in_grouped_dict(
+            self.Properties,
+            name
+        )
+
+        if value is not None:
+            return value
+
+        # Type properties.
+        value = self._lookup_in_grouped_dict(
+            self.TypeProperties,
+            name
+        )
+
+        if value is not None:
+            return value
+
+        # Instance quantities.
+        value = self._lookup_in_grouped_dict(
+            self.Quantities,
+            name
+        )
+
+        if value is not None:
+            return value
+
+        # Type quantities.
+        value = self._lookup_in_grouped_dict(
+            self.TypeQuantities,
+            name
+        )
+
+        if value is not None:
+            return value
+
+        raise AttributeError(
+            f"{self.IFCType} has no attribute '{name}'"
+        )
 
 class IFCFastTopology:
     """
@@ -1352,6 +1592,2128 @@ class IFC:
                 print("IFC.FileByPath - Error: Could not open the IFC file. Returning None.")
             return None
         return IFCFastTopology.Parse(path, silent=silent)
+    
+    @staticmethod
+    def Entities(file, silent: bool = False):
+        """
+        Returns the parsed IFC STEP entity dictionary from the input IFC file.
+
+        This method accepts:
+        - a previously parsed IFC entity dictionary,
+        - a path to an IFC file,
+        - a STEP text string,
+        - or an ifcopenshell file-like object that can be serialised to STEP text.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary of parsed IFC entities keyed by STEP id. Each value is an
+            IFCFastEntity object. Returns None if parsing fails.
+        """
+
+        entities = IFC._entities_from_input(file, silent=silent)
+
+        if entities is None:
+            if not silent:
+                print("IFC.Entities - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        if not isinstance(entities, dict):
+            if not silent:
+                print("IFC.Entities - Error: Parsed IFC entities are not stored in a valid dictionary. Returning None.")
+            return None
+
+        return entities
+    
+    @staticmethod
+    def EntitiesByPath(path: str, silent: bool = False):
+        """
+        Returns the parsed IFC STEP entity dictionary from the IFC file at the input path.
+
+        Parameters
+        ----------
+        path : str
+            The input IFC file path.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary of parsed IFC entities keyed by STEP id. Each value is an
+            IFCFastEntity object. Returns None if parsing fails.
+        """
+
+        return IFC.Entities(path, silent=silent)
+
+
+    @staticmethod
+    def Object(file,
+               globalId: str = None,
+               ifcId: int = None,
+               ifcKey: str = None,
+               silent: bool = False):
+        """
+        Returns a dynamic IFCEntity wrapper for one IFC entity.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        globalId : str , optional
+            The GlobalId of the IFC entity to retrieve.
+        ifcId : int , optional
+            The STEP id of the IFC entity to retrieve.
+        ifcKey : str , optional
+            The STEP key of the IFC entity to retrieve, e.g. "#123".
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        IFCEntity
+            A dynamic IFC entity wrapper. Returns None if the entity is not found.
+        """
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            entities = IFC._entities_from_input(file, silent=silent)
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.Object - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        target = None
+
+        if ifcId is not None:
+            try:
+                target = entities.get(int(ifcId))
+            except Exception:
+                target = None
+
+        if target is None and ifcKey is not None:
+            try:
+                key = str(ifcKey).strip()
+                if key.startswith("#"):
+                    key = key[1:]
+                target = entities.get(int(key))
+            except Exception:
+                target = None
+
+        if target is None and isinstance(globalId, str) and len(globalId.strip()) > 0:
+            gid = globalId.strip()
+            for entity in entities.values():
+                if IFCFastTopology._root_attr(entity, 0) == gid:
+                    target = entity
+                    break
+
+        if target is None:
+            if not silent:
+                print("IFC.Object - Error: Could not find the requested IFC entity. Returning None.")
+            return None
+
+        props = IFC.Properties(file, includeEmpty=True, silent=silent)
+        prop_record = {}
+
+        if isinstance(props, dict):
+            records = props.get("entities", {})
+            gid = IFCFastTopology._root_attr(target, 0)
+            possible_keys = [
+                gid,
+                str(target.id),
+                f"#{target.id}",
+            ]
+
+            for key in possible_keys:
+                if key in records:
+                    prop_record = records[key]
+                    break
+
+        return IFCEntity(target, entities=entities, properties=prop_record)
+
+    @staticmethod
+    def Objects(file,
+                includeTypes: list = None,
+                excludeTypes: list = None,
+                includeEmpty: bool = True,
+                silent: bool = False):
+        """
+        Returns dynamic IFCEntity wrappers for IFC entities in a file.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        includeTypes : list , optional
+            IFC entity types to include. Default is None.
+        excludeTypes : list , optional
+            IFC entity types to exclude. Default is None.
+        includeEmpty : bool , optional
+            If True, include entities with no extracted property payload.
+            Default is True.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of IFCEntity objects.
+        """
+
+        def _normalise_type(value):
+            if value is None:
+                return None
+            value = str(value).strip().upper()
+            return value if value else None
+
+        def _normalise_type_set(values):
+            if not values:
+                return set()
+            return set([_normalise_type(v) for v in values if _normalise_type(v)])
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            entities = IFC._entities_from_input(file, silent=silent)
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.Objects - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        include_set = _normalise_type_set(includeTypes)
+        exclude_set = _normalise_type_set(excludeTypes)
+
+        props = IFC.Properties(
+            file,
+            includeTypes=includeTypes,
+            excludeTypes=excludeTypes,
+            includeEmpty=includeEmpty,
+            silent=silent,
+        )
+
+        records = {}
+        if isinstance(props, dict):
+            records = props.get("entities", {})
+
+        objects = []
+
+        for entity in sorted(entities.values(), key=lambda e: e.id):
+            etype = _normalise_type(entity.type)
+
+            if include_set and etype not in include_set:
+                continue
+
+            if exclude_set and etype in exclude_set:
+                continue
+
+            if not include_set:
+                try:
+                    if not IFCFastTopology._is_product_like(entity):
+                        continue
+                except Exception:
+                    if etype is None or etype.startswith("IFCREL"):
+                        continue
+
+            gid = IFCFastTopology._root_attr(entity, 0)
+            possible_keys = [
+                gid,
+                str(entity.id),
+                f"#{entity.id}",
+            ]
+
+            record = {}
+            for key in possible_keys:
+                if key in records:
+                    record = records[key]
+                    break
+
+            if not includeEmpty and not record:
+                continue
+
+            objects.append(IFCEntity(entity, entities=entities, properties=record))
+
+        return objects
+
+    @staticmethod
+    def ObjectsByType(file,
+                      ifcType: str,
+                      includeEmpty: bool = True,
+                      silent: bool = False):
+        """
+        Returns dynamic IFCEntity wrappers for entities of one IFC type.
+
+        Example
+        -------
+        walls = IFC.ObjectsByType(file, "IfcWall")
+        print(walls[0].FireRating)
+        """
+
+        if not isinstance(ifcType, str) or len(ifcType.strip()) < 1:
+            if not silent:
+                print("IFC.ObjectsByType - Error: The ifcType parameter is not a valid string. Returning None.")
+            return None
+
+        t = ifcType.strip().upper()
+        if not t.startswith("IFC"):
+            t = "IFC" + t.upper()
+
+        return IFC.Objects(
+            file,
+            includeTypes=[t],
+            includeEmpty=includeEmpty,
+            silent=silent,
+        )
+
+    @staticmethod
+    def Triples(file,
+                includeRels: list = None,
+                excludeRels: list = None,
+                subjectKey: str = "global_id",
+                objectKey: str = "global_id",
+                includeMetadata: bool = True,
+                silent: bool = False):
+        """
+        Returns IFC relationship triples from the input IFC file.
+
+        Each IfcRel* entity is converted into one or more explicit triples in
+        the form:
+
+        {
+            "subject": ...,
+            "predicate": ...,
+            "object": ...
+        }
+
+        If includeMetadata is True, each triple also includes IFC ids, STEP keys,
+        entity types, entity names, and relationship metadata.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        includeRels : list , optional
+            A list of IFC relationship types to include. If None, all supported
+            relationship types are included. Default is None.
+        excludeRels : list , optional
+            A list of IFC relationship types to exclude. Default is None.
+        subjectKey : str , optional
+            Identifier to use for the subject. Options are "global_id", "id",
+            or "key". Default is "global_id".
+        objectKey : str , optional
+            Identifier to use for the object. Options are "global_id", "id",
+            or "key". Default is "global_id".
+        includeMetadata : bool , optional
+            If set to True, additional metadata is included in each triple.
+            Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries representing IFC relationship triples.
+        """
+
+        def _normalise_type(value):
+            if value is None:
+                return None
+            value = str(value).strip()
+            if not value:
+                return None
+            return value.upper()
+
+        def _normalise_type_set(values):
+            if not values:
+                return set()
+            return set([_normalise_type(v) for v in values if _normalise_type(v)])
+
+        def _display_type(ifc_type):
+            if ifc_type is None:
+                return None
+            ifc_type = str(ifc_type).strip()
+            if ifc_type.upper().startswith("IFC"):
+                return "Ifc" + ifc_type[3:].lower().title().replace("_", "")
+            return ifc_type
+
+        def _entity_id(entity, key="global_id"):
+            if entity is None:
+                return None
+
+            key = (key or "global_id").strip().lower()
+
+            if key in ["id", "ifc_id", "step_id"]:
+                return entity.id
+
+            if key in ["key", "ifc_key", "step_key"]:
+                return f"#{entity.id}"
+
+            # Default: use GlobalId where possible, otherwise STEP key.
+            gid = IFCFastTopology._root_attr(entity, 0)
+            if gid not in [None, "", "*"]:
+                return gid
+
+            return f"#{entity.id}"
+
+        def _entity_name(entity):
+            try:
+                return IFCFastTopology._root_attr(entity, 2)
+            except Exception:
+                return None
+
+        def _refs(value):
+            try:
+                return IFCFastTopology._refs_in_value(value)
+            except Exception:
+                return []
+
+        def _entity_from_ref(ref):
+            try:
+                return IFCFastTopology._entity_from_ref(ref, entities)
+            except Exception:
+                return None
+
+        def _make_triple(subject_entity, predicate, object_entity, rel_entity):
+            if subject_entity is None or object_entity is None:
+                return None
+
+            triple = {
+                "subject": _entity_id(subject_entity, subjectKey),
+                "predicate": predicate,
+                "object": _entity_id(object_entity, objectKey),
+            }
+
+            if includeMetadata:
+                triple.update({
+                    "subject_id": subject_entity.id,
+                    "subject_key": f"#{subject_entity.id}",
+                    "subject_type": _display_type(subject_entity.type),
+                    "subject_name": _entity_name(subject_entity),
+
+                    "object_id": object_entity.id,
+                    "object_key": f"#{object_entity.id}",
+                    "object_type": _display_type(object_entity.type),
+                    "object_name": _entity_name(object_entity),
+
+                    "relationship_id": rel_entity.id,
+                    "relationship_key": f"#{rel_entity.id}",
+                    "relationship_type": _display_type(rel_entity.type),
+                    "relationship_global_id": IFCFastTopology._root_attr(rel_entity, 0),
+                    "relationship_name": IFCFastTopology._root_attr(rel_entity, 2),
+                })
+
+            return triple
+
+        # --------------------------------------------------------------
+        # Parse once
+        # --------------------------------------------------------------
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            entities = IFC._entities_from_input(file, silent=silent)
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.Triples - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        include_rel_set = _normalise_type_set(includeRels)
+        exclude_rel_set = _normalise_type_set(excludeRels)
+
+        # --------------------------------------------------------------
+        # Relationship mapping
+        #
+        # Each entry maps:
+        # relationship type -> (subject argument index, object argument index)
+        #
+        # Lists are automatically expanded, so one IfcRel can produce many
+        # triples.
+        # --------------------------------------------------------------
+
+        relationship_map = {
+            "IFCRELAGGREGATES": (4, 5),                         # RelatingObject -> RelatedObjects
+            "IFCRELNESTS": (4, 5),                              # RelatingObject -> RelatedObjects
+            "IFCRELCONTAINEDINSPATIALSTRUCTURE": (5, 4),        # RelatingStructure -> RelatedElements
+            "IFCRELASSIGNSTOGROUP": (5, 4),                     # RelatingGroup -> RelatedObjects
+
+            "IFCRELDEFINESBYPROPERTIES": (5, 4),                # RelatingPropertyDefinition -> RelatedObjects
+            "IFCRELDEFINESBYTYPE": (5, 4),                      # RelatingType -> RelatedObjects
+
+            "IFCRELASSOCIATESMATERIAL": (5, 4),                 # RelatingMaterial -> RelatedObjects
+            "IFCRELASSOCIATESCLASSIFICATION": (5, 4),           # RelatingClassification -> RelatedObjects
+            "IFCRELASSOCIATESDOCUMENT": (5, 4),                 # RelatingDocument -> RelatedObjects
+            "IFCRELASSOCIATESAPPROVAL": (5, 4),                 # RelatingApproval -> RelatedObjects
+            "IFCRELASSOCIATESCONSTRAINT": (5, 4),               # RelatingConstraint -> RelatedObjects
+
+            "IFCRELVOIDSELEMENT": (5, 4),                       # RelatedOpeningElement -> RelatingBuildingElement
+            "IFCRELFILLSELEMENT": (5, 4),                       # RelatedBuildingElement -> RelatingOpeningElement
+
+            "IFCRELSPACEBOUNDARY": (4, 5),                      # RelatingSpace -> RelatedBuildingElement
+            "IFCRELSPACEBOUNDARY1STLEVEL": (4, 5),
+            "IFCRELSPACEBOUNDARY2NDLEVEL": (4, 5),
+
+            "IFCRELCONNECTSELEMENTS": (4, 5),                   # RelatingElement -> RelatedElement
+            "IFCRELCONNECTSPATH ELEMENTS": (4, 5),
+            "IFCRELCONNECTSPORTTOELEMENT": (4, 5),              # RelatingPort -> RelatedElement
+            "IFCRELCONNECTSPORTS": (4, 5),                      # RelatingPort -> RelatedPort
+            "IFCRELCONNECTSSTRUCTURALMEMBER": (4, 5),           # RelatingStructuralMember -> RelatedStructuralConnection
+        }
+
+        # Typo-safe duplicate for correct IFC spelling.
+        relationship_map["IFCRELCONNECTSPATHELEMENTS"] = (4, 5)
+
+        triples = []
+
+        for rel in entities.values():
+            rel_type = _normalise_type(rel.type)
+
+            if rel_type is None or not rel_type.startswith("IFCREL"):
+                continue
+
+            if include_rel_set and rel_type not in include_rel_set:
+                continue
+
+            if exclude_rel_set and rel_type in exclude_rel_set:
+                continue
+
+            predicate = _display_type(rel_type)
+
+            # ----------------------------------------------------------
+            # Preferred path: known IFC relationship signatures.
+            # ----------------------------------------------------------
+
+            if rel_type in relationship_map:
+                subject_index, object_index = relationship_map[rel_type]
+
+                if subject_index >= len(rel.args) or object_index >= len(rel.args):
+                    continue
+
+                subject_refs = _refs(rel.args[subject_index])
+                object_refs = _refs(rel.args[object_index])
+
+                for subject_ref in subject_refs:
+                    subject_entity = _entity_from_ref(subject_ref)
+
+                    for object_ref in object_refs:
+                        object_entity = _entity_from_ref(object_ref)
+                        triple = _make_triple(subject_entity, predicate, object_entity, rel)
+
+                        if triple is not None:
+                            triples.append(triple)
+
+                continue
+
+            # ----------------------------------------------------------
+            # Fallback path:
+            # For unsupported IfcRel* entities, inspect arguments after
+            # the Root attributes and connect the first referenced entity
+            # to all subsequent referenced entities.
+            # ----------------------------------------------------------
+
+            rel_refs = []
+            for arg in rel.args[4:]:
+                rel_refs.extend(_refs(arg))
+
+            if len(rel_refs) < 2:
+                continue
+
+            subject_entity = _entity_from_ref(rel_refs[0])
+
+            for object_ref in rel_refs[1:]:
+                object_entity = _entity_from_ref(object_ref)
+                triple = _make_triple(subject_entity, predicate, object_entity, rel)
+
+                if triple is not None:
+                    triples.append(triple)
+
+        return triples
+
+    @staticmethod
+    def Properties(file,
+                   includeTypes: list = None,
+                   excludeTypes: list = None,
+                   keyMode: str = "global_id",
+                   includeEmpty: bool = False,
+                   silent: bool = False):
+        """
+        Extracts semantic properties, quantities, classifications, and materials
+        from an IFC file.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        includeTypes : list , optional
+            IFC entity types to include. If None, all product-like entities are
+            included. Default is None.
+        excludeTypes : list , optional
+            IFC entity types to exclude. Default is None.
+        keyMode : str , optional
+            Entity key mode. Options are "global_id", "id", or "key".
+            Default is "global_id".
+        includeEmpty : bool , optional
+            If True, entities with no extracted semantic payload are included.
+            Default is False.
+        silent : bool , optional
+            If True, suppresses error and warning messages. Default is False.
+
+        Returns
+        -------
+        dict
+            A dictionary with two main keys:
+
+            {
+                "entities": {
+                    "<entity_key>": {
+                        "ifc_id": int,
+                        "ifc_key": "#123",
+                        "ifc_type": "IfcWall",
+                        "global_id": "...",
+                        "name": "...",
+                        "properties": {...},
+                        "type_properties": {...},
+                        "quantities": {...},
+                        "classifications": [...],
+                        "materials": [...],
+                        "type": {...}
+                    }
+                },
+                "summary": {...}
+            }
+        """
+
+        def _normalise_type(value):
+            if value is None:
+                return None
+            value = str(value).strip().upper()
+            return value if value else None
+
+        def _normalise_type_set(values):
+            if not values:
+                return set()
+            return set([_normalise_type(v) for v in values if _normalise_type(v)])
+
+        def _display_type(ifc_type):
+            if ifc_type is None:
+                return None
+            ifc_type = str(ifc_type).strip()
+            if ifc_type.upper().startswith("IFC"):
+                return "Ifc" + ifc_type[3:].lower().title().replace("_", "")
+            return ifc_type
+
+        def _root_attr(entity, index):
+            try:
+                return IFCFastTopology._root_attr(entity, index)
+            except Exception:
+                return None
+
+        def _refs(value):
+            try:
+                return IFCFastTopology._refs_in_value(value)
+            except Exception:
+                return []
+
+        def _entity_from_ref(ref):
+            try:
+                return IFCFastTopology._entity_from_ref(ref, entities)
+            except Exception:
+                return None
+
+        def _entity_key(entity):
+            if entity is None:
+                return None
+
+            mode = (keyMode or "global_id").strip().lower()
+
+            if mode in ["id", "ifc_id", "step_id"]:
+                return str(entity.id)
+
+            if mode in ["key", "ifc_key", "step_key"]:
+                return f"#{entity.id}"
+
+            gid = _root_attr(entity, 0)
+            if gid not in [None, "", "*"]:
+                return str(gid)
+
+            return f"#{entity.id}"
+
+        def _entity_name(entity):
+            value = _root_attr(entity, 2)
+            return value if value not in [None, "", "*"] else None
+
+        def _unwrap(value):
+            """
+            Converts STEP parser values into practical Python scalar/list forms.
+            Handles IFC measure wrapper calls such as IFCLABEL('A') or
+            IFCAREAMEASURE(12.3).
+            """
+            if value in [None, "*", "$"]:
+                return None
+
+            if isinstance(value, tuple):
+                if len(value) == 3 and value[0] == "CALL":
+                    args = value[2] or []
+                    if len(args) == 1:
+                        return _unwrap(args[0])
+                    return [_unwrap(v) for v in args]
+                if len(value) == 2 and value[0] == "REF":
+                    ref_entity = _entity_from_ref(value)
+                    if ref_entity is None:
+                        return f"#{value[1]}"
+                    return _entity_key(ref_entity)
+
+            if isinstance(value, list):
+                return [_unwrap(v) for v in value]
+
+            return value
+
+        def _property_name(entity):
+            if entity is None or len(entity.args) < 1:
+                return None
+            name = entity.args[0]
+            return str(name) if name not in [None, "", "*", "$"] else None
+
+        def _property_value(prop):
+            """
+            Extracts values from common IfcProperty* entities.
+            """
+            if prop is None:
+                return None
+
+            ptype = _normalise_type(prop.type)
+
+            # IfcPropertySingleValue(Name, Description, NominalValue, Unit)
+            if ptype == "IFCPROPERTYSINGLEVALUE":
+                return _unwrap(prop.args[2]) if len(prop.args) > 2 else None
+
+            # IfcPropertyEnumeratedValue(Name, Description, EnumerationValues, EnumerationReference)
+            if ptype == "IFCPROPERTYENUMERATEDVALUE":
+                return _unwrap(prop.args[2]) if len(prop.args) > 2 else None
+
+            # IfcPropertyListValue(Name, Description, ListValues, Unit)
+            if ptype == "IFCPROPERTYLISTVALUE":
+                return _unwrap(prop.args[2]) if len(prop.args) > 2 else None
+
+            # IfcPropertyBoundedValue(Name, Description, UpperBoundValue, LowerBoundValue, SetPointValue, Unit)
+            if ptype == "IFCPROPERTYBOUNDEDVALUE":
+                return {
+                    "upper": _unwrap(prop.args[2]) if len(prop.args) > 2 else None,
+                    "lower": _unwrap(prop.args[3]) if len(prop.args) > 3 else None,
+                    "set_point": _unwrap(prop.args[4]) if len(prop.args) > 4 else None,
+                }
+
+            # IfcPropertyTableValue(Name, Description, DefiningValues, DefinedValues, ...)
+            if ptype == "IFCPROPERTYTABLEVALUE":
+                return {
+                    "defining": _unwrap(prop.args[2]) if len(prop.args) > 2 else None,
+                    "defined": _unwrap(prop.args[3]) if len(prop.args) > 3 else None,
+                }
+
+            # IfcComplexProperty(Name, Description, UsageName, HasProperties)
+            if ptype == "IFCCOMPLEXPROPERTY":
+                nested = {}
+                if len(prop.args) > 3:
+                    for ref in _refs(prop.args[3]):
+                        child = _entity_from_ref(ref)
+                        child_name = _property_name(child)
+                        if child_name:
+                            nested[child_name] = _property_value(child)
+                return nested
+
+            return _unwrap(prop.args)
+
+        def _quantity_name(entity):
+            if entity is None or len(entity.args) < 1:
+                return None
+            name = entity.args[0]
+            return str(name) if name not in [None, "", "*", "$"] else None
+
+        def _quantity_value(quantity):
+            """
+            Extracts the numerical value from common IfcPhysicalSimpleQuantity
+            subtypes. IFC simple quantities normally store the value at args[3].
+            """
+            if quantity is None:
+                return None
+
+            qtype = _normalise_type(quantity.type)
+
+            if qtype in [
+                "IFCQUANTITYLENGTH",
+                "IFCQUANTITYAREA",
+                "IFCQUANTITYVOLUME",
+                "IFCQUANTITYCOUNT",
+                "IFCQUANTITYWEIGHT",
+                "IFCQUANTITYTIME",
+            ]:
+                return _unwrap(quantity.args[3]) if len(quantity.args) > 3 else None
+
+            # IfcQuantityNumber is present in some IFC versions / exports.
+            if qtype == "IFCQUANTITYNUMBER":
+                return _unwrap(quantity.args[3]) if len(quantity.args) > 3 else None
+
+            return _unwrap(quantity.args)
+
+        def _merge_named_value(target, group_name, name, value):
+            if group_name not in target:
+                target[group_name] = {}
+            target[group_name][name] = value
+
+        def _classification_info(classification_entity):
+            if classification_entity is None:
+                return None
+
+            ctype = _normalise_type(classification_entity.type)
+
+            data = {
+                "ifc_id": classification_entity.id,
+                "ifc_key": f"#{classification_entity.id}",
+                "ifc_type": _display_type(classification_entity.type),
+            }
+
+            # IfcClassificationReference(Location, Identification/ItemReference, Name, ReferencedSource, ...)
+            if ctype == "IFCCLASSIFICATIONREFERENCE":
+                data.update({
+                    "location": _unwrap(classification_entity.args[0]) if len(classification_entity.args) > 0 else None,
+                    "identification": _unwrap(classification_entity.args[1]) if len(classification_entity.args) > 1 else None,
+                    "name": _unwrap(classification_entity.args[2]) if len(classification_entity.args) > 2 else None,
+                })
+                if len(classification_entity.args) > 3:
+                    source = _entity_from_ref(classification_entity.args[3])
+                    if source is not None:
+                        data["source"] = _classification_info(source)
+                return data
+
+            # IfcClassification(Source, Edition, EditionDate, Name, ...)
+            if ctype == "IFCCLASSIFICATION":
+                data.update({
+                    "source": _unwrap(classification_entity.args[0]) if len(classification_entity.args) > 0 else None,
+                    "edition": _unwrap(classification_entity.args[1]) if len(classification_entity.args) > 1 else None,
+                    "name": _unwrap(classification_entity.args[3]) if len(classification_entity.args) > 3 else None,
+                })
+                return data
+
+            data["value"] = _unwrap(classification_entity.args)
+            return data
+
+        def _material_info(material_entity):
+            if material_entity is None:
+                return None
+
+            mtype = _normalise_type(material_entity.type)
+
+            data = {
+                "ifc_id": material_entity.id,
+                "ifc_key": f"#{material_entity.id}",
+                "ifc_type": _display_type(material_entity.type),
+            }
+
+            if mtype == "IFCMATERIAL":
+                data.update({
+                    "name": _unwrap(material_entity.args[0]) if len(material_entity.args) > 0 else None,
+                    "description": _unwrap(material_entity.args[1]) if len(material_entity.args) > 1 else None,
+                    "category": _unwrap(material_entity.args[2]) if len(material_entity.args) > 2 else None,
+                })
+                return data
+
+            if mtype == "IFCMATERIALLAYER":
+                mat = _entity_from_ref(material_entity.args[0]) if len(material_entity.args) > 0 else None
+                data.update({
+                    "material": _material_info(mat),
+                    "thickness": _unwrap(material_entity.args[1]) if len(material_entity.args) > 1 else None,
+                    "is_ventilated": _unwrap(material_entity.args[2]) if len(material_entity.args) > 2 else None,
+                    "name": _unwrap(material_entity.args[3]) if len(material_entity.args) > 3 else None,
+                })
+                return data
+
+            if mtype == "IFCMATERIALLAYERSET":
+                layers = []
+                if len(material_entity.args) > 0:
+                    for ref in _refs(material_entity.args[0]):
+                        layer = _entity_from_ref(ref)
+                        if layer is not None:
+                            layers.append(_material_info(layer))
+                data.update({
+                    "layers": layers,
+                    "name": _unwrap(material_entity.args[1]) if len(material_entity.args) > 1 else None,
+                    "description": _unwrap(material_entity.args[2]) if len(material_entity.args) > 2 else None,
+                })
+                return data
+
+            if mtype == "IFCMATERIALLAYERSETUSAGE":
+                layer_set = _entity_from_ref(material_entity.args[0]) if len(material_entity.args) > 0 else None
+                data.update({
+                    "layer_set": _material_info(layer_set),
+                    "layer_set_direction": _unwrap(material_entity.args[1]) if len(material_entity.args) > 1 else None,
+                    "direction_sense": _unwrap(material_entity.args[2]) if len(material_entity.args) > 2 else None,
+                    "offset_from_reference_line": _unwrap(material_entity.args[3]) if len(material_entity.args) > 3 else None,
+                })
+                return data
+
+            if mtype == "IFCMATERIALLIST":
+                mats = []
+                if len(material_entity.args) > 0:
+                    for ref in _refs(material_entity.args[0]):
+                        mat = _entity_from_ref(ref)
+                        if mat is not None:
+                            mats.append(_material_info(mat))
+                data["materials"] = mats
+                return data
+
+            data["value"] = _unwrap(material_entity.args)
+            return data
+
+        def _is_product_like(entity):
+            try:
+                return IFCFastTopology._is_product_like(entity)
+            except Exception:
+                if entity is None:
+                    return False
+                t = _normalise_type(entity.type)
+                return t is not None and t.startswith("IFC") and not t.startswith("IFCREL")
+
+        def _empty_record(entity):
+            return {
+                "ifc_id": entity.id,
+                "ifc_key": f"#{entity.id}",
+                "ifc_type": _display_type(entity.type),
+                "global_id": _root_attr(entity, 0),
+                "name": _entity_name(entity),
+                "properties": {},
+                "type_properties": {},
+                "quantities": {},
+                "type_quantities": {},
+                "classifications": [],
+                "materials": [],
+                "type": None,
+            }
+
+        # --------------------------------------------------------------
+        # Parse IFC once.
+        # --------------------------------------------------------------
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            try:
+                entities = IFC._entities_from_input(file, silent=silent)
+            except Exception:
+                entities = None
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.Properties - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        include_type_set = _normalise_type_set(includeTypes)
+        exclude_type_set = _normalise_type_set(excludeTypes)
+
+        records = {}
+
+        def _ensure_entity_record(entity):
+            if entity is None:
+                return None
+
+            etype = _normalise_type(entity.type)
+
+            if include_type_set and etype not in include_type_set:
+                return None
+            if exclude_type_set and etype in exclude_type_set:
+                return None
+
+            key = _entity_key(entity)
+            if key is None:
+                return None
+
+            if key not in records:
+                records[key] = _empty_record(entity)
+
+            return records[key]
+
+        # Initialise records for product-like entities.
+        for entity in entities.values():
+            if _is_product_like(entity):
+                _ensure_entity_record(entity)
+
+        # --------------------------------------------------------------
+        # Extract IfcPropertySet and IfcElementQuantity content.
+        # --------------------------------------------------------------
+
+        property_sets = {}
+        quantity_sets = {}
+
+        for entity in entities.values():
+            etype = _normalise_type(entity.type)
+
+            # IfcPropertySet(GlobalId, OwnerHistory, Name, Description, HasProperties)
+            if etype == "IFCPROPERTYSET":
+                pset_name = _root_attr(entity, 2) or f"IfcPropertySet_{entity.id}"
+                values = {}
+
+                if len(entity.args) > 4:
+                    for prop_ref in _refs(entity.args[4]):
+                        prop = _entity_from_ref(prop_ref)
+                        pname = _property_name(prop)
+
+                        if pname:
+                            values[pname] = _property_value(prop)
+
+                property_sets[entity.id] = {
+                    "name": pset_name,
+                    "values": values,
+                    "ifc_id": entity.id,
+                    "ifc_key": f"#{entity.id}",
+                }
+
+            # IfcElementQuantity(GlobalId, OwnerHistory, Name, Description, MethodOfMeasurement, Quantities)
+            elif etype == "IFCELEMENTQUANTITY":
+                qset_name = _root_attr(entity, 2) or f"IfcElementQuantity_{entity.id}"
+                values = {}
+
+                if len(entity.args) > 5:
+                    for q_ref in _refs(entity.args[5]):
+                        q = _entity_from_ref(q_ref)
+                        qname = _quantity_name(q)
+
+                        if qname:
+                            values[qname] = _quantity_value(q)
+
+                quantity_sets[entity.id] = {
+                    "name": qset_name,
+                    "values": values,
+                    "ifc_id": entity.id,
+                    "ifc_key": f"#{entity.id}",
+                }
+
+        # --------------------------------------------------------------
+        # IfcRelDefinesByProperties:
+        #   args[4] = RelatedObjects
+        #   args[5] = RelatingPropertyDefinition
+        # --------------------------------------------------------------
+
+        for rel in entities.values():
+            if _normalise_type(rel.type) != "IFCRELDEFINESBYPROPERTIES":
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            related_refs = _refs(rel.args[4])
+            definition_refs = _refs(rel.args[5])
+
+            for definition_ref in definition_refs:
+                definition = _entity_from_ref(definition_ref)
+                if definition is None:
+                    continue
+
+                pset = property_sets.get(definition.id)
+                qset = quantity_sets.get(definition.id)
+
+                for related_ref in related_refs:
+                    related = _entity_from_ref(related_ref)
+                    record = _ensure_entity_record(related)
+
+                    if record is None:
+                        continue
+
+                    if pset is not None:
+                        record["properties"][pset["name"]] = dict(pset["values"])
+
+                    if qset is not None:
+                        record["quantities"][qset["name"]] = dict(qset["values"])
+
+        # --------------------------------------------------------------
+        # IfcRelDefinesByType:
+        #   args[4] = RelatedObjects
+        #   args[5] = RelatingType
+        #
+        # Also collect psets/qsets attached to type objects directly through
+        # HasPropertySets, usually args[5] on IfcTypeObject derivatives.
+        # --------------------------------------------------------------
+
+        type_payload = {}
+
+        def _type_payload(type_entity):
+            if type_entity is None:
+                return None
+
+            key = _entity_key(type_entity)
+            if key in type_payload:
+                return type_payload[key]
+
+            payload = {
+                "ifc_id": type_entity.id,
+                "ifc_key": f"#{type_entity.id}",
+                "ifc_type": _display_type(type_entity.type),
+                "global_id": _root_attr(type_entity, 0),
+                "name": _entity_name(type_entity),
+                "properties": {},
+                "quantities": {},
+            }
+
+            # IFC TypeObject: HasPropertySets is commonly at args[5].
+            possible_slots = [5, 6]
+            for slot in possible_slots:
+                if len(type_entity.args) <= slot:
+                    continue
+                for ref in _refs(type_entity.args[slot]):
+                    definition = _entity_from_ref(ref)
+                    if definition is None:
+                        continue
+
+                    pset = property_sets.get(definition.id)
+                    qset = quantity_sets.get(definition.id)
+
+                    if pset is not None:
+                        payload["properties"][pset["name"]] = dict(pset["values"])
+
+                    if qset is not None:
+                        payload["quantities"][qset["name"]] = dict(qset["values"])
+
+            type_payload[key] = payload
+            return payload
+
+        for rel in entities.values():
+            if _normalise_type(rel.type) != "IFCRELDEFINESBYTYPE":
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            related_refs = _refs(rel.args[4])
+            type_refs = _refs(rel.args[5])
+
+            for type_ref in type_refs:
+                type_entity = _entity_from_ref(type_ref)
+                payload = _type_payload(type_entity)
+
+                if payload is None:
+                    continue
+
+                for related_ref in related_refs:
+                    related = _entity_from_ref(related_ref)
+                    record = _ensure_entity_record(related)
+
+                    if record is None:
+                        continue
+
+                    record["type"] = {
+                        "ifc_id": payload["ifc_id"],
+                        "ifc_key": payload["ifc_key"],
+                        "ifc_type": payload["ifc_type"],
+                        "global_id": payload["global_id"],
+                        "name": payload["name"],
+                    }
+
+                    for pset_name, pset_values in payload["properties"].items():
+                        record["type_properties"][pset_name] = dict(pset_values)
+
+                    for qset_name, qset_values in payload["quantities"].items():
+                        record["type_quantities"][qset_name] = dict(qset_values)
+
+        # --------------------------------------------------------------
+        # IfcRelAssociatesClassification:
+        #   args[4] = RelatedObjects
+        #   args[5] = RelatingClassification
+        # --------------------------------------------------------------
+
+        for rel in entities.values():
+            if _normalise_type(rel.type) != "IFCRELASSOCIATESCLASSIFICATION":
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            classification_refs = _refs(rel.args[5])
+
+            for classification_ref in classification_refs:
+                classification = _entity_from_ref(classification_ref)
+                info = _classification_info(classification)
+
+                if info is None:
+                    continue
+
+                for related_ref in _refs(rel.args[4]):
+                    related = _entity_from_ref(related_ref)
+                    record = _ensure_entity_record(related)
+
+                    if record is not None:
+                        record["classifications"].append(info)
+
+        # --------------------------------------------------------------
+        # IfcRelAssociatesMaterial:
+        #   args[4] = RelatedObjects
+        #   args[5] = RelatingMaterial
+        # --------------------------------------------------------------
+
+        for rel in entities.values():
+            if _normalise_type(rel.type) != "IFCRELASSOCIATESMATERIAL":
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            material_refs = _refs(rel.args[5])
+
+            for material_ref in material_refs:
+                material = _entity_from_ref(material_ref)
+                info = _material_info(material)
+
+                if info is None:
+                    continue
+
+                for related_ref in _refs(rel.args[4]):
+                    related = _entity_from_ref(related_ref)
+                    record = _ensure_entity_record(related)
+
+                    if record is not None:
+                        record["materials"].append(info)
+
+        # --------------------------------------------------------------
+        # Remove empty records unless requested.
+        # --------------------------------------------------------------
+
+        if not includeEmpty:
+            filtered = {}
+
+            for key, record in records.items():
+                has_payload = bool(
+                    record["properties"] or
+                    record["type_properties"] or
+                    record["quantities"] or
+                    record["type_quantities"] or
+                    record["classifications"] or
+                    record["materials"] or
+                    record["type"]
+                )
+
+                if has_payload:
+                    filtered[key] = record
+
+            records = filtered
+
+        summary = {
+            "entity_count": len(records),
+            "property_entity_count": sum(1 for r in records.values() if r["properties"]),
+            "type_property_entity_count": sum(1 for r in records.values() if r["type_properties"]),
+            "quantity_entity_count": sum(1 for r in records.values() if r["quantities"]),
+            "type_quantity_entity_count": sum(1 for r in records.values() if r["type_quantities"]),
+            "classification_entity_count": sum(1 for r in records.values() if r["classifications"]),
+            "material_entity_count": sum(1 for r in records.values() if r["materials"]),
+            "property_set_count": len(property_sets),
+            "quantity_set_count": len(quantity_sets),
+        }
+
+        return {
+            "entities": records,
+            "summary": summary,
+        }
+
+    @staticmethod
+    def SpaceAdjacencyGraph(file,
+                            boundaryElementTypes: list = None,
+                            useFillingElements: bool = True,
+                            includeIsolatedSpaces: bool = True,
+                            dictionaryMode: str = "basic",
+                            bidirectional: bool = True,
+                            tolerance: float = 0.0001,
+                            silent: bool = False):
+        """
+        Creates a TopologicPy Graph representing space adjacency from an IFC file.
+
+        The returned graph contains one vertex per IfcSpace. Edges are created
+        between spaces that share a boundary-related connector element, typically
+        an IfcDoor or IfcOpeningElement derived from IfcRelSpaceBoundary records.
+
+        This method uses IFC relationships rather than geometry. It primarily
+        traverses:
+
+        - IfcRelSpaceBoundary / IfcRelSpaceBoundary1stLevel / IfcRelSpaceBoundary2ndLevel
+        - IfcRelFillsElement, optionally, to resolve openings to doors/windows/etc.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        boundaryElementTypes : list , optional
+            IFC element types that are allowed to act as adjacency connectors.
+            If set to None, the default is ["IFCDOOR", "IFCDOORSTANDARDCASE",
+            "IFCOPENINGELEMENT"]. Default is None.
+        useFillingElements : bool , optional
+            If set to True, IfcOpeningElement references are resolved through
+            IfcRelFillsElement to their filling elements, usually doors.
+            Default is True.
+        includeIsolatedSpaces : bool , optional
+            If set to True, all IfcSpace entities are included as vertices even
+            when they have no detected adjacency. If False, only spaces involved
+            in at least one adjacency edge are included. Default is True.
+        dictionaryMode : str , optional
+            The dictionary mode to use for entity dictionaries. Currently supports
+            the same basic entity dictionary behaviour as the IFC parser.
+            Default is "basic".
+        bidirectional : bool , optional
+            If set to True, the edge dictionary records the edge as bidirectional.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            A TopologicPy graph whose vertices are IfcSpace entities and whose
+            edges represent inferred space adjacency through shared boundary
+            elements. Returns None if the IFC file cannot be parsed.
+        """
+
+        import math
+        from itertools import combinations
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def _normalise_type(value):
+            if value is None:
+                return None
+            value = str(value).strip().upper()
+            return value if value else None
+
+        def _normalise_type_set(values):
+            if not values:
+                return set()
+            return set([_normalise_type(v) for v in values if _normalise_type(v)])
+
+        def _display_type(ifc_type):
+            if ifc_type is None:
+                return None
+            ifc_type = str(ifc_type).strip()
+            if ifc_type.upper().startswith("IFC"):
+                return "Ifc" + ifc_type[3:].lower().title().replace("_", "")
+            return ifc_type
+
+        def _root_attr(entity, index):
+            try:
+                return IFCFastTopology._root_attr(entity, index)
+            except Exception:
+                return None
+
+        def _refs(value):
+            try:
+                return IFCFastTopology._refs_in_value(value)
+            except Exception:
+                return []
+
+        def _entity_from_ref(ref):
+            try:
+                return IFCFastTopology._entity_from_ref(ref, entities)
+            except Exception:
+                return None
+
+        def _entity_key(entity):
+            if entity is None:
+                return None
+            gid = _root_attr(entity, 0)
+            if gid not in [None, "", "*"]:
+                return str(gid)
+            return f"#{entity.id}"
+
+        def _entity_name(entity):
+            try:
+                name = _root_attr(entity, 2)
+                return name if name not in [None, "", "*"] else None
+            except Exception:
+                return None
+
+        def _safe_dictionary_by_keys_values(keys, values):
+            clean_keys = []
+            clean_values = []
+            for k, v in zip(keys, values):
+                if k is None:
+                    continue
+                if v is None:
+                    v = ""
+                if isinstance(v, (list, tuple, set)):
+                    v = ", ".join([str(x) for x in v])
+                clean_keys.append(k)
+                clean_values.append(v)
+            try:
+                return Dictionary.ByKeysValues(clean_keys, clean_values)
+            except Exception:
+                d = None
+                for k, v in zip(clean_keys, clean_values):
+                    try:
+                        if d is None:
+                            d = Dictionary.ByKeyValue(k, v)
+                        else:
+                            d = Dictionary.SetValueAtKey(d, k, v)
+                    except Exception:
+                        pass
+                return d
+
+        def _space_dictionary(space_entity, index):
+            keys = [
+                "index",
+                "IFC_id",
+                "IFC_key",
+                "IFC_type",
+                "IFC_global_id",
+                "IFC_name",
+                "label",
+                "type",
+            ]
+            gid = _root_attr(space_entity, 0)
+            name = _entity_name(space_entity)
+            label = name if name not in [None, ""] else (_entity_key(space_entity) or f"Space_{index}")
+            values = [
+                index,
+                space_entity.id,
+                f"#{space_entity.id}",
+                _display_type(space_entity.type),
+                gid if gid not in [None, "", "*"] else "",
+                name if name not in [None, "", "*"] else "",
+                label,
+                "space",
+            ]
+            return _safe_dictionary_by_keys_values(keys, values)
+
+        def _edge_dictionary(space_a, space_b, connector, boundary_ids, index_a, index_b):
+            connector_key = _entity_key(connector)
+            connector_gid = _root_attr(connector, 0)
+            connector_name = _entity_name(connector)
+
+            keys = [
+                "src",
+                "dst",
+                "IFC_type",
+                "relationship_type",
+                "predicate",
+                "connector_id",
+                "connector_key",
+                "connector_global_id",
+                "connector_type",
+                "connector_name",
+                "space_a",
+                "space_b",
+                "space_a_name",
+                "space_b_name",
+                "space_a_global_id",
+                "space_b_global_id",
+                "space_boundary_ids",
+                "bidirectional",
+                "weight",
+            ]
+
+            values = [
+                index_a,
+                index_b,
+                "IfcRelSpaceAdjacency",
+                "IfcRelSpaceAdjacency",
+                "adjacent_to",
+                connector.id if connector is not None else "",
+                connector_key or "",
+                connector_gid if connector_gid not in [None, "", "*"] else "",
+                _display_type(connector.type) if connector is not None else "",
+                connector_name if connector_name not in [None, "", "*"] else "",
+                _entity_key(space_a) or "",
+                _entity_key(space_b) or "",
+                _entity_name(space_a) or "",
+                _entity_name(space_b) or "",
+                _root_attr(space_a, 0) or "",
+                _root_attr(space_b, 0) or "",
+                sorted(list(boundary_ids)),
+                bool(bidirectional),
+                1.0,
+            ]
+
+            return _safe_dictionary_by_keys_values(keys, values)
+
+        # --------------------------------------------------------------
+        # Parse IFC once
+        # --------------------------------------------------------------
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            entities = IFC._entities_from_input(file, silent=silent)
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.SpaceAdjacencyGraph - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        if boundaryElementTypes is None:
+            boundaryElementTypes = ["IFCDOOR", "IFCDOORSTANDARDCASE", "IFCOPENINGELEMENT"]
+
+        allowed_connector_types = _normalise_type_set(boundaryElementTypes)
+
+        # --------------------------------------------------------------
+        # Collect spaces
+        # --------------------------------------------------------------
+
+        spaces = []
+        for entity in entities.values():
+            if _normalise_type(entity.type) == "IFCSPACE":
+                spaces.append(entity)
+
+        spaces.sort(key=lambda e: e.id)
+
+        if len(spaces) < 1:
+            if not silent:
+                print("IFC.SpaceAdjacencyGraph - Warning: No IfcSpace entities were found. Returning None.")
+            return None
+
+        space_by_id = {space.id: space for space in spaces}
+        space_keys = {_entity_key(space): space for space in spaces}
+
+        # --------------------------------------------------------------
+        # Resolve openings to filling elements.
+        # IfcRelFillsElement args:
+        #   4 = RelatingOpeningElement
+        #   5 = RelatedBuildingElement
+        # --------------------------------------------------------------
+
+        opening_to_filling = {}
+
+        if useFillingElements:
+            for rel in entities.values():
+                if _normalise_type(rel.type) != "IFCRELFILLSELEMENT":
+                    continue
+                if len(rel.args) <= 5:
+                    continue
+
+                opening_refs = _refs(rel.args[4])
+                filling_refs = _refs(rel.args[5])
+
+                for opening_ref in opening_refs:
+                    opening = _entity_from_ref(opening_ref)
+                    if opening is None:
+                        continue
+
+                    for filling_ref in filling_refs:
+                        filling = _entity_from_ref(filling_ref)
+                        if filling is not None:
+                            opening_to_filling[opening.id] = filling
+
+        # --------------------------------------------------------------
+        # Collect boundary connector -> spaces.
+        #
+        # IfcRelSpaceBoundary args:
+        #   4 = RelatingSpace
+        #   5 = RelatedBuildingElement
+        # --------------------------------------------------------------
+
+        connector_to_spaces = {}
+        connector_to_boundary_ids = {}
+
+        boundary_types = {
+            "IFCRELSPACEBOUNDARY",
+            "IFCRELSPACEBOUNDARY1STLEVEL",
+            "IFCRELSPACEBOUNDARY2NDLEVEL",
+        }
+
+        for rel in entities.values():
+            rel_type = _normalise_type(rel.type)
+
+            if rel_type not in boundary_types:
+                continue
+
+            if len(rel.args) <= 5:
+                continue
+
+            space_refs = _refs(rel.args[4])
+            element_refs = _refs(rel.args[5])
+
+            if len(space_refs) < 1 or len(element_refs) < 1:
+                continue
+
+            for space_ref in space_refs:
+                space_entity = _entity_from_ref(space_ref)
+
+                if space_entity is None or _normalise_type(space_entity.type) != "IFCSPACE":
+                    continue
+
+                for element_ref in element_refs:
+                    element_entity = _entity_from_ref(element_ref)
+
+                    if element_entity is None:
+                        continue
+
+                    connector_entity = element_entity
+
+                    if useFillingElements and _normalise_type(element_entity.type) == "IFCOPENINGELEMENT":
+                        connector_entity = opening_to_filling.get(element_entity.id, element_entity)
+
+                    connector_type = _normalise_type(connector_entity.type)
+
+                    if allowed_connector_types and connector_type not in allowed_connector_types:
+                        continue
+
+                    connector_key = _entity_key(connector_entity)
+
+                    if connector_key is None:
+                        continue
+
+                    if connector_key not in connector_to_spaces:
+                        connector_to_spaces[connector_key] = {
+                            "connector": connector_entity,
+                            "spaces": {},
+                        }
+
+                    connector_to_spaces[connector_key]["spaces"][_entity_key(space_entity)] = space_entity
+                    connector_to_boundary_ids.setdefault(connector_key, set()).add(rel.id)
+
+        # --------------------------------------------------------------
+        # Build adjacency pairs.
+        # One connector touching N spaces creates all pairwise adjacencies.
+        # --------------------------------------------------------------
+
+        pair_to_data = {}
+
+        for connector_key, data in connector_to_spaces.items():
+            connector = data.get("connector")
+            connector_spaces = list(data.get("spaces", {}).values())
+
+            if len(connector_spaces) < 2:
+                continue
+
+            connector_spaces.sort(key=lambda e: e.id)
+
+            for space_a, space_b in combinations(connector_spaces, 2):
+                key_a = _entity_key(space_a)
+                key_b = _entity_key(space_b)
+
+                if key_a is None or key_b is None or key_a == key_b:
+                    continue
+
+                pair_key = tuple(sorted([key_a, key_b]))
+
+                if pair_key not in pair_to_data:
+                    pair_to_data[pair_key] = {
+                        "space_a": space_a,
+                        "space_b": space_b,
+                        "connectors": [],
+                        "boundary_ids": set(),
+                    }
+
+                pair_to_data[pair_key]["connectors"].append(connector)
+                pair_to_data[pair_key]["boundary_ids"].update(connector_to_boundary_ids.get(connector_key, set()))
+
+        # --------------------------------------------------------------
+        # Decide which spaces become vertices.
+        # --------------------------------------------------------------
+
+        if includeIsolatedSpaces:
+            graph_spaces = spaces
+        else:
+            used_space_keys = set()
+            for pair_key in pair_to_data.keys():
+                used_space_keys.update(pair_key)
+            graph_spaces = [space for space in spaces if _entity_key(space) in used_space_keys]
+
+        graph_spaces.sort(key=lambda e: e.id)
+
+        # --------------------------------------------------------------
+        # Create vertices.
+        # Use deterministic synthetic coordinates on a circle.
+        # --------------------------------------------------------------
+
+        vertices = []
+        space_key_to_index = {}
+
+        n = max(len(graph_spaces), 1)
+        radius = max(1.0, float(n) / (2.0 * math.pi))
+
+        for i, space in enumerate(graph_spaces):
+            angle = (2.0 * math.pi * float(i)) / float(n)
+            x = radius * math.cos(angle)
+            y = radius * math.sin(angle)
+            z = 0.0
+
+            try:
+                vertex = Vertex.ByCoordinates(x, y, z)
+            except Exception:
+                if not silent:
+                    print(f"IFC.SpaceAdjacencyGraph - Warning: Could not create vertex for IfcSpace #{space.id}. Skipping.")
+                continue
+
+            d = _space_dictionary(space, len(vertices))
+
+            try:
+                vertex = Topology.SetDictionary(vertex, d, silent=True)
+            except TypeError:
+                vertex = Topology.SetDictionary(vertex, d)
+            except Exception:
+                pass
+
+            space_key_to_index[_entity_key(space)] = len(vertices)
+            vertices.append(vertex)
+
+        # --------------------------------------------------------------
+        # Create edges.
+        # --------------------------------------------------------------
+
+        edges = []
+
+        for pair_key, data in pair_to_data.items():
+            key_a, key_b = pair_key
+
+            if key_a not in space_key_to_index or key_b not in space_key_to_index:
+                continue
+
+            index_a = space_key_to_index[key_a]
+            index_b = space_key_to_index[key_b]
+
+            if index_a == index_b:
+                continue
+
+            vertex_a = vertices[index_a]
+            vertex_b = vertices[index_b]
+
+            try:
+                edge = Edge.ByVertices([vertex_a, vertex_b], tolerance=tolerance, silent=True)
+            except TypeError:
+                edge = Edge.ByVertices(vertex_a, vertex_b)
+            except Exception:
+                edge = None
+
+            if edge is None:
+                continue
+
+            connectors = data.get("connectors", [])
+            connector = connectors[0] if connectors else None
+
+            d = _edge_dictionary(
+                data.get("space_a"),
+                data.get("space_b"),
+                connector,
+                data.get("boundary_ids", set()),
+                index_a,
+                index_b,
+            )
+
+            if len(connectors) > 1:
+                connector_keys = [_entity_key(c) for c in connectors if c is not None]
+                connector_types = [_display_type(c.type) for c in connectors if c is not None]
+                try:
+                    d = Dictionary.SetValuesAtKeys(
+                        d,
+                        ["connector_count", "connector_keys", "connector_types"],
+                        [len(connectors), connector_keys, connector_types],
+                    )
+                except Exception:
+                    pass
+
+            try:
+                edge = Topology.SetDictionary(edge, d, silent=True)
+            except TypeError:
+                edge = Topology.SetDictionary(edge, d)
+            except Exception:
+                pass
+
+            edges.append(edge)
+
+        try:
+            graph = Graph.ByVerticesEdges(vertices, edges, index=True)
+        except Exception as e:
+            if not silent:
+                print(f"IFC.SpaceAdjacencyGraph - Error: Could not create graph. {e} Returning None.")
+            return None
+
+        return graph
+
+    @staticmethod
+    def DoorSpaceCardinalityReport(file,
+                                   connectorTypes: list = None,
+                                   includeOpenings: bool = True,
+                                   includeWindows: bool = False,
+                                   includeZeroSpaceConnectors: bool = True,
+                                   highCardinalityThreshold: int = 2,
+                                   silent: bool = False):
+        """
+        Returns a diagnostic report of door/opening-to-space cardinalities in an IFC file.
+
+        The method inspects IfcRelSpaceBoundary relationships to determine how many
+        IfcSpace entities are associated with each connector element. It also uses
+        IfcRelFillsElement to resolve IfcOpeningElement entities to their filling
+        elements, usually IfcDoor or IfcWindow.
+
+        A correctly exported door connecting two rooms is normally expected to have
+        a space_count of 2. Doors with one related space may indicate an external
+        door, incomplete space boundaries, or an export issue. Doors with more than
+        two related spaces are usually suspicious and are flagged as high_cardinality.
+
+        Parameters
+        ----------
+        file : dict, str, or ifcopenshell.file-like object
+            The input IFC source.
+        connectorTypes : list , optional
+            IFC connector types to include. If None, defaults to IfcDoor and,
+            optionally, IfcOpeningElement and IfcWindow depending on the other
+            parameters. Default is None.
+        includeOpenings : bool , optional
+            If set to True, unresolved IfcOpeningElement entities are included in
+            the report. Default is True.
+        includeWindows : bool , optional
+            If set to True, IfcWindow and IfcWindowStandardCase are included.
+            Default is False.
+        includeZeroSpaceConnectors : bool , optional
+            If set to True, connector elements found through IfcRelFillsElement are
+            included even if no related IfcSpace was found. Default is True.
+        highCardinalityThreshold : int , optional
+            Cardinalities above this number are labelled high_cardinality.
+            Default is 2.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries. Each dictionary reports one connector element and
+            the IfcSpace entities associated with it.
+        """
+
+        def _normalise_type(value):
+            if value is None:
+                return None
+            value = str(value).strip().upper()
+            return value if value else None
+
+        def _normalise_type_set(values):
+            if not values:
+                return set()
+            return set([_normalise_type(v) for v in values if _normalise_type(v)])
+
+        def _display_type(ifc_type):
+            if ifc_type is None:
+                return None
+            ifc_type = str(ifc_type).strip()
+            if ifc_type.upper().startswith("IFC"):
+                return "Ifc" + ifc_type[3:].lower().title().replace("_", "")
+            return ifc_type
+
+        def _root_attr(entity, index):
+            try:
+                return IFCFastTopology._root_attr(entity, index)
+            except Exception:
+                return None
+
+        def _refs(value):
+            try:
+                return IFCFastTopology._refs_in_value(value)
+            except Exception:
+                return []
+
+        def _entity_from_ref(ref):
+            try:
+                return IFCFastTopology._entity_from_ref(ref, entities)
+            except Exception:
+                return None
+
+        def _entity_key(entity):
+            if entity is None:
+                return None
+            gid = _root_attr(entity, 0)
+            if gid not in [None, "", "*"]:
+                return str(gid)
+            return f"#{entity.id}"
+
+        def _entity_name(entity):
+            name = _root_attr(entity, 2)
+            return name if name not in [None, "", "*"] else None
+
+        def _entity_row(entity):
+            return {
+                "id": entity.id if entity is not None else None,
+                "key": f"#{entity.id}" if entity is not None else None,
+                "global_id": _root_attr(entity, 0) if entity is not None else None,
+                "type": _display_type(entity.type) if entity is not None else None,
+                "name": _entity_name(entity) if entity is not None else None,
+            }
+
+        def _status(space_count):
+            if space_count <= 0:
+                return "no_space_boundary"
+            if space_count == 1:
+                return "single_space"
+            if space_count <= highCardinalityThreshold:
+                return "ok"
+            return "high_cardinality"
+
+        # --------------------------------------------------------------
+        # Parse IFC once.
+        # --------------------------------------------------------------
+
+        try:
+            entities = IFC.Entities(file, silent=silent)
+        except Exception:
+            try:
+                entities = IFC._entities_from_input(file, silent=silent)
+            except Exception:
+                entities = None
+
+        if entities is None or not isinstance(entities, dict):
+            if not silent:
+                print("IFC.DoorSpaceCardinalityReport - Error: Could not read or parse the input IFC file. Returning None.")
+            return None
+
+        # --------------------------------------------------------------
+        # Decide connector types.
+        # --------------------------------------------------------------
+
+        if connectorTypes is None:
+            connectorTypes = ["IFCDOOR", "IFCDOORSTANDARDCASE"]
+            if includeOpenings:
+                connectorTypes += ["IFCOPENINGELEMENT"]
+            if includeWindows:
+                connectorTypes += ["IFCWINDOW", "IFCWINDOWSTANDARDCASE"]
+
+        connector_type_set = _normalise_type_set(connectorTypes)
+
+        boundary_types = {
+            "IFCRELSPACEBOUNDARY",
+            "IFCRELSPACEBOUNDARY1STLEVEL",
+            "IFCRELSPACEBOUNDARY2NDLEVEL",
+        }
+
+        # --------------------------------------------------------------
+        # Resolve opening <-> filling element relationships.
+        #
+        # IfcRelFillsElement:
+        #   args[4] = RelatingOpeningElement
+        #   args[5] = RelatedBuildingElement
+        # --------------------------------------------------------------
+
+        opening_to_fillings = {}
+        filling_to_openings = {}
+
+        for rel in entities.values():
+            if _normalise_type(rel.type) != "IFCRELFILLSELEMENT":
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            opening_refs = _refs(rel.args[4])
+            filling_refs = _refs(rel.args[5])
+
+            for opening_ref in opening_refs:
+                opening = _entity_from_ref(opening_ref)
+                if opening is None:
+                    continue
+
+                for filling_ref in filling_refs:
+                    filling = _entity_from_ref(filling_ref)
+                    if filling is None:
+                        continue
+
+                    opening_to_fillings.setdefault(opening.id, [])
+                    filling_to_openings.setdefault(filling.id, [])
+
+                    if filling.id not in [f.id for f in opening_to_fillings[opening.id]]:
+                        opening_to_fillings[opening.id].append(filling)
+
+                    if opening.id not in [o.id for o in filling_to_openings[filling.id]]:
+                        filling_to_openings[filling.id].append(opening)
+
+        # --------------------------------------------------------------
+        # Initialise connector records from entities and fill relationships.
+        # --------------------------------------------------------------
+
+        connector_records = {}
+
+        def _ensure_record(connector):
+            if connector is None:
+                return None
+
+            connector_type = _normalise_type(connector.type)
+
+            if connector_type_set and connector_type not in connector_type_set:
+                return None
+
+            key = _entity_key(connector)
+            if key is None:
+                return None
+
+            if key not in connector_records:
+                connector_records[key] = {
+                    "connector": connector,
+                    "spaces": {},
+                    "space_boundary_ids": set(),
+                    "space_boundary_keys": set(),
+                    "opening_elements": {},
+                    "filling_elements": {},
+                    "raw_boundary_elements": {},
+                }
+
+            return connector_records[key]
+
+        for entity in entities.values():
+            entity_type = _normalise_type(entity.type)
+            if connector_type_set and entity_type in connector_type_set:
+                _ensure_record(entity)
+
+        for opening_id, fillings in opening_to_fillings.items():
+            opening = entities.get(opening_id)
+            if opening is not None:
+                opening_record = _ensure_record(opening)
+                if opening_record is not None:
+                    for filling in fillings:
+                        opening_record["filling_elements"][_entity_key(filling)] = filling
+
+            for filling in fillings:
+                filling_record = _ensure_record(filling)
+                if filling_record is not None and opening is not None:
+                    filling_record["opening_elements"][_entity_key(opening)] = opening
+
+        # --------------------------------------------------------------
+        # Traverse IfcRelSpaceBoundary.
+        #
+        # IfcRelSpaceBoundary:
+        #   args[4] = RelatingSpace
+        #   args[5] = RelatedBuildingElement
+        # --------------------------------------------------------------
+
+        for rel in entities.values():
+            rel_type = _normalise_type(rel.type)
+
+            if rel_type not in boundary_types:
+                continue
+            if len(rel.args) <= 5:
+                continue
+
+            space_refs = _refs(rel.args[4])
+            element_refs = _refs(rel.args[5])
+
+            if len(space_refs) < 1 or len(element_refs) < 1:
+                continue
+
+            spaces = []
+            for space_ref in space_refs:
+                space = _entity_from_ref(space_ref)
+                if space is not None and _normalise_type(space.type) == "IFCSPACE":
+                    spaces.append(space)
+
+            if len(spaces) < 1:
+                continue
+
+            for element_ref in element_refs:
+                element = _entity_from_ref(element_ref)
+                if element is None:
+                    continue
+
+                # The raw boundary element may be an opening, door, wall, etc.
+                possible_connectors = []
+
+                if _normalise_type(element.type) == "IFCOPENINGELEMENT":
+                    fillings = opening_to_fillings.get(element.id, [])
+                    if fillings:
+                        possible_connectors.extend(fillings)
+                    if includeOpenings:
+                        possible_connectors.append(element)
+                else:
+                    possible_connectors.append(element)
+
+                    # If this element itself has related openings, keep them as metadata.
+                    for opening in filling_to_openings.get(element.id, []):
+                        if includeOpenings:
+                            possible_connectors.append(opening)
+
+                for connector in possible_connectors:
+                    record = _ensure_record(connector)
+                    if record is None:
+                        continue
+
+                    record["raw_boundary_elements"][_entity_key(element)] = element
+                    record["space_boundary_ids"].add(rel.id)
+                    record["space_boundary_keys"].add(f"#{rel.id}")
+
+                    if _normalise_type(element.type) == "IFCOPENINGELEMENT" and connector.id != element.id:
+                        record["opening_elements"][_entity_key(element)] = element
+
+                    if _normalise_type(connector.type) == "IFCOPENINGELEMENT":
+                        for filling in opening_to_fillings.get(connector.id, []):
+                            record["filling_elements"][_entity_key(filling)] = filling
+
+                    for space in spaces:
+                        record["spaces"][_entity_key(space)] = space
+
+        # --------------------------------------------------------------
+        # Build report rows.
+        # --------------------------------------------------------------
+
+        rows = []
+
+        for connector_key in sorted(connector_records.keys()):
+            record = connector_records[connector_key]
+            connector = record["connector"]
+
+            spaces = list(record["spaces"].values())
+            spaces.sort(key=lambda e: e.id)
+
+            if len(spaces) == 0 and not includeZeroSpaceConnectors:
+                continue
+
+            openings = list(record["opening_elements"].values())
+            openings.sort(key=lambda e: e.id)
+
+            fillings = list(record["filling_elements"].values())
+            fillings.sort(key=lambda e: e.id)
+
+            raw_boundary_elements = list(record["raw_boundary_elements"].values())
+            raw_boundary_elements.sort(key=lambda e: e.id)
+
+            space_count = len(spaces)
+
+            row = {
+                "connector_id": connector.id,
+                "connector_key": f"#{connector.id}",
+                "connector_global_id": _root_attr(connector, 0),
+                "connector_type": _display_type(connector.type),
+                "connector_name": _entity_name(connector),
+
+                "space_count": space_count,
+                "status": _status(space_count),
+
+                "space_ids": [s.id for s in spaces],
+                "space_keys": [f"#{s.id}" for s in spaces],
+                "space_global_ids": [_root_attr(s, 0) for s in spaces],
+                "space_names": [_entity_name(s) for s in spaces],
+                "spaces": [_entity_row(s) for s in spaces],
+
+                "opening_ids": [o.id for o in openings],
+                "opening_keys": [f"#{o.id}" for o in openings],
+                "opening_global_ids": [_root_attr(o, 0) for o in openings],
+                "opening_names": [_entity_name(o) for o in openings],
+
+                "filling_ids": [f.id for f in fillings],
+                "filling_keys": [f"#{f.id}" for f in fillings],
+                "filling_global_ids": [_root_attr(f, 0) for f in fillings],
+                "filling_names": [_entity_name(f) for f in fillings],
+
+                "raw_boundary_element_ids": [e.id for e in raw_boundary_elements],
+                "raw_boundary_element_keys": [f"#{e.id}" for e in raw_boundary_elements],
+                "raw_boundary_element_types": [_display_type(e.type) for e in raw_boundary_elements],
+
+                "space_boundary_count": len(record["space_boundary_ids"]),
+                "space_boundary_ids": sorted(list(record["space_boundary_ids"])),
+                "space_boundary_keys": sorted(list(record["space_boundary_keys"])),
+            }
+
+            rows.append(row)
+
+        return rows
+
 
     @staticmethod
     def ElementTypes(file, includeCounts: bool = False, silent: bool = False):
