@@ -304,7 +304,13 @@ class Shell():
             print("Shell.ByFaces - Error: The input faces list does not contain any valid faces. Returning None.")
             return None
         shell = Core.Shell.ByFaces(faceList, tolerance)
-        if not Topology.IsInstance(shell, "Shell"):
+        if Topology.IsInstance(shell, "Shell"):
+            return shell
+        elif shell is None:
+            if not silent:
+                print("Shell.ByFaces - Error: Could not create shell. Returning None.")
+            return None
+        elif TopologyIsInstance(shell, "topology"):
             shell = Topology.SelfMerge(shell, tolerance=tolerance)
             if Topology.IsInstance(shell, "Shell"):
                 return shell

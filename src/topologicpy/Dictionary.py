@@ -967,6 +967,76 @@ class Dictionary():
             calframe = inspect.getouterframes(curframe, 2)
             print('caller name:', calframe[1][3])
         return None
+    
+    @staticmethod
+    def KeysAtValue(dictionary, value, silent=False):
+        """
+        Returns all keys in the input dictionary whose value matches the input value.
+
+        Parameters
+        ----------
+        dictionary : dict or topologic_core.Dictionary
+            The input dictionary.
+        value : any
+            The value to search for.
+        silent : bool , optional
+            If set to True, error messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of keys whose associated value matches the input value.
+            Returns an empty list if no matches are found or if the input dictionary
+            is invalid.
+        """
+
+        def _values_match(a, b):
+            if a == b:
+                return True
+
+            # Numeric tolerance-free comparison across int/float-like values.
+            try:
+                if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                    return float(a) == float(b)
+            except Exception:
+                pass
+
+            # Useful for cases where Topologic converts values to strings.
+            try:
+                if str(a) == str(b):
+                    return True
+            except Exception:
+                pass
+
+            return False
+
+        if isinstance(dictionary, dict):
+            return [k for k, v in dictionary.items() if _values_match(v, value)]
+
+        if not Dictionary._IsDictionary(dictionary):
+            if not silent:
+                print("Dictionary.KeysAtValue - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning empty list.")
+            return []
+
+        keys = Dictionary.Keys(dictionary, silent=True)
+
+        if not isinstance(keys, list):
+            return []
+
+        result = []
+
+        for key in keys:
+            raw_value = Dictionary._RawValueAtKey(dictionary, key)
+
+            if raw_value is None:
+                continue
+
+            converted_value = Dictionary._ConvertAttribute(raw_value)
+
+            if _values_match(converted_value, value):
+                result.append(key)
+
+        return result
 
     @staticmethod
     def ListAttributeValues(listAttribute):

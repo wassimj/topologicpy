@@ -250,6 +250,7 @@ class Plotly:
                     vertexMaxGroup = None,
                     showVertices: bool = True,
                     showVertexLabel: bool = False,
+                    vertexLabelFontSize: int = 5,
                     showVertexLegend: bool = False,
                     vertexLegendLabel="Graph Vertices",
                     vertexLegendRank=4, 
@@ -318,7 +319,7 @@ class Plotly:
             For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.
         showVertices : bool , optional
             If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.
-        showVertexLabels : bool , optional
+        showVertexLabel : bool , optional
             If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.
         showVertexLegend : bool , optional
             If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. Default is False.
@@ -434,6 +435,7 @@ class Plotly:
                                    borderWidthKey=vertexBorderWidthKey,
                                    labelKey=vertexLabelKey,
                                    showVertexLabel=showVertexLabel,
+                                   vertexLabelFontSize=vertexLabelFontSize,
                                    groupKey=vertexGroupKey,
                                    minGroup=vertexMinGroup,
                                    maxGroup=vertexMaxGroup,
@@ -459,6 +461,7 @@ class Plotly:
                    borderWidthKey=None,
                    labelKey=None,
                    showVertexLabel = False,
+                   vertexLabelFontSize = 5,
                    groupKey=None,
                    minGroup=None,
                    maxGroup=None,
@@ -579,6 +582,7 @@ class Plotly:
                             legendgroup=legendGroup,
                             legendrank=legendRank,
                             text=labels,
+                            textfont=dict(size=vertexLabelFontSize),   # Font size for displayed text labels
                             hoverinfo='text',
                             hovertext=labels,
                             hovertemplate=["Click "+label for label in labels]
@@ -815,6 +819,7 @@ class Plotly:
                        vertexBorderColorKey: str = None,
                        vertexBorderWidthKey: float = None,
                        showVertexLabel=False,
+                       vertexLabelFontSize = 5,
                        vertexGroupKey=None,
                        vertexGroups=[], 
                        vertexMinGroup=None,
@@ -910,6 +915,8 @@ class Plotly:
             The default is "black".
         vertexLabelKey : str , optional
             The dictionary key to use to display the vertex label. Default is None.
+        vertexLabelFontSize : int , optional
+            The font size to use for vertex labels. Default is 5.
         vertexGroupKey : str , optional
             The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
@@ -1279,6 +1286,7 @@ class Plotly:
                                               borderWidthKey=vertexBorderWidthKey,
                                               labelKey=vertexLabelKey,
                                               showVertexLabel=showVertexLabel,
+                                              vertexLabelFontSize=vertexLabelFontSize,
                                               groupKey=vertexGroupKey,
                                               minGroup=vertexMinGroup,
                                               maxGroup=vertexMaxGroup,

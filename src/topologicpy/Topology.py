@@ -11582,6 +11582,7 @@ class Topology():
              vertexBorderColorKey=None,
              vertexLabelKey=None,
              showVertexLabel= False,
+             vertexLabelFontSize=5,
              vertexGroupKey=None,
              vertexGroups=[], 
              vertexMinGroup=None,
@@ -11712,6 +11713,8 @@ class Topology():
             The dictionary key to use to display the vertex label. Default is None.
         showVertexLabels : bool , optional
             If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.
+        vertexLabelFontSize : int , optional
+            The font size of the vertex labels. Default is 5.
         vertexGroupKey : str , optional
             The dictionary key to use to display the vertex group. Default is None.
         vertexGroups : list , optional
@@ -11981,6 +11984,7 @@ class Topology():
                                            vertexMaxGroup=vertexMaxGroup,
                                            showVertices=showVertices,
                                            showVertexLabel=showVertexLabel,
+                                           vertexLabelFontSize=vertexLabelFontSize,
                                            showVertexLegend=showVertexLegend,
                                            vertexLegendLabel= str(i+1)+": "+vll,
                                            vertexLegendRank= (graph_counter+1),
@@ -12031,6 +12035,7 @@ class Topology():
                                               vertexBorderWidthKey=vertexBorderWidthKey,
                                               vertexLabelKey=vertexLabelKey,
                                               showVertexLabel=showVertexLabel,
+                                              vertexLabelFontSize=vertexLabelFontSize,
                                               vertexGroupKey=vertexGroupKey,
                                               vertexGroups=vertexGroups,
                                               vertexMinGroup=vertexMinGroup,
