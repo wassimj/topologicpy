@@ -1,13 +1,426 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>TopologicPy Ontology</title>
+  <meta name="description" content="The formal ontology specification for TopologicPy: geometry, topology, graphs, building semantics, provenance, and analysis metrics.">
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #dfe5ee;
+      --accent: #2557a7;
+      --accent-dark: #173c77;
+      --soft: #eef4ff;
+      --code-bg: #111827;
+      --code-ink: #f9fafb;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, #eaf1ff 0, transparent 34rem),
+        linear-gradient(180deg, #ffffff 0, var(--bg) 22rem);
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: var(--accent-dark);
+      text-decoration: underline;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    header {
+      padding: 4.5rem 0 3rem;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      padding: 0.3rem 0.7rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.75);
+      color: var(--muted);
+      font-size: 0.85rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      margin: 1rem 0 0.75rem;
+      font-size: clamp(2.2rem, 6vw, 4.75rem);
+      line-height: 1.03;
+      letter-spacing: -0.05em;
+    }
+
+    .lead {
+      max-width: 820px;
+      font-size: clamp(1.05rem, 2vw, 1.35rem);
+      color: var(--muted);
+      margin: 0 0 1.75rem;
+    }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 2.7rem;
+      padding: 0.65rem 1rem;
+      border-radius: 0.8rem;
+      border: 1px solid var(--accent);
+      background: var(--accent);
+      color: white;
+      font-weight: 700;
+    }
+
+    .button:hover {
+      background: var(--accent-dark);
+      color: white;
+      text-decoration: none;
+    }
+
+    .button.secondary {
+      background: white;
+      color: var(--accent);
+      border-color: var(--line);
+    }
+
+    .button.secondary:hover {
+      background: var(--soft);
+      color: var(--accent-dark);
+    }
+
+    main {
+      padding-bottom: 4rem;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 1rem;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid var(--line);
+      border-radius: 1.25rem;
+      padding: 1.25rem;
+      box-shadow: 0 12px 36px rgba(16, 24, 40, 0.06);
+    }
+
+    .span-4 {
+      grid-column: span 4;
+    }
+
+    .span-6 {
+      grid-column: span 6;
+    }
+
+    .span-8 {
+      grid-column: span 8;
+    }
+
+    .span-12 {
+      grid-column: span 12;
+    }
+
+    h2 {
+      margin: 0 0 0.8rem;
+      font-size: 1.55rem;
+      letter-spacing: -0.025em;
+    }
+
+    h3 {
+      margin: 0 0 0.35rem;
+      font-size: 1.05rem;
+    }
+
+    p {
+      margin: 0.3rem 0 0.9rem;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    code, pre {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    }
+
+    pre {
+      overflow-x: auto;
+      background: var(--code-bg);
+      color: var(--code-ink);
+      padding: 1rem;
+      border-radius: 0.9rem;
+      margin: 0.75rem 0 0;
+      font-size: 0.92rem;
+    }
+
+    .pill-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      padding: 0;
+      margin: 0.8rem 0 0;
+      list-style: none;
+    }
+
+    .pill-list li {
+      padding: 0.32rem 0.65rem;
+      border-radius: 999px;
+      background: var(--soft);
+      color: #1d3f77;
+      border: 1px solid #d8e6ff;
+      font-size: 0.9rem;
+      font-weight: 600;
+    }
+
+    .link-list {
+      display: grid;
+      gap: 0.65rem;
+      margin-top: 0.6rem;
+    }
+
+    .link-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .link-item:last-child {
+      border-bottom: 0;
+    }
+
+    .small {
+      font-size: 0.92rem;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      padding: 2rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 800px) {
+      header {
+        padding-top: 3rem;
+      }
+
+      .span-4, .span-6, .span-8 {
+        grid-column: span 12;
+      }
+
+      .link-item {
+        display: block;
+      }
+    }
+  </style>
 </head>
 <body>
-  <h1>TopologicPy Ontology</h1>
-  <p>Canonical namespace: <code>http://w3id.org/topologicpy#</code></p>
-  <p><a href="ontology/topologicpy.ttl">Current ontology TTL</a></p>
-  <p><a href="ontology/versions/0.1.0/topologicpy.ttl">Version 0.1.0 TTL</a></p>
+  <header>
+    <div class="wrap">
+      <span class="eyebrow">Formal ontology specification</span>
+      <h1>TopologicPy Ontology</h1>
+      <p class="lead">
+        A semantic framework for representing geometry, topology, graphs, building spaces,
+        elements, provenance, and analysis metrics in TopologicPy workflows.
+      </p>
+      <div class="actions">
+        <a class="button" href="ontology/topologicpy.ttl">Download current TTL</a>
+        <a class="button secondary" href="ontology/versions/0.1.0/topologicpy.ttl">Version 0.1.0</a>
+        <a class="button secondary" href="https://github.com/wassimj/topologicpy">GitHub repository</a>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="grid">
+      <div class="card span-8">
+        <h2>Canonical namespace</h2>
+        <p class="muted">
+          The ontology uses a persistent w3id namespace. The physical ontology file is hosted
+          through GitHub Pages, but the namespace is intended to remain stable.
+        </p>
+        <pre><code>@prefix top: &lt;http://w3id.org/topologicpy#&gt; .</code></pre>
+      </div>
+
+      <div class="card span-4">
+        <h2>Ontology files</h2>
+        <div class="link-list">
+          <div class="link-item">
+            <a href="ontology/topologicpy.ttl">Current ontology</a>
+            <span class="muted small">TTL</span>
+          </div>
+          <div class="link-item">
+            <a href="ontology/versions/0.1.0/topologicpy.ttl">Version 0.1.0</a>
+            <span class="muted small">TTL</span>
+          </div>
+          <div class="link-item">
+            <a href="https://github.com/wassimj/topologicpy/tree/main/ontology">Ontology source</a>
+            <span class="muted small">GitHub</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card span-12">
+        <h2>Scope</h2>
+        <p class="muted">
+          The ontology formalises the main conceptual layers used by TopologicPy.
+        </p>
+        <ul class="pill-list">
+          <li>Vertex</li>
+          <li>Edge</li>
+          <li>Wire</li>
+          <li>Face</li>
+          <li>Shell</li>
+          <li>Cell</li>
+          <li>CellComplex</li>
+          <li>Cluster</li>
+          <li>Aperture</li>
+          <li>Dictionary</li>
+          <li>Graph</li>
+          <li>Space</li>
+          <li>Room</li>
+          <li>Building</li>
+          <li>Storey</li>
+          <li>Interface</li>
+          <li>Wall</li>
+          <li>Door</li>
+          <li>Window</li>
+          <li>AdjacencyGraph</li>
+          <li>VisibilityGraph</li>
+          <li>KnowledgeGraph</li>
+        </ul>
+      </div>
+
+      <div class="card span-6">
+        <h2>Example usage</h2>
+        <p class="muted">
+          Use the namespace in Turtle, RDF, graph databases, linked-data exports, and semantic annotations.
+        </p>
+        <pre><code>@prefix top: &lt;http://w3id.org/topologicpy#&gt; .
+
+:room_101 a top:Room ;
+    top:hasArea "24.6"^^xsd:double ;
+    top:adjacentTo :corridor_1 .
+
+:wall_12 a top:Wall ;
+    top:bounds :room_101 .</code></pre>
+      </div>
+
+      <div class="card span-6">
+        <h2>Implementation in TopologicPy</h2>
+        <p class="muted">
+          The Python implementation uses dictionaries as the lightweight semantic layer.
+        </p>
+        <pre><code>from topologicpy.Ontology import Ontology
+
+Ontology.SetClass(cell, "top:Room")
+Ontology.SetLabel(cell, "Room 101")
+Ontology.SetCategory(cell, "space")
+
+ttl = Ontology.TTLString(cell)</code></pre>
+      </div>
+
+      <div class="card span-4">
+        <h2>Topology</h2>
+        <p class="muted">
+          Defines core TopologicPy entities and compositional relations such as containment,
+          boundaries, subtopologies, interfaces, and apertures.
+        </p>
+      </div>
+
+      <div class="card span-4">
+        <h2>Buildings</h2>
+        <p class="muted">
+          Represents spatial and architectural concepts including sites, buildings, storeys,
+          spaces, rooms, thermal zones, and building elements.
+        </p>
+      </div>
+
+      <div class="card span-4">
+        <h2>Graphs</h2>
+        <p class="muted">
+          Supports graph-native workflows including nodes, relationships, adjacency graphs,
+          visibility graphs, knowledge graphs, and graph analysis metrics.
+        </p>
+      </div>
+
+      <div class="card span-6">
+        <h2>Alignment</h2>
+        <p class="muted">
+          The ontology is intended to interoperate with linked building data and semantic web ecosystems.
+        </p>
+        <ul class="pill-list">
+          <li>BOT</li>
+          <li>Brick Schema</li>
+          <li>RDF</li>
+          <li>RDFS</li>
+          <li>OWL</li>
+          <li>IFC</li>
+          <li>Linked Building Data</li>
+        </ul>
+      </div>
+
+      <div class="card span-6">
+        <h2>Persistent identifier policy</h2>
+        <p class="muted">
+          The preferred namespace is <code>http://w3id.org/topologicpy#</code>. The redirect
+          points to the GitHub Pages-hosted ontology document. If hosting changes, the redirect
+          can be updated without changing published data.
+        </p>
+      </div>
+
+      <div class="card span-12">
+        <h2>Maintainer</h2>
+        <p>
+          Professor Wassim Jabi, Welsh School of Architecture, Cardiff University.
+        </p>
+        <p class="muted">
+          Project repository:
+          <a href="https://github.com/wassimj/topologicpy">https://github.com/wassimj/topologicpy</a>
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <p>
+        TopologicPy Ontology. Canonical prefix:
+        <code>top: &lt;http://w3id.org/topologicpy#&gt;</code>
+      </p>
+    </div>
+  </footer>
 </body>
 </html>
