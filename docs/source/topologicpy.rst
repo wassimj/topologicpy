@@ -33,6 +33,7 @@ Submodules
    topologicpy.LLM
    topologicpy.Matrix
    topologicpy.Neo4j
+   topologicpy.Ontology
    topologicpy.Plotly
    topologicpy.Polyskel
    topologicpy.PyG

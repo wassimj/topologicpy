@@ -1,0 +1,1490 @@
+@base <http://w3id.org/topologicpy/> .
+@prefix top: <http://w3id.org/topologicpy#> .
+@prefix bot: <https://w3id.org/bot#> .
+@prefix brick: <https://brickschema.org/schema/Brick#> .
+@prefix ifc: <https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#> .
+@prefix geo: <http://www.opengis.net/ont/geosparql#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix vann: <http://purl.org/vocab/vann/> .
+@prefix schema: <https://schema.org/> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+<http://w3id.org/topologicpy>
+    rdf:type owl:Ontology ;
+    dcterms:title "TopologicPy Ontology"@en ;
+    dcterms:description "A formal OWL/RDFS vocabulary for representing TopologicPy topologies, graphs, dictionaries, geometric attributes, analytical metrics, provenance, and building-domain alignments."@en ;
+    dcterms:creator "TopologicPy Project"@en ;
+    dcterms:contributor "Wassim Jabi"@en ;
+    dcterms:license <https://www.gnu.org/licenses/agpl-3.0.en.html> ;
+    dcterms:issued "2026-05-24"^^xsd:date ;
+    dcterms:modified "2026-05-24"^^xsd:date ;
+    owl:versionInfo "0.1.0" ;
+    vann:preferredNamespacePrefix "top" ;
+    vann:preferredNamespaceUri "http://w3id.org/topologicpy#" ;
+    rdfs:label "TopologicPy Ontology"@en ;
+    rdfs:comment "The canonical namespace prefix is top:. The vocabulary intentionally does not define or use a tpy: prefix or an inst: instance namespace."@en .
+
+# -----------------------------------------------------------------------------
+# Classes
+# -----------------------------------------------------------------------------
+top:Topology rdf:type owl:Class ;
+    rdfs:label "Topology"@en ;
+    rdfs:comment "The superclass for TopologicPy topological entities."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Vertex rdf:type owl:Class ;
+    rdfs:label "Vertex"@en ;
+    rdfs:comment "A zero-dimensional topology representing a point in 3D space."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Edge rdf:type owl:Class ;
+    rdfs:label "Edge"@en ;
+    rdfs:comment "A one-dimensional topology connecting two vertices."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Wire rdf:type owl:Class ;
+    rdfs:label "Wire"@en ;
+    rdfs:comment "A connected sequence or collection of edges."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Face rdf:type owl:Class ;
+    rdfs:label "Face"@en ;
+    rdfs:comment "A bounded two-dimensional surface, optionally with internal boundaries."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:subClassOf geo:Feature .
+
+top:Shell rdf:type owl:Class ;
+    rdfs:label "Shell"@en ;
+    rdfs:comment "A connected collection of faces forming a segmented surface."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Cell rdf:type owl:Class ;
+    rdfs:label "Cell"@en ;
+    rdfs:comment "A volumetric topological entity bounded by faces."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:subClassOf geo:Feature .
+
+top:CellComplex rdf:type owl:Class ;
+    rdfs:label "Cell Complex"@en ;
+    rdfs:comment "A collection of cells, typically sharing faces."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Cluster rdf:type owl:Class ;
+    rdfs:label "Cluster"@en ;
+    rdfs:comment "A heterogeneous collection of topologies."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Aperture rdf:type owl:Class ;
+    rdfs:label "Aperture"@en ;
+    rdfs:comment "An opening, void, or aperture associated with another topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Face ;
+    rdfs:subClassOf top:Element ;
+    rdfs:subClassOf bot:Element .
+
+top:Dictionary rdf:type owl:Class ;
+    rdfs:label "Dictionary"@en ;
+    rdfs:comment "A key-value container for semantic, analytical, and provenance metadata."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Attribute rdf:type owl:Class ;
+    rdfs:label "Attribute"@en ;
+    rdfs:comment "A semantic or analytical key-value attribute associated with an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Vector rdf:type owl:Class ;
+    rdfs:label "Vector"@en ;
+    rdfs:comment "A mathematical vector with magnitude and direction."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Matrix rdf:type owl:Class ;
+    rdfs:label "Matrix"@en ;
+    rdfs:comment "A matrix, typically used for geometric transformations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:CoordinateSystem rdf:type owl:Class ;
+    rdfs:label "Coordinate System"@en ;
+    rdfs:comment "A spatial reference frame for coordinates and transformations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Transform rdf:type owl:Class ;
+    rdfs:label "Transform"@en ;
+    rdfs:comment "A geometric or topological transformation."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Grid rdf:type owl:Class ;
+    rdfs:label "Grid"@en ;
+    rdfs:comment "A regular spatial subdivision or sampling structure."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Context rdf:type owl:Class ;
+    rdfs:label "Context"@en ;
+    rdfs:comment "The modelling, analytical, or computational context in which entities are interpreted."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Project rdf:type owl:Class ;
+    rdfs:label "Project"@en ;
+    rdfs:comment "A project-level container for a model, dataset, or computational study."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf prov:Entity .
+
+top:Site rdf:type owl:Class ;
+    rdfs:label "Site"@en ;
+    rdfs:comment "A site or land parcel containing buildings or spatial zones."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone ;
+    rdfs:subClassOf bot:Site .
+
+top:Building rdf:type owl:Class ;
+    rdfs:label "Building"@en ;
+    rdfs:comment "A building-level spatial container."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone ;
+    rdfs:subClassOf bot:Building .
+
+top:Storey rdf:type owl:Class ;
+    rdfs:label "Storey"@en ;
+    rdfs:comment "A building storey or level."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone ;
+    rdfs:subClassOf bot:Storey .
+
+top:Zone rdf:type owl:Class ;
+    rdfs:label "Zone"@en ;
+    rdfs:comment "A spatial region or bounded domain."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Cell ;
+    rdfs:subClassOf bot:Zone .
+
+top:Space rdf:type owl:Class ;
+    rdfs:label "Space"@en ;
+    rdfs:comment "A building space, usually corresponding to an IFC space or room-like domain."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone ;
+    rdfs:subClassOf bot:Space .
+
+top:Room rdf:type owl:Class ;
+    rdfs:label "Room"@en ;
+    rdfs:comment "A room or occupiable space."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Space .
+
+top:ThermalZone rdf:type owl:Class ;
+    rdfs:label "Thermal Zone"@en ;
+    rdfs:comment "A thermal analysis zone."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Space .
+
+top:FunctionalZone rdf:type owl:Class ;
+    rdfs:label "Functional Zone"@en ;
+    rdfs:comment "A zone grouped by function or programme."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone .
+
+top:CirculationZone rdf:type owl:Class ;
+    rdfs:label "Circulation Zone"@en ;
+    rdfs:comment "A zone primarily used for movement or circulation."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Zone .
+
+top:Element rdf:type owl:Class ;
+    rdfs:label "Element"@en ;
+    rdfs:comment "A physical or conceptual building element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology ;
+    rdfs:subClassOf bot:Element .
+
+top:Wall rdf:type owl:Class ;
+    rdfs:label "Wall"@en ;
+    rdfs:comment "A vertical or near-vertical building element separating or bounding spaces."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Door rdf:type owl:Class ;
+    rdfs:label "Door"@en ;
+    rdfs:comment "A door or access element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Window rdf:type owl:Class ;
+    rdfs:label "Window"@en ;
+    rdfs:comment "A window or transparent/translucent opening element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Slab rdf:type owl:Class ;
+    rdfs:label "Slab"@en ;
+    rdfs:comment "A slab, floor, ceiling, or plate-like element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Roof rdf:type owl:Class ;
+    rdfs:label "Roof"@en ;
+    rdfs:comment "A roof element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Column rdf:type owl:Class ;
+    rdfs:label "Column"@en ;
+    rdfs:comment "A column or vertical structural member."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Beam rdf:type owl:Class ;
+    rdfs:label "Beam"@en ;
+    rdfs:comment "A beam or horizontal/linear structural member."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Stair rdf:type owl:Class ;
+    rdfs:label "Stair"@en ;
+    rdfs:comment "A stair or stair flight."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Railing rdf:type owl:Class ;
+    rdfs:label "Railing"@en ;
+    rdfs:comment "A railing, guard, or balustrade."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Opening rdf:type owl:Class ;
+    rdfs:label "Opening"@en ;
+    rdfs:comment "An opening element or void."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Furniture rdf:type owl:Class ;
+    rdfs:label "Furniture"@en ;
+    rdfs:comment "Furniture or furnishing elements."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element .
+
+top:Equipment rdf:type owl:Class ;
+    rdfs:label "Equipment"@en ;
+    rdfs:comment "Building equipment or operational systems."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element ;
+    rdfs:subClassOf brick:Equipment .
+
+top:Sensor rdf:type owl:Class ;
+    rdfs:label "Sensor"@en ;
+    rdfs:comment "A sensor or observation point."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Element ;
+    rdfs:subClassOf brick:Point .
+
+top:Surface rdf:type owl:Class ;
+    rdfs:label "Surface"@en ;
+    rdfs:comment "A surface used as a geometric, analytical, or building-domain entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Face .
+
+top:Boundary rdf:type owl:Class ;
+    rdfs:label "Boundary"@en ;
+    rdfs:comment "A topology that bounds another topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Topology .
+
+top:Interface rdf:type owl:Class ;
+    rdfs:label "Interface"@en ;
+    rdfs:comment "A shared boundary or interface between zones, elements, or topologies."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Face ;
+    rdfs:subClassOf bot:Interface .
+
+top:ExternalBoundary rdf:type owl:Class ;
+    rdfs:label "External Boundary"@en ;
+    rdfs:comment "An external boundary of a topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Boundary .
+
+top:InternalBoundary rdf:type owl:Class ;
+    rdfs:label "Internal Boundary"@en ;
+    rdfs:comment "An internal boundary, hole, or void boundary."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Boundary .
+
+top:Graph rdf:type owl:Class ;
+    rdfs:label "Graph"@en ;
+    rdfs:comment "A graph composed of nodes and relationships, commonly represented in TopologicPy by vertices and edges."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Node rdf:type owl:Class ;
+    rdfs:label "Node"@en ;
+    rdfs:comment "A graph node, often represented by a TopologicPy Vertex."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Vertex .
+
+top:Relationship rdf:type owl:Class ;
+    rdfs:label "Relationship"@en ;
+    rdfs:comment "A graph relationship, often represented by a TopologicPy Edge."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Edge .
+
+top:DirectedRelationship rdf:type owl:Class ;
+    rdfs:label "Directed Relationship"@en ;
+    rdfs:comment "A relationship with a start node and an end node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Relationship .
+
+top:UndirectedRelationship rdf:type owl:Class ;
+    rdfs:label "Undirected Relationship"@en ;
+    rdfs:comment "A relationship without intrinsic direction."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Relationship .
+
+top:SpatialGraph rdf:type owl:Class ;
+    rdfs:label "Spatial Graph"@en ;
+    rdfs:comment "A graph representing spatial relations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Graph .
+
+top:AdjacencyGraph rdf:type owl:Class ;
+    rdfs:label "Adjacency Graph"@en ;
+    rdfs:comment "A graph representing adjacency relations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:SpatialGraph .
+
+top:VisibilityGraph rdf:type owl:Class ;
+    rdfs:label "Visibility Graph"@en ;
+    rdfs:comment "A graph representing visibility relations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:SpatialGraph .
+
+top:CirculationGraph rdf:type owl:Class ;
+    rdfs:label "Circulation Graph"@en ;
+    rdfs:comment "A graph representing movement or circulation relations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:SpatialGraph .
+
+top:ConnectivityGraph rdf:type owl:Class ;
+    rdfs:label "Connectivity Graph"@en ;
+    rdfs:comment "A graph representing connectivity relations."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:SpatialGraph .
+
+top:KnowledgeGraph rdf:type owl:Class ;
+    rdfs:label "Knowledge Graph"@en ;
+    rdfs:comment "A graph integrating entities, semantics, provenance, and relationships."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Graph .
+
+top:GraphDataset rdf:type owl:Class ;
+    rdfs:label "Graph Dataset"@en ;
+    rdfs:comment "A dataset containing graphs, nodes, edges, labels, and features."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf prov:Entity .
+
+top:GraphFeature rdf:type owl:Class ;
+    rdfs:label "Graph Feature"@en ;
+    rdfs:comment "A numerical or categorical feature associated with a graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Attribute .
+
+top:NodeFeature rdf:type owl:Class ;
+    rdfs:label "Node Feature"@en ;
+    rdfs:comment "A numerical or categorical feature associated with a graph node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Attribute .
+
+top:EdgeFeature rdf:type owl:Class ;
+    rdfs:label "Edge Feature"@en ;
+    rdfs:comment "A numerical or categorical feature associated with a graph edge."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Attribute .
+
+top:AnalysisMetric rdf:type owl:Class ;
+    rdfs:label "Analysis Metric"@en ;
+    rdfs:comment "A computed metric associated with geometry, topology, graphs, or buildings."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:SpaceSyntaxMetric rdf:type owl:Class ;
+    rdfs:label "Space Syntax Metric"@en ;
+    rdfs:comment "A spatial network metric commonly used in space syntax analysis."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:AnalysisMetric .
+
+top:Isovist rdf:type owl:Class ;
+    rdfs:label "Isovist"@en ;
+    rdfs:comment "A visibility polygon, volume, or related visibility field from an observer point."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:AnalysisMetric .
+
+top:QualityIssue rdf:type owl:Class ;
+    rdfs:label "Quality Issue"@en ;
+    rdfs:comment "A validation, quality-control, or model-checking issue."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:ValidationRule rdf:type owl:Class ;
+    rdfs:label "Validation Rule"@en ;
+    rdfs:comment "A rule used to validate model content, geometry, topology, semantics, or provenance."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:Project skos:closeMatch ifc:IfcProject .
+
+top:Site skos:closeMatch ifc:IfcSite .
+
+top:Building skos:closeMatch ifc:IfcBuilding .
+
+top:Storey skos:closeMatch ifc:IfcBuildingStorey .
+
+top:Space skos:closeMatch ifc:IfcSpace .
+
+top:Zone skos:closeMatch ifc:IfcZone .
+
+top:Wall skos:closeMatch ifc:IfcWall .
+
+top:Door skos:closeMatch ifc:IfcDoor .
+
+top:Window skos:closeMatch ifc:IfcWindow .
+
+top:Slab skos:closeMatch ifc:IfcSlab .
+
+top:Roof skos:closeMatch ifc:IfcRoof .
+
+top:Column skos:closeMatch ifc:IfcColumn .
+
+top:Beam skos:closeMatch ifc:IfcBeam .
+
+top:Stair skos:closeMatch ifc:IfcStair .
+
+top:Railing skos:closeMatch ifc:IfcRailing .
+
+top:Opening skos:closeMatch ifc:IfcOpeningElement .
+
+top:Furniture skos:closeMatch ifc:IfcFurnishingElement .
+
+top:Equipment skos:closeMatch ifc:IfcDistributionElement .
+
+top:Interface skos:closeMatch ifc:IfcRelSpaceBoundary .
+
+top:Path rdf:type owl:Class ;
+    rdfs:label "Path"@en ;
+    rdfs:comment "An ordered sequence of graph nodes and relationships."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:subClassOf top:Graph .
+
+# -----------------------------------------------------------------------------
+# Object properties
+# -----------------------------------------------------------------------------
+top:hasTopology rdf:type owl:ObjectProperty ;
+    rdfs:label "has topology"@en ;
+    rdfs:comment "Associates an entity with a topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:isTopologyOf .
+
+top:isTopologyOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is topology of"@en ;
+    rdfs:comment "Inverse of hasTopology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    owl:inverseOf top:hasTopology .
+
+top:hasSubTopology rdf:type owl:ObjectProperty ;
+    rdfs:label "has subtopology"@en ;
+    rdfs:comment "Associates a topology with a subtopology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:isSubTopologyOf .
+
+top:isSubTopologyOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is subtopology of"@en ;
+    rdfs:comment "Associates a topology with a parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:hasSubTopology .
+
+top:hasFreeTopology rdf:type owl:ObjectProperty ;
+    rdfs:label "has free topology"@en ;
+    rdfs:comment "Associates a cluster with a free or heterogeneous contained topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Cluster ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isFreeTopologyOf .
+
+top:isFreeTopologyOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is free topology of"@en ;
+    rdfs:comment "Associates a topology with a containing cluster."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Cluster ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasFreeTopology .
+
+top:hasVertex rdf:type owl:ObjectProperty ;
+    rdfs:label "has vertex"@en ;
+    rdfs:comment "Associates a topology or graph with a vertex."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Vertex ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isVertexOf .
+
+top:isVertexOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is vertex of"@en ;
+    rdfs:comment "Associates a vertex with its parent topology or graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Vertex ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasVertex .
+
+top:hasEdge rdf:type owl:ObjectProperty ;
+    rdfs:label "has edge"@en ;
+    rdfs:comment "Associates a topology or graph with an edge."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Edge ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isEdgeOf .
+
+top:isEdgeOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is edge of"@en ;
+    rdfs:comment "Associates an edge with its parent topology or graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Edge ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasEdge .
+
+top:hasWire rdf:type owl:ObjectProperty ;
+    rdfs:label "has wire"@en ;
+    rdfs:comment "Associates a topology with a wire."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Wire ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isWireOf .
+
+top:isWireOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is wire of"@en ;
+    rdfs:comment "Associates a wire with its parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Wire ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasWire .
+
+top:hasFace rdf:type owl:ObjectProperty ;
+    rdfs:label "has face"@en ;
+    rdfs:comment "Associates a topology with a face."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Face ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isFaceOf .
+
+top:isFaceOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is face of"@en ;
+    rdfs:comment "Associates a face with its parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Face ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasFace .
+
+top:hasShell rdf:type owl:ObjectProperty ;
+    rdfs:label "has shell"@en ;
+    rdfs:comment "Associates a topology with a shell."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Shell ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isShellOf .
+
+top:isShellOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is shell of"@en ;
+    rdfs:comment "Associates a shell with its parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Shell ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasShell .
+
+top:hasCell rdf:type owl:ObjectProperty ;
+    rdfs:label "has cell"@en ;
+    rdfs:comment "Associates a topology with a cell."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Cell ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isCellOf .
+
+top:isCellOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is cell of"@en ;
+    rdfs:comment "Associates a cell with its parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Cell ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasCell .
+
+top:hasCellComplex rdf:type owl:ObjectProperty ;
+    rdfs:label "has cell complex"@en ;
+    rdfs:comment "Associates a topology with a cell complex."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:CellComplex ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isCellComplexOf .
+
+top:isCellComplexOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is cell complex of"@en ;
+    rdfs:comment "Associates a cell complex with its parent topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:CellComplex ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasCellComplex .
+
+top:hasAperture rdf:type owl:ObjectProperty ;
+    rdfs:label "has aperture"@en ;
+    rdfs:comment "Associates a topology with an aperture."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Aperture ;
+    rdfs:subPropertyOf top:hasSubTopology ;
+    owl:inverseOf top:isApertureOf .
+
+top:isApertureOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is aperture of"@en ;
+    rdfs:comment "Associates an aperture with the topology it belongs to."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Aperture ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isSubTopologyOf ;
+    owl:inverseOf top:hasAperture .
+
+top:bounds rdf:type owl:ObjectProperty ;
+    rdfs:label "bounds"@en ;
+    rdfs:comment "Indicates that one topology bounds another."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:isBoundedBy .
+
+top:isBoundedBy rdf:type owl:ObjectProperty ;
+    rdfs:label "is bounded by"@en ;
+    rdfs:comment "Indicates that one topology is bounded by another."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:bounds .
+
+top:hasExternalBoundary rdf:type owl:ObjectProperty ;
+    rdfs:label "has external boundary"@en ;
+    rdfs:comment "Associates a topology with an external boundary."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Boundary ;
+    rdfs:subPropertyOf top:isBoundedBy ;
+    owl:inverseOf top:isExternalBoundaryOf .
+
+top:isExternalBoundaryOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is external boundary of"@en ;
+    rdfs:comment "Associates an external boundary with the topology it bounds."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Boundary ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:bounds ;
+    owl:inverseOf top:hasExternalBoundary .
+
+top:hasInternalBoundary rdf:type owl:ObjectProperty ;
+    rdfs:label "has internal boundary"@en ;
+    rdfs:comment "Associates a topology with an internal boundary, hole, or void boundary."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Boundary ;
+    rdfs:subPropertyOf top:isBoundedBy ;
+    owl:inverseOf top:isInternalBoundaryOf .
+
+top:isInternalBoundaryOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is internal boundary of"@en ;
+    rdfs:comment "Associates an internal boundary with the topology it bounds."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Boundary ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:bounds ;
+    owl:inverseOf top:hasInternalBoundary .
+
+top:hasInterface rdf:type owl:ObjectProperty ;
+    rdfs:label "has interface"@en ;
+    rdfs:comment "Associates a topology with an interface."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Interface ;
+    owl:inverseOf top:isInterfaceOf .
+
+top:isInterfaceOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is interface of"@en ;
+    rdfs:comment "Associates an interface with the topology, zone, or element it interfaces."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Interface ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:hasInterface .
+
+top:contains rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:label "contains"@en ;
+    rdfs:comment "Indicates topological, geometric, or semantic containment."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:isContainedIn .
+
+top:isContainedIn rdf:type owl:ObjectProperty , owl:TransitiveProperty ;
+    rdfs:label "is contained in"@en ;
+    rdfs:comment "Inverse of contains."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:contains .
+
+top:containsElement rdf:type owl:ObjectProperty ;
+    rdfs:label "contains element"@en ;
+    rdfs:comment "Associates a topology or zone with a contained element."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Element ;
+    rdfs:subPropertyOf top:contains ;
+    owl:inverseOf top:isElementOf .
+
+top:isElementOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is element of"@en ;
+    rdfs:comment "Associates an element with its container."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Element ;
+    rdfs:range top:Topology ;
+    rdfs:subPropertyOf top:isContainedIn ;
+    owl:inverseOf top:containsElement .
+
+top:containsZone rdf:type owl:ObjectProperty ;
+    rdfs:label "contains zone"@en ;
+    rdfs:comment "Associates a zone with a contained zone."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Zone ;
+    rdfs:range top:Zone ;
+    rdfs:subPropertyOf top:contains ;
+    owl:inverseOf top:isZoneOf .
+
+top:isZoneOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is zone of"@en ;
+    rdfs:comment "Associates a zone with a containing zone."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Zone ;
+    rdfs:range top:Zone ;
+    rdfs:subPropertyOf top:isContainedIn ;
+    owl:inverseOf top:containsZone .
+
+top:adjacentTo rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "adjacent to"@en ;
+    rdfs:comment "Indicates that two topologies are adjacent."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:intersects rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "intersects"@en ;
+    rdfs:comment "Indicates that two topologies intersect."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:overlaps rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "overlaps"@en ;
+    rdfs:comment "Indicates that two topologies overlap."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:touches rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "touches"@en ;
+    rdfs:comment "Indicates that two topologies touch."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Topology .
+
+top:hasDictionary rdf:type owl:ObjectProperty ;
+    rdfs:label "has dictionary"@en ;
+    rdfs:comment "Associates an entity with a TopologicPy dictionary."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:Dictionary ;
+    owl:inverseOf top:isDictionaryOf .
+
+top:isDictionaryOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is dictionary of"@en ;
+    rdfs:comment "Associates a dictionary with the entity it describes."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Dictionary ;
+    owl:inverseOf top:hasDictionary .
+
+top:hasAttribute rdf:type owl:ObjectProperty ;
+    rdfs:label "has attribute"@en ;
+    rdfs:comment "Associates an entity with an attribute."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:Attribute ;
+    owl:inverseOf top:isAttributeOf .
+
+top:isAttributeOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is attribute of"@en ;
+    rdfs:comment "Associates an attribute with the entity it describes."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Attribute ;
+    owl:inverseOf top:hasAttribute .
+
+top:hasContext rdf:type owl:ObjectProperty ;
+    rdfs:label "has context"@en ;
+    rdfs:comment "Associates an entity with a context."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:Context ;
+    owl:inverseOf top:isContextOf .
+
+top:isContextOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is context of"@en ;
+    rdfs:comment "Associates a context with an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Context ;
+    owl:inverseOf top:hasContext .
+
+top:hasTransform rdf:type owl:ObjectProperty ;
+    rdfs:label "has transform"@en ;
+    rdfs:comment "Associates a topology with a transformation."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range top:Transform ;
+    owl:inverseOf top:isTransformOf .
+
+top:isTransformOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is transform of"@en ;
+    rdfs:comment "Associates a transformation with a topology."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Transform ;
+    rdfs:range top:Topology ;
+    owl:inverseOf top:hasTransform .
+
+top:hasMatrix rdf:type owl:ObjectProperty ;
+    rdfs:label "has matrix"@en ;
+    rdfs:comment "Associates a transform with a matrix."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Transform ;
+    rdfs:range top:Matrix ;
+    owl:inverseOf top:isMatrixOf .
+
+top:isMatrixOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is matrix of"@en ;
+    rdfs:comment "Associates a matrix with a transform."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Matrix ;
+    rdfs:range top:Transform ;
+    owl:inverseOf top:hasMatrix .
+
+top:hasVector rdf:type owl:ObjectProperty ;
+    rdfs:label "has vector"@en ;
+    rdfs:comment "Associates an entity with a vector."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:Vector ;
+    owl:inverseOf top:isVectorOf .
+
+top:isVectorOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is vector of"@en ;
+    rdfs:comment "Associates a vector with an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Vector ;
+    owl:inverseOf top:hasVector .
+
+top:hasNode rdf:type owl:ObjectProperty ;
+    rdfs:label "has node"@en ;
+    rdfs:comment "Associates a graph with a node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Graph ;
+    rdfs:range top:Node ;
+    rdfs:subPropertyOf top:hasVertex ;
+    owl:inverseOf top:isNodeOf .
+
+top:isNodeOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is node of"@en ;
+    rdfs:comment "Associates a node with a graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range top:Graph ;
+    rdfs:subPropertyOf top:isVertexOf ;
+    owl:inverseOf top:hasNode .
+
+top:hasRelationship rdf:type owl:ObjectProperty ;
+    rdfs:label "has relationship"@en ;
+    rdfs:comment "Associates a graph with a relationship."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Graph ;
+    rdfs:range top:Relationship ;
+    rdfs:subPropertyOf top:hasEdge ;
+    owl:inverseOf top:isRelationshipOf .
+
+top:isRelationshipOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is relationship of"@en ;
+    rdfs:comment "Associates a relationship with a graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range top:Graph ;
+    rdfs:subPropertyOf top:isEdgeOf ;
+    owl:inverseOf top:hasRelationship .
+
+top:startsAt rdf:type owl:ObjectProperty ;
+    rdfs:label "starts at"@en ;
+    rdfs:comment "Associates a directed relationship with its start node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:DirectedRelationship ;
+    rdfs:range top:Node .
+
+top:endsAt rdf:type owl:ObjectProperty ;
+    rdfs:label "ends at"@en ;
+    rdfs:comment "Associates a directed relationship with its end node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:DirectedRelationship ;
+    rdfs:range top:Node .
+
+top:connects rdf:type owl:ObjectProperty ;
+    rdfs:label "connects"@en ;
+    rdfs:comment "Associates a relationship with one of the nodes it connects."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range top:Node .
+
+top:connectsTo rdf:type owl:ObjectProperty , owl:SymmetricProperty ;
+    rdfs:label "connects to"@en ;
+    rdfs:comment "Indicates that one node is connected to another node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range top:Node .
+
+top:hasSource rdf:type owl:ObjectProperty ;
+    rdfs:label "has source"@en ;
+    rdfs:comment "Associates a relationship with a source node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range top:Node .
+
+top:hasTarget rdf:type owl:ObjectProperty ;
+    rdfs:label "has target"@en ;
+    rdfs:comment "Associates a relationship with a target node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range top:Node .
+
+top:hasPath rdf:type owl:ObjectProperty ;
+    rdfs:label "has path"@en ;
+    rdfs:comment "Associates a graph with a path."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Graph ;
+    rdfs:range top:Path ;
+    owl:inverseOf top:isPathOf .
+
+top:isPathOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is path of"@en ;
+    rdfs:comment "Associates a path with a graph."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Path ;
+    rdfs:range top:Graph ;
+    owl:inverseOf top:hasPath .
+
+top:hasMetric rdf:type owl:ObjectProperty ;
+    rdfs:label "has metric"@en ;
+    rdfs:comment "Associates an entity with a computed metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:AnalysisMetric ;
+    owl:inverseOf top:isMetricOf .
+
+top:isMetricOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is metric of"@en ;
+    rdfs:comment "Associates a metric with the entity it describes."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:AnalysisMetric ;
+    owl:inverseOf top:hasMetric .
+
+top:hasQualityIssue rdf:type owl:ObjectProperty ;
+    rdfs:label "has quality issue"@en ;
+    rdfs:comment "Associates an entity with a quality issue."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:QualityIssue ;
+    owl:inverseOf top:isQualityIssueOf .
+
+top:isQualityIssueOf rdf:type owl:ObjectProperty ;
+    rdfs:label "is quality issue of"@en ;
+    rdfs:comment "Associates a quality issue with an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:QualityIssue ;
+    owl:inverseOf top:hasQualityIssue .
+
+top:validatedBy rdf:type owl:ObjectProperty ;
+    rdfs:label "validated by"@en ;
+    rdfs:comment "Associates an entity with a validation rule."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range top:ValidationRule ;
+    owl:inverseOf top:validates .
+
+top:validates rdf:type owl:ObjectProperty ;
+    rdfs:label "validates"@en ;
+    rdfs:comment "Associates a validation rule with the entity it validates."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:ValidationRule ;
+    owl:inverseOf top:validatedBy .
+
+top:derivedFrom rdf:type owl:ObjectProperty ;
+    rdfs:label "derived from"@en ;
+    rdfs:comment "Associates an entity with the entity, file, model, or process it was derived from."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+top:generatedBy rdf:type owl:ObjectProperty ;
+    rdfs:label "generated by"@en ;
+    rdfs:comment "Associates an entity with the method, agent, or process that generated it."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> .
+
+# -----------------------------------------------------------------------------
+# Datatype properties
+# -----------------------------------------------------------------------------
+top:id rdf:type owl:DatatypeProperty ;
+    rdfs:label "identifier"@en ;
+    rdfs:comment "A local identifier."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:uuid rdf:type owl:DatatypeProperty ;
+    rdfs:label "UUID"@en ;
+    rdfs:comment "A UUID derived from, or assigned to, an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:label rdf:type owl:DatatypeProperty ;
+    rdfs:label "label"@en ;
+    rdfs:comment "A human-readable label."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:category rdf:type owl:DatatypeProperty ;
+    rdfs:label "category"@en ;
+    rdfs:comment "A broad semantic category."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:ontologyClass rdf:type owl:DatatypeProperty ;
+    rdfs:label "ontology class"@en ;
+    rdfs:comment "The ontology class as a compact string, typically top:ClassName."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:uri rdf:type owl:DatatypeProperty ;
+    rdfs:label "URI"@en ;
+    rdfs:comment "A URI identifying an entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:anyURI .
+
+top:comment rdf:type owl:DatatypeProperty ;
+    rdfs:label "comment"@en ;
+    rdfs:comment "A human-readable comment."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:x rdf:type owl:DatatypeProperty ;
+    rdfs:label "x coordinate"@en ;
+    rdfs:comment "The X coordinate of a vertex or point."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
+
+top:y rdf:type owl:DatatypeProperty ;
+    rdfs:label "y coordinate"@en ;
+    rdfs:comment "The Y coordinate of a vertex or point."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
+
+top:z rdf:type owl:DatatypeProperty ;
+    rdfs:label "z coordinate"@en ;
+    rdfs:comment "The Z coordinate of a vertex or point."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Vertex ;
+    rdfs:range xsd:double .
+
+top:u rdf:type owl:DatatypeProperty ;
+    rdfs:label "u coordinate"@en ;
+    rdfs:comment "The U coordinate in a parametric or local coordinate system."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:v rdf:type owl:DatatypeProperty ;
+    rdfs:label "v coordinate"@en ;
+    rdfs:comment "The V coordinate in a parametric or local coordinate system."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:w rdf:type owl:DatatypeProperty ;
+    rdfs:label "w coordinate"@en ;
+    rdfs:comment "The W coordinate or scalar component."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:length rdf:type owl:DatatypeProperty ;
+    rdfs:label "length"@en ;
+    rdfs:comment "The length of an edge, wire, path, or other linear entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range xsd:double .
+
+top:area rdf:type owl:DatatypeProperty ;
+    rdfs:label "area"@en ;
+    rdfs:comment "The area of a face, shell, surface, or spatial entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range xsd:double .
+
+top:volume rdf:type owl:DatatypeProperty ;
+    rdfs:label "volume"@en ;
+    rdfs:comment "The volume of a cell, cell complex, or spatial entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range xsd:double .
+
+top:perimeter rdf:type owl:DatatypeProperty ;
+    rdfs:label "perimeter"@en ;
+    rdfs:comment "The perimeter of a face, boundary, or region."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Topology ;
+    rdfs:range xsd:double .
+
+top:width rdf:type owl:DatatypeProperty ;
+    rdfs:label "width"@en ;
+    rdfs:comment "The width of an entity or bounding rectangle."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:height rdf:type owl:DatatypeProperty ;
+    rdfs:label "height"@en ;
+    rdfs:comment "The height of an entity or bounding box."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:depth rdf:type owl:DatatypeProperty ;
+    rdfs:label "depth"@en ;
+    rdfs:comment "The depth of an entity or graph traversal."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:radius rdf:type owl:DatatypeProperty ;
+    rdfs:label "radius"@en ;
+    rdfs:comment "The radius of a circular, spherical, or radial entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:diameter rdf:type owl:DatatypeProperty ;
+    rdfs:label "diameter"@en ;
+    rdfs:comment "The diameter of a circular or spherical entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:normalX rdf:type owl:DatatypeProperty ;
+    rdfs:label "normal x"@en ;
+    rdfs:comment "The X component of a normal vector."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Face ;
+    rdfs:range xsd:double .
+
+top:normalY rdf:type owl:DatatypeProperty ;
+    rdfs:label "normal y"@en ;
+    rdfs:comment "The Y component of a normal vector."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Face ;
+    rdfs:range xsd:double .
+
+top:normalZ rdf:type owl:DatatypeProperty ;
+    rdfs:label "normal z"@en ;
+    rdfs:comment "The Z component of a normal vector."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Face ;
+    rdfs:range xsd:double .
+
+top:azimuth rdf:type owl:DatatypeProperty ;
+    rdfs:label "azimuth"@en ;
+    rdfs:comment "An azimuth angle."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:inclination rdf:type owl:DatatypeProperty ;
+    rdfs:label "inclination"@en ;
+    rdfs:comment "An inclination or tilt angle."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:mantissa rdf:type owl:DatatypeProperty ;
+    rdfs:label "mantissa"@en ;
+    rdfs:comment "The number of decimal places used for rounding."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:integer .
+
+top:tolerance rdf:type owl:DatatypeProperty ;
+    rdfs:label "tolerance"@en ;
+    rdfs:comment "A geometric or numerical tolerance."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:unit rdf:type owl:DatatypeProperty ;
+    rdfs:label "unit"@en ;
+    rdfs:comment "A unit label or unit symbol."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:hasWeight rdf:type owl:DatatypeProperty ;
+    rdfs:label "weight"@en ;
+    rdfs:comment "A numerical edge or relationship weight."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range xsd:double .
+
+top:hasCost rdf:type owl:DatatypeProperty ;
+    rdfs:label "cost"@en ;
+    rdfs:comment "A numerical traversal or optimisation cost."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Relationship ;
+    rdfs:range xsd:double .
+
+top:degree rdf:type owl:DatatypeProperty ;
+    rdfs:label "degree"@en ;
+    rdfs:comment "The graph degree of a node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:inDegree rdf:type owl:DatatypeProperty ;
+    rdfs:label "in degree"@en ;
+    rdfs:comment "The incoming degree of a node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:outDegree rdf:type owl:DatatypeProperty ;
+    rdfs:label "out degree"@en ;
+    rdfs:comment "The outgoing degree of a node."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:closenessCentrality rdf:type owl:DatatypeProperty ;
+    rdfs:label "closeness centrality"@en ;
+    rdfs:comment "A closeness centrality score."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:betweennessCentrality rdf:type owl:DatatypeProperty ;
+    rdfs:label "betweenness centrality"@en ;
+    rdfs:comment "A betweenness centrality score."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:eigenvectorCentrality rdf:type owl:DatatypeProperty ;
+    rdfs:label "eigenvector centrality"@en ;
+    rdfs:comment "An eigenvector centrality score."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:pageRank rdf:type owl:DatatypeProperty ;
+    rdfs:label "PageRank"@en ;
+    rdfs:comment "A PageRank score."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:double .
+
+top:community rdf:type owl:DatatypeProperty ;
+    rdfs:label "community"@en ;
+    rdfs:comment "A community or cluster assignment."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:Node ;
+    rdfs:range xsd:string .
+
+top:shortestPathDistance rdf:type owl:DatatypeProperty ;
+    rdfs:label "shortest path distance"@en ;
+    rdfs:comment "A shortest-path distance or cost."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:isovistArea rdf:type owl:DatatypeProperty ;
+    rdfs:label "isovist area"@en ;
+    rdfs:comment "The area of an isovist."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:isovistPerimeter rdf:type owl:DatatypeProperty ;
+    rdfs:label "isovist perimeter"@en ;
+    rdfs:comment "The perimeter of an isovist."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:visibility rdf:type owl:DatatypeProperty ;
+    rdfs:label "visibility"@en ;
+    rdfs:comment "A visibility metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:compactness rdf:type owl:DatatypeProperty ;
+    rdfs:label "compactness"@en ;
+    rdfs:comment "A compactness metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:integration rdf:type owl:DatatypeProperty ;
+    rdfs:label "integration"@en ;
+    rdfs:comment "A spatial integration metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:choice rdf:type owl:DatatypeProperty ;
+    rdfs:label "choice"@en ;
+    rdfs:comment "A spatial choice metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:connectivity rdf:type owl:DatatypeProperty ;
+    rdfs:label "connectivity"@en ;
+    rdfs:comment "A connectivity metric."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:control rdf:type owl:DatatypeProperty ;
+    rdfs:label "control"@en ;
+    rdfs:comment "A control value in spatial graph analysis."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:double .
+
+top:ifcClass rdf:type owl:DatatypeProperty ;
+    rdfs:label "IFC class"@en ;
+    rdfs:comment "The IFC entity class name, for example IfcSpace."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:ifcGlobalId rdf:type owl:DatatypeProperty ;
+    rdfs:label "IFC GlobalId"@en ;
+    rdfs:comment "The IFC GlobalId."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:ifcName rdf:type owl:DatatypeProperty ;
+    rdfs:label "IFC name"@en ;
+    rdfs:comment "The IFC Name attribute."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:ifcType rdf:type owl:DatatypeProperty ;
+    rdfs:label "IFC type"@en ;
+    rdfs:comment "The IFC type, object type, or type object label."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:source rdf:type owl:DatatypeProperty ;
+    rdfs:label "source"@en ;
+    rdfs:comment "A source identifier."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:sourceFile rdf:type owl:DatatypeProperty ;
+    rdfs:label "source file"@en ;
+    rdfs:comment "The source file from which an entity was read or generated."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:generatedByMethod rdf:type owl:DatatypeProperty ;
+    rdfs:label "generated by method"@en ;
+    rdfs:comment "The TopologicPy method or process that generated the entity."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:createdAt rdf:type owl:DatatypeProperty ;
+    rdfs:label "created at"@en ;
+    rdfs:comment "The creation timestamp."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:dateTime .
+
+top:modifiedAt rdf:type owl:DatatypeProperty ;
+    rdfs:label "modified at"@en ;
+    rdfs:comment "The modification timestamp."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:dateTime .
+
+top:version rdf:type owl:DatatypeProperty ;
+    rdfs:label "version"@en ;
+    rdfs:comment "A version string."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:range xsd:string .
+
+top:severity rdf:type owl:DatatypeProperty ;
+    rdfs:label "severity"@en ;
+    rdfs:comment "The severity of a quality issue."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:QualityIssue ;
+    rdfs:range xsd:string .
+
+top:issueCode rdf:type owl:DatatypeProperty ;
+    rdfs:label "issue code"@en ;
+    rdfs:comment "A machine-readable quality issue code."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:QualityIssue ;
+    rdfs:range xsd:string .
+
+top:issueMessage rdf:type owl:DatatypeProperty ;
+    rdfs:label "issue message"@en ;
+    rdfs:comment "A human-readable quality issue message."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:QualityIssue ;
+    rdfs:range xsd:string .
+
+top:ruleExpression rdf:type owl:DatatypeProperty ;
+    rdfs:label "rule expression"@en ;
+    rdfs:comment "The expression or description of a validation rule."@en ;
+    rdfs:isDefinedBy <http://w3id.org/topologicpy> ;
+    rdfs:domain top:ValidationRule ;
+    rdfs:range xsd:string .
+
+
+# -----------------------------------------------------------------------------
+# Dictionary-key compatibility notes
+# -----------------------------------------------------------------------------
+# TopologicPy dictionaries may still contain compact keys such as ontology_class,
+# ifc_guid, src, dst, color, cp_color, graph_id, node_id, edge_id, feat_0, etc.
+# Ontology.py should map such implementation keys to the canonical properties
+# defined above when emitting RDF/Turtle.
+
+
+# -----------------------------------------------------------------------------
+# Selected disjointness axioms
+# -----------------------------------------------------------------------------
+top:Vertex owl:disjointWith top:Edge , top:Face , top:Cell .
+top:Edge owl:disjointWith top:Face , top:Cell .
+top:Face owl:disjointWith top:Cell .
+
+# -----------------------------------------------------------------------------
+# BOT alignment notes
+# -----------------------------------------------------------------------------
+top:Site skos:closeMatch bot:Site .
+top:Building skos:closeMatch bot:Building .
+top:Storey skos:closeMatch bot:Storey .
+top:Zone skos:closeMatch bot:Zone .
+top:Space skos:closeMatch bot:Space .
+top:Element skos:closeMatch bot:Element .
+top:Interface skos:closeMatch bot:Interface .
+
