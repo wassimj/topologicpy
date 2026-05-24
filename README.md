@@ -11,7 +11,7 @@ Two of Topologic's main strengths are its support for *defeaturing* and *encoded
 
 Topologic's versatility extends to entities with mixed dimensionalities, enabling structural models, for example, to be represented coherently. Lines can represent columns and beams, surfaces can represent walls and slabs, and volumes can represent solids. Even non-building entities like structural loads can be efficiently attached to the structure. This approach creates mixed-dimensional models that are highly compatible with structural analysis simulation software.
 
-Topologic's graph-based representation makes it a natural fit for integrating with Graph Machine Learning (GML), an exciting new branch of artificial intelligence. With GML, you can process vast amounts of connected data and extract valuable insights quickly and accurately. Topologic's intelligent algorithms for graph and node classification take GML to the next level by using the extracted data to classify building typologies, predict associations, and complete missing information in building information models. This integration empowers you to leverage the historical knowledge embedded in your databases and make informed decisions about your current design projects. With Topologic and GML, you can streamline your workflow, enhance your productivity, and achieve your project goals with greater efficiency and precision.
+Topologic's graph-based representation makes it a natural fit for integrating with Graph Machine Learning (GML), graph databases, knowledge graphs, and GraphRAG workflows, an exciting new branch of artificial intelligence. With GML, you can process vast amounts of connected data and extract valuable insights quickly and accurately. Topologic's intelligent algorithms for graph and node classification take GML to the next level by using the extracted data to classify building typologies, predict associations, and complete missing information in building information models. This integration empowers you to leverage the historical knowledge embedded in your databases and make informed decisions about your current design projects. With Topologic and GML, you can streamline your workflow, enhance your productivity, and achieve your project goals with greater efficiency and precision.
 
 Experience Topologic's comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. Topologic uses cutting-edge C++-based non-manifold topology (NMT) core technology ([Open CASCADE](https://www.opencascade.com/)), and python bindings. Interacting with Topologic is easily accomplished through a command-Line interface and scripts, visual data flow programming (VDFP) plugins for popular BIM software, and cloud-based interfaces through [Streamlit](https://streamlit.io/). You can easily interact with Topologic in various ways to perform design and analysis tasks or even seamlessly customize and embed it in your own in-house software and workflows. Plus, Topologic includes several industry-standard methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, as well serializing through cloud-based services such as [Speckle](https://speckle.systems/).
 
@@ -57,6 +57,62 @@ topologicpy depends on the following python libraries which will be installed au
 1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
 1. Type 'import topologicpy'
 1. Start using the API
+
+
+## Ontology and Semantic Web Support
+
+topologicpy now includes a formal ontology specification that provides a semantic framework for representing geometry, topology, graphs, spatial relationships, building information, provenance, and analytical metrics.
+
+The ontology enables interoperability with:
+
+* RDF / RDFS / OWL
+* BOT (Building Topology Ontology)
+* Brick Schema
+* IFC and Linked Building Data workflows
+* Graph databases such as Neo4j and Kùzu
+* GraphRAG and AI reasoning systems
+
+The canonical namespace is:
+
+`@prefix top: <http://w3id.org/topologicpy#> .`
+
+The ontology is persistently identified through w3id.org and physically hosted through GitHub Pages.
+
+### Ontology Resources
+
+* Ontology namespace: `http://w3id.org/topologicpy#`
+* Ontology document: `http://w3id.org/topologicpy`
+* Current ontology specification:
+  `https://wassimj.github.io/topologicpy/ontology/topologicpy.ttl`
+* Ontology source folder:
+  `https://github.com/wassimj/topologicpy/tree/main/ontology`
+
+### Example
+
+```ttl
+@prefix top: <http://w3id.org/topologicpy#> .
+
+:room_101 a top:Room ;
+    top:hasArea "24.6"^^xsd:double ;
+    top:adjacentTo :corridor_1 .
+
+:wall_12 a top:Wall ;
+    top:bounds :room_101 .
+```
+
+### Python Example
+
+```python
+from topologicpy.Ontology import Ontology
+
+Ontology.SetClass(cell, "top:Room")
+Ontology.SetLabel(cell, "Room 101")
+Ontology.SetCategory(cell, "space")
+
+ttl = Ontology.TTLString(cell)
+print(ttl)
+```
+
 
 ## API Documentation
 API documentation can be found at [https://topologicpy.readthedocs.io](https://topologicpy.readthedocs.io)
