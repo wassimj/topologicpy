@@ -11,6 +11,7 @@ Graph until Executor.TopologicGraph(...) is explicitly requested.
 
 Phase 1:
 - MATCH one node-edge-node pattern
+- ontology-prefixed labels such as top:Room and top:adjacentTo
 - WHERE with AND / OR / parentheses
 - RETURN / RETURN *
 - RETURN DISTINCT
@@ -137,7 +138,7 @@ class Executor:
         return working_graph
 
     @staticmethod
-    def TopologicGraph(graph, silent: bool = False):
+    def TopologicGraph(graph, ontology: bool = True, silent: bool = False):
         """
         Returns a TopologicPy Graph from a TopologicPy graph or GQL working graph.
 
@@ -166,7 +167,7 @@ class Executor:
         vertices = graph.get("vertices", []) or []
         edges = graph.get("edges", []) or []
 
-        updated = Executor._graph_by_vertices_edges(vertices, edges, silent=silent)
+        updated = Executor._graph_by_vertices_edges(vertices, edges, ontology=ontology, silent=silent)
         if updated is not None:
             graph["topologic_graph"] = updated
             graph["dirty"] = False
@@ -210,6 +211,108 @@ class Executor:
                     pass
                 return text
         return value
+
+    @staticmethod
+    def _ontology_term(value, default_prefix: str = "top"):
+        """Returns a normalised ontology term, e.g. ``top:Room``."""
+        if value is None:
+            return None
+        text = str(value).strip()
+        if text == "":
+            return None
+        if ":" in text:
+            prefix, local = text.split(":", 1)
+            prefix = prefix.strip() or default_prefix
+            local = local.strip()
+            if local == "":
+                return None
+            return f"{prefix}:{local}"
+        return text
+
+    @staticmethod
+    def _ontology_local_name(value):
+        """Returns the local part of an ontology term."""
+        term = Executor._ontology_term(value)
+        if term is None:
+            return None
+        if ":" in term:
+            return term.split(":", 1)[1]
+        return term
+
+    @staticmethod
+    def _ontology_match(candidate, query) -> bool:
+        """Ontology-aware string comparison.
+
+        A query for ``top:Room`` matches ``top:Room`` and also the local label
+        ``Room``. A query for ``Room`` matches ``Room`` and ``top:Room``.
+        """
+        if query is None:
+            return True
+        if candidate is None:
+            return False
+        q = str(query).strip()
+        c = str(candidate).strip()
+        if q == "" or c == "":
+            return False
+        if c == q:
+            return True
+        return str(Executor._ontology_local_name(c)).lower() == str(Executor._ontology_local_name(q)).lower()
+
+    @staticmethod
+    def _ontology_category_from_class(ontology_class, fallback=None):
+        """Best-effort category lookup using Ontology.py, with safe fallback."""
+        if ontology_class is None:
+            return fallback
+        try:
+            from topologicpy.Ontology import Ontology
+            if hasattr(Ontology, "CategoryByClass"):
+                value = Ontology.CategoryByClass(ontology_class, silent=True)
+                if value is not None:
+                    return value
+        except Exception:
+            pass
+        local = Executor._ontology_local_name(ontology_class)
+        if local is None:
+            return fallback
+        low = str(local).lower()
+        if low in ("vertex", "node"):
+            return "node"
+        if low in ("edge", "relationship", "adjacentto", "connectsto", "connects"):
+            return "relationship"
+        if low in ("room", "space", "storey", "building", "site"):
+            return "space"
+        return fallback
+
+    @staticmethod
+    def _ontology_annotate_pattern_data(data: Dict[str, Any], pattern, is_edge: bool = False):
+        """Adds ontology keys to pattern-created topology dictionaries."""
+        label = getattr(pattern, "label", None)
+        if label is None:
+            return data
+
+        label_text = str(label).strip()
+        if label_text == "":
+            return data
+
+        if ":" in label_text:
+            ontology_class = Executor._ontology_term(label_text)
+            local = Executor._ontology_local_name(ontology_class)
+            data["ontology_class"] = ontology_class
+            # Keep a clean local label for legacy graph/GQL workflows.
+            data["label"] = local
+            category = Executor._ontology_category_from_class(
+                ontology_class,
+                fallback=("relationship" if is_edge else "node")
+            )
+            if category is not None:
+                data.setdefault("category", category)
+        else:
+            data["label"] = label_text
+            data.setdefault("ontology_class", f"top:{label_text}" if label_text[:1].isupper() else None)
+            if data.get("ontology_class") is None:
+                data.pop("ontology_class", None)
+
+        return data
 
     @staticmethod
     def _vertex_by_index_map(graph):
@@ -619,7 +722,15 @@ class Executor:
         if label:
             vertex_label = Executor._dictionary_value(vertex, "label")
             vertex_category = Executor._dictionary_value(vertex, "category")
-            if vertex_label != label and vertex_category != label:
+            vertex_ontology_class = Executor._dictionary_value(vertex, "ontology_class")
+            vertex_type = Executor._dictionary_value(vertex, "type")
+
+            if not (
+                Executor._ontology_match(vertex_label, label)
+                or Executor._ontology_match(vertex_category, label)
+                or Executor._ontology_match(vertex_ontology_class, label)
+                or Executor._ontology_match(vertex_type, label)
+            ):
                 return False
 
         properties = getattr(node_pattern, "properties", None) or {}
@@ -638,7 +749,15 @@ class Executor:
         if label:
             edge_label = Executor._dictionary_value(edge, "label")
             edge_category = Executor._dictionary_value(edge, "category")
-            if edge_label != label and edge_category != label:
+            edge_ontology_class = Executor._dictionary_value(edge, "ontology_class")
+            edge_type = Executor._dictionary_value(edge, "type")
+
+            if not (
+                Executor._ontology_match(edge_label, label)
+                or Executor._ontology_match(edge_category, label)
+                or Executor._ontology_match(edge_ontology_class, label)
+                or Executor._ontology_match(edge_type, label)
+            ):
                 return False
 
         properties = getattr(edge_pattern, "properties", None) or {}
@@ -716,9 +835,8 @@ class Executor:
     @staticmethod
     def _apply_pattern_dictionary(topology, pattern):
         data = {}
-        label = getattr(pattern, "label", None)
-        if label:
-            data["label"] = label
+        is_edge = isinstance(pattern, object) and pattern.__class__.__name__.lower().startswith("edge")
+        data = Executor._ontology_annotate_pattern_data(data, pattern, is_edge=is_edge)
         properties = getattr(pattern, "properties", None) or {}
         data.update(properties)
         Executor._set_dictionary_values(topology, data)
@@ -1012,20 +1130,25 @@ class Executor:
         return Topology.SetDictionary(topology, d)
 
     @staticmethod
-    def _graph_by_vertices_edges(vertices, edges, silent: bool = False):
+    def _graph_by_vertices_edges(vertices, edges, ontology: bool = True, silent: bool = False):
         from topologicpy.Graph import Graph
 
         try:
-            result = Graph.ByVerticesEdges(vertices, edges, silent=silent)
+            result = Graph.ByVerticesEdges(vertices, edges, ontology=ontology, silent=silent)
             return result
         except TypeError:
             try:
-                return Graph.ByVerticesEdges(vertices, edges)
-            except Exception as e:
-                if not silent:
-                    print("GQL.Executor._graph_by_vertices_edges - Warning: Could not rebuild graph.")
-                    print("Error:", e)
-                return None
+                result = Graph.ByVerticesEdges(vertices, edges, silent=silent)
+            except TypeError:
+                result = Graph.ByVerticesEdges(vertices, edges)
+            if ontology and result is not None:
+                try:
+                    from topologicpy.Graph import Graph as _Graph
+                    if hasattr(_Graph, "AnnotateOntology"):
+                        result = _Graph.AnnotateOntology(result, silent=True)
+                except Exception:
+                    pass
+            return result
         except Exception as e:
             if not silent:
                 print("GQL.Executor._graph_by_vertices_edges - Warning: Could not rebuild graph.")

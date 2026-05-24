@@ -265,6 +265,184 @@ class GraphDB:
         database = graphdb.get("database") if isinstance(graphdb, dict) else None
         return manager, database
 
+
+    # -------------------------------------------------------------------------
+    # Ontology helpers
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def OntologyKeys() -> list:
+        """
+        Returns the canonical ontology-related dictionary keys that should be
+        preserved by graph database backends.
+
+        Returns
+        -------
+        list
+            The list of ontology-related dictionary keys.
+        """
+        return [
+            "ontology_class",
+            "ontology_uri",
+            "uri",
+            "label",
+            "category",
+            "ifc_class",
+            "ifc_guid",
+            "source",
+            "derived_from",
+            "generated_by",
+        ]
+
+    @staticmethod
+    def _ontology_option(graphdb, key: str, defaultValue=None):
+        """Returns an ontology option from graphdb['options']."""
+        try:
+            options = GraphDB.Options(graphdb, silent=True) or {}
+            return options.get(key, defaultValue)
+        except Exception:
+            return defaultValue
+
+    @staticmethod
+    def _annotate_graph_ontology(graph,
+                                 ontology: bool = True,
+                                 graphClass: str = "top:Graph",
+                                 vertexClass: str = "top:Node",
+                                 edgeClass: str = "top:Relationship",
+                                 generatedBy: str = "GraphDB.UpsertGraph",
+                                 silent: bool = True):
+        """
+        Annotates a TopologicPy graph, its vertices, and its edges using the
+        TopologicPy ontology.
+
+        This method is intentionally defensive and non-breaking. If Ontology.py
+        is unavailable, or if a backend returns an object that cannot be inspected
+        as a TopologicPy graph, the input graph is returned unchanged.
+        """
+        if ontology is False or graph is None:
+            return graph
+
+        try:
+            from topologicpy.Topology import Topology
+            from topologicpy.Graph import Graph
+            from topologicpy.Ontology import Ontology
+            from topologicpy.Dictionary import Dictionary
+        except Exception:
+            return graph
+
+        try:
+            if not Topology.IsInstance(graph, "graph"):
+                return graph
+        except Exception:
+            return graph
+
+        def _class(obj):
+            try:
+                return Ontology.Class(obj, defaultValue=None)
+            except Exception:
+                return None
+
+        def _category(obj):
+            try:
+                return Ontology.Category(obj, defaultValue=None)
+            except Exception:
+                return None
+
+        def _value(obj, key, defaultValue=None):
+            try:
+                d = Topology.Dictionary(obj)
+                return Dictionary.ValueAtKey(d, key, defaultValue)
+            except Exception:
+                return defaultValue
+
+        try:
+            if _class(graph) is None:
+                graph = Ontology.Annotate(graph,
+                                          ontologyClass=graphClass,
+                                          category="graph",
+                                          generatedBy=generatedBy,
+                                          silent=True)
+            else:
+                graph = Ontology.Annotate(graph,
+                                          generatedBy=generatedBy,
+                                          silent=True)
+        except Exception:
+            pass
+
+        try:
+            vertices = Graph.Vertices(graph) or []
+        except Exception:
+            vertices = []
+
+        for i, vertex in enumerate(vertices):
+            try:
+                if _class(vertex) is None:
+                    vertex = Ontology.Annotate(vertex,
+                                               ontologyClass=vertexClass,
+                                               category="node",
+                                               silent=True)
+                elif _category(vertex) is None:
+                    vertex = Ontology.SetCategory(vertex, "node", silent=True)
+
+                # Preserve a graph-database-friendly id if none exists.
+                if _value(vertex, "id", None) is None:
+                    d = Topology.Dictionary(vertex)
+                    d = Dictionary.SetValueAtKey(d, "id", i)
+                    Topology.SetDictionary(vertex, d, silent=True)
+            except Exception:
+                continue
+
+        try:
+            edges = Graph.Edges(graph, vertices) or []
+        except TypeError:
+            try:
+                edges = Graph.Edges(graph) or []
+            except Exception:
+                edges = []
+        except Exception:
+            edges = []
+
+        for edge in edges:
+            try:
+                if _class(edge) is None:
+                    edge = Ontology.Annotate(edge,
+                                             ontologyClass=edgeClass,
+                                             category="relationship",
+                                             silent=True)
+                elif _category(edge) is None:
+                    edge = Ontology.SetCategory(edge, "relationship", silent=True)
+            except Exception:
+                continue
+
+        return graph
+
+    @staticmethod
+    def _annotate_graph_result(result,
+                               ontology: bool = True,
+                               graphClass: str = "top:Graph",
+                               vertexClass: str = "top:Node",
+                               edgeClass: str = "top:Relationship",
+                               generatedBy: str = "GraphDB.GraphByID",
+                               silent: bool = True):
+        """Annotates a returned graph or list of graphs, if possible."""
+        if ontology is False or result is None:
+            return result
+        if isinstance(result, list):
+            return [GraphDB._annotate_graph_ontology(g,
+                                                     ontology=ontology,
+                                                     graphClass=graphClass,
+                                                     vertexClass=vertexClass,
+                                                     edgeClass=edgeClass,
+                                                     generatedBy=generatedBy,
+                                                     silent=silent) for g in result]
+        return GraphDB._annotate_graph_ontology(result,
+                                                ontology=ontology,
+                                                graphClass=graphClass,
+                                                vertexClass=vertexClass,
+                                                edgeClass=edgeClass,
+                                                generatedBy=generatedBy,
+                                                silent=silent)
+
     @staticmethod
     def _call(graphdb, methodName: str, *args, silent: bool = False, **kwargs):
         """
@@ -310,6 +488,18 @@ class GraphDB:
                 merged = dict(options)
                 merged.update(call_kwargs)
                 call_kwargs = merged
+
+                # GraphDB-level ontology options are consumed by GraphDB before
+                # dispatch. Do not pass them to backend-specific UpsertGraph
+                # methods unless those methods explicitly add their own support.
+                for _key in [
+                    "ontology",
+                    "ontologyGraphClass",
+                    "ontologyVertexClass",
+                    "ontologyEdgeClass",
+                    "ontologyGeneratedBy",
+                ]:
+                    call_kwargs.pop(_key, None)
 
             # Neo4j database context.
             if provider == "neo4j" and "database" not in call_kwargs:
@@ -368,6 +558,7 @@ class GraphDB:
         nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
         nodeFeaturesKeys=None,
         tolerance=0.0001,
+        ontology: bool = True,
         silent=False):
         """
         Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs
@@ -452,6 +643,7 @@ class GraphDB:
             nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
             nodeFeaturesKeys=nodeFeaturesKeys,
             tolerance=tolerance,
+            ontology=ontology,
             silent=silent,
         )
 
@@ -471,6 +663,10 @@ class GraphDB:
                     bidirectional: bool = True,
                     overwrite: bool = False,
                     mantissa: int = 6,
+                    ontology: bool = True,
+                    ontologyGraphClass: str = "top:Graph",
+                    ontologyVertexClass: str = "top:Node",
+                    ontologyEdgeClass: str = "top:Relationship",
                     silent: bool = False) -> str:
         """
         Upserts a TopologicPy graph into the selected backend.
@@ -507,6 +703,15 @@ class GraphDB:
             If set to True, an existing graph with the same graph id is overwritten where supported by the backend. Default is False.
         mantissa : int , optional
             The number of decimal places to use when extracting coordinate data. Default is 6.
+        ontology : bool , optional
+            If True, annotates the graph, vertices, and edges with TopologicPy ontology
+            classes before upserting. Default is True.
+        ontologyGraphClass : str , optional
+            The ontology class assigned to the graph if none exists. Default is "top:Graph".
+        ontologyVertexClass : str , optional
+            The ontology class assigned to vertices if none exists. Default is "top:Node".
+        ontologyEdgeClass : str , optional
+            The ontology class assigned to edges if none exists. Default is "top:Relationship".
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -515,6 +720,26 @@ class GraphDB:
         str
             The graph id used, or None on error.
         """
+
+        # GraphDB is the safest place to enforce ontology adherence before
+        # the graph is persisted by a backend. This remains non-breaking because
+        # it only adds dictionary keys when they are missing.
+        try:
+            options = GraphDB.Options(graphdb, silent=True) or {}
+            ontology = bool(options.get("ontology", ontology))
+            ontologyGraphClass = options.get("ontologyGraphClass", ontologyGraphClass)
+            ontologyVertexClass = options.get("ontologyVertexClass", ontologyVertexClass)
+            ontologyEdgeClass = options.get("ontologyEdgeClass", ontologyEdgeClass)
+        except Exception:
+            pass
+
+        graph = GraphDB._annotate_graph_ontology(graph,
+                                                 ontology=ontology,
+                                                 graphClass=ontologyGraphClass,
+                                                 vertexClass=ontologyVertexClass,
+                                                 edgeClass=ontologyEdgeClass,
+                                                 generatedBy="GraphDB.UpsertGraph",
+                                                 silent=True)
 
         kwargs = {
             "graph": graph,
@@ -531,13 +756,14 @@ class GraphDB:
             "bidirectional": bidirectional,
             "overwrite": overwrite,
             "mantissa": mantissa,
+            "ontology": ontology,
             "silent": silent
         }
 
         return GraphDB._call(graphdb, "UpsertGraph", **kwargs)
 
     @staticmethod
-    def GraphByID(graphdb, graphID: str, silent: bool = False):
+    def GraphByID(graphdb, graphID: str, ontology: bool = True, silent: bool = False):
         """
         Constructs a TopologicPy graph from the selected backend using a graph id.
 
@@ -547,6 +773,9 @@ class GraphDB:
             The graph database descriptor.
         graphID : str
             The graph id to retrieve.
+        ontology : bool , optional
+            If True, annotates the returned graph with TopologicPy ontology classes
+            where missing. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -555,10 +784,14 @@ class GraphDB:
         topologic_core.Graph
             A TopologicPy graph, or None on error.
         """
-        return GraphDB._call(graphdb, "GraphByID", graphID, silent=silent)
+        result = GraphDB._call(graphdb, "GraphByID", graphID, silent=silent)
+        return GraphDB._annotate_graph_result(result,
+                                              ontology=ontology,
+                                              generatedBy="GraphDB.GraphByID",
+                                              silent=True)
 
     @staticmethod
-    def GraphsByQuery(graphdb, query: str, parameters: dict = None, silent: bool = False):
+    def GraphsByQuery(graphdb, query: str, parameters: dict = None, ontology: bool = True, silent: bool = False):
         """
         Executes a backend query and returns matching TopologicPy graphs.
 
@@ -570,6 +803,9 @@ class GraphDB:
             The backend query string. For Kuzu and Neo4j this is Cypher.
         parameters : dict , optional
             Query parameters. Default is None.
+        ontology : bool , optional
+            If True, annotates the returned graphs with TopologicPy ontology classes
+            where missing. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -578,7 +814,11 @@ class GraphDB:
         list
             A list of TopologicPy graphs, or None on error.
         """
-        return GraphDB._call(graphdb, "GraphsByQuery", query, parameters=parameters, silent=silent)
+        result = GraphDB._call(graphdb, "GraphsByQuery", query, parameters=parameters, silent=silent)
+        return GraphDB._annotate_graph_result(result,
+                                              ontology=ontology,
+                                              generatedBy="GraphDB.GraphsByQuery",
+                                              silent=True)
 
     @staticmethod
     def DeleteGraph(graphdb, graphID: str, silent: bool = False) -> bool:
@@ -656,6 +896,72 @@ class GraphDB:
             A list of graph metadata dictionaries, or None on error.
         """
         return GraphDB._call(graphdb, "ListGraphs", where=where, limit=limit, offset=offset, silent=silent)
+
+
+    # -------------------------------------------------------------------------
+    # Ontology-oriented query helpers
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def VerticesByOntologyClass(graphdb, ontologyClass: str, limit: int = 100, silent: bool = False):
+        """
+        Returns backend rows for vertices/nodes with the requested ontology class.
+
+        Parameters
+        ----------
+        graphdb : dict
+            The graph database descriptor.
+        ontologyClass : str
+            The requested ontology class, for example "top:Room".
+        limit : int , optional
+            Maximum number of rows to return. Default is 100.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            Backend-normalized rows, or None on error.
+        """
+        provider = GraphDB.Provider(graphdb, silent=silent)
+        if provider == "neo4j":
+            query = "MATCH (n) WHERE n.ontology_class = $ontologyClass RETURN n LIMIT $limit"
+            return GraphDB.Query(graphdb, query, parameters={"ontologyClass": ontologyClass, "limit": int(limit)}, silent=silent)
+        if provider == "kuzu":
+            query = "MATCH (n) WHERE n.ontology_class = $ontologyClass RETURN n LIMIT $limit"
+            return GraphDB.Query(graphdb, query, parameters={"ontologyClass": ontologyClass, "limit": int(limit)}, silent=silent)
+        if not silent:
+            print(f"GraphDB.VerticesByOntologyClass - Error: Unsupported provider '{provider}'. Returning None.")
+        return None
+
+    @staticmethod
+    def VerticesByCategory(graphdb, category: str, limit: int = 100, silent: bool = False):
+        """
+        Returns backend rows for vertices/nodes with the requested category.
+
+        Parameters
+        ----------
+        graphdb : dict
+            The graph database descriptor.
+        category : str
+            The requested category, for example "space", "node", or "element".
+        limit : int , optional
+            Maximum number of rows to return. Default is 100.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            Backend-normalized rows, or None on error.
+        """
+        provider = GraphDB.Provider(graphdb, silent=silent)
+        if provider in ("neo4j", "kuzu"):
+            query = "MATCH (n) WHERE n.category = $category RETURN n LIMIT $limit"
+            return GraphDB.Query(graphdb, query, parameters={"category": category, "limit": int(limit)}, silent=silent)
+        if not silent:
+            print(f"GraphDB.VerticesByCategory - Error: Unsupported provider '{provider}'. Returning None.")
+        return None
 
     # -------------------------------------------------------------------------
     # Corpus analytics for GraphRAG

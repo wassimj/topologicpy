@@ -274,137 +274,6 @@ class Graph:
     # value: compiled routing graph dict
     _compiled_routing_registry = {}
 
-
-    @staticmethod
-    def _OntologyAnnotateGraph(graph,
-                               graphClass: str = "top:Graph",
-                               generatedBy: str = None,
-                               source: str = None,
-                               ontology: bool = True,
-                               silent: bool = True):
-        """
-        Annotates a TopologicPy graph, its vertices, and its edges with the
-        TopologicPy ontology.
-
-        This is an internal helper. It deliberately fails silently so ontology
-        support never prevents graph construction.
-        """
-
-        if ontology is False:
-            return graph
-
-        if graph is None:
-            return None
-
-        try:
-            from topologicpy.Topology import Topology
-            from topologicpy.Dictionary import Dictionary
-            from topologicpy.Ontology import Ontology
-        except Exception:
-            return graph
-
-        try:
-            if not Topology.IsInstance(graph, "Graph"):
-                return graph
-        except Exception:
-            return graph
-
-        def _value(topology, key, default=None):
-            try:
-                return Dictionary.ValueAtKey(Topology.Dictionary(topology), key, default)
-            except TypeError:
-                try:
-                    value = Dictionary.ValueAtKey(Topology.Dictionary(topology), key)
-                    return default if value is None else value
-                except Exception:
-                    return default
-            except Exception:
-                return default
-
-        def _annotate(topology, ontologyClass, category=None, label=None, generatedByValue=None):
-            if topology is None:
-                return topology
-            try:
-                if _value(topology, "ontology_class", None) is None:
-                    topology = Ontology.Annotate(
-                        topology,
-                        ontologyClass=ontologyClass,
-                        category=category,
-                        label=label,
-                        source=source,
-                        generatedBy=generatedByValue,
-                        silent=True,
-                    )
-                else:
-                    if generatedByValue is not None and _value(topology, "generated_by", None) is None:
-                        topology = Ontology.Annotate(topology, generatedBy=generatedByValue, silent=True)
-                    if source is not None and _value(topology, "source", None) is None:
-                        topology = Ontology.Annotate(topology, source=source, silent=True)
-                return topology
-            except Exception:
-                return topology
-
-        graph = _annotate(graph, graphClass or "top:Graph", category="graph", generatedByValue=generatedBy)
-
-        try:
-            vertices = Graph.Vertices(graph) or []
-        except Exception:
-            vertices = []
-
-        try:
-            for i, vertex in enumerate(vertices):
-                vertex = _annotate(vertex, "top:Node", category="node")
-
-                # Ensure each node has a stable local index when possible.
-                try:
-                    if _value(vertex, "index", None) is None:
-                        d = Topology.Dictionary(vertex)
-                        d = Dictionary.SetValueAtKey(d, "index", i)
-                        Topology.SetDictionary(vertex, d, silent=True)
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        try:
-            edges = Graph.Edges(graph, vertices) or []
-        except TypeError:
-            try:
-                edges = Graph.Edges(graph) or []
-            except Exception:
-                edges = []
-        except Exception:
-            edges = []
-
-        try:
-            from topologicpy.Edge import Edge
-            from topologicpy.Vertex import Vertex
-
-            for edge in edges:
-                edge = _annotate(edge, "top:Relationship", category="relationship")
-
-                # Ensure each relationship has src and dst indices when possible.
-                try:
-                    d = Topology.Dictionary(edge)
-                    src = _value(edge, "src", None)
-                    dst = _value(edge, "dst", None)
-                    if src is None or dst is None:
-                        sv = Edge.StartVertex(edge)
-                        ev = Edge.EndVertex(edge)
-                        svi = Vertex.Index(sv, vertices)
-                        evi = Vertex.Index(ev, vertices)
-                        if svi is not None and src is None:
-                            d = Dictionary.SetValueAtKey(d, "src", svi)
-                        if evi is not None and dst is None:
-                            d = Dictionary.SetValueAtKey(d, "dst", evi)
-                        Topology.SetDictionary(edge, d, silent=True)
-                except Exception:
-                    pass
-        except Exception:
-            pass
-
-        return graph
-
     @staticmethod
     def AABB(graph, silent: bool = False, pad: float = 0.0):
         """
@@ -4186,7 +4055,7 @@ class Graph:
         return bridge_edges
 
     @staticmethod
-    def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, ontology: bool = True, silent: bool = False):
+    def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, silent: bool = False):
         """
         Returns graphs according to the input path. This method assumes the CSV files follow an adjacency matrix schema.
 
@@ -4212,10 +4081,10 @@ class Graph:
         
         # Convert DataFrame to a nested list
         adjacency_matrix = adjacency_matrix_df.values.tolist()
-        return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix, dictionaries=dictionaries, ontology=ontology, silent=silent)
+        return Graph.ByAdjacencyMatrix(adjacencyMatrix=adjacency_matrix, dictionaries=dictionaries, silent=silent)
 
     @staticmethod
-    def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, edgeKeyFwd="weightFwd", edgeKeyBwd="weightBwd", xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, ontology: bool = True, silent=False):
+    def ByAdjacencyMatrix(adjacencyMatrix, dictionaries = None, edgeKeyFwd="weightFwd", edgeKeyBwd="weightBwd", xMin=-0.5, yMin=-0.5, zMin=-0.5, xMax=0.5, yMax=0.5, zMax=0.5, silent=False):
         """
         Returns graphs according to the input folder path. This method assumes the CSV files follow pytorch geometric schema.
 
@@ -4508,7 +4377,7 @@ class Graph:
                 nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
                 nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
                 nodeFeaturesKeys=None,
-                tolerance=0.0001, ontology: bool = True, silent=False):
+                tolerance=0.0001, silent=False):
         """
         Imports TopologicPy graphs from a folder containing CSV files (graphs.csv, nodes.csv, edges.csv)
         exported using the *new* TopologicPy CSV format for PyTorch Geometric-style datasets.
@@ -4808,7 +4677,7 @@ class Graph:
                 _warn(f"Graph.ByCSVPath - Warning: Graph id {gid} has no vertices. Skipping.")
                 continue
 
-            g = Graph.ByVerticesEdges(verts, eds, index=False, ontology=ontology)
+            g = Graph.ByVerticesEdges(verts, eds, index=False)
             if not Topology.IsInstance(g, "Graph"):
                 _warn(f"Graph.ByCSVPath - Warning: Failed to create graph id {gid}. Skipping.")
                 continue
@@ -4835,14 +4704,6 @@ class Graph:
                     # fallback if Graph.SetDictionary not available in your build
                     g = Topology.SetDictionary(g, d)
 
-            g = Graph._OntologyAnnotateGraph(
-                g,
-                graphClass="top:Graph",
-                generatedBy="Graph.ByCSVPath",
-                source=path,
-                ontology=ontology,
-                silent=True,
-            )
             graphs.append(g)
 
         return graphs
@@ -7917,7 +7778,6 @@ class Graph:
         edgesKey: str = "edges",
         mantissa: int = 6,
         tolerance: float = 0.0001,
-        ontology: bool = True,
         silent: bool = False,
     ):
         """
@@ -8097,10 +7957,10 @@ class Graph:
 
         # --- Assemble graph ---
         try:
-            g = Graph.ByVerticesEdges(vertex_list, edge_list, index=False, ontology=ontology)
+            g = Graph.ByVerticesEdges(vertex_list, edge_list, index=False)
         except Exception:
             # Fallback: create empty, then add
-            g = Graph.ByVerticesEdges([], [], index=False, ontology=ontology)
+            g = Graph.ByVerticesEdges([], [], index=False)
             for v in vertex_list:
                 try:
                     g = Graph.AddVertex(g, v)
@@ -8117,13 +7977,7 @@ class Graph:
         if g_dict:
             g = Topology.SetDictionary(g, g_dict)
 
-        return Graph._OntologyAnnotateGraph(
-            g,
-            graphClass="top:Graph",
-            generatedBy="Graph.ByJSONDictionary",
-            ontology=ontology,
-            silent=True,
-        )
+        return g
 
     @staticmethod
     def ByJSONFile(file,
@@ -8289,7 +8143,7 @@ class Graph:
                                       silent=silent)
 
     @staticmethod
-    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001, ontology: bool = True):
+    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001):
         """
         Creates a graph from the input mesh data
 
@@ -8348,7 +8202,7 @@ class Graph:
                     if len(Dictionary.Keys(d)) > 0:
                         g_e = Topology.SetDictionary(g_e, d)
             g_edges.append(g_e)
-        return Graph.ByVerticesEdges(g_vertices, g_edges, index=False, ontology=ontology)
+        return Graph.ByVerticesEdges(g_vertices, g_edges, index=False)
 
     @staticmethod
     def ByNetworkXGraph(nxGraph, vertexID="id", xKey="x", yKey="y", zKey="z", coordsKey='coords', randomRange=(-1, 1), mantissa: int = 6, tolerance: float = 0.0001):
@@ -9939,7 +9793,7 @@ class Graph:
         else:
             return None
 
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False, ontology=ontology), graphClass="top:SpatialGraph", generatedBy="Graph.ByTopology", ontology=ontology, silent=True)
+        return Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False)
     
     @staticmethod
     def ByTriples(triples,
@@ -10238,7 +10092,7 @@ class Graph:
         return graph
 
     @staticmethod
-    def ByVerticesEdges(vertices, edges, index: bool = True, ontology: bool = True, silent: bool = False):
+    def ByVerticesEdges(vertices, edges, index: bool = True):
         """
         Creates a graph from the input list of vertices and edges.
 
@@ -10287,14 +10141,7 @@ class Graph:
                 
 
         # return topologic.Graph.ByVerticesEdges(vertices, edges) # H to Core
-        graph = Core.Graph.ByVerticesEdges(vertices, edges)
-        return Graph._OntologyAnnotateGraph(
-            graph,
-            graphClass="top:Graph",
-            generatedBy="Graph.ByVerticesEdges",
-            ontology=ontology,
-            silent=True,
-        )
+        return Core.Graph.ByVerticesEdges(vertices, edges)
 
     @staticmethod
     def CardinalityReport(graph,
@@ -11114,7 +10961,7 @@ class Graph:
                 }
 
     @staticmethod
-    def Complement(graph, tolerance=0.0001, ontology: bool = True, silent=False):
+    def Complement(graph, tolerance=0.0001, silent=False):
         """
         Creates the complement graph of the input graph.
         See https://en.wikipedia.org/wiki/Complement_graph
@@ -11272,10 +11119,10 @@ class Graph:
 
                 complement_edges.append(edge)
 
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(adjusted_vertices, complement_edges, index=False, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.Complement", ontology=ontology, silent=True)
+        return Graph.ByVerticesEdges(adjusted_vertices, complement_edges, index=False)
 
     @staticmethod
-    def Complete(graph, ontology: bool = True, silent: bool = False):
+    def Complete(graph, silent: bool = False):
         """
         Completes the graph by conneting unconnected vertices.
 
@@ -11326,9 +11173,9 @@ class Graph:
                     new_edges.append(new_edge)
         
         graph_dict = Topology.Dictionary(graph)
-        new_graph = Graph.ByVerticesEdges(vertices, new_edges, index=False, ontology=ontology)
+        new_graph = Graph.ByVerticesEdges(vertices, new_edges, index=False)
         new_graph = Topology.SetDictionary(new_graph, graph_dict)
-        return Graph._OntologyAnnotateGraph(new_graph, graphClass="top:Graph", generatedBy="Graph.Complete", ontology=ontology, silent=True)
+        return new_graph
 
     @staticmethod
     def ConnectedComponents(graph, key: str = "component", tolerance: float = 0.0001, silent: bool = False):
@@ -18770,7 +18617,7 @@ class Graph:
                     predicateKey: str = "predicate",
                     objectKey: str = "id",
                     baseIRI: str = "https://topologic.app/resource/",
-                    ontologyIRI: str = "http://w3id.org/topologicpy#",
+                    ontologyIRI: str = "https://topologic.app/ontology/",
                     includeMetadata: bool = True,
                     format: str = "turtle",
                     overwrite: bool = True,
@@ -18794,7 +18641,7 @@ class Graph:
         baseIRI : str , optional
             Base IRI for generated resources. Default is "https://topologic.app/resource/".
         ontologyIRI : str , optional
-            Base IRI for generated predicates/classes. Default is "http://w3id.org/topologicpy#".
+            Base IRI for generated predicates/classes. Default is "https://topologic.app/ontology/".
         includeMetadata : bool , optional
             If True, vertex labels, types, and selected dictionary values are exported.
             Default is True.
@@ -19783,7 +19630,7 @@ class Graph:
     
     @staticmethod
     def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False,
-                tolerance=0.0001, ontology: bool = True, silent=False):
+                tolerance=0.0001, silent=False):
 
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
@@ -19940,7 +19787,7 @@ class Graph:
 
                     lg_edges.append(lg_e)
 
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(lg_vertices, lg_edges, index=False, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.LineGraph", ontology=ontology, silent=True)
+        return Graph.ByVerticesEdges(lg_vertices, lg_edges, index=False)
 
     @staticmethod
     def LocalClusteringCoefficient(graph, vertices: list = None, key: str = "lcc", mantissa: int = 6, tolerance: float = 0.0001):
@@ -20803,7 +20650,7 @@ class Graph:
         return graph.MinimumDelta()
     
     @staticmethod
-    def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001, ontology: bool = True):
+    def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001):
         """
         Returns the minimum spanning tree of the input graph.
         See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
@@ -21045,10 +20892,10 @@ class Graph:
             if len(mst_edges) == len(indexed_vertices) - 1:
                 break
 
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(indexed_vertices, mst_edges, index=False, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.MinimumSpanningTree", ontology=ontology, silent=True)
+        return Graph.ByVerticesEdges(indexed_vertices, mst_edges, index=False)
 
     @staticmethod
-    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, numWorkers=None, ontology: bool = True):
+    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, numWorkers=None):
         """
         Creates a 2D navigation graph.
 
@@ -21153,8 +21000,8 @@ class Graph:
             final_edges += holes_edges
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
-            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True, ontology=ontology)
-            return Graph._OntologyAnnotateGraph(g, graphClass="top:VisibilityGraph", generatedBy="Graph.VisibilityGraph", ontology=ontology, silent=True)
+            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True)
+            return g
         return None
 
     @staticmethod
@@ -22752,7 +22599,7 @@ class Graph:
                   predicateKey: str = "predicate",
                   objectKey: str = "id",
                   baseIRI: str = "https://topologic.app/resource/",
-                  ontologyIRI: str = "http://w3id.org/topologicpy#",
+                  ontologyIRI: str = "https://topologic.app/ontology/",
                   includeMetadata: bool = True,
                   format: str = "turtle",
                   tolerance: float = 0.0001,
@@ -22773,7 +22620,7 @@ class Graph:
         baseIRI : str , optional
             Base IRI for generated resources. Default is "https://topologic.app/resource/".
         ontologyIRI : str , optional
-            Base IRI for generated predicates/classes. Default is "http://w3id.org/topologicpy#".
+            Base IRI for generated predicates/classes. Default is "https://topologic.app/ontology/".
         includeMetadata : bool , optional
             If True, vertex labels, types, and selected dictionary values are exported.
             Default is True.
@@ -22891,7 +22738,7 @@ class Graph:
             return None
 
         baseIRI = str(baseIRI or "https://topologic.app/resource/")
-        ontologyIRI = str(ontologyIRI or "http://w3id.org/topologicpy#")
+        ontologyIRI = str(ontologyIRI or "https://topologic.app/ontology/")
 
         if not baseIRI.endswith(("/", "#")):
             baseIRI += "/"
@@ -25093,7 +24940,7 @@ class Graph:
         return graph.Topology()
     
     @staticmethod
-    def Tree(graph, vertex=None, tolerance=0.0001, ontology: bool = True):
+    def Tree(graph, vertex=None, tolerance=0.0001):
         """
         Creates a tree graph version of the input graph rooted at the input vertex.
 
@@ -25168,7 +25015,7 @@ class Graph:
             vertex = Graph.NearestVertex(graph, vertex)
         dictionary = {'vertices':[], 'edges':[]}
         dictionary = buildTree(graph, dictionary, vertex, None, tolerance=tolerance)
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'], index=True, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.Tree", ontology=ontology, silent=True)
+        return Graph.ByVerticesEdges(dictionary['vertices'], dictionary['edges'], index=True)
     
     @staticmethod
     def Triples(graph,
@@ -25508,7 +25355,7 @@ class Graph:
         return vertices
 
     @staticmethod
-    def VisibilityGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001, ontology: bool = True):
+    def VisibilityGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001):
         """
         Creates a 2D visibility graph.
 
@@ -25591,8 +25438,8 @@ class Graph:
                         final_edges.append(edge)
         if len(final_edges) > 0:
             final_vertices = Topology.Vertices(Cluster.ByTopologies(final_edges))
-            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True, ontology=ontology)
-            return Graph._OntologyAnnotateGraph(g, graphClass="top:CirculationGraph", generatedBy="Graph.NavigationGraph", ontology=ontology, silent=True)
+            g = Graph.ByVerticesEdges(final_vertices, final_edges, index=True)
+            return g
         return None
 
     @staticmethod

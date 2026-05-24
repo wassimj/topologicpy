@@ -183,6 +183,58 @@ def _safe_local_id(raw: Any, fallback: Any) -> str:
     return raw
 
 
+def _ontology_scalar(props: Dict[str, Any], key: str, default: Any = "") -> Any:
+    """Returns a scalar ontology/provenance value from a props dictionary."""
+    try:
+        value = props.get(key, default)
+    except Exception:
+        value = default
+    if value is None:
+        return default
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    return str(value)
+
+
+def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str = "Kuzu.UpsertGraph", silent: bool = True):
+    """
+    Best-effort ontology annotation before graph persistence.
+
+    This intentionally fails silently so Kuzu remains usable without Ontology.py.
+    """
+    if not ontology:
+        return graph
+    try:
+        from topologicpy.Graph import Graph
+        if hasattr(Graph, "_AnnotateOntology"):
+            return Graph._AnnotateOntology(graph, graphClass="top:Graph", generatedBy=generatedBy, silent=silent)
+    except Exception:
+        pass
+    try:
+        from topologicpy.Ontology import Ontology
+        graph = Ontology.Annotate(graph, ontologyClass="top:Graph", category="graph", generatedBy=generatedBy, silent=True)
+        try:
+            from topologicpy.Graph import Graph
+            vertices = Graph.Vertices(graph) or []
+            edges = Graph.Edges(graph) or []
+        except Exception:
+            vertices = []
+            edges = []
+        for v in vertices:
+            try:
+                Ontology.Annotate(v, ontologyClass="top:Node", category="node", silent=True)
+            except Exception:
+                pass
+        for e in edges:
+            try:
+                Ontology.Annotate(e, ontologyClass="top:Relationship", category="relationship", silent=True)
+            except Exception:
+                pass
+    except Exception:
+        pass
+    return graph
+
+
 class _DBCache:
     def __init__(self):
         self._lock = threading.RLock()
@@ -276,6 +328,12 @@ class _Mgr:
             CREATE NODE TABLE IF NOT EXISTS Graph(
                 id STRING,
                 label STRING,
+                ontology_class STRING,
+                category STRING,
+                uri STRING,
+                source STRING,
+                generated_by STRING,
+                derived_from STRING,
                 num_nodes INT64,
                 num_edges INT64,
                 props STRING,
@@ -293,6 +351,14 @@ class _Mgr:
                 id STRING,
                 graph_id STRING,
                 label STRING,
+                ontology_class STRING,
+                category STRING,
+                uri STRING,
+                source STRING,
+                generated_by STRING,
+                derived_from STRING,
+                ifc_class STRING,
+                ifc_guid STRING,
                 x DOUBLE,
                 y DOUBLE,
                 z DOUBLE,
@@ -304,7 +370,20 @@ class _Mgr:
         )
         self.exec(
             """
-            CREATE REL TABLE IF NOT EXISTS Edge(FROM Vertex TO Vertex, graph_id STRING, label STRING, props STRING);
+            CREATE REL TABLE IF NOT EXISTS Edge(
+                FROM Vertex TO Vertex,
+                graph_id STRING,
+                label STRING,
+                ontology_class STRING,
+                category STRING,
+                uri STRING,
+                source STRING,
+                generated_by STRING,
+                derived_from STRING,
+                ifc_class STRING,
+                ifc_guid STRING,
+                props STRING
+            );
             """,
             write=True,
         )
@@ -387,17 +466,21 @@ class Kuzu:
                     mantissa: int = 6,
                     tolerance: float = 0.0001,
                     database: str = None,
+                    ontology: bool = True,
                     silent: bool = False) -> str:
         """
         Upserts a TopologicPy graph into Kuzu using the canonical GraphDB schema.
 
         The signature mirrors Neo4j.UpsertGraph. The database argument is accepted
         for GraphDB compatibility and ignored because Kuzu database identity is the
-        manager/path.
+        manager/path. If ontology is True, the graph, vertices, and edges are
+        annotated with TopologicPy ontology metadata before persistence.
         """
         try:
             from topologicpy.Graph import Graph
             from topologicpy.Topology import Topology
+
+            graph = _annotate_graph_for_ontology(graph, ontology=ontology, generatedBy="Kuzu.UpsertGraph", silent=True)
 
             manager.ensure_schema()
 
@@ -443,11 +526,29 @@ class Kuzu:
             edge_count = len(edges) * (2 if bidirectional else 1)
             manager.exec(
                 """
-                CREATE (g:Graph {id:$id, label:$label, num_nodes:$num_nodes, num_edges:$num_edges, props:$props});
+                CREATE (g:Graph {
+                    id:$id,
+                    label:$label,
+                    ontology_class:$ontology_class,
+                    category:$category,
+                    uri:$uri,
+                    source:$source,
+                    generated_by:$generated_by,
+                    derived_from:$derived_from,
+                    num_nodes:$num_nodes,
+                    num_edges:$num_edges,
+                    props:$props
+                });
                 """,
                 {
                     "id": gid,
                     "label": g_label,
+                    "ontology_class": _ontology_scalar(g_props, "ontology_class", "top:Graph"),
+                    "category": _ontology_scalar(g_props, "category", "graph"),
+                    "uri": _ontology_scalar(g_props, "uri", ""),
+                    "source": _ontology_scalar(g_props, "source", ""),
+                    "generated_by": _ontology_scalar(g_props, "generated_by", "Kuzu.UpsertGraph"),
+                    "derived_from": _ontology_scalar(g_props, "derived_from", ""),
                     "num_nodes": int(len(verts)),
                     "num_edges": int(edge_count),
                     "props": _json_dumps(g_props),
@@ -492,12 +593,36 @@ class Kuzu:
                 vertex_ids.append(storage_id)
                 manager.exec(
                     """
-                    CREATE (v:Vertex {id:$id, graph_id:$gid, label:$label, props:$props, x:$x, y:$y, z:$z});
+                    CREATE (v:Vertex {
+                        id:$id,
+                        graph_id:$gid,
+                        label:$label,
+                        ontology_class:$ontology_class,
+                        category:$category,
+                        uri:$uri,
+                        source:$source,
+                        generated_by:$generated_by,
+                        derived_from:$derived_from,
+                        ifc_class:$ifc_class,
+                        ifc_guid:$ifc_guid,
+                        props:$props,
+                        x:$x,
+                        y:$y,
+                        z:$z
+                    });
                     """,
                     {
                         "id": storage_id,
                         "gid": gid,
                         "label": label,
+                        "ontology_class": _ontology_scalar(props, "ontology_class", "top:Node"),
+                        "category": _ontology_scalar(props, "category", "node"),
+                        "uri": _ontology_scalar(props, "uri", ""),
+                        "source": _ontology_scalar(props, "source", ""),
+                        "generated_by": _ontology_scalar(props, "generated_by", ""),
+                        "derived_from": _ontology_scalar(props, "derived_from", ""),
+                        "ifc_class": _ontology_scalar(props, "ifc_class", ""),
+                        "ifc_guid": _ontology_scalar(props, "ifc_guid", ""),
                         "x": float(x),
                         "y": float(y),
                         "z": float(z),
@@ -539,13 +664,33 @@ class Kuzu:
                     manager.exec(
                         """
                         MATCH (a:Vertex {id:$a}), (b:Vertex {id:$b})
-                        CREATE (a)-[:Edge {graph_id:$gid, label:$label, props:$props}]->(b);
+                        CREATE (a)-[:Edge {
+                            graph_id:$gid,
+                            label:$label,
+                            ontology_class:$ontology_class,
+                            category:$category,
+                            uri:$uri,
+                            source:$source,
+                            generated_by:$generated_by,
+                            derived_from:$derived_from,
+                            ifc_class:$ifc_class,
+                            ifc_guid:$ifc_guid,
+                            props:$props
+                        }]->(b);
                         """,
                         {
                             "a": start_id,
                             "b": end_id,
                             "gid": gid,
                             "label": label,
+                            "ontology_class": _ontology_scalar(props, "ontology_class", "top:Relationship"),
+                            "category": _ontology_scalar(props, "category", "relationship"),
+                            "uri": _ontology_scalar(props, "uri", ""),
+                            "source": _ontology_scalar(props, "source", ""),
+                            "generated_by": _ontology_scalar(props, "generated_by", ""),
+                            "derived_from": _ontology_scalar(props, "derived_from", ""),
+                            "ifc_class": _ontology_scalar(props, "ifc_class", ""),
+                            "ifc_guid": _ontology_scalar(props, "ifc_guid", ""),
                             "props": _json_dumps(props),
                         },
                         write=True,
@@ -557,7 +702,7 @@ class Kuzu:
             return None
 
     @staticmethod
-    def GraphByID(manager, graphID: str, silent: bool = False):
+    def GraphByID(manager, graphID: str, ontology: bool = True, silent: bool = False):
         try:
             from topologicpy.Graph import Graph
             from topologicpy.Dictionary import Dictionary
@@ -571,7 +716,11 @@ class Kuzu:
                 """
                 MATCH (g:Graph)
                 WHERE g.id = $id
-                RETURN g.id AS id, g.label AS label, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props;
+                RETURN g.id AS id, g.label AS label,
+                       g.ontology_class AS ontology_class, g.category AS category,
+                       g.uri AS uri, g.source AS source,
+                       g.generated_by AS generated_by, g.derived_from AS derived_from,
+                       g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props;
                 """,
                 {"id": graphID},
                 write=False,
@@ -583,13 +732,21 @@ class Kuzu:
             g_props = dict(_json_loads(g_row.get("props"), {}))
             if "label" not in g_props and g_row.get("label") is not None:
                 g_props["label"] = g_row.get("label")
+            for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from"]:
+                if _k not in g_props and g_row.get(_k) not in [None, ""]:
+                    g_props[_k] = g_row.get(_k)
             g_dict = Dictionary.ByPythonDictionary(g_props)
 
             rows_v = manager.exec(
                 """
                 MATCH (v:Vertex)
                 WHERE v.graph_id = $gid
-                RETURN v.id AS id, v.label AS label, v.x AS x, v.y AS y, v.z AS z, v.props AS props
+                RETURN v.id AS id, v.label AS label,
+                       v.ontology_class AS ontology_class, v.category AS category,
+                       v.uri AS uri, v.source AS source,
+                       v.generated_by AS generated_by, v.derived_from AS derived_from,
+                       v.ifc_class AS ifc_class, v.ifc_guid AS ifc_guid,
+                       v.x AS x, v.y AS y, v.z AS z, v.props AS props
                 ORDER BY v.id;
                 """,
                 {"gid": graphID},
@@ -609,6 +766,9 @@ class Kuzu:
                     props["id"] = row.get("id")
                 if "label" not in props:
                     props["label"] = row.get("label") or ""
+                for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
+                    if _k not in props and row.get(_k) not in [None, ""]:
+                        props[_k] = row.get(_k)
                 d = Dictionary.ByPythonDictionary(props)
                 v = Topology.SetDictionary(v, d)
                 id_to_vertex[row.get("id")] = v
@@ -618,7 +778,12 @@ class Kuzu:
                 """
                 MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
                 WHERE a.graph_id = $gid AND b.graph_id = $gid
-                RETURN a.id AS a_id, b.id AS b_id, r.label AS label, r.props AS props;
+                RETURN a.id AS a_id, b.id AS b_id, r.label AS label,
+                       r.ontology_class AS ontology_class, r.category AS category,
+                       r.uri AS uri, r.source AS source,
+                       r.generated_by AS generated_by, r.derived_from AS derived_from,
+                       r.ifc_class AS ifc_class, r.ifc_guid AS ifc_guid,
+                       r.props AS props;
                 """,
                 {"gid": graphID},
                 write=False,
@@ -642,14 +807,23 @@ class Kuzu:
                 props = dict(_json_loads(row.get("props"), {}))
                 if "label" not in props:
                     props["label"] = row.get("label") or "connect"
+                for _k in ["ontology_class", "category", "uri", "source", "generated_by", "derived_from", "ifc_class", "ifc_guid"]:
+                    if _k not in props and row.get(_k) not in [None, ""]:
+                        props[_k] = row.get(_k)
                 d = Dictionary.ByPythonDictionary(props)
                 e = Topology.SetDictionary(e, d)
                 edges_out.append(e)
 
             if not vertices:
                 return None
-            g = Graph.ByVerticesEdges(vertices, edges_out)
+            g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
             g = Topology.SetDictionary(g, g_dict)
+            if ontology:
+                try:
+                    from topologicpy.Graph import Graph as _Graph
+                    g = _Graph._OntologyAnnotateGraph(g, graphClass="top:Graph", generatedBy="Kuzu.GraphByID", ontology=True, silent=True)
+                except Exception:
+                    pass
             return g
         except Exception as e:
             if not silent:
@@ -657,7 +831,7 @@ class Kuzu:
             return None
 
     @staticmethod
-    def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, silent: bool = False):
+    def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, ontology: bool = True, silent: bool = False):
         """
         Executes a Kuzu query and returns a list containing a TopologicPy graph
         constructed from the returned rows. If rows return graph_id/gid only,
@@ -690,7 +864,7 @@ class Kuzu:
             if gids and not has_graph_objects:
                 graphs = []
                 for gid in gids:
-                    g = Kuzu.GraphByID(manager, str(gid), silent=silent)
+                    g = Kuzu.GraphByID(manager, str(gid), ontology=ontology, silent=silent)
                     if g is not None:
                         graphs.append(g)
                 return graphs
@@ -794,7 +968,13 @@ class Kuzu:
 
             if not vertices:
                 return []
-            return [Graph.ByVerticesEdges(vertices, edges_out)]
+            g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
+            if ontology:
+                try:
+                    g = Graph._OntologyAnnotateGraph(g, graphClass="top:Graph", generatedBy="Kuzu.GraphsByQuery", ontology=True, silent=True)
+                except Exception:
+                    pass
+            return [g]
         except Exception as e:
             if not silent:
                 print(f"Kuzu.GraphsByQuery - Error: {e}. Returning None.")
@@ -876,6 +1056,18 @@ class Kuzu:
             if where.get("label"):
                 conds.append("g.label CONTAINS $label_sub")
                 params["label_sub"] = str(where["label"])
+            if where.get("ontology_class"):
+                conds.append("g.ontology_class = $ontology_class")
+                params["ontology_class"] = str(where["ontology_class"])
+            if where.get("category"):
+                conds.append("g.category = $category")
+                params["category"] = str(where["category"])
+            if where.get("source"):
+                conds.append("g.source CONTAINS $source")
+                params["source"] = str(where["source"])
+            if where.get("generated_by"):
+                conds.append("g.generated_by = $generated_by")
+                params["generated_by"] = str(where["generated_by"])
             if where.get("props_contains"):
                 conds.append("g.props CONTAINS $props_sub")
                 params["props_sub"] = str(where["props_contains"])
@@ -901,7 +1093,11 @@ class Kuzu:
                 f"""
                 MATCH (g:Graph)
                 {where_clause}
-                RETURN g.id AS id, g.label AS label, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
+                RETURN g.id AS id, g.label AS label,
+                       g.ontology_class AS ontology_class, g.category AS category,
+                       g.uri AS uri, g.source AS source,
+                       g.generated_by AS generated_by, g.derived_from AS derived_from,
+                       g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
                 ORDER BY g.id
                 SKIP $offset LIMIT $limit;
                 """,
@@ -929,7 +1125,7 @@ class Kuzu:
         nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
         nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
         nodeFeaturesKeys=None,
-        tolerance=0.0001, silent=False):
+        tolerance=0.0001, ontology: bool = True, silent=False):
         try:
             from topologicpy.Graph import Graph
             manager.ensure_schema()
@@ -946,7 +1142,7 @@ class Kuzu:
                 nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
                 nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
                 nodeFeaturesKeys=nodeFeaturesKeys,
-                tolerance=tolerance, silent=silent)
+                tolerance=tolerance, ontology=ontology, silent=silent)
             if graphs is None:
                 if not silent:
                     print("Kuzu.ByCSVPath - Error: Graph.ByCSVPath returned None. Returning None.")
@@ -965,6 +1161,7 @@ class Kuzu:
                     overwrite=True,
                     bidirectional=True,
                     tolerance=tolerance,
+                    ontology=ontology,
                     silent=silent,
                 )
                 if gid is not None:
@@ -1151,3 +1348,155 @@ class Kuzu:
             if not silent:
                 print(f"Kuzu.FindBestExampleForLabel - Error: {e}. Returning None.")
             return None
+
+
+    # -------------------------------------------------------------------------
+    # Ontology-oriented queries
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def OntologyClasses(manager, elementType: str = "all", silent: bool = False):
+        """
+        Returns ontology class counts for graphs, vertices, edges, or all stored elements.
+
+        Parameters
+        ----------
+        manager : Kuzu manager
+            The input Kuzu manager.
+        elementType : str , optional
+            One of "graph", "vertex", "edge", or "all". Default is "all".
+        silent : bool , optional
+            If True, suppresses warning/error messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of dictionaries with element_type, ontology_class, and count.
+        """
+        try:
+            manager.ensure_schema()
+            elementType = str(elementType or "all").strip().lower()
+            rows = []
+            if elementType in ["graph", "graphs", "all"]:
+                rows += manager.exec(
+                    """
+                    MATCH (g:Graph)
+                    WHERE g.ontology_class IS NOT NULL AND g.ontology_class <> ""
+                    RETURN "graph" AS element_type, g.ontology_class AS ontology_class, COUNT(*) AS count
+                    ORDER BY count DESC;
+                    """,
+                    write=False,
+                ) or []
+            if elementType in ["vertex", "vertices", "node", "nodes", "all"]:
+                rows += manager.exec(
+                    """
+                    MATCH (v:Vertex)
+                    WHERE v.ontology_class IS NOT NULL AND v.ontology_class <> ""
+                    RETURN "vertex" AS element_type, v.ontology_class AS ontology_class, COUNT(*) AS count
+                    ORDER BY count DESC;
+                    """,
+                    write=False,
+                ) or []
+            if elementType in ["edge", "edges", "relationship", "relationships", "all"]:
+                rows += manager.exec(
+                    """
+                    MATCH (:Vertex)-[r:Edge]->(:Vertex)
+                    WHERE r.ontology_class IS NOT NULL AND r.ontology_class <> ""
+                    RETURN "edge" AS element_type, r.ontology_class AS ontology_class, COUNT(*) AS count
+                    ORDER BY count DESC;
+                    """,
+                    write=False,
+                ) or []
+            return rows
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.OntologyClasses - Error: {e}. Returning None.")
+            return None
+
+    @staticmethod
+    def GraphsByOntologyClass(manager, ontologyClass: str, silent: bool = False):
+        """
+        Returns TopologicPy graphs whose stored graph ontology_class matches the input class.
+        """
+        try:
+            ontologyClass = str(ontologyClass or "").strip()
+            if ontologyClass == "":
+                return []
+            rows = manager.exec(
+                """
+                MATCH (g:Graph)
+                WHERE g.ontology_class = $ontology_class
+                RETURN g.id AS graph_id;
+                """,
+                {"ontology_class": ontologyClass},
+                write=False,
+            ) or []
+            graphs = []
+            for row in rows:
+                gid = row.get("graph_id")
+                if gid is None:
+                    continue
+                graph = Kuzu.GraphByID(manager, str(gid), ontology=ontology, silent=silent)
+                if graph is not None:
+                    graphs.append(graph)
+            return graphs
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.GraphsByOntologyClass - Error: {e}. Returning None.")
+            return None
+
+    @staticmethod
+    def VerticesByOntologyClass(manager, ontologyClass: str, graphID: str = None, silent: bool = False):
+        """
+        Returns stored vertex rows matching the input ontology class.
+
+        Parameters
+        ----------
+        manager : Kuzu manager
+            The input Kuzu manager.
+        ontologyClass : str
+            The ontology class, for example "top:Room".
+        graphID : str , optional
+            Optional graph id filter. Default is None.
+        silent : bool , optional
+            If True, suppresses warning/error messages. Default is False.
+
+        Returns
+        -------
+        list
+            A list of vertex row dictionaries. The props value is decoded when possible.
+        """
+        try:
+            ontologyClass = str(ontologyClass or "").strip()
+            if ontologyClass == "":
+                return []
+            params = {"ontology_class": ontologyClass}
+            graph_clause = ""
+            if graphID is not None:
+                params["graph_id"] = str(graphID)
+                graph_clause = "AND v.graph_id = $graph_id"
+            rows = manager.exec(
+                f"""
+                MATCH (v:Vertex)
+                WHERE v.ontology_class = $ontology_class
+                {graph_clause}
+                RETURN v.id AS id, v.graph_id AS graph_id, v.label AS label,
+                       v.ontology_class AS ontology_class, v.category AS category,
+                       v.uri AS uri, v.source AS source,
+                       v.generated_by AS generated_by, v.derived_from AS derived_from,
+                       v.ifc_class AS ifc_class, v.ifc_guid AS ifc_guid,
+                       v.x AS x, v.y AS y, v.z AS z, v.props AS props
+                ORDER BY v.graph_id, v.id;
+                """,
+                params,
+                write=False,
+            ) or []
+            for row in rows:
+                if isinstance(row, dict) and "props" in row:
+                    row["props"] = _json_loads(row.get("props"), {})
+            return rows
+        except Exception as e:
+            if not silent:
+                print(f"Kuzu.VerticesByOntologyClass - Error: {e}. Returning None.")
+            return None
+

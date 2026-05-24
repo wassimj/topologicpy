@@ -204,6 +204,162 @@ class MergingProcess(Process):
 
 class Topology():
     @staticmethod
+    def _OntologyAnnotate(topology,
+                          ontology: bool = False,
+                          ontologyClass: str = None,
+                          category: str = None,
+                          label: str = None,
+                          source: str = None,
+                          derivedFrom: str = None,
+                          generatedBy: str = None,
+                          annotateSubtopologies: bool = False,
+                          silent: bool = True):
+        """
+        Annotates a topology with TopologicPy ontology metadata.
+
+        This is an internal helper used by high-level constructors and importers.
+        It deliberately does nothing unless ontology is True.
+        """
+        if ontology is not True:
+            return topology
+        if topology is None:
+            return None
+        try:
+            from topologicpy.Ontology import Ontology
+            topology = Ontology.Annotate(
+                topology,
+                ontologyClass=ontologyClass,
+                category=category,
+                label=label,
+                source=source,
+                derivedFrom=derivedFrom,
+                generatedBy=generatedBy,
+                inferClass=(ontologyClass is None),
+                silent=True,
+            )
+            if annotateSubtopologies:
+                try:
+                    topology = Ontology.AnnotateSubtopologies(
+                        topology,
+                        vertices=True,
+                        edges=True,
+                        wires=True,
+                        faces=True,
+                        shells=True,
+                        cells=True,
+                        cellComplexes=True,
+                        inferClass=True,
+                        silent=True,
+                    )
+                except Exception:
+                    pass
+            return topology
+        except Exception as e:
+            if not silent:
+                print("Topology._OntologyAnnotate - Warning: Could not annotate topology. Returning input topology.")
+                print("Error:", e)
+            return topology
+
+    @staticmethod
+    def _OntologyAnnotateList(topologies,
+                              ontology: bool = False,
+                              generatedBy: str = None,
+                              source: str = None,
+                              annotateSubtopologies: bool = False,
+                              silent: bool = True):
+        """
+        Annotates a list of topologies with TopologicPy ontology metadata.
+        """
+        if ontology is not True:
+            return topologies
+        if topologies is None:
+            return None
+        if not isinstance(topologies, list):
+            return Topology._OntologyAnnotate(
+                topologies,
+                ontology=ontology,
+                generatedBy=generatedBy,
+                source=source,
+                annotateSubtopologies=annotateSubtopologies,
+                silent=silent,
+            )
+        return [
+            Topology._OntologyAnnotate(
+                t,
+                ontology=ontology,
+                generatedBy=generatedBy,
+                source=source,
+                annotateSubtopologies=annotateSubtopologies,
+                silent=silent,
+            ) for t in topologies
+        ]
+
+    @staticmethod
+    def SetOntology(topology,
+                    ontologyClass: str = None,
+                    category: str = None,
+                    label: str = None,
+                    source: str = None,
+                    derivedFrom: str = None,
+                    generatedBy: str = None,
+                    annotateSubtopologies: bool = False,
+                    silent: bool = False):
+        """
+        Annotates the input topology with TopologicPy ontology metadata.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        ontologyClass : str , optional
+            The ontology class, for example "top:Face", "top:Cell", or "top:Space".
+            If set to None, the class is inferred from the Topologic type. Default is None.
+        category : str , optional
+            The semantic category. Default is None.
+        label : str , optional
+            A human-readable label. Default is None.
+        source : str , optional
+            A source file, URI, or process identifier. Default is None.
+        derivedFrom : str , optional
+            The source entity from which this topology was derived. Default is None.
+        generatedBy : str , optional
+            The method or process that generated the topology. Default is None.
+        annotateSubtopologies : bool , optional
+            If True, vertices, edges, wires, faces, shells, cells, and cell complexes
+            contained by the topology are also annotated. Default is False.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The annotated topology.
+        """
+        return Topology._OntologyAnnotate(
+            topology,
+            ontology=True,
+            ontologyClass=ontologyClass,
+            category=category,
+            label=label,
+            source=source,
+            derivedFrom=derivedFrom,
+            generatedBy=generatedBy,
+            annotateSubtopologies=annotateSubtopologies,
+            silent=silent,
+        )
+
+    @staticmethod
+    def OntologyClass(topology, defaultValue=None):
+        """
+        Returns the ontology class assigned to the input topology.
+        """
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.Class(topology, defaultValue=defaultValue)
+        except Exception:
+            return defaultValue
+
+    @staticmethod
     def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001):
         """
         Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.
@@ -1117,6 +1273,9 @@ class Topology():
             The threshold tilt angle in degrees to determine if a face is vertical, horizontal, or tilted. The tilt angle is measured from the nearest cardinal direction. Default is 10.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        ontology : bool , optional
+            If True, the returned topology is annotated with TopologicPy ontology metadata.
+            Default is False.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -1614,7 +1773,7 @@ class Topology():
         return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Do NOT Use this method directly. Executes the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -2095,7 +2254,7 @@ class Topology():
         return st
     
     # @staticmethod
-    # def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, silent: bool = False):
+    # def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
     #     """
     #     Create a topology by the input lists of vertices, edges, and faces.
 
@@ -2236,7 +2395,7 @@ class Topology():
     #     return return_topology
     
     @staticmethod
-    def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, silent: bool = False):
+    def ByGeometry(vertices=[], edges=[], faces=[], topologyType: str = None, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Create a topology by the input lists of vertices, edges, and faces.
 
@@ -2326,7 +2485,7 @@ class Topology():
                 return None
 
             topVerts[i] = v
-            return v
+            return Topology._OntologyAnnotate(v, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         def _all_vertices():
             result = []
@@ -2334,7 +2493,7 @@ class Topology():
                 v = _vertex_at(i)
                 if v is not None:
                     result.append(v)
-            return result
+            return Topology._OntologyAnnotate(result, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Cached edge construction
@@ -2361,7 +2520,7 @@ class Topology():
             if e is not None:
                 edge_cache[key] = e
 
-            return e
+            return Topology._OntologyAnnotate(e, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         def _edges_from_indices(edge_indices):
             result = []
@@ -2374,7 +2533,7 @@ class Topology():
                 if top_edge is not None:
                     result.append(top_edge)
 
-            return result
+            return Topology._OntologyAnnotate(result, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Helper: build topology from already-created faces
@@ -2411,7 +2570,7 @@ class Topology():
             elif topologyType is None or topologyType == "face":
                 output = Cluster_ByTopologies(topFaces)
 
-            return output
+            return Topology._OntologyAnnotate(output, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Helper: build topology from already-created edges
@@ -2428,7 +2587,7 @@ class Topology():
                     return output
                 return None
 
-            return output
+            return Topology._OntologyAnnotate(output, ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Vertex-only request
@@ -2442,7 +2601,7 @@ class Topology():
             if len(topVertsAll) == 1:
                 return topVertsAll[0]
 
-            return Cluster_ByTopologies(topVertsAll)
+            return Topology._OntologyAnnotate(Cluster_ByTopologies(topVertsAll), ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Edge-only request
@@ -2459,7 +2618,7 @@ class Topology():
             if not topEdges:
                 return None
 
-            return Cluster_ByTopologies(topEdges)
+            return Topology._OntologyAnnotate(Cluster_ByTopologies(topEdges), ontology=ontology, generatedBy="Topology.ByGeometry", annotateSubtopologies=True, silent=True)
 
         # -------------------------------------------------------------------------
         # Wire request from explicit edges
@@ -2573,7 +2732,6 @@ class Topology():
             return None
 
         return Cluster_ByTopologies(topVertsAll)
-
     @staticmethod
     def ByBIMPath(path, guidKey: str = "guid", colorKey: str = "color", typeKey: str = "type",
                         defaultColor: list = [255,255,255,1], defaultType: str = "Structure",
@@ -2815,7 +2973,7 @@ class Topology():
         return final_topologies
     
     @staticmethod
-    def ByBREPFile(file):
+    def ByBREPFile(file, ontology: bool = False, silent: bool = False):
         """
         Imports a topology from a BREP file.
 
@@ -2840,7 +2998,7 @@ class Topology():
         return topology
     
     @staticmethod
-    def ByBREPPath(path):
+    def ByBREPPath(path, ontology: bool = False, silent: bool = False):
         """
         Imports a topology from a BREP file path.
 
@@ -3276,7 +3434,7 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByJSONFile(file, tolerance: float = 0.0001, silent: bool = False):
+    def ByJSONFile(file, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -3306,10 +3464,10 @@ class Topology():
             if not silent:
                 print("Topology.ByJSONFile - Error: Could not load the JSON file: {e}. Returning None.")
             return None
-        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, ontology=ontology, silent=silent)
     
     @staticmethod
-    def ByJSONPath(path, tolerance: float = 0.0001, silent: bool = False):
+    def ByJSONPath(path, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -3340,10 +3498,10 @@ class Topology():
             if not silent:
                 print("Topology.ByJSONPath - Error: Could not load file: {e}. Returning None.")
             return None
-        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, ontology=ontology, silent=silent)
     
     # @staticmethod
-    # def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, silent: bool = False):
+    # def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
     #     """
     #     Imports the topology from a JSON dictionary.
 
@@ -3563,7 +3721,7 @@ class Topology():
     #     return return_topologies
 
     @staticmethod
-    def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, silent: bool = False):
+    def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Imports the topology from a JSON dictionary.
 
@@ -3910,10 +4068,10 @@ class Topology():
                 cluster = Cluster.ByTopologies(topologies)
                 return_topologies.append(cluster)
 
-        return return_topologies
+        return Topology._OntologyAnnotateList(return_topologies, ontology=ontology, generatedBy="Topology.ByJSONDictionary", annotateSubtopologies=True, silent=True)
     
     @staticmethod
-    def ByJSONString(string: str, tolerance: float = 0.0001, silent: bool = False):
+    def ByJSONString(string: str, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Imports the topology from a JSON string.
 
@@ -3942,10 +4100,10 @@ class Topology():
                 calframe = inspect.getouterframes(curframe, 2)
                 print('caller name:', calframe[1][3])
             return None 
-        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, silent=silent)
+        return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, ontology=ontology, silent=silent)
 
     @staticmethod
-    def ByMeshData(dictionary, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def ByMeshData(dictionary, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Create a cluster by the input python dictionary of vertices, edges, faces, and cells.
 
@@ -4064,7 +4222,7 @@ class Topology():
                     top_cell = Topology.SetDictionary(top_cell, d, silent=True)
                 top_cells.append(top_cell)
         
-        return Cluster.ByTopologies(top_verts+top_edges+top_faces+top_cells)
+        return Topology._OntologyAnnotate(Cluster.ByTopologies(top_verts+top_edges+top_faces+top_cells), ontology=ontology, generatedBy="Topology.ByMeshData", annotateSubtopologies=True, silent=True)
 
     @staticmethod
     def ByOBJFile(objFile, mtlFile = None,
@@ -5094,7 +5252,7 @@ class Topology():
         return topologies
 
     @staticmethod
-    def ByBREPString(string):
+    def ByBREPString(string, ontology: bool = False, silent: bool = False):
         """
         Creates a topology from the input brep string
 
@@ -5118,7 +5276,7 @@ class Topology():
         except:
             print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
             returnTopology = None
-        return returnTopology
+        return Topology._OntologyAnnotate(returnTopology, ontology=ontology, generatedBy="Topology.ByBREPString", annotateSubtopologies=True, silent=True)
     
     @staticmethod
     def ByXYZFile(file, frameIdKey="id", vertexIdKey="id"):
@@ -10575,7 +10733,7 @@ class Topology():
     #     return return_topology
 
     @staticmethod
-    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
         """
         Self merges the input topology to return the most logical topology type
         given the input data.
@@ -10610,7 +10768,7 @@ class Topology():
 
         # Non-cluster topologies are already single logical topologies.
         if not Topology.IsInstance(topology, "Cluster"):
-            return topology
+            return Topology._OntologyAnnotate(topology, ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
 
         def _len_items(func, t):
             try:
@@ -10622,7 +10780,7 @@ class Topology():
                 return 0, []
 
         def _vertices(t):
-            return Topology.Vertices(t, silent=True)
+            return Topology._OntologyAnnotate(Topology.Vertices(t, silent=True), ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
 
         # ------------------------------------------------------------------
         # 1. Fastest possible direct-child test.
@@ -10741,7 +10899,7 @@ class Topology():
         except Exception:
             pass
 
-        return return_topology
+        return Topology._OntologyAnnotate(return_topology, ontology=ontology, generatedBy="Topology.SelfMerge", annotateSubtopologies=True, silent=True)
     
     @staticmethod
     def SetDictionary(topology, dictionary, silent=False):

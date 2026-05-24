@@ -50,6 +50,11 @@ CSV assumptions
 - edges.csv contains at least: graph_id, src_id, dst_id, label, optional masks, and feature columns:
     feat_0, feat_1, ...
 
+- Ontology metadata columns are optional and are preserved as metadata, not used as
+  numeric model features unless the user explicitly encodes them as feat_* columns.
+  Recommended metadata columns include:
+    ontology_class, category, uri, ifc_class, ifc_guid, source, derived_from, generated_by.
+
 Notes
 -----
 - This module intentionally avoids auto-install behaviour.
@@ -156,6 +161,19 @@ class _RunConfig:
     edge_dst_header: str = "dst_id"
     edge_label_header: str = "label"
     edge_features_header: str = "feat"
+
+    # ----------------------------
+    # Ontology / semantic metadata
+    # ----------------------------
+    ontology: bool = True
+    ontology_class_header: str = "ontology_class"
+    category_header: str = "category"
+    uri_header: str = "uri"
+    ifc_class_header: str = "ifc_class"
+    ifc_guid_header: str = "ifc_guid"
+    source_header: str = "source"
+    derived_from_header: str = "derived_from"
+    generated_by_header: str = "generated_by"
 
     # masks (optional)
     node_train_mask_header: str = "train_mask"
@@ -404,6 +422,7 @@ if _PYG_IMPORT_ERROR is None:
                       graphLabelType: LabelType = "categorical",
                       nodeLabelType: LabelType = "categorical",
                       edgeLabelType: LabelType = "categorical",
+                      ontology: bool = True,
                       **kwargs) -> "PyG":
             """
             Creates a :class:`~topologicpy.PyG.PyG` instance from a TopologicPy-exported CSV dataset folder.
@@ -440,6 +459,11 @@ if _PYG_IMPORT_ERROR is None:
                 Label type for node-level targets (used when ``level="node"``).
             edgeLabelType : {"categorical", "continuous"}, optional
                 Label type for edge-level targets (used when ``level="edge"``).
+            ontology : bool, optional
+                If True, preserves ontology and semantic metadata columns from
+                ``graphs.csv``, ``nodes.csv``, and ``edges.csv``. These columns are
+                stored as metadata and are not converted into numeric feature tensors.
+                Default is True.
             **kwargs : dict
                 Optional overrides for any field in :class:`~topologicpy.PyG._RunConfig`.
                 Common examples include ``conv``, ``hidden_dims``, ``activation``,
@@ -471,7 +495,8 @@ if _PYG_IMPORT_ERROR is None:
             cfg = _RunConfig(level=level, task=task,
                              graph_label_type=graphLabelType,
                              node_label_type=nodeLabelType,
-                             edge_label_type=edgeLabelType)
+                             edge_label_type=edgeLabelType,
+                             ontology=bool(ontology))
 
             # allow override of any config field via kwargs
             for k, v in kwargs.items():
@@ -505,6 +530,17 @@ if _PYG_IMPORT_ERROR is None:
             self._in_dim: Optional[int] = None
             self._feature_schema: Optional[Dict[str, List[str]]] = None
             self._freeze_num_outputs: bool = False
+
+            # Ontology / semantic metadata is deliberately kept outside numeric
+            # feature tensors. It is keyed by graph index and graph id so that it
+            # can be carried through summaries, predictions, and checkpoints.
+            self.ontology_metadata: Dict[str, object] = {
+                "enabled": bool(config.ontology),
+                "columns": {"graph": [], "node": [], "edge": []},
+                "graphs": {},
+                "nodes": {},
+                "edges": {},
+            }
 
             self._load_csv()
             self._build_data_list()
@@ -630,6 +666,8 @@ if _PYG_IMPORT_ERROR is None:
                 "early_stopping": cfg.early_stopping,
                 "early_stopping_patience": cfg.early_stopping_patience,
                 "device": str(self.device),
+                "ontology": bool(getattr(cfg, "ontology", False)),
+                "ontology_metadata_columns": dict((getattr(self, "ontology_metadata", {}) or {}).get("columns", {})),
                 "num_graphs": len(self.data_list),
                 "num_outputs": int(self._num_outputs),
             }
@@ -721,6 +759,139 @@ if _PYG_IMPORT_ERROR is None:
             )
             return fig
 
+        # ----------------------------
+        # Ontology / semantic metadata
+        # ----------------------------
+        def _ontology_base_columns(self) -> List[str]:
+            """
+            Returns the canonical ontology metadata column names for CSV preservation.
+
+            These are not interpreted as numeric features. They are retained as
+            metadata so predictions and trained checkpoints can be traced back to
+            semantic TopologicPy, IFC, graph database, or RDF entities.
+            """
+            cfg = self.config
+            cols = [
+                getattr(cfg, "ontology_class_header", "ontology_class"),
+                getattr(cfg, "category_header", "category"),
+                getattr(cfg, "uri_header", "uri"),
+                getattr(cfg, "ifc_class_header", "ifc_class"),
+                getattr(cfg, "ifc_guid_header", "ifc_guid"),
+                getattr(cfg, "source_header", "source"),
+                getattr(cfg, "derived_from_header", "derived_from"),
+                getattr(cfg, "generated_by_header", "generated_by"),
+                "label",
+                "name",
+                "description",
+            ]
+            # Preserve order and remove duplicates.
+            return list(dict.fromkeys([c for c in cols if isinstance(c, str) and c.strip()]))
+
+        def _ontology_columns(self, df: pd.DataFrame, entity: str) -> List[str]:
+            """
+            Returns ontology/semantic metadata columns present in the given dataframe.
+
+            Parameters
+            ----------
+            df : pandas.DataFrame
+                The input dataframe.
+            entity : str
+                One of ``"graph"``, ``"node"``, or ``"edge"``.
+            """
+            if df is None or not getattr(self.config, "ontology", True):
+                return []
+
+            cfg = self.config
+            candidate_cols = self._ontology_base_columns()
+
+            if entity == "graph":
+                candidate_cols += [cfg.graph_id_header, cfg.graph_label_header]
+            elif entity == "node":
+                candidate_cols += [cfg.graph_id_header, cfg.node_id_header, cfg.node_label_header]
+            elif entity == "edge":
+                candidate_cols += [cfg.graph_id_header, cfg.edge_src_header, cfg.edge_dst_header, cfg.edge_label_header]
+
+            candidate_cols = list(dict.fromkeys(candidate_cols))
+            return [c for c in candidate_cols if c in df.columns]
+
+        @staticmethod
+        def _clean_metadata_value(value):
+            """
+            Converts numpy/pandas scalar values to serialisable Python values.
+            """
+            try:
+                if pd.isna(value):
+                    return None
+            except Exception:
+                pass
+            if isinstance(value, np.generic):
+                return value.item()
+            return value
+
+        def _row_metadata(self, row, columns: List[str]) -> Dict[str, object]:
+            """
+            Returns a clean metadata dictionary from a pandas row.
+            """
+            meta = {}
+            for col in columns:
+                try:
+                    value = self._clean_metadata_value(row[col])
+                except Exception:
+                    value = None
+                if value is not None:
+                    meta[col] = value
+            return meta
+
+        def _reset_ontology_metadata(self, graph_cols=None, node_cols=None, edge_cols=None):
+            """
+            Resets ontology metadata containers.
+            """
+            self.ontology_metadata = {
+                "enabled": bool(getattr(self.config, "ontology", True)),
+                "columns": {
+                    "graph": list(graph_cols or []),
+                    "node": list(node_cols or []),
+                    "edge": list(edge_cols or []),
+                },
+                "graphs": {},
+                "nodes": {},
+                "edges": {},
+            }
+
+        def OntologyMetadata(self) -> Dict[str, object]:
+            """
+            Returns preserved ontology and semantic metadata for the loaded dataset.
+
+            Returns
+            -------
+            dict
+                A dictionary with ``graphs``, ``nodes``, ``edges`` and ``columns``
+                sections. Metadata is keyed by graph index and graph id where possible.
+            """
+            return copy.deepcopy(getattr(self, "ontology_metadata", {}) or {})
+
+        def MetadataByGraphID(self, graphID) -> Dict[str, object]:
+            """
+            Returns preserved metadata for one graph id.
+
+            Parameters
+            ----------
+            graphID : any
+                The graph id value as stored in ``graphs.csv``.
+
+            Returns
+            -------
+            dict
+                A dictionary containing graph, node, and edge metadata.
+            """
+            md = getattr(self, "ontology_metadata", {}) or {}
+            key = str(graphID)
+            return {
+                "graph": copy.deepcopy((md.get("graphs", {}) or {}).get(key, {})),
+                "nodes": copy.deepcopy((md.get("nodes", {}) or {}).get(key, [])),
+                "edges": copy.deepcopy((md.get("edges", {}) or {}).get(key, [])),
+            }
+
         # ----------------
         # Dataset loading
         # ----------------
@@ -785,6 +956,11 @@ if _PYG_IMPORT_ERROR is None:
             node_feat_cols = self._feature_columns(ndf, cfg.node_features_header)
             edge_feat_cols = self._feature_columns(edf, cfg.edge_features_header)
 
+            graph_meta_cols = self._ontology_columns(gdf, "graph")
+            node_meta_cols = self._ontology_columns(ndf, "node")
+            edge_meta_cols = self._ontology_columns(edf, "edge")
+            self._reset_ontology_metadata(graph_meta_cols, node_meta_cols, edge_meta_cols)
+
             # If a saved feature schema exists (e.g. loaded from a trained checkpoint),
             # enforce it so that node/edge feature dimensions match the trained model.
             if getattr(self, "_feature_schema", None):
@@ -810,7 +986,7 @@ if _PYG_IMPORT_ERROR is None:
                     f"Expected columns starting with '{cfg.node_features_header}_'."
                 )
 
-            for gid in gdf[cfg.graph_id_header].unique():
+            for graph_index, gid in enumerate(gdf[cfg.graph_id_header].unique()):
                 g_row = gdf[gdf[cfg.graph_id_header] == gid]
                 g_nodes = ndf[ndf[cfg.graph_id_header] == gid].sort_values(cfg.node_id_header)
                 g_edges = edf[edf[cfg.graph_id_header] == gid]
@@ -822,6 +998,23 @@ if _PYG_IMPORT_ERROR is None:
                 )
 
                 data = Data(x=x, edge_index=edge_index)
+
+                # Preserve graph identity as a tensor-safe index. Full ontology
+                # metadata is stored externally in self.ontology_metadata to avoid
+                # polluting PyG mini-batches with strings/dictionaries.
+                data.topologicpy_graph_index = torch.tensor([int(graph_index)], dtype=torch.long)
+
+                if getattr(cfg, "ontology", True):
+                    gid_key = str(gid)
+                    graph_meta = self._row_metadata(g_row.iloc[0], graph_meta_cols) if len(g_row) > 0 else {}
+                    node_meta = [self._row_metadata(row, node_meta_cols) for _, row in g_nodes.iterrows()]
+                    edge_meta = [self._row_metadata(row, edge_meta_cols) for _, row in g_edges.iterrows()]
+                    self.ontology_metadata["graphs"][gid_key] = graph_meta
+                    self.ontology_metadata["graphs"][int(graph_index)] = graph_meta
+                    self.ontology_metadata["nodes"][gid_key] = node_meta
+                    self.ontology_metadata["nodes"][int(graph_index)] = node_meta
+                    self.ontology_metadata["edges"][gid_key] = edge_meta
+                    self.ontology_metadata["edges"][int(graph_index)] = edge_meta
 
                 if len(edge_feat_cols) > 0:
                     data.edge_attr = torch.tensor(g_edges[edge_feat_cols].values, dtype=torch.float32)
@@ -1557,6 +1750,15 @@ if _PYG_IMPORT_ERROR is None:
                     "pred": np.array(all_pred),
                     "index": np.array(all_idx)
                 }
+                if getattr(cfg, "ontology", True):
+                    md = getattr(self, "ontology_metadata", {}) or {}
+                    graph_md = md.get("graphs", {}) or {}
+                    selected_metadata = []
+                    if split == "all":
+                        selected_metadata = [copy.deepcopy(graph_md.get(i, {})) for i in range(len(all_pred))]
+                    else:
+                        selected_metadata = [copy.deepcopy(graph_md.get(i, {})) for i in all_idx]
+                    out["metadata"] = selected_metadata
                 if len(all_true) > 0:
                     out["y_true"] = np.array(all_true)
                 if return_probs and len(all_probs) > 0:
@@ -1666,6 +1868,9 @@ if _PYG_IMPORT_ERROR is None:
                                 setattr(d0, emb_key, node_emb.detach().cpu().numpy())
 
                 out = {"pred": preds_per_graph}
+                if getattr(cfg, "ontology", True):
+                    md = getattr(self, "ontology_metadata", {}) or {}
+                    out["metadata"] = [copy.deepcopy((md.get("nodes", {}) or {}).get(i, [])) for i in range(len(preds_per_graph))]
                 if len(true_per_graph) > 0:
                     out["y_true"] = true_per_graph
                 if mask_name is not None:
@@ -1755,6 +1960,9 @@ if _PYG_IMPORT_ERROR is None:
                                 setattr(d0, emb_key, node_emb.detach().cpu().numpy())
 
                 out = {"pred": preds_per_graph}
+                if getattr(cfg, "ontology", True):
+                    md = getattr(self, "ontology_metadata", {}) or {}
+                    out["metadata"] = [copy.deepcopy((md.get("edges", {}) or {}).get(i, [])) for i in range(len(preds_per_graph))]
                 if len(true_per_graph) > 0:
                     out["y_true"] = true_per_graph
                 if mask_name is not None:
@@ -2503,6 +2711,7 @@ if _PYG_IMPORT_ERROR is None:
                     "in_dim": int(self._in_dim) if getattr(self, "_in_dim", None) is not None else int(self.data_list[0].x.shape[1]) if self.data_list else None,
                     "num_outputs": int(self._num_outputs),
                     "feature_schema": self._current_feature_schema() if (self.graph_df is not None and self.nodes_df is not None and self.edges_df is not None) else None,
+                    "ontology_metadata": copy.deepcopy(getattr(self, "ontology_metadata", {}) or {}),
                 }
                 torch.save(payload, path)
             else:
@@ -2571,6 +2780,8 @@ if _PYG_IMPORT_ERROR is None:
                         self._freeze_num_outputs = True
                     if "feature_schema" in obj and isinstance(obj.get("feature_schema"), dict):
                         self._feature_schema = obj.get("feature_schema")
+                    if "ontology_metadata" in obj and isinstance(obj.get("ontology_metadata"), dict):
+                        self.ontology_metadata = copy.deepcopy(obj.get("ontology_metadata") or {})
 
                     # If we already have CSVs loaded (common when doing: ByCSVPath(unseen) -> LoadModel()),
                     # rebuild data_list using the saved schema so tensors match the trained model.
@@ -2596,6 +2807,8 @@ if _PYG_IMPORT_ERROR is None:
                     self._freeze_num_outputs = True
                 if ("feature_schema" in obj) and isinstance(obj.get("feature_schema"), dict):
                     self._feature_schema = obj.get("feature_schema")
+                if ("ontology_metadata" in obj) and isinstance(obj.get("ontology_metadata"), dict):
+                    self.ontology_metadata = copy.deepcopy(obj.get("ontology_metadata") or {})
 
                 # Align already-loaded CSVs to the schema (if any) so prediction tensors match.
                 if self._feature_schema and (self.graph_df is not None) and (self.nodes_df is not None) and (self.edges_df is not None):

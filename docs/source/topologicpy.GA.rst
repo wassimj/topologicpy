@@ -1,5 +1,5 @@
 topologicpy.GA module
-====================
+=====================
 
 .. automodule:: topologicpy.GA
    :members:

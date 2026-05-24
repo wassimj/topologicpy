@@ -350,6 +350,7 @@ class IFCFastTopology:
                          circleSides: int = 24,
                          topologyType: str = None,
                          scale: float = 1.0,
+                         ontology: bool = True,
                          silent: bool = False) -> list:
         """
         Imports IFC product geometry from a path into TopologicPy topologies.
@@ -375,6 +376,8 @@ class IFCFastTopology:
             circleSides=circleSides,
             topologyType=topologyType,
             scale=scale,
+            ontology=ontology,
+            source=path,
             silent=silent,
         )
 
@@ -390,6 +393,7 @@ class IFCFastTopology:
                          circleSides: int = 24,
                          topologyType: str = None,
                          scale: float = 1.0,
+                         ontology: bool = True,
                          silent: bool = False) -> list:
         """
         Imports IFC product geometry into TopologicPy topologies.
@@ -413,6 +417,7 @@ class IFCFastTopology:
                 circleSides=circleSides,
                 topologyType=topologyType,
                 scale=scale,
+                ontology=ontology,
                 silent=silent,
             )
 
@@ -434,6 +439,7 @@ class IFCFastTopology:
             circleSides=circleSides,
             topologyType=topologyType,
             scale=scale,
+            ontology=ontology,
             silent=silent,
         )
 
@@ -444,10 +450,11 @@ class IFCFastTopology:
                        dictionaryMode: str = "basic",
                        circleSides: int = 24,
                        scale: float = 1.0,
+                       ontology: bool = True,
                        silent: bool = False) -> dict:
         entities = IFCFastTopology.Parse(path, silent=silent)
         products = IFCFastTopology.ProductsByEntities(entities, includeTypes, excludeTypes)
-        return IFCFastTopology.MeshDataByProducts(products, entities, dictionaryMode, circleSides, scale, silent=silent)
+        return IFCFastTopology.MeshDataByProducts(products, entities, dictionaryMode, circleSides, scale, ontology=ontology, source=path, silent=silent)
 
     @staticmethod
     def TopologiesByEntities(entities: Dict[int, IFCFastEntity],
@@ -461,6 +468,8 @@ class IFCFastTopology:
                              circleSides: int = 24,
                              topologyType: str = None,
                              scale: float = 1.0,
+                             ontology: bool = True,
+                             source: str = None,
                              silent: bool = False) -> list:
         from topologicpy.Topology import Topology
 
@@ -511,7 +520,7 @@ class IFCFastTopology:
             if clean:
                 topology = IFCFastTopology._clean_topology(topology, epsilon, angTolerance, tolerance, silent)
 
-            d = IFCFastTopology._entity_dictionary(product, dictionaryMode=dictionaryMode, metadataCache=metadata_cache)
+            d = IFCFastTopology._entity_dictionary(product, dictionaryMode=dictionaryMode, metadataCache=metadata_cache, ontology=ontology, source=source, generatedBy='IFCFastTopology.TopologiesByEntities')
             if d is not None:
                 try:
                     topology = Topology.SetDictionary(topology, d, silent=True)
@@ -522,6 +531,16 @@ class IFCFastTopology:
                         pass
                 except Exception:
                     pass
+
+            if ontology:
+                topology = IFCFastTopology._annotate_topology_with_ontology(
+                    topology,
+                    entity=product,
+                    source=source,
+                    generatedBy="IFCFastTopology.TopologiesByEntities",
+                    silent=True,
+                )
+
             topologies.append(topology)
             converted += 1
 
@@ -678,6 +697,8 @@ class IFCFastTopology:
                            dictionaryMode: str = "basic",
                            circleSides: int = 24,
                            scale: float = 1.0,
+                           ontology: bool = True,
+                           source: str = None,
                            silent: bool = False) -> dict:
         vertices, edges, faces, vertex_dictionaries, product_ranges = [], [], [], [], []
         metadata_cache = IFCFastTopology._entity_metadata_cache(entities, dictionaryMode=dictionaryMode)
@@ -685,7 +706,7 @@ class IFCFastTopology:
             mesh = IFCFastTopology.MeshDataByProduct(product, entities, circleSides=circleSides, scale=scale)
             if not mesh or not mesh.get("vertices"):
                 continue
-            d = IFCFastTopology._entity_dictionary(product, dictionaryMode, metadataCache=metadata_cache)
+            d = IFCFastTopology._entity_dictionary(product, dictionaryMode, metadataCache=metadata_cache, ontology=ontology, source=source, generatedBy='IFCFastTopology.MeshDataByProducts')
             v0, e0, f0 = len(vertices), len(edges), len(faces)
             vertices.extend(mesh.get("vertices") or [])
             vertex_dictionaries.extend([d] * len(mesh.get("vertices") or []))
@@ -1195,6 +1216,205 @@ class IFCFastTopology:
     # Helpers
     # ------------------------------------------------------------------
 
+
+    @staticmethod
+    def _ifc_display_class(ifcType):
+        """
+        Returns a canonical IFC class name such as IfcSpace from a parsed IFC
+        entity type such as IFCSPACE.
+        """
+        if ifcType is None:
+            return None
+        s = str(ifcType).strip()
+        if not s:
+            return None
+        if s.upper().startswith("IFC"):
+            return "Ifc" + s[3:].lower().title().replace("_", "")
+        return s
+
+    @staticmethod
+    def _ontology_class_by_ifc_class(ifcClass, defaultValue="top:Element"):
+        """
+        Returns a TopologicPy ontology class from an IFC class.
+
+        This method first delegates to topologicpy.Ontology when available. A
+        local fallback is kept here so IFC import remains robust even if the
+        Ontology class is unavailable during partial installations or tests.
+        """
+        if ifcClass is None:
+            return defaultValue
+
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.ClassByIFCClass(ifcClass, defaultValue=None)
+            if result not in [None, ""]:
+                return result
+        except Exception:
+            pass
+
+        key = str(ifcClass).strip()
+        key_upper = key.upper()
+
+        mapping = {
+            "IFCPROJECT": "top:Project",
+            "IFCSITE": "top:Site",
+            "IFCBUILDING": "top:Building",
+            "IFCBUILDINGSTOREY": "top:Storey",
+            "IFCSPACE": "top:Space",
+            "IFCZONE": "top:Zone",
+
+            "IFCWALL": "top:Wall",
+            "IFCWALLSTANDARDCASE": "top:Wall",
+            "IFCWALLELEMENTEDCASE": "top:Wall",
+            "IFCCURTAINWALL": "top:Wall",
+            "IFCDOOR": "top:Door",
+            "IFCDOORSTANDARDCASE": "top:Door",
+            "IFCWINDOW": "top:Window",
+            "IFCWINDOWSTANDARDCASE": "top:Window",
+            "IFCSLAB": "top:Slab",
+            "IFCSLABSTANDARDCASE": "top:Slab",
+            "IFCSLABELEMENTEDCASE": "top:Slab",
+            "IFCROOF": "top:Roof",
+            "IFCCOLUMN": "top:Column",
+            "IFCCOLUMNSTANDARDCASE": "top:Column",
+            "IFCBEAM": "top:Beam",
+            "IFCBEAMSTANDARDCASE": "top:Beam",
+            "IFCMEMBER": "top:Member",
+            "IFCSTAIR": "top:Stair",
+            "IFCSTAIRFLIGHT": "top:Stair",
+            "IFCRAILING": "top:Railing",
+            "IFCOPENINGELEMENT": "top:Opening",
+            "IFCVIRTUALELEMENT": "top:Element",
+            "IFCFURNISHINGELEMENT": "top:Furniture",
+            "IFCFURNITURE": "top:Furniture",
+            "IFCFLOWTERMINAL": "top:Equipment",
+            "IFCDISTRIBUTIONELEMENT": "top:Equipment",
+            "IFCBUILDINGELEMENTPROXY": "top:Element",
+
+            "IFCRELSPACEBOUNDARY": "top:Interface",
+            "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",
+            "IFCRELSPACEBOUNDARY2NDLEVEL": "top:Interface",
+        }
+
+        return mapping.get(key_upper, defaultValue)
+
+    @staticmethod
+    def _ontology_category_by_class(ontologyClass, defaultValue="element"):
+        """
+        Returns a broad TopologicPy ontology category for an ontology class.
+        """
+        if ontologyClass is None:
+            return defaultValue
+
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.CategoryByClass(ontologyClass, defaultValue=None)
+            if result not in [None, ""]:
+                return result
+        except Exception:
+            pass
+
+        cls = str(ontologyClass).strip()
+
+        if cls in ["top:Project"]:
+            return "project"
+        if cls in ["top:Site"]:
+            return "site"
+        if cls in ["top:Building"]:
+            return "building"
+        if cls in ["top:Storey"]:
+            return "storey"
+        if cls in ["top:Zone", "top:Space", "top:Room", "top:ThermalZone"]:
+            return "space"
+        if cls in ["top:Interface"]:
+            return "interface"
+        if cls in ["top:Graph", "top:SpatialGraph", "top:AdjacencyGraph", "top:VisibilityGraph", "top:CirculationGraph", "top:ConnectivityGraph", "top:KnowledgeGraph"]:
+            return "graph"
+        if cls in ["top:Vertex", "top:Edge", "top:Wire", "top:Face", "top:Shell", "top:Cell", "top:CellComplex", "top:Cluster", "top:Aperture"]:
+            return "topology"
+        return defaultValue
+
+    @staticmethod
+    def _bot_class_by_ontology_class(ontologyClass):
+        """
+        Returns an aligned BOT class when available.
+        """
+        if ontologyClass is None:
+            return None
+
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.BOTClassByClass(ontologyClass, defaultValue=None)
+            if result not in [None, ""]:
+                return result
+        except Exception:
+            pass
+
+        mapping = {
+            "top:Site": "bot:Site",
+            "top:Building": "bot:Building",
+            "top:Storey": "bot:Storey",
+            "top:Zone": "bot:Zone",
+            "top:Space": "bot:Space",
+            "top:Room": "bot:Space",
+            "top:Element": "bot:Element",
+            "top:Wall": "bot:Element",
+            "top:Door": "bot:Element",
+            "top:Window": "bot:Element",
+            "top:Slab": "bot:Element",
+            "top:Roof": "bot:Element",
+            "top:Column": "bot:Element",
+            "top:Beam": "bot:Element",
+            "top:Interface": "bot:Interface",
+        }
+        return mapping.get(str(ontologyClass).strip(), None)
+
+    @staticmethod
+    def _annotate_topology_with_ontology(topology,
+                                         entity=None,
+                                         ifcClass=None,
+                                         ifcGUID=None,
+                                         ifcName=None,
+                                         source=None,
+                                         generatedBy=None,
+                                         silent=True):
+        """
+        Applies Ontology.py annotations to a topology when Ontology.py is
+        available. The method is deliberately fault-tolerant because IFC imports
+        should not fail merely because semantic annotation is unavailable.
+        """
+        if topology is None:
+            return None
+
+        try:
+            from topologicpy.Ontology import Ontology
+
+            if entity is not None:
+                ifcClass = ifcClass or IFCFastTopology._ifc_display_class(getattr(entity, "type", None))
+                ifcGUID = ifcGUID or IFCFastTopology._root_attr(entity, 0)
+                ifcName = ifcName or IFCFastTopology._root_attr(entity, 2)
+
+            topology = Ontology.AnnotateIFC(
+                topology,
+                ifcClass=ifcClass,
+                ifcGUID=ifcGUID,
+                ifcName=ifcName,
+                source=source,
+                silent=silent,
+            )
+
+            if generatedBy is not None:
+                topology = Ontology.Annotate(
+                    topology,
+                    generatedBy=generatedBy,
+                    silent=silent,
+                )
+        except Exception:
+            pass
+
+        return topology
+
+
     @staticmethod
     def _clean_topology(topology, epsilon, angTolerance, tolerance, silent):
         from topologicpy.Topology import Topology
@@ -1612,7 +1832,10 @@ class IFCFastTopology:
     @staticmethod
     def _entity_dictionary(entity: IFCFastEntity,
                            dictionaryMode: str = "basic",
-                           metadataCache: dict = None):
+                           metadataCache: dict = None,
+                           ontology: bool = False,
+                           source: str = None,
+                           generatedBy: str = None):
         """
         Returns a TopologicPy Dictionary for an IFCFastEntity.
 
@@ -1622,7 +1845,7 @@ class IFCFastTopology:
         relationship-derived metadata from metadataCache when supplied.
         """
         mode = (dictionaryMode or "none").strip().lower()
-        if mode in ("none", "off", "false", "no"):
+        if mode in ("none", "off", "false", "no") and not ontology:
             return None
         try:
             from topologicpy.Dictionary import Dictionary
@@ -1651,13 +1874,18 @@ class IFCFastTopology:
 
         ifc_type = str(getattr(entity, "type", "")).strip().upper()
         ifc_type_lower = ifc_type.lower()
+        ifc_class = IFCFastTopology._ifc_display_class(ifc_type)
+        ontology_class = IFCFastTopology._ontology_class_by_ifc_class(ifc_class, defaultValue="top:Element") if ontology else None
+        ontology_category = IFCFastTopology._ontology_category_by_class(ontology_class, defaultValue="element") if ontology else ifc_type_lower
+        bot_class = IFCFastTopology._bot_class_by_ontology_class(ontology_class) if ontology else None
+        ontology_uri = "http://w3id.org/topologicpy#" + str(ontology_class).split(":", 1)[1] if ontology_class and ":" in str(ontology_class) else ""
 
         keys = []
         values = []
 
         _add(keys, values, "IFC_id", getattr(entity, "id", ""))
         _add(keys, values, "IFC_key", f"#{getattr(entity, 'id', '')}")
-        _add(keys, values, "IFC_type", ifc_type_lower)
+        _add(keys, values, "IFC_type", ifc_class or ifc_type_lower)
         _add(keys, values, "IFC_type_upper", ifc_type)
         _add(keys, values, "IFC_global_id", IFCFastTopology._root_attr(entity, 0))
         _add(keys, values, "IFC_name", IFCFastTopology._root_attr(entity, 2))
@@ -1669,7 +1897,18 @@ class IFCFastTopology:
             label = f"{ifc_type_lower}_{getattr(entity, 'id', '')}"
         _add(keys, values, "label", label)
         _add(keys, values, "type", ifc_type_lower)
-        _add(keys, values, "category", ifc_type_lower)
+        _add(keys, values, "category", ontology_category)
+
+        if ontology:
+            _add(keys, values, "ontology_class", ontology_class)
+            _add(keys, values, "ontology_uri", ontology_uri)
+            _add(keys, values, "bot_class", bot_class)
+            _add(keys, values, "ifc_class", ifc_class)
+            _add(keys, values, "ifc_guid", gid)
+            _add(keys, values, "ifc_name", name)
+            _add(keys, values, "source", source)
+            _add(keys, values, "derived_from", f"#{getattr(entity, 'id', '')}")
+            _add(keys, values, "generated_by", generatedBy)
 
         if mode not in ("all", "full"):
             try:
@@ -2110,16 +2349,17 @@ class IFC:
         epsilon: float = 0.01,
         angTolerance: float = 0.1,
         tolerance: float = 0.0001,
+        ontology: bool = True,
         silent: bool = False,
     ) -> list[Any]:
         """Import an IFC file into a list of TopologicPy topologies using the pure-Python STEP-text importer."""
         if isinstance(file, dict):
             return IFCFastTopology.TopologiesByEntities(
                 file, includeTypes=includeTypes, excludeTypes=excludeTypes, dictionaryMode=dictionaryMode,
-                clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+                clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, ontology=ontology, silent=silent)
         return IFCFastTopology.TopologiesByFile(
             file, includeTypes=includeTypes, excludeTypes=excludeTypes, dictionaryMode=dictionaryMode,
-            clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+            clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, ontology=ontology, silent=silent)
 
     @staticmethod
     def TopologiesByPath(path: str,
@@ -2130,6 +2370,7 @@ class IFC:
                   epsilon: float = 0.0001,
                   angTolerance: float = 0.1,
                   tolerance: float = 0.0001,
+                  ontology: bool = True,
                   silent: bool = False) -> list[Any]:
         """Imports the topologies from an IFC file path using the pure-Python STEP-text importer."""
         if not path or not isinstance(path, str) or not os.path.exists(path):
@@ -2138,7 +2379,7 @@ class IFC:
             return None
         return IFCFastTopology.TopologiesByPath(
             path, includeTypes=includeTypes, excludeTypes=excludeTypes, dictionaryMode=dictionaryMode,
-            clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, silent=silent)
+            clean=clean, epsilon=epsilon, angTolerance=angTolerance, tolerance=tolerance, ontology=ontology, silent=silent)
 
     @staticmethod
     def FileByPath(path: str, silent: bool = False):
@@ -2442,6 +2683,8 @@ class IFC:
                             circleSides: int = 24,
                             topologyType: str = None,
                             scale: float = 1.0,
+                            ontology: bool = True,
+                            source: str = None,
                             silent: bool = False):
         """
         Imports IFC product geometry from an already parsed IFC entity dictionary.
@@ -2462,6 +2705,8 @@ class IFC:
             circleSides=circleSides,
             topologyType=topologyType,
             scale=scale,
+            ontology=ontology,
+            source=source,
             silent=silent,
         )
     
@@ -3418,6 +3663,7 @@ class IFC:
                             dictionaryMode: str = "basic",
                             bidirectional: bool = True,
                             tolerance: float = 0.0001,
+                            ontology: bool = True,
                             silent: bool = False):
         """
         Creates a TopologicPy Graph representing space adjacency from an IFC file.
@@ -3508,6 +3754,8 @@ class IFC:
             if not silent:
                 print("IFC.AccessGraph - Error: The importMode parameter must be either 'topology' or 'geometry'. Returning None.")
             return None
+
+        source_file = file if isinstance(file, str) else None
 
         wall_connector_types = {
             "IFCWALL",
@@ -3634,6 +3882,9 @@ class IFC:
                     entity,
                     dictionaryMode=dictionaryMode,
                     metadataCache=metadata_cache,
+                    ontology=ontology,
+                    source=source_file,
+                    generatedBy="IFC.AccessGraph",
                 )
             except Exception:
                 d = None
@@ -3730,54 +3981,56 @@ class IFC:
             connector_gid = _root_attr(connector, 0)
             connector_name = _entity_name(connector)
 
-            return _safe_dictionary_by_keys_values(
-                [
-                    "src",
-                    "dst",
-                    "IFC_type",
-                    "relationship_type",
-                    "predicate",
-                    "edge_role",
-                    "connector_source",
-                    "connector_id",
-                    "connector_key",
-                    "connector_global_id",
-                    "connector_type",
-                    "connector_name",
-                    "space_a",
-                    "space_b",
-                    "space_a_name",
-                    "space_b_name",
-                    "space_a_global_id",
-                    "space_b_global_id",
-                    "space_boundary_ids",
-                    "bidirectional",
-                    "weight",
-                ],
-                [
-                    index_a,
-                    index_b,
-                    "IfcRelSpaceAdjacency",
-                    "IfcRelSpaceAdjacency",
-                    "adjacent_to",
-                    "space_to_space",
-                    source,
-                    connector.id if connector is not None else "",
-                    connector_key or "",
-                    connector_gid if connector_gid not in [None, "", "*"] else "",
-                    _display_type(connector.type) if connector is not None else "",
-                    connector_name if connector_name not in [None, "", "*"] else "",
-                    _entity_key(space_a) or "",
-                    _entity_key(space_b) or "",
-                    _entity_name(space_a) or "",
-                    _entity_name(space_b) or "",
-                    _root_attr(space_a, 0) or "",
-                    _root_attr(space_b, 0) or "",
-                    sorted(list(boundary_ids or [])),
-                    bool(bidirectional),
-                    1.0,
-                ],
-            )
+            keys = [
+                "src",
+                "dst",
+                "IFC_type",
+                "relationship_type",
+                "predicate",
+                "edge_role",
+                "connector_source",
+                "connector_id",
+                "connector_key",
+                "connector_global_id",
+                "connector_type",
+                "connector_name",
+                "space_a",
+                "space_b",
+                "space_a_name",
+                "space_b_name",
+                "space_a_global_id",
+                "space_b_global_id",
+                "space_boundary_ids",
+                "bidirectional",
+                "weight",
+            ]
+            values = [
+                index_a,
+                index_b,
+                "IfcRelSpaceAdjacency",
+                "IfcRelSpaceAdjacency",
+                "adjacent_to",
+                "space_to_space",
+                source,
+                connector.id if connector is not None else "",
+                connector_key or "",
+                connector_gid if connector_gid not in [None, "", "*"] else "",
+                _display_type(connector.type) if connector is not None else "",
+                connector_name if connector_name not in [None, "", "*"] else "",
+                _entity_key(space_a) or "",
+                _entity_key(space_b) or "",
+                _entity_name(space_a) or "",
+                _entity_name(space_b) or "",
+                _root_attr(space_a, 0) or "",
+                _root_attr(space_b, 0) or "",
+                sorted(list(boundary_ids or [])),
+                bool(bidirectional),
+                1.0,
+            ]
+            if ontology:
+                keys.extend(["ontology_class", "category", "generated_by"])
+                values.extend(["top:Relationship", "relationship", "IFC.AccessGraph"])
+            return _safe_dictionary_by_keys_values(keys, values)
 
         def _routed_edge_dictionary(src_index,
                                     dst_index,
@@ -3789,56 +4042,58 @@ class IFC:
             connector_gid = _root_attr(connector, 0) if connector is not None else None
             connecting_gid = _root_attr(connecting_entity, 0) if connecting_entity is not None else None
 
-            return _safe_dictionary_by_keys_values(
-                [
-                    "src",
-                    "dst",
-                    "IFC_type",
-                    "relationship_type",
-                    "predicate",
-                    "edge_role",
-                    "connector_source",
-                    "space_id",
-                    "space_key",
-                    "space_global_id",
-                    "space_name",
-                    "connecting_element_id",
-                    "connecting_element_key",
-                    "connecting_element_global_id",
-                    "connecting_element_type",
-                    "connector_id",
-                    "connector_key",
-                    "connector_global_id",
-                    "connector_type",
-                    "space_boundary_ids",
-                    "bidirectional",
-                    "weight",
-                ],
-                [
-                    src_index,
-                    dst_index,
-                    "IfcRelSpaceBoundaryAdjacency",
-                    "IfcRelSpaceBoundaryAdjacency",
-                    "connects_to",
-                    "space_to_connecting_element",
-                    source,
-                    space_entity.id if space_entity is not None else "",
-                    _entity_key(space_entity) or "",
-                    _root_attr(space_entity, 0) or "",
-                    _entity_name(space_entity) or "",
-                    connecting_entity.id if connecting_entity is not None else "",
-                    _entity_key(connecting_entity) or "",
-                    connecting_gid if connecting_gid not in [None, "", "*"] else "",
-                    _display_type(connecting_entity.type) if connecting_entity is not None else "",
-                    connector.id if connector is not None else "",
-                    _entity_key(connector) or "",
-                    connector_gid if connector_gid not in [None, "", "*"] else "",
-                    _display_type(connector.type) if connector is not None else "",
-                    sorted(list(boundary_ids or [])),
-                    bool(bidirectional),
-                    1.0,
-                ],
-            )
+            keys = [
+                "src",
+                "dst",
+                "IFC_type",
+                "relationship_type",
+                "predicate",
+                "edge_role",
+                "connector_source",
+                "space_id",
+                "space_key",
+                "space_global_id",
+                "space_name",
+                "connecting_element_id",
+                "connecting_element_key",
+                "connecting_element_global_id",
+                "connecting_element_type",
+                "connector_id",
+                "connector_key",
+                "connector_global_id",
+                "connector_type",
+                "space_boundary_ids",
+                "bidirectional",
+                "weight",
+            ]
+            values = [
+                src_index,
+                dst_index,
+                "IfcRelSpaceBoundaryAdjacency",
+                "IfcRelSpaceBoundaryAdjacency",
+                "connects_to",
+                "space_to_connecting_element",
+                source,
+                space_entity.id if space_entity is not None else "",
+                _entity_key(space_entity) or "",
+                _root_attr(space_entity, 0) or "",
+                _entity_name(space_entity) or "",
+                connecting_entity.id if connecting_entity is not None else "",
+                _entity_key(connecting_entity) or "",
+                connecting_gid if connecting_gid not in [None, "", "*"] else "",
+                _display_type(connecting_entity.type) if connecting_entity is not None else "",
+                connector.id if connector is not None else "",
+                _entity_key(connector) or "",
+                connector_gid if connector_gid not in [None, "", "*"] else "",
+                _display_type(connector.type) if connector is not None else "",
+                sorted(list(boundary_ids or [])),
+                bool(bidirectional),
+                1.0,
+            ]
+            if ontology:
+                keys.extend(["ontology_class", "category", "generated_by"])
+                values.extend(["top:Relationship", "relationship", "IFC.AccessGraph"])
+            return _safe_dictionary_by_keys_values(keys, values)
 
         def _bbox_centre_by_fast_mesh(entity):
             if entity is None:
@@ -5097,13 +5352,29 @@ class IFC:
         return IFCFastTopology.SummaryByPath(path, silent=silent)
 
     @staticmethod
-    def MeshDataByPath(path: str, includeTypes: list = [], excludeTypes: list = [], dictionaryMode: str = "basic", silent: bool = False) -> dict:
+    def MeshDataByPath(path: str,
+                       includeTypes: list = [],
+                       excludeTypes: list = [],
+                       dictionaryMode: str = "basic",
+                       circleSides: int = 24,
+                       scale: float = 1.0,
+                       ontology: bool = True,
+                       silent: bool = False) -> dict:
         """Returns extracted mesh data using the pure-Python parser."""
         if not path or not isinstance(path, str) or not os.path.exists(path):
             if not silent:
                 print("IFC.MeshDataByPath - Error: the input path parameter is not a valid path. Returning None.")
             return None
-        return IFCFastTopology.MeshDataByPath(path, includeTypes=includeTypes, excludeTypes=excludeTypes, dictionaryMode=dictionaryMode, silent=silent)
+        return IFCFastTopology.MeshDataByPath(
+            path,
+            includeTypes=includeTypes,
+            excludeTypes=excludeTypes,
+            dictionaryMode=dictionaryMode,
+            circleSides=circleSides,
+            scale=scale,
+            ontology=ontology,
+            silent=silent,
+        )
 
     @staticmethod
     def _entities_from_input(file, silent: bool = False):

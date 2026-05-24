@@ -136,133 +136,6 @@ def _python_dictionary(dictionary: Any) -> Dict[str, Any]:
         return {}
 
 
-def _ontology_class_value(props: Dict[str, Any], default: str = None) -> Any:
-    if not isinstance(props, dict):
-        return default
-    for key in ("ontology_class", "class", "rdf_type"):
-        value = props.get(key, None)
-        if value not in (None, ""):
-            return value
-    return default
-
-
-def _ontology_uri_value(props: Dict[str, Any], default: str = None) -> Any:
-    if not isinstance(props, dict):
-        return default
-    for key in ("uri", "ontology_uri"):
-        value = props.get(key, None)
-        if value not in (None, ""):
-            return value
-    return default
-
-
-def _ontology_category_value(props: Dict[str, Any], default: str = None) -> Any:
-    if not isinstance(props, dict):
-        return default
-    value = props.get("category", None)
-    if value not in (None, ""):
-        return value
-    return default
-
-
-def _annotate_graph_for_ontology(graph, graphClass: str = "top:Graph", graphCategory: str = "graph", generatedBy: str = None, silent: bool = True):
-    """Best-effort ontology annotation for a TopologicPy graph and its members."""
-    if graph is None:
-        return graph
-    try:
-        from topologicpy.Graph import Graph
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-        try:
-            from topologicpy.Ontology import Ontology
-        except Exception:
-            Ontology = None
-
-        def _dict(t):
-            try:
-                return Topology.Dictionary(t)
-            except Exception:
-                return None
-
-        def _value(d, key, default=None):
-            try:
-                return Dictionary.ValueAtKey(d, key, default)
-            except TypeError:
-                try:
-                    v = Dictionary.ValueAtKey(d, key)
-                    return default if v is None else v
-                except Exception:
-                    return default
-            except Exception:
-                return default
-
-        def _set(t, key, value):
-            if t is None or key is None or value is None:
-                return t
-            d = _dict(t)
-            try:
-                d = Dictionary.SetValueAtKey(d, key, value)
-            except Exception:
-                try:
-                    d = Dictionary.ByKeyValue(key, value)
-                except Exception:
-                    return t
-            try:
-                Topology.SetDictionary(t, d, silent=True)
-            except TypeError:
-                try:
-                    Topology.SetDictionary(t, d)
-                except Exception:
-                    pass
-            except Exception:
-                pass
-            return t
-
-        def _ensure(t, ontology_class, category, label=None):
-            if t is None:
-                return t
-            if Ontology is not None:
-                try:
-                    if Ontology.Class(t, None) is None:
-                        t = Ontology.SetClass(t, ontology_class, silent=True)
-                    if Ontology.Category(t, None) is None and category is not None:
-                        t = Ontology.SetCategory(t, category, silent=True)
-                    if label is not None and Ontology.Label(t, None) is None:
-                        t = Ontology.SetLabel(t, label, silent=True)
-                    return t
-                except Exception:
-                    pass
-            d = _dict(t)
-            if _value(d, "ontology_class", None) is None:
-                _set(t, "ontology_class", ontology_class)
-            if category is not None and _value(d, "category", None) is None:
-                _set(t, "category", category)
-            if label is not None and _value(d, "label", None) is None:
-                _set(t, "label", label)
-            return t
-
-        _ensure(graph, graphClass, graphCategory)
-        if generatedBy is not None:
-            _set(graph, "generated_by", generatedBy)
-        try:
-            vertices = Graph.Vertices(graph) or []
-        except Exception:
-            vertices = []
-        for i, vertex in enumerate(vertices):
-            _ensure(vertex, "top:Node", "node", label=None)
-        try:
-            edges = Graph.Edges(graph) or []
-        except Exception:
-            edges = []
-        for edge in edges:
-            _ensure(edge, "top:Relationship", "relationship", label=None)
-        return graph
-    except Exception as e:
-        if not silent:
-            print(f"Neo4j ontology annotation warning: {e}")
-        return graph
-
-
 class Neo4j:
     """
     Neo4j helper class for TopologicPy.
@@ -526,14 +399,7 @@ class Neo4j:
                 "CREATE CONSTRAINT vertex_graph_id_id_unique IF NOT EXISTS FOR (v:Vertex) REQUIRE (v.graph_id, v.id) IS UNIQUE",
                 "CREATE INDEX vertex_graph_id_index IF NOT EXISTS FOR (v:Vertex) ON (v.graph_id)",
                 "CREATE INDEX vertex_label_index IF NOT EXISTS FOR (v:Vertex) ON (v.label)",
-                "CREATE INDEX graph_ontology_class_index IF NOT EXISTS FOR (g:Graph) ON (g.ontology_class)",
-                "CREATE INDEX graph_category_index IF NOT EXISTS FOR (g:Graph) ON (g.category)",
-                "CREATE INDEX vertex_ontology_class_index IF NOT EXISTS FOR (v:Vertex) ON (v.ontology_class)",
-                "CREATE INDEX vertex_category_index IF NOT EXISTS FOR (v:Vertex) ON (v.category)",
-                "CREATE INDEX vertex_uri_index IF NOT EXISTS FOR (v:Vertex) ON (v.uri)",
                 "CREATE INDEX edge_graph_id_index IF NOT EXISTS FOR ()-[r:Edge]-() ON (r.graph_id)",
-                "CREATE INDEX edge_ontology_class_index IF NOT EXISTS FOR ()-[r:Edge]-() ON (r.ontology_class)",
-                "CREATE INDEX edge_category_index IF NOT EXISTS FOR ()-[r:Edge]-() ON (r.category)",
             ]
             for stmt in statements:
                 Neo4j.Execute(manager, stmt, write=True, database=database, silent=True)
@@ -787,7 +653,6 @@ class Neo4j:
                     bidirectional: bool = True,
                     overwrite: bool = False,
                     mantissa: int = 6,
-                    ontology: bool = True,
                     silent: bool = False) -> str:
         """
         Upserts a TopologicPy graph into Neo4j using the canonical schema.
@@ -826,9 +691,6 @@ class Neo4j:
             If set to True, an existing graph with the same id is deleted before import. Default is False.
         mantissa : int , optional
             The number of decimal places to use when extracting mesh data. Default is 6.
-        ontology : bool , optional
-            If True, the graph, vertices, and edges are annotated with canonical
-            TopologicPy ontology keys before being written to Neo4j. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -842,9 +704,6 @@ class Neo4j:
         from topologicpy.Topology import Topology
         from topologicpy.Graph import Graph
         import re
-
-        if ontology:
-            graph = _annotate_graph_for_ontology(graph, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.UpsertGraph", silent=True)
 
         def _safe_string(value, default: str = "") -> str:
             if value is None:
@@ -932,11 +791,6 @@ class Neo4j:
                 CREATE (g:Graph {
                     id:$id,
                     label:$label,
-                    ontology_class:$ontology_class,
-                    category:$category,
-                    uri:$uri,
-                    source:$source,
-                    generated_by:$generated_by,
                     num_nodes:$num_nodes,
                     num_edges:$num_edges,
                     props:$props
@@ -946,11 +800,6 @@ class Neo4j:
                 parameters={
                     "id": gid,
                     "label": g_label,
-                    "ontology_class": _ontology_class_value(g_props, "top:Graph" if ontology else None),
-                    "category": _ontology_category_value(g_props, "graph" if ontology else None),
-                    "uri": _ontology_uri_value(g_props, None),
-                    "source": g_props.get("source", None),
-                    "generated_by": g_props.get("generated_by", "Neo4j.UpsertGraph" if ontology else None),
                     "num_nodes": int(len(verts)),
                     "num_edges": int(edge_count),
                     "props": _json_dumps(g_props),
@@ -1034,11 +883,6 @@ class Neo4j:
                     "id": vid,
                     "graph_id": gid,
                     "label": label,
-                    "ontology_class": _ontology_class_value(props, "top:Node" if ontology else None),
-                    "category": _ontology_category_value(props, "node" if ontology else None),
-                    "uri": _ontology_uri_value(props, None),
-                    "ifc_class": props.get("ifc_class", None),
-                    "ifc_guid": props.get("ifc_guid", props.get("global_id", None)),
                     "x": float(x),
                     "y": float(y),
                     "z": float(z),
@@ -1055,11 +899,6 @@ class Neo4j:
                         id: row.id,
                         graph_id: row.graph_id,
                         label: row.label,
-                        ontology_class: row.ontology_class,
-                        category: row.category,
-                        uri: row.uri,
-                        ifc_class: row.ifc_class,
-                        ifc_guid: row.ifc_guid,
                         x: row.x,
                         y: row.y,
                         z: row.z,
@@ -1133,9 +972,6 @@ class Neo4j:
                     "b_uid": b_uid,
                     "graph_id": gid,
                     "label": label,
-                    "ontology_class": _ontology_class_value(props, "top:Relationship" if ontology else None),
-                    "category": _ontology_category_value(props, "relationship" if ontology else None),
-                    "uri": _ontology_uri_value(props, None),
                     "props": _json_dumps(props),
                 })
 
@@ -1145,9 +981,6 @@ class Neo4j:
                         "b_uid": a_uid,
                         "graph_id": gid,
                         "label": label,
-                        "ontology_class": _ontology_class_value(props, "top:Relationship" if ontology else None),
-                        "category": _ontology_category_value(props, "relationship" if ontology else None),
-                        "uri": _ontology_uri_value(props, None),
                         "props": _json_dumps(props),
                     })
 
@@ -1161,9 +994,6 @@ class Neo4j:
                     CREATE (a)-[:Edge {
                         graph_id: row.graph_id,
                         label: row.label,
-                        ontology_class: row.ontology_class,
-                        category: row.category,
-                        uri: row.uri,
                         props: row.props
                     }]->(b)
                     """,
@@ -1184,7 +1014,7 @@ class Neo4j:
             return None
 
     @staticmethod
-    def GraphByID(manager, graphID: str, database=None, ontology: bool = True, silent: bool = False):
+    def GraphByID(manager, graphID: str, database=None, silent: bool = False):
         """
         Constructs a TopologicPy graph from Neo4j using the canonical graph id.
         """
@@ -1200,10 +1030,7 @@ class Neo4j:
                 manager,
                 """
                 MATCH (g:Graph {id:$id})
-                RETURN g.id AS id, g.label AS label, g.ontology_class AS ontology_class,
-                       g.category AS category, g.uri AS uri, g.source AS source,
-                       g.generated_by AS generated_by,
-                       g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
+                RETURN g.id AS id, g.label AS label, g.num_nodes AS num_nodes, g.num_edges AS num_edges, g.props AS props
                 """,
                 parameters={"id": graphID},
                 database=database,
@@ -1216,9 +1043,6 @@ class Neo4j:
             g_props = dict(_json_loads(g_row.get("props"), {}))
             if "label" not in g_props and g_row.get("label") is not None:
                 g_props["label"] = g_row.get("label")
-            for _k in ["ontology_class", "category", "uri", "source", "generated_by"]:
-                if _k not in g_props and g_row.get(_k) is not None:
-                    g_props[_k] = g_row.get(_k)
             g_dict = Dictionary.ByPythonDictionary(g_props)
 
             rows_v = _records_to_dicts(Neo4j.Query(
@@ -1226,9 +1050,7 @@ class Neo4j:
                 """
                 MATCH (v:Vertex)
                 WHERE v.graph_id = $gid
-                RETURN v.id AS id, v.label AS label, v.ontology_class AS ontology_class,
-                       v.category AS category, v.uri AS uri, v.ifc_class AS ifc_class,
-                       v.ifc_guid AS ifc_guid, v.x AS x, v.y AS y, v.z AS z, v.props AS props
+                RETURN v.id AS id, v.label AS label, v.x AS x, v.y AS y, v.z AS z, v.props AS props
                 ORDER BY v.id
                 """,
                 parameters={"gid": graphID},
@@ -1248,9 +1070,6 @@ class Neo4j:
                     props["id"] = row.get("id")
                 if "label" not in props:
                     props["label"] = row.get("label") or ""
-                for _k in ["ontology_class", "category", "uri", "ifc_class", "ifc_guid"]:
-                    if _k not in props and row.get(_k) is not None:
-                        props[_k] = row.get(_k)
                 d = Dictionary.ByPythonDictionary(props)
                 v = Topology.SetDictionary(v, d)
                 id_to_vertex[row.get("id")] = v
@@ -1261,9 +1080,7 @@ class Neo4j:
                 """
                 MATCH (a:Vertex)-[r:Edge]->(b:Vertex)
                 WHERE a.graph_id = $gid AND b.graph_id = $gid AND r.graph_id = $gid
-                RETURN a.id AS a_id, b.id AS b_id, r.label AS label,
-                       r.ontology_class AS ontology_class, r.category AS category,
-                       r.uri AS uri, r.props AS props
+                RETURN a.id AS a_id, b.id AS b_id, r.label AS label, r.props AS props
                 """,
                 parameters={"gid": graphID},
                 database=database,
@@ -1280,22 +1097,14 @@ class Neo4j:
                 props = dict(_json_loads(row.get("props"), {}))
                 if "label" not in props:
                     props["label"] = row.get("label") or "connect"
-                for _k in ["ontology_class", "category", "uri"]:
-                    if _k not in props and row.get(_k) is not None:
-                        props[_k] = row.get(_k)
                 d = Dictionary.ByPythonDictionary(props)
                 e = Topology.SetDictionary(e, d)
                 edges.append(e)
 
             if not vertices:
                 return None
-            try:
-                g = Graph.ByVerticesEdges(vertices, edges, ontology=ontology)
-            except TypeError:
-                g = Graph.ByVerticesEdges(vertices, edges)
+            g = Graph.ByVerticesEdges(vertices, edges)
             g = Topology.SetDictionary(g, g_dict)
-            if ontology:
-                g = _annotate_graph_for_ontology(g, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.GraphByID", silent=True)
             return g
         except Exception as ex:
             if not silent:
@@ -1303,7 +1112,7 @@ class Neo4j:
             return None
 
     @staticmethod
-    def GraphsByQuery(manager, query: str, parameters: dict = None, database=None, ontology: bool = True, silent: bool = False):
+    def GraphsByQuery(manager, query: str, parameters: dict = None, database=None, silent: bool = False):
         """
         Executes a Cypher query and returns a list of TopologicPy graphs constructed
         directly from the returned nodes, relationships, and paths.
@@ -1549,12 +1358,7 @@ class Neo4j:
             if not vertices:
                 return []
 
-            try:
-                g = Graph.ByVerticesEdges(vertices, edges, ontology=ontology)
-            except TypeError:
-                g = Graph.ByVerticesEdges(vertices, edges)
-            if ontology:
-                g = _annotate_graph_for_ontology(g, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.GraphsByQuery", silent=True)
+            g = Graph.ByVerticesEdges(vertices, edges)
             return [g]
 
         except Exception as ex:
@@ -1650,7 +1454,7 @@ class Neo4j:
         nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
         nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
         nodeFeaturesKeys=None,
-        tolerance=0.0001, database=None, ontology: bool = True, silent=False):
+        tolerance=0.0001, database=None, silent=False):
         """
         Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs into Neo4j.
 
@@ -1660,36 +1464,20 @@ class Neo4j:
             from topologicpy.Graph import Graph
 
             Neo4j.EnsureSchema(manager, database=database, silent=silent)
-            try:
-                graphs = Graph.ByCSVPath(
-                    path=path,
-                    graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
-                    graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
-                    edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
-                    edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
-                    edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
-                    edgeFeaturesKeys=edgeFeaturesKeys,
-                    nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
-                    nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
-                    nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
-                    nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
-                    nodeFeaturesKeys=nodeFeaturesKeys,
-                    tolerance=tolerance, ontology=ontology, silent=silent)
-            except TypeError:
-                graphs = Graph.ByCSVPath(
-                    path=path,
-                    graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
-                    graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
-                    edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
-                    edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
-                    edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
-                    edgeFeaturesKeys=edgeFeaturesKeys,
-                    nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
-                    nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
-                    nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
-                    nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
-                    nodeFeaturesKeys=nodeFeaturesKeys,
-                    tolerance=tolerance, silent=silent)
+            graphs = Graph.ByCSVPath(
+                path=path,
+                graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
+                graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
+                edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
+                edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
+                edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
+                edgeFeaturesKeys=edgeFeaturesKeys,
+                nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
+                nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
+                nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
+                nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
+                nodeFeaturesKeys=nodeFeaturesKeys,
+                tolerance=tolerance, silent=silent)
             if graphs is None:
                 if not silent:
                     print("Neo4j.ByCSVPath - Error: Graph.ByCSVPath returned None. Returning None.")
@@ -1705,7 +1493,6 @@ class Neo4j:
                     vertexIDKey=nodeIDHeader,
                     vertexLabelKey=nodeLabelHeader,
                     database=database,
-                    ontology=ontology,
                     silent=silent)
                 if gid is not None:
                     graph_ids.append(gid)
@@ -1915,101 +1702,6 @@ class Neo4j:
                 print(f"Neo4j.FindBestExampleForLabel - Error: {ex}. Returning None.")
             return None
 
-
-    @staticmethod
-    def GraphsByOntologyClass(manager, ontologyClass: str, limit: int = 100, database=None, silent: bool = False):
-        """
-        Returns graph metadata records whose graph-level ontology_class matches the input value.
-        """
-        try:
-            rows = _records_to_dicts(Neo4j.Query(
-                manager,
-                """
-                MATCH (g:Graph)
-                WHERE g.ontology_class = $ontology_class
-                RETURN g.id AS id, g.label AS label, g.ontology_class AS ontology_class,
-                       g.category AS category, g.uri AS uri, g.num_nodes AS num_nodes,
-                       g.num_edges AS num_edges, g.props AS props
-                ORDER BY g.id
-                LIMIT $limit
-                """,
-                parameters={"ontology_class": str(ontologyClass), "limit": max(1, int(limit or 100))},
-                database=database,
-                silent=silent,
-            ))
-            for row in rows:
-                row["props"] = _json_loads(row.get("props"), {})
-            return rows
-        except Exception as ex:
-            if not silent:
-                print(f"Neo4j.GraphsByOntologyClass - Error: {ex}. Returning None.")
-            return None
-
-    @staticmethod
-    def VerticesByOntologyClass(manager, ontologyClass: str, graphID: str = None, limit: int = 100, database=None, silent: bool = False):
-        """
-        Returns vertex records whose ontology_class matches the input value.
-        """
-        try:
-            where = "v.ontology_class = $ontology_class"
-            params = {"ontology_class": str(ontologyClass), "limit": max(1, int(limit or 100))}
-            if graphID is not None:
-                where += " AND v.graph_id = $graph_id"
-                params["graph_id"] = str(graphID)
-            rows = _records_to_dicts(Neo4j.Query(
-                manager,
-                f"""
-                MATCH (v:Vertex)
-                WHERE {where}
-                RETURN v.id AS id, v.graph_id AS graph_id, v.label AS label,
-                       v.ontology_class AS ontology_class, v.category AS category,
-                       v.uri AS uri, v.ifc_class AS ifc_class, v.ifc_guid AS ifc_guid,
-                       v.x AS x, v.y AS y, v.z AS z, v.props AS props
-                ORDER BY v.graph_id, v.id
-                LIMIT $limit
-                """,
-                parameters=params,
-                database=database,
-                silent=silent,
-            ))
-            for row in rows:
-                row["props"] = _json_loads(row.get("props"), {})
-            return rows
-        except Exception as ex:
-            if not silent:
-                print(f"Neo4j.VerticesByOntologyClass - Error: {ex}. Returning None.")
-            return None
-
-    @staticmethod
-    def OntologySummary(manager, database=None, silent: bool = False):
-        """
-        Returns counts grouped by ontology_class for graphs, vertices, and edges.
-        """
-        try:
-            graphs = _records_to_dicts(Neo4j.Query(
-                manager,
-                "MATCH (g:Graph) RETURN coalesce(g.ontology_class, '') AS ontology_class, count(*) AS count ORDER BY count DESC",
-                database=database,
-                silent=silent,
-            ))
-            vertices = _records_to_dicts(Neo4j.Query(
-                manager,
-                "MATCH (v:Vertex) RETURN coalesce(v.ontology_class, '') AS ontology_class, count(*) AS count ORDER BY count DESC",
-                database=database,
-                silent=silent,
-            ))
-            edges = _records_to_dicts(Neo4j.Query(
-                manager,
-                "MATCH ()-[r:Edge]->() RETURN coalesce(r.ontology_class, '') AS ontology_class, count(*) AS count ORDER BY count DESC",
-                database=database,
-                silent=silent,
-            ))
-            return {"graphs": graphs, "vertices": vertices, "edges": edges}
-        except Exception as ex:
-            if not silent:
-                print(f"Neo4j.OntologySummary - Error: {ex}. Returning None.")
-            return None
-
     # -------------------------------------------------------------------------
     # Compatibility wrappers for older Neo4j.py workflows
     # -------------------------------------------------------------------------
@@ -2035,7 +1727,6 @@ class Neo4j:
                 tolerance: float = 0.0001,
                 database: str = None,
                 overwrite: bool = True,
-                ontology: bool = True,
                 silent: bool = False):
         """
         Writes the input Topologic graph to Neo4j.
@@ -2053,7 +1744,7 @@ class Neo4j:
                 d = Topology.Dictionary(graph)
                 d = Dictionary.SetValueAtKey(d, graphIDKey, str(graphID).strip())
                 Topology.SetDictionary(graph, d)
-            gid = Neo4j.UpsertGraph(driver, graph, graphIDKey=graphIDKey, vertexIDKey=None, vertexLabelKey=nodeLabelKey, mantissa=mantissa, database=database, ontology=ontology, silent=silent)
+            gid = Neo4j.UpsertGraph(driver, graph, graphIDKey=graphIDKey, vertexIDKey=None, vertexLabelKey=nodeLabelKey, mantissa=mantissa, database=database, silent=silent)
             return driver if gid is not None else None
         except Exception as ex:
             if not silent:
@@ -2077,12 +1768,11 @@ class Neo4j:
                    mantissa=6,
                    tolerance=0.0001,
                    database=None,
-                   ontology: bool = True,
                    silent=False):
         """
         Compatibility wrapper. Uses canonical UpsertGraph and returns the driver.
         """
-        gid = Neo4j.UpsertGraph(driver, graph, graphIDKey="graph_id", vertexIDKey=None, vertexLabelKey=nodeLabelKey, mantissa=mantissa, database=database, ontology=ontology, silent=silent)
+        gid = Neo4j.UpsertGraph(driver, graph, graphIDKey="graph_id", vertexIDKey=None, vertexLabelKey=nodeLabelKey, mantissa=mantissa, database=database, silent=silent)
         return driver if gid is not None else None
 
 
@@ -2191,7 +1881,6 @@ class Neo4j:
                 zMax: float = 0.5,
                 database: str = None,
                 tolerance: float = 0.0001,
-                ontology: bool = True,
                 silent: bool = False):
         """
         Returns a Topologic graph from Neo4j.
@@ -2201,7 +1890,7 @@ class Neo4j:
         Cypher query, or by a generic whole-database query when cypher is None.
         """
         if graphID is not None:
-            return Neo4j.GraphByID(driver, graphID, database=database, ontology=ontology, silent=silent)
+            return Neo4j.GraphByID(driver, graphID, database=database, silent=silent)
 
         # Generic fallback for arbitrary Neo4j graph queries.
         try:
@@ -2292,15 +1981,7 @@ class Neo4j:
                 d = Dictionary.ByPythonDictionary(props)
                 e = Topology.SetDictionary(e, d)
                 edges.append(e)
-            if not vertices:
-                return None
-            try:
-                g = Graph.ByVerticesEdges(vertices, edges, ontology=ontology)
-            except TypeError:
-                g = Graph.ByVerticesEdges(vertices, edges)
-            if ontology:
-                g = _annotate_graph_for_ontology(g, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.ToGraph", silent=True)
-            return g
+            return Graph.ByVerticesEdges(vertices, edges) if vertices else None
         except Exception as ex:
             if not silent:
                 print(f"Neo4j.ToGraph - Error: {ex}. Returning None.")

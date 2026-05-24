@@ -1452,7 +1452,7 @@ class Ontology:
     @staticmethod
     def TurtleFromTriples(triples,
                           namespaces=None,
-                          instanceNamespace="https://topologic.app/instance#",
+                          instanceNamespace="http://w3id.org/topologicpy/instance#",
                           includeHeader=True):
         """
         Returns a Turtle string from the input triples.
@@ -1465,7 +1465,7 @@ class Ontology:
         namespaces : dict , optional
             Namespace dictionary. Default is None.
         instanceNamespace : str , optional
-            The URI for the "inst" namespace. Default is "https://topologic.app/instance#".
+            The URI for the "inst" namespace. Default is "http://w3id.org/topologicpy/instance#".
         includeHeader : bool , optional
             If True, namespace prefixes are included. Default is True.
 
@@ -1604,7 +1604,7 @@ class Ontology:
 
     @staticmethod
     def OntologyTTLString(includeBOT=True,
-                          instanceNamespace="https://topologic.app/instance#"):
+                          instanceNamespace="http://w3id.org/topologicpy/instance#"):
         """
         Returns the TopologicPy ontology specification as a Turtle string.
 
@@ -1613,7 +1613,7 @@ class Ontology:
         includeBOT : bool , optional
             If True, BOT alignment triples are included. Default is True.
         instanceNamespace : str , optional
-            The instance namespace URI. Default is "https://topologic.app/instance#".
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
 
         Returns
         -------
@@ -1630,7 +1630,7 @@ class Ontology:
     @staticmethod
     def ExportOntologyTTL(path,
                           includeBOT=True,
-                          instanceNamespace="https://topologic.app/instance#",
+                          instanceNamespace="http://w3id.org/topologicpy/instance#",
                           silent=False):
         """
         Exports the TopologicPy ontology specification as a Turtle file.
@@ -1642,7 +1642,7 @@ class Ontology:
         includeBOT : bool , optional
             If True, BOT alignment triples are included. Default is True.
         instanceNamespace : str , optional
-            The instance namespace URI. Default is "https://topologic.app/instance#".
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
 
@@ -1675,7 +1675,7 @@ class Ontology:
                   includeDictionaries=True,
                   includeBOT=True,
                   namespacePrefix="inst",
-                  instanceNamespace="https://topologic.app/instance#",
+                  instanceNamespace="http://w3id.org/topologicpy/instance#",
                   silent=False):
         """
         Exports a topology or graph as a Turtle file.
@@ -1696,7 +1696,7 @@ class Ontology:
         namespacePrefix : str , optional
             The instance namespace prefix. Default is "inst".
         instanceNamespace : str , optional
-            The instance namespace URI. Default is "https://topologic.app/instance#".
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
 
@@ -1748,7 +1748,7 @@ class Ontology:
                   includeDictionaries=True,
                   includeBOT=True,
                   namespacePrefix="inst",
-                  instanceNamespace="https://topologic.app/instance#",
+                  instanceNamespace="http://w3id.org/topologicpy/instance#",
                   silent=False):
         """
         Returns a Turtle string from a topology or graph.
@@ -1767,7 +1767,7 @@ class Ontology:
         namespacePrefix : str , optional
             The instance namespace prefix. Default is "inst".
         instanceNamespace : str , optional
-            The instance namespace URI. Default is "https://topologic.app/instance#".
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
 
@@ -1804,3 +1804,914 @@ class Ontology:
                 print("Ontology.TTLString - Error: Could not create Turtle string. Returning None.")
                 print("Error:", e)
             return None
+
+    # -------------------------------------------------------------------------
+    # Validation
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def Validate(topology,
+                 requireClass=True,
+                 requireCategory=False,
+                 requireLabel=False,
+                 requireURI=False,
+                 checkClassKnown=True,
+                 checkCategory=True,
+                 checkQName=True,
+                 silent=False):
+        """
+        Validates the ontology annotation of a topology or graph object.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology or topologic_core.Graph
+            The input topology or graph.
+        requireClass : bool , optional
+            If True, ``ontology_class`` must be present. Default is True.
+        requireCategory : bool , optional
+            If True, ``category`` must be present. Default is False.
+        requireLabel : bool , optional
+            If True, ``label`` must be present. Default is False.
+        requireURI : bool , optional
+            If True, ``uri`` or ``ontology_uri`` must be present. Default is False.
+        checkClassKnown : bool , optional
+            If True, ``ontology_class`` must be in the built-in ontology class map or be expandable as a QName. Default is True.
+        checkCategory : bool , optional
+            If True, validates ``category`` against the inferred category where possible. Default is True.
+        checkQName : bool , optional
+            If True, validates QName prefixes against ``Ontology.NAMESPACES``. Default is True.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A validation report with keys ``ok``, ``errors``, ``warnings``, and ``dictionary``.
+        """
+
+        report = {
+            "ok": False,
+            "errors": [],
+            "warnings": [],
+            "dictionary": {},
+        }
+
+        if topology is None:
+            report["errors"].append("The input topology is None.")
+            return report
+
+        d = Ontology._dictionary(topology)
+        try:
+            from topologicpy.Dictionary import Dictionary
+            if d is not None:
+                report["dictionary"] = dict(Dictionary.PythonDictionary(d) or {})
+        except Exception:
+            report["dictionary"] = {}
+
+        ontologyClass = report["dictionary"].get(Ontology.ONTOLOGY_CLASS_KEY, None)
+        category = report["dictionary"].get(Ontology.CATEGORY_KEY, None)
+        label = report["dictionary"].get(Ontology.LABEL_KEY, None)
+        uri = report["dictionary"].get(Ontology.URI_KEY, None)
+        ontologyURI = report["dictionary"].get(Ontology.ONTOLOGY_URI_KEY, None)
+
+        if requireClass and (ontologyClass is None or str(ontologyClass).strip() == ""):
+            report["errors"].append("Missing ontology_class.")
+
+        if requireCategory and (category is None or str(category).strip() == ""):
+            report["errors"].append("Missing category.")
+
+        if requireLabel and (label is None or str(label).strip() == ""):
+            report["errors"].append("Missing label.")
+
+        if requireURI and (uri is None or str(uri).strip() == "") and (ontologyURI is None or str(ontologyURI).strip() == ""):
+            report["errors"].append("Missing uri or ontology_uri.")
+
+        if ontologyClass is not None and str(ontologyClass).strip() != "":
+            ontologyClass = str(ontologyClass).strip()
+
+            if checkQName and ":" in ontologyClass:
+                prefix = ontologyClass.split(":", 1)[0]
+                if prefix not in Ontology.NAMESPACES:
+                    report["errors"].append(f"Unknown ontology_class prefix: {prefix}.")
+
+            if checkClassKnown:
+                known = ontologyClass in Ontology.TOP_SUPERCLASSES
+                expandable = Ontology.ExpandQName(ontologyClass, defaultValue=None) is not None
+                if not known and not expandable:
+                    report["warnings"].append(f"ontology_class is not known and cannot be expanded: {ontologyClass}.")
+
+            if checkCategory and category is not None and str(category).strip() != "":
+                expected = Ontology.CategoryByClass(ontologyClass, defaultValue=None)
+                if expected is not None and str(category).strip().lower() != str(expected).strip().lower():
+                    report["warnings"].append(
+                        f"Category '{category}' does not match inferred category '{expected}' for {ontologyClass}."
+                    )
+
+            if ontologyURI is not None and str(ontologyURI).strip() != "":
+                expanded = Ontology.ExpandQName(ontologyClass, defaultValue=None)
+                if expanded is not None and str(ontologyURI).strip() != str(expanded).strip():
+                    report["warnings"].append("ontology_uri does not match expanded ontology_class.")
+
+        report["ok"] = len(report["errors"]) == 0
+
+        if not silent and (report["errors"] or report["warnings"]):
+            for error in report["errors"]:
+                print("Ontology.Validate - Error:", error)
+            for warning in report["warnings"]:
+                print("Ontology.Validate - Warning:", warning)
+
+        return report
+
+    @staticmethod
+    def ValidateGraph(graph,
+                      requireClass=True,
+                      requireVertexClasses=True,
+                      requireEdgeClasses=True,
+                      requireLabels=False,
+                      checkConnectivity=True,
+                      silent=False):
+        """
+        Validates ontology annotations on a graph, its vertices, and its edges.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        requireClass : bool , optional
+            If True, the graph itself must have ``ontology_class``. Default is True.
+        requireVertexClasses : bool , optional
+            If True, every vertex must have ``ontology_class``. Default is True.
+        requireEdgeClasses : bool , optional
+            If True, every edge must have ``ontology_class``. Default is True.
+        requireLabels : bool , optional
+            If True, graph elements must have labels. Default is False.
+        checkConnectivity : bool , optional
+            If True, validates that edge endpoints can be resolved. Default is True.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A validation report with aggregate status and per-element reports.
+        """
+
+        report = {
+            "ok": False,
+            "errors": [],
+            "warnings": [],
+            "graph": None,
+            "vertices": [],
+            "edges": [],
+        }
+
+        if graph is None:
+            report["errors"].append("The input graph is None.")
+            return report
+
+        try:
+            from topologicpy.Graph import Graph
+            from topologicpy.Topology import Topology
+            from topologicpy.Edge import Edge
+        except Exception as e:
+            report["errors"].append(f"Could not import required TopologicPy classes: {e}.")
+            return report
+
+        report["graph"] = Ontology.Validate(graph,
+                                             requireClass=requireClass,
+                                             requireLabel=requireLabels,
+                                             silent=True)
+        if not report["graph"].get("ok", False):
+            for error in report["graph"].get("errors", []):
+                report["errors"].append("Graph: " + error)
+        for warning in report["graph"].get("warnings", []):
+            report["warnings"].append("Graph: " + warning)
+
+        try:
+            vertices = Graph.Vertices(graph) or []
+        except Exception:
+            vertices = []
+        try:
+            edges = Graph.Edges(graph) or []
+        except Exception:
+            edges = []
+
+        for i, vertex in enumerate(vertices):
+            r = Ontology.Validate(vertex,
+                                  requireClass=requireVertexClasses,
+                                  requireLabel=requireLabels,
+                                  silent=True)
+            r["index"] = i
+            report["vertices"].append(r)
+            if not r.get("ok", False):
+                for error in r.get("errors", []):
+                    report["errors"].append(f"Vertex {i}: {error}")
+            for warning in r.get("warnings", []):
+                report["warnings"].append(f"Vertex {i}: {warning}")
+
+        for i, edge in enumerate(edges):
+            r = Ontology.Validate(edge,
+                                  requireClass=requireEdgeClasses,
+                                  requireLabel=False,
+                                  silent=True)
+            r["index"] = i
+
+            if checkConnectivity:
+                sv = None
+                ev = None
+                try:
+                    sv = Edge.StartVertex(edge)
+                    ev = Edge.EndVertex(edge)
+                except Exception:
+                    try:
+                        sv = Topology.StartVertex(edge)
+                        ev = Topology.EndVertex(edge)
+                    except Exception:
+                        sv = ev = None
+                if sv is None or ev is None:
+                    r.setdefault("errors", []).append("Could not resolve edge start/end vertices.")
+                    r["ok"] = False
+
+            report["edges"].append(r)
+            if not r.get("ok", False):
+                for error in r.get("errors", []):
+                    report["errors"].append(f"Edge {i}: {error}")
+            for warning in r.get("warnings", []):
+                report["warnings"].append(f"Edge {i}: {warning}")
+
+        report["ok"] = len(report["errors"]) == 0
+
+        if not silent and (report["errors"] or report["warnings"]):
+            for error in report["errors"]:
+                print("Ontology.ValidateGraph - Error:", error)
+            for warning in report["warnings"]:
+                print("Ontology.ValidateGraph - Warning:", warning)
+
+        return report
+
+    @staticmethod
+    def ValidateTTLString(ttlString, silent=False):
+        """
+        Validates a Turtle string using RDFLib when available.
+
+        Parameters
+        ----------
+        ttlString : str
+            The Turtle string.
+        silent : bool , optional
+            If True, errors are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A validation report with keys ``ok``, ``errors``, ``warnings``, and ``triple_count``.
+        """
+
+        report = {"ok": False, "errors": [], "warnings": [], "triple_count": 0}
+        if not isinstance(ttlString, str) or ttlString.strip() == "":
+            report["errors"].append("The input ttlString is not a valid string.")
+            return report
+        try:
+            import rdflib
+        except Exception as e:
+            report["warnings"].append("RDFLib is not installed, so syntax validation could not be performed.")
+            report["ok"] = True
+            return report
+        try:
+            g = rdflib.Graph()
+            g.parse(data=ttlString, format="turtle")
+            report["triple_count"] = len(g)
+            report["ok"] = True
+            return report
+        except Exception as e:
+            report["errors"].append(str(e))
+            if not silent:
+                print("Ontology.ValidateTTLString - Error:", e)
+            return report
+
+    @staticmethod
+    def ValidateTTLFile(path, silent=False):
+        """
+        Validates a Turtle file using RDFLib when available.
+
+        Parameters
+        ----------
+        path : str
+            The Turtle file path.
+        silent : bool , optional
+            If True, errors are suppressed. Default is False.
+
+        Returns
+        -------
+        dict
+            A validation report.
+        """
+
+        if path is None:
+            return {"ok": False, "errors": ["The input path is None."], "warnings": [], "triple_count": 0}
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return Ontology.ValidateTTLString(f.read(), silent=silent)
+        except Exception as e:
+            if not silent:
+                print("Ontology.ValidateTTLFile - Error:", e)
+            return {"ok": False, "errors": [str(e)], "warnings": [], "triple_count": 0}
+
+    # -------------------------------------------------------------------------
+    # RDFLib export/import
+    # -------------------------------------------------------------------------
+
+    @staticmethod
+    def RDFGraph(topology,
+                 includeGraph=True,
+                 includeDictionaries=True,
+                 includeBOT=True,
+                 namespacePrefix="inst",
+                 instanceNamespace="http://w3id.org/topologicpy/instance#",
+                 silent=False):
+        """
+        Returns an RDFLib graph from a topology or graph.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology or topologic_core.Graph
+            The input topology or graph.
+        includeGraph : bool , optional
+            If True and the input is a graph, vertices and edges are exported. Default is True.
+        includeDictionaries : bool , optional
+            If True, dictionary keys are exported as data properties. Default is True.
+        includeBOT : bool , optional
+            If True, BOT type triples are included where mapped. Default is True.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        instanceNamespace : str , optional
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        rdflib.Graph
+            The RDFLib graph, or None if RDFLib is unavailable.
+        """
+
+        try:
+            import rdflib
+            from rdflib import Graph as RDFLibGraph
+            from rdflib import Namespace, URIRef, Literal
+            from rdflib.namespace import RDF, RDFS, XSD, OWL
+        except Exception as e:
+            if not silent:
+                print("Ontology.RDFGraph - Error: RDFLib is required. Install it with 'pip install rdflib'. Returning None.")
+                print("Error:", e)
+            return None
+
+        def expand(term):
+            if term is None:
+                return None
+            if isinstance(term, str) and term.startswith('"'):
+                return literal_from_turtle(term)
+            if isinstance(term, str) and ":" in term and not term.startswith("http"):
+                prefix, local = term.split(":", 1)
+                if prefix in namespaces:
+                    return URIRef(namespaces[prefix] + local)
+            if isinstance(term, str) and (term.startswith("http://") or term.startswith("https://")):
+                return URIRef(term)
+            return URIRef(str(term))
+
+        def literal_from_turtle(text):
+            text = str(text)
+            if "^^" not in text:
+                return Literal(text[1:-1] if text.startswith('"') and text.endswith('"') else text)
+            value, dtype = text.split("^^", 1)
+            value = value.strip()
+            if value.startswith('"') and value.endswith('"'):
+                value = value[1:-1]
+            dtype_ref = expand(dtype.strip())
+            if str(dtype_ref) == str(XSD.integer):
+                try:
+                    return Literal(int(value), datatype=XSD.integer)
+                except Exception:
+                    return Literal(value, datatype=XSD.integer)
+            if str(dtype_ref) == str(XSD.double):
+                try:
+                    return Literal(float(value), datatype=XSD.double)
+                except Exception:
+                    return Literal(value, datatype=XSD.double)
+            if str(dtype_ref) == str(XSD.boolean):
+                return Literal(str(value).lower() == "true", datatype=XSD.boolean)
+            return Literal(value, datatype=dtype_ref)
+
+        namespaces = dict(Ontology.NAMESPACES)
+        namespaces[namespacePrefix] = instanceNamespace
+
+        rdf_graph = RDFLibGraph()
+        for prefix, uri in namespaces.items():
+            rdf_graph.bind(prefix, Namespace(uri))
+
+        try:
+            from topologicpy.Topology import Topology
+            if includeGraph and Topology.IsInstance(topology, "graph"):
+                triples = Ontology.GraphTriples(topology,
+                                                includeDictionaries=includeDictionaries,
+                                                includeBOT=includeBOT,
+                                                namespacePrefix=namespacePrefix,
+                                                silent=silent)
+            else:
+                triples = Ontology.Triples(topology,
+                                           includeDictionaries=includeDictionaries,
+                                           includeBOT=includeBOT,
+                                           namespacePrefix=namespacePrefix,
+                                           silent=silent)
+            for s, p, o in triples:
+                rdf_graph.add((expand(s), expand(p), expand(o)))
+            return rdf_graph
+        except Exception as e:
+            if not silent:
+                print("Ontology.RDFGraph - Error: Could not build RDF graph. Returning None.")
+                print("Error:", e)
+            return None
+
+    @staticmethod
+    def RDFString(topology,
+                  format="turtle",
+                  includeGraph=True,
+                  includeDictionaries=True,
+                  includeBOT=True,
+                  namespacePrefix="inst",
+                  instanceNamespace="http://w3id.org/topologicpy/instance#",
+                  silent=False):
+        """
+        Serializes a topology or graph to an RDF string using RDFLib.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology or topologic_core.Graph
+            The input topology or graph.
+        format : str , optional
+            RDFLib serialization format, e.g. "turtle", "xml", "json-ld", "nt". Default is "turtle".
+        includeGraph : bool , optional
+            If True and the input is a graph, vertices and edges are exported. Default is True.
+        includeDictionaries : bool , optional
+            If True, dictionary keys are exported. Default is True.
+        includeBOT : bool , optional
+            If True, BOT type triples are included where mapped. Default is True.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        instanceNamespace : str , optional
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        str
+            The serialized RDF string, or None on failure.
+        """
+
+        g = Ontology.RDFGraph(topology,
+                              includeGraph=includeGraph,
+                              includeDictionaries=includeDictionaries,
+                              includeBOT=includeBOT,
+                              namespacePrefix=namespacePrefix,
+                              instanceNamespace=instanceNamespace,
+                              silent=silent)
+        if g is None:
+            return None
+        try:
+            result = g.serialize(format=format)
+            if isinstance(result, bytes):
+                return result.decode("utf-8")
+            return str(result)
+        except Exception as e:
+            if not silent:
+                print("Ontology.RDFString - Error: Could not serialize RDF graph. Returning None.")
+                print("Error:", e)
+            return None
+
+    @staticmethod
+    def ExportRDF(topology,
+                  path,
+                  format=None,
+                  includeGraph=True,
+                  includeDictionaries=True,
+                  includeBOT=True,
+                  namespacePrefix="inst",
+                  instanceNamespace="http://w3id.org/topologicpy/instance#",
+                  silent=False):
+        """
+        Exports a topology or graph to an RDF file using RDFLib.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology or topologic_core.Graph
+            The input topology or graph.
+        path : str
+            The output file path.
+        format : str , optional
+            RDFLib serialization format. If None, it is inferred from the extension. Default is None.
+        includeGraph : bool , optional
+            If True and the input is a graph, vertices and edges are exported. Default is True.
+        includeDictionaries : bool , optional
+            If True, dictionary keys are exported. Default is True.
+        includeBOT : bool , optional
+            If True, BOT type triples are included where mapped. Default is True.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        instanceNamespace : str , optional
+            The instance namespace URI. Default is "http://w3id.org/topologicpy/instance#".
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        str
+            The output path, or None on failure.
+        """
+
+        if path is None:
+            if not silent:
+                print("Ontology.ExportRDF - Error: The input path is None. Returning None.")
+            return None
+        if format is None:
+            ext = str(path).lower().rsplit(".", 1)[-1] if "." in str(path) else "ttl"
+            format = {
+                "ttl": "turtle",
+                "rdf": "xml",
+                "xml": "xml",
+                "jsonld": "json-ld",
+                "json": "json-ld",
+                "nt": "nt",
+                "n3": "n3",
+            }.get(ext, "turtle")
+        g = Ontology.RDFGraph(topology,
+                              includeGraph=includeGraph,
+                              includeDictionaries=includeDictionaries,
+                              includeBOT=includeBOT,
+                              namespacePrefix=namespacePrefix,
+                              instanceNamespace=instanceNamespace,
+                              silent=silent)
+        if g is None:
+            return None
+        try:
+            g.serialize(destination=path, format=format)
+            return path
+        except Exception as e:
+            if not silent:
+                print("Ontology.ExportRDF - Error: Could not export RDF file. Returning None.")
+                print("Error:", e)
+            return None
+
+    @staticmethod
+    def GraphByRDFGraph(rdfGraph,
+                        graphSubject=None,
+                        namespacePrefix="inst",
+                        tolerance=0.0001,
+                        silent=False):
+        """
+        Reconstructs a TopologicPy graph from an RDFLib graph exported by Ontology.RDFGraph or Ontology.ExportRDF.
+
+        Parameters
+        ----------
+        rdfGraph : rdflib.Graph
+            The input RDFLib graph.
+        graphSubject : str , optional
+            The graph subject URI or QName. If None, the first subject with ``top:hasNode`` is used. Default is None.
+        namespacePrefix : str , optional
+            The preferred instance namespace prefix for stored ``uri`` values. Default is "inst".
+        tolerance : float , optional
+            The graph creation tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The reconstructed graph, or None on failure.
+        """
+
+        try:
+            import rdflib
+            from rdflib import URIRef, Literal
+            from rdflib.namespace import RDF, RDFS
+            from topologicpy.Vertex import Vertex
+            from topologicpy.Edge import Edge
+            from topologicpy.Graph import Graph
+            from topologicpy.Topology import Topology
+            from topologicpy.Dictionary import Dictionary
+        except Exception as e:
+            if not silent:
+                print("Ontology.GraphByRDFGraph - Error: Missing dependency or TopologicPy class. Returning None.")
+                print("Error:", e)
+            return None
+
+        if rdfGraph is None:
+            if not silent:
+                print("Ontology.GraphByRDFGraph - Error: The input rdfGraph is None. Returning None.")
+            return None
+
+        ns = {k: URIRef(v) for k, v in Ontology.NAMESPACES.items()}
+        TOP = Ontology.NAMESPACES["top"]
+        RDF_TYPE = RDF.type
+        RDFS_LABEL = RDFS.label
+
+        def uri(term):
+            if term is None:
+                return None
+            if isinstance(term, URIRef):
+                return term
+            term = str(term)
+            if ":" in term and not term.startswith("http"):
+                prefix, local = term.split(":", 1)
+                namespace = Ontology.NAMESPACES.get(prefix)
+                if namespace is not None:
+                    return URIRef(namespace + local)
+            return URIRef(term)
+
+        def qname(term):
+            if term is None:
+                return None
+            try:
+                return rdfGraph.namespace_manager.normalizeUri(term).replace("<", "").replace(">", "")
+            except Exception:
+                s = str(term)
+                for prefix, namespace in Ontology.NAMESPACES.items():
+                    if s.startswith(namespace):
+                        return prefix + ":" + s[len(namespace):]
+                return s
+
+        def literal_value(value):
+            if isinstance(value, Literal):
+                return value.toPython()
+            return str(value) if value is not None else None
+
+        def local_key(predicate):
+            s = str(predicate)
+            for prefix, namespace in Ontology.NAMESPACES.items():
+                if s.startswith(namespace):
+                    local = s[len(namespace):]
+                    for alias, canonical in Ontology.PROPERTY_ALIASES.items():
+                        if canonical == local:
+                            return alias
+                    reverse = {
+                        "category": Ontology.CATEGORY_KEY,
+                        "hasX": "x",
+                        "hasY": "y",
+                        "hasZ": "z",
+                    }
+                    return reverse.get(local, local)
+            return s.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+
+        hasNode = uri("top:hasNode")
+        hasRelationship = uri("top:hasRelationship")
+        hasStartVertex = uri("top:hasStartVertex")
+        hasEndVertex = uri("top:hasEndVertex")
+        hasX = uri("top:hasX")
+        hasY = uri("top:hasY")
+        hasZ = uri("top:hasZ")
+        categoryP = uri("top:category")
+
+        graph_subject = uri(graphSubject) if graphSubject is not None else None
+        if graph_subject is None:
+            for s, _, _ in rdfGraph.triples((None, hasNode, None)):
+                graph_subject = s
+                break
+        if graph_subject is None:
+            if not silent:
+                print("Ontology.GraphByRDFGraph - Error: Could not find a graph subject with top:hasNode. Returning None.")
+            return None
+
+        node_subjects = list(rdfGraph.objects(graph_subject, hasNode))
+        rel_subjects = list(rdfGraph.objects(graph_subject, hasRelationship))
+
+        def subject_props(subject):
+            props = {Ontology.URI_KEY: qname(subject)}
+            for obj in rdfGraph.objects(subject, RDF_TYPE):
+                q = qname(obj)
+                if isinstance(q, str) and q.startswith("top:"):
+                    props[Ontology.ONTOLOGY_CLASS_KEY] = q
+                    expanded = Ontology.ExpandQName(q, defaultValue=None)
+                    if expanded is not None:
+                        props[Ontology.ONTOLOGY_URI_KEY] = expanded
+                    cat = Ontology.CategoryByClass(q, defaultValue=None)
+                    if cat is not None and Ontology.CATEGORY_KEY not in props:
+                        props[Ontology.CATEGORY_KEY] = cat
+                    break
+            for obj in rdfGraph.objects(subject, RDFS_LABEL):
+                props[Ontology.LABEL_KEY] = literal_value(obj)
+                break
+            for obj in rdfGraph.objects(subject, categoryP):
+                props[Ontology.CATEGORY_KEY] = literal_value(obj)
+                break
+            skip = {RDF_TYPE, RDFS_LABEL, categoryP, hasStartVertex, hasEndVertex}
+            for _, p, o in rdfGraph.triples((subject, None, None)):
+                if p in skip:
+                    continue
+                if p in (hasNode, hasRelationship):
+                    continue
+                if isinstance(o, Literal):
+                    key = local_key(p)
+                    if key not in props:
+                        props[key] = literal_value(o)
+            return props
+
+        vertices = []
+        subject_to_vertex = {}
+        for i, subject in enumerate(node_subjects):
+            props = subject_props(subject)
+            x = props.get("x", None)
+            y = props.get("y", None)
+            z = props.get("z", None)
+            if x is None:
+                objs = list(rdfGraph.objects(subject, hasX))
+                x = literal_value(objs[0]) if objs else float(i)
+            if y is None:
+                objs = list(rdfGraph.objects(subject, hasY))
+                y = literal_value(objs[0]) if objs else 0.0
+            if z is None:
+                objs = list(rdfGraph.objects(subject, hasZ))
+                z = literal_value(objs[0]) if objs else 0.0
+            try:
+                x = float(x)
+            except Exception:
+                x = float(i)
+            try:
+                y = float(y)
+            except Exception:
+                y = 0.0
+            try:
+                z = float(z)
+            except Exception:
+                z = 0.0
+            props.setdefault("id", Ontology._safe_local_name(qname(subject)))
+            v = Vertex.ByCoordinates(x, y, z)
+            v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(props))
+            subject_to_vertex[subject] = v
+            vertices.append(v)
+
+        edges = []
+        for subject in rel_subjects:
+            start_objs = list(rdfGraph.objects(subject, hasStartVertex))
+            end_objs = list(rdfGraph.objects(subject, hasEndVertex))
+            if not start_objs or not end_objs:
+                continue
+            sv = subject_to_vertex.get(start_objs[0])
+            ev = subject_to_vertex.get(end_objs[0])
+            if sv is None or ev is None:
+                continue
+            try:
+                e = Edge.ByStartVertexEndVertex(sv, ev)
+            except Exception:
+                try:
+                    e = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
+                except Exception:
+                    e = None
+            if e is None:
+                continue
+            props = subject_props(subject)
+            props.setdefault("id", Ontology._safe_local_name(qname(subject)))
+            e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(props))
+            edges.append(e)
+
+        if not vertices:
+            return None
+
+        try:
+            graph = Graph.ByVerticesEdges(vertices, edges, tolerance=tolerance, silent=silent)
+        except TypeError:
+            try:
+                graph = Graph.ByVerticesEdges(vertices, edges)
+            except Exception:
+                graph = None
+        if graph is None:
+            return None
+
+        graph_props = subject_props(graph_subject)
+        graph_props.setdefault(Ontology.ONTOLOGY_CLASS_KEY, "top:Graph")
+        graph_props.setdefault(Ontology.CATEGORY_KEY, "graph")
+        graph = Topology.SetDictionary(graph, Dictionary.ByPythonDictionary(graph_props))
+        return graph
+
+    @staticmethod
+    def GraphByRDFFile(path,
+                       format=None,
+                       graphSubject=None,
+                       namespacePrefix="inst",
+                       tolerance=0.0001,
+                       silent=False):
+        """
+        Reconstructs a TopologicPy graph from an RDF/Turtle file.
+
+        Parameters
+        ----------
+        path : str
+            The RDF file path.
+        format : str , optional
+            RDFLib parser format. If None, inferred from the extension. Default is None.
+        graphSubject : str , optional
+            The graph subject URI or QName. Default is None.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        tolerance : float , optional
+            Graph creation tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The reconstructed graph, or None on failure.
+        """
+
+        if path is None:
+            if not silent:
+                print("Ontology.GraphByRDFFile - Error: The input path is None. Returning None.")
+            return None
+        try:
+            import rdflib
+        except Exception as e:
+            if not silent:
+                print("Ontology.GraphByRDFFile - Error: RDFLib is required. Install it with 'pip install rdflib'. Returning None.")
+                print("Error:", e)
+            return None
+        if format is None:
+            ext = str(path).lower().rsplit(".", 1)[-1] if "." in str(path) else "ttl"
+            format = {
+                "ttl": "turtle",
+                "rdf": "xml",
+                "xml": "xml",
+                "jsonld": "json-ld",
+                "json": "json-ld",
+                "nt": "nt",
+                "n3": "n3",
+            }.get(ext, "turtle")
+        try:
+            g = rdflib.Graph()
+            for prefix, uri in Ontology.NAMESPACES.items():
+                g.bind(prefix, uri)
+            g.parse(path, format=format)
+            return Ontology.GraphByRDFGraph(g,
+                                            graphSubject=graphSubject,
+                                            namespacePrefix=namespacePrefix,
+                                            tolerance=tolerance,
+                                            silent=silent)
+        except Exception as e:
+            if not silent:
+                print("Ontology.GraphByRDFFile - Error: Could not parse RDF file. Returning None.")
+                print("Error:", e)
+            return None
+
+    @staticmethod
+    def GraphByTTL(path,
+                   graphSubject=None,
+                   namespacePrefix="inst",
+                   tolerance=0.0001,
+                   silent=False):
+        """
+        Reconstructs a TopologicPy graph from a Turtle file.
+        """
+
+        return Ontology.GraphByRDFFile(path,
+                                       format="turtle",
+                                       graphSubject=graphSubject,
+                                       namespacePrefix=namespacePrefix,
+                                       tolerance=tolerance,
+                                       silent=silent)
+
+    @staticmethod
+    def GraphByTTLString(ttlString,
+                         graphSubject=None,
+                         namespacePrefix="inst",
+                         tolerance=0.0001,
+                         silent=False):
+        """
+        Reconstructs a TopologicPy graph from a Turtle string.
+        """
+
+        try:
+            import rdflib
+        except Exception as e:
+            if not silent:
+                print("Ontology.GraphByTTLString - Error: RDFLib is required. Install it with 'pip install rdflib'. Returning None.")
+                print("Error:", e)
+            return None
+        if not isinstance(ttlString, str) or ttlString.strip() == "":
+            if not silent:
+                print("Ontology.GraphByTTLString - Error: The input ttlString is not valid. Returning None.")
+            return None
+        try:
+            g = rdflib.Graph()
+            for prefix, uri in Ontology.NAMESPACES.items():
+                g.bind(prefix, uri)
+            g.parse(data=ttlString, format="turtle")
+            return Ontology.GraphByRDFGraph(g,
+                                            graphSubject=graphSubject,
+                                            namespacePrefix=namespacePrefix,
+                                            tolerance=tolerance,
+                                            silent=silent)
+        except Exception as e:
+            if not silent:
+                print("Ontology.GraphByTTLString - Error: Could not parse Turtle string. Returning None.")
+                print("Error:", e)
+            return None
+

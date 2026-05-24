@@ -515,14 +515,6 @@ class GraphRAG:
                 raw_action,
                 silent=effective_silent,
             )
-
-            # Build a compact state from the current graph summary before using it
-            # to enrich id-only actions with labels. Older versions referenced a
-            # variable named `state` here without defining it.
-            state = {
-                "ids": [n.get("id") for n in (summary_before or {}).get("nodes", [])],
-                "labels": [n.get("label") for n in (summary_before or {}).get("nodes", [])],
-            }
             action = _enrich_action_labels_from_state(state, action)
 
             if verbose and not effective_silent:

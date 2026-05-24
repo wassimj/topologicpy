@@ -5,6 +5,7 @@ Minimal GQL-like parser for TopologicPy.
 
 Phase 1 read-query subset:
 - MATCH one node-edge-node pattern
+- ontology-prefixed labels such as top:Room and top:adjacentTo
 - directed, reverse-directed, and undirected edge patterns
 - optional WHERE with AND / OR / parentheses
 - RETURN / RETURN *
@@ -232,7 +233,7 @@ _GRAMMAR = r"""
     STAR: "*"
     OP.3: "==" | ">=" | "<=" | "<>" | "!=" | ">" | "<"
     EQUAL.3: "="
-    NAME: /[A-Za-z_][A-Za-z0-9_]*/
+    NAME: /[A-Za-z_][A-Za-z0-9_]*(?::[A-Za-z_][A-Za-z0-9_]*)?/
 
     %import common.SIGNED_NUMBER
     %import common.ESCAPED_STRING

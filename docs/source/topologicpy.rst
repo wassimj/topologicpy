@@ -22,6 +22,7 @@ Submodules
    topologicpy.EnergyModel
    topologicpy.Face
    topologicpy.GA
+   topologicpy.GQL
    topologicpy.Graph
    topologicpy.GraphDB
    topologicpy.GraphRAG
