@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.GraphDB module &mdash; topologicpy 0.9.40 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.GraphRAG module" href="topologicpy.GraphRAG.html" />
+    <link rel="prev" title="topologicpy.Graph module" href="topologicpy.Graph.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.9.40
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Core.html">topologicpy.Core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GQL.html">topologicpy.GQL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html">topologicpy.IFC module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Plotly.html">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.GraphDB module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.GraphDB.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.GraphDB">
+<span id="topologicpy-graphdb-module"></span><h1>topologicpy.GraphDB module<a class="headerlink" href="#module-topologicpy.GraphDB" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.GraphDB.</span></span><span class="sig-name descname"><span class="pre">GraphDB</span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A provider-neutral dispatcher for graph database backends.</p>
+<p>GraphDB is intentionally lightweight. It does not implement graph database
+logic itself. Instead, it stores a provider name and a backend manager, then
+dispatches calls to the corresponding TopologicPy database class, currently
+Kuzu or Neo4j.</p>
+<p>The expected usage pattern is:</p>
+<blockquote>
+<div><p>from topologicpy.GraphDB import GraphDB
+from topologicpy.Kuzu import Kuzu</p>
+<p>manager = Kuzu.Manager(“my_db”)
+graphdb = GraphDB.ByParameters(provider=”kuzu”, manager=manager)</p>
+<p>GraphDB.EnsureSchema(graphdb)
+GraphDB.UpsertGraph(graphdb, graph, graphIDKey=”graph_id”,</p>
+<blockquote>
+<div><p>vertexIDKey=”node_id”, vertexLabelKey=”label”)</p>
+</div></blockquote>
+</div></blockquote>
+<p>For Neo4j:</p>
+<blockquote>
+<div><p>from topologicpy.GraphDB import GraphDB
+from topologicpy.Neo4j import Neo4j</p>
+<p>driver = Neo4j.Connect(url, username, password)
+graphdb = GraphDB.ByParameters(provider=”neo4j”, manager=driver,</p>
+<blockquote>
+<div><p>database=”neo4j”)</p>
+</div></blockquote>
+<p>GraphDB.EnsureSchema(graphdb)</p>
+</div></blockquote>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.ByCSVPath" title="topologicpy.GraphDB.GraphDB.ByCSVPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByCSVPath</span></code></a>(graphdb, path[, graphIDHeader, ...])</p></td>
+<td><p>Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs into the selected backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.ByParameters" title="topologicpy.GraphDB.GraphDB.ByParameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByParameters</span></code></a>(provider[, manager, database, ...])</p></td>
+<td><p>Creates a provider-neutral graph database descriptor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.CandidateCountsForLabels" title="topologicpy.GraphDB.GraphDB.CandidateCountsForLabels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CandidateCountsForLabels</span></code></a>(graphdb, labels[, ...])</p></td>
+<td><p>Returns likely candidate labels connected to the input labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Database" title="topologicpy.GraphDB.GraphDB.Database"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Database</span></code></a>(graphdb[, silent])</p></td>
+<td><p>Returns the database name stored in the input graph database descriptor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.DeleteGraph" title="topologicpy.GraphDB.GraphDB.DeleteGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeleteGraph</span></code></a>(graphdb, graphID[, silent])</p></td>
+<td><p>Deletes a graph by id from the selected backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.EmptyDatabase" title="topologicpy.GraphDB.GraphDB.EmptyDatabase"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EmptyDatabase</span></code></a>(graphdb[, dropSchema, ...])</p></td>
+<td><p>Empties the selected backend database.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.EnsureSchema" title="topologicpy.GraphDB.GraphDB.EnsureSchema"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EnsureSchema</span></code></a>(graphdb[, silent])</p></td>
+<td><p>Ensures that the backend-specific schema/indexes exist.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Execute" title="topologicpy.GraphDB.GraphDB.Execute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Execute</span></code></a>(graphdb, query[, parameters, write, ...])</p></td>
+<td><p>Executes a backend query and returns raw backend rows where supported.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.FetchAllPairs" title="topologicpy.GraphDB.GraphDB.FetchAllPairs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FetchAllPairs</span></code></a>(graphdb[, undirected, silent])</p></td>
+<td><p>Returns all label-pair counts from the selected backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.FindBestExampleForLabel" title="topologicpy.GraphDB.GraphDB.FindBestExampleForLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FindBestExampleForLabel</span></code></a>(graphdb, label[, ...])</p></td>
+<td><p>Returns a representative database example for the input label.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.GraphByID" title="topologicpy.GraphDB.GraphDB.GraphByID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphByID</span></code></a>(graphdb, graphID[, ontology, silent])</p></td>
+<td><p>Constructs a TopologicPy graph from the selected backend using a graph id.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.GraphsByQuery" title="topologicpy.GraphDB.GraphDB.GraphsByQuery"><code class="xref py py-obj docutils literal notranslate"><span class="pre">GraphsByQuery</span></code></a>(graphdb, query[, parameters, ...])</p></td>
+<td><p>Executes a backend query and returns matching TopologicPy graphs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.ListGraphs" title="topologicpy.GraphDB.GraphDB.ListGraphs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ListGraphs</span></code></a>(graphdb[, where, limit, offset, ...])</p></td>
+<td><p>Lists graph metadata from the selected backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Manager" title="topologicpy.GraphDB.GraphDB.Manager"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Manager</span></code></a>(graphdb[, silent])</p></td>
+<td><p>Returns the backend-specific manager stored in the input graph database descriptor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.MaxNeighborsForLabel" title="topologicpy.GraphDB.GraphDB.MaxNeighborsForLabel"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MaxNeighborsForLabel</span></code></a>(graphdb, label[, silent])</p></td>
+<td><p>Returns the maximum observed neighbour count for vertices with the input label.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.OntologyKeys" title="topologicpy.GraphDB.GraphDB.OntologyKeys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyKeys</span></code></a>()</p></td>
+<td><p>Returns the canonical ontology-related dictionary keys that should be preserved by graph database backends.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Options" title="topologicpy.GraphDB.GraphDB.Options"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Options</span></code></a>(graphdb[, silent])</p></td>
+<td><p>Returns the options dictionary stored in the input graph database descriptor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Provider" title="topologicpy.GraphDB.GraphDB.Provider"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Provider</span></code></a>(graphdb[, silent])</p></td>
+<td><p>Returns the provider string stored in the input graph database descriptor.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.Query" title="topologicpy.GraphDB.GraphDB.Query"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Query</span></code></a>(graphdb, query[, parameters, silent])</p></td>
+<td><p>Executes a read query against the selected backend.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.UpsertGraph" title="topologicpy.GraphDB.GraphDB.UpsertGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UpsertGraph</span></code></a>(graphdb, graph[, graphIDKey, ...])</p></td>
+<td><p>Upserts a TopologicPy graph into the selected backend.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.VerticesByCategory" title="topologicpy.GraphDB.GraphDB.VerticesByCategory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByCategory</span></code></a>(graphdb, category[, ...])</p></td>
+<td><p>Returns backend rows for vertices/nodes with the requested category.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GraphDB.GraphDB.VerticesByOntologyClass" title="topologicpy.GraphDB.GraphDB.VerticesByOntologyClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesByOntologyClass</span></code></a>(graphdb, ontologyClass)</p></td>
+<td><p>Returns backend rows for vertices/nodes with the requested ontology class.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.ByCSVPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByCSVPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'graph_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeSRCHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'src_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDSTHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'dst_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeTrainMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeValidateMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeTestMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeIDHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'node_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeLabelHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTrainMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'train_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeValidateMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'val_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTestMaskHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'test_mask'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFeaturesHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'feat'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeXHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeYHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeZHeader</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Z'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeFeaturesKeys</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.ByCSVPath" title="Permalink to this definition"></a></dt>
+<dd><p>Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs
+into the selected backend.</p>
+<p>The signature mirrors Graph.ByCSVPath and the backend-specific ByCSVPath
+methods in Kuzu and Neo4j.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The CSV dataset path.</p>
+</dd>
+<dt><strong>graphIDHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The graph id column/header. Default is “graph_id”.</p>
+</dd>
+<dt><strong>graphLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The graph label column/header. Default is “label”.</p>
+</dd>
+<dt><strong>graphFeaturesHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The graph features prefix/header. Default is “feat”.</p>
+</dd>
+<dt><strong>graphFeaturesKeys</strong><span class="classifier">list , optional</span></dt><dd><p>Optional graph feature keys. Default is None.</p>
+</dd>
+<dt><strong>edgeSRCHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge source id column/header. Default is “src_id”.</p>
+</dd>
+<dt><strong>edgeDSTHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge destination id column/header. Default is “dst_id”.</p>
+</dd>
+<dt><strong>edgeLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge label column/header. Default is “label”.</p>
+</dd>
+<dt><strong>edgeTrainMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge train mask column/header. Default is “train_mask”.</p>
+</dd>
+<dt><strong>edgeValidateMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge validation mask column/header. Default is “val_mask”.</p>
+</dd>
+<dt><strong>edgeTestMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge test mask column/header. Default is “test_mask”.</p>
+</dd>
+<dt><strong>edgeFeaturesHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The edge features prefix/header. Default is “feat”.</p>
+</dd>
+<dt><strong>edgeFeaturesKeys</strong><span class="classifier">list , optional</span></dt><dd><p>Optional edge feature keys. Default is None.</p>
+</dd>
+<dt><strong>nodeIDHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node id column/header. Default is “node_id”.</p>
+</dd>
+<dt><strong>nodeLabelHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node label column/header. Default is “label”.</p>
+</dd>
+<dt><strong>nodeTrainMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node train mask column/header. Default is “train_mask”.</p>
+</dd>
+<dt><strong>nodeValidateMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node validation mask column/header. Default is “val_mask”.</p>
+</dd>
+<dt><strong>nodeTestMaskHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node test mask column/header. Default is “test_mask”.</p>
+</dd>
+<dt><strong>nodeFeaturesHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node features prefix/header. Default is “feat”.</p>
+</dd>
+<dt><strong>nodeXHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node X-coordinate column/header. Default is “X”.</p>
+</dd>
+<dt><strong>nodeYHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node Y-coordinate column/header. Default is “Y”.</p>
+</dd>
+<dt><strong>nodeZHeader</strong><span class="classifier">str , optional</span></dt><dd><p>The node Z-coordinate column/header. Default is “Z”.</p>
+</dd>
+<dt><strong>nodeFeaturesKeys</strong><span class="classifier">list , optional</span></dt><dd><p>Optional node feature keys. Default is None.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance passed to Graph.ByCSVPath. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary containing the number of upserted graphs and their ids.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.ByParameters">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByParameters</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">provider</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">manager</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">database</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">options</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.ByParameters" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a provider-neutral graph database descriptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>provider</strong><span class="classifier">str</span></dt><dd><p>The backend provider name. Supported values are “kuzu” and “neo4j”.</p>
+</dd>
+<dt><strong>manager</strong><span class="classifier">object , optional</span></dt><dd><p>The backend-specific manager. For Kuzu, this is usually the object
+returned by Kuzu.Manager(…). For Neo4j, this is usually the driver
+returned by Neo4j.Connect(…).</p>
+</dd>
+<dt><strong>database</strong><span class="classifier">str , optional</span></dt><dd><p>Optional database name. This is mainly used by Neo4j. Default is None.</p>
+</dd>
+<dt><strong>options</strong><span class="classifier">dict , optional</span></dt><dd><p>Optional provider-specific settings. Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A graph database descriptor, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.CandidateCountsForLabels">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CandidateCountsForLabels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeLabels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">50</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.CandidateCountsForLabels" title="Permalink to this definition"></a></dt>
+<dd><p>Returns likely candidate labels connected to the input labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>labels</strong><span class="classifier">list</span></dt><dd><p>The input labels.</p>
+</dd>
+<dt><strong>excludeLabels</strong><span class="classifier">list , optional</span></dt><dd><p>Labels to exclude from candidates. Default is None.</p>
+</dd>
+<dt><strong>limit</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum number of candidates to return. Default is 50.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of candidate label dictionaries.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Database">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Database</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Database" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the database name stored in the input graph database descriptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The input graph database descriptor.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The database name, or None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.DeleteGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DeleteGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.DeleteGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Deletes a graph by id from the selected backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>graphID</strong><span class="classifier">str</span></dt><dd><p>The graph id to delete.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True on success, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.EmptyDatabase">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EmptyDatabase</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dropSchema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">recreateSchema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.EmptyDatabase" title="Permalink to this definition"></a></dt>
+<dd><p>Empties the selected backend database.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>dropSchema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, drops the schema where the backend supports it. Default is False.</p>
+</dd>
+<dt><strong>recreateSchema</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and dropSchema is True, recreates schema afterwards. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True on success, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.EnsureSchema">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">EnsureSchema</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.EnsureSchema" title="Permalink to this definition"></a></dt>
+<dd><p>Ensures that the backend-specific schema/indexes exist.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if successful, False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Execute">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Execute</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">write</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Execute" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a backend query and returns raw backend rows where supported.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>The query to execute.</p>
+</dd>
+<dt><strong>parameters</strong><span class="classifier">dict , optional</span></dt><dd><p>Query parameters. Default is None.</p>
+</dd>
+<dt><strong>write</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, executes a write query. Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Backend-normalized result rows, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.FetchAllPairs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FetchAllPairs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">undirected</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.FetchAllPairs" title="Permalink to this definition"></a></dt>
+<dd><p>Returns all label-pair counts from the selected backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>undirected</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, normalizes direction so A-B and B-A are counted together.
+Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of dictionaries describing label pairs and counts.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.FindBestExampleForLabel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FindBestExampleForLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">attachTo</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.FindBestExampleForLabel" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a representative database example for the input label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>label</strong><span class="classifier">str</span></dt><dd><p>The input vertex label.</p>
+</dd>
+<dt><strong>attachTo</strong><span class="classifier">str , optional</span></dt><dd><p>Optional label of the node to which the candidate is expected to attach.
+Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A representative example dictionary, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.GraphByID">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphID</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.GraphByID" title="Permalink to this definition"></a></dt>
+<dd><p>Constructs a TopologicPy graph from the selected backend using a graph id.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>graphID</strong><span class="classifier">str</span></dt><dd><p>The graph id to retrieve.</p>
+</dd>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, annotates the returned graph with TopologicPy ontology classes
+where missing. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph</dt><dd><p>A TopologicPy graph, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.GraphsByQuery">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphsByQuery</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.GraphsByQuery" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a backend query and returns matching TopologicPy graphs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>The backend query string. For Kuzu and Neo4j this is Cypher.</p>
+</dd>
+<dt><strong>parameters</strong><span class="classifier">dict , optional</span></dt><dd><p>Query parameters. Default is None.</p>
+</dd>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, annotates the returned graphs with TopologicPy ontology classes
+where missing. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of TopologicPy graphs, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.ListGraphs">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ListGraphs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">where</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">offset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.ListGraphs" title="Permalink to this definition"></a></dt>
+<dd><p>Lists graph metadata from the selected backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>where</strong><span class="classifier">dict , optional</span></dt><dd><p>Simple backend-supported filters. Default is None.</p>
+</dd>
+<dt><strong>limit</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum number of records to return. Default is 100.</p>
+</dd>
+<dt><strong>offset</strong><span class="classifier">int , optional</span></dt><dd><p>Number of records to skip. Default is 0.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of graph metadata dictionaries, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Manager">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Manager</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Manager" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the backend-specific manager stored in the input graph database descriptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The input graph database descriptor.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>object</dt><dd><p>The backend manager, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.MaxNeighborsForLabel">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MaxNeighborsForLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.MaxNeighborsForLabel" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the maximum observed neighbour count for vertices with the input label.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>label</strong><span class="classifier">str</span></dt><dd><p>The input vertex label.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>int</dt><dd><p>The maximum neighbour count, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.OntologyKeys">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OntologyKeys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.OntologyKeys" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the canonical ontology-related dictionary keys that should be
+preserved by graph database backends.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>list</dt><dd><p>The list of ontology-related dictionary keys.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Options">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Options</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Options" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the options dictionary stored in the input graph database descriptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The input graph database descriptor.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>The options dictionary, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Provider">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Provider</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Provider" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the provider string stored in the input graph database descriptor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The input graph database descriptor.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The provider string, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.Query">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.Query" title="Permalink to this definition"></a></dt>
+<dd><p>Executes a read query against the selected backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>The query to execute.</p>
+</dd>
+<dt><strong>parameters</strong><span class="classifier">dict , optional</span></dt><dd><p>Query parameters. Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Backend-normalized result rows, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.UpsertGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UpsertGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph_id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexIDKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'id'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultVertexCategory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CONNECTED_TO'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCategoryKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'category'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultEdgeCategory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Edge'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyGraphClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyVertexClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Node'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyEdgeClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Relationship'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.UpsertGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Upserts a TopologicPy graph into the selected backend.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor. See GraphDB.ByParameters(…).</p>
+</dd>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The graph to be upserted.</p>
+</dd>
+<dt><strong>graphIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve the graph id. Default is “id”.</p>
+</dd>
+<dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each vertex id. Default is “id”.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each vertex label. Default is “label”.</p>
+</dd>
+<dt><strong>defaultVertexLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex label to use if no vertex label is found. Default is “Node”.</p>
+</dd>
+<dt><strong>vertexCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each vertex category. Default is “category”.</p>
+</dd>
+<dt><strong>defaultVertexCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default vertex category to use if no vertex category is found. Default is “Node”.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each edge label. Default is “label”.</p>
+</dd>
+<dt><strong>defaultEdgeLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge label to use if no edge label is found. Default is “CONNECTED_TO”.</p>
+</dd>
+<dt><strong>edgeCategoryKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each edge category. Default is “category”.</p>
+</dd>
+<dt><strong>defaultEdgeCategory</strong><span class="classifier">str , optional</span></dt><dd><p>The default edge category to use if no edge category is found. Default is “Edge”.</p>
+</dd>
+<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, edges are written bidirectionally where supported by the backend. Default is True.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, an existing graph with the same graph id is overwritten where supported by the backend. Default is False.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to use when extracting coordinate data. Default is 6.</p>
+</dd>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, annotates the graph, vertices, and edges with TopologicPy ontology
+classes before upserting. Default is True.</p>
+</dd>
+<dt><strong>ontologyGraphClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to the graph if none exists. Default is “top:Graph”.</p>
+</dd>
+<dt><strong>ontologyVertexClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to vertices if none exists. Default is “top:Node”.</p>
+</dd>
+<dt><strong>ontologyEdgeClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to edges if none exists. Default is “top:Relationship”.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The graph id used, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.VerticesByCategory">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByCategory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.VerticesByCategory" title="Permalink to this definition"></a></dt>
+<dd><p>Returns backend rows for vertices/nodes with the requested category.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>category</strong><span class="classifier">str</span></dt><dd><p>The requested category, for example “space”, “node”, or “element”.</p>
+</dd>
+<dt><strong>limit</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum number of rows to return. Default is 100.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Backend-normalized rows, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GraphDB.GraphDB.VerticesByOntologyClass">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VerticesByOntologyClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphdb</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">limit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GraphDB.GraphDB.VerticesByOntologyClass" title="Permalink to this definition"></a></dt>
+<dd><p>Returns backend rows for vertices/nodes with the requested ontology class.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graphdb</strong><span class="classifier">dict</span></dt><dd><p>The graph database descriptor.</p>
+</dd>
+<dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The requested ontology class, for example “top:Room”.</p>
+</dd>
+<dt><strong>limit</strong><span class="classifier">int , optional</span></dt><dd><p>Maximum number of rows to return. Default is 100.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>Backend-normalized rows, or None on error.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Graph.html" class="btn btn-neutral float-left" title="topologicpy.Graph module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.GraphRAG.html" class="btn btn-neutral float-right" title="topologicpy.GraphRAG module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

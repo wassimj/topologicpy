@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>topologicpy.Plotly module &mdash; topologicpy 0.9.40 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+        <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="topologicpy.Polyskel module" href="topologicpy.Polyskel.html" />
+    <link rel="prev" title="topologicpy.Ontology module" href="topologicpy.Ontology.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> topologicpy
+          </a>
+              <div class="version">
+                0.9.40
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="modules.html">topologicpy</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="topologicpy.html">topologicpy package</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="topologicpy.html#submodules">Submodules</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ANN.html">topologicpy.ANN module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Aperture.html">topologicpy.Aperture module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.BVH.html">topologicpy.BVH module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CSG.html">topologicpy.CSG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cell.html">topologicpy.Cell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.CellComplex.html">topologicpy.CellComplex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Cluster.html">topologicpy.Cluster module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Color.html">topologicpy.Color module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Context.html">topologicpy.Context module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Core.html">topologicpy.Core module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Dictionary.html">topologicpy.Dictionary module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Edge.html">topologicpy.Edge module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.EnergyModel.html">topologicpy.EnergyModel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Face.html">topologicpy.Face module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GA.html">topologicpy.GA module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GQL.html">topologicpy.GQL module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Graph.html">topologicpy.Graph module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphDB.html">topologicpy.GraphDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.GraphRAG.html">topologicpy.GraphRAG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Grid.html">topologicpy.Grid module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Helper.html">topologicpy.Helper module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Honeybee.html">topologicpy.Honeybee module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.IFC.html">topologicpy.IFC module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Kuzu.html">topologicpy.Kuzu module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.LLM.html">topologicpy.LLM module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Matrix.html">topologicpy.Matrix module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Neo4j.html">topologicpy.Neo4j module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Ontology.html">topologicpy.Ontology module</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Plotly module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Polyskel.html">topologicpy.Polyskel module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.PyG.html">topologicpy.PyG module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.ShapeGrammar.html">topologicpy.ShapeGrammar module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.Wire.html">topologicpy.Wire module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.version.html">topologicpy.version module</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="topologicpy.html#module-topologicpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">topologicpy</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+          <li><a href="modules.html">topologicpy</a> &raquo;</li>
+          <li><a href="topologicpy.html">topologicpy package</a> &raquo;</li>
+      <li>topologicpy.Plotly module</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/topologicpy.Plotly.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast.container,
+.nboutput.nblast.container {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast.container + .nbinput.container {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+
+/* Fix math alignment, see https://github.com/rtfd/sphinx_rtd_theme/pull/686 */
+.math {
+    text-align: unset;
+}
+</style>
+<section id="module-topologicpy.Plotly">
+<span id="topologicpy-plotly-module"></span><h1>topologicpy.Plotly module<a class="headerlink" href="#module-topologicpy.Plotly" title="Permalink to this heading"></a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Plotly.</span></span><span class="sig-name descname"><span class="pre">Plotly</span></span><a class="headerlink" href="#topologicpy.Plotly.Plotly" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.AddColorBar" title="topologicpy.Plotly.Plotly.AddColorBar"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddColorBar</span></code></a>(figure[, values, nTicks, ...])</p></td>
+<td><p>Adds a color bar to the input figure</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Colors" title="topologicpy.Plotly.Plotly.Colors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Colors</span></code></a>()</p></td>
+<td><p>Returns the list of named CSS colors that plotly can use.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByGraph" title="topologicpy.Plotly.Plotly.DataByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByGraph</span></code></a>(graph[, sagitta, absolute, ...])</p></td>
+<td><p>Creates plotly vertex and edge data from the input graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.DataByTopology" title="topologicpy.Plotly.Plotly.DataByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DataByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
+<td><p>Creates plotly face, edge, and vertex data.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.ExportToImage" title="topologicpy.Plotly.Plotly.ExportToImage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportToImage</span></code></a>(figure, path[, format, width, ...])</p></td>
+<td><p>Exports the plotly figure to an image.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="topologicpy.Plotly.Plotly.FigureByConfusionMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByConfusionMatrix</span></code></a>(matrix[, ...])</p></td>
+<td><p>Returns a Plotly Figure of the input confusion matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="topologicpy.Plotly.Plotly.FigureByCorrelation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByCorrelation</span></code></a>(actual, predicted[, ...])</p></td>
+<td><p>Returns a Plotly Figure showing the correlation between the input actual and predicted values.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByData" title="topologicpy.Plotly.Plotly.FigureByData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByData</span></code></a>(data[, width, height, xAxis, ...])</p></td>
+<td><p>Creates a plotly figure.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="topologicpy.Plotly.Plotly.FigureByDataFrame"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByDataFrame</span></code></a>(dataFrame[, labels, ...])</p></td>
+<td><p>Returns a Plotly Figure of the input dataframe</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="topologicpy.Plotly.Plotly.FigureByJSONFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONFile</span></code></a>(file)</p></td>
+<td><p>Imports a plotly figure from a JSON file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="topologicpy.Plotly.Plotly.FigureByJSONPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByJSONPath</span></code></a>(path)</p></td>
+<td><p>Imports a plotly figure from a JSON file path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="topologicpy.Plotly.Plotly.FigureByMatrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByMatrix</span></code></a>(matrix[, xCategories, ...])</p></td>
+<td><p>Returns a Plotly Figure of the input matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="topologicpy.Plotly.Plotly.FigureByPieChart"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByPieChart</span></code></a>(data, values, names)</p></td>
+<td><p>Creates a plotly pie chart figure.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="topologicpy.Plotly.Plotly.FigureByTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByTopology</span></code></a>(topology[, showVertices, ...])</p></td>
+<td><p>Creates a figure from the input topology.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="topologicpy.Plotly.Plotly.FigureExportToJSON"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToJSON</span></code></a>(figure, path[, overwrite])</p></td>
+<td><p>Exports the input plotly figure to a JSON file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="topologicpy.Plotly.Plotly.FigureExportToPDF"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPDF</span></code></a>(figure, path[, width, ...])</p></td>
+<td><p>Exports the input plotly figure to a PDF file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="topologicpy.Plotly.Plotly.FigureExportToPNG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToPNG</span></code></a>(figure, path[, width, ...])</p></td>
+<td><p>Exports the input plotly figure to a PNG file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="topologicpy.Plotly.Plotly.FigureExportToSVG"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureExportToSVG</span></code></a>(figure, path[, width, ...])</p></td>
+<td><p>Exports the input plotly figure to a SVG file.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderer" title="topologicpy.Plotly.Plotly.Renderer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderer</span></code></a>()</p></td>
+<td><p>Return the renderer most suitable for the environment in which the script is running.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Renderers" title="topologicpy.Plotly.Plotly.Renderers"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Renderers</span></code></a>()</p></td>
+<td><p>Returns a list of the available plotly renderers.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.SetCamera" title="topologicpy.Plotly.Plotly.SetCamera"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetCamera</span></code></a>(figure[, camera, center, up, ...])</p></td>
+<td><p>Sets the camera for the input figure.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Plotly.Plotly.Show" title="topologicpy.Plotly.Plotly.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(figure[, camera, center, up, renderer, ...])</p></td>
+<td><p>Shows the input figure.</p></td>
+</tr>
+</tbody>
+</table>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 58%" />
+<col style="width: 42%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>ColorScale</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>edgeData</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>vertexData</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.AddColorBar">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddColorBar</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nTicks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xPosition</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">outlineWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.AddColorBar" title="Permalink to this definition"></a></dt>
+<dd><p>Adds a color bar to the input figure</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>values</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the color bar. Default is [].</p>
+</dd>
+<dt><strong>nTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the color bar. Default is 5.</p>
+</dd>
+<dt><strong>xPosition</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the color bar. Default is -0.15.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the color bar. Default is 15</p>
+</dd>
+<dt><strong>outlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the color bar. Default is 0.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the color bar. Default is “”.</p>
+</dd>
+<dt><strong>subTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the color bar. Default is “”.</p>
+</dd>
+<dt><strong>units: str , optional</strong></dt><dd><p>The units used in the color bar. Default is “”</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.
+In addition to these, three color-blind friendly scales are included. These are “protanopia”, “deuteranopia”, and “tritanopia” for red, green, and blue colorblindness respectively.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the color bar. Default is 6.</p>
+</dd>
+<dt><strong>Returns</strong></dt><dd></dd>
+<dt><strong>——-</strong></dt><dd></dd>
+<dt><strong>plotly.graph_objs._figure.Figure</strong></dt><dd><p>The input figure with the color bar added.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.ColorScale">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ColorScale</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.ColorScale" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.Colors">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Colors</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.Colors" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the list of named CSS colors that plotly can use.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>list</dt><dd><p>The list of named CSS colors.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.DataByGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DataByGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sagitta</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absolute</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSizeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSizeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderWidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderColorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderWidthKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroupKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroups</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelFontSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLegend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Graph</span> <span class="pre">Vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDash</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDashKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroupKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroups</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLabel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLegend</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Graph</span> <span class="pre">Edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.DataByGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Creates plotly vertex and edge data from the input graph.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+</dd>
+<dt><strong>sagitta</strong><span class="classifier">float , optional</span></dt><dd><p>The length of the sagitta. In mathematics, the sagitta is the line connecting the center of a chord to the apex (or highest point) of the arc subtended by that chord. Default is 0 which means a straight edge is drawn instead of an arc. Default is 0.</p>
+</dd>
+<dt><strong>absolute</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the sagitta length is treated as an absolute value. Otherwise, it is treated as a ratio based on the length of the edge. Default is False.
+For example, if the length of the edge is 10, the sagitta is set to 0.5, and absolute is set to False, the sagitta length will be 5. Default is True.</p>
+</dd>
+<dt><strong>sides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides of the arc. Default is 8.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. Default is False.</p>
+</dd>
+<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. Default is 0.1.</p>
+</dd>
+<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. Default is None.</p>
+</dd>
+<dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex color. Default is None.</p>
+</dd>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. Default is 6.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
+</dd>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
+</dd>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
+</dd>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>showVertexLabel</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the vertex labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
+</dd>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertex legend will be drawn. Otherwise, it will not be drawn. Default is False.</p>
+</dd>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
+</dd>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
+</dd>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
+</dd>
+<dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge color. Default is None.</p>
+</dd>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge width. Default is None.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
+</dd>
+<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. Default is False.</p>
+</dd>
+<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. Default is None.</p>
+</dd>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
+</dd>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of groups to use for indexing the color of edges. Default is None.</p>
+</dd>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>showEdgeLabels</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edge labels are shown permenantely on screen. Otherwise, they are not. Default is False.</p>
+</dd>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edge legend will be drawn. Otherwise, it will not be drawn. Default is False.</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The vertex and edge data list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.DataByTopology">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DataByTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2.8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderColor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderWidth</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderColorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexBorderWidthKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeDashKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showFaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceOpacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceOpacityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#FAFAFA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showFaceLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Faces'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensities</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">material</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">materialKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">flatShading</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambient</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ambientKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffuse</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">diffuseKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specular</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">specularKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughness</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">roughnessKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.DataByTopology" title="Permalink to this definition"></a></dt>
+<dd><p>Creates plotly face, edge, and vertex data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology. This must contain faces and or edges.</p>
+</dd>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the output vertices. Default is 1.1.</p>
+</dd>
+<dt><strong>vertexSizeKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex size.The default is None.</p>
+</dd>
+<dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>vertexColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the vertex color.The default is None.</p>
+</dd>
+<dt><strong>vertexBorderWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired width of the border of the output vertices. Default is 0.</p>
+</dd>
+<dt><strong>vertexBorderColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the border of the output vertices. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
+</dd>
+<dt><strong>vertexLabelFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The font size to use for vertex labels. Default is 5.</p>
+</dd>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
+</dd>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
+</dd>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>vertexMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
+</dd>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
+</dd>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, arrowheads are drawn to show direction. Default is False.</p>
+</dd>
+<dt><strong>arrowSize</strong><span class="classifier">int, optional</span></dt><dd><p>The desired size of arrowheads for directed graphs. Default is 0.1.</p>
+</dd>
+<dt><strong>arrowSizeKey: str , optional</strong></dt><dd><p>The edge dictionary key under which to find the arrowhead size. Default is None.</p>
+</dd>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
+</dd>
+<dt><strong>edgeWidthKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge width.The default is None.</p>
+</dd>
+<dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>edgeColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the edge color.The default is None.</p>
+</dd>
+<dt><strong>edgeDash</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the edges are drawn as dashed lines. Default is False.</p>
+</dd>
+<dt><strong>edgeDashKey</strong><span class="classifier">str , optional</span></dt><dd><p>The key under which to find the boolean flag to draw edges as dashed lines. Default is None.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
+</dd>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
+</dd>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. Default is [].</p>
+</dd>
+<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.</p>
+</dd>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.</p>
+</dd>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. Default is “Topology Edges”.</p>
+</dd>
+<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. Default is 2.</p>
+</dd>
+<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. Default is 2.</p>
+</dd>
+<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.</p>
+</dd>
+<dt><strong>faceOpacityKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the face opacity.The default is None.</p>
+</dd>
+<dt><strong>faceColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output faces. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “#FAFAFA”.</p>
+</dd>
+<dt><strong>faceColorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which to find the face color.The default is None.</p>
+</dd>
+<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. Default is None.</p>
+</dd>
+<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. Default is None.</p>
+</dd>
+<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].</p>
+</dd>
+<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.</p>
+</dd>
+<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.</p>
+</dd>
+<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. Default is “Topology Faces”.</p>
+</dd>
+<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. Default is 3.</p>
+</dd>
+<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. Default is 3.</p>
+</dd>
+<dt><strong>intensityKey</strong><span class="classifier">str, optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.</p>
+</dd>
+<dt><strong>intensities</strong><span class="classifier">list , optional</span></dt><dd><p>The list of intensities against which to index the intensity of the vertex. Default is [].</p>
+</dd>
+<dt><strong>material</strong><span class="classifier">str , optional</span></dt><dd><p>The type of object material. Supported pre-built materials are:
+Preset     Ambient  Diffuse  Specular  Roughness  Description
+————————————————————–
+chalk        1.0      0.4       0.0        1.0     Very soft shading, low contrast
+concrete     0.85     0.75      0.05       0.9     Highly matte, micro-rough surface, minimal specular reflection
+eggshell     0.65     0.85      0.25       0.45    Slight sheen, soft highlights without gloss
+glossy       0.5      0.9       0.6        0.1     Highly polished appearance
+matte        0.9      0.7       0.0        1.0     Flat, non-reflective surfaces
+metallic     0.3      0.8       0.9        0.2     Strong, sharp reflections
+plastic      0.6      0.9       0.2        0.4     Soft highlights, good shape readability
+default      N/A      N/A       N/A        N/A     Flat shading is applied.
+Default is plastic.</p>
+</dd>
+<dt><strong>materialKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the material string is stored. Default is None.</p>
+</dd>
+<dt><strong>flatShading</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the model is rendered with flat shading with no clear light source. Default is True.</p>
+</dd>
+<dt><strong>ambient</strong><span class="classifier">float , optional</span></dt><dd><p>Controls the strength of ambient light applied uniformly to the surface.
+Higher values reduce shading contrast by increasing overall brightness.
+Typical range is [0, 1]. This over-rides the material pre-sets. Default is 0.6.</p>
+</dd>
+<dt><strong>ambientKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the ambient value (float) is stored. Default is None.</p>
+</dd>
+<dt><strong>diffuse</strong><span class="classifier">float , optional</span></dt><dd><p>Controls the strength of diffuse (Lambertian) lighting based on the angle
+between the light direction and the surface normal.
+Higher values enhance shape perception through shading.
+Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.</p>
+</dd>
+<dt><strong>diffuseKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the diffuse value (float) is stored. Default is None.</p>
+</dd>
+<dt><strong>specular</strong><span class="classifier">float , optional</span></dt><dd><p>Controls the intensity of specular (mirror-like) highlights on the surface.
+Higher values produce sharper and brighter highlights, giving a glossy appearance.
+Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.</p>
+</dd>
+<dt><strong>specularKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the specular value (float) is stored. Default is None.</p>
+</dd>
+<dt><strong>roughness</strong><span class="classifier">float , optional</span></dt><dd><p>Controls the spread of specular highlights on the surface.
+Lower values result in sharp, concentrated highlights (smooth surfaces),
+while higher values produce broader, softer highlights (rough surfaces).
+Typical range is [0, 1]. This over-rides the material pre-sets. Default is None.</p>
+</dd>
+<dt><strong>roughnessKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key under which the roughness value (float) is stored. Default is None.</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The vertex, edge, and face data list.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.ExportToImage">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportToImage</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'png'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1920'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'1080'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.ExportToImage" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the plotly figure to an image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The image file path.</p>
+</dd>
+<dt><strong>format</strong><span class="classifier">str , optional</span></dt><dd><p>The desired format. This can be any of “jpg”, “jpeg”, “pdf”, “png”, “svg”, or “webp”. It is case insensitive. Default is “png”.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 1920.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 1080.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the image was exported sucessfully. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByConfusionMatrix">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByConfusionMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Confusion</span> <span class="pre">Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Categories'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisTitleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotationFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grayScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByConfusionMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure of the input confusion matrix. Actual categories are displayed on the X-Axis,
+Predicted categories are displayed on the Y-Axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>matrix</strong><span class="classifier">list or numpy.array</span></dt><dd><p>The matrix to display.</p>
+</dd>
+<dt><strong>categories</strong><span class="classifier">list</span></dt><dd><p>The list of categories to use on the X and Y axes.</p>
+</dd>
+<dt><strong>minValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired minimum value to use for the color scale. If set to None, the minimum value found in the input matrix will be used.</p>
+</dd>
+<dt><strong>maxValue</strong><span class="classifier">float , optional</span></dt><dd><p>The desired maximum value to use for the color scale. If set to None, the maximum value found in the input matrix will be used.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Confusion Matrix”.</p>
+</dd>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual Categories”.</p>
+</dd>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted Categories”.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
+</dd>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a color scale is shown on the right side of the figure. Default is True.</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “Viridis”, “Plasma”). Default is “Viridis”.</p>
+</dd>
+<dt><strong>colorSamples</strong><span class="classifier">int , optional</span></dt><dd><p>The number of discrete color samples to use for displaying the data. Default is 10.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color (see docstring above). Default is transparent.</p>
+</dd>
+<dt><strong>marginLeft, marginRight, marginTop, marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>Plot margins in pixels.</p>
+</dd>
+<dt><strong>baseFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The base font size. Default is 16.</p>
+</dd>
+<dt><strong>tickFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The tick font size. Default is 14.</p>
+</dd>
+<dt><strong>titleFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The title font size. Default is 22.</p>
+</dd>
+<dt><strong>axisTitleFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The axis title font size. Default is 16.</p>
+</dd>
+<dt><strong>annotationFontSize</strong><span class="classifier">int , optional</span></dt><dd><p>The annotation font size. Default is 18.</p>
+</dd>
+<dt><strong>grayScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the figure is rendered in grayscale. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objects.Figure</dt><dd><p>The created plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByCorrelation">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByCorrelation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">actual</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predicted</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Correlation</span> <span class="pre">between</span> <span class="pre">Actual</span> <span class="pre">and</span> <span class="pre">Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Actual</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Predicted</span> <span class="pre">Values'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showIdentity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showBestFit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dotColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'blue'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lineColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'red'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">800</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">600</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theme</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'default'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByCorrelation" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure showing the correlation between the input actual and predicted values. Actual values are displayed on the X-Axis, Predicted values are displayed on the Y-Axis.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>actual</strong><span class="classifier">list</span></dt><dd><p>The actual values to display.</p>
+</dd>
+<dt><strong>predicted</strong><span class="classifier">list</span></dt><dd><p>The predicted values to display.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The desired title to display. Default is “Correlation between Actual and Predicted Values”.</p>
+</dd>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired X-axis title to display. Default is “Actual Values”.</p>
+</dd>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The desired Y-axis title to display. Default is “Predicted Values”.</p>
+</dd>
+<dt><strong>showIdentity</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to true, shows the 45 degree line.</p>
+</dd>
+<dt><strong>showBestFit</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, draws the best fit line through the data.</p>
+</dd>
+<dt><strong>dotSize</strong><span class="classifier">int, optional</span></dt><dd><p>The marker size</p>
+</dd>
+<dt><strong>dotColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the dots. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘blue’.</p>
+</dd>
+<dt><strong>lineColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the best fit line. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘red’.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 800.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 600.</p>
+</dd>
+<dt><strong>theme</strong><span class="classifier">str , optional</span></dt><dd><p>The plotly color scheme to use. The options are “dark”, “light”, “default”. Default is “default”.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
+- An rgb list (e.g. [255,0,0])
+- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.Figure</dt><dd><p>The created plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByData" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a plotly figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">list</span></dt><dd><p>The input list of plotly data.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 950.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 950.</p>
+</dd>
+<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>axisSize</strong><span class="classifier">float , optional</span></dt><dd><p>The size of the X, Y, Z, axes. Default is 1.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
+- An rgb list (e.g. [255,0,0])
+- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the left margin. The default value is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the right margin. The default value is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the top margin. The default value is 20.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the bottom margin. The default value is 0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objs._figure.Figure</dt><dd><p>The created plotly figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByDataFrame">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByDataFrame</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataFrame</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Untitled'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xSpacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ySpacing</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useMarkers</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">chartType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Line'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">gridColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'lightgray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByDataFrame" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure of the input dataframe</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>df</strong><span class="classifier">pandas.df</span></dt><dd><p>The pandas dataframe to display.</p>
+</dd>
+<dt><strong>data_labels</strong><span class="classifier">list</span></dt><dd><p>The labels to use for the data.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The desired width of the figure. Default is 950.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The desired height of the figure. Default is 500.</p>
+</dd>
+<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The chart title. Default is “Training and Testing Results”.</p>
+</dd>
+<dt><strong>xTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The X-axis title. Default is “Epochs”.</p>
+</dd>
+<dt><strong>xSpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The X-axis spacing. Default is 1.0.</p>
+</dd>
+<dt><strong>yTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The Y-axis title. Default is “Accuracy and Loss”.</p>
+</dd>
+<dt><strong>ySpacing</strong><span class="classifier">float , optional</span></dt><dd><p>The Y-axis spacing. Default is 0.1.</p>
+</dd>
+<dt><strong>useMarkers</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, markers will be displayed. Default is False.</p>
+</dd>
+<dt><strong>chartType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of chart. The options are “Line”, “Bar”, or “Scatter”. It is case insensitive. Default is “Line”.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
+- An rgb list (e.g. [255,0,0])
+- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>grid</strong><span class="classifier">str , optional</span></dt><dd><p>The desired background color. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘lightgray’</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The desired left margin in pixels. Default is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The desired right margin in pixels. Default is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The desired top margin in pixels. Default is 40.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The desired bottom margin in pixels. Default is 0.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>None.</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByJSONFile">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByJSONFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByJSONFile" title="Permalink to this definition"></a></dt>
+<dd><p>Imports a plotly figure from a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file</strong><span class="classifier">file object</span></dt><dd><p>The JSON file.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objs._figure.Figure</dt><dd><p>The imported figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByJSONPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByJSONPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByJSONPath" title="Permalink to this definition"></a></dt>
+<dd><p>Imports a plotly figure from a JSON file path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the BRep file.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objs._figure.Figure</dt><dd><p>The imported figure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByMatrix">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByMatrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yCategories</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxValue</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Matrix'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'X</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Y</span> <span class="pre">Axis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'gray'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorSamples</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">40</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">baseFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tickFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">14</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">titleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">22</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisTitleFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">16</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotationFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">18</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grayscale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByMatrix" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a Plotly Figure of the input matrix.</p>
+<p class="rubric">Notes</p>
+<ul class="simple">
+<li><p>Plots matrix values as provided (no implicit normalization).</p></li>
+<li><p>If <cite>grayscale</cite> is True, the figure becomes publication-friendly:</p></li>
+</ul>
+<p>white background, black axis lines/ticks, grayscale colorscale, and
+annotation contrast tuned for grayscale.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByPieChart">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByPieChart</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">values</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">names</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByPieChart" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a plotly pie chart figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>data</strong><span class="classifier">list</span></dt><dd><p>The input list of plotly data.</p>
+</dd>
+<dt><strong>values</strong><span class="classifier">list</span></dt><dd><p>The input list of values.</p>
+</dd>
+<dt><strong>names</strong><span class="classifier">list</span></dt><dd><p>The input list of names.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureByTopology">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureByTopology</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertices</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdges</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showFaces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceOpacity</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'#FAFAFA'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLabelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceGroupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceGroups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceMinGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceMaxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showFaceLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Faces'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">faceLegendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">intensityKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">950</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">500</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zAxis</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axisSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">backgroundColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'rgba(0,0,0,0)'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginLeft</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginRight</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginTop</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">20</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">marginBottom</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbValues</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbTicks</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbX</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">-0.15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">15</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbOutlineWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbSubTitle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">cbUnits</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureByTopology" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a figure from the input topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology. This must contain faces and or edges.</p>
+</dd>
+<dt><strong>showVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the vertices will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>vertexSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the vertices. Default is 1.1.</p>
+</dd>
+<dt><strong>vertexColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output vertices. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>vertexLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex label. Default is None.</p>
+</dd>
+<dt><strong>vertexGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the vertex group. Default is None.</p>
+</dd>
+<dt><strong>vertexGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of vertex groups against which to index the color of the vertex. Default is [].</p>
+</dd>
+<dt><strong>vertexMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the minimum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric vertexGroups, vertexMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the vertexGroupKey. If set to None, it is set to the maximum value in vertexGroups. Default is None.</p>
+</dd>
+<dt><strong>showVertexLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the vertices of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>vertexLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify vertices. Default is “Topology Vertices”.</p>
+</dd>
+<dt><strong>vertexLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the vertices of this topology. Default is 1.</p>
+</dd>
+<dt><strong>vertexLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the vertex legend group to which the vertices of this topology belong. Default is 1.</p>
+</dd>
+<dt><strong>showEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the edges will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>edgeWidth</strong><span class="classifier">float , optional</span></dt><dd><p>The desired thickness of the output edges. Default is 1.</p>
+</dd>
+<dt><strong>edgeColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output edges. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “black”.</p>
+</dd>
+<dt><strong>edgeLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge label. Default is None.</p>
+</dd>
+<dt><strong>edgeGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the edge group. Default is None.</p>
+</dd>
+<dt><strong>edgeGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of edge groups against which to index the color of the edge. Default is [].</p>
+</dd>
+<dt><strong>edgeMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMinGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the minimum value in edgeGroups. Default is None.</p>
+</dd>
+<dt><strong>edgeMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric edgeGroups, edgeMaxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the edgeGroupKey. If set to None, it is set to the maximum value in edgeGroups. Default is None.</p>
+</dd>
+<dt><strong>showEdgeLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the edges of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>edgeLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to identify edges. Default is “Topology Edges”.</p>
+</dd>
+<dt><strong>edgeLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the edges of this topology. Default is 2.</p>
+</dd>
+<dt><strong>edgeLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the edge legend group to which the edges of this topology belong. Default is 2.</p>
+</dd>
+<dt><strong>showFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the faces will be drawn. Otherwise, they will not be drawn. Default is True.</p>
+</dd>
+<dt><strong>faceOpacity</strong><span class="classifier">float , optional</span></dt><dd><p>The desired opacity of the output faces (0=transparent, 1=opaque). Default is 0.5.</p>
+</dd>
+<dt><strong>faceColor</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color of the output faces. This can be any plotly color string and may be specified as:
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is “#FAFAFA”.</p>
+</dd>
+<dt><strong>faceLabelKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face label. Default is None.</p>
+</dd>
+<dt><strong>faceGroupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key to use to display the face group. Default is None.</p>
+</dd>
+<dt><strong>faceGroups</strong><span class="classifier">list , optional</span></dt><dd><p>The list of face groups against which to index the color of the face. This can bhave numeric or string values. This should match the type of value associated with the faceGroupKey. Default is [].</p>
+</dd>
+<dt><strong>faceMinGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, minGroup is the desired minimum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the minimum value in faceGroups. Default is None.</p>
+</dd>
+<dt><strong>faceMaxGroup</strong><span class="classifier">int or float , optional</span></dt><dd><p>For numeric faceGroups, maxGroup is the desired maximum value for the scaling of colors. This should match the type of value associated with the faceGroupKey. If set to None, it is set to the maximum value in faceGroups. Default is None.</p>
+</dd>
+<dt><strong>showFaceLegend</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, the legend for the faces of this topology is shown. Otherwise, it isn’t. Default is False.</p>
+</dd>
+<dt><strong>faceLegendLabel</strong><span class="classifier">str , optional</span></dt><dd><p>The legend label string used to idenitfy edges. Default is “Topology Faces”.</p>
+</dd>
+<dt><strong>faceLegendRank</strong><span class="classifier">int , optional</span></dt><dd><p>The legend rank order of the faces of this topology. Default is 3.</p>
+</dd>
+<dt><strong>faceLegendGroup</strong><span class="classifier">int , optional</span></dt><dd><p>The number of the face legend group to which the faces of this topology belong. Default is 3.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the figure. The default value is 950.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height in pixels of the figure. The default value is 950.</p>
+</dd>
+<dt><strong>xAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the x axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>yAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the y axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>zAxis</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the z axis is drawn. Otherwise it is not drawn. Default is False.</p>
+</dd>
+<dt><strong>backgroundColor</strong><span class="classifier">list or str , optional</span></dt><dd><p>The desired background color. This can be any color list or plotly color string and may be specified as:
+- An rgb list (e.g. [255,0,0])
+- A cmyk list (e.g. [0.5, 0, 0.25, 0.2])
+- A hex string (e.g. ‘#ff0000’)
+- An rgb/rgba string (e.g. ‘rgb(255,0,0)’)
+- An hsl/hsla string (e.g. ‘hsl(0,100%,50%)’)
+- An hsv/hsva string (e.g. ‘hsv(0,100%,100%)’)
+- A named CSS color.
+The default is ‘rgba(0,0,0,0)’ (transparent).</p>
+</dd>
+<dt><strong>marginLeft</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the left margin. The default value is 0.</p>
+</dd>
+<dt><strong>marginRight</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the right margin. The default value is 0.</p>
+</dd>
+<dt><strong>marginTop</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the top margin. The default value is 20.</p>
+</dd>
+<dt><strong>marginBottom</strong><span class="classifier">int , optional</span></dt><dd><p>The size in pixels of the bottom margin. The default value is 0.</p>
+</dd>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera). Default is [-1.25, -1.25, 1.25].</p>
+</dd>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
+</dd>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). Default is “notebook”.</p>
+</dd>
+<dt><strong>intensityKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the dictionary of each vertex is searched for the value associated with the intensity key. This value is then used to color-code the vertex based on the colorScale. Default is None.</p>
+</dd>
+<dt><strong>showScale</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the colorbar is shown. Default is False.</p>
+</dd>
+<dt><strong>cbValues</strong><span class="classifier">list , optional</span></dt><dd><p>The input list of values to use for the colorbar. Default is [].</p>
+</dd>
+<dt><strong>cbTicks</strong><span class="classifier">int , optional</span></dt><dd><p>The number of ticks to use on the colorbar. Default is 5.</p>
+</dd>
+<dt><strong>cbX</strong><span class="classifier">float , optional</span></dt><dd><p>The x location of the colorbar. Default is -0.15.</p>
+</dd>
+<dt><strong>cbWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the colorbar. Default is 15</p>
+</dd>
+<dt><strong>cbOutlineWidth</strong><span class="classifier">int , optional</span></dt><dd><p>The width in pixels of the outline of the colorbar. Default is 0.</p>
+</dd>
+<dt><strong>cbTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the colorbar. Default is “”.</p>
+</dd>
+<dt><strong>cbSubTitle</strong><span class="classifier">str , optional</span></dt><dd><p>The subtitle of the colorbar. Default is “”.</p>
+</dd>
+<dt><strong>cbUnits: str , optional</strong></dt><dd><p>The units used in the colorbar. Default is “”</p>
+</dd>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of plotly color scales to use (e.g. “viridis”, “plasma”). Default is “viridis”. For a full list of names, see <a class="reference external" href="https://plotly.com/python/builtin-colorscales/">https://plotly.com/python/builtin-colorscales/</a>.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa for the values listed on the colorbar. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>Plotly figure</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureExportToJSON">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureExportToJSON</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureExportToJSON" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input plotly figure to a JSON file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureExportToPDF">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureExportToPDF</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1920</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureExportToPDF" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input plotly figure to a PDF file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureExportToPNG">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureExportToPNG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1920</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureExportToPNG" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input plotly figure to a PNG file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.FigureExportToSVG">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FigureExportToSVG</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1920</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.FigureExportToSVG" title="Permalink to this definition"></a></dt>
+<dd><p>Exports the input plotly figure to a SVG file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The input file path.</p>
+</dd>
+<dt><strong>width</strong><span class="classifier">int, optional</span></dt><dd><p>The width of the exported image in pixels. Default is 1920.</p>
+</dd>
+<dt><strong>height</strong><span class="classifier">int , optional</span></dt><dd><p>The height of the exported image in pixels. Default is 1200.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won’t.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>bool</dt><dd><p>True if the export operation is successful. False otherwise.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.Renderer">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Renderer</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.Renderer" title="Permalink to this definition"></a></dt>
+<dd><p>Return the renderer most suitable for the environment in which the script is running.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><blockquote>
+<div></div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The most suitable renderer type for the environment in which the script is running.
+Currently, this is limited to:
+- “vscode” if running in Visual Studio Code
+- “colab” if running in Google Colab
+- “iframe” if running in jupyter notebook or jupyterlab
+- “browser” if running in anything else</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.Renderers">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Renderers</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.Renderers" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a list of the available plotly renderers.</p>
+<dl class="field-list">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><blockquote>
+<div></div></blockquote>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of the available plotly renderers.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.SetCamera">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetCamera</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[-1.25,</span> <span class="pre">-1.25,</span> <span class="pre">1.25]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">up</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'perspective'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.SetCamera" title="Permalink to this definition"></a></dt>
+<dd><p>Sets the camera for the input figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. Default is [-1.25, -1.25, 1.25].</p>
+</dd>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
+</dd>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>projection</strong><span class="classifier">str , optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. Default is “perspective”</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>plotly.graph_objs._figure.Figure</dt><dd><p>The updated figure</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.Show">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Show</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">figure</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">camera</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[-1.25,</span> <span class="pre">-1.25,</span> <span class="pre">1.25]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">center</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">0]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">up</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">renderer</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">projection</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'perspective'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.Show" title="Permalink to this definition"></a></dt>
+<dd><p>Shows the input figure.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>figure</strong><span class="classifier">plotly.graph_objs._figure.Figure</span></dt><dd><p>The input plotly figure.</p>
+</dd>
+<dt><strong>camera</strong><span class="classifier">list , optional</span></dt><dd><p>The desired location of the camera. Default is [0, 0, 0].</p>
+</dd>
+<dt><strong>center</strong><span class="classifier">list , optional</span></dt><dd><p>The desired center (camera target). Default is [0, 0, 0].</p>
+</dd>
+<dt><strong>up</strong><span class="classifier">list , optional</span></dt><dd><p>The desired up vector. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>renderer</strong><span class="classifier">str , optional</span></dt><dd><p>The desired renderer. See Plotly.Renderers(). If set to None, the code will attempt to discover the most suitable renderer. Default is None.</p>
+</dd>
+<dt><strong>projection</strong><span class="classifier">str, optional</span></dt><dd><p>The desired type of projection. The options are “orthographic” or “perspective”. It is case insensitive. Default is “perspective”</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>None</dt><dd></dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.edgeData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">edgeData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">width</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">widthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dash</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dashKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">arrowSizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showEdgeLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Edges'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Viridis'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.edgeData" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Plotly.Plotly.vertexData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">vertexData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertices</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">color</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sizeKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderColor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'black'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderWidth</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderColorKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">borderWidthKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showVertexLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexLabelFontSize</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupKey</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groups</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendLabel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Topology</span> <span class="pre">Vertices'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendGroup</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">legendRank</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">showLegend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Viridis'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Plotly.Plotly.vertexData" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="topologicpy.Ontology.html" class="btn btn-neutral float-left" title="topologicpy.Ontology module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.Polyskel.html" class="btn btn-neutral float-right" title="topologicpy.Polyskel module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2026, Wassim Jabi.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
