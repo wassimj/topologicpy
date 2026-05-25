@@ -477,6 +477,7 @@ class Topology():
 
         """
 
+        from topologicpy.Vertex import Vertex
         from topologicpy.Context import Context
         from topologicpy.Dictionary import Dictionary
 
@@ -513,9 +514,46 @@ class Topology():
                 # topology.AddContent(content) # H to Core
                 Core.InstanceCall(topology, 'AddContent', content)
         else:
-            t = Topology.TypeID(subTopologyType)
-            # topology.AddContents(copy_contents, t) # H to Core
-            Core.InstanceCall(topology, 'AddContents', copy_contents, t)
+            subTopologyType = subTopologyType.lower()
+
+            if subTopologyType == "cellcomplex":
+                subtopologies = Topology.CellComplexes(topology, silent=True)
+            elif subTopologyType == "cell":
+                subtopologies = Topology.Cells(topology, silent=True)
+            elif subTopologyType == "shell":
+                subtopologies = Topology.Shells(topology, silent=True)
+            elif subTopologyType == "face":
+                subtopologies = Topology.Faces(topology, silent=True)
+            elif subTopologyType == "wire":
+                subtopologies = Topology.Wires(topology, silent=True)
+            elif subTopologyType == "edge":
+                subtopologies = Topology.Edges(topology, silent=True)
+            elif subTopologyType == "vertex":
+                subtopologies = Topology.Vertices(topology, silent=True)
+            else:
+                subtopologies = []
+
+            for content in copy_contents:
+                try:
+                    content_vertex = Topology.InternalVertex(content, tolerance=tolerance)
+                except Exception:
+                    try:
+                        content_vertex = Topology.Centroid(content)
+                    except Exception:
+                        content_vertex = None
+
+                if content_vertex is None:
+                    continue
+
+                for subtopology in subtopologies:
+                    try:
+                        if Vertex.IsInternal(content_vertex, subtopology, tolerance=tolerance):
+                            context = Context.ByTopologyParameters(subtopology)
+                            Core.InstanceCall(content, "AddContext", context)
+                            Core.InstanceCall(subtopology, "AddContent", content)
+                            break
+                    except Exception:
+                        continue
         return topology
     
     @staticmethod

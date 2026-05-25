@@ -2431,7 +2431,7 @@ class Graph:
                 siteLabel: str = "Site_0001",
                 siteDictionary: dict = None,
                 buildingLabel: str = "Building_0001",
-                buildingDictionary: dict = None , 
+                buildingDictionary: dict = None,
                 storeyPrefix: str = "Storey",
                 floorLevels: list = [],
                 vertexLabelKey: str = "label",
@@ -2451,24 +2451,24 @@ class Graph:
                 doorType: str = "door",
                 windowType: str = "window",
                 contentType: str = "content",
-                namespace: str = "http://github.com/wassimj/topologicpy/resources",
-                mantissa: int = 6
-                ):
+                namespace: str = "http://w3id.org/topologicpy#",
+                instanceNamespace: str = "http://w3id.org/topologicpy/instance#",
+                mantissa: int = 6):
         """
-        Creates an RDF graph according to the BOT ontology. See https://w3c-lbd-cg.github.io/bot/.
+        Creates an RDF graph according to the BOT ontology and the TopologicPy ontology.
 
         Parameters
         ----------
         graph : topologic_core.Graph
             The input graph.
         bidirectional : bool , optional
-            If set to True, reverse relationships are created wherever possible. Otherwise, they are not. Default is False.
+            If set to True, reverse relationships are created wherever possible. Default is False.
         includeAttributes : bool , optional
-            If set to True, the attributes associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
+            If set to True, vertex attributes are written out as RDF literals. Default is False.
         includeLabel : bool , optional
-            If set to True, a label is attached to each node. Otherwise, it is not. Default is False.
+            If set to True, an rdfs:label is attached to each resource. Default is False.
         includeGeometry : bool , optional
-            If set to True, the geometry associated with vertices in the graph are written out. Otherwise, they are not. Default is False.
+            If set to True, geometry is written out where available. Default is False.
         siteLabel : str , optional
             The desired site label. Default is "Site_0001".
         siteDictionary : dict , optional
@@ -2478,88 +2478,146 @@ class Graph:
         buildingDictionary : dict , optional
             The dictionary of building attributes to include in the output. Default is None.
         storeyPrefix : str , optional
-            The desired prefixed to use for each building storey. Default is "Storey".
+            The desired prefix to use for each building storey. Default is "Storey".
         floorLevels : list , optional
-            The list of floor levels. This should be a numeric list, sorted from lowest to highest.
-            If not provided, floorLevels will be computed automatically based on the vertices' (zKey)) attribute. See below.
-        verticesKey : str , optional
-            The desired key name to call vertices. Default is "vertices".
-        edgesKey : str , optional
-            The desired key name to call edges. Default is "edges".
+            The list of floor levels. If not provided, floor levels are computed from slab vertices when possible.
         vertexLabelKey : str , optional
-            If set to a valid string, the vertex label will be set to the value at this key. Otherwise it will be set to Vertex_XXXX where XXXX is a sequential unique number.
-            Note: If vertex labels are not unique, they will be forced to be unique.
+            The dictionary key used to retrieve vertex labels. Default is "label".
+        typeKey : str , optional
+            The dictionary key used to retrieve vertex types. Default is "type".
+        verticesKey : str , optional
+            The JSON key used for vertices. Default is "vertices".
+        edgesKey : str , optional
+            The JSON key used for edges. Default is "edges".
         edgeLabelKey : str , optional
-            If set to a valid string, the edge label will be set to the value at this key. Otherwise it will be set to Edge_XXXX where XXXX is a sequential unique number.
-            Note: If edge labels are not unique, they will be forced to be unique.
+            The dictionary key used to retrieve edge labels. Default is "".
         sourceKey : str , optional
             The dictionary key used to store the source vertex. Default is "source".
         targetKey : str , optional
             The dictionary key used to store the target vertex. Default is "target".
         xKey : str , optional
-            The desired key name to use for x-coordinates. Default is "hasX".
+            The key used for x-coordinates. Default is "hasX".
         yKey : str , optional
-            The desired key name to use for y-coordinates. Default is "hasY".
+            The key used for y-coordinates. Default is "hasY".
         zKey : str , optional
-            The desired key name to use for z-coordinates. Default is "hasZ".
+            The key used for z-coordinates. Default is "hasZ".
         geometryKey : str , optional
-            The desired key name to use for geometry. Default is "brep".
-        typeKey : str , optional
-            The dictionary key to use to look up the type of the node. Default is "type".
-        geometryKey : str , optional
-            The dictionary key to use to look up the geometry of the node. Default is "brep".
+            The key used for geometry. Default is "brep".
         spaceType : str , optional
-            The dictionary string value to use to look up vertices of type "space". Default is "space".
+            The value used to identify spaces. Default is "space".
         wallType : str , optional
-            The dictionary string value to use to look up vertices of type "wall". Default is "wall".
+            The value used to identify walls. Default is "wall".
         slabType : str , optional
-            The dictionary string value to use to look up vertices of type "slab". Default is "slab".
+            The value used to identify slabs. Default is "slab".
         doorType : str , optional
-            The dictionary string value to use to look up vertices of type "door". Default is "door".
+            The value used to identify doors. Default is "door".
         windowType : str , optional
-            The dictionary string value to use to look up vertices of type "window". Default is "window".
+            The value used to identify windows. Default is "window".
         contentType : str , optional
-            The dictionary string value to use to look up vertices of type "content". Default is "contents".
+            The value used to identify contents. Default is "content".
         namespace : str , optional
-            The desired namespace to use in the BOT graph. Default is "http://github.com/wassimj/topologicpy/resources".
+            The TopologicPy ontology namespace. Default is "http://w3id.org/topologicpy#".
+        instanceNamespace : str , optional
+            The instance namespace used for generated resources. Default is "http://w3id.org/topologicpy/instance#".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
 
-            
         Returns
         -------
         rdflib.graph.Graph
-            The rdf graph using the BOT ontology.
+            The RDF graph using BOT and TopologicPy ontology terms.
         """
 
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
         import os
+        import re
+        import json
         import warnings
-        
+
         try:
             from rdflib import Graph as RDFGraph
             from rdflib import URIRef, Literal, Namespace
             from rdflib.namespace import RDF, RDFS, XSD
-        except:
+        except Exception:
             print("Graph.BOTGraph - Information: Installing required rdflib library.")
             try:
                 os.system("pip install rdflib")
-            except:
+            except Exception:
                 os.system("pip install rdflib --user")
             try:
                 from rdflib import Graph as RDFGraph
                 from rdflib import URIRef, Literal, Namespace
-                from rdflib.namespace import RDF, RDFS
+                from rdflib.namespace import RDF, RDFS, XSD
                 print("Graph.BOTGraph - Information: rdflib library installed correctly.")
-            except:
+            except Exception:
                 warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
                 return None
-        
-        if floorLevels == None:
+
+        def _safe_local_name(value):
+            value = "unnamed" if value is None else str(value).strip()
+            if value == "":
+                value = "unnamed"
+            value = re.sub(r"[^A-Za-z0-9_\-]", "_", value)
+            if value[0].isdigit():
+                value = "id_" + value
+            return value
+
+        def _literal(value):
+            if isinstance(value, bool):
+                return Literal(value, datatype=XSD.boolean)
+            if isinstance(value, int) and not isinstance(value, bool):
+                return Literal(value, datatype=XSD.integer)
+            if isinstance(value, float):
+                return Literal(value, datatype=XSD.double)
+            if isinstance(value, (list, tuple, dict)):
+                return Literal(json.dumps(value), datatype=XSD.string)
+            return Literal("" if value is None else str(value), datatype=XSD.string)
+
+        def _attr(attributes, key, default=""):
+            if not isinstance(attributes, dict):
+                return default
+            value = attributes.get(key, default)
+            return default if value is None else value
+
+        def _type(attributes):
+            if not isinstance(attributes, dict):
+                return ""
+            values = [
+                attributes.get(typeKey, None),
+                attributes.get("category", None),
+                attributes.get("ontology_class", None),
+                attributes.get("ifc_class", None),
+                attributes.get(vertexLabelKey, None),
+            ]
+            values = [str(v).lower() for v in values if v is not None and str(v).strip() != ""]
+            return " ".join(values)
+
+        def _prop_uri(top_ns, key):
+            return top_ns[_safe_local_name(key)]
+
+        def _resource_uri(inst_ns, label):
+            return inst_ns[_safe_local_name(label)]
+
+        def _dictionary_items(d):
+            if d is None:
+                return []
+            if isinstance(d, dict):
+                return list(d.items())
+            try:
+                if Topology.IsInstance(d, "Dictionary"):
+                    keys = Dictionary.Keys(d) or []
+                    return [(k, Dictionary.ValueAtKey(d, k, None)) for k in keys]
+            except Exception:
+                return []
+            return []
+
+        if floorLevels is None:
             floorLevels = []
-        
+        else:
+            floorLevels = list(floorLevels)
+
         json_data = Graph.JSONData(graph,
                                    verticesKey=verticesKey,
                                    edgesKey=edgesKey,
@@ -2572,149 +2630,152 @@ class Graph:
                                    zKey=zKey,
                                    geometryKey=geometryKey,
                                    mantissa=mantissa)
-        
-        # Create an empty RDF graph
+
         bot_graph = RDFGraph()
-        
-        # Define namespaces
-        rdf = Namespace("http://www.w3.org/1999/02/22-rdf-syntax-ns#")
         bot = Namespace("https://w3id.org/bot#")
         top = Namespace(namespace)
-        
-        # Define a custom prefix mapping
+        inst = Namespace(instanceNamespace)
+
         bot_graph.namespace_manager.bind("bot", bot)
-        bot_graph.namespace_manager.bind("xsd", XSD)
         bot_graph.namespace_manager.bind("top", top)
-        
-        # Add site
-        site_uri = URIRef(siteLabel)
-        bot_graph.add((site_uri, rdf.type, bot.Site))
+        bot_graph.namespace_manager.bind("inst", inst)
+        bot_graph.namespace_manager.bind("xsd", XSD)
+
+        site_uri = _resource_uri(inst, siteLabel)
+        building_uri = _resource_uri(inst, buildingLabel)
+
+        bot_graph.add((site_uri, RDF.type, bot.Site))
+        bot_graph.add((site_uri, RDF.type, top.Site))
         if includeLabel:
-            bot_graph.add((site_uri, RDFS.label, Literal(siteLabel)))
-        if Topology.IsInstance(siteDictionary, "Dictionary"):
-            keys = Dictionary.Keys(siteDictionary)
-            for key in keys:
-                value = Dictionary.ValueAtKey(siteDictionary, key)
-                if not (key == vertexLabelKey) and not (key == typeKey):
-                    if isinstance(value, float):
-                        datatype = XSD.float
-                    elif isinstance(value, bool):
-                        datatype = XSD.boolean
-                    elif isinstance(value, int):
-                        datatype = XSD.integer
-                    elif isinstance(value, str):
-                        datatype = XSD.string
-                    bot_graph.add((site_uri, top[key], Literal(value, datatype=datatype)))
-        # Add building
-        building_uri = URIRef(buildingLabel)
-        bot_graph.add((building_uri, rdf.type, bot.Building))
+            bot_graph.add((site_uri, RDFS.label, _literal(siteLabel)))
+        for key, value in _dictionary_items(siteDictionary):
+            if key not in [vertexLabelKey, typeKey]:
+                bot_graph.add((site_uri, _prop_uri(top, key), _literal(value)))
+
+        bot_graph.add((building_uri, RDF.type, bot.Building))
+        bot_graph.add((building_uri, RDF.type, top.Building))
         if includeLabel:
-            bot_graph.add((building_uri, RDFS.label, Literal(buildingLabel)))
-        if Topology.IsInstance(buildingDictionary, "Dictionary"):
-            keys = Dictionary.Keys(siteDictionary)
-            for key in keys:
-                value = Dictionary.ValueAtKey(siteDictionary, key)
-                if not (key == vertexLabelKey) and not (key == typeKey):
-                    if isinstance(value, float):
-                        datatype = XSD.float
-                    elif isinstance(value, bool):
-                        datatype = XSD.boolean
-                    elif isinstance(value, int):
-                        datatype = XSD.integer
-                    elif isinstance(value, str):
-                        datatype = XSD.string
-                    bot_graph.add((building_uri, top[key], Literal(value, datatype=datatype)))
-        # Add stories
-        # if floor levels are not given, then need to be computed
+            bot_graph.add((building_uri, RDFS.label, _literal(buildingLabel)))
+        for key, value in _dictionary_items(buildingDictionary):
+            if key not in [vertexLabelKey, typeKey]:
+                bot_graph.add((building_uri, _prop_uri(top, key), _literal(value)))
+
         if len(floorLevels) == 0:
-            for node, attributes in json_data[verticesKey].items():
-                if slabType.lower() in attributes[typeKey].lower():
-                    floorLevels.append(attributes[zKey])
-            floorLevels = list(set(floorLevels))
-            floorLevels.sort()
-            floorLevels = floorLevels[:-1]
+            for node, attributes in (json_data.get(verticesKey, {}) or {}).items():
+                if slabType.lower() in _type(attributes):
+                    try:
+                        floorLevels.append(float(_attr(attributes, zKey, 0.0)))
+                    except Exception:
+                        pass
+            floorLevels = sorted(list(set(floorLevels)))
+            if len(floorLevels) > 1:
+                floorLevels = floorLevels[:-1]
+            if len(floorLevels) == 0:
+                floorLevels = [0.0]
+
         storey_uris = []
-        n = max(len(str(len(floorLevels))),4)
+        n = max(len(str(len(floorLevels))), 4)
         for i, floor_level in enumerate(floorLevels):
-            storey_uri = URIRef(storeyPrefix+"_"+str(i+1).zfill(n))
-            bot_graph.add((storey_uri, rdf.type, bot.Storey))
+            label = storeyPrefix + "_" + str(i + 1).zfill(n)
+            storey_uri = _resource_uri(inst, label)
+            bot_graph.add((storey_uri, RDF.type, bot.Storey))
+            bot_graph.add((storey_uri, RDF.type, top.Storey))
+            bot_graph.add((storey_uri, top.hasZ, _literal(float(floor_level))))
             if includeLabel:
-                bot_graph.add((storey_uri, RDFS.label, Literal(storeyPrefix+"_"+str(i+1).zfill(n))))
+                bot_graph.add((storey_uri, RDFS.label, _literal(label)))
             storey_uris.append(storey_uri)
 
-        # Add triples to relate building to site and stories to building
         bot_graph.add((site_uri, bot.hasBuilding, building_uri))
         if bidirectional:
-            bot_graph.add((building_uri, bot.isPartOf, site_uri)) # might not be needed
+            bot_graph.add((building_uri, bot.isPartOf, site_uri))
 
         for storey_uri in storey_uris:
             bot_graph.add((building_uri, bot.hasStorey, storey_uri))
             if bidirectional:
-                bot_graph.add((storey_uri, bot.isPartOf, building_uri)) # might not be needed
-        
-        # Add vertices as RDF resources
-        for node, attributes in json_data[verticesKey].items():
-            node_uri = URIRef(top[node])
-            if spaceType.lower() in attributes[typeKey].lower():
-                bot_graph.add((node_uri, rdf.type, bot.Space))
-                # Find the storey it is on
-                z = attributes[zKey]
+                bot_graph.add((storey_uri, bot.isPartOf, building_uri))
+
+        vertices = json_data.get(verticesKey, {}) or {}
+        edges = json_data.get(edgesKey, {}) or {}
+
+        for node, attributes in vertices.items():
+            node_uri = _resource_uri(inst, node)
+            node_type = _type(attributes)
+
+            if spaceType.lower() in node_type or "top:space" in node_type or "top:room" in node_type or "ifcspace" in node_type:
+                bot_graph.add((node_uri, RDF.type, bot.Space))
+                bot_graph.add((node_uri, RDF.type, top.Space))
+                try:
+                    z = float(_attr(attributes, zKey, 0.0))
+                except Exception:
+                    z = 0.0
                 level = Helper.Position(z, floorLevels)
+                if level is None or level < 1:
+                    level = 1
                 if level > len(storey_uris):
                     level = len(storey_uris)
-                storey_uri = storey_uris[level-1]
+                storey_uri = storey_uris[level - 1]
                 bot_graph.add((storey_uri, bot.hasSpace, node_uri))
                 if bidirectional:
-                    bot_graph.add((node_uri, bot.isPartOf, storey_uri)) # might not be needed
-            elif windowType.lower() in attributes[typeKey].lower():
-                bot_graph.add((node_uri, rdf.type, bot.Window))
-            elif doorType.lower() in attributes[typeKey].lower():
-                bot_graph.add((node_uri, rdf.type, bot.Door))
-            elif wallType.lower() in attributes[typeKey].lower():
-                bot_graph.add((node_uri, rdf.type, bot.Wall))
-            elif slabType.lower() in attributes[typeKey].lower():
-                bot_graph.add((node_uri, rdf.type, bot.Slab))
+                    bot_graph.add((node_uri, bot.isPartOf, storey_uri))
+            elif windowType.lower() in node_type or "top:window" in node_type or "ifcwindow" in node_type:
+                bot_graph.add((node_uri, RDF.type, bot.Element))
+                bot_graph.add((node_uri, RDF.type, top.Window))
+            elif doorType.lower() in node_type or "top:door" in node_type or "ifcdoor" in node_type:
+                bot_graph.add((node_uri, RDF.type, bot.Element))
+                bot_graph.add((node_uri, RDF.type, top.Door))
+            elif wallType.lower() in node_type or "top:wall" in node_type or "ifcwall" in node_type:
+                bot_graph.add((node_uri, RDF.type, bot.Element))
+                bot_graph.add((node_uri, RDF.type, top.Wall))
+            elif slabType.lower() in node_type or "top:slab" in node_type or "ifcslab" in node_type:
+                bot_graph.add((node_uri, RDF.type, bot.Element))
+                bot_graph.add((node_uri, RDF.type, top.Slab))
             else:
-                bot_graph.add((node_uri, rdf.type, bot.Element))
-            
+                bot_graph.add((node_uri, RDF.type, bot.Element))
+                bot_graph.add((node_uri, RDF.type, top.Element))
+
+            # Geometry export is controlled by includeGeometry, not includeAttributes.
+            geometry_value = attributes.get(geometryKey, None)
+            if includeGeometry and geometry_value is not None:
+                bot_graph.add((node_uri, bot.hasSimple3DModel, _literal(geometry_value)))
+                bot_graph.add((node_uri, top.brep, _literal(geometry_value)))
+
             if includeAttributes:
                 for key, value in attributes.items():
                     if key == geometryKey:
-                        if includeGeometry:
-                            bot_graph.add((node_uri, bot.hasSimpleGeometry, Literal(value)))
-                    if key == vertexLabelKey:
+                        continue
+                    elif key == vertexLabelKey:
                         if includeLabel:
-                            bot_graph.add((node_uri, RDFS.label, Literal(value)))
-                    elif key != typeKey and key != geometryKey:
-                        if isinstance(value, float):
-                            datatype = XSD.float
-                        elif isinstance(value, bool):
-                            datatype = XSD.boolean
-                        elif isinstance(value, int):
-                            datatype = XSD.integer
-                        elif isinstance(value, str):
-                            datatype = XSD.string
-                        bot_graph.add((node_uri, top[key], Literal(value, datatype=datatype)))
-            if includeLabel:
-                for key, value in attributes.items():
-                    if key == vertexLabelKey:
-                        bot_graph.add((node_uri, RDFS.label, Literal(value)))
-        
-        # Add edges as RDF triples
-        for edge, attributes in json_data[edgesKey].items():
-            source = attributes[sourceKey]
-            target = attributes[targetKey]
-            source_uri = URIRef(top[source])
-            target_uri = URIRef(top[target])
-            if spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and spaceType.lower() in json_data[verticesKey][target][typeKey].lower():
+                            bot_graph.add((node_uri, RDFS.label, _literal(value)))
+                    elif key != typeKey:
+                        bot_graph.add((node_uri, _prop_uri(top, key), _literal(value)))
+
+            if includeLabel and vertexLabelKey in attributes:
+                bot_graph.add((node_uri, RDFS.label, _literal(attributes.get(vertexLabelKey))))
+
+        for edge, attributes in edges.items():
+            source = _attr(attributes, sourceKey, None)
+            target = _attr(attributes, targetKey, None)
+            if source is None or target is None:
+                continue
+
+            source_uri = _resource_uri(inst, source)
+            target_uri = _resource_uri(inst, target)
+            source_type = _type(vertices.get(source, {}))
+            target_type = _type(vertices.get(target, {}))
+
+            source_is_space = spaceType.lower() in source_type or "top:space" in source_type or "top:room" in source_type or "ifcspace" in source_type
+            target_is_space = spaceType.lower() in target_type or "top:space" in target_type or "top:room" in target_type or "ifcspace" in target_type
+            target_is_wall = wallType.lower() in target_type or "top:wall" in target_type or "ifcwall" in target_type
+            target_is_slab = slabType.lower() in target_type or "top:slab" in target_type or "ifcslab" in target_type
+            target_is_content = contentType.lower() in target_type or "content" in target_type or "furniture" in target_type or "equipment" in target_type
+
+            if source_is_space and target_is_space:
                 bot_graph.add((source_uri, bot.adjacentTo, target_uri))
                 if bidirectional:
                     bot_graph.add((target_uri, bot.adjacentTo, source_uri))
-            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and wallType.lower() in json_data[verticesKey][target][typeKey].lower():
+            elif source_is_space and (target_is_wall or target_is_slab):
                 bot_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and slabType.lower() in json_data['vertices'][target][typeKey].lower():
-                bot_graph.add((target_uri, bot.interfaceOf, source_uri))
-            elif spaceType.lower() in json_data[verticesKey][source][typeKey].lower() and contentType.lower() in json_data[verticesKey][target][typeKey].lower():
+            elif source_is_space and target_is_content:
                 bot_graph.add((source_uri, bot.containsElement, target_uri))
                 if bidirectional:
                     bot_graph.add((target_uri, bot.isPartOf, source_uri))
@@ -2722,6 +2783,7 @@ class Graph:
                 bot_graph.add((source_uri, bot.connectsTo, target_uri))
                 if bidirectional:
                     bot_graph.add((target_uri, bot.connectsTo, source_uri))
+
         return bot_graph
 
     @staticmethod
@@ -2754,7 +2816,7 @@ class Graph:
                   doorType: str = "door",
                   windowType: str = "window",
                   contentType: str = "content",
-                  namespace: str = "http://github.com/wassimj/topologicpy/resources",
+                  namespace: str = "http://w3id.org/topologicpy#",
                   mantissa: int = 6
                 ):
         
@@ -4444,189 +4506,402 @@ class Graph:
 
     @staticmethod
     def ByBOTGraph(botGraph,
-                   includeContext = False,
-                   xMin = -0.5,
-                   xMax = 0.5,
-                   yMin = -0.5,
-                   yMax = 0.5,
-                   zMin = -0.5,
-                   zMax = 0.5,
-                   tolerance = 0.0001
-                ):
+                includeContext: bool = False,
+                xMin: float = -0.5,
+                xMax: float = 0.5,
+                yMin: float = -0.5,
+                yMax: float = 0.5,
+                zMin: float = -0.5,
+                zMax: float = 0.5,
+                ontology: bool = True,
+                tolerance: float = 0.0001,
+                silent: bool = False):
+        """
+        Creates a TopologicPy graph from an RDF graph encoded using the BOT ontology.
 
-        def value_by_string(s):
-            if s.lower() == "true":
-                return True
-            if s.lower() == "false":
-                return False
-            vt = "str"
-            s2 = s.strip("-")
-            if s2.isnumeric():
-                vt = "int"
-            else:
-                try:
-                    s3 = s2.split(".")[0]
-                    s4 = s2.split(".")[1]
-                    if (s3.isnumeric() or s4.isnumeric()):
-                        vt = "float"
-                except:
-                    vt = "str"
-            if vt == "str":
-                return s
-            elif vt == "int":
-                return int(s)
-            elif vt == "float":
-                return float(s)
+        Parameters
+        ----------
+        botGraph : rdflib.graph.Graph
+            The input RDF graph.
+        includeContext : bool , optional
+            If set to True, Site, Building, and Storey nodes and relations are
+            included. Default is False.
+        xMin : float , optional
+            The minimum fallback X coordinate. Default is -0.5.
+        xMax : float , optional
+            The maximum fallback X coordinate. Default is 0.5.
+        yMin : float , optional
+            The minimum fallback Y coordinate. Default is -0.5.
+        yMax : float , optional
+            The maximum fallback Y coordinate. Default is 0.5.
+        zMin : float , optional
+            The minimum fallback Z coordinate. Default is -0.5.
+        zMax : float , optional
+            The maximum fallback Z coordinate. Default is 0.5.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are
+            added to the created graph. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
-        def collect_nodes_by_type(rdf_graph, node_type=None):
-            results = set()
+        Returns
+        -------
+        topologic_core.Graph
+            The created TopologicPy graph.
 
-            if node_type is not None:
-                for subj, pred, obj in rdf_graph.triples((None, None, None)):
-                    if "type" in pred.lower():
-                        if node_type.lower() in obj.lower():
-                            results.add(subj)
-            return list(results)
-
-        def collect_attributes_for_subject(rdf_graph, subject):
-            attributes = {}
-
-            for subj, pred, obj in rdf_graph.triples((subject, None, None)):
-                predicate_str = str(pred)
-                object_str = str(obj)
-                attributes[predicate_str] = object_str
-
-            return attributes
-
-        def get_triples_by_predicate_type(rdf_graph, predicate_type):
-            triples = []
-
-            for subj, pred, obj in rdf_graph:
-                if pred.split('#')[-1].lower() == predicate_type.lower():
-                    triples.append((str(subj), str(pred), str(obj)))
-
-            return triples
+        """
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Graph import Graph
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
+        import os
         import random
+        import warnings
 
         try:
             import rdflib
-        except:
-            print("Graph.BOTGraph - Information: Installing required rdflib library.")
+            from rdflib import URIRef
+            from rdflib.namespace import RDF, RDFS
+        except Exception:
+            if not silent:
+                print("Graph.ByBOTGraph - Information: Installing required rdflib library.")
             try:
                 os.system("pip install rdflib")
-            except:
-                os.system("pip install rdflib --user")
-            try:
                 import rdflib
-                print("Graph.BOTGraph - Information: rdflib library installed correctly.")
-            except:
-                warnings.warn("Graph.BOTGraph - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
+                from rdflib import URIRef
+                from rdflib.namespace import RDF, RDFS
+            except Exception:
+                if not silent:
+                    warnings.warn("Graph.ByBOTGraph - Error: Could not import rdflib. Returning None.")
                 return None
+
+        try:
+            from topologicpy.Ontology import Ontology
+        except Exception:
+            Ontology = None
+
+        def _literal_value(value):
+            try:
+                return value.toPython()
+            except Exception:
+                return str(value)
+
+        def _safe_local_name(uri):
+            text = str(uri).strip()
+            if "#" in text:
+                text = text.split("#")[-1]
+            elif "/" in text:
+                text = text.rstrip("/").split("/")[-1]
+            return text
+
+        def _value_by_string(value):
+            if value is None:
+                return None
+            if not isinstance(value, str):
+                return value
+            s = value.strip()
+            if s.lower() == "true":
+                return True
+            if s.lower() == "false":
+                return False
+            try:
+                if "." in s:
+                    return float(s)
+                return int(s)
+            except Exception:
+                return s
+
+        def _bot_namespace(rdf_graph):
+            for prefix, namespace in rdf_graph.namespaces():
+                if str(prefix).lower() == "bot":
+                    return str(namespace)
+            return "https://w3id.org/bot#"
+
+        def _subjects_of_type(rdf_graph, class_uri):
+            return list(set(rdf_graph.subjects(RDF.type, URIRef(class_uri))))
+
+        def _attributes_for_subject(rdf_graph, subject):
+            attrs = {}
+            for _, pred, obj in rdf_graph.triples((subject, None, None)):
+                pred_name = _safe_local_name(pred)
+                pred_name_l = pred_name.lower()
+
+                if pred == RDF.type or pred_name_l == "type":
+                    continue
+
+                value = _value_by_string(_literal_value(obj))
+
+                if pred_name_l in ["hassimple3dmodel", "hassimplegeometry", "brep"]:
+                    attrs["brep"] = value
+                    attrs["hasSimple3DModel"] = True
+                else:
+                    attrs[pred_name] = value
+
+            return attrs
         
-        predicates = ['adjacentto', 'interfaceof', 'containselement', 'connectsto']
-        bot_types = ['Space', 'Wall', 'Slab', 'Door', 'Window', 'Element']
+        def _rdf_types_for_subject(rdf_graph, subject):
+            return [str(obj) for obj in rdf_graph.objects(subject, RDF.type)]
 
+        def _top_class_from_types(types):
+            type_text = " ".join(types).lower()
+            if "bot#space" in type_text:
+                return "top:Space"
+            if "bot#site" in type_text:
+                return "top:Site"
+            if "bot#building" in type_text:
+                return "top:Building"
+            if "bot#storey" in type_text:
+                return "top:Storey"
+            if "topologicpy#wall" in type_text or "top#wall" in type_text:
+                return "top:Wall"
+            if "topologicpy#slab" in type_text or "top#slab" in type_text:
+                return "top:Slab"
+            if "topologicpy#door" in type_text or "top#door" in type_text:
+                return "top:Door"
+            if "topologicpy#window" in type_text or "top#window" in type_text:
+                return "top:Window"
+            if "bot#element" in type_text:
+                return "top:Element"
+            return "top:Topology"
+
+        def _category_from_class(top_class):
+            if Ontology is not None:
+                try:
+                    return Ontology.CategoryByClass(top_class, defaultValue=None)
+                except Exception:
+                    pass
+            mapping = {
+                "top:Site": "site",
+                "top:Building": "building",
+                "top:Storey": "storey",
+                "top:Space": "space",
+                "top:Wall": "element",
+                "top:Slab": "element",
+                "top:Door": "element",
+                "top:Window": "element",
+                "top:Element": "element",
+            }
+            return mapping.get(top_class, "topology")
+
+        def _coordinate(attrs, key, fallback):
+            value = attrs.get(key, fallback)
+            try:
+                return float(value)
+            except Exception:
+                return fallback
+
+        bot_ns = _bot_namespace(botGraph)
+
+        bot_classes = ["Space", "Element"]
         if includeContext:
-            predicates += ['hasspace', 'hasbuilding', 'hasstorey']
-            bot_types += ['Site', 'Building', 'Storey']
+            bot_classes += ["Site", "Building", "Storey"]
 
-        namespaces = botGraph.namespaces()
+        # BOT does not formally distinguish Wall/Slab/Door/Window as core classes in
+        # the same way as TopologicPy, but some exported graphs may include them.
+        bot_classes += ["Wall", "Slab", "Door", "Window"]
 
-        for ns in namespaces:
-            if 'bot' in ns[0].lower():
-                bot_namespace = ns
-                break
+        node_set = set()
+        for bot_type in bot_classes:
+            node_set.update(_subjects_of_type(botGraph, bot_ns + bot_type))
 
-        ref = bot_namespace[1]
-
-        nodes = []
-        for bot_type in bot_types:
-            node_type = rdflib.term.URIRef(ref+bot_type)
-            nodes +=collect_nodes_by_type(botGraph, node_type=node_type)
+        nodes = list(node_set)
 
         vertices = []
-        dic = {}
-        for i, node in enumerate(nodes):
-            x, y, z = random.uniform(xMin,xMax), random.uniform(yMin,yMax), random.uniform(zMin,zMax)
-            d_keys = ["bot_id"]
-            d_values = [str(node)]
-            attributes = collect_attributes_for_subject(botGraph, node)
-            keys = attributes.keys()
-            for key in keys:
-                key_type = key.split('#')[-1]
-                if key_type.lower() not in predicates:
-                    if 'x' == key_type.lower():
-                        x = value_by_string(attributes[key])
-                        d_keys.append('x')
-                        d_values.append(x)
-                    elif 'y' == key_type.lower():
-                        y = value_by_string(attributes[key])
-                        d_keys.append('y')
-                        d_values.append(y)
-                    elif 'z' == key_type.lower():
-                        z = value_by_string(attributes[key])
-                        d_keys.append('z')
-                        d_values.append(z)
-                    else:
-                        d_keys.append(key_type.lower())
-                        d_values.append(value_by_string(attributes[key].split("#")[-1]))
+        vertex_by_uri = {}
 
-            d_keys.append("index")
-            d_values.append(i)
-            d = Dictionary.ByKeysValues(d_keys, d_values)
-            v = Vertex.ByCoordinates(x,y,z)
-            v = Topology.SetDictionary(v, d)
-            dic[str(node)] = v
+        for i, node in enumerate(nodes):
+            node_uri = str(node)
+            rdf_types = _rdf_types_for_subject(botGraph, node)
+            top_class = _top_class_from_types(rdf_types)
+            category = _category_from_class(top_class)
+
+            attrs = _attributes_for_subject(botGraph, node)
+
+            x = _coordinate(attrs, "hasX", random.uniform(xMin, xMax))
+            y = _coordinate(attrs, "hasY", random.uniform(yMin, yMax))
+            z = _coordinate(attrs, "hasZ", random.uniform(zMin, zMax))
+
+            label = attrs.get("label", None)
+            if label is None:
+                label = _safe_local_name(node_uri)
+
+            d = {
+                "bot_id": node_uri,
+                "uri": node_uri,
+                "index": i,
+                "label": label,
+                "category": category,
+                "type": category,
+            }
+
+            for key, value in attrs.items():
+                if key not in d:
+                    d[key] = value
+
+            v = Vertex.ByCoordinates(x, y, z)
+            v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(d))
+
+            if ontology and Ontology is not None:
+                try:
+                    v = Ontology.Annotate(
+                        v,
+                        ontologyClass=top_class,
+                        category=category,
+                        label=label,
+                        uri=node_uri,
+                        source="BOTGraph",
+                        generatedBy="Graph.ByBOTGraph",
+                        silent=True,
+                    )
+                except Exception:
+                    pass
+
+            vertex_by_uri[node_uri] = v
             vertices.append(v)
 
+        predicates = {
+            "adjacentTo": bot_ns + "adjacentTo",
+            "interfaceOf": bot_ns + "interfaceOf",
+            "containsElement": bot_ns + "containsElement",
+            "connectsTo": bot_ns + "connectsTo",
+        }
+
+        if includeContext:
+            predicates.update({
+                "hasSpace": bot_ns + "hasSpace",
+                "hasBuilding": bot_ns + "hasBuilding",
+                "hasStorey": bot_ns + "hasStorey",
+                "isPartOf": bot_ns + "isPartOf",
+            })
+
         edges = []
-        for predicate in predicates:
-            triples = get_triples_by_predicate_type(botGraph, predicate)
-            for triple in triples:
-                subj = triple[0]
-                obj = triple[2]
-                sv = dic[subj]
-                ev = dic[obj]
-                e = Edge.ByVertices([sv,ev], tolerance=tolerance)
-                src = Vertex.Index(sv, vertices)
-                dst = Vertex.Index(ev, vertices)
-                d = Dictionary.ByKeyValue(["type", "src", "dst"], [predicate, src, dst])
+        for relationship, predicate_uri in predicates.items():
+            for subj, _, obj in botGraph.triples((None, URIRef(predicate_uri), None)):
+                subj_uri = str(subj)
+                obj_uri = str(obj)
+
+                if subj_uri not in vertex_by_uri or obj_uri not in vertex_by_uri:
+                    continue
+
+                sv = vertex_by_uri[subj_uri]
+                ev = vertex_by_uri[obj_uri]
+
+                e = Edge.ByVertices([sv, ev], tolerance=tolerance)
+                if e is None:
+                    continue
+
+                src = Vertex.Index(sv, vertices, tolerance=tolerance)
+                dst = Vertex.Index(ev, vertices, tolerance=tolerance)
+
+                d = Dictionary.ByKeysValues(
+                    ["type", "relationship", "category", "label", "src", "dst", "source", "target"],
+                    [relationship, relationship, "relationship", relationship, src, dst, subj_uri, obj_uri]
+                )
                 e = Topology.SetDictionary(e, d)
+
+                if ontology and Ontology is not None:
+                    try:
+                        e = Ontology.Annotate(
+                            e,
+                            ontologyClass="top:Relationship",
+                            category="relationship",
+                            label=relationship,
+                            source="BOTGraph",
+                            generatedBy="Graph.ByBOTGraph",
+                            silent=True,
+                        )
+                    except Exception:
+                        pass
+
                 edges.append(e)
 
-        return Graph.ByVerticesEdges(vertices, edges, index=False)
+        result = Graph.ByVerticesEdges(vertices, edges, index=False, ontology=ontology)
+
+        if ontology and Ontology is not None and result is not None:
+            try:
+                result = Ontology.Annotate(
+                    result,
+                    ontologyClass="top:KnowledgeGraph",
+                    category="graph",
+                    label="BOT Graph",
+                    source="BOTGraph",
+                    generatedBy="Graph.ByBOTGraph",
+                    silent=True,
+                )
+            except Exception:
+                pass
+
+        return result
 
     @staticmethod
     def ByBOTPath(path,
-                  includeContext = False,
-                  xMin = -0.5,
-                  xMax = 0.5,
-                  yMin = -0.5,
-                  yMax = 0.5,
-                  zMin = -0.5,
-                  zMax = 0.5,
-                  tolerance = 0.0001
-                  ):
+                  includeContext: bool = False,
+                  xMin: float = -0.5,
+                  xMax: float = 0.5,
+                  yMin: float = -0.5,
+                  yMax: float = 0.5,
+                  zMin: float = -0.5,
+                  zMax: float = 0.5,
+                  ontology: bool = True,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
+        """
+        Creates a TopologicPy graph from an RDF path encoded using the BOT ontology.
+
+        Parameters
+        ----------
+        path : str
+            The file path to the input RDF graph.
+        includeContext : bool , optional
+            If set to True, Site, Building, and Storey nodes and relations are
+            included. Default is False.
+        xMin : float , optional
+            The minimum fallback X coordinate. Default is -0.5.
+        xMax : float , optional
+            The maximum fallback X coordinate. Default is 0.5.
+        yMin : float , optional
+            The minimum fallback Y coordinate. Default is -0.5.
+        yMax : float , optional
+            The maximum fallback Y coordinate. Default is 0.5.
+        zMin : float , optional
+            The minimum fallback Z coordinate. Default is -0.5.
+        zMax : float , optional
+            The maximum fallback Z coordinate. Default is 0.5.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are
+            added to the created graph. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The created TopologicPy graph.
+
+        """
+
+        import os
+        import warnings
         
         try:
+            import rdflib
             from rdflib import Graph as RDFGraph
-        except:
-            print("Graph.ByBOTPath - Information: Installing required rdflib library.")
+        except Exception:
+            if not silent:
+                print("Graph.ByBOTPath - Information: Installing required rdflib library.")
             try:
                 os.system("pip install rdflib")
-            except:
-                os.system("pip install rdflib --user")
-            try:
+                import rdflib
                 from rdflib import Graph as RDFGraph
-                print("Graph.ByBOTPath - Information: rdflib library installed correctly.")
-            except:
-                warnings.warn("Graph.ByBOTPath - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
+            except Exception:
+                if not silent:
+                    warnings.warn("Graph.ByBOTPath - Error: Could not import rdflib. Please try to install rdflib manually. Returning None.")
                 return None
         
         bot_graph = RDFGraph()
@@ -4639,7 +4914,9 @@ class Graph:
                                 yMax = yMax,
                                 zMin = zMin,
                                 zMax = zMax,
-                                tolerance = tolerance
+                                ontology = ontology,
+                                tolerance = tolerance,
+                                silent = silent
                                 )
     
     @staticmethod
@@ -9633,18 +9910,20 @@ class Graph:
         def _edge_dictionary(relationship, category, source_topology=None):
             source = _topology_from_aperture(source_topology)
 
+            keys = []
+            values = []
+
             if source is not None:
                 d = _dictionary(source)
                 if d is not None:
-                    return Dictionary.ByKeysValues(
-                        _keys(d) + ["relationship", edgeCategoryKey],
-                        _values(d) + [relationship, category]
-                    )
+                    for k in _keys(d):
+                        keys.append(k)
+                        values.append(_value_at_key(d, k, None))
 
-            return Dictionary.ByKeysValues(
-                ["relationship", edgeCategoryKey],
-                [relationship, category]
-            )
+            keys.extend(["relationship", edgeCategoryKey])
+            values.extend([relationship, category])
+
+            return Dictionary.ByKeysValues(keys, values)
 
         def _append_edge(v1, v2, relationship, category, source_topology=None):
             src = _append_vertex(v1)
@@ -9684,10 +9963,20 @@ class Graph:
             tid = _id(t)
             if tid in contents_cache:
                 return contents_cache[tid]
+
             try:
-                cs = T_Contents(t) or []
-            except:
+                cs = T_Contents(t, silent=True) or []
+            except TypeError:
+                try:
+                    cs = T_Contents(t) or []
+                except Exception:
+                    cs = []
+            except Exception:
                 cs = []
+
+            # Aperture contents should contribute their underlying topology.
+            cs = [_topology_from_aperture(c) for c in cs if c is not None]
+
             contents_cache[tid] = cs
             return cs
 
@@ -9812,10 +10101,20 @@ class Graph:
 
         def _add_contents(v_from, contents):
             _append_vertex(v_from)
+
             for content in contents:
                 content = _topology_from_aperture(content)
+                if content is None:
+                    continue
+
                 v_to = _representative_vertex(content, 5, apply_offset=True)
-                _append_edge(v_from, v_to, "To_Contents", 5)
+                _append_edge(
+                    v_from,
+                    v_to,
+                    "To_Contents",
+                    5,
+                    source_topology=content
+                )
 
         def _outpost_lookup(topologies):
             lookup = {}
@@ -10014,6 +10313,8 @@ class Graph:
                     _add_related_vertices(v_owner, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
 
                 if toContents:
+                    owner_contents = _contents(owner)
+                    print("OWNER CONTENTS:", owner, len(owner_contents), owner_contents)
                     _add_contents(v_owner, _contents(owner))
 
                 if toOutposts:

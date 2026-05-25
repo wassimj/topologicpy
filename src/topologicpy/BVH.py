@@ -177,37 +177,27 @@ class BVH:
         silent: bool = False
     ) -> "BVH":
         """
-        Creates a BVH Tree from the input list of topologies. The input can be individual topologies each as an input argument or a list of topologies stored in one input argument.
+        Creates a BVH Tree from the input list of topologies.
 
         Parameters
         ----------
-        *topologies: (tuple of Topologic topologies)
+        *topologies: tuple
             One or more TopologicPy topologies to include in the BVH.
-            Each topology is automatically analyzed to extract its vertices and compute an axis-aligned bounding box (AABB)
-            for hierarchical spatial indexing.
-
         maxLeafSize: int , optional
-            The maximum number of primitives (topologies) that can be stored in a single leaf node of the BVH.
-            Smaller values result in deeper trees with finer spatial subdivision (potentially faster queries but slower build times),
-            while larger values produce shallower trees with coarser spatial grouping (faster builds but less precise queries).
-            Default is 4.
+            The maximum number of primitives stored in a leaf node. Default is 4.
         tolerance : float , optional
-            The desired tolerance. Tolerance is used for an optional margin added to all sides of each topology's axis-aligned bounding box (AABB).
-            This helps account for numerical precision errors or slight geometric inaccuracies.
-            A small positive value ensures that closely adjacent or nearly touching primitives are
-            properly enclosed within their bounding boxes. Default is 0.0001.
+            The desired tolerance used as padding around each AABB. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
-        
+
         Returns
         -------
-        BVH tree
+        BVH
             The created BVH tree.
 
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Helper import Helper
 
         topologyList = Helper.Flatten(list(topologies))
@@ -217,73 +207,94 @@ class BVH:
             if not silent:
                 print("BVH.ByTopologies - Error: The input parameters do not contain any valid topologies. Returning None.")
             return None
-        
+
         bvh = BVH()
 
-        # Precompute per-item AABBs & centroids
+        # Private, non-persistent cache. This deliberately does NOT write "aabb"
+        # into any topology dictionary.
+        aabb_cache = {}
+
         bvh.items = []
         bvh.bboxes = []
         bvh.centroids = []
+        bvh.aabbs = []
+
+        def _topology_aabb(topo):
+            tid = id(topo)
+            if tid in aabb_cache:
+                return aabb_cache[tid]
+
+            xmin = ymin = zmin = float("inf")
+            xmax = ymax = zmax = float("-inf")
+
+            try:
+                verts = Topology.Vertices(topo)
+            except TypeError:
+                try:
+                    verts = Topology.Vertices(topo, silent=True)
+                except Exception:
+                    verts = []
+            except Exception:
+                verts = []
+
+            if not isinstance(verts, list) or len(verts) == 0:
+                return None
+
+            for v in verts:
+                try:
+                    x, y, z = Vertex.Coordinates(v)
+                except Exception:
+                    continue
+
+                xmin = min(xmin, x)
+                ymin = min(ymin, y)
+                zmin = min(zmin, z)
+                xmax = max(xmax, x)
+                ymax = max(ymax, y)
+                zmax = max(zmax, z)
+
+            if (
+                xmin == float("inf") or ymin == float("inf") or zmin == float("inf") or
+                xmax == float("-inf") or ymax == float("-inf") or zmax == float("-inf")
+            ):
+                return None
+
+            aabb = (xmin, ymin, zmin, xmax, ymax, zmax)
+            aabb_cache[tid] = aabb
+            return aabb
 
         for topo in topologyList:
-            pts = None
-            d = Topology.Dictionary(topo)
-            aabb = Dictionary.ValueAtKey(d, "aabb", None)
+            aabb = _topology_aabb(topo)
 
             if aabb is None:
-                xmin = ymin = zmin = float("inf")
-                xmax = ymax = zmax = float("-inf")
+                if not silent:
+                    print("BVH.ByTopologies - Error: Invalid topology with no vertices. Skipping.")
+                continue
 
-                verts = Topology.Vertices(topo)
-                if not isinstance(verts, list) or len(verts) == 0:
-                    if not silent:
-                        print("BVH.ByTopologies - Error: Invalid topology with no vertices. Skipping.")
-                    continue
+            xmin, ymin, zmin, xmax, ymax, zmax = aabb
+            pts = [(xmin, ymin, zmin), (xmax, ymax, zmax)]
 
-                for v in verts:
-                    x, y, z = Vertex.Coordinates(v)
-                    xmin = min(xmin, x)
-                    ymin = min(ymin, y)
-                    zmin = min(zmin, z)
-                    xmax = max(xmax, x)
-                    ymax = max(ymax, y)
-                    zmax = max(zmax, z)
-
-                pts = [[xmin, ymin, zmin], [xmax, ymax, zmax]]
-                d = Dictionary.SetValueAtKey(d, "aabb", [xmin, ymin, zmin, xmax, ymax, zmax])
-                Topology.SetDictionary(topo, d)
-            else:
-                if isinstance(aabb, (list, tuple)) and len(aabb) == 6:
-                    pts = [list(aabb[:3]), list(aabb[3:])]
-                else:
-                    if not silent:
-                        print("BVH.ByTopologies - Error: Invalid cached AABB found. Skipping.")
-                    continue
-            
-            if pts is None:
-                box = AABB.from_points([(0.0, 0.0, 0.0)], pad=tolerance)
-                c = (0.0, 0.0, 0.0)
-            else:
-                box = AABB.from_points(pts, pad=tolerance)
-                c = box.center()
+            box = AABB.from_points(pts, pad=tolerance)
+            c = box.center()
 
             bvh.items.append(topo)
             bvh.bboxes.append(box)
             bvh.centroids.append(c)
+            bvh.aabbs.append(aabb)
 
-        # Build using indices
         indices = list(range(len(bvh.items)))
         if not indices:
             if not silent:
                 print("BVH.ByTopologies - Warning: no items to build.")
             return bvh
 
-        # Reserve nodes list
         bvh.nodes = []
         bvh._root = bvh._build_recursive(indices, maxLeafSize)
+
         if not silent:
             depth = bvh.Depth(bvh)
             print(f"BVH.ByTopologies - Information: Built with {len(bvh.items)} items, {len(bvh.nodes)} nodes, depth ~{depth}.")
+
         return bvh
 
     @staticmethod

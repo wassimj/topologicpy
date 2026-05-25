@@ -484,18 +484,30 @@ class Dictionary():
             The created dictionary.
 
         """
+
+        import inspect
+        
         
         if not isinstance(keys, list):
             if not silent:
                 print("Dictionary.ByKeysValues - Error: The input keys parameter is not a valid list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if not isinstance(values, list):
             if not silent:
                 print("Dictionary.ByKeysValues - Error: The input values parameter is not a valid list. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         if len(keys) != len(values):
             if not silent:
                 print("Dictionary.ByKeysValues - Error: The input keys and values parameters are not of equal length. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
         stl_keys = []
         stl_values = []
