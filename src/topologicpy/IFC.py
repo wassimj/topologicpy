@@ -353,11 +353,46 @@ class IFCFastTopology:
                          ontology: bool = True,
                          silent: bool = False) -> list:
         """
-        Imports IFC product geometry from a path into TopologicPy topologies.
+        Imports IFC product geometry from a file path into TopologicPy topologies.
 
-        This method is intentionally API-compatible in spirit with
-        IFC.TopologiesByPath / IFC.TopologiesByFile, but it does not use
-        IfcOpenShell for geometry extraction.
+        Parameters
+        ----------
+        path : str
+            The path to the input IFC file.
+        includeTypes : list , optional
+            The list of IFC entity types to include. If empty, all supported types are
+            included. Default is [].
+        excludeTypes : list , optional
+            The list of IFC entity types to exclude. Default is [].
+        dictionaryMode : str , optional
+            The dictionary import mode. Options are "none", "basic", and "full".
+            Default is "basic".
+        clean : bool , optional
+            If set to True, the imported topologies are cleaned. Default is False.
+        epsilon : float , optional
+            The geometric epsilon used during import. Default is 0.01.
+        angTolerance : float , optional
+            The angular tolerance used during import. Default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        circleSides : int , optional
+            The number of sides used to approximate circular geometry. Default is 24.
+        topologyType : str , optional
+            The desired output topology type. If set to None, the method returns the
+            most appropriate topology type for each imported product. Default is None.
+        scale : float , optional
+            The scale factor applied to imported coordinates. Default is 1.0.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the imported topologies. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported TopologicPy topologies.
+
         """
         if not path or not os.path.exists(path):
             if not silent:
@@ -395,14 +430,50 @@ class IFCFastTopology:
                          scale: float = 1.0,
                          ontology: bool = True,
                          silent: bool = False) -> list:
+
+
         """
-        Imports IFC product geometry into TopologicPy topologies.
+        Imports IFC product geometry from a file path into TopologicPy topologies.
 
         Parameters
         ----------
         file : str or ifcopenshell.file-like object
             Prefer passing a path string. If an ifcopenshell file-like object is
             supplied, this method attempts to serialise it to STEP text.
+        includeTypes : list , optional
+            The list of IFC entity types to include. If empty, all supported types are
+            included. Default is [].
+        excludeTypes : list , optional
+            The list of IFC entity types to exclude. Default is [].
+        dictionaryMode : str , optional
+            The dictionary import mode. Options are "none", "basic", and "full".
+            Default is "basic".
+        clean : bool , optional
+            If set to True, the imported topologies are cleaned. Default is False.
+        epsilon : float , optional
+            The geometric epsilon used during import. Default is 0.01.
+        angTolerance : float , optional
+            The angular tolerance used during import. Default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        circleSides : int , optional
+            The number of sides used to approximate circular geometry. Default is 24.
+        topologyType : str , optional
+            The desired output topology type. If set to None, the method returns the
+            most appropriate topology type for each imported product. Default is None.
+        scale : float , optional
+            The scale factor applied to imported coordinates. Default is 1.0.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the imported topologies. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported TopologicPy topologies.
+
         """
         if isinstance(file, str):
             return IFCFastTopology.TopologiesByPath(
@@ -2346,13 +2417,47 @@ class IFC:
         excludeTypes: list = [],
         dictionaryMode: str = "basic",
         clean: bool = False,
+        ontology: bool = True,
         epsilon: float = 0.01,
         angTolerance: float = 0.1,
         tolerance: float = 0.0001,
-        ontology: bool = True,
-        silent: bool = False,
-    ) -> list[Any]:
-        """Import an IFC file into a list of TopologicPy topologies using the pure-Python STEP-text importer."""
+        silent: bool = False) -> list[Any]:
+        """
+        Imports IFC product geometry from an IFC file object into TopologicPy topologies.
+
+        Parameters
+        ----------
+        file : ifcopenshell.file or any
+            The input IFC file object.
+        includeTypes : list , optional
+            The list of IFC entity types to include. If empty, all supported types are
+            included. Default is [].
+        excludeTypes : list , optional
+            The list of IFC entity types to exclude. Default is [].
+        dictionaryMode : str , optional
+            The dictionary import mode. Options are "none", "basic", and "full".
+            Default is "basic".
+        clean : bool , optional
+            If set to True, the imported topologies are cleaned. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the imported topologies. Default is True.
+        epsilon : float , optional
+            The geometric epsilon used during import. Default is 0.01.
+        angTolerance : float , optional
+            The angular tolerance used during import. Default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported TopologicPy topologies.
+
+        """
+
         if isinstance(file, dict):
             return IFCFastTopology.TopologiesByEntities(
                 file, includeTypes=includeTypes, excludeTypes=excludeTypes, dictionaryMode=dictionaryMode,
@@ -2367,12 +2472,47 @@ class IFC:
                   excludeTypes: list = [],
                   dictionaryMode: str = "basic",
                   clean: bool = False,
+                  ontology: bool = True,
                   epsilon: float = 0.0001,
                   angTolerance: float = 0.1,
                   tolerance: float = 0.0001,
-                  ontology: bool = True,
                   silent: bool = False) -> list[Any]:
-        """Imports the topologies from an IFC file path using the pure-Python STEP-text importer."""
+        """
+        Imports IFC product geometry from an IFC file path into TopologicPy topologies.
+
+        Parameters
+        ----------
+        path : str
+            The path to the input IFC file.
+        includeTypes : list , optional
+            The list of IFC entity types to include. If empty, all supported types are
+            included. Default is [].
+        excludeTypes : list , optional
+            The list of IFC entity types to exclude. Default is [].
+        dictionaryMode : str , optional
+            The dictionary import mode. Options are "none", "basic", and "full".
+            Default is "basic".
+        clean : bool , optional
+            If set to True, the imported topologies are cleaned. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the imported topologies. Default is True.
+        epsilon : float , optional
+            The geometric epsilon used during import. Default is 0.0001.
+        angTolerance : float , optional
+            The angular tolerance used during import. Default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported TopologicPy topologies.
+
+        """
+
         if not path or not isinstance(path, str) or not os.path.exists(path):
             if not silent:
                 print("IFC.TopologiesByPath - Error: the input path parameter is not a valid path. Returning None.")
@@ -2683,14 +2823,53 @@ class IFC:
                             circleSides: int = 24,
                             topologyType: str = None,
                             scale: float = 1.0,
-                            ontology: bool = True,
                             source: str = None,
+                            ontology: bool = True,
                             silent: bool = False):
         """
         Imports IFC product geometry from an already parsed IFC entity dictionary.
 
-        This avoids reparsing the IFC file when the same parsed entities are also
-        used for graph extraction, metadata queries, or other IFC workflows.
+        Parameters
+        ----------
+        entities : dict
+            The parsed IFC entity dictionary.
+        includeTypes : list , optional
+            The list of IFC entity types to include. If empty, all supported types are
+            included. Default is [].
+        excludeTypes : list , optional
+            The list of IFC entity types to exclude. Default is [].
+        dictionaryMode : str , optional
+            The dictionary import mode. Options are "none", "basic", and "full".
+            Default is "basic".
+        clean : bool , optional
+            If set to True, the imported topologies are cleaned. Default is False.
+        epsilon : float , optional
+            The geometric epsilon used during import. Default is 0.01.
+        angTolerance : float , optional
+            The angular tolerance used during import. Default is 0.1.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        circleSides : int , optional
+            The number of sides used to approximate circular geometry. Default is 24.
+        topologyType : str , optional
+            The desired output topology type. If set to None, the method returns the
+            most appropriate topology type for each imported product. Default is None.
+        scale : float , optional
+            The scale factor applied to imported coordinates. Default is 1.0.
+        source : str , optional
+            The source file, database, or process identifier assigned to imported
+            topology metadata. Default is None.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the imported topologies. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of imported TopologicPy topologies.
+
         """
 
         return IFCFastTopology.TopologiesByEntities(
@@ -3654,17 +3833,17 @@ class IFC:
 
     @staticmethod
     def AccessGraph(file,
-                            importMode: str = "topology",
-                            useInternalVertex: bool = False,
-                            connectingElementTypes: list = None,
-                            useFillingElements: bool = True,
-                            includeIsolatedSpaces: bool = True,
-                            viaConnectingElements: bool = False,
-                            dictionaryMode: str = "basic",
-                            bidirectional: bool = True,
-                            tolerance: float = 0.0001,
-                            ontology: bool = True,
-                            silent: bool = False):
+                    importMode: str = "topology",
+                    useInternalVertex: bool = False,
+                    connectingElementTypes: list = None,
+                    useFillingElements: bool = True,
+                    includeIsolatedSpaces: bool = True,
+                    viaConnectingElements: bool = False,
+                    dictionaryMode: str = "basic",
+                    bidirectional: bool = True,
+                    ontology: bool = True,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
         """
         Creates a TopologicPy Graph representing space adjacency from an IFC file.
 

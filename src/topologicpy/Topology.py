@@ -1773,7 +1773,7 @@ class Topology():
         return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Do NOT Use this method directly. Executes the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
 
@@ -1787,6 +1787,9 @@ class Topology():
             The boolean operation. This can be one of "union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint". It is case insensitive. Default is "union".
         tranDict : bool , optional
             If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -2413,6 +2416,9 @@ class Topology():
             "Cell", "CellComplex". It is case insensitive. If any of these options are selected, the returned
             topology will only contain this type either as a single topology or as a Cluster of these types of
             topologies. If set to None, a Cluster will be returned of vertices, edges, and/or faces. Default is None.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -2981,6 +2987,11 @@ class Topology():
         ----------
         file : file object
             The BREP file.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2990,7 +3001,8 @@ class Topology():
         """
         topology = None
         if not file:
-            print("Topology.ByBREPFile - Error: the input file parameter is not a valid file. Returning None.")
+            if not silent:
+                print("Topology.ByBREPFile - Error: the input file parameter is not a valid file. Returning None.")
             return None
         brep_string = file.read()
         topology = Topology.ByBREPString(brep_string)
@@ -3006,6 +3018,11 @@ class Topology():
         ----------
         path : str
             The path to the BREP file.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -3014,12 +3031,14 @@ class Topology():
 
         """
         if not path:
-            print("Topology.ByBREPPath - Error: the input path parameter is not a valid path. Returning None.")
+            if not silent:
+                print("Topology.ByBREPPath - Error: the input path parameter is not a valid path. Returning None.")
             return None
         try:
             file = open(path)
         except:
-            print("Topology.ByBREPPath - Error: the BREP file is not a valid file. Returning None.")
+            if not silent:
+                print("Topology.ByBREPPath - Error: the BREP file is not a valid file. Returning None.")
             return None
         return Topology.ByBREPFile(file)
 
@@ -3434,7 +3453,7 @@ class Topology():
         return topology
     '''
     @staticmethod
-    def ByJSONFile(file, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def ByJSONFile(file, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -3444,6 +3463,9 @@ class Topology():
             The input JSON file.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -3467,7 +3489,7 @@ class Topology():
         return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, ontology=ontology, silent=silent)
     
     @staticmethod
-    def ByJSONPath(path, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def ByJSONPath(path, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON file.
 
@@ -3475,6 +3497,9 @@ class Topology():
         ----------
         path : str
             The file path to the json file.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -3721,7 +3746,7 @@ class Topology():
     #     return return_topologies
 
     @staticmethod
-    def ByJSONDictionary(jsonDictionary: dict, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def ByJSONDictionary(jsonDictionary: dict, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON dictionary.
 
@@ -3729,6 +3754,9 @@ class Topology():
         ----------
         jsonDictionary : dict
             The input JSON dictionary.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -4071,7 +4099,7 @@ class Topology():
         return Topology._OntologyAnnotateList(return_topologies, ontology=ontology, generatedBy="Topology.ByJSONDictionary", annotateSubtopologies=True, silent=True)
     
     @staticmethod
-    def ByJSONString(string: str, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def ByJSONString(string: str, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
         """
         Imports the topology from a JSON string.
 
@@ -4079,6 +4107,9 @@ class Topology():
         ----------
         string : str
             The input JSON string.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -4103,7 +4134,12 @@ class Topology():
         return Topology.ByJSONDictionary(json_dict, tolerance=tolerance, ontology=ontology, silent=silent)
 
     @staticmethod
-    def ByMeshData(dictionary, transferDictionaries: bool = False, mantissa: int = 6, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def ByMeshData(dictionary,
+                   transferDictionaries: bool = False,
+                   ontology: bool = False,
+                   mantissa: int = 6,
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
         """
         Create a cluster by the input python dictionary of vertices, edges, faces, and cells.
 
@@ -4125,6 +4161,9 @@ class Topology():
             }
         transferDictionaries : bool , optional
             If set to True, the python dictionaries will be transferred to the coorespoding topologies. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
@@ -4173,7 +4212,7 @@ class Topology():
                 
         top_verts = []
         for i, vertex in enumerate(vertices):
-            top_vertex = Vertex.ByCoordinates(vertex)
+            top_vertex = Vertex.ByCoordinates(round(vertex[0], mantissa), round(vertex[1], mantissa), round(vertex[2], mantissa))
             if Topology.IsInstance(top_vertex, "Vertex"):
                 if transferDictionaries:
                     d = Dictionary.ByPythonDictionary(vertex_dicts[i])
@@ -5260,6 +5299,11 @@ class Topology():
         ----------
         string : str
             The input brep string.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -5268,13 +5312,15 @@ class Topology():
 
         """
         if not isinstance(string, str):
-            print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
             return None
         returnTopology = None
         try:
             returnTopology = Core.Topology.ByString(string)
         except:
-            print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
+            if not silent:
+                print("Topology.ByBREPString - Error: the input string parameter is not a valid string. Returning None.")
             returnTopology = None
         return Topology._OntologyAnnotate(returnTopology, ontology=ontology, generatedBy="Topology.ByBREPString", annotateSubtopologies=True, silent=True)
     
@@ -10733,7 +10779,11 @@ class Topology():
     #     return return_topology
 
     @staticmethod
-    def SelfMerge(topology, transferDictionaries: bool = False, tolerance: float = 0.0001, ontology: bool = False, silent: bool = False):
+    def SelfMerge(topology,
+                  transferDictionaries: bool = False,
+                  ontology: bool = False,
+                  tolerance: float = 0.0001,
+                  silent: bool = False):
         """
         Self merges the input topology to return the most logical topology type
         given the input data.
@@ -10748,6 +10798,9 @@ class Topology():
         transferDictionaries : bool , optional
             If set to True, the dictionary of the input Cluster is transferred to
             the returned singleton candidate when applicable. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -11730,7 +11783,7 @@ class Topology():
              nameKey = "name",
              opacityKey = "opacity",
              showVertices=True,
-             vertexSize=2.8,
+             vertexSize=None,
              vertexSizeKey = None,
              vertexColor="black",
              vertexColorKey = None,
@@ -12104,6 +12157,7 @@ class Topology():
             d = Topology.Dictionary(topology)
             if Topology.IsInstance(topology, "Graph"):
                 name = Dictionary.ValueAtKey(d, nameKey) or "Untitled Graph"
+                
                 if vertexSize == None:
                     vSize = 10
                 else:
@@ -12118,6 +12172,8 @@ class Topology():
                     eColor = edgeColor
                 vll = name+" ("+vertexLegendLabel+")"
                 ell = name+" ("+edgeLegendLabel+")"
+
+
                 
                 data.extend(Plotly.DataByGraph(topology,
                                            sagitta=sagitta,

@@ -435,8 +435,143 @@ class Graph:
                 print("Graph.AABB - Error: The input graph does not contain any valid vertices. Returning None.")
             return None
         return AABB.from_points(pts=[Vertex.Coordinates(v) for v in vertices], pad=pad)
-        
     
+    @staticmethod
+    def AccessGraph(topology,
+                    key: str = None,
+                    includeTypes: list = None,
+                    excludeTypes: list = None,
+                    vertexCategoryKey: str = "category",
+                    edgeCategoryKey : str = "category",
+                    viaSharedApertures: bool = False,
+                    toExteriorApertures: bool = False,
+                    useInternalVertex: bool = False,
+                    includeIsolatedVertices: bool = True,
+                    storeBREP: bool = False,
+                    ontology: bool = True,
+                    mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
+    
+        from topologicpy.Graph import Graph
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        def _as_set(values):
+            if values is None:
+                return set()
+            if isinstance(values, (list, tuple, set)):
+                return {str(v).strip().lower() for v in values if v is not None and str(v).strip() != ""}
+            return {str(values).strip().lower()}
+
+        def _value(vertex, k, default=None):
+            try:
+                return Dictionary.ValueAtKey(Topology.Dictionary(vertex), k, default)
+            except Exception:
+                return default
+
+        def _is_aperture(element):
+            candidates = [
+                _value(element, "ontology_class", None),
+                _value(element, "category", None),
+                _value(element, "label", None),
+                _value(element, "type", None),
+                _value(element, "ifc_class", None),
+            ]
+            candidates = [str(x).strip().lower() for x in candidates if x is not None]
+            return (
+                "top:aperture" in candidates
+                or "aperture" in candidates
+                or "ifcopeningelement" in candidates
+                or "ifcdoor" in candidates
+                or "ifcwindow" in candidates
+            )
+
+        def _passes_filter(element):
+            if key is None:
+                return True
+
+            include_set = _as_set(includeTypes)
+            exclude_set = _as_set(excludeTypes)
+
+            val = _value(element, key, None)
+            val = "" if val is None else str(val).strip().lower()
+
+            if include_set and val not in include_set:
+                return False
+            if exclude_set and val in exclude_set:
+                return False
+            return True
+
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Graph.AccessGraph - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        
+        if key.lower() == "type":
+            if not silent:
+                print("Graph.AccessGraph - Warning: 'type' is a reserved ontology dictionary key and will be overwritten. Use a different key.")
+        
+        # If they want sharedApertures to be represented then do not create direct edges, and Vice Versa.
+        directApertures = not viaSharedApertures
+
+        graph = Graph.ByTopology(topology=topology,
+                                 direct=False,
+                                 directApertures=directApertures,
+                                 viaSharedTopologies= False,
+                                 viaSharedApertures=viaSharedApertures,
+                                 toExteriorTopologies=False,
+                                 toExteriorApertures=toExteriorApertures,
+                                 vertexCategoryKey=vertexCategoryKey,
+                                 edgeCategoryKey=edgeCategoryKey,
+                                 useInternalVertex=useInternalVertex,
+                                 storeBREP=storeBREP,
+                                 ontology=ontology,
+                                 mantissa=mantissa,
+                                 tolerance=tolerance,
+                                 silent=silent)
+
+        if graph is None:
+            return None
+
+        if key is None:
+            return graph
+
+        if viaSharedApertures:
+            for vertex in list(Graph.Vertices(graph) or []):
+                d = Topology.Dictionary(vertex)
+                if _is_aperture(vertex) and not _passes_filter(vertex):
+                    graph = Graph.RemoveVertex(graph, vertex, silent=True)
+        else:
+            for edge in list(Graph.Edges(graph) or []):
+                d = Topology.Dictionary(edge)
+                if _is_aperture(edge) and not _passes_filter(edge):
+                    graph = Graph.RemoveEdge(graph, edge, silent=True)
+        
+        if includeIsolatedVertices is False:
+            graph = Graph.RemoveIsolatedVertices(graph, silent=False)
+        
+        g_verts = Graph.Vertices(graph)
+        if len(g_verts) == 0:
+            if not silent:
+                print("Graph.AccessGraph - Warning: the resulting graph is NULL. Returning None.")
+            return None
+        
+        if ontology:
+            try:
+                from topologicpy.Ontology import Ontology
+                graph = Ontology.Annotate(
+                    graph,
+                    ontologyClass="top:AdjacencyGraph",
+                    category="graph",
+                    label="Access Graph",
+                    generatedBy="Graph.AccessGraph",
+                    silent=True)
+            except Exception:
+                pass
+
+        return graph
+
     @staticmethod
     def AccessibilityCentrality(graph, step: int = 2, normalize: bool = False, key: str = "accessibility_centrality", colorKey: str = "ac_color", colorScale: str = "viridis", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -4186,7 +4321,10 @@ class Graph:
         return bridge_edges
 
     @staticmethod
-    def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, ontology: bool = True, silent: bool = False):
+    def ByAdjacencyMatrixCSVPath(path: str,
+                                 dictionaries: list = None,
+                                 ontology: bool = True,
+                                 silent: bool = False):
         """
         Returns graphs according to the input path. This method assumes the CSV files follow an adjacency matrix schema.
 
@@ -4197,6 +4335,9 @@ class Graph:
         dictionaries : list , optional
             A list of dictionaries to assign to the vertices of the graph. This list should be in
             the same order and of the same length as the rows in the adjacency matrix.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         silent : bool , optional
             If set to True, no warnings or error messages are displayed. Default is False.
         
@@ -4242,6 +4383,9 @@ class Graph:
             The desired maximum value to assign for a vertex's Y coordinate. Default is 0.5.
         zMax : float , optional
             The desired maximum value to assign for a vertex's Z coordinate. Default is 0.5.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         silent : bool , optional
             If set to True, no warnings or error messages are displayed. Default is False.
         
@@ -4508,7 +4652,9 @@ class Graph:
                 nodeTrainMaskHeader="train_mask", nodeValidateMaskHeader="val_mask", nodeTestMaskHeader="test_mask",
                 nodeFeaturesHeader="feat", nodeXHeader="X", nodeYHeader="Y", nodeZHeader="Z",
                 nodeFeaturesKeys=None,
-                tolerance=0.0001, ontology: bool = True, silent=False):
+                ontology: bool = True,
+                tolerance=0.0001,
+                silent=False):
         """
         Imports TopologicPy graphs from a folder containing CSV files (graphs.csv, nodes.csv, edges.csv)
         exported using the *new* TopologicPy CSV format for PyTorch Geometric-style datasets.
@@ -4562,6 +4708,9 @@ class Graph:
             If provided, these keys are used to store node features in the node dictionary.
             Length must match number of node feature columns found. If None, keys will be
             "<nodeFeaturesHeader>_0", "<nodeFeaturesHeader>_1", ...
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             Desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -7915,9 +8064,9 @@ class Graph:
         graphPropsKey: str = "properties",
         verticesKey: str = "vertices",
         edgesKey: str = "edges",
+        ontology: bool = True,
         mantissa: int = 6,
         tolerance: float = 0.0001,
-        ontology: bool = True,
         silent: bool = False,
     ):
         """
@@ -7950,6 +8099,9 @@ class Graph:
             JSON key for the vertices section. Default is "vertices".
         edgesKey: str , optional
             JSON key for the edges section. Default is "edges".
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         mantissa : int , optional
             The desired length of the mantissa. Default is 6.
         tolerance : float , optional
@@ -8289,7 +8441,12 @@ class Graph:
                                       silent=silent)
 
     @staticmethod
-    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, tolerance=0.0001, ontology: bool = True):
+    def ByMeshData(vertices,
+                   edges,
+                   vertexDictionaries=None,
+                   edgeDictionaries=None,
+                   ontology: bool = True,
+                   tolerance: float = 0.0001):
         """
         Creates a graph from the input mesh data
 
@@ -8303,6 +8460,9 @@ class Graph:
             The python dictionaries of the vertices (in the same order as the list of vertices).
         edgeDictionaries : list , optional
             The python dictionaries of the edges (in the same order as the list of edges).
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -9163,6 +9323,7 @@ class Graph:
                 edgeCategoryKey : str = "category",
                 useInternalVertex: bool = False,
                 storeBREP: bool = False,
+                ontology: bool = True,
                 mantissa: int = 6,
                 tolerance: float = 0.0001,
                 silent: float = False):
@@ -9206,6 +9367,9 @@ class Graph:
             If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
         storeBREP : bool , optional
             If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         mantissa : int , optional
             The number of decimal places. Default is 6.
         tolerance : float , optional
@@ -9466,18 +9630,23 @@ class Graph:
             representative_cache[key] = v
             return v
 
-        def _edge_dictionary(relationship, category, source_topologies=None):
-            if source_topologies:
-                d = _merge_dictionaries(source_topologies)
+        def _edge_dictionary(relationship, category, source_topology=None):
+            source = _topology_from_aperture(source_topology)
+
+            if source is not None:
+                d = _dictionary(source)
                 if d is not None:
                     return Dictionary.ByKeysValues(
                         _keys(d) + ["relationship", edgeCategoryKey],
                         _values(d) + [relationship, category]
                     )
 
-            return Dictionary.ByKeysValues(["relationship", edgeCategoryKey], [relationship, category])
+            return Dictionary.ByKeysValues(
+                ["relationship", edgeCategoryKey],
+                [relationship, category]
+            )
 
-        def _append_edge(v1, v2, relationship, category, source_topologies=None):
+        def _append_edge(v1, v2, relationship, category, source_topology=None):
             src = _append_vertex(v1)
             dst = _append_vertex(v2)
 
@@ -9488,7 +9657,7 @@ class Graph:
             if e is None:
                 return
 
-            d = _edge_dictionary(relationship, category, source_topologies)
+            d = _edge_dictionary(relationship, category, source_topology)
 
             if _value_at_key(d, edgeSrcKey, None) is None:
                 d = _set_value_at_key(d, edgeSrcKey, src)
@@ -9639,7 +9808,7 @@ class Graph:
             _append_vertex(v_from)
             for t in related_topologies:
                 v_to = _representative_vertex(t, vertex_category, apply_offset=apply_offset)
-                _append_edge(v_from, v_to, relationship, edge_category)
+                _append_edge(v_from, v_to, relationship, edge_category, source_topology=t)
 
         def _add_contents(v_from, contents):
             _append_vertex(v_from)
@@ -9747,12 +9916,31 @@ class Graph:
                             continue
                         seen_pairs.add(pair)
 
+                        relationship = "Direct_Apertures" if require_aperture else "Direct"
+                        edge_category = 2 if require_aperture else 0
+
+                        source = None
+
+                        refs = boundary_to_refs.get(bk, []) or []
+
+                        if require_aperture:
+                            for ref in refs:
+                                aps = _apertures(ref)
+                                if aps:
+                                    source = aps[0]
+                                    break
+                        else:
+                            source = refs[0] if refs else None
+
+                        relationship = "Direct_Apertures" if require_aperture else "Direct"
+                        edge_category = 2 if require_aperture else 0
+
                         _append_edge(
                             owner_vertex[oi_id],
                             owner_vertex[oj_id],
-                            "Direct",
-                            0,
-                            source_refs
+                            relationship,
+                            edge_category,
+                            source_topology=source
                         )
 
         def _process_collection(host, main_type, child_type, outpost_lookup):
@@ -10250,6 +10438,11 @@ class Graph:
             The input list of edges.
         index : bool , optional
             If set to True, the vertices and edges are indexed. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -11114,7 +11307,7 @@ class Graph:
                 }
 
     @staticmethod
-    def Complement(graph, tolerance=0.0001, ontology: bool = True, silent=False):
+    def Complement(graph, ontology: bool = True, tolerance=0.0001, silent=False):
         """
         Creates the complement graph of the input graph.
         See https://en.wikipedia.org/wiki/Complement_graph
@@ -11126,6 +11319,9 @@ class Graph:
         ----------
         graph : topologicpy.Graph
             The input topologic graph.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -11275,7 +11471,10 @@ class Graph:
         return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(adjusted_vertices, complement_edges, index=False, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.Complement", ontology=ontology, silent=True)
 
     @staticmethod
-    def Complete(graph, ontology: bool = True, silent: bool = False):
+    def Complete(graph,
+                 ontology: bool = True,
+                 tolerance: float = 0.0001,
+                 silent: bool = False):
         """
         Completes the graph by conneting unconnected vertices.
 
@@ -11283,6 +11482,9 @@ class Graph:
         ----------
         graph : topologic_core.Graph
             The input graph.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -19782,8 +19984,41 @@ class Graph:
         return [v for v in Graph.Vertices(graph) if Graph.VertexDegree(graph, v, weightKey=weightKey, mantissa=mantissa, tolerance=tolerance, silent=silent) == 1]
     
     @staticmethod
-    def LineGraph(graph, transferVertexDictionaries=False, transferEdgeDictionaries=False,
-                tolerance=0.0001, ontology: bool = True, silent=False):
+    def LineGraph(graph,
+                  transferVertexDictionaries: bool = False,
+                  transferEdgeDictionaries: bool = False,
+                  ontology: bool = True,
+                  tolerance=0.0001,
+                  silent=False):
+        """
+        Returns the line graph of the input graph. In the resulting graph, each edge
+        in the original graph becomes a vertex, and adjacency between edges becomes
+        an edge. If ontology is set to True, ontology annotations are added.
+
+        Parameters
+        ----------
+        graph : topologic_core.Graph
+            The input graph.
+        transferVertexDictionaries : bool , optional
+            If set to True, vertex dictionaries from the input graph are transferred
+            to the corresponding vertices in the resulting graph. Default is False.
+        transferEdgeDictionaries : bool , optional
+            If set to True, edge dictionaries from the input graph are transferred
+            to the corresponding edges in the resulting graph. Default is False.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph
+            The resulting line graph.
+
+        """
 
         from topologicpy.Edge import Edge
         from topologicpy.Topology import Topology
@@ -20803,7 +21038,7 @@ class Graph:
         return graph.MinimumDelta()
     
     @staticmethod
-    def MinimumSpanningTree(graph, edgeKey=None, tolerance=0.0001, ontology: bool = True):
+    def MinimumSpanningTree(graph, edgeKey=None, ontology: bool = True, tolerance=0.0001):
         """
         Returns the minimum spanning tree of the input graph.
         See https://en.wikipedia.org/wiki/Minimum_spanning_tree.
@@ -20822,6 +21057,9 @@ class Graph:
             If set, the value of the edgeKey will be used as the edge weight.
             The value associated with edgeKey must be numerical. If not set,
             edge length is used. Default is None.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -21048,7 +21286,7 @@ class Graph:
         return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(indexed_vertices, mst_edges, index=False, ontology=ontology), graphClass="top:Graph", generatedBy="Graph.MinimumSpanningTree", ontology=ontology, silent=True)
 
     @staticmethod
-    def NavigationGraph(face, sources=None, destinations=None, tolerance=0.0001, numWorkers=None, ontology: bool = True):
+    def NavigationGraph(face, sources=None, destinations=None, numWorkers=None, ontology: bool = True, tolerance=0.0001):
         """
         Creates a 2D navigation graph.
 
@@ -21060,6 +21298,9 @@ class Graph:
             The first input list of sources (vertices). Navigation edges will connect these veritces to destinations.
         destinations : list
             The input list of destinations (vertices). Navigation edges will connect these vertices to sources.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         numWorkers : int, optional
@@ -25093,7 +25334,7 @@ class Graph:
         return graph.Topology()
     
     @staticmethod
-    def Tree(graph, vertex=None, tolerance=0.0001, ontology: bool = True):
+    def Tree(graph, vertex=None, ontology: bool = True, tolerance=0.0001):
         """
         Creates a tree graph version of the input graph rooted at the input vertex.
 
@@ -25103,6 +25344,9 @@ class Graph:
             The input graph.
         vertex : topologic_core.Vertex , optional
             The input root vertex. If not set, the first vertex in the graph is set as the root vertex. Default is None.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -25508,7 +25752,7 @@ class Graph:
         return vertices
 
     @staticmethod
-    def VisibilityGraph(face, viewpointsA=None, viewpointsB=None, tolerance=0.0001, ontology: bool = True):
+    def VisibilityGraph(face, viewpointsA=None, viewpointsB=None, ontology: bool = True, tolerance=0.0001):
         """
         Creates a 2D visibility graph.
 
@@ -25520,6 +25764,9 @@ class Graph:
             The first input list of viewpoints (vertices). Visibility edges will connect these veritces to viewpointsB. If set to None, this parameters will be set to all vertices of the input face. Default is None.
         viewpointsB : list , optional
             The input list of viewpoints (vertices). Visibility edges will connect these vertices to viewpointsA. If set to None, this parameters will be set to all vertices of the input face. Default is None.
+        ontology : bool , optional
+            If set to True, ontology metadata and semantic class annotations are added
+            to the created/imported topology or graph. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
