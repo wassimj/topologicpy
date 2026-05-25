@@ -1,0 +1,1925 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TopologicPy Ontology Specification</title>
+  <meta name="description" content="Human-readable specification for the TopologicPy ontology generated from the TTL vocabulary.">
+  <style>
+    :root {
+      --bg:#f5f5f7; --paper:#fbfbfd; --ink:#1d1d1f; --muted:#6e6e73; --soft:#86868b;
+      --panel:rgba(255,255,255,.78); --line:rgba(29,29,31,.09); --line-soft:rgba(29,29,31,.055);
+      --shadow:0 18px 48px rgba(0,0,0,.065); --blue:#0066cc; --max:1180px;
+    }
+    * { box-sizing:border-box; }
+    html { scroll-behavior:smooth; }
+    body { margin:0; color:var(--ink); background:linear-gradient(180deg,#fff 0%,var(--bg) 44%,#fff 100%); font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif; line-height:1.55; -webkit-font-smoothing:antialiased; }
+    a { color:var(--blue); text-decoration:none; } a:hover { text-decoration:underline; }
+    code { font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace; font-size:.92em; }
+    .nav { position:sticky; top:0; z-index:40; backdrop-filter:saturate(180%) blur(22px); -webkit-backdrop-filter:saturate(180%) blur(22px); background:rgba(255,255,255,.76); border-bottom:1px solid var(--line-soft); }
+    .nav-inner { max-width:var(--max); margin:0 auto; padding:.72rem 1.35rem; display:flex; justify-content:space-between; align-items:center; gap:1rem; font-size:.92rem; }
+    .brand { color:var(--ink); font-weight:680; letter-spacing:-.02em; }
+    .nav-links { display:flex; gap:1.1rem; align-items:center; } .nav-links a { color:var(--muted); font-weight:520; } .nav-links a:hover { color:var(--ink); text-decoration:none; }
+    .wrap { max-width:var(--max); margin:0 auto; padding:0 1.35rem; }
+    header.hero { padding:6.2rem 0 4.2rem; text-align:center; }
+    .eyebrow { display:inline-flex; padding:.4rem .72rem; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.72); color:var(--muted); font-size:.82rem; font-weight:650; }
+    h1 { margin:1rem auto .9rem; max-width:980px; font-size:clamp(3rem,7vw,6.6rem); line-height:.94; letter-spacing:-.067em; font-weight:780; }
+    .lead { max-width:850px; margin:0 auto; color:var(--muted); font-size:clamp(1.08rem,1.9vw,1.38rem); line-height:1.42; letter-spacing:-.018em; }
+    .actions { display:flex; justify-content:center; flex-wrap:wrap; gap:.7rem; margin-top:1.8rem; }
+    .button { display:inline-flex; min-height:2.8rem; align-items:center; justify-content:center; padding:.68rem 1.02rem; border-radius:999px; background:var(--ink); color:#fff; font-weight:620; box-shadow:0 10px 26px rgba(0,0,0,.12); }
+    .button:hover { color:#fff; background:#000; text-decoration:none; } .button.secondary { color:var(--ink); background:rgba(255,255,255,.74); border:1px solid var(--line); box-shadow:none; }
+    section { padding:3.8rem 0; }
+    .section-head { max-width:820px; margin:0 auto 1.8rem; text-align:center; }
+    .section-head h2 { margin:0 0 .65rem; font-size:clamp(2rem,4.6vw,4.2rem); line-height:1; letter-spacing:-.055em; }
+    .section-head p { margin:0; color:var(--muted); font-size:1.08rem; }
+    .grid { display:grid; grid-template-columns:repeat(12,1fr); gap:1rem; }
+    .card, .term-card { background:var(--panel); border:1px solid rgba(255,255,255,.82); border-radius:26px; box-shadow:var(--shadow); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); }
+    .card { padding:1.45rem; }
+    .span-3 { grid-column:span 3; } .span-4 { grid-column:span 4; } .span-6 { grid-column:span 6; } .span-8 { grid-column:span 8; } .span-12 { grid-column:span 12; }
+    .stat { display:block; font-size:clamp(2rem,4vw,3.7rem); line-height:.95; letter-spacing:-.05em; font-weight:760; margin-bottom:.55rem; }
+    .card h3 { margin:0 0 .45rem; font-size:1.18rem; letter-spacing:-.028em; } .card p { margin:0; color:var(--muted); }
+    .spec-table { width:100%; border-collapse:collapse; overflow:hidden; }
+    .spec-table th, .spec-table td { padding:.78rem .85rem; border-bottom:1px solid var(--line-soft); text-align:left; vertical-align:top; }
+    .spec-table th { width:26%; color:var(--soft); font-size:.82rem; font-weight:650; text-transform:uppercase; letter-spacing:.035em; }
+    .spec-table td { color:#333438; } .spec-table tr:last-child th, .spec-table tr:last-child td { border-bottom:0; }
+    .panel { background:rgba(255,255,255,.68); border:1px solid var(--line-soft); border-radius:22px; overflow:hidden; box-shadow:0 10px 32px rgba(0,0,0,.045); }
+    .tree { margin:0; padding:1rem 1rem 1rem 1.4rem; } .tree ul { margin:.45rem 0 .45rem 1.2rem; padding-left:1rem; border-left:1px solid var(--line); } .tree li { margin:.45rem 0; }
+    .tree-node { display:grid; grid-template-columns:minmax(170px,.9fr) 1fr; gap:.4rem .8rem; padding:.55rem .65rem; border-radius:14px; background:rgba(255,255,255,.58); border:1px solid var(--line-soft); }
+    .tree-node small { grid-column:1/-1; color:var(--muted); }
+    .term-grid { display:grid; grid-template-columns:1fr; gap:1rem; }
+    .term-card { padding:1.18rem; scroll-margin-top:5.2rem; }
+    .term-head { display:flex; align-items:flex-start; justify-content:space-between; gap:1rem; margin-bottom:.7rem; }
+    .term-head h3 { margin:0 .0 .18rem; font-size:1.24rem; letter-spacing:-.03em; }
+    .term-head code { color:var(--muted); }
+    .term-comment { color:var(--muted); margin:.25rem 0 1rem; max-width:900px; }
+    .badge, .anchor { flex:0 0 auto; display:inline-flex; align-items:center; border:1px solid var(--line); border-radius:999px; padding:.28rem .58rem; color:var(--muted); background:rgba(255,255,255,.62); font-size:.78rem; font-weight:650; }
+    .anchor { width:2rem; height:2rem; justify-content:center; padding:0; }
+    .compact th, .compact td { padding:.58rem .65rem; }
+    .toc { display:flex; flex-wrap:wrap; gap:.48rem; justify-content:center; margin-top:1.4rem; }
+    .toc a { padding:.4rem .68rem; border:1px solid var(--line); border-radius:999px; background:rgba(255,255,255,.66); color:var(--ink); font-size:.9rem; } .toc a:hover { text-decoration:none; background:#fff; }
+    .two-col { columns:2 320px; column-gap:1.2rem; }
+    footer { padding:3rem 0; color:var(--muted); border-top:1px solid var(--line-soft); }
+    @media (max-width:980px) { .span-3,.span-4,.span-6,.span-8 { grid-column:span 12; } .nav-links { display:none; } .tree-node { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+  <nav class="nav"><div class="nav-inner"><a class="brand" href="index.html">TopologicPy Ontology</a><div class="nav-links"><a href="index.html">Overview</a><a href="#metadata">Metadata</a><a href="#classes">Classes</a><a href="#properties">Properties</a><a href="ontology/topologicpy.ttl">TTL</a></div></div></nav>
+  <header class="hero">
+    <div class="wrap">
+      <span class="eyebrow">Human-readable ontology specification</span>
+      <h1>TopologicPy Ontology Specification</h1>
+      <p class="lead">Generated from the supplied Turtle vocabulary. This page documents the namespace, ontology metadata, class hierarchy, classes, object properties, datatype properties, and alignment terms used to make TopologicPy a spatial-semantic graph framework.</p>
+      <div class="actions"><a class="button" href="ontology/topologicpy.ttl">Download TTL</a><a class="button secondary" href="index.html">Return to overview</a></div>
+      <nav class="toc"><a href="#overview">Overview</a><a href="#metadata">Metadata</a><a href="#hierarchy">Class hierarchy</a><a href="#classes">Class reference</a><a href="#properties">Property reference</a><a href="#prefixes">Prefixes</a></nav>
+    </div>
+  </header>
+  <main>
+    <section id="overview"><div class="wrap"><div class="grid">
+      <div class="card span-3"><span class="stat">68</span><h3>TopologicPy classes</h3><p>Internal classes in the canonical <code>top:</code> namespace.</p></div>
+      <div class="card span-3"><span class="stat">72</span><h3>Object properties</h3><p>Relationships between topology, graph, BIM, analysis, and provenance entities.</p></div>
+      <div class="card span-3"><span class="stat">63</span><h3>Datatype properties</h3><p>Literal attributes for labels, identifiers, metrics, values, units, coordinates, and paths.</p></div>
+      <div class="card span-3"><span class="stat">1233</span><h3>RDF triples</h3><p>Total statements parsed from the supplied Turtle file.</p></div>
+      <div class="card span-12"><h3>Specification scope</h3><p>The vocabulary describes TopologicPy entities as linked computational objects: geometric and topological primitives, graph structures, building-domain concepts, dictionaries and attributes, analysis metrics, graph database workflows, GQL/GraphRAG/PyG workflows, RDF export/import, and provenance. The canonical namespace is <code>http://w3id.org/topologicpy#</code>.</p></div>
+    </div></div></section>
+
+    <section id="metadata"><div class="wrap"><div class="section-head"><h2>Ontology metadata</h2><p>Publication, namespace, and licensing information extracted from the ontology header.</p></div><div class="panel"><table class="spec-table"><tbody><tr><th>Title</th><td>TopologicPy Ontology</td></tr><tr><th>Description</th><td>A formal OWL/RDFS vocabulary for representing TopologicPy topologies, graphs, dictionaries, geometric attributes, analytical metrics, provenance, and building-domain alignments.</td></tr><tr><th>Version</th><td>0.1.0</td></tr><tr><th>Creator</th><td>TopologicPy Project</td></tr><tr><th>License</th><td>&lt;https://www.gnu.org/licenses/agpl-3.0.en.html&gt;</td></tr><tr><th>Preferred namespace prefix</th><td>top</td></tr><tr><th>Preferred namespace URI</th><td>http://w3id.org/topologicpy#</td></tr></tbody></table></div></div></section>
+
+    <section id="hierarchy"><div class="wrap"><div class="section-head"><h2>Class hierarchy</h2><p>Internal and referenced classes organised by their explicit <code>rdfs:subClassOf</code> relations.</p></div><div class="panel"><ul class="tree"><li><div class="tree-node"><a href="#class-AnalysisMetric"><code>top:AnalysisMetric</code></a><span>Analysis Metric</span><small>A computed metric associated with geometry, topology, graphs, or buildings.</small></div><ul><li><div class="tree-node"><a href="#class-Isovist"><code>top:Isovist</code></a><span>Isovist</span><small>A visibility polygon, volume, or related visibility field from an observer point.</small></div></li><li><div class="tree-node"><a href="#class-SpaceSyntaxMetric"><code>top:SpaceSyntaxMetric</code></a><span>Space Syntax Metric</span><small>A spatial network metric commonly used in space syntax analysis.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Attribute"><code>top:Attribute</code></a><span>Attribute</span><small>A semantic or analytical key-value attribute associated with an entity.</small></div><ul><li><div class="tree-node"><a href="#class-EdgeFeature"><code>top:EdgeFeature</code></a><span>Edge Feature</span><small>A numerical or categorical feature associated with a graph edge.</small></div></li><li><div class="tree-node"><a href="#class-GraphFeature"><code>top:GraphFeature</code></a><span>Graph Feature</span><small>A numerical or categorical feature associated with a graph.</small></div></li><li><div class="tree-node"><a href="#class-NodeFeature"><code>top:NodeFeature</code></a><span>Node Feature</span><small>A numerical or categorical feature associated with a graph node.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Context"><code>top:Context</code></a><span>Context</span><small>The modelling, analytical, or computational context in which entities are interpreted.</small></div></li><li><div class="tree-node"><a href="#class-CoordinateSystem"><code>top:CoordinateSystem</code></a><span>Coordinate System</span><small>A spatial reference frame for coordinates and transformations.</small></div></li><li><div class="tree-node"><a href="#class-Dictionary"><code>top:Dictionary</code></a><span>Dictionary</span><small>A key-value container for semantic, analytical, and provenance metadata.</small></div></li><li><div class="tree-node"><a href="#class-Graph"><code>top:Graph</code></a><span>Graph</span><small>A graph composed of nodes and relationships, commonly represented in TopologicPy by vertices and edges.</small></div><ul><li><div class="tree-node"><a href="#class-KnowledgeGraph"><code>top:KnowledgeGraph</code></a><span>Knowledge Graph</span><small>A graph integrating entities, semantics, provenance, and relationships.</small></div></li><li><div class="tree-node"><a href="#class-Path"><code>top:Path</code></a><span>Path</span><small>An ordered sequence of graph nodes and relationships.</small></div></li><li><div class="tree-node"><a href="#class-SpatialGraph"><code>top:SpatialGraph</code></a><span>Spatial Graph</span><small>A graph representing spatial relations.</small></div><ul><li><div class="tree-node"><a href="#class-AdjacencyGraph"><code>top:AdjacencyGraph</code></a><span>Adjacency Graph</span><small>A graph representing adjacency relations.</small></div></li><li><div class="tree-node"><a href="#class-CirculationGraph"><code>top:CirculationGraph</code></a><span>Circulation Graph</span><small>A graph representing movement or circulation relations.</small></div></li><li><div class="tree-node"><a href="#class-ConnectivityGraph"><code>top:ConnectivityGraph</code></a><span>Connectivity Graph</span><small>A graph representing connectivity relations.</small></div></li><li><div class="tree-node"><a href="#class-VisibilityGraph"><code>top:VisibilityGraph</code></a><span>Visibility Graph</span><small>A graph representing visibility relations.</small></div></li></ul></li></ul></li><li><div class="tree-node"><a href="#class-GraphDataset"><code>top:GraphDataset</code></a><span>Graph Dataset</span><small>A dataset containing graphs, nodes, edges, labels, and features.</small></div></li><li><div class="tree-node"><a href="#class-Grid"><code>top:Grid</code></a><span>Grid</span><small>A regular spatial subdivision or sampling structure.</small></div></li><li><div class="tree-node"><a href="#class-Matrix"><code>top:Matrix</code></a><span>Matrix</span><small>A matrix, typically used for geometric transformations.</small></div></li><li><div class="tree-node"><a href="#class-Project"><code>top:Project</code></a><span>Project</span><small>A project-level container for a model, dataset, or computational study.</small></div></li><li><div class="tree-node"><a href="#class-QualityIssue"><code>top:QualityIssue</code></a><span>Quality Issue</span><small>A validation, quality-control, or model-checking issue.</small></div></li><li><div class="tree-node"><a href="#class-Topology"><code>top:Topology</code></a><span>Topology</span><small>The superclass for TopologicPy topological entities.</small></div><ul><li><div class="tree-node"><a href="#class-Boundary"><code>top:Boundary</code></a><span>Boundary</span><small>A topology that bounds another topology.</small></div><ul><li><div class="tree-node"><a href="#class-ExternalBoundary"><code>top:ExternalBoundary</code></a><span>External Boundary</span><small>An external boundary of a topology.</small></div></li><li><div class="tree-node"><a href="#class-InternalBoundary"><code>top:InternalBoundary</code></a><span>Internal Boundary</span><small>An internal boundary, hole, or void boundary.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Cell"><code>top:Cell</code></a><span>Cell</span><small>A volumetric topological entity bounded by faces.</small></div><ul><li><div class="tree-node"><a href="#class-Zone"><code>top:Zone</code></a><span>Zone</span><small>A spatial region or bounded domain.</small></div><ul><li><div class="tree-node"><a href="#class-Building"><code>top:Building</code></a><span>Building</span><small>A building-level spatial container.</small></div></li><li><div class="tree-node"><a href="#class-CirculationZone"><code>top:CirculationZone</code></a><span>Circulation Zone</span><small>A zone primarily used for movement or circulation.</small></div></li><li><div class="tree-node"><a href="#class-FunctionalZone"><code>top:FunctionalZone</code></a><span>Functional Zone</span><small>A zone grouped by function or programme.</small></div></li><li><div class="tree-node"><a href="#class-Site"><code>top:Site</code></a><span>Site</span><small>A site or land parcel containing buildings or spatial zones.</small></div></li><li><div class="tree-node"><a href="#class-Space"><code>top:Space</code></a><span>Space</span><small>A building space, usually corresponding to an IFC space or room-like domain.</small></div><ul><li><div class="tree-node"><a href="#class-Room"><code>top:Room</code></a><span>Room</span><small>A room or occupiable space.</small></div></li><li><div class="tree-node"><a href="#class-ThermalZone"><code>top:ThermalZone</code></a><span>Thermal Zone</span><small>A thermal analysis zone.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Storey"><code>top:Storey</code></a><span>Storey</span><small>A building storey or level.</small></div></li></ul></li></ul></li><li><div class="tree-node"><a href="#class-CellComplex"><code>top:CellComplex</code></a><span>Cell Complex</span><small>A collection of cells, typically sharing faces.</small></div></li><li><div class="tree-node"><a href="#class-Cluster"><code>top:Cluster</code></a><span>Cluster</span><small>A heterogeneous collection of topologies.</small></div></li><li><div class="tree-node"><a href="#class-Edge"><code>top:Edge</code></a><span>Edge</span><small>A one-dimensional topology connecting two vertices.</small></div><ul><li><div class="tree-node"><a href="#class-Relationship"><code>top:Relationship</code></a><span>Relationship</span><small>A graph relationship, often represented by a TopologicPy Edge.</small></div><ul><li><div class="tree-node"><a href="#class-DirectedRelationship"><code>top:DirectedRelationship</code></a><span>Directed Relationship</span><small>A relationship with a start node and an end node.</small></div></li><li><div class="tree-node"><a href="#class-UndirectedRelationship"><code>top:UndirectedRelationship</code></a><span>Undirected Relationship</span><small>A relationship without intrinsic direction.</small></div></li></ul></li></ul></li><li><div class="tree-node"><a href="#class-Element"><code>top:Element</code></a><span>Element</span><small>A physical or conceptual building element.</small></div><ul><li><div class="tree-node"><a href="#class-Aperture"><code>top:Aperture</code></a><span>Aperture</span><small>An opening, void, or aperture associated with another topology.</small></div></li><li><div class="tree-node"><a href="#class-Beam"><code>top:Beam</code></a><span>Beam</span><small>A beam or horizontal/linear structural member.</small></div></li><li><div class="tree-node"><a href="#class-Column"><code>top:Column</code></a><span>Column</span><small>A column or vertical structural member.</small></div></li><li><div class="tree-node"><a href="#class-Door"><code>top:Door</code></a><span>Door</span><small>A door or access element.</small></div></li><li><div class="tree-node"><a href="#class-Equipment"><code>top:Equipment</code></a><span>Equipment</span><small>Building equipment or operational systems.</small></div></li><li><div class="tree-node"><a href="#class-Furniture"><code>top:Furniture</code></a><span>Furniture</span><small>Furniture or furnishing elements.</small></div></li><li><div class="tree-node"><a href="#class-Opening"><code>top:Opening</code></a><span>Opening</span><small>An opening element or void.</small></div></li><li><div class="tree-node"><a href="#class-Railing"><code>top:Railing</code></a><span>Railing</span><small>A railing, guard, or balustrade.</small></div></li><li><div class="tree-node"><a href="#class-Roof"><code>top:Roof</code></a><span>Roof</span><small>A roof element.</small></div></li><li><div class="tree-node"><a href="#class-Sensor"><code>top:Sensor</code></a><span>Sensor</span><small>A sensor or observation point.</small></div></li><li><div class="tree-node"><a href="#class-Slab"><code>top:Slab</code></a><span>Slab</span><small>A slab, floor, ceiling, or plate-like element.</small></div></li><li><div class="tree-node"><a href="#class-Stair"><code>top:Stair</code></a><span>Stair</span><small>A stair or stair flight.</small></div></li><li><div class="tree-node"><a href="#class-Wall"><code>top:Wall</code></a><span>Wall</span><small>A vertical or near-vertical building element separating or bounding spaces.</small></div></li><li><div class="tree-node"><a href="#class-Window"><code>top:Window</code></a><span>Window</span><small>A window or transparent/translucent opening element.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Face"><code>top:Face</code></a><span>Face</span><small>A bounded two-dimensional surface, optionally with internal boundaries.</small></div><ul><li><div class="tree-node"><a href="#class-Aperture"><code>top:Aperture</code></a><span>Aperture</span><small>An opening, void, or aperture associated with another topology.</small></div></li><li><div class="tree-node"><a href="#class-Interface"><code>top:Interface</code></a><span>Interface</span><small>A shared boundary or interface between zones, elements, or topologies.</small></div></li><li><div class="tree-node"><a href="#class-Surface"><code>top:Surface</code></a><span>Surface</span><small>A surface used as a geometric, analytical, or building-domain entity.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Shell"><code>top:Shell</code></a><span>Shell</span><small>A connected collection of faces forming a segmented surface.</small></div></li><li><div class="tree-node"><a href="#class-Vertex"><code>top:Vertex</code></a><span>Vertex</span><small>A zero-dimensional topology representing a point in 3D space.</small></div><ul><li><div class="tree-node"><a href="#class-Node"><code>top:Node</code></a><span>Node</span><small>A graph node, often represented by a TopologicPy Vertex.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Wire"><code>top:Wire</code></a><span>Wire</span><small>A connected sequence or collection of edges.</small></div></li></ul></li><li><div class="tree-node"><a href="#class-Transform"><code>top:Transform</code></a><span>Transform</span><small>A geometric or topological transformation.</small></div></li><li><div class="tree-node"><a href="#class-ValidationRule"><code>top:ValidationRule</code></a><span>Validation Rule</span><small>A rule used to validate model content, geometry, topology, semantics, or provenance.</small></div></li><li><div class="tree-node"><a href="#class-Vector"><code>top:Vector</code></a><span>Vector</span><small>A mathematical vector with magnitude and direction.</small></div></li></ul></div></div></section>
+
+    <section id="roots"><div class="wrap"><div class="section-head"><h2>Top-level semantic areas</h2><p>Root classes provide the main conceptual partitions of the vocabulary.</p></div><div class="panel"><table class="spec-table"><thead><tr><th>Root class</th><th>Description</th><th>Descendants</th></tr></thead><tbody><tr><td><a href="#class-AnalysisMetric">top:AnalysisMetric</a></td><td>A computed metric associated with geometry, topology, graphs, or buildings.</td><td>2</td></tr><tr><td><a href="#class-Attribute">top:Attribute</a></td><td>A semantic or analytical key-value attribute associated with an entity.</td><td>3</td></tr><tr><td><a href="#class-Context">top:Context</a></td><td>The modelling, analytical, or computational context in which entities are interpreted.</td><td>0</td></tr><tr><td><a href="#class-CoordinateSystem">top:CoordinateSystem</a></td><td>A spatial reference frame for coordinates and transformations.</td><td>0</td></tr><tr><td><a href="#class-Dictionary">top:Dictionary</a></td><td>A key-value container for semantic, analytical, and provenance metadata.</td><td>0</td></tr><tr><td><a href="#class-Graph">top:Graph</a></td><td>A graph composed of nodes and relationships, commonly represented in TopologicPy by vertices and edges.</td><td>7</td></tr><tr><td><a href="#class-GraphDataset">top:GraphDataset</a></td><td>A dataset containing graphs, nodes, edges, labels, and features.</td><td>0</td></tr><tr><td><a href="#class-Grid">top:Grid</a></td><td>A regular spatial subdivision or sampling structure.</td><td>0</td></tr><tr><td><a href="#class-Matrix">top:Matrix</a></td><td>A matrix, typically used for geometric transformations.</td><td>0</td></tr><tr><td><a href="#class-Project">top:Project</a></td><td>A project-level container for a model, dataset, or computational study.</td><td>0</td></tr><tr><td><a href="#class-QualityIssue">top:QualityIssue</a></td><td>A validation, quality-control, or model-checking issue.</td><td>0</td></tr><tr><td><a href="#class-Topology">top:Topology</a></td><td>The superclass for TopologicPy topological entities.</td><td>41</td></tr><tr><td><a href="#class-Transform">top:Transform</a></td><td>A geometric or topological transformation.</td><td>0</td></tr><tr><td><a href="#class-ValidationRule">top:ValidationRule</a></td><td>A rule used to validate model content, geometry, topology, semantics, or provenance.</td><td>0</td></tr><tr><td><a href="#class-Vector">top:Vector</a></td><td>A mathematical vector with magnitude and direction.</td><td>0</td></tr></tbody></table></div></div></section>
+
+    <section id="classes"><div class="wrap"><div class="section-head"><h2>Class reference</h2><p>Every class declared in the ontology, including comments, superclass relations, alignments, and domain-linked properties.</p></div><div class="term-grid">
+      <article class="term-card" id="class-AdjacencyGraph">
+        <div class="term-head">
+          <div><h3>Adjacency Graph</h3><code>top:AdjacencyGraph</code></div>
+          <a class="anchor" href="#class-AdjacencyGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph representing adjacency relations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#AdjacencyGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-SpatialGraph">top:SpatialGraph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-AnalysisMetric">
+        <div class="term-head">
+          <div><h3>Analysis Metric</h3><code>top:AnalysisMetric</code></div>
+          <a class="anchor" href="#class-AnalysisMetric" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A computed metric associated with geometry, topology, graphs, or buildings.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#AnalysisMetric</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isMetricOf">top:isMetricOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Aperture">
+        <div class="term-head">
+          <div><h3>Aperture</h3><code>top:Aperture</code></div>
+          <a class="anchor" href="#class-Aperture" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">An opening, void, or aperture associated with another topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Aperture</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Face">top:Face</a>, <a href="#class-Element">top:Element</a>, <code>bot:Element</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isApertureOf">top:isApertureOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Attribute">
+        <div class="term-head">
+          <div><h3>Attribute</h3><code>top:Attribute</code></div>
+          <a class="anchor" href="#class-Attribute" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A semantic or analytical key-value attribute associated with an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Attribute</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isAttributeOf">top:isAttributeOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Beam">
+        <div class="term-head">
+          <div><h3>Beam</h3><code>top:Beam</code></div>
+          <a class="anchor" href="#class-Beam" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A beam or horizontal/linear structural member.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Beam</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Boundary">
+        <div class="term-head">
+          <div><h3>Boundary</h3><code>top:Boundary</code></div>
+          <a class="anchor" href="#class-Boundary" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A topology that bounds another topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Boundary</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isExternalBoundaryOf">top:isExternalBoundaryOf</a>, <a href="#property-isInternalBoundaryOf">top:isInternalBoundaryOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Building">
+        <div class="term-head">
+          <div><h3>Building</h3><code>top:Building</code></div>
+          <a class="anchor" href="#class-Building" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A building-level spatial container.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Building</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a>, <code>bot:Building</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Cell">
+        <div class="term-head">
+          <div><h3>Cell</h3><code>top:Cell</code></div>
+          <a class="anchor" href="#class-Cell" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A volumetric topological entity bounded by faces.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Cell</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a>, <code>geo:Feature</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isCellOf">top:isCellOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-CellComplex">
+        <div class="term-head">
+          <div><h3>Cell Complex</h3><code>top:CellComplex</code></div>
+          <a class="anchor" href="#class-CellComplex" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A collection of cells, typically sharing faces.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#CellComplex</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isCellComplexOf">top:isCellComplexOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-CirculationGraph">
+        <div class="term-head">
+          <div><h3>Circulation Graph</h3><code>top:CirculationGraph</code></div>
+          <a class="anchor" href="#class-CirculationGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph representing movement or circulation relations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#CirculationGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-SpatialGraph">top:SpatialGraph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-CirculationZone">
+        <div class="term-head">
+          <div><h3>Circulation Zone</h3><code>top:CirculationZone</code></div>
+          <a class="anchor" href="#class-CirculationZone" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A zone primarily used for movement or circulation.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#CirculationZone</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Cluster">
+        <div class="term-head">
+          <div><h3>Cluster</h3><code>top:Cluster</code></div>
+          <a class="anchor" href="#class-Cluster" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A heterogeneous collection of topologies.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Cluster</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-hasFreeTopology">top:hasFreeTopology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Column">
+        <div class="term-head">
+          <div><h3>Column</h3><code>top:Column</code></div>
+          <a class="anchor" href="#class-Column" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A column or vertical structural member.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Column</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-ConnectivityGraph">
+        <div class="term-head">
+          <div><h3>Connectivity Graph</h3><code>top:ConnectivityGraph</code></div>
+          <a class="anchor" href="#class-ConnectivityGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph representing connectivity relations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ConnectivityGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-SpatialGraph">top:SpatialGraph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Context">
+        <div class="term-head">
+          <div><h3>Context</h3><code>top:Context</code></div>
+          <a class="anchor" href="#class-Context" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">The modelling, analytical, or computational context in which entities are interpreted.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Context</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isContextOf">top:isContextOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-CoordinateSystem">
+        <div class="term-head">
+          <div><h3>Coordinate System</h3><code>top:CoordinateSystem</code></div>
+          <a class="anchor" href="#class-CoordinateSystem" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A spatial reference frame for coordinates and transformations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#CoordinateSystem</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Dictionary">
+        <div class="term-head">
+          <div><h3>Dictionary</h3><code>top:Dictionary</code></div>
+          <a class="anchor" href="#class-Dictionary" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A key-value container for semantic, analytical, and provenance metadata.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Dictionary</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isDictionaryOf">top:isDictionaryOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-DirectedRelationship">
+        <div class="term-head">
+          <div><h3>Directed Relationship</h3><code>top:DirectedRelationship</code></div>
+          <a class="anchor" href="#class-DirectedRelationship" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A relationship with a start node and an end node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#DirectedRelationship</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-endsAt">top:endsAt</a>, <a href="#property-startsAt">top:startsAt</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Door">
+        <div class="term-head">
+          <div><h3>Door</h3><code>top:Door</code></div>
+          <a class="anchor" href="#class-Door" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A door or access element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Door</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Edge">
+        <div class="term-head">
+          <div><h3>Edge</h3><code>top:Edge</code></div>
+          <a class="anchor" href="#class-Edge" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A one-dimensional topology connecting two vertices.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Edge</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Disjoint with</th><td><a href="#class-Face">top:Face</a>, <a href="#class-Cell">top:Cell</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isEdgeOf">top:isEdgeOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-EdgeFeature">
+        <div class="term-head">
+          <div><h3>Edge Feature</h3><code>top:EdgeFeature</code></div>
+          <a class="anchor" href="#class-EdgeFeature" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A numerical or categorical feature associated with a graph edge.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#EdgeFeature</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Attribute">top:Attribute</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Element">
+        <div class="term-head">
+          <div><h3>Element</h3><code>top:Element</code></div>
+          <a class="anchor" href="#class-Element" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A physical or conceptual building element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Element</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a>, <code>bot:Element</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isElementOf">top:isElementOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Equipment">
+        <div class="term-head">
+          <div><h3>Equipment</h3><code>top:Equipment</code></div>
+          <a class="anchor" href="#class-Equipment" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">Building equipment or operational systems.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Equipment</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a>, <code>brick:Equipment</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-ExternalBoundary">
+        <div class="term-head">
+          <div><h3>External Boundary</h3><code>top:ExternalBoundary</code></div>
+          <a class="anchor" href="#class-ExternalBoundary" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">An external boundary of a topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ExternalBoundary</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Boundary">top:Boundary</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Face">
+        <div class="term-head">
+          <div><h3>Face</h3><code>top:Face</code></div>
+          <a class="anchor" href="#class-Face" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A bounded two-dimensional surface, optionally with internal boundaries.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Face</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a>, <code>geo:Feature</code></td></tr><tr><th>Disjoint with</th><td><a href="#class-Cell">top:Cell</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isFaceOf">top:isFaceOf</a>, <a href="#property-normalX">top:normalX</a>, <a href="#property-normalY">top:normalY</a>, <a href="#property-normalZ">top:normalZ</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-FunctionalZone">
+        <div class="term-head">
+          <div><h3>Functional Zone</h3><code>top:FunctionalZone</code></div>
+          <a class="anchor" href="#class-FunctionalZone" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A zone grouped by function or programme.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#FunctionalZone</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Furniture">
+        <div class="term-head">
+          <div><h3>Furniture</h3><code>top:Furniture</code></div>
+          <a class="anchor" href="#class-Furniture" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">Furniture or furnishing elements.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Furniture</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Graph">
+        <div class="term-head">
+          <div><h3>Graph</h3><code>top:Graph</code></div>
+          <a class="anchor" href="#class-Graph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph composed of nodes and relationships, commonly represented in TopologicPy by vertices and edges.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Graph</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-hasNode">top:hasNode</a>, <a href="#property-hasPath">top:hasPath</a>, <a href="#property-hasRelationship">top:hasRelationship</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-GraphDataset">
+        <div class="term-head">
+          <div><h3>Graph Dataset</h3><code>top:GraphDataset</code></div>
+          <a class="anchor" href="#class-GraphDataset" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A dataset containing graphs, nodes, edges, labels, and features.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#GraphDataset</code></td></tr><tr><th>SubClassOf</th><td><code>prov:Entity</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-GraphFeature">
+        <div class="term-head">
+          <div><h3>Graph Feature</h3><code>top:GraphFeature</code></div>
+          <a class="anchor" href="#class-GraphFeature" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A numerical or categorical feature associated with a graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#GraphFeature</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Attribute">top:Attribute</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Grid">
+        <div class="term-head">
+          <div><h3>Grid</h3><code>top:Grid</code></div>
+          <a class="anchor" href="#class-Grid" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A regular spatial subdivision or sampling structure.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Grid</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Interface">
+        <div class="term-head">
+          <div><h3>Interface</h3><code>top:Interface</code></div>
+          <a class="anchor" href="#class-Interface" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A shared boundary or interface between zones, elements, or topologies.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Interface</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Face">top:Face</a>, <code>bot:Interface</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isInterfaceOf">top:isInterfaceOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-InternalBoundary">
+        <div class="term-head">
+          <div><h3>Internal Boundary</h3><code>top:InternalBoundary</code></div>
+          <a class="anchor" href="#class-InternalBoundary" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">An internal boundary, hole, or void boundary.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#InternalBoundary</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Boundary">top:Boundary</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Isovist">
+        <div class="term-head">
+          <div><h3>Isovist</h3><code>top:Isovist</code></div>
+          <a class="anchor" href="#class-Isovist" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A visibility polygon, volume, or related visibility field from an observer point.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Isovist</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-AnalysisMetric">top:AnalysisMetric</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-KnowledgeGraph">
+        <div class="term-head">
+          <div><h3>Knowledge Graph</h3><code>top:KnowledgeGraph</code></div>
+          <a class="anchor" href="#class-KnowledgeGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph integrating entities, semantics, provenance, and relationships.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#KnowledgeGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Graph">top:Graph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Matrix">
+        <div class="term-head">
+          <div><h3>Matrix</h3><code>top:Matrix</code></div>
+          <a class="anchor" href="#class-Matrix" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A matrix, typically used for geometric transformations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Matrix</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isMatrixOf">top:isMatrixOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Node">
+        <div class="term-head">
+          <div><h3>Node</h3><code>top:Node</code></div>
+          <a class="anchor" href="#class-Node" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph node, often represented by a TopologicPy Vertex.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Node</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-betweennessCentrality">top:betweennessCentrality</a>, <a href="#property-closenessCentrality">top:closenessCentrality</a>, <a href="#property-community">top:community</a>, <a href="#property-connectsTo">top:connectsTo</a>, <a href="#property-degree">top:degree</a>, <a href="#property-eigenvectorCentrality">top:eigenvectorCentrality</a>, <a href="#property-inDegree">top:inDegree</a>, <a href="#property-isNodeOf">top:isNodeOf</a>, <a href="#property-outDegree">top:outDegree</a>, <a href="#property-pageRank">top:pageRank</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-NodeFeature">
+        <div class="term-head">
+          <div><h3>Node Feature</h3><code>top:NodeFeature</code></div>
+          <a class="anchor" href="#class-NodeFeature" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A numerical or categorical feature associated with a graph node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#NodeFeature</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Attribute">top:Attribute</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Opening">
+        <div class="term-head">
+          <div><h3>Opening</h3><code>top:Opening</code></div>
+          <a class="anchor" href="#class-Opening" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">An opening element or void.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Opening</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Path">
+        <div class="term-head">
+          <div><h3>Path</h3><code>top:Path</code></div>
+          <a class="anchor" href="#class-Path" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">An ordered sequence of graph nodes and relationships.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Path</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isPathOf">top:isPathOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Project">
+        <div class="term-head">
+          <div><h3>Project</h3><code>top:Project</code></div>
+          <a class="anchor" href="#class-Project" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A project-level container for a model, dataset, or computational study.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Project</code></td></tr><tr><th>SubClassOf</th><td><code>prov:Entity</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-QualityIssue">
+        <div class="term-head">
+          <div><h3>Quality Issue</h3><code>top:QualityIssue</code></div>
+          <a class="anchor" href="#class-QualityIssue" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A validation, quality-control, or model-checking issue.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#QualityIssue</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isQualityIssueOf">top:isQualityIssueOf</a>, <a href="#property-issueCode">top:issueCode</a>, <a href="#property-issueMessage">top:issueMessage</a>, <a href="#property-severity">top:severity</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Railing">
+        <div class="term-head">
+          <div><h3>Railing</h3><code>top:Railing</code></div>
+          <a class="anchor" href="#class-Railing" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A railing, guard, or balustrade.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Railing</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Relationship">
+        <div class="term-head">
+          <div><h3>Relationship</h3><code>top:Relationship</code></div>
+          <a class="anchor" href="#class-Relationship" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph relationship, often represented by a TopologicPy Edge.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Relationship</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Edge">top:Edge</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-connects">top:connects</a>, <a href="#property-hasCost">top:hasCost</a>, <a href="#property-hasSource">top:hasSource</a>, <a href="#property-hasTarget">top:hasTarget</a>, <a href="#property-isRelationshipOf">top:isRelationshipOf</a>, <a href="#property-hasWeight">top:hasWeight</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Roof">
+        <div class="term-head">
+          <div><h3>Roof</h3><code>top:Roof</code></div>
+          <a class="anchor" href="#class-Roof" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A roof element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Roof</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Room">
+        <div class="term-head">
+          <div><h3>Room</h3><code>top:Room</code></div>
+          <a class="anchor" href="#class-Room" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A room or occupiable space.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Room</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Space">top:Space</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Sensor">
+        <div class="term-head">
+          <div><h3>Sensor</h3><code>top:Sensor</code></div>
+          <a class="anchor" href="#class-Sensor" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A sensor or observation point.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Sensor</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a>, <code>brick:Point</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Shell">
+        <div class="term-head">
+          <div><h3>Shell</h3><code>top:Shell</code></div>
+          <a class="anchor" href="#class-Shell" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A connected collection of faces forming a segmented surface.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Shell</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isShellOf">top:isShellOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Site">
+        <div class="term-head">
+          <div><h3>Site</h3><code>top:Site</code></div>
+          <a class="anchor" href="#class-Site" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A site or land parcel containing buildings or spatial zones.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Site</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a>, <code>bot:Site</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Slab">
+        <div class="term-head">
+          <div><h3>Slab</h3><code>top:Slab</code></div>
+          <a class="anchor" href="#class-Slab" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A slab, floor, ceiling, or plate-like element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Slab</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Space">
+        <div class="term-head">
+          <div><h3>Space</h3><code>top:Space</code></div>
+          <a class="anchor" href="#class-Space" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A building space, usually corresponding to an IFC space or room-like domain.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Space</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a>, <code>bot:Space</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-SpaceSyntaxMetric">
+        <div class="term-head">
+          <div><h3>Space Syntax Metric</h3><code>top:SpaceSyntaxMetric</code></div>
+          <a class="anchor" href="#class-SpaceSyntaxMetric" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A spatial network metric commonly used in space syntax analysis.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#SpaceSyntaxMetric</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-AnalysisMetric">top:AnalysisMetric</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-SpatialGraph">
+        <div class="term-head">
+          <div><h3>Spatial Graph</h3><code>top:SpatialGraph</code></div>
+          <a class="anchor" href="#class-SpatialGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph representing spatial relations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#SpatialGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Graph">top:Graph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Stair">
+        <div class="term-head">
+          <div><h3>Stair</h3><code>top:Stair</code></div>
+          <a class="anchor" href="#class-Stair" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A stair or stair flight.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Stair</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Storey">
+        <div class="term-head">
+          <div><h3>Storey</h3><code>top:Storey</code></div>
+          <a class="anchor" href="#class-Storey" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A building storey or level.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Storey</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Zone">top:Zone</a>, <code>bot:Storey</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Surface">
+        <div class="term-head">
+          <div><h3>Surface</h3><code>top:Surface</code></div>
+          <a class="anchor" href="#class-Surface" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A surface used as a geometric, analytical, or building-domain entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Surface</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Face">top:Face</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-ThermalZone">
+        <div class="term-head">
+          <div><h3>Thermal Zone</h3><code>top:ThermalZone</code></div>
+          <a class="anchor" href="#class-ThermalZone" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A thermal analysis zone.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ThermalZone</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Space">top:Space</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Topology">
+        <div class="term-head">
+          <div><h3>Topology</h3><code>top:Topology</code></div>
+          <a class="anchor" href="#class-Topology" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">The superclass for TopologicPy topological entities.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Topology</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-adjacentTo">top:adjacentTo</a>, <a href="#property-area">top:area</a>, <a href="#property-bounds">top:bounds</a>, <a href="#property-contains">top:contains</a>, <a href="#property-containsElement">top:containsElement</a>, <a href="#property-hasAperture">top:hasAperture</a>, <a href="#property-hasCell">top:hasCell</a>, <a href="#property-hasCellComplex">top:hasCellComplex</a>, <a href="#property-hasEdge">top:hasEdge</a>, <a href="#property-hasExternalBoundary">top:hasExternalBoundary</a>, <a href="#property-hasFace">top:hasFace</a>, <a href="#property-hasInterface">top:hasInterface</a>, <a href="#property-hasInternalBoundary">top:hasInternalBoundary</a>, <a href="#property-hasShell">top:hasShell</a>, <a href="#property-hasSubTopology">top:hasSubTopology</a>, <a href="#property-hasTransform">top:hasTransform</a>, <a href="#property-hasVertex">top:hasVertex</a>, <a href="#property-hasWire">top:hasWire</a> …</td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Transform">
+        <div class="term-head">
+          <div><h3>Transform</h3><code>top:Transform</code></div>
+          <a class="anchor" href="#class-Transform" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A geometric or topological transformation.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Transform</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-hasMatrix">top:hasMatrix</a>, <a href="#property-isTransformOf">top:isTransformOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-UndirectedRelationship">
+        <div class="term-head">
+          <div><h3>Undirected Relationship</h3><code>top:UndirectedRelationship</code></div>
+          <a class="anchor" href="#class-UndirectedRelationship" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A relationship without intrinsic direction.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#UndirectedRelationship</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Relationship">top:Relationship</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-ValidationRule">
+        <div class="term-head">
+          <div><h3>Validation Rule</h3><code>top:ValidationRule</code></div>
+          <a class="anchor" href="#class-ValidationRule" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A rule used to validate model content, geometry, topology, semantics, or provenance.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ValidationRule</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-ruleExpression">top:ruleExpression</a>, <a href="#property-validates">top:validates</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Vector">
+        <div class="term-head">
+          <div><h3>Vector</h3><code>top:Vector</code></div>
+          <a class="anchor" href="#class-Vector" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A mathematical vector with magnitude and direction.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Vector</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isVectorOf">top:isVectorOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Vertex">
+        <div class="term-head">
+          <div><h3>Vertex</h3><code>top:Vertex</code></div>
+          <a class="anchor" href="#class-Vertex" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A zero-dimensional topology representing a point in 3D space.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Vertex</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Disjoint with</th><td><a href="#class-Edge">top:Edge</a>, <a href="#class-Face">top:Face</a>, <a href="#class-Cell">top:Cell</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isVertexOf">top:isVertexOf</a>, <a href="#property-x">top:x</a>, <a href="#property-y">top:y</a>, <a href="#property-z">top:z</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-VisibilityGraph">
+        <div class="term-head">
+          <div><h3>Visibility Graph</h3><code>top:VisibilityGraph</code></div>
+          <a class="anchor" href="#class-VisibilityGraph" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A graph representing visibility relations.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#VisibilityGraph</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-SpatialGraph">top:SpatialGraph</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Wall">
+        <div class="term-head">
+          <div><h3>Wall</h3><code>top:Wall</code></div>
+          <a class="anchor" href="#class-Wall" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A vertical or near-vertical building element separating or bounding spaces.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Wall</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Window">
+        <div class="term-head">
+          <div><h3>Window</h3><code>top:Window</code></div>
+          <a class="anchor" href="#class-Window" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A window or transparent/translucent opening element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Window</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Element">top:Element</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Wire">
+        <div class="term-head">
+          <div><h3>Wire</h3><code>top:Wire</code></div>
+          <a class="anchor" href="#class-Wire" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A connected sequence or collection of edges.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Wire</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Properties with this domain</th><td><a href="#property-isWireOf">top:isWireOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="class-Zone">
+        <div class="term-head">
+          <div><h3>Zone</h3><code>top:Zone</code></div>
+          <a class="anchor" href="#class-Zone" aria-label="Anchor link">#</a>
+        </div>
+        <p class="term-comment">A spatial region or bounded domain.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#Zone</code></td></tr><tr><th>SubClassOf</th><td><a href="#class-Cell">top:Cell</a>, <code>bot:Zone</code></td></tr><tr><th>Properties with this domain</th><td><a href="#property-containsZone">top:containsZone</a>, <a href="#property-isZoneOf">top:isZoneOf</a></td></tr></tbody></table>
+      </article></div></div></section>
+
+    <section id="properties"><div class="wrap"><div class="section-head"><h2>Property reference</h2><p>All declared object, datatype, and RDF properties with domain and range declarations where available.</p></div><div class="grid"><div class="card span-4"><span class="stat">72</span><h3>Object properties</h3><p>Semantic relations between resources.</p></div><div class="card span-4"><span class="stat">63</span><h3>Datatype properties</h3><p>Literal-valued attributes and metrics.</p></div><div class="card span-4"><span class="stat">0</span><h3>Other RDF properties</h3><p>Generic property declarations.</p></div></div><div class="term-grid" style="margin-top:1rem;">
+      <article class="term-card" id="property-adjacentTo">
+        <div class="term-head">
+          <div><h3>adjacent to</h3><code>top:adjacentTo</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that two topologies are adjacent.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#adjacentTo</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-bounds">
+        <div class="term-head">
+          <div><h3>bounds</h3><code>top:bounds</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that one topology bounds another.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#bounds</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isBoundedBy">top:isBoundedBy</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-connects">
+        <div class="term-head">
+          <div><h3>connects</h3><code>top:connects</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a relationship with one of the nodes it connects.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#connects</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-connectsTo">
+        <div class="term-head">
+          <div><h3>connects to</h3><code>top:connectsTo</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that one node is connected to another node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#connectsTo</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-contains">
+        <div class="term-head">
+          <div><h3>contains</h3><code>top:contains</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates topological, geometric, or semantic containment.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#contains</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isContainedIn">top:isContainedIn</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-containsElement">
+        <div class="term-head">
+          <div><h3>contains element</h3><code>top:containsElement</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology or zone with a contained element.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#containsElement</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Element">top:Element</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-contains">top:contains</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isElementOf">top:isElementOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-containsZone">
+        <div class="term-head">
+          <div><h3>contains zone</h3><code>top:containsZone</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a zone with a contained zone.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#containsZone</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Zone">top:Zone</a></td></tr><tr><th>Range</th><td><a href="#class-Zone">top:Zone</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-contains">top:contains</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isZoneOf">top:isZoneOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-derivedFrom">
+        <div class="term-head">
+          <div><h3>derived from</h3><code>top:derivedFrom</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with the entity, file, model, or process it was derived from.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#derivedFrom</code></td></tr><tr><th>Type</th><td>Object property</td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-endsAt">
+        <div class="term-head">
+          <div><h3>ends at</h3><code>top:endsAt</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a directed relationship with its end node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#endsAt</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-DirectedRelationship">top:DirectedRelationship</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-generatedBy">
+        <div class="term-head">
+          <div><h3>generated by</h3><code>top:generatedBy</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with the method, agent, or process that generated it.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#generatedBy</code></td></tr><tr><th>Type</th><td>Object property</td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasAperture">
+        <div class="term-head">
+          <div><h3>has aperture</h3><code>top:hasAperture</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with an aperture.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasAperture</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Aperture">top:Aperture</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isApertureOf">top:isApertureOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasAttribute">
+        <div class="term-head">
+          <div><h3>has attribute</h3><code>top:hasAttribute</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with an attribute.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasAttribute</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-Attribute">top:Attribute</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isAttributeOf">top:isAttributeOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasCell">
+        <div class="term-head">
+          <div><h3>has cell</h3><code>top:hasCell</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a cell.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasCell</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Cell">top:Cell</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isCellOf">top:isCellOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasCellComplex">
+        <div class="term-head">
+          <div><h3>has cell complex</h3><code>top:hasCellComplex</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a cell complex.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasCellComplex</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-CellComplex">top:CellComplex</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isCellComplexOf">top:isCellComplexOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasContext">
+        <div class="term-head">
+          <div><h3>has context</h3><code>top:hasContext</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a context.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasContext</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-Context">top:Context</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isContextOf">top:isContextOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasDictionary">
+        <div class="term-head">
+          <div><h3>has dictionary</h3><code>top:hasDictionary</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a TopologicPy dictionary.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasDictionary</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-Dictionary">top:Dictionary</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isDictionaryOf">top:isDictionaryOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasEdge">
+        <div class="term-head">
+          <div><h3>has edge</h3><code>top:hasEdge</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology or graph with an edge.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasEdge</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Edge">top:Edge</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isEdgeOf">top:isEdgeOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasExternalBoundary">
+        <div class="term-head">
+          <div><h3>has external boundary</h3><code>top:hasExternalBoundary</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with an external boundary.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasExternalBoundary</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Boundary">top:Boundary</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isBoundedBy">top:isBoundedBy</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isExternalBoundaryOf">top:isExternalBoundaryOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasFace">
+        <div class="term-head">
+          <div><h3>has face</h3><code>top:hasFace</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a face.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasFace</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Face">top:Face</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isFaceOf">top:isFaceOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasFreeTopology">
+        <div class="term-head">
+          <div><h3>has free topology</h3><code>top:hasFreeTopology</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a cluster with a free or heterogeneous contained topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasFreeTopology</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Cluster">top:Cluster</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isFreeTopologyOf">top:isFreeTopologyOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasInterface">
+        <div class="term-head">
+          <div><h3>has interface</h3><code>top:hasInterface</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with an interface.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasInterface</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Interface">top:Interface</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isInterfaceOf">top:isInterfaceOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasInternalBoundary">
+        <div class="term-head">
+          <div><h3>has internal boundary</h3><code>top:hasInternalBoundary</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with an internal boundary, hole, or void boundary.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasInternalBoundary</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Boundary">top:Boundary</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isBoundedBy">top:isBoundedBy</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isInternalBoundaryOf">top:isInternalBoundaryOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasMatrix">
+        <div class="term-head">
+          <div><h3>has matrix</h3><code>top:hasMatrix</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a transform with a matrix.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasMatrix</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Transform">top:Transform</a></td></tr><tr><th>Range</th><td><a href="#class-Matrix">top:Matrix</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isMatrixOf">top:isMatrixOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasMetric">
+        <div class="term-head">
+          <div><h3>has metric</h3><code>top:hasMetric</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a computed metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasMetric</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-AnalysisMetric">top:AnalysisMetric</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isMetricOf">top:isMetricOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasNode">
+        <div class="term-head">
+          <div><h3>has node</h3><code>top:hasNode</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a graph with a node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasNode</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasVertex">top:hasVertex</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isNodeOf">top:isNodeOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasPath">
+        <div class="term-head">
+          <div><h3>has path</h3><code>top:hasPath</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a graph with a path.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasPath</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>Range</th><td><a href="#class-Path">top:Path</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isPathOf">top:isPathOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasQualityIssue">
+        <div class="term-head">
+          <div><h3>has quality issue</h3><code>top:hasQualityIssue</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a quality issue.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasQualityIssue</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-QualityIssue">top:QualityIssue</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isQualityIssueOf">top:isQualityIssueOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasRelationship">
+        <div class="term-head">
+          <div><h3>has relationship</h3><code>top:hasRelationship</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a graph with a relationship.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasRelationship</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>Range</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasEdge">top:hasEdge</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isRelationshipOf">top:isRelationshipOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasShell">
+        <div class="term-head">
+          <div><h3>has shell</h3><code>top:hasShell</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a shell.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasShell</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Shell">top:Shell</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isShellOf">top:isShellOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasSource">
+        <div class="term-head">
+          <div><h3>has source</h3><code>top:hasSource</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a relationship with a source node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasSource</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasSubTopology">
+        <div class="term-head">
+          <div><h3>has subtopology</h3><code>top:hasSubTopology</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a subtopology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasSubTopology</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasTarget">
+        <div class="term-head">
+          <div><h3>has target</h3><code>top:hasTarget</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a relationship with a target node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasTarget</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasTopology">
+        <div class="term-head">
+          <div><h3>has topology</h3><code>top:hasTopology</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasTopology</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isTopologyOf">top:isTopologyOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasTransform">
+        <div class="term-head">
+          <div><h3>has transform</h3><code>top:hasTransform</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a transformation.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasTransform</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Transform">top:Transform</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isTransformOf">top:isTransformOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasVector">
+        <div class="term-head">
+          <div><h3>has vector</h3><code>top:hasVector</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a vector.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasVector</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-Vector">top:Vector</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isVectorOf">top:isVectorOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasVertex">
+        <div class="term-head">
+          <div><h3>has vertex</h3><code>top:hasVertex</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology or graph with a vertex.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasVertex</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isVertexOf">top:isVertexOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasWire">
+        <div class="term-head">
+          <div><h3>has wire</h3><code>top:hasWire</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a wire.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasWire</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Wire">top:Wire</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-isWireOf">top:isWireOf</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-intersects">
+        <div class="term-head">
+          <div><h3>intersects</h3><code>top:intersects</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that two topologies intersect.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#intersects</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isApertureOf">
+        <div class="term-head">
+          <div><h3>is aperture of</h3><code>top:isApertureOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an aperture with the topology it belongs to.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isApertureOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Aperture">top:Aperture</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasAperture">top:hasAperture</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isAttributeOf">
+        <div class="term-head">
+          <div><h3>is attribute of</h3><code>top:isAttributeOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an attribute with the entity it describes.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isAttributeOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Attribute">top:Attribute</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasAttribute">top:hasAttribute</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isBoundedBy">
+        <div class="term-head">
+          <div><h3>is bounded by</h3><code>top:isBoundedBy</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that one topology is bounded by another.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isBoundedBy</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-bounds">top:bounds</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isCellComplexOf">
+        <div class="term-head">
+          <div><h3>is cell complex of</h3><code>top:isCellComplexOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a cell complex with its parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isCellComplexOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-CellComplex">top:CellComplex</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasCellComplex">top:hasCellComplex</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isCellOf">
+        <div class="term-head">
+          <div><h3>is cell of</h3><code>top:isCellOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a cell with its parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isCellOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Cell">top:Cell</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasCell">top:hasCell</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isContainedIn">
+        <div class="term-head">
+          <div><h3>is contained in</h3><code>top:isContainedIn</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Inverse of contains.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isContainedIn</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-contains">top:contains</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isContextOf">
+        <div class="term-head">
+          <div><h3>is context of</h3><code>top:isContextOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a context with an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isContextOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Context">top:Context</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasContext">top:hasContext</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isDictionaryOf">
+        <div class="term-head">
+          <div><h3>is dictionary of</h3><code>top:isDictionaryOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a dictionary with the entity it describes.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isDictionaryOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Dictionary">top:Dictionary</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasDictionary">top:hasDictionary</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isEdgeOf">
+        <div class="term-head">
+          <div><h3>is edge of</h3><code>top:isEdgeOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an edge with its parent topology or graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isEdgeOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Edge">top:Edge</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasEdge">top:hasEdge</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isElementOf">
+        <div class="term-head">
+          <div><h3>is element of</h3><code>top:isElementOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an element with its container.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isElementOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Element">top:Element</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isContainedIn">top:isContainedIn</a></td></tr><tr><th>Inverse of</th><td><a href="#property-containsElement">top:containsElement</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isExternalBoundaryOf">
+        <div class="term-head">
+          <div><h3>is external boundary of</h3><code>top:isExternalBoundaryOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an external boundary with the topology it bounds.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isExternalBoundaryOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Boundary">top:Boundary</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-bounds">top:bounds</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasExternalBoundary">top:hasExternalBoundary</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isFaceOf">
+        <div class="term-head">
+          <div><h3>is face of</h3><code>top:isFaceOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a face with its parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isFaceOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Face">top:Face</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasFace">top:hasFace</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isFreeTopologyOf">
+        <div class="term-head">
+          <div><h3>is free topology of</h3><code>top:isFreeTopologyOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a containing cluster.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isFreeTopologyOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Cluster">top:Cluster</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasFreeTopology">top:hasFreeTopology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isInterfaceOf">
+        <div class="term-head">
+          <div><h3>is interface of</h3><code>top:isInterfaceOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an interface with the topology, zone, or element it interfaces.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isInterfaceOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Interface">top:Interface</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasInterface">top:hasInterface</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isInternalBoundaryOf">
+        <div class="term-head">
+          <div><h3>is internal boundary of</h3><code>top:isInternalBoundaryOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an internal boundary with the topology it bounds.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isInternalBoundaryOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Boundary">top:Boundary</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-bounds">top:bounds</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasInternalBoundary">top:hasInternalBoundary</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isMatrixOf">
+        <div class="term-head">
+          <div><h3>is matrix of</h3><code>top:isMatrixOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a matrix with a transform.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isMatrixOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Matrix">top:Matrix</a></td></tr><tr><th>Range</th><td><a href="#class-Transform">top:Transform</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasMatrix">top:hasMatrix</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isMetricOf">
+        <div class="term-head">
+          <div><h3>is metric of</h3><code>top:isMetricOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a metric with the entity it describes.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isMetricOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-AnalysisMetric">top:AnalysisMetric</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasMetric">top:hasMetric</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isNodeOf">
+        <div class="term-head">
+          <div><h3>is node of</h3><code>top:isNodeOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a node with a graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isNodeOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isVertexOf">top:isVertexOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasNode">top:hasNode</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isPathOf">
+        <div class="term-head">
+          <div><h3>is path of</h3><code>top:isPathOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a path with a graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isPathOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Path">top:Path</a></td></tr><tr><th>Range</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasPath">top:hasPath</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isQualityIssueOf">
+        <div class="term-head">
+          <div><h3>is quality issue of</h3><code>top:isQualityIssueOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a quality issue with an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isQualityIssueOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-QualityIssue">top:QualityIssue</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasQualityIssue">top:hasQualityIssue</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isRelationshipOf">
+        <div class="term-head">
+          <div><h3>is relationship of</h3><code>top:isRelationshipOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a relationship with a graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isRelationshipOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><a href="#class-Graph">top:Graph</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isEdgeOf">top:isEdgeOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasRelationship">top:hasRelationship</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isShellOf">
+        <div class="term-head">
+          <div><h3>is shell of</h3><code>top:isShellOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a shell with its parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isShellOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Shell">top:Shell</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasShell">top:hasShell</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isSubTopologyOf">
+        <div class="term-head">
+          <div><h3>is subtopology of</h3><code>top:isSubTopologyOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a topology with a parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isSubTopologyOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasSubTopology">top:hasSubTopology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isTopologyOf">
+        <div class="term-head">
+          <div><h3>is topology of</h3><code>top:isTopologyOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Inverse of hasTopology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isTopologyOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasTopology">top:hasTopology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isTransformOf">
+        <div class="term-head">
+          <div><h3>is transform of</h3><code>top:isTransformOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a transformation with a topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isTransformOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Transform">top:Transform</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasTransform">top:hasTransform</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isVectorOf">
+        <div class="term-head">
+          <div><h3>is vector of</h3><code>top:isVectorOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a vector with an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isVectorOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Vector">top:Vector</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasVector">top:hasVector</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isVertexOf">
+        <div class="term-head">
+          <div><h3>is vertex of</h3><code>top:isVertexOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a vertex with its parent topology or graph.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isVertexOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasVertex">top:hasVertex</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isWireOf">
+        <div class="term-head">
+          <div><h3>is wire of</h3><code>top:isWireOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a wire with its parent topology.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isWireOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Wire">top:Wire</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isSubTopologyOf">top:isSubTopologyOf</a></td></tr><tr><th>Inverse of</th><td><a href="#property-hasWire">top:hasWire</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isZoneOf">
+        <div class="term-head">
+          <div><h3>is zone of</h3><code>top:isZoneOf</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a zone with a containing zone.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isZoneOf</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Zone">top:Zone</a></td></tr><tr><th>Range</th><td><a href="#class-Zone">top:Zone</a></td></tr><tr><th>SubPropertyOf</th><td><a href="#property-isContainedIn">top:isContainedIn</a></td></tr><tr><th>Inverse of</th><td><a href="#property-containsZone">top:containsZone</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-overlaps">
+        <div class="term-head">
+          <div><h3>overlaps</h3><code>top:overlaps</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that two topologies overlap.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#overlaps</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-startsAt">
+        <div class="term-head">
+          <div><h3>starts at</h3><code>top:startsAt</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a directed relationship with its start node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#startsAt</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-DirectedRelationship">top:DirectedRelationship</a></td></tr><tr><th>Range</th><td><a href="#class-Node">top:Node</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-touches">
+        <div class="term-head">
+          <div><h3>touches</h3><code>top:touches</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Indicates that two topologies touch.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#touches</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><a href="#class-Topology">top:Topology</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-validatedBy">
+        <div class="term-head">
+          <div><h3>validated by</h3><code>top:validatedBy</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates an entity with a validation rule.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#validatedBy</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Range</th><td><a href="#class-ValidationRule">top:ValidationRule</a></td></tr><tr><th>Inverse of</th><td><a href="#property-validates">top:validates</a></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-validates">
+        <div class="term-head">
+          <div><h3>validates</h3><code>top:validates</code></div>
+          <span class="badge">Object property</span>
+        </div>
+        <p class="term-comment">Associates a validation rule with the entity it validates.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#validates</code></td></tr><tr><th>Type</th><td>Object property</td></tr><tr><th>Domain</th><td><a href="#class-ValidationRule">top:ValidationRule</a></td></tr><tr><th>Inverse of</th><td><a href="#property-validatedBy">top:validatedBy</a></td></tr></tbody></table>
+      </article>
+      <article class="term-card" id="property-area">
+        <div class="term-head">
+          <div><h3>area</h3><code>top:area</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The area of a face, shell, surface, or spatial entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#area</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-azimuth">
+        <div class="term-head">
+          <div><h3>azimuth</h3><code>top:azimuth</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">An azimuth angle.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#azimuth</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-betweennessCentrality">
+        <div class="term-head">
+          <div><h3>betweenness centrality</h3><code>top:betweennessCentrality</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A betweenness centrality score.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#betweennessCentrality</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-category">
+        <div class="term-head">
+          <div><h3>category</h3><code>top:category</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A broad semantic category.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#category</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-choice">
+        <div class="term-head">
+          <div><h3>choice</h3><code>top:choice</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A spatial choice metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#choice</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-closenessCentrality">
+        <div class="term-head">
+          <div><h3>closeness centrality</h3><code>top:closenessCentrality</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A closeness centrality score.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#closenessCentrality</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-comment">
+        <div class="term-head">
+          <div><h3>comment</h3><code>top:comment</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A human-readable comment.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#comment</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-community">
+        <div class="term-head">
+          <div><h3>community</h3><code>top:community</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A community or cluster assignment.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#community</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-compactness">
+        <div class="term-head">
+          <div><h3>compactness</h3><code>top:compactness</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A compactness metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#compactness</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-connectivity">
+        <div class="term-head">
+          <div><h3>connectivity</h3><code>top:connectivity</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A connectivity metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#connectivity</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-control">
+        <div class="term-head">
+          <div><h3>control</h3><code>top:control</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A control value in spatial graph analysis.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#control</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasCost">
+        <div class="term-head">
+          <div><h3>cost</h3><code>top:hasCost</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A numerical traversal or optimisation cost.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasCost</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-createdAt">
+        <div class="term-head">
+          <div><h3>created at</h3><code>top:createdAt</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The creation timestamp.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#createdAt</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:dateTime</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-degree">
+        <div class="term-head">
+          <div><h3>degree</h3><code>top:degree</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The graph degree of a node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#degree</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-depth">
+        <div class="term-head">
+          <div><h3>depth</h3><code>top:depth</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The depth of an entity or graph traversal.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#depth</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-diameter">
+        <div class="term-head">
+          <div><h3>diameter</h3><code>top:diameter</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The diameter of a circular or spherical entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#diameter</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-eigenvectorCentrality">
+        <div class="term-head">
+          <div><h3>eigenvector centrality</h3><code>top:eigenvectorCentrality</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">An eigenvector centrality score.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#eigenvectorCentrality</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-generatedByMethod">
+        <div class="term-head">
+          <div><h3>generated by method</h3><code>top:generatedByMethod</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The TopologicPy method or process that generated the entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#generatedByMethod</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-height">
+        <div class="term-head">
+          <div><h3>height</h3><code>top:height</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The height of an entity or bounding box.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#height</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-id">
+        <div class="term-head">
+          <div><h3>identifier</h3><code>top:id</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A local identifier.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#id</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ifcClass">
+        <div class="term-head">
+          <div><h3>IFC class</h3><code>top:ifcClass</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The IFC entity class name, for example IfcSpace.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ifcClass</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ifcGlobalId">
+        <div class="term-head">
+          <div><h3>IFC GlobalId</h3><code>top:ifcGlobalId</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The IFC GlobalId.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ifcGlobalId</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ifcName">
+        <div class="term-head">
+          <div><h3>IFC name</h3><code>top:ifcName</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The IFC Name attribute.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ifcName</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ifcType">
+        <div class="term-head">
+          <div><h3>IFC type</h3><code>top:ifcType</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The IFC type, object type, or type object label.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ifcType</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-inDegree">
+        <div class="term-head">
+          <div><h3>in degree</h3><code>top:inDegree</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The incoming degree of a node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#inDegree</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-inclination">
+        <div class="term-head">
+          <div><h3>inclination</h3><code>top:inclination</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">An inclination or tilt angle.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#inclination</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-integration">
+        <div class="term-head">
+          <div><h3>integration</h3><code>top:integration</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A spatial integration metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#integration</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isovistArea">
+        <div class="term-head">
+          <div><h3>isovist area</h3><code>top:isovistArea</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The area of an isovist.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isovistArea</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-isovistPerimeter">
+        <div class="term-head">
+          <div><h3>isovist perimeter</h3><code>top:isovistPerimeter</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The perimeter of an isovist.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#isovistPerimeter</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-issueCode">
+        <div class="term-head">
+          <div><h3>issue code</h3><code>top:issueCode</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A machine-readable quality issue code.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#issueCode</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-QualityIssue">top:QualityIssue</a></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-issueMessage">
+        <div class="term-head">
+          <div><h3>issue message</h3><code>top:issueMessage</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A human-readable quality issue message.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#issueMessage</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-QualityIssue">top:QualityIssue</a></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-label">
+        <div class="term-head">
+          <div><h3>label</h3><code>top:label</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A human-readable label.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#label</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-length">
+        <div class="term-head">
+          <div><h3>length</h3><code>top:length</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The length of an edge, wire, path, or other linear entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#length</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-mantissa">
+        <div class="term-head">
+          <div><h3>mantissa</h3><code>top:mantissa</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The number of decimal places used for rounding.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#mantissa</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:integer</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-modifiedAt">
+        <div class="term-head">
+          <div><h3>modified at</h3><code>top:modifiedAt</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The modification timestamp.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#modifiedAt</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:dateTime</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-normalX">
+        <div class="term-head">
+          <div><h3>normal x</h3><code>top:normalX</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The X component of a normal vector.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#normalX</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Face">top:Face</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-normalY">
+        <div class="term-head">
+          <div><h3>normal y</h3><code>top:normalY</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The Y component of a normal vector.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#normalY</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Face">top:Face</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-normalZ">
+        <div class="term-head">
+          <div><h3>normal z</h3><code>top:normalZ</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The Z component of a normal vector.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#normalZ</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Face">top:Face</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ontologyClass">
+        <div class="term-head">
+          <div><h3>ontology class</h3><code>top:ontologyClass</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The ontology class as a compact string, typically top:ClassName.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ontologyClass</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-outDegree">
+        <div class="term-head">
+          <div><h3>out degree</h3><code>top:outDegree</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The outgoing degree of a node.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#outDegree</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-pageRank">
+        <div class="term-head">
+          <div><h3>PageRank</h3><code>top:pageRank</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A PageRank score.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#pageRank</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Node">top:Node</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-perimeter">
+        <div class="term-head">
+          <div><h3>perimeter</h3><code>top:perimeter</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The perimeter of a face, boundary, or region.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#perimeter</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-radius">
+        <div class="term-head">
+          <div><h3>radius</h3><code>top:radius</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The radius of a circular, spherical, or radial entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#radius</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-ruleExpression">
+        <div class="term-head">
+          <div><h3>rule expression</h3><code>top:ruleExpression</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The expression or description of a validation rule.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#ruleExpression</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-ValidationRule">top:ValidationRule</a></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-severity">
+        <div class="term-head">
+          <div><h3>severity</h3><code>top:severity</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The severity of a quality issue.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#severity</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-QualityIssue">top:QualityIssue</a></td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-shortestPathDistance">
+        <div class="term-head">
+          <div><h3>shortest path distance</h3><code>top:shortestPathDistance</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A shortest-path distance or cost.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#shortestPathDistance</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-source">
+        <div class="term-head">
+          <div><h3>source</h3><code>top:source</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A source identifier.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#source</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-sourceFile">
+        <div class="term-head">
+          <div><h3>source file</h3><code>top:sourceFile</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The source file from which an entity was read or generated.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#sourceFile</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-tolerance">
+        <div class="term-head">
+          <div><h3>tolerance</h3><code>top:tolerance</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A geometric or numerical tolerance.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#tolerance</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-u">
+        <div class="term-head">
+          <div><h3>u coordinate</h3><code>top:u</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The U coordinate in a parametric or local coordinate system.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#u</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-unit">
+        <div class="term-head">
+          <div><h3>unit</h3><code>top:unit</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A unit label or unit symbol.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#unit</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-uri">
+        <div class="term-head">
+          <div><h3>URI</h3><code>top:uri</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A URI identifying an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#uri</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:anyURI</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-uuid">
+        <div class="term-head">
+          <div><h3>UUID</h3><code>top:uuid</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A UUID derived from, or assigned to, an entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#uuid</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-v">
+        <div class="term-head">
+          <div><h3>v coordinate</h3><code>top:v</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The V coordinate in a parametric or local coordinate system.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#v</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-version">
+        <div class="term-head">
+          <div><h3>version</h3><code>top:version</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A version string.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#version</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:string</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-visibility">
+        <div class="term-head">
+          <div><h3>visibility</h3><code>top:visibility</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A visibility metric.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#visibility</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-volume">
+        <div class="term-head">
+          <div><h3>volume</h3><code>top:volume</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The volume of a cell, cell complex, or spatial entity.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#volume</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Topology">top:Topology</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-w">
+        <div class="term-head">
+          <div><h3>w coordinate</h3><code>top:w</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The W coordinate or scalar component.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#w</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-hasWeight">
+        <div class="term-head">
+          <div><h3>weight</h3><code>top:hasWeight</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">A numerical edge or relationship weight.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#hasWeight</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Relationship">top:Relationship</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-width">
+        <div class="term-head">
+          <div><h3>width</h3><code>top:width</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The width of an entity or bounding rectangle.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#width</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-x">
+        <div class="term-head">
+          <div><h3>x coordinate</h3><code>top:x</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The X coordinate of a vertex or point.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#x</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-y">
+        <div class="term-head">
+          <div><h3>y coordinate</h3><code>top:y</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The Y coordinate of a vertex or point.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#y</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article>
+
+      <article class="term-card" id="property-z">
+        <div class="term-head">
+          <div><h3>z coordinate</h3><code>top:z</code></div>
+          <span class="badge">Datatype property</span>
+        </div>
+        <p class="term-comment">The Z coordinate of a vertex or point.</p>
+        <table class="spec-table compact"><tbody><tr><th>IRI</th><td><code>http://w3id.org/topologicpy#z</code></td></tr><tr><th>Type</th><td>Datatype property</td></tr><tr><th>Domain</th><td><a href="#class-Vertex">top:Vertex</a></td></tr><tr><th>Range</th><td><code>xsd:double</code></td></tr></tbody></table>
+      </article></div></div></section>
+
+    <section id="alignments"><div class="wrap"><div class="section-head"><h2>External vocabulary alignments</h2><p>The ontology references established vocabularies for building topology, IFC, Brick, GeoSPARQL, provenance, Dublin Core, schema.org, OWL, RDF, RDFS, SKOS, and XSD.</p></div><div class="card"><div class="two-col"><p><code>geo:Feature</code></p><p><code>prov:Entity</code></p><p><code>brick:Equipment</code></p><p><code>brick:Point</code></p><p><code>ifc:IfcBeam</code></p><p><code>ifc:IfcBuilding</code></p><p><code>ifc:IfcBuildingStorey</code></p><p><code>ifc:IfcColumn</code></p><p><code>ifc:IfcDistributionElement</code></p><p><code>ifc:IfcDoor</code></p><p><code>ifc:IfcFurnishingElement</code></p><p><code>ifc:IfcOpeningElement</code></p><p><code>ifc:IfcProject</code></p><p><code>ifc:IfcRailing</code></p><p><code>ifc:IfcRelSpaceBoundary</code></p><p><code>ifc:IfcRoof</code></p><p><code>ifc:IfcSite</code></p><p><code>ifc:IfcSlab</code></p><p><code>ifc:IfcSpace</code></p><p><code>ifc:IfcStair</code></p><p><code>ifc:IfcWall</code></p><p><code>ifc:IfcWindow</code></p><p><code>ifc:IfcZone</code></p><p><code>bot:Building</code></p><p><code>bot:Element</code></p><p><code>bot:Interface</code></p><p><code>bot:Site</code></p><p><code>bot:Space</code></p><p><code>bot:Storey</code></p><p><code>bot:Zone</code></p></div></div></div></section>
+
+    <section id="prefixes"><div class="wrap"><div class="section-head"><h2>Prefixes</h2><p>Namespace declarations used by the Turtle file.</p></div><div class="panel"><table class="spec-table"><thead><tr><th>Prefix</th><th>Namespace</th></tr></thead><tbody><tr><td><code>bot</code></td><td><code>https://w3id.org/bot#</code></td></tr><tr><td><code>brick</code></td><td><code>https://brickschema.org/schema/Brick#</code></td></tr><tr><td><code>csvw</code></td><td><code>http://www.w3.org/ns/csvw#</code></td></tr><tr><td><code>dc</code></td><td><code>http://purl.org/dc/elements/1.1/</code></td></tr><tr><td><code>dcam</code></td><td><code>http://purl.org/dc/dcam/</code></td></tr><tr><td><code>dcat</code></td><td><code>http://www.w3.org/ns/dcat#</code></td></tr><tr><td><code>dcmitype</code></td><td><code>http://purl.org/dc/dcmitype/</code></td></tr><tr><td><code>dcterms</code></td><td><code>http://purl.org/dc/terms/</code></td></tr><tr><td><code>doap</code></td><td><code>http://usefulinc.com/ns/doap#</code></td></tr><tr><td><code>foaf</code></td><td><code>http://xmlns.com/foaf/0.1/</code></td></tr><tr><td><code>geo</code></td><td><code>http://www.opengis.net/ont/geosparql#</code></td></tr><tr><td><code>ifc</code></td><td><code>https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#</code></td></tr><tr><td><code>odrl</code></td><td><code>http://www.w3.org/ns/odrl/2/</code></td></tr><tr><td><code>org</code></td><td><code>http://www.w3.org/ns/org#</code></td></tr><tr><td><code>owl</code></td><td><code>http://www.w3.org/2002/07/owl#</code></td></tr><tr><td><code>prof</code></td><td><code>http://www.w3.org/ns/dx/prof/</code></td></tr><tr><td><code>prov</code></td><td><code>http://www.w3.org/ns/prov#</code></td></tr><tr><td><code>qb</code></td><td><code>http://purl.org/linked-data/cube#</code></td></tr><tr><td><code>rdf</code></td><td><code>http://www.w3.org/1999/02/22-rdf-syntax-ns#</code></td></tr><tr><td><code>rdfs</code></td><td><code>http://www.w3.org/2000/01/rdf-schema#</code></td></tr><tr><td><code>schema</code></td><td><code>https://schema.org/</code></td></tr><tr><td><code>sh</code></td><td><code>http://www.w3.org/ns/shacl#</code></td></tr><tr><td><code>skos</code></td><td><code>http://www.w3.org/2004/02/skos/core#</code></td></tr><tr><td><code>sosa</code></td><td><code>http://www.w3.org/ns/sosa/</code></td></tr><tr><td><code>ssn</code></td><td><code>http://www.w3.org/ns/ssn/</code></td></tr><tr><td><code>time</code></td><td><code>http://www.w3.org/2006/time#</code></td></tr><tr><td><code>top</code></td><td><code>http://w3id.org/topologicpy#</code></td></tr><tr><td><code>vann</code></td><td><code>http://purl.org/vocab/vann/</code></td></tr><tr><td><code>void</code></td><td><code>http://rdfs.org/ns/void#</code></td></tr><tr><td><code>wgs</code></td><td><code>https://www.w3.org/2003/01/geo/wgs84_pos#</code></td></tr><tr><td><code>xsd</code></td><td><code>http://www.w3.org/2001/XMLSchema#</code></td></tr></tbody></table></div></div></section>
+  </main>
+  <footer><div class="wrap"><p>TopologicPy Ontology Specification. Generated from <code>topologicpy.ttl</code>. Canonical prefix: <code>top: &lt;http://w3id.org/topologicpy#&gt;</code></p></div></footer>
+</body>
+</html>
