@@ -5668,7 +5668,7 @@ class Face():
             WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
         meshSize : float , optional
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
-            calculated automatically and set to 10% of the overall size of the face.
+            calculated automatically and set to 10% of the overall size of the face. default is None.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional

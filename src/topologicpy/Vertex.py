@@ -594,7 +594,7 @@ class Vertex():
         return list(reversed(Vertex.CounterClockwise2D(vertices)))
     
     @staticmethod
-    def Coordinates(vertex, outputType: str = "xyz", mantissa: int = 6) -> list:
+    def Coordinates(vertex, outputType: str = "xyz", mantissa: int = None) -> list:
         """
         Returns the coordinates of the input vertex.
 
@@ -605,7 +605,7 @@ class Vertex():
         outputType : string, optional
             The desired output type. Could be any permutation or substring of "xyz" or the string "matrix". Default is "xyz". The input is case insensitive and the coordinates will be returned in the specified order.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. None means no rounding. Default is None.
 
         Returns
         -------
@@ -3460,9 +3460,24 @@ class Vertex():
         return Vertex.Fuse(vertices = vertices, mantissa = mantissa, tolerance = tolerance)
     
     @staticmethod
-    def X(vertex, mantissa: int = 6, silent: bool = False):
+    def X(vertex, mantissa: int = None, silent: bool = False):
         """
         Returns the X coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex
+        mantissa : int , optional
+            The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        float
+            The X coordinate of the input vertex.
+        
         """
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
@@ -3477,16 +3492,37 @@ class Vertex():
             return None
 
         try:
-            return round(Core.InstanceCall(vertex, "X"), mantissa)
+            if mantissa is None:
+                return Core.InstanceCall(vertex, "X")
+            else:
+                return round(Core.InstanceCall(vertex, "X"), mantissa)
         except Exception:
             if not silent:
                 print("Vertex.X - Error: Could not retrieve the X coordinate. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
     @staticmethod
-    def Y(vertex, mantissa: int = 6, silent: bool = False):
+    def Y(vertex, mantissa: int = None, silent: bool = False):
         """
         Returns the Y coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex
+        mantissa : int , optional
+            The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        float
+            The Y coordinate of the input vertex.
+        
         """
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
@@ -3501,16 +3537,37 @@ class Vertex():
             return None
 
         try:
-            return round(Core.InstanceCall(vertex, "Y"), mantissa)
+            if mantissa is None:
+                return Core.InstanceCall(vertex, "Y")
+            else:
+                return round(Core.InstanceCall(vertex, "Y"), mantissa)
         except Exception:
             if not silent:
                 print("Vertex.Y - Error: Could not retrieve the Y coordinate. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
     @staticmethod
-    def Z(vertex, mantissa: int = 6, silent: bool = False):
+    def Z(vertex, mantissa: int = None, silent: bool = False):
         """
         Returns the Z coordinate of the input vertex.
+
+        Parameters
+        ----------
+        vertex : topologic_core.Vertex
+            The input vertex
+        mantissa : int , optional
+            The desired length of the mantissa for retrieving vertex coordinates. None means no rounding. Default is None.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
+        Returns
+        -------
+        float
+            The Z coordinate of the input vertex.
+        
         """
         from topologicpy.Core import Core
         from topologicpy.Topology import Topology
@@ -3525,9 +3582,15 @@ class Vertex():
             return None
 
         try:
-            return round(Core.InstanceCall(vertex, "Z"), mantissa)
+            if mantissa is None:
+                return Core.InstanceCall(vertex, "Z")
+            else:
+                return round(Core.InstanceCall(vertex, "Z"), mantissa)
         except Exception:
             if not silent:
-                print("Vertex.Z - Error: Could not retrieve the Z coordinate. Returning None.")
+                print("Vertex.Z - Error: Could not retrieve the Y coordinate. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
            

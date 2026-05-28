@@ -7656,22 +7656,33 @@ class Topology():
     
 
     @staticmethod
-    def _OBJString(topology, color, vertexIndex, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
+    def _OBJString(topology,
+                   color,
+                   vertexIndex,
+                   transposeAxes: bool = True,
+                   triangulate: bool = False,
+                   mode: int = 0,
+                   meshSize: float = None,
+                   mantissa: int = 6,
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
         """
-        Returns the Wavefront string of the input topology. This is very experimental and outputs a simple solid topology.
+        Returns the Wavefront OBJ string of the input topology. This is very experimental and outputs a simple solid topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        color : list
-            The desired color to assign to the topology
+        color : str
+            The desired material name to assign to the topology.
         vertexIndex : int
             The vertex index to use as the starting index.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up"
+            If set to True the Z and Y coordinates are transposed so that Y points "up". Default is True.
+        triangulate : bool , optional
+            If set to True, all faces of the input geometry are triangulated. Otherwise, only faces with holes are triangulated. Default is False.
         mode : int , optional
-            The desired mode of meshing algorithm. Several options are available:
+            The desired mode of meshing algorithm (for triangulation). Several options are available:
             0: Classic
             1: MeshAdapt
             3: Initial Mesh Only
@@ -7692,44 +7703,78 @@ class Topology():
 
         Returns
         -------
-        str
-            The Wavefront OBJ string of the input topology
+        tuple
+            The Wavefront OBJ string and the number of vertices exported.
 
         """
-        
-        from topologicpy.Helper import Helper
 
         if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.ExportToOBJ - Error: the input topology parameter is not a valid topology. Returning None.")
+            if not silent:
+                print("Topology._OBJString - Error: The input topology parameter is not a valid topology. Returning None.")
             return None
 
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology._OBJString - Error: Could not triangulate the input topology. Returning None.")
+            return None
+
+        d = Topology.Geometry(topology,
+                              triangulate = triangulate,
+                              mode = mode,
+                              meshSize = meshSize,
+                              mantissa = mantissa,
+                              tolerance = tolerance,
+                              silent = silent)
+
+        if not isinstance(d, dict):
+            if not silent:
+                print("Topology._OBJString - Error: Could not extract geometry from the input topology. Returning None.")
+            return None
+
+        vertices = d.get("vertices", [])
+        faces = d.get("faces", [])
+
         lines = []
-        #version = Helper.Version()
-        #lines.append("# topologicpy " + version)
-        topology = Topology.Triangulate(topology, mode=mode, meshSize=meshSize, tolerance=tolerance)
-        d = Topology.Geometry(topology, mantissa=mantissa)
-        vertices = d['vertices']
-        faces = d['faces']
-        tVertices = []
+
         if transposeAxes:
-            for v in vertices:
-                tVertices.append([v[0], -v[2], v[1]])
-            vertices = tVertices
-        for v in vertices:
-            lines.append("v " + str(v[0]) + " " + str(v[1]) + " " + str(v[2]))
-        for f in faces:
-            line = "usemtl " + str(color) + "\nf"  # reference the material name
-            for j in f:
-                line = line + " " + str(j + vertexIndex)
-            lines.append(line)
-        finalLines = lines[0]
-        for i in range(1, len(lines)):
-            finalLines = finalLines + "\n" + lines[i]
-        return finalLines, len(vertices)
+            lines.extend(
+                "v " + str(v[0]) + " " + str(-v[2]) + " " + str(v[1])
+                for v in vertices
+            )
+        else:
+            lines.extend(
+                "v " + str(v[0]) + " " + str(v[1]) + " " + str(v[2])
+                for v in vertices
+            )
+
+        if len(faces) > 0:
+            lines.append("usemtl " + str(color))
+
+            vi = vertexIndex
+            lines.extend(
+                "f " + " ".join(str(j + vi) for j in f)
+                for f in faces
+            )
+
+        return "\n".join(lines), len(vertices)
     
 
     @staticmethod
-    def ExportToOBJ(*topologies, path, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, overwrite: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+    def ExportToOBJ(*topologies,
+                    path,
+                    nameKey="name",
+                    colorKey="color",
+                    opacityKey="opacity",
+                    defaultColor=[256,256,256],
+                    defaultOpacity=0.5,
+                    transposeAxes: bool = True,
+                    triangulate: bool = False,
+                    mode: int = 0,
+                    meshSize: float = None,
+                    overwrite: bool = False,
+                    mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
         """
         Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
 
@@ -7751,6 +7796,8 @@ class Topology():
             The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).
         transposeAxes : bool , optional
             If set to True the Z and Y coordinates are transposed so that Y points "up"
+        triangulate : bool , optional
+            If set to True, all faces of the input geometry are triangulated. Otherwise, only faces with holes are triangulated. Default is False.
         mode : int , optional
             The desired mode of meshing algorithm (for triangulation). Several options are available:
             0: Classic
@@ -7766,12 +7813,15 @@ class Topology():
         meshSize : float , optional
             The desired size of the mesh when using the "mesh" option. If set to None, it will be
             calculated automatically and set to 10% of the overall size of the face.
+        overwrite : bool , optional
+            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        overwrite : bool , optional
-            If set to True the ouptut file will overwrite any pre-existing file. Otherwise, it won't. Default is False.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+        
 
         Returns
         -------
@@ -7787,14 +7837,17 @@ class Topology():
         if isinstance(topologies, list):
             new_topologies = [d for d in topologies if Topology.IsInstance(d, "Topology")]
         if len(new_topologies) == 0:
-            print("Topology.ExportToOBJ - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
+            if not silent:
+                print("Topology.ExportToOBJ - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
             return None
         if not isinstance(new_topologies, list):
-            print("Topology.ExportToOBJ - Error: The input topologies parameter is not a valid list. Returning None.")
+            if not silent:
+                print("Topology.ExportToOBJ - Error: The input topologies parameter is not a valid list. Returning None.")
             return None
 
         if not overwrite and exists(path):
-            print("Topology.ExportToOBJ - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
+            if not silent:
+                print("Topology.ExportToOBJ - Error: a file already exists at the specified path and overwrite is set to False. Returning None.")
             return None
         
         # Make sure the file extension is .obj
@@ -7812,10 +7865,12 @@ class Topology():
                                                     defaultColor=defaultColor,
                                                     defaultOpacity=defaultOpacity,
                                                     transposeAxes=transposeAxes,
+                                                    triangulate=triangulate,
                                                     mode=mode,
                                                     meshSize=meshSize,
                                                     mantissa=mantissa,
-                                                    tolerance=tolerance)
+                                                    tolerance=tolerance,
+                                                    silent=silent)
         # Write out the material file
         with open(mtl_path, "w") as mtl_file:
             mtl_file.write(mtl_string)
@@ -8065,7 +8120,14 @@ class Topology():
         return flat_topology
     
     @staticmethod
-    def Geometry(topology, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
+    def Geometry(topology,
+                 transferDictionaries: bool = False,
+                 triangulate: bool = False,
+                 mode : int = 0,
+                 meshSize : float = None,
+                 mantissa: int = 6,
+                 tolerance: float = 0.0001,
+                 silent: bool = False):
         """
         Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
@@ -8075,8 +8137,27 @@ class Topology():
             The input topology.
         transferDictionaries : bool , optional
             If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.
+        triangulate : bool , optional
+            If set to True, all faces of the input geometry are triangulated. Otherwise, only faces with holes are triangulated. Default is False.
+                mode : int , optional
+            The desired mode of meshing algorithm (for triangulation). Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Fontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
+            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+        meshSize : float , optional
+            The desired size of the mesh when using the "mesh" option. If set to None, it will be
+            calculated automatically and set to 10% of the overall size of the face. Default is None.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -8153,8 +8234,13 @@ class Topology():
         for aFace in topFaces:
             ib = []
             ib = Face.InternalBoundaries(aFace)
-            if(len(ib) > 0):
-                triFaces = Face.Triangulate(aFace)
+            if(len(ib) > 0 or triangulate == True):
+                triFaces = Face.Triangulate(aFace,
+                                            mode=mode,
+                                            meshSize=meshSize,
+                                            mantissa=mantissa,
+                                            tolerance=tolerance,
+                                            silent=silent)
                 for aTriFace in triFaces:
                     wire = Face.ExternalBoundary(aTriFace)
                     faceVertices = Topology.Vertices(wire)
@@ -9513,14 +9599,26 @@ class Topology():
         return [f for f in faces if not Topology.IsPlanar(f, tolerance=tolerance)]
     
     @staticmethod
-    def OBJString(*topologies, nameKey="name", colorKey="color", opacityKey="opacity", defaultColor=[256,256,256], defaultOpacity=0.5, transposeAxes: bool = True, mode: int = 0, meshSize: float = None, mantissa: int = 6, tolerance: float = 0.0001):
+    def OBJString(*topologies,
+                nameKey="name",
+                colorKey="color",
+                opacityKey="opacity",
+                defaultColor=[255, 255, 255],
+                defaultOpacity=0.5,
+                transposeAxes: bool = True,
+                triangulate: bool = False,
+                mode: int = 0,
+                meshSize: float = None,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
-        Exports the input topology to a Wavefront OBJ file. This is very experimental and outputs a simple solid topology.
+        Exports the input topology to Wavefront OBJ and MTL strings.
 
         Parameters
         ----------
         topologies : list or comma separated topologies
-            The input list of topologies.
+            The input topology or list of topologies.
         nameKey : str , optional
             The topology dictionary key under which to find the name of the topology. Default is "name".
         colorKey : str, optional
@@ -9528,11 +9626,13 @@ class Topology():
         opacityKey : str , optional
             The topology dictionary key under which to find the opacity of the topology. Default is "opacity".
         defaultColor : list , optional
-            The default color to use if no color is stored in the topology dictionary. Default is [255,255, 255] (white).
+            The default color to use if no color is stored in the topology dictionary. Default is [255, 255, 255].
         defaultOpacity : float , optional
-            The default opacity to use of no opacity is stored in the topology dictionary. This must be between 0 and 1. Default is 1 (fully opaque).
+            The default opacity to use if no opacity is stored in the topology dictionary. Default is 0.5.
         transposeAxes : bool , optional
-            If set to True the Z and Y coordinates are transposed so that Y points "up"
+            If set to True, the Z and Y coordinates are transposed so that Y points up. Default is True.
+        triangulate : bool , optional
+            If set to True, all faces of the input geometry are triangulated. Otherwise, only faces with holes are triangulated. Default is False.
         mode : int , optional
             The desired mode of meshing algorithm (for triangulation). Several options are available:
             0: Classic
@@ -9552,62 +9652,129 @@ class Topology():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        list
-            Return the OBJ and MTL strings as a list.
-
+        tuple
+            Returns the OBJ and MTL strings as a tuple.
         """
+
         from topologicpy.Helper import Helper
         from topologicpy.Dictionary import Dictionary
-        import io
 
-        obj_file = io.StringIO()
-        mtl_file = io.StringIO()
+        def _safe_name(value, fallback):
+            if value is None:
+                value = fallback
+            value = str(value).strip()
+            if not value:
+                value = fallback
+            return value.replace(" ", "_")
+
+        def _safe_color(value, fallback):
+            if value is None:
+                value = fallback
+
+            if not isinstance(value, (list, tuple)) or len(value) < 3:
+                value = fallback
+
+            result = []
+            for c in value[:3]:
+                try:
+                    c = float(c)
+                except Exception:
+                    c = 255.0
+                c = max(0.0, min(255.0, c))
+                result.append(c / 255.0)
+
+            return result
+
+        def _safe_opacity(value, fallback):
+            if value is None:
+                value = fallback
+            try:
+                value = float(value)
+            except Exception:
+                value = fallback
+            return max(0.0, min(1.0, value))
 
         if isinstance(topologies, tuple):
             topologies = Helper.Flatten(list(topologies))
-        if isinstance(topologies, list):
-            new_topologies = [d for d in topologies if Topology.IsInstance(d, "Topology")]
+        else:
+            topologies = [topologies]
+
+        new_topologies = []
+        cached_data = []
+
+        for topology in topologies:
+            if not Topology.IsInstance(topology, "Topology"):
+                continue
+
+            d = Topology.Dictionary(topology)
+
+            name = Dictionary.ValueAtKey(d, nameKey, None)
+            color = Dictionary.ValueAtKey(d, colorKey, None)
+            opacity = Dictionary.ValueAtKey(d, opacityKey, None)
+
+            new_topologies.append(topology)
+            cached_data.append((name, color, opacity))
+
         if len(new_topologies) == 0:
-            print("Topology.OBJString - Error: the input topologies parameter does not contain any valid topologies. Returning None.")
+            if not silent:
+                print("Topology.OBJString - Error: The input topologies parameter does not contain any valid topologies. Returning None.")
             return None
-        if not isinstance(new_topologies, list):
-            print("Topology.OBJString - Error: The input dictionaries parameter is not a valid list. Returning None.")
-            return None
-       
-        # Write out the material file
-        n = max(len(str(len(topologies))), 3)
-        for i in range(len(new_topologies)):
-            d = Topology.Dictionary(new_topologies[i])
-            name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
-            color = Dictionary.ValueAtKey(d, colorKey) or defaultColor
-            color = [c/255 for c in color]
-            opacity = Dictionary.ValueAtKey(d, opacityKey) or defaultOpacity
-            mtl_file.write("newmtl color_" + str(i).zfill(n) + "\n")
-            mtl_file.write("Kd " + ' '.join(map(str, color)) + "\n")
-            mtl_file.write("d " + str(opacity) + "\n")
-        
-        vertex_index = 1  # global vertex index counter
-        obj_file.writelines("# topologicpy "+Helper.Version()+"\n")
-        obj_file.writelines("mtllib example.mtl")
-        for i in range(len(topologies)):
-            d = Topology.Dictionary(topologies[i])
-            name = Dictionary.ValueAtKey(d, nameKey) or "Untitled_"+str(i).zfill(n)
-            name = name.replace(" ", "_")
-            obj_file.writelines("\ng "+name+"\n")
-            result = Topology._OBJString(topologies[i], "color_" + str(i).zfill(n), vertex_index, transposeAxes=transposeAxes, mode=mode,
-                            meshSize=meshSize,
-                            mantissa=mantissa, tolerance=tolerance)
-            
-            obj_file.writelines(result[0])
+
+        n = max(len(str(len(new_topologies))), 3)
+
+        obj_parts = [
+            "# topologicpy " + Helper.Version() + "\n",
+            "mtllib example.mtl\n"
+        ]
+
+        mtl_parts = []
+
+        for i, (_, color, opacity) in enumerate(cached_data):
+            material_name = "color_" + str(i).zfill(n)
+            color = _safe_color(color, defaultColor)
+            opacity = _safe_opacity(opacity, defaultOpacity)
+
+            mtl_parts.append("newmtl " + material_name + "\n")
+            mtl_parts.append("Kd " + " ".join(str(c) for c in color) + "\n")
+            mtl_parts.append("d " + str(opacity) + "\n")
+
+        vertex_index = 1
+
+        for i, topology in enumerate(new_topologies):
+            name, _, _ = cached_data[i]
+
+            fallback_name = "Untitled_" + str(i).zfill(n)
+            name = _safe_name(name, fallback_name)
+
+            material_name = "color_" + str(i).zfill(n)
+
+            obj_parts.append("\ng " + name + "\n")
+
+            result = Topology._OBJString(
+                topology,
+                material_name,
+                vertex_index,
+                transposeAxes=transposeAxes,
+                triangulate=triangulate,
+                mode=mode,
+                meshSize=meshSize,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if result is None:
+                continue
+
+            obj_parts.append(result[0])
             vertex_index += result[1]
-        obj_string = obj_file.getvalue()
-        mtl_string = mtl_file.getvalue()
-        obj_file.close()
-        mtl_file.close()
-        return obj_string, mtl_string
+
+        return "".join(obj_parts), "".join(mtl_parts)
     
     @staticmethod
     def OCCTShape(topology):

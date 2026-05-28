@@ -9584,6 +9584,953 @@ class Graph:
         )
         return graph
 
+    # @staticmethod
+    # def ByTopology(topology,
+    #             direct: bool = True,
+    #             directApertures: bool = False,
+    #             viaSharedTopologies: bool = False,
+    #             viaSharedApertures: bool = False,
+    #             toExteriorTopologies: bool = False,
+    #             toExteriorApertures: bool = False,
+    #             toContents: bool = False,
+    #             toOutposts: bool = False,
+    #             idKey: str = "TOPOLOGIC_ID",
+    #             outpostsKey: str = "outposts",
+    #             vertexCategoryKey: str = "category",
+    #             edgeCategoryKey : str = "category",
+    #             useInternalVertex: bool = False,
+    #             storeBREP: bool = False,
+    #             ontology: bool = True,
+    #             mantissa: int = 6,
+    #             tolerance: float = 0.0001,
+    #             silent: float = False):
+    #     """
+    #     Creates a graph from the input topology.
+
+    #     This version assigns a stable integer "index" key to every graph vertex
+    #     when it is added to the graph_vertices list, and assigns "src" and "dst"
+    #     keys to every graph edge when it is created. This avoids later reliance on
+    #     Vertex.Index in Graph.ByVerticesEdges or downstream graph processing.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     direct : bool , optional
+    #         If set to True, connect the subtopologies directly with a single edge. Default is True.
+    #     directApertures : bool , optional
+    #         If set to True, connect the subtopologies directly with a single edge if they share one or more apertures. Default is False.
+    #     viaSharedTopologies : bool , optional
+    #         If set to True, connect the subtopologies via their shared topologies. Default is False.
+    #     viaSharedApertures : bool , optional
+    #         If set to True, connect the subtopologies via their shared apertures. Default is False.
+    #     toExteriorTopologies : bool , optional
+    #         If set to True, connect the subtopologies to their exterior topologies. Default is False.
+    #     toExteriorApertures : bool , optional
+    #         If set to True, connect the subtopologies to their exterior apertures. Default is False.
+    #     toContents : bool , optional
+    #         If set to True, connect the subtopologies to their contents. Default is False.
+    #     toOutposts : bool , optional
+    #         If set to True, connect the topology to the list specified in its outposts. Default is False.
+    #     idKey : str , optional
+    #         The key to use to find outpost by ID. It is case insensitive. Default is "TOPOLOGIC_ID".
+    #     outpostsKey : str , optional
+    #         The key to use to find the list of outposts. It is case insensitive. Default is "outposts".
+    #     vertexCategoryKey : str , optional
+    #         The key under which to store the node category. Default is "category".
+    #     edgeCategoryKey : str , optional
+    #         The key under which to store the edge category. Default is "category".
+    #     useInternalVertex : bool , optional
+    #         If set to True, use an internal vertex to represent the subtopology. Otherwise, use its centroid. Default is False.
+    #     storeBREP : bool , optional
+    #         If set to True, store the BRep of the subtopology in its representative vertex. Default is False.
+    #     ontology : bool , optional
+    #         If set to True, ontology metadata and semantic class annotations are added
+    #         to the created/imported topology or graph. Default is True.
+    #     mantissa : int , optional
+    #         The number of decimal places. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Graph
+    #         The created graph.
+    #     """
+
+    #     from topologicpy.Dictionary import Dictionary
+    #     from topologicpy.Vertex import Vertex
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+    #     from topologicpy.Aperture import Aperture
+
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print("Graph.ByTopology - Error: The input topology parameter is not a valid topology. Returning None.")
+    #         return None
+
+    #     graph_vertices = []
+    #     graph_edges = []
+
+    #     vertexIndexKey = "index"
+    #     edgeSrcKey = "src"
+    #     edgeDstKey = "dst"
+
+    #     vertex_index_by_object_id = {}
+
+    #     offset = tolerance * 100
+
+    #     dictionary_cache = {}
+    #     keys_cache = {}
+    #     values_cache = {}
+    #     brep_cache = {}
+    #     representative_cache = {}
+    #     apertures_cache = {}
+    #     contents_cache = {}
+    #     vertices_cache = {}
+    #     edges_cache = {}
+    #     faces_cache = {}
+    #     incidence_cache = {}
+
+    #     T_IsInstance = Topology.IsInstance
+    #     T_SetDictionary = Topology.SetDictionary
+    #     T_CenterOfMass = Topology.CenterOfMass
+    #     T_InternalVertex = Topology.InternalVertex
+    #     T_Dictionary = Topology.Dictionary
+    #     T_Apertures = Topology.Apertures
+    #     T_Contents = Topology.Contents
+    #     T_Vertices = Topology.Vertices
+    #     T_Edges = Topology.Edges
+    #     T_Faces = Topology.Faces
+    #     T_Type = Topology.Type
+    #     T_TypeAsString = Topology.TypeAsString
+    #     T_BREPString = Topology.BREPString
+    #     E_ByStartVertexEndVertex = Edge.ByStartVertexEndVertex
+
+    #     def _id(t):
+    #         return id(t)
+
+    #     def _keys(d):
+    #         if d is None:
+    #             return []
+    #         did = id(d)
+    #         if did in keys_cache:
+    #             return keys_cache[did]
+    #         try:
+    #             ks = Dictionary.Keys(d) or []
+    #         except:
+    #             try:
+    #                 ks = Core.InstanceCall(d, "Keys") or []
+    #             except:
+    #                 ks = []
+    #         keys_cache[did] = ks
+    #         return ks
+
+    #     def _values(d):
+    #         if d is None:
+    #             return []
+    #         did = id(d)
+    #         if did in values_cache:
+    #             return values_cache[did]
+    #         try:
+    #             vs = Dictionary.Values(d) or []
+    #         except:
+    #             vs = []
+    #         values_cache[did] = vs
+    #         return vs
+
+    #     def _value_at_key(d, key, defaultValue=None):
+    #         if d is None or key is None:
+    #             return defaultValue
+    #         try:
+    #             return Dictionary.ValueAtKey(d, key, defaultValue)
+    #         except TypeError:
+    #             try:
+    #                 value = Dictionary.ValueAtKey(d, key)
+    #                 return defaultValue if value is None else value
+    #             except:
+    #                 return defaultValue
+    #         except:
+    #             return defaultValue
+
+    #     def _set_value_at_key(d, key, value):
+    #         if d is None:
+    #             return Dictionary.ByKeyValue(key, value)
+    #         return Dictionary.SetValueAtKey(d, key, value)
+
+    #     def _case_key(d, key):
+    #         if d is None or key is None:
+    #             return None
+    #         key_l = str(key).lower()
+    #         for k in _keys(d):
+    #             if str(k).lower() == key_l:
+    #                 return k
+    #         return None
+
+    #     def _dictionary(t):
+    #         if t is None:
+    #             return None
+    #         tid = _id(t)
+    #         if tid in dictionary_cache:
+    #             return dictionary_cache[tid]
+    #         try:
+    #             d = T_Dictionary(t)
+    #         except:
+    #             d = None
+    #         dictionary_cache[tid] = d
+    #         return d
+
+    #     def _set_topology_value(t, key, value):
+    #         if t is None:
+    #             return None
+    #         d = _dictionary(t)
+    #         d = _set_value_at_key(d, key, value)
+    #         t = T_SetDictionary(t, d, silent=True)
+    #         dictionary_cache[_id(t)] = d
+    #         return t
+
+    #     def _brep_data(t):
+    #         tid = _id(t)
+    #         if tid in brep_cache:
+    #             return brep_cache[tid]
+    #         data = [T_BREPString(t), T_Type(t), T_TypeAsString(t)]
+    #         brep_cache[tid] = data
+    #         return data
+
+    #     def _merge_dictionaries(items, items_are_dictionaries=False):
+    #         if not isinstance(items, list):
+    #             items = [items]
+
+    #         sink = {}
+    #         order = []
+
+    #         for item in items:
+    #             d = item if items_are_dictionaries else _dictionary(item)
+    #             if d is None:
+    #                 continue
+
+    #             for k in _keys(d):
+    #                 v = _value_at_key(d, k, None)
+    #                 if v is None:
+    #                     continue
+
+    #                 if k not in sink:
+    #                     sink[k] = v
+    #                     order.append(k)
+    #                 else:
+    #                     if isinstance(sink[k], list):
+    #                         sink[k].append(v)
+    #                     else:
+    #                         sink[k] = [sink[k], v]
+
+    #         if not order:
+    #             return None
+
+    #         return Dictionary.ByKeysValues(order, [sink[k] for k in order])
+
+    #     def _add_brep(d, t):
+    #         if not storeBREP:
+    #             return d
+    #         brep, brep_type, brep_type_string = _brep_data(t)
+    #         d_brep = Dictionary.ByKeysValues(
+    #             ["brep", "brepType", "brepTypeString"],
+    #             [brep, brep_type, brep_type_string]
+    #         )
+    #         return _merge_dictionaries([d, d_brep], items_are_dictionaries=True)
+
+    #     def _category_dictionary(t, category):
+    #         d = _dictionary(t)
+    #         d = Dictionary.SetValueAtKey(d, vertexCategoryKey, category)
+    #         return _add_brep(d, t)
+
+    #     def _topology_from_aperture(t):
+    #         if T_IsInstance(t, "Aperture"):
+    #             try:
+    #                 return Aperture.Topology(t)
+    #             except:
+    #                 return t
+    #         return t
+
+    #     def _append_vertex(v):
+    #         if v is None:
+    #             return None
+
+    #         original_vid = _id(v)
+
+    #         if original_vid in vertex_index_by_object_id:
+    #             return vertex_index_by_object_id[original_vid]
+
+    #         # Always assign a fresh graph-local index.
+    #         # Do not trust an existing "index" key copied from the source topology.
+    #         index = len(graph_vertices)
+
+    #         d = _dictionary(v)
+    #         d = _set_value_at_key(d, vertexIndexKey, index)
+    #         v_indexed = T_SetDictionary(v, d, silent=True)
+
+    #         # Cache both object identities because SetDictionary may return a new object.
+    #         vertex_index_by_object_id[original_vid] = index
+    #         vertex_index_by_object_id[_id(v_indexed)] = index
+
+    #         dictionary_cache[original_vid] = d
+    #         dictionary_cache[_id(v_indexed)] = d
+
+    #         graph_vertices.append(v_indexed)
+
+    #         return index
+        
+    #     def _same_vertex(v1, v2):
+    #         if v1 is None or v2 is None:
+    #             return False
+
+    #         if _id(v1) == _id(v2):
+    #             return True
+
+    #         try:
+    #             return Vertex.Distance(v1, v2) <= tolerance
+    #         except:
+    #             try:
+    #                 return (
+    #                     abs(Vertex.X(v1, mantissa=mantissa) - Vertex.X(v2, mantissa=mantissa)) <= tolerance and
+    #                     abs(Vertex.Y(v1, mantissa=mantissa) - Vertex.Y(v2, mantissa=mantissa)) <= tolerance and
+    #                     abs(Vertex.Z(v1, mantissa=mantissa) - Vertex.Z(v2, mantissa=mantissa)) <= tolerance
+    #                 )
+    #             except:
+    #                 return False
+
+
+    #     def _representative_vertex(t, category=None, apply_offset=False, source_dictionary_topology=None):
+    #         t = _topology_from_aperture(t)
+    #         source = source_dictionary_topology if source_dictionary_topology is not None else t
+    #         key = (_id(t), category, apply_offset, _id(source) if source is not None else None)
+
+    #         if key in representative_cache:
+    #             return representative_cache[key]
+
+    #         if useInternalVertex:
+    #             v = T_InternalVertex(t, tolerance=tolerance)
+    #         else:
+    #             v = T_CenterOfMass(t)
+
+    #         if apply_offset:
+    #             v = Vertex.ByCoordinates(
+    #                 Vertex.X(v, mantissa=mantissa) + offset,
+    #                 Vertex.Y(v, mantissa=mantissa) + offset,
+    #                 Vertex.Z(v, mantissa=mantissa) + offset
+    #             )
+
+    #         if category is not None:
+    #             d = _category_dictionary(source, category)
+    #             v = T_SetDictionary(v, d, silent=True)
+    #             dictionary_cache[_id(v)] = d
+
+    #         _append_vertex(v)
+    #         representative_cache[key] = v
+    #         return v
+
+    #     def _edge_dictionary(relationship, category, source_topology=None):
+    #         source = _topology_from_aperture(source_topology)
+
+    #         keys = []
+    #         values = []
+
+    #         if source is not None:
+    #             d = _dictionary(source)
+    #             if d is not None:
+    #                 for k in _keys(d):
+    #                     keys.append(k)
+    #                     values.append(_value_at_key(d, k, None))
+
+    #         keys.extend(["relationship", edgeCategoryKey])
+    #         values.extend([relationship, category])
+
+    #         return Dictionary.ByKeysValues(keys, values)
+
+    #     def _append_edge(v1, v2, relationship, category, source_topology=None):
+    #         if v1 is None or v2 is None:
+    #             return
+
+    #         if _same_vertex(v1, v2):
+    #             if not silent:
+    #                 print(
+    #                     "Graph.ByTopology - Warning: Skipping self-loop edge.",
+    #                     "relationship:", relationship,
+    #                     "category:", category
+    #                 )
+    #             return
+
+    #         src = _append_vertex(v1)
+    #         dst = _append_vertex(v2)
+
+    #         if src is None or dst is None:
+    #             return
+
+    #         if src == dst:
+    #             if not silent:
+    #                 print(
+    #                     "Graph.ByTopology - Warning: Skipping edge with identical src and dst.",
+    #                     "src:", src,
+    #                     "dst:", dst,
+    #                     "relationship:", relationship,
+    #                     "category:", category
+    #                 )
+    #             return
+
+    #         e = E_ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
+    #         if e is None:
+    #             if not silent:
+    #                 print("Graph.ByTopology - Warning: Could not create edge.")
+    #                 print("_append_edge - v1:", Vertex.Coordinates(v1))
+    #                 print("_append_edge - v2:", Vertex.Coordinates(v2))
+    #                 print("_append_edge - relationship:", relationship)
+    #                 print("_append_edge - category:", category)
+    #             return
+
+    #         d = _edge_dictionary(relationship, category, source_topology)
+
+    #         # Always write graph-local src/dst.
+    #         # Do not preserve stale src/dst values copied from the source topology.
+    #         d = _set_value_at_key(d, edgeSrcKey, src)
+    #         d = _set_value_at_key(d, edgeDstKey, dst)
+
+    #         e = T_SetDictionary(e, d, silent=True)
+    #         dictionary_cache[_id(e)] = d
+    #         graph_edges.append(e)
+
+    #     def _apertures(t):
+    #         tid = _id(t)
+    #         if tid in apertures_cache:
+    #             return apertures_cache[tid]
+    #         try:
+    #             aps = T_Apertures(t) or []
+    #         except:
+    #             aps = []
+    #         apertures_cache[tid] = aps
+    #         return aps
+
+    #     def _contents(t):
+    #         tid = _id(t)
+    #         if tid in contents_cache:
+    #             return contents_cache[tid]
+
+    #         try:
+    #             cs = T_Contents(t, silent=True) or []
+    #         except TypeError:
+    #             try:
+    #                 cs = T_Contents(t) or []
+    #             except Exception:
+    #                 cs = []
+    #         except Exception:
+    #             cs = []
+
+    #         # Aperture contents should contribute their underlying topology.
+    #         cs = [_topology_from_aperture(c) for c in cs if c is not None]
+
+    #         contents_cache[tid] = cs
+    #         return cs
+
+    #     def _vertices(t):
+    #         tid = _id(t)
+    #         if tid in vertices_cache:
+    #             return vertices_cache[tid]
+    #         try:
+    #             vs = T_Vertices(t, silent=True)
+    #         except TypeError:
+    #             try:
+    #                 vs = T_Vertices(t)
+    #             except:
+    #                 vs = []
+    #         vertices_cache[tid] = vs
+    #         return vs
+
+    #     def _edges(t):
+    #         tid = _id(t)
+    #         if tid in edges_cache:
+    #             return edges_cache[tid]
+    #         try:
+    #             es = T_Edges(t, silent=True)
+    #         except TypeError:
+    #             try:
+    #                 es = T_Edges(t)
+    #             except:
+    #                 es = []
+    #         edges_cache[tid] = es
+    #         return es
+
+    #     def _faces(t):
+    #         tid = _id(t)
+    #         if tid in faces_cache:
+    #             return faces_cache[tid]
+    #         try:
+    #             fs = T_Faces(t, silent=True)
+    #         except TypeError:
+    #             try:
+    #                 fs = T_Faces(t)
+    #             except:
+    #                 fs = []
+    #         faces_cache[tid] = fs
+    #         return fs
+
+    #     def _coord_key(v):
+    #         return (
+    #             round(Vertex.X(v, mantissa=mantissa), mantissa),
+    #             round(Vertex.Y(v, mantissa=mantissa), mantissa),
+    #             round(Vertex.Z(v, mantissa=mantissa), mantissa)
+    #         )
+
+    #     def _vertex_key(v):
+    #         return _coord_key(v)
+
+    #     def _edge_key(e):
+    #         return tuple(sorted([_coord_key(v) for v in _vertices(e)]))
+
+    #     def _face_key(f):
+    #         return tuple(sorted([_coord_key(v) for v in _vertices(f)]))
+
+    #     def _boundary_key(t, boundary_type):
+    #         if boundary_type == "Face":
+    #             return _face_key(t)
+    #         if boundary_type == "Edge":
+    #             return _edge_key(t)
+    #         if boundary_type == "Vertex":
+    #             return _vertex_key(t)
+    #         return _id(t)
+
+    #     def _children(t, child_type):
+    #         if child_type == "Face":
+    #             return _faces(t)
+    #         if child_type == "Edge":
+    #             return _edges(t)
+    #         if child_type == "Vertex":
+    #             return _vertices(t)
+    #         return []
+
+    #     def _subtopologies(t, topology_type, free=False):
+    #         if topology_type == "CellComplex":
+    #             try:
+    #                 return Topology.CellComplexes(t, silent=True)
+    #             except TypeError:
+    #                 return Topology.CellComplexes(t)
+    #         if topology_type == "Cell":
+    #             return Cluster.FreeCells(t, tolerance=tolerance) if free else Topology.Cells(t, silent=True)
+    #         if topology_type == "Shell":
+    #             return Cluster.FreeShells(t, tolerance=tolerance) if free else Topology.Shells(t, silent=True)
+    #         if topology_type == "Face":
+    #             return Cluster.FreeFaces(t, tolerance=tolerance) if free else Topology.Faces(t, silent=True)
+    #         if topology_type == "Wire":
+    #             return Cluster.FreeWires(t, tolerance=tolerance) if free else Topology.Wires(t, silent=True)
+    #         if topology_type == "Edge":
+    #             return Cluster.FreeEdges(t, tolerance=tolerance) if free else Topology.Edges(t, silent=True)
+    #         if topology_type == "Vertex":
+    #             return Cluster.FreeVertices(t, tolerance=tolerance) if free else Topology.Vertices(t, silent=True)
+    #         return []
+
+    #     def _build_incidence(host, owners, child_type):
+    #         key = (_id(host), tuple(_id(o) for o in owners), child_type)
+    #         if key in incidence_cache:
+    #             return incidence_cache[key]
+
+    #         boundary_to_owners = {}
+    #         boundary_to_refs = {}
+    #         boundary_to_owner_ids = {}
+
+    #         for owner in owners:
+    #             owner_id = _id(owner)
+
+    #             for child in _children(owner, child_type):
+    #                 bk = _boundary_key(child, child_type)
+
+    #                 owner_ids = boundary_to_owner_ids.setdefault(bk, set())
+
+    #                 # A boundary should record each owning topology only once.
+    #                 # Without this guard, repeated or geometrically duplicate children
+    #                 # inside the same owner can make direct=True create self-loops.
+    #                 if owner_id not in owner_ids:
+    #                     owner_ids.add(owner_id)
+    #                     boundary_to_owners.setdefault(bk, []).append(owner)
+
+    #                 # Keep the reference child for edge source dictionaries and aperture checks.
+    #                 boundary_to_refs.setdefault(bk, []).append(child)
+
+    #         incidence_cache[key] = (boundary_to_owners, boundary_to_refs)
+    #         return boundary_to_owners, boundary_to_refs
+
+    #     def _add_related_vertices(v_from, related_topologies, vertex_category, relationship, edge_category, apply_offset=False):
+    #         _append_vertex(v_from)
+    #         for t in related_topologies:
+    #             v_to = _representative_vertex(t, vertex_category, apply_offset=apply_offset)
+    #             _append_edge(v_from, v_to, relationship, edge_category, source_topology=t)
+
+    #     def _add_contents(v_from, contents):
+    #         _append_vertex(v_from)
+
+    #         for content in contents:
+    #             content = _topology_from_aperture(content)
+    #             if content is None:
+    #                 continue
+
+    #             v_to = _representative_vertex(content, 5, apply_offset=True)
+    #             _append_edge(
+    #                 v_from,
+    #                 v_to,
+    #                 "To_Contents",
+    #                 5,
+    #                 source_topology=content
+    #             )
+
+    #     def _outpost_lookup(topologies):
+    #         lookup = {}
+    #         id_key_l = str(idKey).lower()
+
+    #         for t in topologies:
+    #             d = _dictionary(t)
+    #             k = None
+    #             for key in _keys(d):
+    #                 if str(key).lower() == id_key_l:
+    #                     k = key
+    #                     break
+
+    #             if k is None:
+    #                 continue
+
+    #             value = _value_at_key(d, k, None)
+    #             if value is not None and value not in lookup:
+    #                 lookup[value] = t
+
+    #         return lookup
+
+    #     def _add_outposts(v_from, outpost_lookup):
+    #         _append_vertex(v_from)
+    #         d = _dictionary(v_from)
+    #         k = _case_key(d, outpostsKey)
+    #         if k is None:
+    #             return
+
+    #         ids = _value_at_key(d, k, [])
+    #         if ids is None:
+    #             return
+    #         if not isinstance(ids, list):
+    #             ids = [ids]
+
+    #         for an_id in ids:
+    #             outpost = outpost_lookup.get(an_id, None)
+    #             if outpost is None:
+    #                 continue
+    #             v_to = _representative_vertex(outpost, 6)
+    #             _append_edge(v_from, v_to, "To_Outposts", 6)
+
+    #     def _classify_boundaries(owner, child_type, boundary_to_owners):
+    #         shared_tops = []
+    #         exterior_tops = []
+    #         shared_aps = []
+    #         exterior_aps = []
+
+    #         for child in _children(owner, child_type):
+    #             bk = _boundary_key(child, child_type)
+    #             aps = _apertures(child)
+
+    #             if len(boundary_to_owners.get(bk, [])) > 1:
+    #                 shared_tops.append(child)
+    #                 shared_aps.extend(aps)
+    #             else:
+    #                 exterior_tops.append(child)
+    #                 exterior_aps.extend(aps)
+
+    #         return shared_tops, exterior_tops, shared_aps, exterior_aps
+
+    #     def _add_direct_edges_from_incidence(owners, child_type, boundary_to_owners, boundary_to_refs, require_aperture=False):
+    #         owner_vertex = {}
+
+    #         for owner in owners:
+    #             owner_id = _id(owner)
+    #             v_owner = _representative_vertex(owner, 0)
+    #             _append_vertex(v_owner)
+    #             owner_vertex[owner_id] = v_owner
+
+    #         seen_pairs = set()
+
+    #         for bk, incident_owners in boundary_to_owners.items():
+    #             if not incident_owners:
+    #                 continue
+
+    #             # Critical fix:
+    #             # A boundary may be reported more than once for the same owner.
+    #             # Direct adjacency must be between distinct owning topologies only.
+    #             unique_incident_owners = []
+    #             seen_owner_ids = set()
+
+    #             for owner in incident_owners:
+    #                 owner_id = _id(owner)
+    #                 if owner_id in seen_owner_ids:
+    #                     continue
+    #                 seen_owner_ids.add(owner_id)
+    #                 unique_incident_owners.append(owner)
+
+    #             if len(unique_incident_owners) < 2:
+    #                 continue
+
+    #             refs = boundary_to_refs.get(bk, []) or []
+
+    #             if require_aperture:
+    #                 has_aperture = False
+    #                 for ref in refs:
+    #                     if _apertures(ref):
+    #                         has_aperture = True
+    #                         break
+    #                 if not has_aperture:
+    #                     continue
+
+    #             n = len(unique_incident_owners)
+
+    #             for i in range(n - 1):
+    #                 oi = unique_incident_owners[i]
+    #                 oi_id = _id(oi)
+
+    #                 if oi_id not in owner_vertex:
+    #                     continue
+
+    #                 vi = owner_vertex[oi_id]
+
+    #                 for j in range(i + 1, n):
+    #                     oj = unique_incident_owners[j]
+    #                     oj_id = _id(oj)
+
+    #                     # Absolute guard: direct adjacency must never connect an owner to itself.
+    #                     if oi_id == oj_id:
+    #                         continue
+
+    #                     if oj_id not in owner_vertex:
+    #                         continue
+
+    #                     vj = owner_vertex[oj_id]
+
+    #                     pair = (oi_id, oj_id) if oi_id <= oj_id else (oj_id, oi_id)
+    #                     pair = pair + (bk, "aperture" if require_aperture else "direct")
+
+    #                     if pair in seen_pairs:
+    #                         continue
+    #                     seen_pairs.add(pair)
+
+    #                     source = None
+
+    #                     if require_aperture:
+    #                         for ref in refs:
+    #                             aps = _apertures(ref)
+    #                             if aps:
+    #                                 source = aps[0]
+    #                                 break
+    #                     else:
+    #                         source = refs[0] if refs else None
+
+    #                     relationship = "Direct_Apertures" if require_aperture else "Direct"
+    #                     edge_category = 2 if require_aperture else 0
+
+    #                     if oi_id == oj_id:
+    #                         print("BUG: direct self-pair reached edge creation", bk, oi_id)
+    #                         continue
+
+    #                     _append_edge(
+    #                         vi,
+    #                         vj,
+    #                         relationship,
+    #                         edge_category,
+    #                         source_topology=source
+    #                     )
+
+    #     def _process_collection(host, main_type, child_type, outpost_lookup):
+    #         owners = _subtopologies(host, main_type)
+    #         boundary_to_owners, boundary_to_refs = _build_incidence(host, owners, child_type)
+
+    #         for owner in owners:
+    #             _append_vertex(_representative_vertex(owner, 0))
+
+    #         if direct:
+    #             _add_direct_edges_from_incidence(
+    #                 owners,
+    #                 child_type,
+    #                 boundary_to_owners,
+    #                 boundary_to_refs,
+    #                 require_aperture=False
+    #             )
+
+    #         if directApertures:
+    #             _add_direct_edges_from_incidence(
+    #                 owners,
+    #                 child_type,
+    #                 boundary_to_owners,
+    #                 boundary_to_refs,
+    #                 require_aperture=True
+    #             )
+
+    #         if not any([viaSharedTopologies, viaSharedApertures, toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+    #             return
+
+    #         for owner in owners:
+    #             v_owner = _representative_vertex(owner, 0)
+    #             _append_vertex(v_owner)
+
+    #             shared_tops, exterior_tops, shared_aps, exterior_aps = _classify_boundaries(
+    #                 owner,
+    #                 child_type,
+    #                 boundary_to_owners
+    #             )
+
+    #             if viaSharedTopologies:
+    #                 _add_related_vertices(v_owner, shared_tops, 1, "Via_Shared_Topologies", 1)
+
+    #                 if toContents or toOutposts:
+    #                     for shared_top in shared_tops:
+    #                         v_shared = _representative_vertex(shared_top, 1)
+    #                         _append_vertex(v_shared)
+
+    #                         if toContents:
+    #                             _add_contents(v_shared, _contents(shared_top))
+    #                         if toOutposts:
+    #                             _add_outposts(v_shared, outpost_lookup)
+
+    #             if viaSharedApertures:
+    #                 _add_related_vertices(v_owner, shared_aps, 2, "Via_Shared_Apertures", 2, apply_offset=True)
+
+    #             if toExteriorTopologies:
+    #                 _add_related_vertices(v_owner, exterior_tops, 3, "To_Exterior_Topologies", 3)
+
+    #                 if toContents or toOutposts:
+    #                     for exterior_top in exterior_tops:
+    #                         v_exterior = _representative_vertex(exterior_top, 3)
+    #                         _append_vertex(v_exterior)
+
+    #                         if toContents:
+    #                             _add_contents(v_exterior, _contents(exterior_top))
+    #                         if toOutposts:
+    #                             _add_outposts(v_exterior, outpost_lookup)
+
+    #             if toExteriorApertures:
+    #                 _add_related_vertices(v_owner, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
+
+    #             if toContents:
+    #                 owner_contents = _contents(owner)
+    #                 print("OWNER CONTENTS:", owner, len(owner_contents), owner_contents)
+    #                 _add_contents(v_owner, _contents(owner))
+
+    #             if toOutposts:
+    #                 _add_outposts(v_owner, outpost_lookup)
+
+    #     def _process_single(t, child_type, outpost_lookup):
+    #         v = _representative_vertex(t, 0)
+    #         _append_vertex(v)
+
+    #         if not any([toExteriorTopologies, toExteriorApertures, toContents, toOutposts]):
+    #             return
+
+    #         exterior_tops = _children(t, child_type)
+    #         exterior_aps = []
+    #         for exterior_top in exterior_tops:
+    #             exterior_aps.extend(_apertures(exterior_top))
+
+    #         if toExteriorTopologies:
+    #             _add_related_vertices(v, exterior_tops, 3, "To_Exterior_Topologies", 3)
+
+    #             if toContents or toOutposts:
+    #                 for exterior_top in exterior_tops:
+    #                     v_exterior = _representative_vertex(exterior_top, 3)
+    #                     _append_vertex(v_exterior)
+
+    #                     if toContents:
+    #                         _add_contents(v_exterior, _contents(exterior_top))
+    #                     if toOutposts:
+    #                         _add_outposts(v_exterior, outpost_lookup)
+
+    #         if toExteriorApertures:
+    #             _add_related_vertices(v, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
+
+    #         if toContents:
+    #             _add_contents(v, _contents(t))
+
+    #         if toOutposts:
+    #             _add_outposts(v, outpost_lookup)
+
+    #     def _process_vertex(t, outpost_lookup):
+    #         _append_vertex(t)
+
+    #         if toContents:
+    #             _add_contents(t, _contents(t))
+
+    #         if toOutposts:
+    #             _add_outposts(t, outpost_lookup)
+
+    #     def _all_subtopologies(t):
+    #         return (
+    #             Topology.CellComplexes(t, silent=True) +
+    #             Topology.Cells(t, silent=True) +
+    #             Topology.Shells(t, silent=True) +
+    #             Topology.Faces(t, silent=True) +
+    #             Topology.Wires(t, silent=True) +
+    #             Topology.Edges(t, silent=True) +
+    #             Topology.Vertices(t, silent=True)
+    #         )
+
+    #     others = _all_subtopologies(topology)
+    #     outposts = _outpost_lookup(others)
+
+    #     if T_IsInstance(topology, "CellComplex"):
+    #         _process_collection(topology, "Cell", "Face", outposts)
+
+    #     elif T_IsInstance(topology, "Cell"):
+    #         _process_single(topology, "Face", outposts)
+
+    #     elif T_IsInstance(topology, "Shell"):
+    #         _process_collection(topology, "Face", "Edge", outposts)
+
+    #     elif T_IsInstance(topology, "Face"):
+    #         _process_single(topology, "Edge", outposts)
+
+    #     elif T_IsInstance(topology, "Wire"):
+    #         _process_collection(topology, "Edge", "Vertex", outposts)
+
+    #     elif T_IsInstance(topology, "Edge"):
+    #         _process_single(topology, "Vertex", outposts)
+
+    #     elif T_IsInstance(topology, "Vertex"):
+    #         _process_vertex(topology, outposts)
+
+    #     elif T_IsInstance(topology, "Cluster"):
+    #         c_cellComplexes = Topology.CellComplexes(topology, silent=True)
+    #         c_cells = Cluster.FreeCells(topology, tolerance=tolerance)
+    #         c_shells = Cluster.FreeShells(topology, tolerance=tolerance)
+    #         c_faces = Cluster.FreeFaces(topology, tolerance=tolerance)
+    #         c_wires = Cluster.FreeWires(topology, tolerance=tolerance)
+    #         c_edges = Cluster.FreeEdges(topology, tolerance=tolerance)
+    #         c_vertices = Cluster.FreeVertices(topology, tolerance=tolerance)
+
+    #         others = others + c_cellComplexes + c_cells + c_shells + c_faces + c_wires + c_edges + c_vertices
+    #         outposts = _outpost_lookup(others)
+
+    #         for t in c_cellComplexes:
+    #             _process_collection(t, "Cell", "Face", outposts)
+    #         for t in c_cells:
+    #             _process_single(t, "Face", outposts)
+    #         for t in c_shells:
+    #             _process_collection(t, "Face", "Edge", outposts)
+    #         for t in c_faces:
+    #             _process_single(t, "Edge", outposts)
+    #         for t in c_wires:
+    #             _process_collection(t, "Edge", "Vertex", outposts)
+    #         for t in c_edges:
+    #             _process_single(t, "Vertex", outposts)
+    #         for t in c_vertices:
+    #             _process_vertex(t, outposts)
+
+    #     else:
+    #         return None
+
+    #     return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False, ontology=ontology), graphClass="top:SpatialGraph", generatedBy="Graph.ByTopology", ontology=ontology, silent=True)
+
+
+
+
     @staticmethod
     def ByTopology(topology,
                 direct: bool = True,
@@ -9607,10 +10554,10 @@ class Graph:
         """
         Creates a graph from the input topology.
 
-        This version assigns a stable integer "index" key to every graph vertex
-        when it is added to the graph_vertices list, and assigns "src" and "dst"
-        keys to every graph edge when it is created. This avoids later reliance on
-        Vertex.Index in Graph.ByVerticesEdges or downstream graph processing.
+        This version assigns stable graph-local integer "index" keys to graph vertices
+        and stable graph-local "src" and "dst" keys to graph edges. Existing index,
+        src, and dst values copied from source topology dictionaries are ignored for
+        graph construction. Self-loops are prevented before geometric edge creation.
 
         Parameters
         ----------
@@ -9680,6 +10627,7 @@ class Graph:
         edgeDstKey = "dst"
 
         vertex_index_by_object_id = {}
+        vertex_record_by_object_id = {}
 
         offset = tolerance * 100
 
@@ -9843,7 +10791,7 @@ class Graph:
 
         def _category_dictionary(t, category):
             d = _dictionary(t)
-            d = Dictionary.SetValueAtKey(d, vertexCategoryKey, category)
+            d = _set_value_at_key(d, vertexCategoryKey, category)
             return _add_brep(d, t)
 
         def _topology_from_aperture(t):
@@ -9854,29 +10802,50 @@ class Graph:
                     return t
             return t
 
-        def _append_vertex(v):
+        def _vertex_record(v):
+            """
+            Returns a canonical graph-local vertex record.
+
+            Existing index values copied from source topology dictionaries are ignored.
+            The returned vertex is the actual indexed vertex stored in graph_vertices.
+            """
             if v is None:
                 return None
 
-            vid = _id(v)
-            if vid in vertex_index_by_object_id:
-                return vertex_index_by_object_id[vid]
+            original_id = _id(v)
+
+            if original_id in vertex_record_by_object_id:
+                return vertex_record_by_object_id[original_id]
+
+            index = len(graph_vertices)
 
             d = _dictionary(v)
-            existing_index = _value_at_key(d, vertexIndexKey, None)
+            d = _set_value_at_key(d, vertexIndexKey, index)
+            v_indexed = T_SetDictionary(v, d, silent=True)
 
-            if isinstance(existing_index, int):
-                index = existing_index
-            else:
-                index = len(graph_vertices)
-                d = _set_value_at_key(d, vertexIndexKey, index)
-                v = T_SetDictionary(v, d, silent=True)
-                dictionary_cache[_id(v)] = d
+            record = {
+                "vertex": v_indexed,
+                "index": index
+            }
 
-            vertex_index_by_object_id[_id(v)] = index
-            graph_vertices.append(v)
+            vertex_record_by_object_id[original_id] = record
+            vertex_record_by_object_id[_id(v_indexed)] = record
 
-            return index
+            vertex_index_by_object_id[original_id] = index
+            vertex_index_by_object_id[_id(v_indexed)] = index
+
+            dictionary_cache[original_id] = d
+            dictionary_cache[_id(v_indexed)] = d
+
+            graph_vertices.append(v_indexed)
+
+            return record
+
+        def _append_vertex(v):
+            record = _vertex_record(v)
+            if record is None:
+                return None
+            return record["index"]
 
         def _representative_vertex(t, category=None, apply_offset=False, source_dictionary_topology=None):
             t = _topology_from_aperture(t)
@@ -9891,6 +10860,9 @@ class Graph:
             else:
                 v = T_CenterOfMass(t)
 
+            if v is None:
+                return None
+
             if apply_offset:
                 v = Vertex.ByCoordinates(
                     Vertex.X(v, mantissa=mantissa) + offset,
@@ -9903,7 +10875,11 @@ class Graph:
                 v = T_SetDictionary(v, d, silent=True)
                 dictionary_cache[_id(v)] = d
 
-            _append_vertex(v)
+            record = _vertex_record(v)
+            if record is None:
+                return None
+
+            v = record["vertex"]
             representative_cache[key] = v
             return v
 
@@ -9926,23 +10902,40 @@ class Graph:
             return Dictionary.ByKeysValues(keys, values)
 
         def _append_edge(v1, v2, relationship, category, source_topology=None):
-            src = _append_vertex(v1)
-            dst = _append_vertex(v2)
+            r1 = _vertex_record(v1)
+            r2 = _vertex_record(v2)
 
-            if src is None or dst is None:
+            if r1 is None or r2 is None:
                 return
 
-            e = E_ByStartVertexEndVertex(v1, v2, tolerance=tolerance)
+            src = r1["index"]
+            dst = r2["index"]
+
+            
+
+            # Graph.ByTopology must not create self-loops. Do this before asking
+            # topologic_core to create a geometric edge.
+            if src == dst:
+                return
+
+            gv1 = r1["vertex"]
+            gv2 = r2["vertex"]
+
+            e = E_ByStartVertexEndVertex(gv1, gv2, tolerance=tolerance)
             if e is None:
+                print("DEBUG e (Edge):", e)
+                print("DEBUG - src:", src)
+                print("DEBUG - dst:", dst)
+                print("DEBUG - gv1 coordinates:", Vertex.Coordinates(gv1))
+                print("DEBUG - gv2 coordinates:", Vertex.Coordinates(gv2))
                 return
 
             d = _edge_dictionary(relationship, category, source_topology)
 
-            if _value_at_key(d, edgeSrcKey, None) is None:
-                d = _set_value_at_key(d, edgeSrcKey, src)
-
-            if _value_at_key(d, edgeDstKey, None) is None:
-                d = _set_value_at_key(d, edgeDstKey, dst)
+            # Always write graph-local endpoints. Do not preserve stale src/dst
+            # copied from source topology dictionaries.
+            d = _set_value_at_key(d, edgeSrcKey, src)
+            d = _set_value_at_key(d, edgeDstKey, dst)
 
             e = T_SetDictionary(e, d, silent=True)
             dictionary_cache[_id(e)] = d
@@ -9974,7 +10967,6 @@ class Graph:
             except Exception:
                 cs = []
 
-            # Aperture contents should contribute their underlying topology.
             cs = [_topology_from_aperture(c) for c in cs if c is not None]
 
             contents_cache[tid] = cs
@@ -10083,24 +11075,43 @@ class Graph:
 
             boundary_to_owners = {}
             boundary_to_refs = {}
+            boundary_to_owner_ids = {}
 
             for owner in owners:
+                owner_id = _id(owner)
+
                 for child in _children(owner, child_type):
                     bk = _boundary_key(child, child_type)
-                    boundary_to_owners.setdefault(bk, []).append(owner)
+
+                    owner_ids = boundary_to_owner_ids.setdefault(bk, set())
+                    if owner_id not in owner_ids:
+                        owner_ids.add(owner_id)
+                        boundary_to_owners.setdefault(bk, []).append(owner)
+
                     boundary_to_refs.setdefault(bk, []).append(child)
 
             incidence_cache[key] = (boundary_to_owners, boundary_to_refs)
             return boundary_to_owners, boundary_to_refs
 
         def _add_related_vertices(v_from, related_topologies, vertex_category, relationship, edge_category, apply_offset=False):
-            _append_vertex(v_from)
+            from_record = _vertex_record(v_from)
+            if from_record is None:
+                return
+
+            v_from = from_record["vertex"]
+
             for t in related_topologies:
                 v_to = _representative_vertex(t, vertex_category, apply_offset=apply_offset)
+                if v_to is None:
+                    continue
                 _append_edge(v_from, v_to, relationship, edge_category, source_topology=t)
 
         def _add_contents(v_from, contents):
-            _append_vertex(v_from)
+            from_record = _vertex_record(v_from)
+            if from_record is None:
+                return
+
+            v_from = from_record["vertex"]
 
             for content in contents:
                 content = _topology_from_aperture(content)
@@ -10108,6 +11119,9 @@ class Graph:
                     continue
 
                 v_to = _representative_vertex(content, 5, apply_offset=True)
+                if v_to is None:
+                    continue
+
                 _append_edge(
                     v_from,
                     v_to,
@@ -10138,7 +11152,12 @@ class Graph:
             return lookup
 
         def _add_outposts(v_from, outpost_lookup):
-            _append_vertex(v_from)
+            from_record = _vertex_record(v_from)
+            if from_record is None:
+                return
+
+            v_from = from_record["vertex"]
+
             d = _dictionary(v_from)
             k = _case_key(d, outpostsKey)
             if k is None:
@@ -10155,6 +11174,8 @@ class Graph:
                 if outpost is None:
                     continue
                 v_to = _representative_vertex(outpost, 6)
+                if v_to is None:
+                    continue
                 _append_edge(v_from, v_to, "To_Outposts", 6)
 
         def _classify_boundaries(owner, child_type, boundary_to_owners):
@@ -10177,50 +11198,89 @@ class Graph:
             return shared_tops, exterior_tops, shared_aps, exterior_aps
 
         def _add_direct_edges_from_incidence(owners, child_type, boundary_to_owners, boundary_to_refs, require_aperture=False):
-            owner_vertex = {}
+            owner_records = {}
+
             for owner in owners:
+                owner_id = _id(owner)
                 v_owner = _representative_vertex(owner, 0)
-                _append_vertex(v_owner)
-                owner_vertex[_id(owner)] = v_owner
+                if v_owner is None:
+                    continue
+
+                record = _vertex_record(v_owner)
+                if record is None:
+                    continue
+
+                owner_records[owner_id] = {
+                    "owner": owner,
+                    "vertex": record["vertex"],
+                    "index": record["index"]
+                }
 
             seen_pairs = set()
 
             for bk, incident_owners in boundary_to_owners.items():
-                if len(incident_owners) < 2:
+                if not incident_owners:
                     continue
 
-                source_refs = boundary_to_refs.get(bk, [])
-                if require_aperture:
-                    source_refs = []
-                    for ref in boundary_to_refs.get(bk, []):
-                        source_refs.extend(_apertures(ref))
-                    if not source_refs:
+                unique_records = []
+                seen_owner_ids = set()
+                seen_indices = set()
+
+                for owner in incident_owners:
+                    owner_id = _id(owner)
+                    if owner_id in seen_owner_ids:
                         continue
 
-                n = len(incident_owners)
-                for i in range(n - 1):
-                    oi = incident_owners[i]
-                    oi_id = _id(oi)
-                    for j in range(i + 1, n):
-                        oj = incident_owners[j]
-                        oj_id = _id(oj)
+                    record = owner_records.get(owner_id, None)
+                    if record is None:
+                        continue
 
-                        pair = (oi_id, oj_id) if oi_id <= oj_id else (oj_id, oi_id)
-                        if require_aperture:
-                            pair = pair + (bk, "aperture")
-                        else:
-                            pair = pair + (bk, "direct")
+                    index = record["index"]
+                    if index in seen_indices:
+                        continue
+
+                    seen_owner_ids.add(owner_id)
+                    seen_indices.add(index)
+                    unique_records.append(record)
+
+                if len(unique_records) < 2:
+                    continue
+
+                refs = boundary_to_refs.get(bk, []) or []
+
+                if require_aperture:
+                    has_aperture = False
+                    for ref in refs:
+                        if _apertures(ref):
+                            has_aperture = True
+                            break
+                    if not has_aperture:
+                        continue
+
+                relationship = "Direct_Apertures" if require_aperture else "Direct"
+                edge_category = 2 if require_aperture else 0
+
+                n = len(unique_records)
+
+                for i in range(n - 1):
+                    ri = unique_records[i]
+                    src_index = ri["index"]
+
+                    for j in range(i + 1, n):
+                        rj = unique_records[j]
+                        dst_index = rj["index"]
+
+                        if src_index == dst_index:
+                            continue
+
+                        pair = (src_index, dst_index) if src_index <= dst_index else (dst_index, src_index)
+                        pair = pair + (bk, "aperture" if require_aperture else "direct")
 
                         if pair in seen_pairs:
                             continue
                         seen_pairs.add(pair)
 
-                        relationship = "Direct_Apertures" if require_aperture else "Direct"
-                        edge_category = 2 if require_aperture else 0
-
                         source = None
-
-                        refs = boundary_to_refs.get(bk, []) or []
 
                         if require_aperture:
                             for ref in refs:
@@ -10231,12 +11291,9 @@ class Graph:
                         else:
                             source = refs[0] if refs else None
 
-                        relationship = "Direct_Apertures" if require_aperture else "Direct"
-                        edge_category = 2 if require_aperture else 0
-
                         _append_edge(
-                            owner_vertex[oi_id],
-                            owner_vertex[oj_id],
+                            ri["vertex"],
+                            rj["vertex"],
                             relationship,
                             edge_category,
                             source_topology=source
@@ -10313,8 +11370,6 @@ class Graph:
                     _add_related_vertices(v_owner, exterior_aps, 4, "To_Exterior_Apertures", 4, apply_offset=True)
 
                 if toContents:
-                    owner_contents = _contents(owner)
-                    print("OWNER CONTENTS:", owner, len(owner_contents), owner_contents)
                     _add_contents(v_owner, _contents(owner))
 
                 if toOutposts:
@@ -10428,8 +11483,17 @@ class Graph:
         else:
             return None
 
-        return Graph._OntologyAnnotateGraph(Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False, ontology=ontology), graphClass="top:SpatialGraph", generatedBy="Graph.ByTopology", ontology=ontology, silent=True)
-    
+        return Graph._OntologyAnnotateGraph(
+            Graph.ByVerticesEdges(graph_vertices, graph_edges, index=False, ontology=ontology),
+            graphClass="top:SpatialGraph",
+            generatedBy="Graph.ByTopology",
+            ontology=ontology,
+            silent=True
+        )
+
+
+
+
     @staticmethod
     def ByTriples(triples,
                   subjectKey: str = "subject",

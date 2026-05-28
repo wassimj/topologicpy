@@ -144,7 +144,7 @@ def test_main():
     # test 3
     cell = cells[0]
     centroid = Topology.Centroid(cell)
-    coordinates = Vertex.Coordinates(centroid)
+    coordinates = Vertex.Coordinates(centroid, mantissa=2)
     assert coordinates == [0.25, 0.25, 0.5], "EnclosingCells. Coordinates should be [0.5, 0.5, 0.5]"
 
     # Case 9 - Index
