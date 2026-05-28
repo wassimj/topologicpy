@@ -174,7 +174,7 @@ def test_main():
     print("Case 12")
     # test 1
     origin = Vertex.Origin()
-    coordinates = Vertex.Coordinates(origin)
+    coordinates = Vertex.Coordinates(origin, mantissa=1)
     assert coordinates == [0,0,0], "Origin. coordinates should be [0,0,0]"
 
     # Case 13 - Project
@@ -183,24 +183,24 @@ def test_main():
     v = Vertex.ByCoordinates(10,10,10)
     f = Face.Rectangle(width=20, length=20)
     v_p = Vertex.Project(v, f)
-    coordinates = Vertex.Coordinates(v_p)
+    coordinates = Vertex.Coordinates(v_p, mantissa=1)
     assert coordinates == [10,10,0], "Origin. coordinates should be [10,10,0]"
 
     # Case 14 - X
     print("Case 14")
     # test 1
     v = Vertex.ByCoordinates(10,20,30)
-    assert Vertex.X(v) == 10, "Origin. x coordinate should be 10"
+    assert Vertex.X(v, mantissa=1) == 10, "Origin. x coordinate should be 10"
 
     # Case 15 - Y
     print("Case 15")
     # test 1
     v = Vertex.ByCoordinates(10,20,30)
-    assert Vertex.Y(v) == 20, "Origin. y coordinate should be 20"
+    assert Vertex.Y(v, mantissa=1) == 20, "Origin. y coordinate should be 20"
 
     # Case 16 - Z
     print("Case 16")
     # test 1
     v = Vertex.ByCoordinates(10,20,30)
-    assert Vertex.Z(v) == 30, "Origin. z coordinate should be 30"
+    assert Vertex.Z(v, mantissa=1) == 30, "Origin. z coordinate should be 30"
     print("End")
