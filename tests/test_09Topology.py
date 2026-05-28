@@ -778,7 +778,7 @@ def test_main():
     # test 1
     topology_trans = Topology.Translate(cell_cy3, x=0, y=0, z=1)
     center_tcy = Topology.Centroid(topology_trans)
-    z_tcy = Vertex.Z(center_tcy)                          # Get the z value of the translated geometry's centroid
+    z_tcy = Vertex.Z(center_tcy, mantissa=1)                          # Get the z value of the translated geometry's centroid
     assert Topology.IsInstance(topology_trans, "Topology"), "Topology.Translate. Should be topologic.Topology"
     assert z_tcy == 1.0, "Vertex.Z. should be 1.0"
 
