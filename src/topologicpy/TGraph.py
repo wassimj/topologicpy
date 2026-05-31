@@ -25,7 +25,6 @@ import math
 
 
 class TGraph:
-    PHASE2_WEIGHTED_MATRIX_FIX = True
     """
     A topology-first graph class.
 
@@ -511,7 +510,11 @@ class TGraph:
     @staticmethod
     def Edges(graph: "TGraph", asTopologic: bool = False, useRepresentation: bool = True,
               activeOnly: bool = True, segmentCurves: bool = True, mantissa: int = 6,
-              tolerance: float = 0.0001, silent: bool = False) -> List[Any]:
+              tolerance: float = 0.0001, silent: bool = False,
+              selfLoopMode: str = "circle", selfLoopRadius: float = 0.25,
+              selfLoopMajorRadius: Optional[float] = None, selfLoopMinorRadius: Optional[float] = None,
+              selfLoopSides: int = 32, selfLoopNormal: Optional[List[float]] = None,
+              sagittaKey: str = "sagitta") -> List[Any]:
         if not isinstance(graph, TGraph):
             return []
         records = [e for e in graph._edges if (not activeOnly or e.get("active", True))]
@@ -525,9 +528,47 @@ class TGraph:
             d = dict(record.get("dictionary", {}))
             rep = record.get("representation")
             topology = None
+
             if useRepresentation and rep is not None:
                 topology = TGraph._EdgeRepresentationToTopology(rep, dictionary=d, segmentCurves=segmentCurves,
                                                                 tolerance=tolerance, silent=silent)
+
+            if topology is None:
+                if not isinstance(src, int) or not isinstance(dst, int) or src >= len(vertices) or dst >= len(vertices):
+                    continue
+
+                # A self-loop is valid graph incidence but cannot be represented
+                # as a straight Topologic Edge. Generate a circular/elliptical
+                # Wire representation unless an explicit representation already
+                # handled it above.
+                if src == dst:
+                    topology = TGraph._SelfLoopToWire(
+                        vertex=vertices[src],
+                        dictionary=d,
+                        representation=rep,
+                        mode=selfLoopMode,
+                        radius=selfLoopRadius,
+                        majorRadius=selfLoopMajorRadius,
+                        minorRadius=selfLoopMinorRadius,
+                        sides=selfLoopSides,
+                        normal=selfLoopNormal,
+                        tolerance=tolerance,
+                        silent=silent,
+                    )
+                else:
+                    # Optional visual arc representation through a sagitta. This
+                    # is drawing geometry only; the graph edge remains pure
+                    # incidence between src and dst.
+                    topology = TGraph._SagittaArcToWire(
+                        vertexA=vertices[src],
+                        vertexB=vertices[dst],
+                        dictionary=d,
+                        representation=rep,
+                        sagittaKey=sagittaKey,
+                        tolerance=tolerance,
+                        silent=silent,
+                    )
+
             if topology is None:
                 if not isinstance(src, int) or not isinstance(dst, int) or src >= len(vertices) or dst >= len(vertices):
                     continue
@@ -887,6 +928,164 @@ class TGraph:
     # ---------------------------------------------------------------------
 
     @staticmethod
+    def _VectorNormalised(vector: Optional[List[float]], default: Optional[List[float]] = None) -> List[float]:
+        default = default if isinstance(default, list) and len(default) >= 3 else [0.0, 0.0, 1.0]
+        if not isinstance(vector, (list, tuple)) or len(vector) < 3:
+            vector = default
+        try:
+            x, y, z = float(vector[0]), float(vector[1]), float(vector[2])
+        except Exception:
+            x, y, z = float(default[0]), float(default[1]), float(default[2])
+        length = math.sqrt(x*x + y*y + z*z)
+        if length <= 0.0:
+            return [float(default[0]), float(default[1]), float(default[2])]
+        return [x/length, y/length, z/length]
+
+    @staticmethod
+    def _VectorCross(a: List[float], b: List[float]) -> List[float]:
+        return [
+            a[1]*b[2] - a[2]*b[1],
+            a[2]*b[0] - a[0]*b[2],
+            a[0]*b[1] - a[1]*b[0],
+        ]
+
+    @staticmethod
+    def _VectorDot(a: List[float], b: List[float]) -> float:
+        return float(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])
+
+    @staticmethod
+    def _FrameFromNormal(normal: Optional[List[float]] = None) -> Tuple[List[float], List[float], List[float]]:
+        n = TGraph._VectorNormalised(normal, default=[0.0, 0.0, 1.0])
+        ref = [1.0, 0.0, 0.0]
+        if abs(TGraph._VectorDot(n, ref)) > 0.9:
+            ref = [0.0, 1.0, 0.0]
+        u = TGraph._VectorNormalised(TGraph._VectorCross(n, ref), default=[1.0, 0.0, 0.0])
+        v = TGraph._VectorNormalised(TGraph._VectorCross(n, u), default=[0.0, 1.0, 0.0])
+        return u, v, n
+
+    @staticmethod
+    def _VertexCoordinates(vertex: Any) -> Optional[List[float]]:
+        try:
+            from topologicpy.Vertex import Vertex
+            coords = Vertex.Coordinates(vertex)
+            if coords and len(coords) >= 3:
+                return [float(coords[0]), float(coords[1]), float(coords[2])]
+        except Exception:
+            return None
+        return None
+
+    @staticmethod
+    def _SelfLoopToWire(vertex: Any, dictionary: Optional[Dict[str, Any]] = None,
+                        representation: Any = None, mode: str = "circle", radius: float = 0.25,
+                        majorRadius: Optional[float] = None, minorRadius: Optional[float] = None,
+                        sides: int = 32, normal: Optional[List[float]] = None,
+                        tolerance: float = 0.0001, silent: bool = False) -> Optional[Any]:
+        """
+        Returns a circular or elliptical Wire representation for a self-loop.
+
+        The self-loop remains graph incidence. This method only creates a visual
+        Topologic representation when asTopologic=True is requested.
+        """
+        d = dictionary if isinstance(dictionary, dict) else {}
+        rep = representation if isinstance(representation, dict) else {}
+        mode = str(rep.get("mode", rep.get("self_loop_mode", rep.get("type", mode)))).lower()
+        if mode in ("selfloop", "self_loop", "loop"):
+            mode = str(rep.get("shape", d.get("self_loop_mode", mode))).lower()
+        if mode not in ("circle", "ellipse"):
+            mode = str(d.get("self_loop_mode", mode)).lower()
+        if mode not in ("circle", "ellipse"):
+            mode = "circle"
+
+        def _number(*values, default=0.25):
+            for value in values:
+                try:
+                    if value is not None:
+                        return float(value)
+                except Exception:
+                    pass
+            return float(default)
+
+        radius = _number(rep.get("radius"), d.get("self_loop_radius"), radius, default=0.25)
+        major = _number(rep.get("major_radius"), rep.get("majorRadius"), d.get("self_loop_major_radius"), majorRadius, radius, default=radius)
+        minor = _number(rep.get("minor_radius"), rep.get("minorRadius"), d.get("self_loop_minor_radius"), minorRadius, radius*0.65, default=radius*0.65)
+        if mode == "circle":
+            major = minor = radius
+        try:
+            sides = int(rep.get("sides", d.get("self_loop_sides", sides)))
+        except Exception:
+            sides = 32
+        sides = max(8, sides)
+        normal = rep.get("normal", d.get("self_loop_normal", normal))
+
+        centre = TGraph._VertexCoordinates(vertex)
+        if centre is None:
+            return None
+        u, v, _ = TGraph._FrameFromNormal(normal)
+        points = []
+        for i in range(sides):
+            angle = 2.0 * math.pi * float(i) / float(sides)
+            ca = math.cos(angle)
+            sa = math.sin(angle)
+            points.append([
+                centre[0] + major * ca * u[0] + minor * sa * v[0],
+                centre[1] + major * ca * u[1] + minor * sa * v[1],
+                centre[2] + major * ca * u[2] + minor * sa * v[2],
+            ])
+        points.append(points[0])
+        return TGraph._ControlPointsToWire(points, dictionary=d, tolerance=tolerance, silent=silent)
+
+    @staticmethod
+    def _SagittaArcToWire(vertexA: Any, vertexB: Any, dictionary: Optional[Dict[str, Any]] = None,
+                          representation: Any = None, sagittaKey: str = "sagitta",
+                          tolerance: float = 0.0001, silent: bool = False) -> Optional[Any]:
+        """
+        Returns a polyline Wire approximating an arc controlled by a sagitta.
+
+        The arc is visual representation only. If no sagitta is present, returns
+        None so the caller can create a straight Topologic edge.
+        """
+        d = dictionary if isinstance(dictionary, dict) else {}
+        rep = representation if isinstance(representation, dict) else {}
+        sagitta = rep.get(sagittaKey, rep.get("sagitta", d.get(sagittaKey, d.get("sagitta", None))))
+        try:
+            sagitta = float(sagitta)
+        except Exception:
+            return None
+        if abs(sagitta) <= tolerance:
+            return None
+        a = TGraph._VertexCoordinates(vertexA)
+        b = TGraph._VertexCoordinates(vertexB)
+        if a is None or b is None:
+            return None
+        chord = [b[0]-a[0], b[1]-a[1], b[2]-a[2]]
+        length = math.sqrt(chord[0]*chord[0] + chord[1]*chord[1] + chord[2]*chord[2])
+        if length <= tolerance:
+            return None
+        tangent = [chord[0]/length, chord[1]/length, chord[2]/length]
+        normal = rep.get("normal", d.get("arc_normal", d.get("normal", [0.0, 0.0, 1.0])))
+        normal = TGraph._VectorNormalised(normal, default=[0.0, 0.0, 1.0])
+        perp = TGraph._VectorCross(normal, tangent)
+        if math.sqrt(sum(x*x for x in perp)) <= tolerance:
+            _, perp, _ = TGraph._FrameFromNormal(normal)
+        perp = TGraph._VectorNormalised(perp, default=[0.0, 1.0, 0.0])
+        mid = [(a[i] + b[i]) * 0.5 + sagitta * perp[i] for i in range(3)]
+        try:
+            sides = int(rep.get("sides", d.get("arc_sides", d.get("sides", 16))))
+        except Exception:
+            sides = 16
+        sides = max(4, sides)
+        points = []
+        for i in range(sides + 1):
+            t = float(i) / float(sides)
+            # Quadratic Bezier through a, mid-control, b.
+            omt = 1.0 - t
+            points.append([
+                omt*omt*a[j] + 2.0*omt*t*mid[j] + t*t*b[j]
+                for j in range(3)
+            ])
+        return TGraph._ControlPointsToWire(points, dictionary=d, tolerance=tolerance, silent=silent)
+
+    @staticmethod
     def _EdgeRepresentationToTopology(representation: Any, dictionary: Optional[Dict[str, Any]] = None,
                                       segmentCurves: bool = True, tolerance: float = 0.0001,
                                       silent: bool = False) -> Optional[Any]:
@@ -1047,23 +1246,23 @@ class TGraph:
             return "{}"
 
     # ---------------------------------------------------------------------
-    # Phase 3 graph algorithms
+    # Graph algorithms
     # ---------------------------------------------------------------------
 
     @staticmethod
-    def _Phase3ActiveVertexIndices(graph: "TGraph") -> List[int]:
+    def _ActiveVertexIndices(graph: "TGraph") -> List[int]:
         if not isinstance(graph, TGraph):
             return []
         return [v["index"] for v in graph._vertices if v.get("active", True)]
 
     @staticmethod
-    def _Phase3ActiveEdges(graph: "TGraph") -> List[Dict[str, Any]]:
+    def _ActiveEdges(graph: "TGraph") -> List[Dict[str, Any]]:
         if not isinstance(graph, TGraph):
             return []
         return [e for e in graph._edges if e.get("active", True)]
 
     @staticmethod
-    def _Phase3SetVertexValue(graph: "TGraph", index: int, key: Optional[str], value: Any) -> None:
+    def _SetVertexValue(graph: "TGraph", index: int, key: Optional[str], value: Any) -> None:
         if not isinstance(graph, TGraph) or key is None:
             return
         if not graph._validate_vertex_index(index):
@@ -1071,7 +1270,7 @@ class TGraph:
         graph._vertices[index].setdefault("dictionary", {})[key] = value
 
     @staticmethod
-    def _Phase3EdgeWeight(edge: Dict[str, Any], edgeKey: Optional[str] = None, default: float = 1.0) -> float:
+    def _EdgeWeightValue(edge: Dict[str, Any], edgeKey: Optional[str] = None, default: float = 1.0) -> float:
         if not isinstance(edge, dict):
             return float(default)
         if edgeKey is None:
@@ -1087,13 +1286,13 @@ class TGraph:
         return value if value > 0 else float(default)
 
     @staticmethod
-    def _Phase3Neighbors(graph: "TGraph", index: int, mode: str = "out") -> List[int]:
+    def _NeighborIndices(graph: "TGraph", index: int, mode: str = "out") -> List[int]:
         return TGraph.AdjacentIndices(graph, index, mode=mode)
 
     @staticmethod
-    def _Phase3UndirectedAdjacency(graph: "TGraph") -> Dict[int, Set[int]]:
-        adjacency = {i: set() for i in TGraph._Phase3ActiveVertexIndices(graph)}
-        for e in TGraph._Phase3ActiveEdges(graph):
+    def _UndirectedAdjacency(graph: "TGraph") -> Dict[int, Set[int]]:
+        adjacency = {i: set() for i in TGraph._ActiveVertexIndices(graph)}
+        for e in TGraph._ActiveEdges(graph):
             src = e.get("src")
             dst = e.get("dst")
             if src in adjacency and dst in adjacency:
@@ -1102,14 +1301,14 @@ class TGraph:
         return adjacency
 
     @staticmethod
-    def _Phase3WeightedEdges(graph: "TGraph", edgeKey: Optional[str] = None) -> List[Tuple[float, int, int, int]]:
+    def _WeightedEdges(graph: "TGraph", edgeKey: Optional[str] = None) -> List[Tuple[float, int, int, int]]:
         result = []
-        for e in TGraph._Phase3ActiveEdges(graph):
+        for e in TGraph._ActiveEdges(graph):
             src = e.get("src")
             dst = e.get("dst")
             if not graph._validate_vertex_index(src) or not graph._validate_vertex_index(dst):
                 continue
-            weight = TGraph._Phase3EdgeWeight(e, edgeKey=edgeKey, default=1.0)
+            weight = TGraph._EdgeWeightValue(e, edgeKey=edgeKey, default=1.0)
             result.append((weight, src, dst, e.get("index")))
         return result
 
@@ -1142,7 +1341,7 @@ class TGraph:
 
         if not isinstance(graph, TGraph):
             return False
-        vertices = TGraph._Phase3ActiveVertexIndices(graph)
+        vertices = TGraph._ActiveVertexIndices(graph)
         for i in vertices:
             for j in vertices:
                 if i == j and not includeSelfLoops:
@@ -1173,7 +1372,7 @@ class TGraph:
         if not TGraph.IsConnected(graph, mode="all"):
             return False
         non_loop_edges = 0
-        for e in TGraph._Phase3ActiveEdges(graph):
+        for e in TGraph._ActiveEdges(graph):
             if e.get("src") != e.get("dst"):
                 non_loop_edges += 1
             else:
@@ -1188,7 +1387,7 @@ class TGraph:
 
         if not isinstance(graph, TGraph):
             return False
-        adjacency = TGraph._Phase3UndirectedAdjacency(graph)
+        adjacency = TGraph._UndirectedAdjacency(graph)
         color = {}
         for start in sorted(adjacency.keys()):
             if start in color:
@@ -1218,11 +1417,11 @@ class TGraph:
 
         if not isinstance(graph, TGraph):
             return []
-        vertices = TGraph._Phase3ActiveVertexIndices(graph)
+        vertices = TGraph._ActiveVertexIndices(graph)
         adjacency_edges: Dict[int, List[Tuple[int, int]]] = {v: [] for v in vertices}
         pair_counts: Dict[Tuple[int, int], int] = {}
 
-        for e in TGraph._Phase3ActiveEdges(graph):
+        for e in TGraph._ActiveEdges(graph):
             u = e.get("src")
             v = e.get("dst")
             eid = e.get("index")
@@ -1273,7 +1472,7 @@ class TGraph:
 
         if not isinstance(graph, TGraph):
             return []
-        adjacency = TGraph._Phase3UndirectedAdjacency(graph)
+        adjacency = TGraph._UndirectedAdjacency(graph)
         visited = set()
         disc = {}
         low = {}
@@ -1311,11 +1510,11 @@ class TGraph:
 
 
     # ---------------------------------------------------------------------
-    # Phase 4: Topology / spatial graph builders
+    # Topology / spatial graph builders
     # ---------------------------------------------------------------------
 
     @staticmethod
-    def _Phase4ValueAtKey(data: Any, key: str, default: Any = None) -> Any:
+    def _ValueAtKey(data: Any, key: str, default: Any = None) -> Any:
         if key is None:
             return default
         if isinstance(data, dict):
@@ -1334,13 +1533,13 @@ class TGraph:
             return default
 
     @staticmethod
-    def _Phase4SetValue(data: Optional[Dict[str, Any]], key: str, value: Any) -> Dict[str, Any]:
+    def _SetValue(data: Optional[Dict[str, Any]], key: str, value: Any) -> Dict[str, Any]:
         d = dict(data) if isinstance(data, dict) else {}
         d[key] = value
         return d
 
     @staticmethod
-    def _Phase4TopologyType(topology: Any) -> str:
+    def _TopologyType(topology: Any) -> str:
         if topology is None:
             return "None"
         try:
@@ -1350,7 +1549,7 @@ class TGraph:
             return type(topology).__name__
 
     @staticmethod
-    def _Phase4Coordinates(topology: Any, useInternalVertex: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> Optional[List[float]]:
+    def _TopologyCoordinates(topology: Any, useInternalVertex: bool = False, mantissa: int = 6, tolerance: float = 0.0001) -> Optional[List[float]]:
         if topology is None:
             return None
         try:
@@ -1376,7 +1575,7 @@ class TGraph:
             return None
 
     @staticmethod
-    def _Phase4BREPString(topology: Any) -> Optional[str]:
+    def _BREPString(topology: Any) -> Optional[str]:
         try:
             from topologicpy.Topology import Topology
             return Topology.BREPString(topology)
@@ -1384,22 +1583,22 @@ class TGraph:
             return None
 
     @staticmethod
-    def _Phase4TopologyDictionary(topology: Any, storeBREP: bool = False, mantissa: int = 6, tolerance: float = 0.0001, useInternalVertex: bool = False) -> Dict[str, Any]:
+    def _TopologyDictionary(topology: Any, storeBREP: bool = False, mantissa: int = 6, tolerance: float = 0.0001, useInternalVertex: bool = False) -> Dict[str, Any]:
         d = TGraph._TopologyDictionaryToPython(topology)
-        d["topology_type"] = TGraph._Phase4TopologyType(topology)
-        coords = TGraph._Phase4Coordinates(topology, useInternalVertex=useInternalVertex, mantissa=mantissa, tolerance=tolerance)
+        d["topology_type"] = TGraph._TopologyType(topology)
+        coords = TGraph._TopologyCoordinates(topology, useInternalVertex=useInternalVertex, mantissa=mantissa, tolerance=tolerance)
         if coords is not None:
             d.setdefault("x", coords[0])
             d.setdefault("y", coords[1])
             d.setdefault("z", coords[2])
         if storeBREP:
-            brep = TGraph._Phase4BREPString(topology)
+            brep = TGraph._BREPString(topology)
             if brep is not None:
                 d["brep"] = brep
         return d
 
     @staticmethod
-    def _Phase4Topologies(topology: Any, topologyType: str, free: bool = False, tolerance: float = 0.0001) -> List[Any]:
+    def _Topologies(topology: Any, topologyType: str, free: bool = False, tolerance: float = 0.0001) -> List[Any]:
         if topology is None:
             return []
         topologyType = str(topologyType or "").lower()
@@ -1444,7 +1643,7 @@ class TGraph:
         return []
 
     @staticmethod
-    def _Phase4Apertures(topology: Any) -> List[Any]:
+    def _Apertures(topology: Any) -> List[Any]:
         try:
             from topologicpy.Topology import Topology
             return Topology.Apertures(topology) or []
@@ -1452,7 +1651,7 @@ class TGraph:
             return []
 
     @staticmethod
-    def _Phase4Contents(topology: Any) -> List[Any]:
+    def _Contents(topology: Any) -> List[Any]:
         try:
             from topologicpy.Topology import Topology
             return Topology.Contents(topology, silent=True) or []
@@ -1466,7 +1665,7 @@ class TGraph:
             return []
 
     @staticmethod
-    def _Phase4TopologyFromAperture(topology: Any) -> Any:
+    def _TopologyFromAperture(topology: Any) -> Any:
         try:
             from topologicpy.Topology import Topology
             from topologicpy.Aperture import Aperture
@@ -1477,7 +1676,7 @@ class TGraph:
         return topology
 
     @staticmethod
-    def _Phase4BoundaryKey(topology: Any, boundaryType: str, mantissa: int = 6) -> Any:
+    def _BoundaryKey(topology: Any, boundaryType: str, mantissa: int = 6) -> Any:
         boundaryType = str(boundaryType or "").lower()
         try:
             from topologicpy.Topology import Topology
@@ -1493,19 +1692,19 @@ class TGraph:
         return (boundaryType, id(topology))
 
     @staticmethod
-    def _Phase4Children(topology: Any, childType: str, tolerance: float = 0.0001) -> List[Any]:
-        return TGraph._Phase4Topologies(topology, childType, free=False, tolerance=tolerance)
+    def _Children(topology: Any, childType: str, tolerance: float = 0.0001) -> List[Any]:
+        return TGraph._Topologies(topology, childType, free=False, tolerance=tolerance)
 
     @staticmethod
-    def _Phase4OwnerBoundaryMaps(owners: List[Any], childType: str, mantissa: int = 6, tolerance: float = 0.0001) -> Tuple[Dict[Any, List[int]], Dict[Any, List[Any]], Dict[int, List[Tuple[Any, Any]]]]:
+    def _OwnerBoundaryMaps(owners: List[Any], childType: str, mantissa: int = 6, tolerance: float = 0.0001) -> Tuple[Dict[Any, List[int]], Dict[Any, List[Any]], Dict[int, List[Tuple[Any, Any]]]]:
         boundary_to_owner_indices: Dict[Any, List[int]] = {}
         boundary_to_refs: Dict[Any, List[Any]] = {}
         owner_to_boundaries: Dict[int, List[Tuple[Any, Any]]] = {}
         seen_owner_boundary = set()
 
         for owner_index, owner in enumerate(owners):
-            for child in TGraph._Phase4Children(owner, childType, tolerance=tolerance):
-                bk = TGraph._Phase4BoundaryKey(child, childType, mantissa=mantissa)
+            for child in TGraph._Children(owner, childType, tolerance=tolerance):
+                bk = TGraph._BoundaryKey(child, childType, mantissa=mantissa)
                 if (owner_index, bk) not in seen_owner_boundary:
                     boundary_to_owner_indices.setdefault(bk, []).append(owner_index)
                     owner_to_boundaries.setdefault(owner_index, []).append((bk, child))
@@ -1514,10 +1713,10 @@ class TGraph:
         return boundary_to_owner_indices, boundary_to_refs, owner_to_boundaries
 
     @staticmethod
-    def _Phase4AddTopologyVertex(graph: "TGraph", topology: Any, category: Any = None, label: Any = None,
+    def _AddTopologyVertex(graph: "TGraph", topology: Any, category: Any = None, label: Any = None,
                                  storeBREP: bool = False, mantissa: int = 6, tolerance: float = 0.0001,
                                  useInternalVertex: bool = False, extra: Optional[Dict[str, Any]] = None) -> int:
-        d = TGraph._Phase4TopologyDictionary(topology, storeBREP=storeBREP, mantissa=mantissa, tolerance=tolerance, useInternalVertex=useInternalVertex)
+        d = TGraph._TopologyDictionary(topology, storeBREP=storeBREP, mantissa=mantissa, tolerance=tolerance, useInternalVertex=useInternalVertex)
         if category is not None:
             d["category"] = category
         if label is not None:
@@ -1527,7 +1726,7 @@ class TGraph:
         return graph.AddVertex(dictionary=d, representation=topology)
 
     @staticmethod
-    def _Phase4AddRelationship(graph: "TGraph", src: int, dst: int, relationship: str, category: Any = None,
+    def _AddRelationship(graph: "TGraph", src: int, dst: int, relationship: str, category: Any = None,
                                source: Any = None, dictionary: Optional[Dict[str, Any]] = None,
                                directed: Optional[bool] = None) -> Optional[int]:
         if src is None or dst is None:
@@ -1537,14 +1736,14 @@ class TGraph:
         if category is not None:
             d["category"] = category
         if source is not None:
-            sd = TGraph._TopologyDictionaryToPython(TGraph._Phase4TopologyFromAperture(source))
+            sd = TGraph._TopologyDictionaryToPython(TGraph._TopologyFromAperture(source))
             for k, v in sd.items():
                 d.setdefault(k, v)
-            d.setdefault("source_topology_type", TGraph._Phase4TopologyType(TGraph._Phase4TopologyFromAperture(source)))
+            d.setdefault("source_topology_type", TGraph._TopologyType(TGraph._TopologyFromAperture(source)))
         return graph.AddEdge(src, dst, directed=directed, dictionary=d, representation=source)
 
     @staticmethod
-    def _Phase4ProcessCollection(graph: "TGraph", host: Any, ownerType: str, childType: str,
+    def _ProcessTopologyCollection(graph: "TGraph", host: Any, ownerType: str, childType: str,
                                  direct: bool = True, directApertures: bool = False,
                                  viaSharedTopologies: bool = False, viaSharedApertures: bool = False,
                                  toExteriorTopologies: bool = False, toExteriorApertures: bool = False,
@@ -1553,15 +1752,15 @@ class TGraph:
                                  idKey: str = "TOPOLOGIC_ID", outpostsKey: str = "outposts",
                                  storeBREP: bool = False, mantissa: int = 6, tolerance: float = 0.0001,
                                  useInternalVertex: bool = False) -> None:
-        owners = TGraph._Phase4Topologies(host, ownerType, free=False, tolerance=tolerance)
+        owners = TGraph._Topologies(host, ownerType, free=False, tolerance=tolerance)
         owner_vertex = {}
         for i, owner in enumerate(owners):
-            owner_vertex[i] = TGraph._Phase4AddTopologyVertex(graph, owner, category=0, label=ownerType,
+            owner_vertex[i] = TGraph._AddTopologyVertex(graph, owner, category=0, label=ownerType,
                                                               storeBREP=storeBREP, mantissa=mantissa,
                                                               tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                               extra={"role": "owner"})
 
-        boundary_to_owners, boundary_to_refs, owner_to_boundaries = TGraph._Phase4OwnerBoundaryMaps(owners, childType, mantissa=mantissa, tolerance=tolerance)
+        boundary_to_owners, boundary_to_refs, owner_to_boundaries = TGraph._OwnerBoundaryMaps(owners, childType, mantissa=mantissa, tolerance=tolerance)
 
         if direct or directApertures:
             seen = set()
@@ -1569,7 +1768,7 @@ class TGraph:
                 if len(incident) < 2:
                     continue
                 refs = boundary_to_refs.get(bk, []) or []
-                has_aperture = any(TGraph._Phase4Apertures(ref) for ref in refs)
+                has_aperture = any(TGraph._Apertures(ref) for ref in refs)
                 for a_i in range(len(incident) - 1):
                     for b_i in range(a_i + 1, len(incident)):
                         oi = incident[a_i]
@@ -1581,27 +1780,27 @@ class TGraph:
                         pair = (min(src, dst), max(src, dst), bk)
                         if direct and pair not in seen:
                             seen.add(pair)
-                            TGraph._Phase4AddRelationship(graph, src, dst, "Direct", category=0,
+                            TGraph._AddRelationship(graph, src, dst, "Direct", category=0,
                                                            source=refs[0] if refs else None, directed=False)
                         if directApertures and has_aperture:
                             aps = []
                             for ref in refs:
-                                aps.extend(TGraph._Phase4Apertures(ref))
+                                aps.extend(TGraph._Apertures(ref))
                             source = aps[0] if aps else (refs[0] if refs else None)
                             ap_pair = pair + ("aperture",)
                             if ap_pair not in seen:
                                 seen.add(ap_pair)
-                                TGraph._Phase4AddRelationship(graph, src, dst, "Direct_Apertures", category=2,
+                                TGraph._AddRelationship(graph, src, dst, "Direct_Apertures", category=2,
                                                                source=source, directed=False)
 
         boundary_vertex = {}
         aperture_vertex = {}
 
         def boundary_index(boundary: Any, category: Any, relationship_label: str) -> int:
-            bk = TGraph._Phase4BoundaryKey(boundary, childType, mantissa=mantissa)
+            bk = TGraph._BoundaryKey(boundary, childType, mantissa=mantissa)
             key = (category, bk)
             if key not in boundary_vertex:
-                boundary_vertex[key] = TGraph._Phase4AddTopologyVertex(graph, boundary, category=category,
+                boundary_vertex[key] = TGraph._AddTopologyVertex(graph, boundary, category=category,
                                                                         label=relationship_label,
                                                                         storeBREP=storeBREP, mantissa=mantissa,
                                                                         tolerance=tolerance,
@@ -1610,10 +1809,10 @@ class TGraph:
             return boundary_vertex[key]
 
         def aperture_index(aperture: Any, category: Any, relationship_label: str) -> int:
-            ap_topology = TGraph._Phase4TopologyFromAperture(aperture)
+            ap_topology = TGraph._TopologyFromAperture(aperture)
             key = (category, id(aperture))
             if key not in aperture_vertex:
-                aperture_vertex[key] = TGraph._Phase4AddTopologyVertex(graph, ap_topology, category=category,
+                aperture_vertex[key] = TGraph._AddTopologyVertex(graph, ap_topology, category=category,
                                                                         label=relationship_label,
                                                                         storeBREP=storeBREP, mantissa=mantissa,
                                                                         tolerance=tolerance,
@@ -1627,30 +1826,30 @@ class TGraph:
                 continue
             for bk, child in owner_to_boundaries.get(owner_index, []):
                 is_shared = len(boundary_to_owners.get(bk, [])) > 1
-                apertures = TGraph._Phase4Apertures(child)
+                apertures = TGraph._Apertures(child)
                 if is_shared and viaSharedTopologies:
                     dst = boundary_index(child, 1, "Shared Topology")
-                    TGraph._Phase4AddRelationship(graph, src, dst, "Via_Shared_Topologies", category=1, source=child, directed=False)
+                    TGraph._AddRelationship(graph, src, dst, "Via_Shared_Topologies", category=1, source=child, directed=False)
                 if is_shared and viaSharedApertures:
                     for aperture in apertures:
                         dst = aperture_index(aperture, 2, "Shared Aperture")
-                        TGraph._Phase4AddRelationship(graph, src, dst, "Via_Shared_Apertures", category=2, source=aperture, directed=False)
+                        TGraph._AddRelationship(graph, src, dst, "Via_Shared_Apertures", category=2, source=aperture, directed=False)
                 if (not is_shared) and toExteriorTopologies:
                     dst = boundary_index(child, 3, "Exterior Topology")
-                    TGraph._Phase4AddRelationship(graph, src, dst, "To_Exterior_Topologies", category=3, source=child, directed=False)
+                    TGraph._AddRelationship(graph, src, dst, "To_Exterior_Topologies", category=3, source=child, directed=False)
                 if (not is_shared) and toExteriorApertures:
                     for aperture in apertures:
                         dst = aperture_index(aperture, 4, "Exterior Aperture")
-                        TGraph._Phase4AddRelationship(graph, src, dst, "To_Exterior_Apertures", category=4, source=aperture, directed=False)
+                        TGraph._AddRelationship(graph, src, dst, "To_Exterior_Apertures", category=4, source=aperture, directed=False)
 
             if toContents:
-                for content in TGraph._Phase4Contents(owner):
-                    content = TGraph._Phase4TopologyFromAperture(content)
-                    dst = TGraph._Phase4AddTopologyVertex(graph, content, category=5, label="Content",
+                for content in TGraph._Contents(owner):
+                    content = TGraph._TopologyFromAperture(content)
+                    dst = TGraph._AddTopologyVertex(graph, content, category=5, label="Content",
                                                           storeBREP=storeBREP, mantissa=mantissa,
                                                           tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                           extra={"role": "content"})
-                    TGraph._Phase4AddRelationship(graph, src, dst, "To_Contents", category=5, source=content, directed=False)
+                    TGraph._AddRelationship(graph, src, dst, "To_Contents", category=5, source=content, directed=False)
 
             if toOutposts and isinstance(outpostLookup, dict):
                 d = graph.VertexDictionary(src)
@@ -1663,47 +1862,47 @@ class TGraph:
                     outpost = outpostLookup.get(outpost_id)
                     if outpost is None:
                         continue
-                    dst = TGraph._Phase4AddTopologyVertex(graph, outpost, category=6, label="Outpost",
+                    dst = TGraph._AddTopologyVertex(graph, outpost, category=6, label="Outpost",
                                                           storeBREP=storeBREP, mantissa=mantissa,
                                                           tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                           extra={"role": "outpost"})
-                    TGraph._Phase4AddRelationship(graph, src, dst, "To_Outposts", category=6, source=outpost, directed=False)
+                    TGraph._AddRelationship(graph, src, dst, "To_Outposts", category=6, source=outpost, directed=False)
 
     @staticmethod
-    def _Phase4ProcessSingle(graph: "TGraph", topology: Any, childType: str,
+    def _ProcessSingleTopology(graph: "TGraph", topology: Any, childType: str,
                              toExteriorTopologies: bool = False, toExteriorApertures: bool = False,
                              toContents: bool = False, toOutposts: bool = False,
                              outpostLookup: Optional[Dict[Any, Any]] = None,
                              outpostsKey: str = "outposts", storeBREP: bool = False,
                              mantissa: int = 6, tolerance: float = 0.0001,
                              useInternalVertex: bool = False) -> None:
-        src = TGraph._Phase4AddTopologyVertex(graph, topology, category=0, label=TGraph._Phase4TopologyType(topology),
+        src = TGraph._AddTopologyVertex(graph, topology, category=0, label=TGraph._TopologyType(topology),
                                               storeBREP=storeBREP, mantissa=mantissa, tolerance=tolerance,
                                               useInternalVertex=useInternalVertex, extra={"role": "owner"})
         if toExteriorTopologies or toExteriorApertures:
-            for child in TGraph._Phase4Children(topology, childType, tolerance=tolerance):
+            for child in TGraph._Children(topology, childType, tolerance=tolerance):
                 if toExteriorTopologies:
-                    dst = TGraph._Phase4AddTopologyVertex(graph, child, category=3, label="Exterior Topology",
+                    dst = TGraph._AddTopologyVertex(graph, child, category=3, label="Exterior Topology",
                                                           storeBREP=storeBREP, mantissa=mantissa,
                                                           tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                           extra={"role": "boundary"})
-                    TGraph._Phase4AddRelationship(graph, src, dst, "To_Exterior_Topologies", category=3, source=child, directed=False)
+                    TGraph._AddRelationship(graph, src, dst, "To_Exterior_Topologies", category=3, source=child, directed=False)
                 if toExteriorApertures:
-                    for aperture in TGraph._Phase4Apertures(child):
-                        ap_topology = TGraph._Phase4TopologyFromAperture(aperture)
-                        dst = TGraph._Phase4AddTopologyVertex(graph, ap_topology, category=4, label="Exterior Aperture",
+                    for aperture in TGraph._Apertures(child):
+                        ap_topology = TGraph._TopologyFromAperture(aperture)
+                        dst = TGraph._AddTopologyVertex(graph, ap_topology, category=4, label="Exterior Aperture",
                                                               storeBREP=storeBREP, mantissa=mantissa,
                                                               tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                               extra={"role": "aperture"})
-                        TGraph._Phase4AddRelationship(graph, src, dst, "To_Exterior_Apertures", category=4, source=aperture, directed=False)
+                        TGraph._AddRelationship(graph, src, dst, "To_Exterior_Apertures", category=4, source=aperture, directed=False)
         if toContents:
-            for content in TGraph._Phase4Contents(topology):
-                content = TGraph._Phase4TopologyFromAperture(content)
-                dst = TGraph._Phase4AddTopologyVertex(graph, content, category=5, label="Content",
+            for content in TGraph._Contents(topology):
+                content = TGraph._TopologyFromAperture(content)
+                dst = TGraph._AddTopologyVertex(graph, content, category=5, label="Content",
                                                       storeBREP=storeBREP, mantissa=mantissa,
                                                       tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                       extra={"role": "content"})
-                TGraph._Phase4AddRelationship(graph, src, dst, "To_Contents", category=5, source=content, directed=False)
+                TGraph._AddRelationship(graph, src, dst, "To_Contents", category=5, source=content, directed=False)
         if toOutposts and isinstance(outpostLookup, dict):
             d = graph.VertexDictionary(src)
             ids = d.get(outpostsKey, [])
@@ -1715,21 +1914,21 @@ class TGraph:
                 outpost = outpostLookup.get(outpost_id)
                 if outpost is None:
                     continue
-                dst = TGraph._Phase4AddTopologyVertex(graph, outpost, category=6, label="Outpost",
+                dst = TGraph._AddTopologyVertex(graph, outpost, category=6, label="Outpost",
                                                       storeBREP=storeBREP, mantissa=mantissa,
                                                       tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                       extra={"role": "outpost"})
-                TGraph._Phase4AddRelationship(graph, src, dst, "To_Outposts", category=6, source=outpost, directed=False)
+                TGraph._AddRelationship(graph, src, dst, "To_Outposts", category=6, source=outpost, directed=False)
 
     @staticmethod
-    def _Phase4AllSubtopologies(topology: Any, tolerance: float = 0.0001) -> List[Any]:
+    def _AllSubtopologies(topology: Any, tolerance: float = 0.0001) -> List[Any]:
         result = []
         for topology_type in ["CellComplex", "Cell", "Shell", "Face", "Wire", "Edge", "Vertex"]:
-            result.extend(TGraph._Phase4Topologies(topology, topology_type, free=False, tolerance=tolerance))
+            result.extend(TGraph._Topologies(topology, topology_type, free=False, tolerance=tolerance))
         return result
 
     @staticmethod
-    def _Phase4OutpostLookup(topologies: List[Any], idKey: str = "TOPOLOGIC_ID") -> Dict[Any, Any]:
+    def _OutpostLookup(topologies: List[Any], idKey: str = "TOPOLOGIC_ID") -> Dict[Any, Any]:
         lookup = {}
         key_l = str(idKey).lower()
         for topology in topologies:
@@ -1786,77 +1985,77 @@ class TGraph:
         g = TGraph(directed=False, allowSelfLoops=True, allowParallelEdges=True,
                    dictionary=dictionary if isinstance(dictionary, dict) else {"generated_by": "TGraph.ByTopology"})
 
-        all_topologies = TGraph._Phase4AllSubtopologies(topology, tolerance=tolerance)
-        outposts = TGraph._Phase4OutpostLookup(all_topologies, idKey=idKey)
+        all_topologies = TGraph._AllSubtopologies(topology, tolerance=tolerance)
+        outposts = TGraph._OutpostLookup(all_topologies, idKey=idKey)
 
         if Topology.IsInstance(topology, "CellComplex"):
-            TGraph._Phase4ProcessCollection(g, topology, "Cell", "Face", direct, directApertures,
+            TGraph._ProcessTopologyCollection(g, topology, "Cell", "Face", direct, directApertures,
                                              viaSharedTopologies, viaSharedApertures,
                                              toExteriorTopologies, toExteriorApertures,
                                              toContents, toOutposts, outposts, idKey, outpostsKey,
                                              storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Cell"):
-            TGraph._Phase4ProcessSingle(g, topology, "Face", toExteriorTopologies, toExteriorApertures,
+            TGraph._ProcessSingleTopology(g, topology, "Face", toExteriorTopologies, toExteriorApertures,
                                         toContents, toOutposts, outposts, outpostsKey,
                                         storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Shell"):
-            TGraph._Phase4ProcessCollection(g, topology, "Face", "Edge", direct, directApertures,
+            TGraph._ProcessTopologyCollection(g, topology, "Face", "Edge", direct, directApertures,
                                              viaSharedTopologies, viaSharedApertures,
                                              toExteriorTopologies, toExteriorApertures,
                                              toContents, toOutposts, outposts, idKey, outpostsKey,
                                              storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Face"):
-            TGraph._Phase4ProcessSingle(g, topology, "Edge", toExteriorTopologies, toExteriorApertures,
+            TGraph._ProcessSingleTopology(g, topology, "Edge", toExteriorTopologies, toExteriorApertures,
                                         toContents, toOutposts, outposts, outpostsKey,
                                         storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Wire"):
-            TGraph._Phase4ProcessCollection(g, topology, "Edge", "Vertex", direct, directApertures,
+            TGraph._ProcessTopologyCollection(g, topology, "Edge", "Vertex", direct, directApertures,
                                              viaSharedTopologies, viaSharedApertures,
                                              toExteriorTopologies, toExteriorApertures,
                                              toContents, toOutposts, outposts, idKey, outpostsKey,
                                              storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Edge"):
-            TGraph._Phase4ProcessSingle(g, topology, "Vertex", toExteriorTopologies, toExteriorApertures,
+            TGraph._ProcessSingleTopology(g, topology, "Vertex", toExteriorTopologies, toExteriorApertures,
                                         toContents, toOutposts, outposts, outpostsKey,
                                         storeBREP, mantissa, tolerance, useInternalVertex)
         elif Topology.IsInstance(topology, "Vertex"):
-            TGraph._Phase4AddTopologyVertex(g, topology, category=0, label="Vertex",
+            TGraph._AddTopologyVertex(g, topology, category=0, label="Vertex",
                                              storeBREP=storeBREP, mantissa=mantissa,
                                              tolerance=tolerance, useInternalVertex=useInternalVertex,
                                              extra={"role": "owner"})
         elif Topology.IsInstance(topology, "Cluster"):
-            for sub in TGraph._Phase4Topologies(topology, "CellComplex", free=False, tolerance=tolerance):
-                TGraph._Phase4ProcessCollection(g, sub, "Cell", "Face", direct, directApertures,
+            for sub in TGraph._Topologies(topology, "CellComplex", free=False, tolerance=tolerance):
+                TGraph._ProcessTopologyCollection(g, sub, "Cell", "Face", direct, directApertures,
                                                  viaSharedTopologies, viaSharedApertures,
                                                  toExteriorTopologies, toExteriorApertures,
                                                  toContents, toOutposts, outposts, idKey, outpostsKey,
                                                  storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Cell", free=True, tolerance=tolerance):
-                TGraph._Phase4ProcessSingle(g, sub, "Face", toExteriorTopologies, toExteriorApertures,
+            for sub in TGraph._Topologies(topology, "Cell", free=True, tolerance=tolerance):
+                TGraph._ProcessSingleTopology(g, sub, "Face", toExteriorTopologies, toExteriorApertures,
                                             toContents, toOutposts, outposts, outpostsKey,
                                             storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Shell", free=True, tolerance=tolerance):
-                TGraph._Phase4ProcessCollection(g, sub, "Face", "Edge", direct, directApertures,
+            for sub in TGraph._Topologies(topology, "Shell", free=True, tolerance=tolerance):
+                TGraph._ProcessTopologyCollection(g, sub, "Face", "Edge", direct, directApertures,
                                                  viaSharedTopologies, viaSharedApertures,
                                                  toExteriorTopologies, toExteriorApertures,
                                                  toContents, toOutposts, outposts, idKey, outpostsKey,
                                                  storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Face", free=True, tolerance=tolerance):
-                TGraph._Phase4ProcessSingle(g, sub, "Edge", toExteriorTopologies, toExteriorApertures,
+            for sub in TGraph._Topologies(topology, "Face", free=True, tolerance=tolerance):
+                TGraph._ProcessSingleTopology(g, sub, "Edge", toExteriorTopologies, toExteriorApertures,
                                             toContents, toOutposts, outposts, outpostsKey,
                                             storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Wire", free=True, tolerance=tolerance):
-                TGraph._Phase4ProcessCollection(g, sub, "Edge", "Vertex", direct, directApertures,
+            for sub in TGraph._Topologies(topology, "Wire", free=True, tolerance=tolerance):
+                TGraph._ProcessTopologyCollection(g, sub, "Edge", "Vertex", direct, directApertures,
                                                  viaSharedTopologies, viaSharedApertures,
                                                  toExteriorTopologies, toExteriorApertures,
                                                  toContents, toOutposts, outposts, idKey, outpostsKey,
                                                  storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Edge", free=True, tolerance=tolerance):
-                TGraph._Phase4ProcessSingle(g, sub, "Vertex", toExteriorTopologies, toExteriorApertures,
+            for sub in TGraph._Topologies(topology, "Edge", free=True, tolerance=tolerance):
+                TGraph._ProcessSingleTopology(g, sub, "Vertex", toExteriorTopologies, toExteriorApertures,
                                             toContents, toOutposts, outposts, outpostsKey,
                                             storeBREP, mantissa, tolerance, useInternalVertex)
-            for sub in TGraph._Phase4Topologies(topology, "Vertex", free=True, tolerance=tolerance):
-                TGraph._Phase4AddTopologyVertex(g, sub, category=0, label="Vertex",
+            for sub in TGraph._Topologies(topology, "Vertex", free=True, tolerance=tolerance):
+                TGraph._AddTopologyVertex(g, sub, category=0, label="Vertex",
                                                  storeBREP=storeBREP, mantissa=mantissa,
                                                  tolerance=tolerance, useInternalVertex=useInternalVertex,
                                                  extra={"role": "owner"})
@@ -1955,7 +2154,7 @@ class TGraph:
         g = TGraph(directed=directed, allowSelfLoops=allowSelfLoops, allowParallelEdges=False,
                    dictionary={"generated_by": "TGraph.BySpatialRelationships", "relationship": relationship})
         for t in topologies:
-            TGraph._Phase4AddTopologyVertex(g, t, category=0, label=TGraph._Phase4TopologyType(t),
+            TGraph._AddTopologyVertex(g, t, category=0, label=TGraph._TopologyType(t),
                                              storeBREP=storeBREP, mantissa=mantissa, tolerance=tolerance,
                                              extra={"role": "spatial_object"})
         rel = str(relationship or "intersects").strip().lower()
@@ -1970,8 +2169,8 @@ class TGraph:
                         return float(Topology.Distance(a, b)) <= tolerance
                     except Exception:
                         try:
-                            ca = TGraph._Phase4Coordinates(a, mantissa=mantissa, tolerance=tolerance)
-                            cb = TGraph._Phase4Coordinates(b, mantissa=mantissa, tolerance=tolerance)
+                            ca = TGraph._TopologyCoordinates(a, mantissa=mantissa, tolerance=tolerance)
+                            cb = TGraph._TopologyCoordinates(b, mantissa=mantissa, tolerance=tolerance)
                             return ca is not None and cb is not None and math.dist(ca, cb) <= tolerance
                         except Exception:
                             return False
@@ -2011,7 +2210,7 @@ class TGraph:
                 if i == j and not allowSelfLoops:
                     continue
                 if related(topologies[i], topologies[j]):
-                    TGraph._Phase4AddRelationship(g, i, j, relationship=rel, category="spatial", source=None, directed=directed)
+                    TGraph._AddRelationship(g, i, j, relationship=rel, category="spatial", source=None, directed=directed)
         return g
 
     @staticmethod
@@ -2050,7 +2249,7 @@ class TGraph:
         g = TGraph(directed=not bidirectional, allowSelfLoops=False, allowParallelEdges=False,
                    dictionary={"generated_by": "TGraph.VisibilityGraph"})
         for v in vertices:
-            d = TGraph._Phase4TopologyDictionary(v, mantissa=6, tolerance=tolerance)
+            d = TGraph._TopologyDictionary(v, mantissa=6, tolerance=tolerance)
             d["role"] = "viewpoint"
             g.AddVertex(dictionary=d, representation=v)
 
@@ -2117,7 +2316,7 @@ class TGraph:
         """
 
         if not kwargs.get("silent", False):
-            print("TGraph.ByIFCPath - Warning: IFC import is scheduled for a later Phase 4/5 pass. Returning None.")
+            print("TGraph.ByIFCPath - Warning: IFC import is not available in this TGraph implementation. Returning None.")
         return None
 
     @staticmethod
@@ -2127,7 +2326,7 @@ class TGraph:
         """
 
         if not kwargs.get("silent", False):
-            print("TGraph.ByIFCFile - Warning: IFC import is scheduled for a later Phase 4/5 pass. Returning None.")
+            print("TGraph.ByIFCFile - Warning: IFC import is not available in this TGraph implementation. Returning None.")
         return None
 
 
@@ -2148,14 +2347,14 @@ class TGraph:
 
 
     @staticmethod
-    def _V2SetVertexValue(graph: "TGraph", stable_index: int, key: Optional[str], value: Any) -> None:
+    def _DijkstraStateetVertexValue(graph: "TGraph", stable_index: int, key: Optional[str], value: Any) -> None:
         if key is None or not isinstance(graph, TGraph):
             return
         if graph._validate_vertex_index(stable_index, active=False):
             graph._vertices[stable_index].setdefault("dictionary", {})[key] = value
 
     @staticmethod
-    def _V2BFSCompact(adj: List[List[int]], source: int) -> Tuple[List[int], List[int]]:
+    def _BFSCompiledStateompact(adj: List[List[int]], source: int) -> Tuple[List[int], List[int]]:
         n = len(adj)
         dist = [-1] * n
         parent = [-1] * n
@@ -2208,15 +2407,24 @@ class TGraph:
         if not isinstance(c, dict) or index not in c["position"]:
             return 0
         p = c["position"][index]
-        return len(TGraph.CompiledAdjacency(graph, mode=mode)[p])
+        mode_l = str(mode).lower()
+        if mode_l == "in":
+            return int(c["degree_in"][p])
+        if mode_l == "out":
+            return int(c["degree_out"][p])
+        return int(c["degree_all"][p])
 
     @staticmethod
     def DegreeSequence(graph: "TGraph", mode: str = "all") -> List[int]:
         c = TGraph.Compile(graph)
         if not isinstance(c, dict):
             return []
-        adj = TGraph.CompiledAdjacency(graph, mode=mode)
-        return [len(row) for row in adj]
+        mode_l = str(mode).lower()
+        if mode_l == "in":
+            return [int(d) for d in c["degree_in"]]
+        if mode_l == "out":
+            return [int(d) for d in c["degree_out"]]
+        return [int(d) for d in c["degree_all"]]
 
 
 
@@ -2260,7 +2468,7 @@ class TGraph:
         n = c["n"]
         values = []
         for s in range(n):
-            dist, _ = TGraph._V2BFSCompact(adj, s)
+            dist, _ = TGraph._BFSCompiledStateompact(adj, s)
             reachable_distances = [d for d in dist if d >= 0]
             reachable = len(reachable_distances)
             if reachable <= 1:
@@ -2272,7 +2480,7 @@ class TGraph:
                     value *= float(reachable - 1) / float(n - 1)
             value = round(value, mantissa)
             values.append(value)
-            TGraph._V2SetVertexValue(graph, c["vertices"][s], key, value)
+            TGraph._DijkstraStateetVertexValue(graph, c["vertices"][s], key, value)
         return values
 
     @staticmethod
@@ -2322,7 +2530,7 @@ class TGraph:
         for i, value in enumerate(cb):
             value = round(value, mantissa)
             values.append(value)
-            TGraph._V2SetVertexValue(graph, c["vertices"][i], key, value)
+            TGraph._DijkstraStateetVertexValue(graph, c["vertices"][i], key, value)
         return values
 
     @staticmethod
@@ -2336,7 +2544,7 @@ class TGraph:
         adj = TGraph.CompiledAdjacency(graph, mode=mode)
         diameter = 0
         for s in range(n):
-            dist, _ = TGraph._V2BFSCompact(adj, s)
+            dist, _ = TGraph._BFSCompiledStateompact(adj, s)
             if any(d < 0 for d in dist):
                 return None
             diameter = max(diameter, max(dist))
@@ -2384,7 +2592,6 @@ class TGraph:
     # TGraph v2.1 hot-path optimisation layer
     # ---------------------------------------------------------------------
 
-    PHASE21_HOTPATH_OPTIMISATION = True
 
     @staticmethod
     def ByDictionaries(
@@ -2500,7 +2707,7 @@ class TGraph:
         )
 
     @staticmethod
-    def _V21AdjacencyCompact(graph: "TGraph", mode: str = "out", weightKey: str = "weight") -> Tuple[Optional[Dict[str, Any]], List[List[int]]]:
+    def _AdjacencyMatrixFastArraydjacencyCompact(graph: "TGraph", mode: str = "out", weightKey: str = "weight") -> Tuple[Optional[Dict[str, Any]], List[List[int]]]:
         c = TGraph.Compile(graph, weightKey=weightKey)
         if not isinstance(c, dict):
             return None, []
@@ -2517,7 +2724,7 @@ class TGraph:
         Returns BFS traversal order using compiled adjacency.
         """
 
-        c, adj = TGraph._V21AdjacencyCompact(graph, mode=mode)
+        c, adj = TGraph._AdjacencyMatrixFastArraydjacencyCompact(graph, mode=mode)
         if not isinstance(c, dict) or source not in c["position"]:
             return []
         start = c["position"][source]
@@ -2542,7 +2749,7 @@ class TGraph:
         Returns connected components using compiled adjacency.
         """
 
-        c, adj = TGraph._V21AdjacencyCompact(graph, mode=mode)
+        c, adj = TGraph._AdjacencyMatrixFastArraydjacencyCompact(graph, mode=mode)
         if not isinstance(c, dict):
             return []
         n = c["n"]
@@ -2616,17 +2823,16 @@ class TGraph:
 
 
     # ---------------------------------------------------------------------
-    # TGraph v2.2 optional acceleration layer
+    # Optional acceleration layer
     # ---------------------------------------------------------------------
 
-    PHASE22_ACCELERATION = True
-    _V22_NUMBA_BFS_PARENT = None
+    _NUMBA_BFS_PARENT = None
 
     @staticmethod
     def Compile(graph: "TGraph", weightKey: str = "weight", force: bool = False,
                 useNumpy: bool = True, useSciPy: bool = True, useNumba: bool = False) -> Optional[Dict[str, Any]]:
         """
-        Returns a v2.2 compiled integer-indexed kernel.
+        Returns a compiled integer-indexed kernel.
 
         The kernel always contains compact Python adjacency rows. When available,
         it also contains NumPy CSR-style arrays and optional SciPy CSR matrices.
@@ -2648,6 +2854,9 @@ class TGraph:
         adj_out_sets = [set() for _ in range(n)]
         adj_in_sets = [set() for _ in range(n)]
         adj_all_sets = [set() for _ in range(n)]
+        degree_out_counts = [0 for _ in range(n)]
+        degree_in_counts = [0 for _ in range(n)]
+        degree_all_counts = [0 for _ in range(n)]
         compiled_edges: List[Dict[str, Any]] = []
         edge_lookup_compact: Dict[Tuple[int, int, bool], List[int]] = {}
 
@@ -2693,12 +2902,35 @@ class TGraph:
             dst_expanded.append(dst)
             weight_expanded.append(weight)
 
+            if directed:
+                degree_out_counts[src] += 1
+                degree_in_counts[dst] += 1
+                if src == dst:
+                    degree_all_counts[src] += 2
+                else:
+                    degree_all_counts[src] += 1
+                    degree_all_counts[dst] += 1
+            else:
+                if src == dst:
+                    # NetworkX-compatible undirected self-loop degree.
+                    degree_out_counts[src] += 2
+                    degree_in_counts[src] += 2
+                    degree_all_counts[src] += 2
+                else:
+                    degree_out_counts[src] += 1
+                    degree_out_counts[dst] += 1
+                    degree_in_counts[src] += 1
+                    degree_in_counts[dst] += 1
+                    degree_all_counts[src] += 1
+                    degree_all_counts[dst] += 1
+
             if not directed:
                 adj_out_sets[dst].add(src)
                 adj_in_sets[src].add(dst)
-                src_expanded.append(dst)
-                dst_expanded.append(src)
-                weight_expanded.append(weight)
+                if src != dst:
+                    src_expanded.append(dst)
+                    dst_expanded.append(src)
+                    weight_expanded.append(weight)
 
             key = (src, dst, directed) if directed else ((src, dst, False) if src <= dst else (dst, src, False))
             edge_lookup_compact.setdefault(key, []).append(edge_id)
@@ -2706,9 +2938,10 @@ class TGraph:
         adj_out = [sorted(row) for row in adj_out_sets]
         adj_in = [sorted(row) for row in adj_in_sets]
         adj_all = [sorted(row) for row in adj_all_sets]
-        degree_out = [len(row) for row in adj_out]
-        degree_in = [len(row) for row in adj_in]
-        degree_all = [len(row) for row in adj_all]
+        degree_out = degree_out_counts
+        degree_in = degree_in_counts
+        degree_all = degree_all_counts
+        pagerank_out_degree = [len(row) for row in adj_out]
 
         compiled = {
             "version": graph._version,
@@ -2758,6 +2991,7 @@ class TGraph:
                 compiled["degree_out_np"] = _np.asarray(degree_out, dtype=_np.int64)
                 compiled["degree_in_np"] = _np.asarray(degree_in, dtype=_np.int64)
                 compiled["degree_all_np"] = _np.asarray(degree_all, dtype=_np.int64)
+                compiled["pagerank_out_degree_np"] = _np.asarray(pagerank_out_degree, dtype=_np.int64)
                 compiled["numpy_available"] = True
             except Exception as exc:
                 compiled["numpy_error"] = f"{type(exc).__name__}: {exc}"
@@ -2791,10 +3025,10 @@ class TGraph:
         return c["adj_out"]
 
     @staticmethod
-    def _V22NumbaBFSParent():
+    def _NumbaShortestPathKernelumbaBFSParent():
         try:
-            if TGraph._V22_NUMBA_BFS_PARENT is not None:
-                return TGraph._V22_NUMBA_BFS_PARENT
+            if TGraph._NUMBA_BFS_PARENT is not None:
+                return TGraph._NUMBA_BFS_PARENT
             import numpy as _np
             from numba import njit
             @njit(cache=False)
@@ -2823,7 +3057,7 @@ class TGraph:
                             queue[tail] = v
                             tail += 1
                 return parent, found
-            TGraph._V22_NUMBA_BFS_PARENT = _bfs_parent
+            TGraph._NUMBA_BFS_PARENT = _bfs_parent
             return _bfs_parent
         except Exception:
             return None
@@ -2846,7 +3080,7 @@ class TGraph:
                 import numpy as _np
                 src = c["src_expanded"]
                 dst = c["dst_expanded"]
-                out_deg = c["degree_out_np"].astype(float)
+                out_deg = c.get("pagerank_out_degree_np", c["degree_out_np"]).astype(float)
                 rank = _np.full(n, 1.0 / n, dtype=float)
                 base = (1.0 - damping) / n
                 active_sources = out_deg[src] > 0
@@ -2902,11 +3136,10 @@ class TGraph:
 
 
     # ---------------------------------------------------------------------
-    # TGraph v2.3 hot-path correction layer
+    # Compiled-kernel construction and hot-path helpers
     # ---------------------------------------------------------------------
 
-    PHASE23_HOTPATH_CORRECTION = True
-    _V23_NUMBA_BFS_ALL_PARENT = None
+    _NUMBA_BFS_ALL_PARENT = None
 
     @staticmethod
     def AccelerationReport() -> Dict[str, Any]:
@@ -2914,9 +3147,6 @@ class TGraph:
         Returns information about optional acceleration libraries available to TGraph.
         """
         report = {
-            "phase22": True,
-            "phase23": True,
-            "phase24": True,
             "numpy": False,
             "scipy": False,
             "numba": False,
@@ -3091,10 +3321,10 @@ class TGraph:
         return values
 
     @staticmethod
-    def _V23NumbaBFSAllParent():
+    def _NumbaBFSMultiTargetKernelumbaBFSAllParent():
         try:
-            if TGraph._V23_NUMBA_BFS_ALL_PARENT is not None:
-                return TGraph._V23_NUMBA_BFS_ALL_PARENT
+            if TGraph._NUMBA_BFS_ALL_PARENT is not None:
+                return TGraph._NUMBA_BFS_ALL_PARENT
             import numpy as _np
             from numba import njit
 
@@ -3125,13 +3355,13 @@ class TGraph:
                             tail += 1
                 return parent, dist
 
-            TGraph._V23_NUMBA_BFS_ALL_PARENT = _bfs_all_parent
+            TGraph._NUMBA_BFS_ALL_PARENT = _bfs_all_parent
             return _bfs_all_parent
         except Exception:
             return None
 
     @staticmethod
-    def _Phase23AdjacencyKeys(mode: str) -> Tuple[str, str, str]:
+    def _CompiledAdjacencyKeys(mode: str) -> Tuple[str, str, str]:
         mode_l = str(mode).lower()
         if mode_l == "in":
             return "adj_in", "indptr_in", "indices_in"
@@ -3156,10 +3386,10 @@ class TGraph:
         if s == t:
             return [source]
 
-        adj_key, indptr_key, indices_key = TGraph._Phase23AdjacencyKeys(mode)
+        adj_key, indptr_key, indices_key = TGraph._CompiledAdjacencyKeys(mode)
 
         if useNumba and c.get("numpy_available", False):
-            bfs = TGraph._V22NumbaBFSParent()
+            bfs = TGraph._NumbaShortestPathKernelumbaBFSParent()
             if bfs is not None and indptr_key in c and indices_key in c:
                 try:
                     parent, found = bfs(c[indptr_key], c[indices_key], s, t)
@@ -3221,15 +3451,13 @@ class TGraph:
 
 
     # ---------------------------------------------------------------------
-    # Phase 2.4: adaptive path queries and shortest-path trees
+    # Adaptive path queries and shortest-path trees
     # ---------------------------------------------------------------------
 
-    PHASE24_ADAPTIVE_PATHS = True
-    PHASE24_HOTPATH_CORRECTION = True  # Backwards-compatible marker for v2.4 benchmark harnesses.
-    _V24_NUMBA_BFS_TREE = None
+    _NUMBA_BFS_TREE = None
 
     @staticmethod
-    def _V24NumbaBFSTree():
+    def _NumbaBFSTreeKernelumbaBFSTree():
         """
         Returns a cached Numba BFS tree kernel.
 
@@ -3238,8 +3466,8 @@ class TGraph:
         unreachable vertices have distance -1 and parent -1.
         """
         try:
-            if TGraph._V24_NUMBA_BFS_TREE is not None:
-                return TGraph._V24_NUMBA_BFS_TREE
+            if TGraph._NUMBA_BFS_TREE is not None:
+                return TGraph._NUMBA_BFS_TREE
             import numpy as _np
             from numba import njit
 
@@ -3271,7 +3499,7 @@ class TGraph:
                             tail += 1
                 return parent, distance
 
-            TGraph._V24_NUMBA_BFS_TREE = _bfs_tree
+            TGraph._NUMBA_BFS_TREE = _bfs_tree
             return _bfs_tree
         except Exception:
             return None
@@ -3329,7 +3557,7 @@ class TGraph:
         if useNumba and c.get("numpy_available", False):
             indptr_key = "indptr_in" if mode == "in" else ("indptr_all" if mode == "all" else "indptr_out")
             indices_key = "indices_in" if mode == "in" else ("indices_all" if mode == "all" else "indices_out")
-            bfs_tree = TGraph._V24NumbaBFSTree()
+            bfs_tree = TGraph._NumbaBFSTreeKernelumbaBFSTree()
             if bfs_tree is not None and indptr_key in c and indices_key in c:
                 try:
                     parent_compact, distance_compact = bfs_tree(c[indptr_key], c[indices_key], s)
@@ -3461,7 +3689,7 @@ class TGraph:
         return result
 
     @staticmethod
-    def _Phase24PairGroupingStats(pairs: Iterable[Tuple[int, int]]) -> Dict[str, Any]:
+    def _PairGroupingStats(pairs: Iterable[Tuple[int, int]]) -> Dict[str, Any]:
         pair_list = [p for p in list(pairs or []) if isinstance(p, (list, tuple)) and len(p) >= 2]
         by_source: Dict[int, int] = {}
         for s, _ in pair_list:
@@ -3499,7 +3727,7 @@ class TGraph:
         if not pair_list:
             return []
 
-        stats = TGraph._Phase24PairGroupingStats(pair_list)
+        stats = TGraph._PairGroupingStats(pair_list)
         if str(grouped).lower() == "auto":
             use_grouped = stats["average_targets_per_source"] >= float(groupThreshold)
         else:
@@ -3562,7 +3790,7 @@ class TGraph:
             vertices = TGraph.ActiveVertexIndices(graph)
         except Exception:
             try:
-                vertices = TGraph._Phase3ActiveVertexIndices(graph)
+                vertices = TGraph._ActiveVertexIndices(graph)
             except Exception:
                 vertices = []
 
@@ -3613,7 +3841,7 @@ class TGraph:
             values.append(value)
             if key is not None:
                 try:
-                    TGraph._Phase3SetVertexValue(graph, v, key, value)
+                    TGraph._SetVertexValue(graph, v, key, value)
                 except Exception:
                     try:
                         d = graph._vertices[v].get("dictionary", {})
@@ -3631,7 +3859,6 @@ class TGraph:
         c = TGraph.Compile(graph, useNumpy=True, useSciPy=True, useNumba=useNumba, force=True)
         report = TGraph.AccelerationReport()
         report["compiled"] = isinstance(c, dict)
-        report["phase24"] = True
         if useNumba and isinstance(c, dict) and c.get("n", 0) >= 2:
             try:
                 verts = c["vertices"]
@@ -3643,3 +3870,2196 @@ class TGraph:
                 report["numba_warmed"] = False
                 report["numba_warm_error"] = f"{type(exc).__name__}: {exc}"
         return report
+
+    # ---------------------------------------------------------------------
+    # v3.0 parity: LineGraph and CSV import/export
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def LineGraph(
+        graph: "TGraph",
+        directed: Optional[bool] = None,
+        transferDictionaries: bool = True,
+        vertexLabelKey: str = "label",
+        originalEdgeKey: str = "original_edge_index",
+        sharedVertexKey: str = "shared_vertex_index",
+        relationshipKey: str = "relationship",
+    ) -> Optional["TGraph"]:
+        """
+        Returns the line graph of the input graph.
+
+        In the returned graph, each active edge of the input graph becomes a
+        vertex. Two line-graph vertices are connected when their corresponding
+        input edges are adjacent.
+
+        Conventions
+        -----------
+        Undirected input graph
+            Two line-graph vertices are adjacent if the corresponding input
+            edges share at least one endpoint. The line graph is undirected.
+
+        Directed input graph
+            There is a directed edge from line-graph vertex e1 to line-graph
+            vertex e2 when dst(e1) == src(e2). This matches the standard
+            directed line-graph convention used by NetworkX.
+
+        Self-loops
+            A self-loop is treated as an edge incident to its source/destination
+            vertex. In a directed graph, a self-loop can connect to following
+            edges according to dst(e1) == src(e2), including itself only when
+            self-loops are allowed in the returned line graph.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input graph.
+        directed : bool , optional
+            If specified, sets whether the returned line graph is directed.
+            If None, the input graph's directedness is used.
+        transferDictionaries : bool , optional
+            If True, transfers input edge dictionaries to line-graph vertices.
+            Default is True.
+        vertexLabelKey : str , optional
+            Key for a readable line-graph vertex label. Default is "label".
+        originalEdgeKey : str , optional
+            Key storing the original edge index. Default is "original_edge_index".
+        sharedVertexKey : str , optional
+            Key storing the shared original vertex index on line-graph edges.
+            Default is "shared_vertex_index".
+        relationshipKey : str , optional
+            Key storing the relationship label on line-graph edges. Default is
+            "relationship".
+
+        Returns
+        -------
+        TGraph
+            The line graph.
+        """
+
+        if not isinstance(graph, TGraph):
+            return None
+
+        output_directed = graph._directed if directed is None else bool(directed)
+        active_edges = [e for e in graph._edges if e.get("active", True)]
+
+        lg = TGraph(
+            directed=output_directed,
+            allowSelfLoops=graph._allow_self_loops,
+            allowParallelEdges=graph._allow_parallel_edges,
+            dictionary={
+                "source": "TGraph.LineGraph",
+                "source_order": TGraph.Order(graph),
+                "source_size": TGraph.Size(graph),
+                "source_directed": graph._directed,
+            },
+        )
+
+        edge_to_vertex = {}
+        for e in active_edges:
+            eidx = e.get("index")
+            d = dict(e.get("dictionary", {})) if transferDictionaries else {}
+            d[originalEdgeKey] = eidx
+            d["src"] = e.get("src")
+            d["dst"] = e.get("dst")
+            d["directed"] = e.get("directed", graph._directed)
+            d.setdefault(vertexLabelKey, f"e{eidx}")
+            edge_to_vertex[eidx] = lg.AddVertex(dictionary=d, representation=e.get("representation"))
+
+        if graph._directed:
+            # Directed line graph: (u, v) -> (v, w).
+            outgoing_by_src = {}
+            for e in active_edges:
+                outgoing_by_src.setdefault(e.get("src"), []).append(e)
+
+            for e1 in active_edges:
+                e1idx = e1.get("index")
+                v = e1.get("dst")
+                for e2 in outgoing_by_src.get(v, []):
+                    e2idx = e2.get("index")
+                    if e1idx == e2idx and not lg._allow_self_loops:
+                        continue
+                    dictionary = {
+                        relationshipKey: "directed_edge_adjacency",
+                        sharedVertexKey: v,
+                        "from_original_edge_index": e1idx,
+                        "to_original_edge_index": e2idx,
+                    }
+                    lg.AddEdge(edge_to_vertex[e1idx], edge_to_vertex[e2idx], directed=output_directed, dictionary=dictionary)
+        else:
+            # Undirected line graph: connect any two edges sharing an endpoint.
+            incident_by_vertex = {}
+            for e in active_edges:
+                incident_by_vertex.setdefault(e.get("src"), []).append(e)
+                if e.get("dst") != e.get("src"):
+                    incident_by_vertex.setdefault(e.get("dst"), []).append(e)
+
+            seen_pairs = set()
+            for shared_vertex, incident_edges in incident_by_vertex.items():
+                m = len(incident_edges)
+                for i in range(m):
+                    for j in range(i + 1, m):
+                        e1 = incident_edges[i]
+                        e2 = incident_edges[j]
+                        e1idx = e1.get("index")
+                        e2idx = e2.get("index")
+                        a, b = sorted((e1idx, e2idx))
+                        pair = (a, b)
+                        if pair in seen_pairs:
+                            continue
+                        seen_pairs.add(pair)
+                        dictionary = {
+                            relationshipKey: "edge_adjacency",
+                            sharedVertexKey: shared_vertex,
+                            "edge_a_index": a,
+                            "edge_b_index": b,
+                        }
+                        lg.AddEdge(edge_to_vertex[a], edge_to_vertex[b], directed=output_directed, dictionary=dictionary)
+
+        return lg
+
+    @staticmethod
+    def VerticesCSVString(graph: "TGraph", includeInactive: bool = False) -> str:
+        """
+        Returns a CSV string for the graph's vertex records.
+        """
+
+        if not isinstance(graph, TGraph):
+            return ""
+
+        keys = set(["index", "active"])
+        rows = []
+        for v in graph._vertices:
+            if not includeInactive and not v.get("active", True):
+                continue
+            d = dict(v.get("dictionary", {}))
+            d["index"] = v.get("index")
+            d["active"] = v.get("active", True)
+            rows.append(d)
+            keys.update(d.keys())
+
+        fieldnames = ["index", "active"] + sorted(k for k in keys if k not in ("index", "active"))
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+        return out.getvalue()
+
+    @staticmethod
+    def EdgesCSVString(graph: "TGraph", includeInactive: bool = False) -> str:
+        """
+        Returns a CSV string for the graph's edge records.
+        """
+
+        if not isinstance(graph, TGraph):
+            return ""
+
+        keys = set(["index", "src", "dst", "directed", "active"])
+        rows = []
+        for e in graph._edges:
+            if not includeInactive and not e.get("active", True):
+                continue
+            d = dict(e.get("dictionary", {}))
+            d["index"] = e.get("index")
+            d["src"] = e.get("src")
+            d["dst"] = e.get("dst")
+            d["directed"] = e.get("directed", graph._directed)
+            d["active"] = e.get("active", True)
+            rows.append(d)
+            keys.update(d.keys())
+
+        fieldnames = ["index", "src", "dst", "directed", "active"] + sorted(k for k in keys if k not in ("index", "src", "dst", "directed", "active"))
+        out = io.StringIO()
+        writer = csv.DictWriter(out, fieldnames=fieldnames, extrasaction="ignore")
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({k: row.get(k, "") for k in fieldnames})
+        return out.getvalue()
+
+    @staticmethod
+    def CSVData(graph: "TGraph", includeInactive: bool = False) -> Dict[str, Any]:
+        """
+        Returns CSV serialisation data for a graph.
+
+        Returns a dictionary with keys:
+        - metadata
+        - vertices_csv
+        - edges_csv
+        """
+
+        if not isinstance(graph, TGraph):
+            return {}
+        return {
+            "metadata": {
+                "type": "TGraphCSV",
+                "directed": graph._directed,
+                "allowSelfLoops": graph._allow_self_loops,
+                "allowParallelEdges": graph._allow_parallel_edges,
+                "dictionary": dict(graph._dictionary),
+            },
+            "vertices_csv": TGraph.VerticesCSVString(graph, includeInactive=includeInactive),
+            "edges_csv": TGraph.EdgesCSVString(graph, includeInactive=includeInactive),
+        }
+
+    @staticmethod
+    def _CSVValue(value: Any) -> Any:
+        """
+        Converts a CSV string value into a Python value where appropriate.
+        """
+
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            return value
+        text = value.strip()
+        if text == "":
+            return None
+        low = text.lower()
+        if low == "true":
+            return True
+        if low == "false":
+            return False
+        if low == "none" or low == "null":
+            return None
+        try:
+            if any(ch in text for ch in [".", "e", "E"]):
+                return float(text)
+            return int(text)
+        except Exception:
+            pass
+        try:
+            return json.loads(text)
+        except Exception:
+            return text
+
+    @staticmethod
+    def ByCSVStrings(
+        verticesCSVString: str,
+        edgesCSVString: str,
+        metadata: Optional[Dict[str, Any]] = None,
+        directed: Optional[bool] = None,
+        allowSelfLoops: Optional[bool] = None,
+        allowParallelEdges: Optional[bool] = None,
+    ) -> Optional["TGraph"]:
+        """
+        Constructs a TGraph from vertex and edge CSV strings.
+        """
+
+        if not isinstance(verticesCSVString, str) or not isinstance(edgesCSVString, str):
+            return None
+
+        metadata = metadata if isinstance(metadata, dict) else {}
+        graph_directed = bool(metadata.get("directed", False)) if directed is None else bool(directed)
+        graph_allow_self = bool(metadata.get("allowSelfLoops", True)) if allowSelfLoops is None else bool(allowSelfLoops)
+        graph_allow_parallel = bool(metadata.get("allowParallelEdges", False)) if allowParallelEdges is None else bool(allowParallelEdges)
+        graph_dictionary = metadata.get("dictionary", {}) if isinstance(metadata.get("dictionary", {}), dict) else {}
+
+        g = TGraph(
+            directed=graph_directed,
+            allowSelfLoops=graph_allow_self,
+            allowParallelEdges=graph_allow_parallel,
+            dictionary=graph_dictionary,
+        )
+
+        reader = csv.DictReader(io.StringIO(verticesCSVString))
+        vertex_rows = []
+        for row in reader:
+            converted = {k: TGraph._CSVValue(v) for k, v in row.items() if k is not None}
+            vertex_rows.append(converted)
+
+        vertex_rows.sort(key=lambda r: int(r.get("index", len(vertex_rows))) if r.get("index") is not None else len(vertex_rows))
+        index_map = {}
+        for row in vertex_rows:
+            old_index = row.get("index")
+            active = bool(row.get("active", True))
+            d = {k: v for k, v in row.items() if k not in ("index", "active") and v is not None}
+            new_index = g.AddVertex(dictionary=d)
+            if old_index is not None:
+                index_map[int(old_index)] = new_index
+            if not active:
+                g.RemoveVertex(new_index)
+
+        reader = csv.DictReader(io.StringIO(edgesCSVString))
+        for row in reader:
+            converted = {k: TGraph._CSVValue(v) for k, v in row.items() if k is not None}
+            src = converted.get("src")
+            dst = converted.get("dst")
+            if src is None or dst is None:
+                continue
+            src = index_map.get(int(src), int(src))
+            dst = index_map.get(int(dst), int(dst))
+            edge_directed = converted.get("directed", graph_directed)
+            active = bool(converted.get("active", True))
+            d = {k: v for k, v in converted.items() if k not in ("index", "src", "dst", "directed", "active") and v is not None}
+            eid = g.AddEdge(src, dst, directed=bool(edge_directed), dictionary=d)
+            if eid is not None and not active:
+                g.RemoveEdge(eid)
+
+        return g
+
+
+    @staticmethod
+    def _CSVFlatten(items: Any) -> List[Any]:
+        """
+        Flattens nested lists/tuples for CSV feature-key handling.
+        """
+
+        if items is None:
+            return []
+        if not isinstance(items, (list, tuple)):
+            return [items]
+        result = []
+        for item in items:
+            if isinstance(item, (list, tuple)):
+                result.extend(TGraph._CSVFlatten(item))
+            else:
+                result.append(item)
+        return result
+
+    @staticmethod
+    def _CSVFeatureHeaders(prefix: str, featureKeys: List[Any]) -> List[str]:
+        """
+        Returns feature headers matching Graph.ExportGraphsToCSV convention.
+
+        If a supplied feature key already includes the requested prefix, it is
+        returned unchanged. This prevents headers such as ``feat_feat_area``
+        when callers pass keys that are already named ``feat_area``.
+        """
+
+        headers = []
+        prefix = str(prefix) if prefix is not None else "feat"
+        prefix_with_sep = prefix + "_"
+
+        for key in featureKeys or []:
+            key = str(key)
+            if key.startswith(prefix_with_sep):
+                headers.append(key)
+            else:
+                headers.append(f"{prefix}_{key}")
+        return headers
+
+    @staticmethod
+    def _CSVLastGraphID(csvPath: str) -> int:
+        """
+        Returns the last graph id from the first column of a CSV file.
+        """
+
+        import os
+        if not os.path.exists(csvPath):
+            return -1
+        try:
+            with open(csvPath, "rb") as f:
+                f.seek(0, os.SEEK_END)
+                size = f.tell()
+                if size == 0:
+                    return -1
+                chunk = 4096
+                data = b""
+                pos = size
+                while pos > 0:
+                    step = chunk if pos >= chunk else pos
+                    pos -= step
+                    f.seek(pos, os.SEEK_SET)
+                    data = f.read(step) + data
+                    lines = data.splitlines()
+                    if len(lines) >= 2:
+                        break
+                for line in reversed(lines):
+                    if not line.strip():
+                        continue
+                    s = line.decode("utf-8", errors="ignore")
+                    first = s.split(",", 1)[0].strip()
+                    if first == "" or first.lower() == "graph_id":
+                        continue
+                    try:
+                        return int(float(first))
+                    except Exception:
+                        return -1
+        except Exception:
+            return -1
+        return -1
+
+    @staticmethod
+    def _CSVMaskFromDictionaryOrRatio(
+        dictionary: Optional[Dict[str, Any]],
+        maskKey: Optional[str],
+        trainMax: int,
+        validateMax: int,
+        counts: Dict[str, int],
+    ) -> Tuple[bool, bool, bool]:
+        """
+        Returns train/validate/test booleans using Graph.ExportGraphsToCSV logic.
+        """
+
+        if maskKey is not None and isinstance(dictionary, dict):
+            value = dictionary.get(maskKey)
+            if value in [0, 1, 2, "0", "1", "2"]:
+                value = int(value)
+                if value == 0:
+                    counts["train"] += 1
+                    return True, False, False
+                if value == 1:
+                    counts["val"] += 1
+                    return False, True, False
+                counts["test"] += 1
+                return False, False, True
+
+        if counts["train"] < trainMax:
+            counts["train"] += 1
+            return True, False, False
+        if counts["val"] < validateMax:
+            counts["val"] += 1
+            return False, True, False
+        counts["test"] += 1
+        return False, False, True
+
+    @staticmethod
+    def _CSVFeatureValues(dictionary: Optional[Dict[str, Any]], featureKeys: List[Any], mantissa: int = 6) -> List[float]:
+        """
+        Returns a stable numeric feature vector. Missing/invalid values become 0.0.
+        """
+
+        if not featureKeys:
+            return []
+        d = dictionary if isinstance(dictionary, dict) else {}
+        values = []
+        for key in featureKeys:
+            try:
+                value = d.get(key, None)
+                if value is None:
+                    values.append(0.0)
+                else:
+                    values.append(round(float(value), mantissa))
+            except Exception:
+                values.append(0.0)
+        return values
+
+    @staticmethod
+    def _CSVLabelValue(dictionary: Optional[Dict[str, Any]], key: str, defaultValue: Any) -> Any:
+        """
+        Returns label value from dictionary with fallback.
+        """
+
+        d = dictionary if isinstance(dictionary, dict) else {}
+        value = d.get(key, None)
+        return defaultValue if value is None else value
+
+    @staticmethod
+    def ExportToCSV(
+        graph,
+        path,
+
+        graphLabelKey="label",
+        defaultGraphLabel=0,
+        graphFeaturesKeys=None,
+        graphIDHeader="graph_id",
+        graphLabelHeader="label",
+        graphFeaturesHeader="feat",
+
+        edgeLabelKey="label",
+        defaultEdgeLabel=0,
+        edgeFeaturesKeys=None,
+        edgeSRCHeader="src_id",
+        edgeDSTHeader="dst_id",
+        edgeLabelHeader="label",
+        edgeFeaturesHeader="feat",
+        edgeTrainMaskHeader="train_mask",
+        edgeValidateMaskHeader="val_mask",
+        edgeTestMaskHeader="test_mask",
+        edgeMaskKey="mask",
+        edgeTrainRatio=0.8,
+        edgeValidateRatio=0.1,
+        edgeTestRatio=0.1,
+        bidirectional=True,
+
+        nodeLabelKey="label",
+        defaultNodeLabel=0,
+        nodeFeaturesKeys=None,
+        nodeIDHeader="node_id",
+        nodeLabelHeader="label",
+        nodeFeaturesHeader="feat",
+        nodeTrainMaskHeader="train_mask",
+        nodeValidateMaskHeader="val_mask",
+        nodeTestMaskHeader="test_mask",
+        nodeMaskKey="mask",
+        nodeTrainRatio=0.8,
+        nodeValidateRatio=0.1,
+        nodeTestRatio=0.1,
+
+        mantissa=6,
+        tolerance=0.0001,
+        overwrite=False,
+        silent=False,
+    ):
+        """
+        Exports the input TGraph or list of TGraphs into CSV files compatible
+        with the Graph.ExportToCSV / Graph.ExportGraphsToCSV PyG format.
+
+        The exported directory contains:
+        - graphs.csv
+        - nodes.csv
+        - edges.csv
+        - meta.yaml
+        """
+
+        if not isinstance(graph, list):
+            graph = [graph]
+        graph = [g for g in graph if isinstance(g, TGraph)]
+        if len(graph) < 1:
+            if not silent:
+                print("TGraph.ExportToCSV - Error: The input graph parameter does not contain any valid TGraphs. Returning None")
+            return None
+
+        return TGraph.ExportGraphsToCSV(
+            graphs=graph,
+            path=path,
+            graphLabelKey=graphLabelKey,
+            defaultGraphLabel=defaultGraphLabel,
+            graphFeaturesKeys=graphFeaturesKeys,
+            graphIDHeader=graphIDHeader,
+            graphLabelHeader=graphLabelHeader,
+            graphFeaturesHeader=graphFeaturesHeader,
+
+            edgeLabelKey=edgeLabelKey,
+            defaultEdgeLabel=defaultEdgeLabel,
+            edgeFeaturesKeys=edgeFeaturesKeys,
+            edgeSRCHeader=edgeSRCHeader,
+            edgeDSTHeader=edgeDSTHeader,
+            edgeLabelHeader=edgeLabelHeader,
+            edgeFeaturesHeader=edgeFeaturesHeader,
+            edgeTrainMaskHeader=edgeTrainMaskHeader,
+            edgeValidateMaskHeader=edgeValidateMaskHeader,
+            edgeTestMaskHeader=edgeTestMaskHeader,
+            edgeMaskKey=edgeMaskKey,
+            edgeTrainRatio=edgeTrainRatio,
+            edgeValidateRatio=edgeValidateRatio,
+            edgeTestRatio=edgeTestRatio,
+            bidirectional=bidirectional,
+
+            nodeLabelKey=nodeLabelKey,
+            defaultNodeLabel=defaultNodeLabel,
+            nodeFeaturesKeys=nodeFeaturesKeys,
+            nodeIDHeader=nodeIDHeader,
+            nodeLabelHeader=nodeLabelHeader,
+            nodeFeaturesHeader=nodeFeaturesHeader,
+            nodeTrainMaskHeader=nodeTrainMaskHeader,
+            nodeValidateMaskHeader=nodeValidateMaskHeader,
+            nodeTestMaskHeader=nodeTestMaskHeader,
+            nodeMaskKey=nodeMaskKey,
+            nodeTrainRatio=nodeTrainRatio,
+            nodeValidateRatio=nodeValidateRatio,
+            nodeTestRatio=nodeTestRatio,
+
+            mantissa=mantissa,
+            tolerance=tolerance,
+            overwrite=overwrite,
+            silent=silent,
+        )
+
+    @staticmethod
+    def ExportGraphsToCSV(
+        graphs,
+        path,
+        graphLabelKey="label",
+        defaultGraphLabel=0,
+        graphFeaturesKeys=None,
+        graphIDHeader="graph_id",
+        graphLabelHeader="label",
+        graphFeaturesHeader="feat",
+
+        edgeLabelKey="label",
+        defaultEdgeLabel=0,
+        edgeFeaturesKeys=None,
+        edgeSRCHeader="src_id",
+        edgeDSTHeader="dst_id",
+        edgeLabelHeader="label",
+        edgeFeaturesHeader="feat",
+        edgeTrainMaskHeader="train_mask",
+        edgeValidateMaskHeader="val_mask",
+        edgeTestMaskHeader="test_mask",
+        edgeMaskKey="mask",
+        edgeTrainRatio=0.8,
+        edgeValidateRatio=0.1,
+        edgeTestRatio=0.1,
+        bidirectional=True,
+
+        nodeLabelKey="label",
+        defaultNodeLabel=0,
+        nodeFeaturesKeys=None,
+        nodeIDHeader="node_id",
+        nodeLabelHeader="label",
+        nodeFeaturesHeader="feat",
+        nodeTrainMaskHeader="train_mask",
+        nodeValidateMaskHeader="val_mask",
+        nodeTestMaskHeader="test_mask",
+        nodeMaskKey="mask",
+        nodeTrainRatio=0.8,
+        nodeValidateRatio=0.1,
+        nodeTestRatio=0.1,
+        mantissa=6,
+        tolerance=0.0001,
+        overwrite=False,
+        silent=False,
+    ):
+        """
+        Batch-exports a list of TGraphs to CSV files compatible with the
+        existing Graph.ExportGraphsToCSV / PyG pipeline.
+
+        Files written
+        -------------
+        graphs.csv
+            graph_id, label, feat_<graph feature key>...
+        nodes.csv
+            graph_id, node_id, label, train_mask, val_mask, test_mask,
+            feat_<node feature key>..., X, Y, Z
+        edges.csv
+            graph_id, src_id, dst_id, label, train_mask, val_mask, test_mask,
+            feat_<edge feature key>...
+        meta.yaml
+            PyG-style dataset metadata.
+        """
+
+        import os
+        import csv as _csv
+        import math as _math
+        import random as _random
+
+        def _err(message):
+            if not silent:
+                print(message)
+            return None
+
+        if graphs is None or not isinstance(graphs, list) or len(graphs) == 0:
+            return _err("TGraph.ExportGraphsToCSV - Error: 'graphs' must be a non-empty list. Returning None.")
+
+        graphs = [g for g in graphs if isinstance(g, TGraph)]
+        if len(graphs) == 0:
+            return _err("TGraph.ExportGraphsToCSV - Error: 'graphs' does not contain valid TGraphs. Returning None.")
+
+        if abs(float(nodeTrainRatio) + float(nodeValidateRatio) + float(nodeTestRatio) - 1.0) > 0.001:
+            return _err("TGraph.ExportGraphsToCSV - Error: node train/val/test ratios must add up to 1. Returning None.")
+        if abs(float(edgeTrainRatio) + float(edgeValidateRatio) + float(edgeTestRatio) - 1.0) > 0.001:
+            return _err("TGraph.ExportGraphsToCSV - Error: edge train/val/test ratios must add up to 1. Returning None.")
+
+        try:
+            os.makedirs(path, exist_ok=True)
+        except Exception:
+            return _err("TGraph.ExportGraphsToCSV - Error: Could not create output folder. Returning None.")
+
+        graphsCSV = os.path.join(path, "graphs.csv")
+        nodesCSV = os.path.join(path, "nodes.csv")
+        edgesCSV = os.path.join(path, "edges.csv")
+
+        if overwrite is False:
+            if not os.path.exists(graphsCSV):
+                return _err("TGraph.ExportGraphsToCSV - Error: overwrite=False but graphs.csv not found. Returning None.")
+            if not os.path.exists(nodesCSV):
+                return _err("TGraph.ExportGraphsToCSV - Error: overwrite=False but nodes.csv not found. Returning None.")
+            if not os.path.exists(edgesCSV):
+                return _err("TGraph.ExportGraphsToCSV - Error: overwrite=False but edges.csv not found. Returning None.")
+
+        startGraphID = 0 if overwrite else (TGraph._CSVLastGraphID(graphsCSV) + 1)
+
+        graphFeatureKeys = TGraph._CSVFlatten([] if graphFeaturesKeys is None else graphFeaturesKeys)
+        nodeFeatureKeys = TGraph._CSVFlatten([] if nodeFeaturesKeys is None else nodeFeaturesKeys)
+        edgeFeatureKeys = TGraph._CSVFlatten([] if edgeFeaturesKeys is None else edgeFeaturesKeys)
+
+        graphFeatureHeaders = TGraph._CSVFeatureHeaders(graphFeaturesHeader, graphFeatureKeys)
+        nodeFeatureHeaders = TGraph._CSVFeatureHeaders(nodeFeaturesHeader, nodeFeatureKeys)
+        edgeFeatureHeaders = TGraph._CSVFeatureHeaders(edgeFeaturesHeader, edgeFeatureKeys)
+
+        graphsHeader = [graphIDHeader, graphLabelHeader] + graphFeatureHeaders
+        nodesHeader = [
+            graphIDHeader,
+            nodeIDHeader,
+            nodeLabelHeader,
+            nodeTrainMaskHeader,
+            nodeValidateMaskHeader,
+            nodeTestMaskHeader,
+        ] + nodeFeatureHeaders + ["X", "Y", "Z"]
+        edgesHeader = [
+            graphIDHeader,
+            edgeSRCHeader,
+            edgeDSTHeader,
+            edgeLabelHeader,
+            edgeTrainMaskHeader,
+            edgeValidateMaskHeader,
+            edgeTestMaskHeader,
+        ] + edgeFeatureHeaders
+
+        graphsMode = "w" if overwrite else "a"
+        nodesMode = "w" if overwrite else "a"
+        edgesMode = "w" if overwrite else "a"
+
+        try:
+            with open(graphsCSV, graphsMode, newline="", encoding="utf-8") as fg, \
+                 open(nodesCSV, nodesMode, newline="", encoding="utf-8") as fn, \
+                 open(edgesCSV, edgesMode, newline="", encoding="utf-8") as fe:
+
+                wg = _csv.writer(fg)
+                wn = _csv.writer(fn)
+                we = _csv.writer(fe)
+
+                if overwrite:
+                    wg.writerow(graphsHeader)
+                    wn.writerow(nodesHeader)
+                    we.writerow(edgesHeader)
+
+                for offset, graph in enumerate(graphs):
+                    graphID = startGraphID + offset
+                    graphDictionary = dict(graph._dictionary) if isinstance(graph._dictionary, dict) else {}
+                    graphLabel = TGraph._CSVLabelValue(graphDictionary, graphLabelKey, defaultGraphLabel)
+                    graphFeatures = TGraph._CSVFeatureValues(graphDictionary, graphFeatureKeys, mantissa=mantissa)
+                    wg.writerow([graphID, graphLabel] + graphFeatures)
+
+                    activeVertices = [v for v in graph._vertices if v.get("active", True)]
+                    if len(activeVertices) < 3:
+                        return _err(f"TGraph.ExportGraphsToCSV - Error: graph {graphID} is too small (<3 vertices). Returning None.")
+
+                    vertices = _random.sample(activeVertices, len(activeVertices))
+                    nodeCount = len(vertices)
+                    nodeTrainMax = max(1, _math.floor(nodeCount * float(nodeTrainRatio)))
+                    nodeValidateMax = max(1, _math.floor(nodeCount * float(nodeValidateRatio)))
+                    nodeCounts = {"train": 0, "val": 0, "test": 0}
+
+                    vertexIndexToNodeID = {}
+                    for nodeID, vertexRecord in enumerate(vertices):
+                        vertexIndex = vertexRecord.get("index")
+                        vertexIndexToNodeID[vertexIndex] = nodeID
+                        vertexDictionary = dict(vertexRecord.get("dictionary", {}))
+                        nodeLabel = TGraph._CSVLabelValue(vertexDictionary, nodeLabelKey, defaultNodeLabel)
+                        trainMask, validateMask, testMask = TGraph._CSVMaskFromDictionaryOrRatio(
+                            vertexDictionary,
+                            nodeMaskKey,
+                            nodeTrainMax,
+                            nodeValidateMax,
+                            nodeCounts,
+                        )
+                        nodeFeatures = TGraph._CSVFeatureValues(vertexDictionary, nodeFeatureKeys, mantissa=mantissa)
+                        coordinates = TGraph.Coordinates(graph, vertexIndex, default=[0.0, 0.0, 0.0])
+                        if coordinates is None:
+                            coordinates = [0.0, 0.0, 0.0]
+                        x = round(float(coordinates[0]), mantissa)
+                        y = round(float(coordinates[1]), mantissa)
+                        z = round(float(coordinates[2]), mantissa)
+                        wn.writerow([graphID, nodeID, nodeLabel, trainMask, validateMask, testMask] + nodeFeatures + [x, y, z])
+
+                    activeEdges = [e for e in graph._edges if e.get("active", True)]
+                    edgeCount = len(activeEdges)
+                    edgeTrainMax = _math.floor(edgeCount * float(edgeTrainRatio))
+                    edgeValidateMax = _math.floor(edgeCount * float(edgeValidateRatio))
+                    edgeCounts = {"train": 0, "val": 0, "test": 0}
+
+                    for edgeRecord in activeEdges:
+                        src = edgeRecord.get("src")
+                        dst = edgeRecord.get("dst")
+                        if src not in vertexIndexToNodeID or dst not in vertexIndexToNodeID:
+                            continue
+                        edgeDictionary = dict(edgeRecord.get("dictionary", {}))
+                        edgeLabel = TGraph._CSVLabelValue(edgeDictionary, edgeLabelKey, defaultEdgeLabel)
+                        trainMask, validateMask, testMask = TGraph._CSVMaskFromDictionaryOrRatio(
+                            edgeDictionary,
+                            edgeMaskKey,
+                            edgeTrainMax,
+                            edgeValidateMax,
+                            edgeCounts,
+                        )
+                        edgeFeatures = TGraph._CSVFeatureValues(edgeDictionary, edgeFeatureKeys, mantissa=mantissa)
+                        srcID = vertexIndexToNodeID[src]
+                        dstID = vertexIndexToNodeID[dst]
+                        we.writerow([graphID, srcID, dstID, edgeLabel, trainMask, validateMask, testMask] + edgeFeatures)
+                        if bidirectional:
+                            we.writerow([graphID, dstID, srcID, edgeLabel, trainMask, validateMask, testMask] + edgeFeatures)
+
+            with open(os.path.join(path, "meta.yaml"), "w", encoding="utf-8") as yamlFile:
+                yamlFile.write(
+                    "dataset_name: topologic_dataset\n"
+                    "edge_data:\n- file_name: edges.csv\n"
+                    "node_data:\n- file_name: nodes.csv\n"
+                    "graph_data:\n  file_name: graphs.csv\n"
+                )
+            return True
+        except Exception as exc:
+            return _err(f"TGraph.ExportGraphsToCSV - Error: {exc}. Returning None.")
+
+    @staticmethod
+    def ByCSVPath(
+        path: str,
+        graphIDHeader: str = "graph_id",
+        graphLabelHeader: str = "label",
+        edgeSRCHeader: str = "src_id",
+        edgeDSTHeader: str = "dst_id",
+        edgeLabelHeader: str = "label",
+        nodeIDHeader: str = "node_id",
+        nodeLabelHeader: str = "label",
+        directed: bool = False,
+        allowSelfLoops: bool = True,
+        allowParallelEdges: bool = True,
+        silent: bool = False,
+    ):
+        """
+        Imports TGraphs from Graph/PyG-compatible CSV files.
+
+        If the directory contains graphs.csv, nodes.csv, and edges.csv, returns
+        a list of TGraphs, one per graph_id. This mirrors the dataset-oriented
+        CSV structure used by Graph.ExportGraphsToCSV and the PyG class.
+
+        For backwards compatibility with the earlier TGraph-only CSV export,
+        if metadata.json, vertices.csv, and edges.csv are found instead, returns
+        a single TGraph from those files.
+        """
+
+        import os
+        import csv as _csv
+
+        def _err(message):
+            if not silent:
+                print(message)
+            return None
+
+        if not isinstance(path, str):
+            return None
+
+        graphsCSV = os.path.join(path, "graphs.csv")
+        nodesCSV = os.path.join(path, "nodes.csv")
+        edgesCSV = os.path.join(path, "edges.csv")
+
+        if os.path.exists(graphsCSV) and os.path.exists(nodesCSV) and os.path.exists(edgesCSV):
+            try:
+                graphRows = []
+                with open(graphsCSV, newline="", encoding="utf-8") as f:
+                    for row in _csv.DictReader(f):
+                        graphRows.append({k: TGraph._CSVValue(v) for k, v in row.items() if k is not None})
+
+                nodeRowsByGraph = {}
+                with open(nodesCSV, newline="", encoding="utf-8") as f:
+                    for row in _csv.DictReader(f):
+                        converted = {k: TGraph._CSVValue(v) for k, v in row.items() if k is not None}
+                        gid = converted.get(graphIDHeader)
+                        nodeRowsByGraph.setdefault(gid, []).append(converted)
+
+                edgeRowsByGraph = {}
+                with open(edgesCSV, newline="", encoding="utf-8") as f:
+                    for row in _csv.DictReader(f):
+                        converted = {k: TGraph._CSVValue(v) for k, v in row.items() if k is not None}
+                        gid = converted.get(graphIDHeader)
+                        edgeRowsByGraph.setdefault(gid, []).append(converted)
+
+                result = []
+                graphRows.sort(key=lambda r: int(r.get(graphIDHeader, 0)))
+                for graphRow in graphRows:
+                    gid = graphRow.get(graphIDHeader)
+                    graphDictionary = {k: v for k, v in graphRow.items() if k != graphIDHeader and v is not None}
+                    g = TGraph(
+                        directed=directed,
+                        allowSelfLoops=allowSelfLoops,
+                        allowParallelEdges=allowParallelEdges,
+                        dictionary=graphDictionary,
+                    )
+
+                    nodeRows = sorted(nodeRowsByGraph.get(gid, []), key=lambda r: int(r.get(nodeIDHeader, 0)))
+                    nodeIDToVertexIndex = {}
+                    for nodeRow in nodeRows:
+                        nodeID = int(nodeRow.get(nodeIDHeader, len(nodeIDToVertexIndex)))
+                        d = {}
+                        for k, v in nodeRow.items():
+                            if k in [graphIDHeader, nodeIDHeader, "X", "Y", "Z"]:
+                                continue
+                            if v is not None:
+                                d[k] = v
+                        if nodeLabelHeader in nodeRow:
+                            d.setdefault("label", nodeRow.get(nodeLabelHeader))
+                        for coordKey in ["X", "Y", "Z"]:
+                            if coordKey in nodeRow and nodeRow.get(coordKey) is not None:
+                                d[coordKey.lower()] = float(nodeRow.get(coordKey))
+                        nodeIDToVertexIndex[nodeID] = g.AddVertex(dictionary=d)
+
+                    for edgeRow in edgeRowsByGraph.get(gid, []):
+                        srcID = edgeRow.get(edgeSRCHeader)
+                        dstID = edgeRow.get(edgeDSTHeader)
+                        if srcID is None or dstID is None:
+                            continue
+                        srcID = int(srcID)
+                        dstID = int(dstID)
+                        if srcID not in nodeIDToVertexIndex or dstID not in nodeIDToVertexIndex:
+                            continue
+                        d = {}
+                        for k, v in edgeRow.items():
+                            if k in [graphIDHeader, edgeSRCHeader, edgeDSTHeader]:
+                                continue
+                            if v is not None:
+                                d[k] = v
+                        if edgeLabelHeader in edgeRow:
+                            d.setdefault("label", edgeRow.get(edgeLabelHeader))
+                        g.AddEdge(nodeIDToVertexIndex[srcID], nodeIDToVertexIndex[dstID], dictionary=d)
+                    result.append(g)
+                return result
+            except Exception as exc:
+                return _err(f"TGraph.ByCSVPath - Error: {exc}. Returning None.")
+
+        # Backwards compatibility with earlier TGraph v3.0 record CSV format.
+        try:
+            from pathlib import Path
+            folder = Path(path)
+            metadataPath = folder / "metadata.json"
+            verticesPath = folder / "vertices.csv"
+            edgesPath = folder / "edges.csv"
+            if metadataPath.exists() and verticesPath.exists() and edgesPath.exists():
+                metadata = json.loads(metadataPath.read_text(encoding="utf-8"))
+                verticesCSV = verticesPath.read_text(encoding="utf-8")
+                edgesCSV = edgesPath.read_text(encoding="utf-8")
+                return TGraph.ByCSVStrings(verticesCSV, edgesCSV, metadata=metadata)
+        except Exception:
+            pass
+
+        return _err("TGraph.ByCSVPath - Error: Could not find compatible CSV files. Returning None.")
+
+
+    # ---------------------------------------------------------------------
+    # v3.0 ontology / RDF / JSON-LD parity
+    # ---------------------------------------------------------------------
+
+
+    @staticmethod
+    def _OntologyConfig() -> Dict[str, Any]:
+        """Returns ontology constants, using topologicpy.Ontology when available."""
+        fallback_namespaces = {
+            "bot": "https://w3id.org/bot#",
+            "brick": "https://brickschema.org/schema/Brick#",
+            "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+            "xsd": "http://www.w3.org/2001/XMLSchema#",
+            "owl": "http://www.w3.org/2002/07/owl#",
+            "top": "http://w3id.org/topologicpy#",
+        }
+        fallback_top_to_bot = {
+            "top:Site": "bot:Site",
+            "top:Building": "bot:Building",
+            "top:Storey": "bot:Storey",
+            "top:Zone": "bot:Zone",
+            "top:Space": "bot:Space",
+            "top:Room": "bot:Space",
+            "top:Element": "bot:Element",
+            "top:Wall": "bot:Element",
+            "top:Door": "bot:Element",
+            "top:Window": "bot:Element",
+            "top:Slab": "bot:Element",
+            "top:Roof": "bot:Element",
+            "top:Column": "bot:Element",
+            "top:Beam": "bot:Element",
+            "top:Interface": "bot:Interface",
+        }
+        fallback_categories = {
+            "top:Graph": "graph",
+            "top:SpatialGraph": "graph",
+            "top:AdjacencyGraph": "graph",
+            "top:VisibilityGraph": "graph",
+            "top:CirculationGraph": "graph",
+            "top:ConnectivityGraph": "graph",
+            "top:KnowledgeGraph": "graph",
+            "top:Node": "topology",
+            "top:Vertex": "topology",
+            "top:Relationship": "topology",
+            "top:Edge": "topology",
+            "top:Space": "space",
+            "top:Room": "space",
+            "top:Wall": "element",
+            "top:Door": "element",
+            "top:Window": "element",
+            "top:Element": "element",
+        }
+        fallback_ifc = {
+            "IfcProject": "top:Project",
+            "IfcSite": "top:Site",
+            "IfcBuilding": "top:Building",
+            "IfcBuildingStorey": "top:Storey",
+            "IfcSpace": "top:Space",
+            "IfcZone": "top:Zone",
+            "IfcWall": "top:Wall",
+            "IfcWallStandardCase": "top:Wall",
+            "IfcCurtainWall": "top:Wall",
+            "IfcDoor": "top:Door",
+            "IfcWindow": "top:Window",
+            "IfcSlab": "top:Slab",
+            "IfcRoof": "top:Roof",
+            "IfcColumn": "top:Column",
+            "IfcBeam": "top:Beam",
+            "IfcOpeningElement": "top:Opening",
+            "IfcFurnishingElement": "top:Furniture",
+            "IfcFurniture": "top:Furniture",
+            "IfcDistributionElement": "top:Equipment",
+            "IfcBuildingElementProxy": "top:Element",
+        }
+        fallback_aliases = {
+            "startsAt": "hasStartVertex",
+            "endsAt": "hasEndVertex",
+            "connectedTo": "connectsTo",
+            "x": "hasX",
+            "y": "hasY",
+            "z": "hasZ",
+            "length": "hasLength",
+            "area": "hasArea",
+            "volume": "hasVolume",
+            "mantissa": "hasMantissa",
+            "unit": "hasUnit",
+        }
+        config = {
+            "namespaces": fallback_namespaces,
+            "top_to_bot": fallback_top_to_bot,
+            "categories": fallback_categories,
+            "ifc_to_top": fallback_ifc,
+            "aliases": fallback_aliases,
+        }
+        try:
+            from topologicpy.Ontology import Ontology
+            config["namespaces"] = dict(getattr(Ontology, "NAMESPACES", fallback_namespaces))
+            config["top_to_bot"] = dict(getattr(Ontology, "TOP_TO_BOT", fallback_top_to_bot))
+            config["categories"] = dict(getattr(Ontology, "TOP_CATEGORIES", fallback_categories))
+            config["ifc_to_top"] = dict(getattr(Ontology, "IFC_TO_TOP", fallback_ifc))
+            config["aliases"] = dict(getattr(Ontology, "PROPERTY_ALIASES", fallback_aliases))
+        except Exception:
+            pass
+        return config
+
+    @staticmethod
+    def _OntologyDictionary(graph: "TGraph", element: str = "graph", index: Optional[int] = None) -> Optional[Dict[str, Any]]:
+        if not isinstance(graph, TGraph):
+            return None
+        element = str(element or "graph").lower()
+        if element in ("graph", "g"):
+            if not isinstance(graph._dictionary, dict):
+                graph._dictionary = {}
+            return graph._dictionary
+        if element in ("vertex", "node", "v"):
+            if not graph._validate_vertex_index(index, active=False):
+                return None
+            return graph._vertices[index].setdefault("dictionary", {})
+        if element in ("edge", "relationship", "e"):
+            if not graph._validate_edge_index(index, active=False):
+                return None
+            return graph._edges[index].setdefault("dictionary", {})
+        return None
+
+    @staticmethod
+    def _OntologyGet(graph: "TGraph", key: str, defaultValue: Any = None, element: str = "graph", index: Optional[int] = None) -> Any:
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if not isinstance(d, dict):
+            return defaultValue
+        value = d.get(key, defaultValue)
+        return defaultValue if value is None else value
+
+    @staticmethod
+    def _OntologySet(graph: "TGraph", key: str, value: Any, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
+        if key is None:
+            return None
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if not isinstance(d, dict):
+            return None
+        d[str(key)] = value
+        if isinstance(graph, TGraph):
+            graph._invalidate_cache()
+        return graph
+
+    @staticmethod
+    def _OntologySafeString(value: Any) -> str:
+        if value is None:
+            return ""
+        return str(value).replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n").replace("\r", "\\r")
+
+    @staticmethod
+    def _OntologySafeLocalName(value: Any) -> str:
+        import re
+        if value is None:
+            return "unnamed"
+        s = str(value).strip()
+        if s == "":
+            return "unnamed"
+        s = re.sub(r"[^A-Za-z0-9_\-]", "_", s)
+        if s == "":
+            s = "unnamed"
+        if s[0].isdigit():
+            s = "id_" + s
+        return s
+
+    @staticmethod
+    def _OntologyRDFLiteral(value: Any) -> str:
+        if isinstance(value, bool):
+            return '"' + str(value).lower() + '"^^xsd:boolean'
+        if isinstance(value, int) and not isinstance(value, bool):
+            return '"' + str(value) + '"^^xsd:integer'
+        if isinstance(value, float):
+            return '"' + repr(float(value)) + '"^^xsd:double'
+        return '"' + TGraph._OntologySafeString(value) + '"'
+
+    @staticmethod
+    def _OntologyExpandQName(qname: str, defaultValue: Any = None) -> Any:
+        if not isinstance(qname, str) or ":" not in qname:
+            return defaultValue
+        prefix, local = qname.split(":", 1)
+        ns = TGraph._OntologyConfig()["namespaces"].get(prefix)
+        if ns is None:
+            return defaultValue
+        return ns + local
+
+    @staticmethod
+    def _OntologyPropertyQName(key: str, defaultPrefix: str = "top") -> Optional[str]:
+        if key is None:
+            return None
+        key = str(key).strip()
+        if key == "":
+            return None
+        if ":" in key:
+            return key
+        aliases = TGraph._OntologyConfig()["aliases"]
+        key = aliases.get(key, key)
+        return str(defaultPrefix) + ":" + TGraph._OntologySafeLocalName(key)
+
+    @staticmethod
+    def _OntologySubjectFromDictionary(dictionary: Dict[str, Any], fallback: str, namespacePrefix: str = "inst") -> str:
+        d = dictionary if isinstance(dictionary, dict) else {}
+        for key in ("uri", "ifc_guid", "global_id", "guid", "label", "name"):
+            value = d.get(key, None)
+            if value not in (None, ""):
+                if key == "uri" and ":" in str(value):
+                    return str(value)
+                return namespacePrefix + ":" + TGraph._OntologySafeLocalName(value)
+        return namespacePrefix + ":" + TGraph._OntologySafeLocalName(fallback)
+
+    @staticmethod
+    def OntologyClass(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
+        return TGraph._OntologyGet(graph, "ontology_class", defaultValue=defaultValue, element=element, index=index)
+
+    @staticmethod
+    def SetOntologyClass(graph: "TGraph", ontologyClass: str, element: str = "graph", index: Optional[int] = None,
+                         setCategory: bool = True, setURI: bool = True) -> Optional["TGraph"]:
+        if not isinstance(ontologyClass, str) or ontologyClass.strip() == "":
+            return None
+        ontologyClass = ontologyClass.strip()
+        graph = TGraph._OntologySet(graph, "ontology_class", ontologyClass, element=element, index=index)
+        if graph is None:
+            return None
+        if setCategory:
+            category = TGraph.CategoryByOntologyClass(ontologyClass, defaultValue=None)
+            if category is not None:
+                TGraph.SetOntologyCategory(graph, category, element=element, index=index)
+        if setURI:
+            uri = TGraph._OntologyExpandQName(ontologyClass, defaultValue=None)
+            if uri is not None:
+                TGraph._OntologySet(graph, "ontology_uri", uri, element=element, index=index)
+        return graph
+
+    @staticmethod
+    def OntologyCategory(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
+        return TGraph._OntologyGet(graph, "category", defaultValue=defaultValue, element=element, index=index)
+
+    @staticmethod
+    def SetOntologyCategory(graph: "TGraph", category: str, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
+        if not isinstance(category, str) or category.strip() == "":
+            return None
+        return TGraph._OntologySet(graph, "category", category.strip(), element=element, index=index)
+
+    @staticmethod
+    def OntologyLabel(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
+        return TGraph._OntologyGet(graph, "label", defaultValue=defaultValue, element=element, index=index)
+
+    @staticmethod
+    def SetOntologyLabel(graph: "TGraph", label: Any, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
+        return TGraph._OntologySet(graph, "label", label, element=element, index=index)
+
+    @staticmethod
+    def OntologyURI(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
+        return TGraph._OntologyGet(graph, "uri", defaultValue=defaultValue, element=element, index=index)
+
+    @staticmethod
+    def SetOntologyURI(graph: "TGraph", uri: str, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
+        if not isinstance(uri, str) or uri.strip() == "":
+            return None
+        return TGraph._OntologySet(graph, "uri", uri.strip(), element=element, index=index)
+
+    @staticmethod
+    def CategoryByOntologyClass(ontologyClass: str, defaultValue: Any = None) -> Any:
+        if ontologyClass is None:
+            return defaultValue
+        return TGraph._OntologyConfig()["categories"].get(str(ontologyClass).strip(), defaultValue)
+
+    @staticmethod
+    def BOTClassByOntologyClass(ontologyClass: str, defaultValue: Any = None) -> Any:
+        if ontologyClass is None:
+            return defaultValue
+        ontologyClass = str(ontologyClass).strip()
+        config = TGraph._OntologyConfig()
+        if ontologyClass in config["top_to_bot"]:
+            return config["top_to_bot"][ontologyClass]
+        return defaultValue
+
+    @staticmethod
+    def OntologyClassByIFCClass(ifcClass: str, defaultValue: Any = "top:Element") -> Any:
+        if ifcClass is None:
+            return defaultValue
+        return TGraph._OntologyConfig()["ifc_to_top"].get(str(ifcClass).strip(), defaultValue)
+
+    @staticmethod
+    def AnnotateOntology(
+        graph: "TGraph",
+        ontologyClass: Optional[str] = None,
+        category: Optional[str] = None,
+        label: Any = None,
+        uri: Optional[str] = None,
+        source: Any = None,
+        derivedFrom: Any = None,
+        generatedBy: Any = None,
+        element: str = "graph",
+        index: Optional[int] = None,
+    ) -> Optional["TGraph"]:
+        if not isinstance(graph, TGraph):
+            return None
+        if ontologyClass is not None:
+            if TGraph.SetOntologyClass(graph, ontologyClass, element=element, index=index) is None:
+                return None
+        if category is not None:
+            TGraph.SetOntologyCategory(graph, category, element=element, index=index)
+        if label is not None:
+            TGraph.SetOntologyLabel(graph, label, element=element, index=index)
+        if uri is not None:
+            TGraph.SetOntologyURI(graph, uri, element=element, index=index)
+        if source is not None:
+            TGraph._OntologySet(graph, "source", source, element=element, index=index)
+        if derivedFrom is not None:
+            TGraph._OntologySet(graph, "derived_from", derivedFrom, element=element, index=index)
+        if generatedBy is not None:
+            TGraph._OntologySet(graph, "generated_by", generatedBy, element=element, index=index)
+        return graph
+
+    @staticmethod
+    def AnnotateIFC(
+        graph: "TGraph",
+        ifcClass: Optional[str] = None,
+        ifcGUID: Optional[str] = None,
+        ifcName: Optional[str] = None,
+        source: Optional[str] = None,
+        element: str = "graph",
+        index: Optional[int] = None,
+    ) -> Optional["TGraph"]:
+        if not isinstance(graph, TGraph):
+            return None
+        if ifcClass is not None:
+            TGraph._OntologySet(graph, "ifc_class", ifcClass, element=element, index=index)
+            ontologyClass = TGraph.OntologyClassByIFCClass(ifcClass, defaultValue=None)
+            if ontologyClass is not None:
+                TGraph.SetOntologyClass(graph, ontologyClass, element=element, index=index)
+        if ifcGUID is not None:
+            TGraph._OntologySet(graph, "ifc_guid", ifcGUID, element=element, index=index)
+        if ifcName is not None:
+            TGraph.SetOntologyLabel(graph, ifcName, element=element, index=index)
+        if source is not None:
+            TGraph._OntologySet(graph, "source", source, element=element, index=index)
+        return graph
+
+    @staticmethod
+    def NormalizeOntologyDictionaries(
+        graph: "TGraph",
+        labelKeys: Optional[List[str]] = None,
+        categoryKeys: Optional[List[str]] = None,
+        ifcClassKeys: Optional[List[str]] = None,
+        ifcGUIDKeys: Optional[List[str]] = None,
+        includeGraph: bool = True,
+        includeVertices: bool = True,
+        includeEdges: bool = True,
+    ) -> Optional["TGraph"]:
+        if not isinstance(graph, TGraph):
+            return None
+        labelKeys = labelKeys or ["name", "Name", "LongName", "ifc_name", "label"]
+        categoryKeys = categoryKeys or ["category", "type", "ObjectType"]
+        ifcClassKeys = ifcClassKeys or ["ifc_class", "IfcClass", "class", "type"]
+        ifcGUIDKeys = ifcGUIDKeys or ["ifc_guid", "GlobalId", "global_id", "guid"]
+
+        def _first(d, keys):
+            for k in keys:
+                if isinstance(d, dict) and d.get(k, None) not in (None, ""):
+                    return d.get(k)
+            return None
+
+        targets = []
+        if includeGraph:
+            targets.append(("graph", None, graph._dictionary))
+        if includeVertices:
+            for v in graph._vertices:
+                targets.append(("vertex", v.get("index"), v.get("dictionary", {})))
+        if includeEdges:
+            for e in graph._edges:
+                targets.append(("edge", e.get("index"), e.get("dictionary", {})))
+
+        for element, index, d in targets:
+            label = _first(d, labelKeys)
+            category = _first(d, categoryKeys)
+            ifcClass = _first(d, ifcClassKeys)
+            ifcGUID = _first(d, ifcGUIDKeys)
+            if label is not None:
+                TGraph.SetOntologyLabel(graph, label, element=element, index=index)
+            if category is not None:
+                TGraph.SetOntologyCategory(graph, str(category).lower(), element=element, index=index)
+            if ifcClass is not None:
+                TGraph.AnnotateIFC(graph, ifcClass=ifcClass, element=element, index=index)
+            if ifcGUID is not None:
+                TGraph._OntologySet(graph, "ifc_guid", ifcGUID, element=element, index=index)
+        return graph
+
+    @staticmethod
+    def OntologyTriples(
+        graph: "TGraph",
+        includeVertices: bool = True,
+        includeEdges: bool = True,
+        includeDictionaries: bool = True,
+        includeBOT: bool = True,
+        namespacePrefix: str = "inst",
+    ) -> List[Tuple[str, str, str]]:
+        if not isinstance(graph, TGraph):
+            return []
+        triples: List[Tuple[str, str, str]] = []
+        graph_subject = TGraph._OntologySubjectFromDictionary(graph._dictionary, "graph", namespacePrefix=namespacePrefix)
+        graph_class = graph._dictionary.get("ontology_class", "top:Graph")
+        triples.append((graph_subject, "rdf:type", graph_class))
+        if includeBOT:
+            botClass = TGraph.BOTClassByOntologyClass(graph_class)
+            if botClass is not None:
+                triples.append((graph_subject, "rdf:type", botClass))
+
+        def _dictionary_triples(subject, d, default_class=None):
+            local = []
+            d = d if isinstance(d, dict) else {}
+            ontologyClass = d.get("ontology_class", default_class)
+            if ontologyClass is not None and (subject, "rdf:type", ontologyClass) not in triples:
+                local.append((subject, "rdf:type", ontologyClass))
+                if includeBOT:
+                    botClass = TGraph.BOTClassByOntologyClass(ontologyClass)
+                    if botClass is not None:
+                        local.append((subject, "rdf:type", botClass))
+            label = d.get("label", None)
+            if label is not None:
+                local.append((subject, "rdfs:label", TGraph._OntologyRDFLiteral(label)))
+            category = d.get("category", None)
+            if category is not None:
+                local.append((subject, "top:category", TGraph._OntologyRDFLiteral(category)))
+            if includeDictionaries:
+                skip = {"ontology_class", "ontology_uri", "label", "category", "uri"}
+                for key, value in d.items():
+                    if key in skip or value is None:
+                        continue
+                    predicate = TGraph._OntologyPropertyQName(key)
+                    if predicate is None:
+                        continue
+                    if isinstance(value, (list, tuple)):
+                        for item in value:
+                            local.append((subject, predicate, TGraph._OntologyRDFLiteral(item)))
+                    else:
+                        local.append((subject, predicate, TGraph._OntologyRDFLiteral(value)))
+            return local
+
+        triples.extend(_dictionary_triples(graph_subject, graph._dictionary, default_class="top:Graph"))
+
+        vertex_subjects: Dict[int, str] = {}
+        if includeVertices:
+            for v in graph._vertices:
+                if not v.get("active", True):
+                    continue
+                idx = v.get("index")
+                d = dict(v.get("dictionary", {}))
+                subject = TGraph._OntologySubjectFromDictionary(d, f"vertex_{idx}", namespacePrefix=namespacePrefix)
+                vertex_subjects[idx] = subject
+                triples.append((graph_subject, "top:hasNode", subject))
+                triples.extend(_dictionary_triples(subject, d, default_class="top:Node"))
+                coords = TGraph.Coordinates(graph, idx, default=None)
+                if coords is not None:
+                    triples.append((subject, "top:hasX", TGraph._OntologyRDFLiteral(float(coords[0]))))
+                    triples.append((subject, "top:hasY", TGraph._OntologyRDFLiteral(float(coords[1]))))
+                    triples.append((subject, "top:hasZ", TGraph._OntologyRDFLiteral(float(coords[2]))))
+
+        if includeEdges:
+            for e in graph._edges:
+                if not e.get("active", True):
+                    continue
+                idx = e.get("index")
+                src = e.get("src")
+                dst = e.get("dst")
+                d = dict(e.get("dictionary", {}))
+                subject = TGraph._OntologySubjectFromDictionary(d, f"edge_{idx}", namespacePrefix=namespacePrefix)
+                triples.append((graph_subject, "top:hasRelationship", subject))
+                triples.extend(_dictionary_triples(subject, d, default_class="top:Relationship"))
+                sv = vertex_subjects.get(src, namespacePrefix + ":" + TGraph._OntologySafeLocalName(f"vertex_{src}"))
+                tv = vertex_subjects.get(dst, namespacePrefix + ":" + TGraph._OntologySafeLocalName(f"vertex_{dst}"))
+                triples.append((subject, "top:hasStartVertex", sv))
+                triples.append((subject, "top:hasEndVertex", tv))
+                triples.append((sv, "top:connectsTo", tv))
+                if not e.get("directed", graph._directed):
+                    triples.append((tv, "top:connectsTo", sv))
+        return triples
+
+    @staticmethod
+    def TurtleFromTriples(
+        triples: List[Tuple[str, str, str]],
+        namespaces: Optional[Dict[str, str]] = None,
+        instanceNamespace: str = "http://w3id.org/topologicpy/instance#",
+        includeHeader: bool = True,
+    ) -> str:
+        namespaces = dict(namespaces or TGraph._OntologyConfig()["namespaces"])
+        if "inst" not in namespaces:
+            namespaces["inst"] = instanceNamespace
+        lines: List[str] = []
+        if includeHeader:
+            for prefix, uri in namespaces.items():
+                lines.append(f"@prefix {prefix}: <{uri}> .")
+            lines.append("")
+        for triple in triples or []:
+            if not isinstance(triple, (list, tuple)) or len(triple) != 3:
+                continue
+            s, p, o = triple
+            if s is None or p is None or o is None:
+                continue
+            lines.append(f"{s} {p} {o} .")
+        return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def TTLString(
+        graph: "TGraph",
+        includeVertices: bool = True,
+        includeEdges: bool = True,
+        includeDictionaries: bool = True,
+        includeBOT: bool = True,
+        namespacePrefix: str = "inst",
+        instanceNamespace: str = "http://w3id.org/topologicpy/instance#",
+        silent: bool = False,
+    ) -> Optional[str]:
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.TTLString - Error: The input graph is not a valid TGraph. Returning None.")
+            return None
+        triples = TGraph.OntologyTriples(
+            graph,
+            includeVertices=includeVertices,
+            includeEdges=includeEdges,
+            includeDictionaries=includeDictionaries,
+            includeBOT=includeBOT,
+            namespacePrefix=namespacePrefix,
+        )
+        return TGraph.TurtleFromTriples(triples, instanceNamespace=instanceNamespace)
+
+    @staticmethod
+    def RDFString(*args, **kwargs) -> Optional[str]:
+        """Alias for TTLString for compatibility with Graph/Ontology workflows."""
+        return TGraph.TTLString(*args, **kwargs)
+
+    @staticmethod
+    def BOTString(*args, **kwargs) -> Optional[str]:
+        """Returns a Turtle string with BOT alignment triples enabled."""
+        kwargs["includeBOT"] = True
+        return TGraph.TTLString(*args, **kwargs)
+
+    @staticmethod
+    def ExportTTL(graph: "TGraph", path: str, silent: bool = False, **kwargs) -> Optional[str]:
+        if not isinstance(path, str) or path.strip() == "":
+            if not silent:
+                print("TGraph.ExportTTL - Error: The input path is not a valid string. Returning None.")
+            return None
+        ttl = TGraph.TTLString(graph, silent=silent, **kwargs)
+        if ttl is None:
+            return None
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(ttl)
+            return path
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.ExportTTL - Error: {exc}. Returning None.")
+            return None
+
+    @staticmethod
+    def JSONLDData(
+        graph: "TGraph",
+        includeVertices: bool = True,
+        includeEdges: bool = True,
+        includeDictionaries: bool = True,
+        includeBOT: bool = True,
+        namespacePrefix: str = "inst",
+        instanceNamespace: str = "http://w3id.org/topologicpy/instance#",
+    ) -> Dict[str, Any]:
+        if not isinstance(graph, TGraph):
+            return {}
+        namespaces = dict(TGraph._OntologyConfig()["namespaces"])
+        namespaces.setdefault("inst", instanceNamespace)
+        triples = TGraph.OntologyTriples(
+            graph,
+            includeVertices=includeVertices,
+            includeEdges=includeEdges,
+            includeDictionaries=includeDictionaries,
+            includeBOT=includeBOT,
+            namespacePrefix=namespacePrefix,
+        )
+        nodes: Dict[str, Dict[str, Any]] = {}
+        for s, p, o in triples:
+            node = nodes.setdefault(str(s), {"@id": str(s)})
+            if p == "rdf:type":
+                node.setdefault("@type", [])
+                if o not in node["@type"]:
+                    node["@type"].append(o)
+                continue
+            value: Any = str(o)
+            if isinstance(o, str) and o.startswith('"'):
+                value = o
+            predicate = str(p)
+            node.setdefault(predicate, [])
+            if value not in node[predicate]:
+                node[predicate].append(value)
+        for node in nodes.values():
+            if "@type" in node and len(node["@type"]) == 1:
+                node["@type"] = node["@type"][0]
+            for k in list(node.keys()):
+                if k not in ("@id", "@type") and isinstance(node[k], list) and len(node[k]) == 1:
+                    node[k] = node[k][0]
+        return {"@context": namespaces, "@graph": list(nodes.values())}
+
+    @staticmethod
+    def JSONLDString(graph: "TGraph", indent: Optional[int] = 2, **kwargs) -> str:
+        try:
+            return json.dumps(TGraph.JSONLDData(graph, **kwargs), indent=indent)
+        except Exception:
+            return "{}"
+
+    @staticmethod
+    def ExportJSONLD(graph: "TGraph", path: str, indent: Optional[int] = 2, silent: bool = False, **kwargs) -> Optional[str]:
+        if not isinstance(path, str) or path.strip() == "":
+            if not silent:
+                print("TGraph.ExportJSONLD - Error: The input path is not a valid string. Returning None.")
+            return None
+        try:
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(TGraph.JSONLDString(graph, indent=indent, **kwargs))
+            return path
+        except Exception as exc:
+            if not silent:
+                print(f"TGraph.ExportJSONLD - Error: {exc}. Returning None.")
+            return None
+
+    @staticmethod
+    def ValidateOntology(
+        graph: "TGraph",
+        requireClass: bool = True,
+        requireVertexClasses: bool = False,
+        requireEdgeClasses: bool = False,
+        requireLabels: bool = False,
+        checkClassKnown: bool = True,
+        checkCategory: bool = True,
+        silent: bool = False,
+    ) -> Dict[str, Any]:
+        report = {"ok": False, "errors": [], "warnings": [], "graph": {}, "vertices": [], "edges": []}
+        if not isinstance(graph, TGraph):
+            report["errors"].append("The input graph is not a valid TGraph.")
+            return report
+        config = TGraph._OntologyConfig()
+
+        def _validate_dict(d, label, require_class, require_label):
+            r = {"ok": False, "errors": [], "warnings": [], "dictionary": dict(d if isinstance(d, dict) else {})}
+            ontologyClass = r["dictionary"].get("ontology_class")
+            category = r["dictionary"].get("category")
+            elementLabel = r["dictionary"].get("label")
+            if require_class and (ontologyClass is None or str(ontologyClass).strip() == ""):
+                r["errors"].append("Missing ontology_class.")
+            if require_label and (elementLabel is None or str(elementLabel).strip() == ""):
+                r["errors"].append("Missing label.")
+            if ontologyClass not in (None, ""):
+                ontologyClass = str(ontologyClass).strip()
+                if ":" in ontologyClass:
+                    prefix = ontologyClass.split(":", 1)[0]
+                    if prefix not in config["namespaces"]:
+                        r["errors"].append(f"Unknown ontology_class prefix: {prefix}.")
+                known = ontologyClass in config["categories"] or TGraph._OntologyExpandQName(ontologyClass) is not None
+                if checkClassKnown and not known:
+                    r["warnings"].append(f"ontology_class is not known and cannot be expanded: {ontologyClass}.")
+                expected = TGraph.CategoryByOntologyClass(ontologyClass, defaultValue=None)
+                if checkCategory and expected is not None and category not in (None, "") and str(category).lower() != str(expected).lower():
+                    r["warnings"].append(f"Category '{category}' does not match inferred category '{expected}' for {ontologyClass}.")
+            r["ok"] = len(r["errors"]) == 0
+            for error in r["errors"]:
+                report["errors"].append(f"{label}: {error}")
+            for warning in r["warnings"]:
+                report["warnings"].append(f"{label}: {warning}")
+            return r
+
+        report["graph"] = _validate_dict(graph._dictionary, "Graph", requireClass, requireLabels)
+        for v in graph._vertices:
+            if not v.get("active", True):
+                continue
+            idx = v.get("index")
+            r = _validate_dict(v.get("dictionary", {}), f"Vertex {idx}", requireVertexClasses, requireLabels)
+            r["index"] = idx
+            report["vertices"].append(r)
+        for e in graph._edges:
+            if not e.get("active", True):
+                continue
+            idx = e.get("index")
+            r = _validate_dict(e.get("dictionary", {}), f"Edge {idx}", requireEdgeClasses, False)
+            r["index"] = idx
+            if not graph._validate_vertex_index(e.get("src"), active=False) or not graph._validate_vertex_index(e.get("dst"), active=False):
+                r["errors"].append("Could not resolve edge start/end vertices.")
+                r["ok"] = False
+                report["errors"].append(f"Edge {idx}: Could not resolve edge start/end vertices.")
+            report["edges"].append(r)
+        report["ok"] = len(report["errors"]) == 0
+        if not silent and (report["errors"] or report["warnings"]):
+            for error in report["errors"]:
+                print("TGraph.ValidateOntology - Error:", error)
+            for warning in report["warnings"]:
+                print("TGraph.ValidateOntology - Warning:", warning)
+        return report
+
+    @staticmethod
+    def ValidateTTLString(ttlString: str, silent: bool = False) -> Dict[str, Any]:
+        report = {"ok": False, "errors": [], "warnings": [], "triple_count": 0}
+        if not isinstance(ttlString, str) or ttlString.strip() == "":
+            report["errors"].append("The input ttlString is not a valid string.")
+            return report
+        try:
+            import rdflib
+        except Exception:
+            report["warnings"].append("RDFLib is not installed, so syntax validation could not be performed.")
+            report["ok"] = True
+            return report
+        try:
+            g = rdflib.Graph()
+            g.parse(data=ttlString, format="turtle")
+            report["triple_count"] = len(g)
+            report["ok"] = True
+            return report
+        except Exception as exc:
+            report["errors"].append(str(exc))
+            if not silent:
+                print("TGraph.ValidateTTLString - Error:", exc)
+            return report
+
+
+    # ---------------------------------------------------------------------
+    # API parity convenience methods
+    # ---------------------------------------------------------------------
+
+
+    @staticmethod
+    def IsEmpty(graph: "TGraph") -> bool:
+        """Returns True if the input graph has no active vertices."""
+        return not isinstance(graph, TGraph) or TGraph.Order(graph) == 0
+
+    @staticmethod
+    def DegreeMatrix(graph: "TGraph", mode: str = "all") -> List[List[int]]:
+        """Returns the degree matrix of the input graph."""
+        if not isinstance(graph, TGraph):
+            return []
+        degrees = TGraph.DegreeSequence(graph, mode=mode)
+        n = len(degrees)
+        matrix = [[0 for _ in range(n)] for _ in range(n)]
+        for i, d in enumerate(degrees):
+            matrix[i][i] = d
+        return matrix
+
+    @staticmethod
+    def EigenVectorCentrality(
+        graph: "TGraph",
+        normalize: bool = False,
+        key: str = "eigen_vector_centrality",
+        colorKey: str = "evc_color",
+        colorScale: str = "viridis",
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> List[float]:
+        """Compatibility alias for EigenvectorCentrality."""
+        values = TGraph.EigenvectorCentrality(
+            graph,
+            mode="all" if not TGraph.IsDirected(graph) else "out",
+            iterations=1000,
+            tolerance=tolerance,
+            key=key,
+            mantissa=mantissa,
+        )
+        if normalize and values:
+            max_value = max(abs(v) for v in values)
+            if max_value > 0:
+                values = [round(float(v) / max_value, mantissa) for v in values]
+                if isinstance(graph, TGraph) and key is not None:
+                    for idx, v_idx in enumerate(TGraph.ActiveVertexIndices(graph)):
+                        TGraph._SetVertexValue(graph, v_idx, key, values[idx])
+        return values
+
+    @staticmethod
+    def Triples(graph: "TGraph", **kwargs) -> List[Tuple[str, str, str]]:
+        """Compatibility alias for OntologyTriples."""
+        return TGraph.OntologyTriples(graph, **kwargs)
+
+    @staticmethod
+    def ExportToRDF(graph: "TGraph", path: str, overwrite: bool = True, silent: bool = False, **kwargs) -> Optional[str]:
+        """Exports the input graph to an RDF/Turtle file."""
+        import os
+        if path is None:
+            if not silent:
+                print("TGraph.ExportToRDF - Error: The input path is None. Returning None.")
+            return None
+        if os.path.exists(path) and not overwrite:
+            if not silent:
+                print("TGraph.ExportToRDF - Error: File exists and overwrite is False. Returning None.")
+            return None
+        return TGraph.ExportTTL(graph, path=path, silent=silent, **kwargs)
+
+    @staticmethod
+    def ExportToBOT(graph: "TGraph", path: str, overwrite: bool = False, silent: bool = False, **kwargs) -> Optional[str]:
+        """Exports the input graph to a BOT/Turtle file."""
+        import os
+        if path is None:
+            if not silent:
+                print("TGraph.ExportToBOT - Error: The input path is None. Returning None.")
+            return None
+        if os.path.exists(path) and not overwrite:
+            if not silent:
+                print("TGraph.ExportToBOT - Error: File exists and overwrite is False. Returning None.")
+            return None
+        try:
+            data = TGraph.BOTString(graph, **kwargs)
+            if data is None:
+                return None
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(data)
+            return path
+        except Exception as exc:
+            if not silent:
+                print("TGraph.ExportToBOT - Error:", exc)
+            return None
+
+    @staticmethod
+    def ExportToJSONLD(graph: "TGraph", path: str, indent: int = 2, sortKeys: bool = False, overwrite: bool = False, silent: bool = False, **kwargs) -> Optional[str]:
+        """Exports the input graph to a JSON-LD file."""
+        import os
+        if path is None:
+            if not silent:
+                print("TGraph.ExportToJSONLD - Error: The input path is None. Returning None.")
+            return None
+        if os.path.exists(path) and not overwrite:
+            if not silent:
+                print("TGraph.ExportToJSONLD - Error: File exists and overwrite is False. Returning None.")
+            return None
+        return TGraph.ExportJSONLD(graph, path=path, indent=indent, sortKeys=sortKeys, silent=silent, **kwargs)
+
+    @staticmethod
+    def ExportToJSON(
+        graph: "TGraph",
+        path: str,
+        propertiesKey: str = "properties",
+        verticesKey: str = "vertices",
+        edgesKey: str = "edges",
+        vertexLabelKey: str = "",
+        edgeLabelKey: str = "",
+        xKey: str = "x",
+        yKey: str = "y",
+        zKey: str = "z",
+        indent: int = 4,
+        sortKeys: bool = False,
+        mantissa: int = 6,
+        overwrite: bool = False,
+    ) -> Optional[str]:
+        """Exports the input graph to a JSON file."""
+        import os
+        if not isinstance(graph, TGraph) or path is None:
+            return None
+        if os.path.exists(path) and not overwrite:
+            return None
+        try:
+            data = {
+                propertiesKey: dict(graph._dictionary),
+                verticesKey: [],
+                edgesKey: [],
+            }
+            for v in graph._vertices:
+                if not v.get("active", True):
+                    continue
+                d = dict(v.get("dictionary", {}))
+                rec = dict(d)
+                rec.setdefault("id", v.get("index"))
+                c = TGraph.Coordinates(graph, v.get("index"), default=None)
+                if c is not None:
+                    rec[xKey] = round(float(c[0]), mantissa)
+                    rec[yKey] = round(float(c[1]), mantissa)
+                    rec[zKey] = round(float(c[2]), mantissa)
+                if vertexLabelKey and vertexLabelKey in d:
+                    rec["label"] = d.get(vertexLabelKey)
+                data[verticesKey].append(rec)
+            for e in graph._edges:
+                if not e.get("active", True):
+                    continue
+                d = dict(e.get("dictionary", {}))
+                rec = dict(d)
+                rec.setdefault("id", e.get("index"))
+                rec.setdefault("source", e.get("src"))
+                rec.setdefault("target", e.get("dst"))
+                rec.setdefault("directed", e.get("directed"))
+                if edgeLabelKey and edgeLabelKey in d:
+                    rec["label"] = d.get(edgeLabelKey)
+                data[edgesKey].append(rec)
+            with open(path, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=indent, sort_keys=sortKeys)
+            return path
+        except Exception:
+            return None
+
+    @staticmethod
+    def ByJSONDictionary(
+        jsonDictionary: Dict[str, Any],
+        xKey: str = "x",
+        yKey: str = "y",
+        zKey: str = "z",
+        vertexIDKey: str = None,
+        edgeSourceKey: str = "source",
+        edgeTargetKey: str = "target",
+        edgeIDKey: str = None,
+        graphPropsKey: str = "properties",
+        verticesKey: str = "vertices",
+        edgesKey: str = "edges",
+        ontology: bool = True,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> Optional["TGraph"]:
+        """Creates a TGraph from a JSON dictionary with graph, vertex, and edge records."""
+        if not isinstance(jsonDictionary, dict):
+            if not silent:
+                print("TGraph.ByJSONDictionary - Error: The input jsonDictionary is not a dictionary. Returning None.")
+            return None
+        gd = jsonDictionary.get(graphPropsKey, {})
+        g = TGraph(directed=False, allowSelfLoops=True, allowParallelEdges=True, dictionary=gd if isinstance(gd, dict) else {})
+        id_to_index = {}
+        vertices = jsonDictionary.get(verticesKey, []) or []
+        for i, rec in enumerate(vertices):
+            d = dict(rec) if isinstance(rec, dict) else {}
+            vid = d.get(vertexIDKey, d.get("id", i)) if vertexIDKey is not None else d.get("id", i)
+            idx = g.AddVertex(dictionary=d)
+            id_to_index[vid] = idx
+        for rec in jsonDictionary.get(edgesKey, []) or []:
+            if not isinstance(rec, dict):
+                continue
+            src_id = rec.get(edgeSourceKey, rec.get("src", rec.get("source")))
+            dst_id = rec.get(edgeTargetKey, rec.get("dst", rec.get("target")))
+            src = id_to_index.get(src_id, src_id if isinstance(src_id, int) else None)
+            dst = id_to_index.get(dst_id, dst_id if isinstance(dst_id, int) else None)
+            if not isinstance(src, int) or not isinstance(dst, int):
+                continue
+            d = dict(rec)
+            directed = bool(d.get("directed", g._directed))
+            g.AddEdge(src, dst, directed=directed, dictionary=d)
+            if directed:
+                g._directed = True
+        if ontology:
+            try:
+                TGraph.NormalizeOntologyDictionaries(g, silent=True)
+            except Exception:
+                pass
+        return g
+
+    @staticmethod
+    def ByJSONFile(file: Any, **kwargs) -> Optional["TGraph"]:
+        """Imports a TGraph from an open JSON file object or file-like object."""
+        try:
+            data = json.load(file)
+        except Exception:
+            return None
+        return TGraph.ByJSONDictionary(data, **kwargs)
+
+    @staticmethod
+    def ByJSONPath(path: str, silent: bool = False, **kwargs) -> Optional["TGraph"]:
+        """Imports a TGraph from a JSON file path."""
+        if path is None:
+            return None
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                return TGraph.ByJSONFile(f, silent=silent, **kwargs)
+        except Exception as exc:
+            if not silent:
+                print("TGraph.ByJSONPath - Error:", exc)
+            return None
+
+    @staticmethod
+    def ExportGraphToCSV(graph: "TGraph", path: str, graphLabel: Any, graphFeatures: str = "", overwrite: bool = False, **kwargs) -> Optional[bool]:
+        """Compatibility wrapper for exporting a single graph to PyG-compatible CSV files."""
+        if not isinstance(graph, TGraph):
+            return None
+        graph = TGraph.Copy(graph)
+        graph._dictionary[kwargs.get("graphLabelKey", "label")] = graphLabel
+        if isinstance(graphFeatures, str) and graphFeatures.strip() != "":
+            values = [v.strip() for v in graphFeatures.split(",")]
+            for i, value in enumerate(values):
+                try:
+                    graph._dictionary[f"feat_{i}"] = round(float(value), kwargs.get("mantissa", 6))
+                except Exception:
+                    graph._dictionary[f"feat_{i}"] = value
+            kwargs.setdefault("graphFeaturesKeys", [f"feat_{i}" for i in range(len(values))])
+        return TGraph.ExportToCSV(graph, path=path, overwrite=overwrite, **kwargs)
+
+    @staticmethod
+    def ExportToAdjacencyMatrixCSV(adjacencyMatrix: List[List[Any]], path: str) -> Optional[str]:
+        """Exports an adjacency matrix to a CSV file."""
+        if path is None or adjacencyMatrix is None:
+            return None
+        try:
+            import csv
+            with open(path, "w", newline="", encoding="utf-8") as f:
+                writer = csv.writer(f)
+                writer.writerows(adjacencyMatrix)
+            return path
+        except Exception:
+            return None
+
+    @staticmethod
+    def ByAdjacencyMatrixCSVPath(path: str, dictionaries: list = None, ontology: bool = True, silent: bool = False) -> Optional["TGraph"]:
+        """Creates a TGraph from an adjacency matrix CSV file."""
+        if path is None:
+            return None
+        try:
+            import csv
+            matrix = []
+            with open(path, "r", newline="", encoding="utf-8") as f:
+                reader = csv.reader(f)
+                for row in reader:
+                    parsed = []
+                    for value in row:
+                        value = value.strip()
+                        if value == "":
+                            parsed.append(0)
+                        else:
+                            try:
+                                fv = float(value)
+                                parsed.append(int(fv) if fv.is_integer() else fv)
+                            except Exception:
+                                parsed.append(value)
+                    matrix.append(parsed)
+            g = TGraph.ByAdjacencyMatrix(matrix, directed=False, dictionary={})
+            if isinstance(dictionaries, list):
+                for i, d in enumerate(dictionaries[:len(g._vertices)]):
+                    if isinstance(d, dict):
+                        g.SetVertexDictionary(i, d)
+            return g
+        except Exception as exc:
+            if not silent:
+                print("TGraph.ByAdjacencyMatrixCSVPath - Error:", exc)
+            return None
+
+    @staticmethod
+    def MeshData(graph: "TGraph", activeOnly: bool = True) -> Dict[str, Any]:
+        """Returns simple mesh-like data for graph vertices and edges."""
+        if not isinstance(graph, TGraph):
+            return {"vertices": [], "edges": []}
+        coords = []
+        index_map = {}
+        for rec in graph._vertices:
+            if activeOnly and not rec.get("active", True):
+                continue
+            idx = rec.get("index")
+            c = TGraph.Coordinates(graph, idx, default=None)
+            if c is None:
+                c = [0.0, 0.0, 0.0]
+            index_map[idx] = len(coords)
+            coords.append(c)
+        edges = []
+        for e in graph._edges:
+            if activeOnly and not e.get("active", True):
+                continue
+            src = e.get("src")
+            dst = e.get("dst")
+            if src in index_map and dst in index_map:
+                edges.append([index_map[src], index_map[dst]])
+        return {"vertices": coords, "edges": edges}
+
+    @staticmethod
+    def ByMeshData(vertices, edges, vertexDictionaries=None, edgeDictionaries=None, ontology: bool = True, tolerance: float = 0.0001) -> "TGraph":
+        """Creates a TGraph from mesh-like vertices and edge index pairs."""
+        g = TGraph(directed=False, allowSelfLoops=True, allowParallelEdges=True)
+        vertexDictionaries = vertexDictionaries or []
+        for i, v in enumerate(vertices or []):
+            d = vertexDictionaries[i] if i < len(vertexDictionaries) and isinstance(vertexDictionaries[i], dict) else {}
+            d = dict(d)
+            if isinstance(v, (list, tuple)) and len(v) >= 3:
+                d.setdefault("x", float(v[0])); d.setdefault("y", float(v[1])); d.setdefault("z", float(v[2]))
+            g.AddVertex(dictionary=d)
+        edgeDictionaries = edgeDictionaries or []
+        for i, pair in enumerate(edges or []):
+            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+                continue
+            d = edgeDictionaries[i] if i < len(edgeDictionaries) and isinstance(edgeDictionaries[i], dict) else {}
+            g.AddEdge(int(pair[0]), int(pair[1]), dictionary=d)
+        return g
+
+    @staticmethod
+    def LocalClusteringCoefficient(graph: "TGraph", vertices: list = None, key: str = "local_clustering_coefficient", mantissa: int = 6, silent: bool = False) -> List[float]:
+        """Returns local clustering coefficients for the selected vertices."""
+        if not isinstance(graph, TGraph):
+            return []
+        selected = [TGraph._as_index(v) for v in vertices] if vertices is not None else TGraph.ActiveVertexIndices(graph)
+        selected = [v for v in selected if graph._validate_vertex_index(v)]
+        result = []
+        for v in selected:
+            nbrs = TGraph.AdjacentIndices(graph, v, mode="all")
+            nbrs = [u for u in nbrs if u != v]
+            k = len(nbrs)
+            if k < 2:
+                coeff = 0.0
+            else:
+                links = 0
+                nbr_set = set(nbrs)
+                for i, a in enumerate(nbrs):
+                    for b in nbrs[i+1:]:
+                        if TGraph.HasEdge(graph, a, b, directed=False) or TGraph.HasEdge(graph, b, a, directed=True) or TGraph.HasEdge(graph, a, b, directed=True):
+                            links += 1
+                coeff = (2.0 * links) / float(k * (k - 1))
+            coeff = round(coeff, mantissa)
+            result.append(coeff)
+            if key is not None:
+                TGraph._SetVertexValue(graph, v, key, coeff)
+        return result
+
+    @staticmethod
+    def AverageClusteringCoefficient(graph: "TGraph", mantissa: int = 6, silent: bool = False) -> float:
+        """Returns the average clustering coefficient of the input graph."""
+        values = TGraph.LocalClusteringCoefficient(graph, key=None, mantissa=mantissa, silent=silent)
+        if not values:
+            return 0.0
+        return round(sum(values) / float(len(values)), mantissa)
+
+    @staticmethod
+    def GlobalClusteringCoefficient(graph: "TGraph") -> float:
+        """Returns the global clustering coefficient / transitivity of the input graph."""
+        if not isinstance(graph, TGraph):
+            return 0.0
+        vertices = TGraph.ActiveVertexIndices(graph)
+        triangles3 = 0
+        triples = 0
+        for v in vertices:
+            nbrs = [u for u in TGraph.AdjacentIndices(graph, v, mode="all") if u != v]
+            k = len(nbrs)
+            triples += k * (k - 1)
+            nbr_set = set(nbrs)
+            for a in nbrs:
+                for b in nbrs:
+                    if a != b and (TGraph.HasEdge(graph, a, b, directed=False) or TGraph.HasEdge(graph, a, b, directed=True)):
+                        triangles3 += 1
+        if triples == 0:
+            return 0.0
+        return triangles3 / float(triples)
+
+    @staticmethod
+    def AllPaths(graph: "TGraph", vertexA, vertexB, timeLimit=10, silent: bool = False) -> List[List[int]]:
+        """Returns all simple paths between two vertices within a time limit."""
+        import time
+        if not isinstance(graph, TGraph):
+            return []
+        src = TGraph._as_index(vertexA)
+        dst = TGraph._as_index(vertexB)
+        if not graph._validate_vertex_index(src) or not graph._validate_vertex_index(dst):
+            return []
+        deadline = time.time() + max(0.0, float(timeLimit))
+        result = []
+        stack = [(src, [src], {src})]
+        while stack:
+            if time.time() > deadline:
+                break
+            u, path, seen = stack.pop()
+            if u == dst:
+                result.append(path)
+                continue
+            for v in reversed(TGraph.AdjacentIndices(graph, u, mode="out" if graph._directed else "all")):
+                if v not in seen:
+                    stack.append((v, path + [v], seen | {v}))
+        return result
+
+    @staticmethod
+    def Path(graph: "TGraph", vertexA, vertexB, tolerance: float = 0.0001, silent: bool = False) -> List[int]:
+        """Returns a shortest path between two vertices as a list of vertex indices."""
+        return TGraph.ShortestPath(graph, TGraph._as_index(vertexA), TGraph._as_index(vertexB), mode="out" if TGraph.IsDirected(graph) else "all")
+
+    @staticmethod
+    def ShortestPathViaVertices(graph: "TGraph", startVertex, endVertex, vertices: list = None, tolerance: float = 0.0001, silent: bool = False) -> Optional[List[int]]:
+        """Returns a head-to-tail shortest path that visits the requested intermediate vertices in order."""
+        if not isinstance(graph, TGraph):
+            return None
+        sequence = [TGraph._as_index(startVertex)] + [TGraph._as_index(v) for v in (vertices or [])] + [TGraph._as_index(endVertex)]
+        if any(not graph._validate_vertex_index(v) for v in sequence):
+            return None
+        mode = "out" if graph._directed else "all"
+        final = []
+        seen = set()
+        for a, b in zip(sequence[:-1], sequence[1:]):
+            segment = TGraph.ShortestPath(graph, a, b, mode=mode)
+            if segment is None or len(segment) == 0:
+                return None
+            if not final:
+                final.extend(segment)
+                seen.update(segment[:-1])
+            else:
+                for v in segment[1:]:
+                    if v in seen and v != b:
+                        return None
+                    final.append(v)
+                    seen.add(v)
+        return final
+
+    @staticmethod
+    def Tree(graph: "TGraph", vertex=None, mode: str = "all", silent: bool = False) -> Optional["TGraph"]:
+        """Creates a tree graph rooted at the input vertex using a shortest-path tree."""
+        if not isinstance(graph, TGraph):
+            return None
+        source = TGraph._as_index(vertex) if vertex is not None else (TGraph.ActiveVertexIndices(graph)[0] if TGraph.ActiveVertexIndices(graph) else None)
+        if source is None or not graph._validate_vertex_index(source):
+            return None
+        tree = TGraph.ShortestPathTree(graph, source, mode=mode)
+        if not isinstance(tree, dict):
+            return None
+        parents = tree.get("parent", {})
+        g = TGraph(directed=True, allowSelfLoops=False, allowParallelEdges=False, dictionary={"root": source})
+        active = TGraph.ActiveVertexIndices(graph)
+        old_to_new = {}
+        for old in active:
+            old_to_new[old] = g.AddVertex(dictionary=dict(graph._vertices[old].get("dictionary", {})))
+        for child, parent in parents.items():
+            if parent is not None and parent in old_to_new and child in old_to_new:
+                g.AddEdge(old_to_new[parent], old_to_new[child], directed=True, dictionary={"relationship": "tree_edge"})
+        return g
+
+    @staticmethod
+    def WikiString(graph: "TGraph", vertexKey: str = "id", vertexLabelKey: str = "label", vertexTypeKey: str = "type", edgeKey: str = "predicate", titleKey: str = None, includeDictionaries: bool = True, includeBacklinks: bool = True, tolerance: float = 0.0001, silent: bool = False) -> str:
+        """Returns a simple Obsidian-style markdown wiki representation of the graph."""
+        if not isinstance(graph, TGraph):
+            return ""
+        lines = ["# TGraph Wiki", ""]
+        for v in graph._vertices:
+            if not v.get("active", True):
+                continue
+            d = v.get("dictionary", {})
+            title = d.get(titleKey, d.get(vertexLabelKey, d.get(vertexKey, f"vertex_{v['index']}"))) if titleKey else d.get(vertexLabelKey, d.get(vertexKey, f"vertex_{v['index']}"))
+            lines.extend([f"## {title}", ""])
+            if includeDictionaries:
+                for k, value in sorted(d.items()):
+                    lines.append(f"- **{k}**: {value}")
+            nbrs = TGraph.AdjacentIndices(graph, v["index"], mode="all")
+            if nbrs:
+                lines.append("- **Adjacent**: " + ", ".join(f"[[vertex_{n}]]" for n in nbrs))
+            lines.append("")
+        return "\n".join(lines)
+
+    @staticmethod
+    def ExportToWiki(graph: "TGraph", path: str, overwrite: bool = True, silent: bool = False, **kwargs) -> Optional[str]:
+        """Exports a simple Obsidian-style markdown wiki representation of the graph."""
+        import os
+        if path is None:
+            return None
+        if os.path.exists(path) and not overwrite:
+            return None
+        try:
+            text = TGraph.WikiString(graph, **kwargs)
+            with open(path, "w", encoding="utf-8") as f:
+                f.write(text)
+            return path
+        except Exception as exc:
+            if not silent:
+                print("TGraph.ExportToWiki - Error:", exc)
+            return None
