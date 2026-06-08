@@ -791,7 +791,7 @@ class Vertex():
         
         def distance_to_face(vertex, face, includeCentroid):
             v_proj = Vertex.Project(vertex, face, mantissa=mantissa)
-            if not Vertex.IsInternal(v_proj, face):
+            if v_proj is None or not Vertex.IsInternal(v_proj, face):
                 vertices = Topology.Vertices(face)
                 distances = [distance_to_vertex(vertex, v) for v in vertices]
                 edges = Topology.Edges(face)
@@ -800,6 +800,14 @@ class Vertex():
                     distances.append(distance_to_vertex(vertex, Topology.Centroid(face)))
                 return min(distances)
             dic = Face.PlaneEquation(face)
+            if dic is None:
+                vertices = Topology.Vertices(face)
+                distances = [distance_to_vertex(vertex, v) for v in vertices]
+                edges = Topology.Edges(face)
+                distances += [distance_to_edge(vertex, e) for e in edges]
+                if includeCentroid:
+                    distances.append(distance_to_vertex(vertex, Topology.Centroid(face)))
+                return min(distances)
             a = dic["a"]
             b = dic["b"]
             c = dic["c"]
@@ -3023,6 +3031,8 @@ class Vertex():
         if not Topology.IsInstance(face, "Face"):
             return None
         eq = Face.PlaneEquation(face, mantissa= mantissa)
+        if eq is None:
+            return None
         if direction == None or direction == []:
             direction = Face.Normal(face)
         pt = project_point_onto_plane(Vertex.Coordinates(vertex), [eq["a"], eq["b"], eq["c"], eq["d"]], direction)
