@@ -3024,7 +3024,6 @@ class Topology():
             The list of imported topologies
 
         """
-        @staticmethod
         def convert_JSON_to_file(json_dictionary):
             import dotbimpy
             schema_version = json_dictionary["schema_version"]
