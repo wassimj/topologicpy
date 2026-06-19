@@ -38,7 +38,6 @@ except:
 
 class Plotly:
     @staticmethod
-    @staticmethod
     def AddColorBar(figure, values=None, nTicks=5, xPosition=-0.15, width=15,
                     outlineWidth=0, title="", subTitle="", units="",
                     colorScale="viridis", mantissa: int = 6):
@@ -474,7 +473,6 @@ class Plotly:
         return data
 
     @staticmethod
-    @staticmethod
     def DataByTGraph(
         graph,
         sagitta: float = 0,
@@ -899,7 +897,6 @@ class Plotly:
         return data
 
     @staticmethod
-    @staticmethod
     def vertexData(vertices,
                    dictionaries=None,
                    color="black",
@@ -1048,7 +1045,6 @@ class Plotly:
         ))
         return traces
 
-    @staticmethod
     @staticmethod
     def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None,
                  width=1, widthKey=None, dash=False, dashKey=None, directed=False,
