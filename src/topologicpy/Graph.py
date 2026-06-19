@@ -11491,9 +11491,6 @@ class Graph:
             silent=True
         )
 
-
-
-
     @staticmethod
     def ByTriples(triples,
                   subjectKey: str = "subject",

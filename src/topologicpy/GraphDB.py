@@ -68,7 +68,7 @@ class GraphDB:
         Parameters
         ----------
         provider : str
-            The backend provider name. Supported values are "kuzu" and "neo4j".
+            The backend provider name. Supported values are "kuzu" and "neo4j" and "ladybug".
         manager : object , optional
             The backend-specific manager. For Kuzu, this is usually the object
             returned by Kuzu.Manager(...). For Neo4j, this is usually the driver
@@ -96,9 +96,12 @@ class GraphDB:
                 "kùzu": "kuzu",
                 "neo4j": "neo4j",
                 "neo": "neo4j",
+                "ladybug": "ladybugdb",
+                "ladybugdb": "ladybugdb",
+                "lbug": "ladybugdb",
             }
             provider = aliases.get(provider, provider)
-            if provider not in ["kuzu", "neo4j"]:
+            if provider not in ["kuzu", "neo4j", "ladybugdb"]:
                 if not silent:
                     print(f"GraphDB.ByParameters - Error: Unsupported provider '{provider}'. Returning None.")
                 return None
@@ -254,6 +257,18 @@ class GraphDB:
                         print(f"GraphDB._backend - Error: Could not import Neo4j: {e}. Returning None.")
                     return None
             return Neo4j
+        
+        if provider == "ladybugdb":
+            try:
+                from topologicpy.LadybugDB import LadybugDB
+            except Exception:
+                try:
+                    from LadybugDB import LadybugDB
+                except Exception as e:
+                    if not silent:
+                        print(f"GraphDB._backend - Error: Could not import LadybugDB: {e}. Returning None.")
+                    return None
+            return LadybugDB
 
         if not silent:
             print(f"GraphDB._backend - Error: Unsupported provider '{provider}'. Returning None.")
@@ -304,6 +319,7 @@ class GraphDB:
             return defaultValue
 
     @staticmethod
+    @staticmethod
     def _annotate_graph_ontology(graph,
                                  ontology: bool = True,
                                  graphClass: str = "top:Graph",
@@ -312,16 +328,112 @@ class GraphDB:
                                  generatedBy: str = "GraphDB.UpsertGraph",
                                  silent: bool = True):
         """
-        Annotates a TopologicPy graph, its vertices, and its edges using the
-        TopologicPy ontology.
+        Annotates a TopologicPy Graph or TGraph, its vertices, and its edges using
+        the TopologicPy ontology.
 
-        This method is intentionally defensive and non-breaking. If Ontology.py
-        is unavailable, or if a backend returns an object that cannot be inspected
-        as a TopologicPy graph, the input graph is returned unchanged.
+        This method is intentionally defensive and non-breaking. If ontology
+        support is unavailable, or if a backend returns an object that cannot be
+        inspected as a TopologicPy graph, the input graph is returned unchanged.
         """
         if ontology is False or graph is None:
             return graph
 
+        # ------------------------------------------------------------------
+        # TGraph path. This must be checked before Topology.IsInstance(...,
+        # "Graph") because Topology may intentionally treat TGraph as graph-
+        # compatible.
+        # ------------------------------------------------------------------
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(graph, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
+
+        if is_tgraph:
+            try:
+                if hasattr(TGraph, "_OntologyAnnotateGraph"):
+                    graph = TGraph._OntologyAnnotateGraph(
+                        graph,
+                        graphClass=graphClass,
+                        vertexClass=vertexClass,
+                        edgeClass=edgeClass,
+                        generatedBy=generatedBy,
+                        ontology=ontology,
+                        silent=True,
+                    )
+            except TypeError:
+                try:
+                    graph = TGraph._OntologyAnnotateGraph(
+                        graph,
+                        graphClass=graphClass,
+                        generatedBy=generatedBy,
+                        ontology=ontology,
+                        silent=True,
+                    )
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+            # Ensure graph-level metadata exists even if the TGraph ontology
+            # helper is absent or older.
+            try:
+                gd = TGraph.Dictionary(graph)
+                gd = dict(gd) if isinstance(gd, dict) else {}
+                gd.setdefault("ontology_class", graphClass)
+                gd.setdefault("category", "graph")
+                gd.setdefault("generated_by", generatedBy)
+                graph.SetDictionary(gd)
+            except Exception:
+                pass
+
+            # Ensure database-friendly vertex ids and ontology metadata.
+            try:
+                vertices = TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
+            except Exception:
+                vertices = []
+
+            for i, vertex in enumerate(vertices):
+                try:
+                    index = vertex.get("index", i)
+                    d = dict(vertex.get("dictionary", {}) or {})
+                    d.setdefault("ontology_class", vertexClass)
+                    d.setdefault("category", "node")
+                    d.setdefault("id", index)
+                    try:
+                        graph.SetVertexDictionary(index, d)
+                    except Exception:
+                        graph._vertices[index]["dictionary"] = d
+                except Exception:
+                    continue
+
+            # Ensure edge ontology metadata.
+            try:
+                edges = TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+            except Exception:
+                edges = []
+
+            for edge in edges:
+                try:
+                    index = edge.get("index")
+                    if index is None:
+                        continue
+                    d = dict(edge.get("dictionary", {}) or {})
+                    d.setdefault("ontology_class", edgeClass)
+                    d.setdefault("category", "relationship")
+                    try:
+                        graph.SetEdgeDictionary(index, d)
+                    except Exception:
+                        graph._edges[index]["dictionary"] = d
+                except Exception:
+                    continue
+
+            return graph
+
+        # ------------------------------------------------------------------
+        # Legacy Graph path.
+        # ------------------------------------------------------------------
         try:
             from topologicpy.Topology import Topology
             from topologicpy.Graph import Graph
@@ -508,7 +620,7 @@ class GraphDB:
                     call_kwargs["database"] = db
 
             # Kuzu does not use Neo4j database names.
-            if provider == "kuzu":
+            if provider in ["kuzu", "ladybugdb"]:
                 call_kwargs.pop("database", None)
 
             if "silent" not in call_kwargs:
@@ -561,11 +673,9 @@ class GraphDB:
         ontology: bool = True,
         silent=False):
         """
-        Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs
-        into the selected backend.
+        Reads CSV graph data and upserts all returned graphs into the selected backend.
 
-        The signature mirrors Graph.ByCSVPath and the backend-specific ByCSVPath
-        methods in Kuzu and Neo4j.
+        The signature mirrors the TopologicPy CSV graph import/export format and the backend-specific ByCSVPath methods in Kuzu and Neo4j.
 
         Parameters
         ----------
@@ -618,7 +728,7 @@ class GraphDB:
         nodeFeaturesKeys : list , optional
             Optional node feature keys. Default is None.
         tolerance : float , optional
-            The tolerance passed to Graph.ByCSVPath. Default is 0.0001.
+            The tolerance passed to the backend CSV importer. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -675,7 +785,7 @@ class GraphDB:
         ----------
         graphdb : dict
             The graph database descriptor. See GraphDB.ByParameters(...).
-        graph : topologic_core.Graph
+        graph : topologic_core.Graph or topologicpy.TGraph
             The graph to be upserted.
         graphIDKey : str , optional
             The dictionary key used to retrieve the graph id. Default is "id".
@@ -781,8 +891,8 @@ class GraphDB:
 
         Returns
         -------
-        topologic_core.Graph
-            A TopologicPy graph, or None on error.
+        topologic_core.Graph or topologicpy.TGraph
+            A TopologicPy Graph or TGraph, or None on error.
         """
         result = GraphDB._call(graphdb, "GraphByID", graphID, silent=silent)
         return GraphDB._annotate_graph_result(result,
@@ -1103,6 +1213,8 @@ class GraphDB:
 
         try:
             if provider == "kuzu":
+                return manager.exec(query, parameters or {}, write=write)
+            if provider == "ladybugdb":
                 return manager.exec(query, parameters or {}, write=write)
             if provider == "neo4j":
                 backend = GraphDB._backend(graphdb, silent=silent)

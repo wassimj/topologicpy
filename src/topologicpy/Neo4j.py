@@ -165,10 +165,238 @@ def _ontology_category_value(props: Dict[str, Any], default: str = None) -> Any:
     return default
 
 
-def _annotate_graph_for_ontology(graph, graphClass: str = "top:Graph", graphCategory: str = "graph", generatedBy: str = None, silent: bool = True):
-    """Best-effort ontology annotation for a TopologicPy graph and its members."""
+
+def _is_tgraph(graph: Any) -> bool:
+    """Returns True if the input object is a topologicpy.TGraph."""
+    try:
+        from topologicpy.TGraph import TGraph
+        return isinstance(graph, TGraph)
+    except Exception:
+        return False
+
+
+def _graph_dictionary(graph: Any) -> Dict[str, Any]:
+    """Returns a Python dictionary for a legacy Graph or TGraph."""
+    if graph is None:
+        return {}
+    if _is_tgraph(graph):
+        try:
+            from topologicpy.TGraph import TGraph
+            return dict(TGraph.Dictionary(graph) or {})
+        except Exception:
+            try:
+                return dict(getattr(graph, "_dictionary", {}) or {})
+            except Exception:
+                return {}
+    try:
+        from topologicpy.Topology import Topology
+        return _python_dictionary(Topology.Dictionary(graph))
+    except Exception:
+        return {}
+
+
+def _set_graph_dictionary(graph: Any, dictionary: Dict[str, Any], silent: bool = True) -> Any:
+    """Sets a Python dictionary on a legacy Graph or TGraph and returns the graph."""
     if graph is None:
         return graph
+    if _is_tgraph(graph):
+        try:
+            graph.SetDictionary(dict(dictionary or {}))
+        except Exception:
+            pass
+        return graph
+    try:
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        return Topology.SetDictionary(graph, Dictionary.ByPythonDictionary(dict(dictionary or {})), silent=silent)
+    except TypeError:
+        try:
+            from topologicpy.Topology import Topology
+            from topologicpy.Dictionary import Dictionary
+            return Topology.SetDictionary(graph, Dictionary.ByPythonDictionary(dict(dictionary or {})))
+        except Exception:
+            return graph
+    except Exception:
+        return graph
+
+
+def _graph_uuid(graph: Any) -> str:
+    """Returns a UUID for a legacy Graph or TGraph."""
+    try:
+        from topologicpy.Topology import Topology
+        value = Topology.UUID(graph)
+        if value is not None:
+            return str(value)
+    except Exception:
+        pass
+    try:
+        from topologicpy.TGraph import TGraph
+        if isinstance(graph, TGraph):
+            d = TGraph.Dictionary(graph) or {}
+            value = d.get("uuid") or d.get("id") or d.get("graph_id")
+            if value is not None:
+                return str(value)
+    except Exception:
+        pass
+    return str(uuid.uuid4())
+
+
+def _tgraph_vertices(graph: Any) -> List[Dict[str, Any]]:
+    """Returns active TGraph vertex records."""
+    try:
+        from topologicpy.TGraph import TGraph
+        return TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
+    except Exception:
+        return []
+
+
+def _tgraph_edges(graph: Any) -> List[Dict[str, Any]]:
+    """Returns active TGraph edge records."""
+    try:
+        from topologicpy.TGraph import TGraph
+        return TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+    except Exception:
+        return []
+
+
+def _record_dictionary(record: Any) -> Dict[str, Any]:
+    """Returns the dictionary stored in a TGraph vertex/edge record."""
+    if isinstance(record, dict):
+        if isinstance(record.get("dictionary"), dict):
+            return dict(record.get("dictionary") or {})
+        return dict(record)
+    return {}
+
+
+def _tgraph_coordinates(graph: Any, record: Dict[str, Any], index: int = 0, mantissa: int = 6) -> List[float]:
+    """Returns coordinates for a TGraph vertex record."""
+    d = _record_dictionary(record)
+    for keys in (("x", "y", "z"), ("X", "Y", "Z")):
+        if all(k in d for k in keys):
+            try:
+                return [round(float(d[keys[0]]), mantissa), round(float(d[keys[1]]), mantissa), round(float(d[keys[2]]), mantissa)]
+            except Exception:
+                pass
+    try:
+        from topologicpy.TGraph import TGraph
+        coords = TGraph.Coordinates(graph, record.get("index"), default=None)
+        if coords is not None:
+            return [round(float(coords[0]), mantissa), round(float(coords[1]), mantissa), round(float(coords[2]), mantissa)]
+    except Exception:
+        pass
+    return [float(index), 0.0, 0.0]
+
+
+def _graph_mesh_data(graph: Any, mantissa: int = 6) -> Dict[str, Any]:
+    """Returns mesh-style graph data for a legacy Graph or TGraph."""
+    if _is_tgraph(graph):
+        vertices = _tgraph_vertices(graph)
+        index_to_position = {}
+        coords = []
+        vertex_dicts = []
+        for pos, record in enumerate(vertices):
+            idx = record.get("index", pos) if isinstance(record, dict) else pos
+            index_to_position[idx] = pos
+            coords.append(_tgraph_coordinates(graph, record, index=pos, mantissa=mantissa))
+            vertex_dicts.append(_record_dictionary(record))
+        edge_indices = []
+        edge_dicts = []
+        for edge in _tgraph_edges(graph):
+            src = edge.get("src") if isinstance(edge, dict) else None
+            dst = edge.get("dst") if isinstance(edge, dict) else None
+            if src in index_to_position and dst in index_to_position:
+                edge_indices.append([index_to_position[src], index_to_position[dst]])
+                edge_dicts.append(_record_dictionary(edge))
+        return {"vertices": coords, "edges": edge_indices, "vertexDictionaries": vertex_dicts, "edgeDictionaries": edge_dicts}
+    try:
+        from topologicpy.Graph import Graph
+        data = Graph.MeshData(graph, mantissa=mantissa) or {}
+        if "vertexDictionaries" not in data and "vertex_dicts" in data:
+            data["vertexDictionaries"] = data.get("vertex_dicts", [])
+        if "edgeDictionaries" not in data and "edge_dicts" in data:
+            data["edgeDictionaries"] = data.get("edge_dicts", [])
+        return data
+    except Exception:
+        return {"vertices": [], "edges": [], "vertexDictionaries": [], "edgeDictionaries": []}
+
+
+
+def _legacy_graph_to_tgraph(graph: Any, ontology: bool = True, silent: bool = True):
+    """Converts a legacy TopologicPy Graph to TGraph where possible."""
+    if graph is None:
+        return None
+    if _is_tgraph(graph):
+        return graph
+    try:
+        from topologicpy.TGraph import TGraph
+        if hasattr(TGraph, "ByGraph"):
+            return TGraph.ByGraph(graph, ontology=ontology)
+    except TypeError:
+        try:
+            from topologicpy.TGraph import TGraph
+            return TGraph.ByGraph(graph)
+        except Exception:
+            pass
+    except Exception:
+        pass
+    try:
+        from topologicpy.TGraph import TGraph
+        from topologicpy.Graph import Graph
+        return TGraph.ByVerticesEdges(vertices=Graph.Vertices(graph) or [], edges=Graph.Edges(graph) or [], ontology=ontology, silent=silent)
+    except TypeError:
+        try:
+            from topologicpy.TGraph import TGraph
+            from topologicpy.Graph import Graph
+            return TGraph.ByVerticesEdges(vertices=Graph.Vertices(graph) or [], edges=Graph.Edges(graph) or [])
+        except Exception:
+            return None
+    except Exception:
+        return None
+
+def _make_tgraph_from_rows(vertices: List[Dict[str, Any]], edges: List[Dict[str, Any]], graph_props: Dict[str, Any] = None, ontology: bool = True):
+    """Creates a TGraph from vertex and edge dictionaries."""
+    try:
+        from topologicpy.TGraph import TGraph
+        return TGraph.ByVerticesEdges(vertices=vertices, edges=edges, dictionary=graph_props or {}, ontology=ontology, silent=True)
+    except Exception:
+        return None
+
+def _annotate_graph_for_ontology(graph, graphClass: str = "top:Graph", graphCategory: str = "graph", generatedBy: str = None, silent: bool = True):
+    """Best-effort ontology annotation for a legacy Graph or TGraph and its members."""
+    if graph is None:
+        return graph
+
+    if _is_tgraph(graph):
+        try:
+            props = _graph_dictionary(graph)
+            props.setdefault("ontology_class", graphClass)
+            props.setdefault("category", graphCategory)
+            if generatedBy is not None:
+                props.setdefault("generated_by", generatedBy)
+            _set_graph_dictionary(graph, props, silent=True)
+            for i, vertex in enumerate(_tgraph_vertices(graph)):
+                d = _record_dictionary(vertex)
+                d.setdefault("ontology_class", "top:Node")
+                d.setdefault("category", "node")
+                d.setdefault("id", i)
+                try:
+                    graph.SetVertexDictionary(vertex.get("index"), d)
+                except Exception:
+                    pass
+            for edge in _tgraph_edges(graph):
+                d = _record_dictionary(edge)
+                d.setdefault("ontology_class", "top:Relationship")
+                d.setdefault("category", "relationship")
+                try:
+                    graph.SetEdgeDictionary(edge.get("index"), d)
+                except Exception:
+                    pass
+            return graph
+        except Exception as e:
+            if not silent:
+                print(f"Neo4j ontology annotation warning: {e}")
+            return graph
+
     try:
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
@@ -241,20 +469,17 @@ def _annotate_graph_for_ontology(graph, graphClass: str = "top:Graph", graphCate
                 _set(t, "label", label)
             return t
 
+        try:
+            if not Topology.IsInstance(graph, "graph"):
+                return graph
+        except Exception:
+            return graph
         _ensure(graph, graphClass, graphCategory)
         if generatedBy is not None:
             _set(graph, "generated_by", generatedBy)
-        try:
-            vertices = Graph.Vertices(graph) or []
-        except Exception:
-            vertices = []
-        for i, vertex in enumerate(vertices):
+        for vertex in Graph.Vertices(graph) or []:
             _ensure(vertex, "top:Node", "node", label=None)
-        try:
-            edges = Graph.Edges(graph) or []
-        except Exception:
-            edges = []
-        for edge in edges:
+        for edge in Graph.Edges(graph) or []:
             _ensure(edge, "top:Relationship", "relationship", label=None)
         return graph
     except Exception as e:
@@ -872,11 +1097,11 @@ class Neo4j:
             if not Neo4j.EnsureSchema(manager, database=database, silent=silent):
                 return None
 
-            graph_dict = Topology.Dictionary(graph)
+            graph_dict = _graph_dictionary(graph) if _is_tgraph(graph) else Topology.Dictionary(graph)
             gid = _value_from_dict(graph_dict, graphIDKey, None) if graphIDKey is not None else None
 
             if gid is None or str(gid).strip() == "":
-                gid = Topology.UUID(graph)
+                gid = _graph_uuid(graph)
 
             gid = str(gid).strip()
 
@@ -912,14 +1137,14 @@ class Neo4j:
             # ------------------------------------------------------------
             # Extract graph data.
             # ------------------------------------------------------------
-            g_props = _python_dictionary(graph_dict)
+            g_props = dict(graph_dict) if isinstance(graph_dict, dict) else _python_dictionary(graph_dict)
             g_label = str(g_props.get("label", ""))
 
-            mesh_data = Graph.MeshData(graph, mantissa=mantissa)
+            mesh_data = _graph_mesh_data(graph, mantissa=mantissa)
             verts = mesh_data.get("vertices", []) or []
-            v_props = mesh_data.get("vertexDictionaries", []) or []
+            v_props = mesh_data.get("vertexDictionaries", mesh_data.get("vertex_dicts", [])) or []
             edges = mesh_data.get("edges", []) or []
-            e_props = mesh_data.get("edgeDictionaries", []) or []
+            e_props = mesh_data.get("edgeDictionaries", mesh_data.get("edge_dicts", [])) or []
 
             edge_count = len(edges) * (2 if bidirectional else 1)
 
@@ -1184,7 +1409,7 @@ class Neo4j:
             return None
 
     @staticmethod
-    def GraphByID(manager, graphID: str, database=None, ontology: bool = True, silent: bool = False):
+    def GraphByID(manager, graphID: str, database=None, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
         """
         Constructs a TopologicPy graph from Neo4j using the canonical graph id.
         """
@@ -1296,6 +1521,9 @@ class Neo4j:
             g = Topology.SetDictionary(g, g_dict)
             if ontology:
                 g = _annotate_graph_for_ontology(g, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.GraphByID", silent=True)
+            if asTGraph:
+                tg = _legacy_graph_to_tgraph(g, ontology=ontology, silent=silent)
+                return tg if tg is not None else g
             return g
         except Exception as ex:
             if not silent:
@@ -1303,7 +1531,7 @@ class Neo4j:
             return None
 
     @staticmethod
-    def GraphsByQuery(manager, query: str, parameters: dict = None, database=None, ontology: bool = True, silent: bool = False):
+    def GraphsByQuery(manager, query: str, parameters: dict = None, database=None, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
         """
         Executes a Cypher query and returns a list of TopologicPy graphs constructed
         directly from the returned nodes, relationships, and paths.
@@ -1555,6 +1783,9 @@ class Neo4j:
                 g = Graph.ByVerticesEdges(vertices, edges)
             if ontology:
                 g = _annotate_graph_for_ontology(g, graphClass="top:Graph", graphCategory="graph", generatedBy="Neo4j.GraphsByQuery", silent=True)
+            if asTGraph:
+                tg = _legacy_graph_to_tgraph(g, ontology=ontology, silent=silent)
+                return [tg if tg is not None else g]
             return [g]
 
         except Exception as ex:
@@ -1652,16 +1883,19 @@ class Neo4j:
         nodeFeaturesKeys=None,
         tolerance=0.0001, database=None, ontology: bool = True, silent=False):
         """
-        Reads CSV graph data using Graph.ByCSVPath and upserts all returned graphs into Neo4j.
+        Reads CSV graph data using TGraph.ByCSVPath where available, falling back to
+        Graph.ByCSVPath, and upserts all returned graphs into Neo4j.
 
-        The signature mirrors Graph.ByCSVPath, with an extra optional database parameter.
+        The signature mirrors the TopologicPy CSV graph dataset import signature,
+        with an extra optional database parameter.
         """
         try:
-            from topologicpy.Graph import Graph
-
             Neo4j.EnsureSchema(manager, database=database, silent=silent)
+            graphs = None
+
             try:
-                graphs = Graph.ByCSVPath(
+                from topologicpy.TGraph import TGraph
+                graphs = TGraph.ByCSVPath(
                     path=path,
                     graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
                     graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
@@ -1675,24 +1909,45 @@ class Neo4j:
                     nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
                     nodeFeaturesKeys=nodeFeaturesKeys,
                     tolerance=tolerance, ontology=ontology, silent=silent)
-            except TypeError:
-                graphs = Graph.ByCSVPath(
-                    path=path,
-                    graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
-                    graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
-                    edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
-                    edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
-                    edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
-                    edgeFeaturesKeys=edgeFeaturesKeys,
-                    nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
-                    nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
-                    nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
-                    nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
-                    nodeFeaturesKeys=nodeFeaturesKeys,
-                    tolerance=tolerance, silent=silent)
+            except Exception:
+                graphs = None
+
+            if graphs is None:
+                from topologicpy.Graph import Graph
+                try:
+                    graphs = Graph.ByCSVPath(
+                        path=path,
+                        graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
+                        graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
+                        edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
+                        edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
+                        edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
+                        edgeFeaturesKeys=edgeFeaturesKeys,
+                        nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
+                        nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
+                        nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
+                        nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
+                        nodeFeaturesKeys=nodeFeaturesKeys,
+                        tolerance=tolerance, ontology=ontology, silent=silent)
+                except TypeError:
+                    graphs = Graph.ByCSVPath(
+                        path=path,
+                        graphIDHeader=graphIDHeader, graphLabelHeader=graphLabelHeader,
+                        graphFeaturesHeader=graphFeaturesHeader, graphFeaturesKeys=graphFeaturesKeys,
+                        edgeSRCHeader=edgeSRCHeader, edgeDSTHeader=edgeDSTHeader, edgeLabelHeader=edgeLabelHeader,
+                        edgeTrainMaskHeader=edgeTrainMaskHeader, edgeValidateMaskHeader=edgeValidateMaskHeader,
+                        edgeTestMaskHeader=edgeTestMaskHeader, edgeFeaturesHeader=edgeFeaturesHeader,
+                        edgeFeaturesKeys=edgeFeaturesKeys,
+                        nodeIDHeader=nodeIDHeader, nodeLabelHeader=nodeLabelHeader,
+                        nodeTrainMaskHeader=nodeTrainMaskHeader, nodeValidateMaskHeader=nodeValidateMaskHeader,
+                        nodeTestMaskHeader=nodeTestMaskHeader, nodeFeaturesHeader=nodeFeaturesHeader,
+                        nodeXHeader=nodeXHeader, nodeYHeader=nodeYHeader, nodeZHeader=nodeZHeader,
+                        nodeFeaturesKeys=nodeFeaturesKeys,
+                        tolerance=tolerance, silent=silent)
+
             if graphs is None:
                 if not silent:
-                    print("Neo4j.ByCSVPath - Error: Graph.ByCSVPath returned None. Returning None.")
+                    print("Neo4j.ByCSVPath - Error: Graph import returned None. Returning None.")
                 return None
             if not isinstance(graphs, list):
                 graphs = [graphs]
@@ -1714,7 +1969,6 @@ class Neo4j:
             if not silent:
                 print(f"Neo4j.ByCSVPath - Error: {ex}. Returning None.")
             return None
-
     # -------------------------------------------------------------------------
     # Corpus analytics for graph generation / GraphRAG workflows
     # -------------------------------------------------------------------------
@@ -2036,6 +2290,7 @@ class Neo4j:
                 database: str = None,
                 overwrite: bool = True,
                 ontology: bool = True,
+                asTGraph: bool = False,
                 silent: bool = False):
         """
         Writes the input Topologic graph to Neo4j.
@@ -2044,15 +2299,12 @@ class Neo4j:
         canonical schema. The input driver is returned on success.
         """
         try:
-            from topologicpy.Topology import Topology
-            from topologicpy.Dictionary import Dictionary
-
             if deleteAll:
                 Neo4j.EmptyDatabase(driver, dropSchema=False, recreateSchema=True, database=database, silent=silent)
             if graphID is not None and str(graphID).strip() != "":
-                d = Topology.Dictionary(graph)
-                d = Dictionary.SetValueAtKey(d, graphIDKey, str(graphID).strip())
-                Topology.SetDictionary(graph, d)
+                d = _graph_dictionary(graph)
+                d[graphIDKey] = str(graphID).strip()
+                graph = _set_graph_dictionary(graph, d, silent=True)
             gid = Neo4j.UpsertGraph(driver, graph, graphIDKey=graphIDKey, vertexIDKey=None, vertexLabelKey=nodeLabelKey, mantissa=mantissa, database=database, ontology=ontology, silent=silent)
             return driver if gid is not None else None
         except Exception as ex:
@@ -2192,16 +2444,17 @@ class Neo4j:
                 database: str = None,
                 tolerance: float = 0.0001,
                 ontology: bool = True,
+                asTGraph: bool = False,
                 silent: bool = False):
         """
-        Returns a Topologic graph from Neo4j.
+        Returns a TopologicPy Graph or TGraph from Neo4j.
 
         If graphID is supplied, the canonical graph with that id is returned.
         Otherwise, the method imports graph entities returned by the supplied
         Cypher query, or by a generic whole-database query when cypher is None.
         """
         if graphID is not None:
-            return Neo4j.GraphByID(driver, graphID, database=database, ontology=ontology, silent=silent)
+            return Neo4j.GraphByID(driver, graphID, database=database, ontology=ontology, asTGraph=asTGraph, silent=silent)
 
         # Generic fallback for arbitrary Neo4j graph queries.
         try:

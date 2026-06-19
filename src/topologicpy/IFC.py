@@ -3842,10 +3842,11 @@ class IFC:
                     dictionaryMode: str = "basic",
                     bidirectional: bool = True,
                     ontology: bool = True,
+                    asTGraph: bool = False,
                     tolerance: float = 0.0001,
                     silent: bool = False):
         """
-        Creates a TopologicPy Graph representing space adjacency from an IFC file.
+        Creates a TopologicPy Graph or TGraph representing space adjacency from an IFC file.
 
         The returned graph contains one vertex per IfcSpace. Edges are created
         between spaces that share a boundary-related connector element.
@@ -3904,6 +3905,9 @@ class IFC:
         bidirectional : bool , optional
             If set to True, edge dictionaries record the edge as bidirectional.
             Default is True.
+        asTGraph : bool , optional
+            If set to True, the method returns a topologicpy.TGraph. If set to
+            False, the method returns a legacy topologic_core.Graph. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -3912,11 +3916,11 @@ class IFC:
 
         Returns
         -------
-        topologic_core.Graph
+        topologic_core.Graph or topologicpy.TGraph
             A TopologicPy graph whose vertices are IfcSpace entities and whose
             edges represent inferred space adjacency through shared or
-            corresponding boundary elements. Returns None if the IFC file cannot
-            be parsed.
+            corresponding boundary elements. If asTGraph is True, a TGraph is
+            returned. Returns None if the IFC file cannot be parsed.
         """
 
         import math
@@ -3924,9 +3928,18 @@ class IFC:
 
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+
+        try:
+            from topologicpy.TGraph import TGraph
+        except Exception:
+            TGraph = None
+
+        try:
+            from topologicpy.Graph import Graph
+        except Exception:
+            Graph = None
 
         importMode = str(importMode).strip().lower() if importMode is not None else "topology"
         if importMode not in ["topology", "geometry"]:
@@ -5035,11 +5048,81 @@ class IFC:
             if edge_cb is not None:
                 edges.append(edge_cb)
 
-        try:
-            graph = Graph.ByVerticesEdges(vertices, edges, index=True)
-        except Exception as e:
+        def _legacy_graph_by_vertices_edges():
+            if Graph is None:
+                return None
+            try:
+                return Graph.ByVerticesEdges(vertices, edges, index=True)
+            except TypeError:
+                try:
+                    return Graph.ByVerticesEdges(vertices, edges)
+                except Exception:
+                    return None
+            except Exception:
+                return None
+
+        def _tgraph_by_vertices_edges():
+            if TGraph is None:
+                return None
+
+            call_patterns = (
+                lambda: TGraph.ByVerticesEdges(
+                    vertices=vertices,
+                    edges=edges,
+                    index=True,
+                    ontology=ontology,
+                    tolerance=tolerance,
+                    silent=silent,
+                ),
+                lambda: TGraph.ByVerticesEdges(
+                    vertices=vertices,
+                    edges=edges,
+                    ontology=ontology,
+                    tolerance=tolerance,
+                    silent=silent,
+                ),
+                lambda: TGraph.ByVerticesEdges(
+                    vertices=vertices,
+                    edges=edges,
+                    tolerance=tolerance,
+                    silent=silent,
+                ),
+                lambda: TGraph.ByVerticesEdges(vertices, edges),
+            )
+
+            for call in call_patterns:
+                try:
+                    graph_candidate = call()
+                    if graph_candidate is not None:
+                        return graph_candidate
+                except TypeError:
+                    continue
+                except Exception:
+                    continue
+
+            legacy_graph = _legacy_graph_by_vertices_edges()
+            if legacy_graph is not None:
+                try:
+                    return TGraph.ByGraph(legacy_graph, ontology=ontology, silent=silent)
+                except TypeError:
+                    try:
+                        return TGraph.ByGraph(legacy_graph)
+                    except Exception:
+                        return None
+                except Exception:
+                    return None
+
+            return None
+
+        if asTGraph:
+            graph = _tgraph_by_vertices_edges()
+        else:
+            graph = _legacy_graph_by_vertices_edges()
+
+        if graph is None:
             if not silent:
-                print(f"IFC.AccessGraph - Error: Could not create graph. {e} Returning None.")
+                graph_type = "TGraph" if asTGraph else "Graph"
+                print(f"IFC.AccessGraph - Error: Could not create {graph_type}. Returning None.")
             return None
 
         return graph

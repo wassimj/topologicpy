@@ -239,99 +239,381 @@ class Grid:
     # -------------------------------------------------------------------------
     # Public methods
     # -------------------------------------------------------------------------
+    # @staticmethod
+    # def EdgesByDistances(face=None,
+    #                     uOrigin=None,
+    #                     vOrigin=None,
+    #                     uRange=None,
+    #                     vRange=None,
+    #                     clip=False,
+    #                     mantissa: int = 6,
+    #                     tolerance=0.0001):
+    #     """
+    #     Creates a grid of edges by distance offsets.
+
+    #     Parameters
+    #     ----------
+    #     face : topologic_core.Face , optional
+    #         The input face. If set to None, the grid is created on the XY plane. Default is None.
+    #     uOrigin : topologic_core.Vertex , optional
+    #         The origin used for the local grid coordinate system. If None, it is set to the face's
+    #         (0,0) parameter vertex or to the world origin when face is None. Default is None.
+    #     vOrigin : topologic_core.Vertex , optional
+    #         Deprecated/legacy-compatible. If supplied, it is used as the origin for constant-v
+    #         lines only. In most cases this should be None so that both u and v lines share one
+    #         coordinate frame. Default is None.
+    #     uRange : list , optional
+    #         A list of distance offsets in the *u* direction. Default is [-0.5,-0.25,0,0.25,0.5].
+    #     vRange : list , optional
+    #         A list of distance offsets in the *v* direction. Default is [-0.5,-0.25,0,0.25,0.5].
+    #     clip : bool , optional
+    #         If True, the grid is clipped by the input face. Default is False.
+    #     mantissa : int , optional
+    #         The number of decimal places to round coordinates to. Default is 6.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Cluster
+    #         The created grid. Edges in the grid have a dictionary with keys "dir" and "offset".
+    #     """
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+
+    #     u_vals = Grid._FloatList(uRange, Grid._DefaultDistanceRange())
+    #     v_vals = Grid._FloatList(vRange, Grid._DefaultDistanceRange())
+
+    #     if u_vals is None or v_vals is None:
+    #         return None
+
+    #     if len(u_vals) < 1 and len(v_vals) < 1:
+    #         return None
+
+    #     u_dir, v_dir = Grid._Basis(face=face, mantissa=mantissa, tolerance=tolerance)
+    #     if u_dir is None or v_dir is None:
+    #         return None
+
+    #     # Use one consistent local coordinate frame.
+    #     # uOrigin is the primary origin. vOrigin is kept only for backward compatibility.
+    #     origin = Grid._Origin(face=face, origin=uOrigin, mantissa=mantissa)
+    #     if origin is None:
+    #         return None
+
+    #     origin_coords = Grid._Coordinates(origin, mantissa=mantissa)
+    #     if origin_coords is None:
+    #         return None
+
+    #     if vOrigin is None:
+    #         v_origin_coords = origin_coords
+    #     else:
+    #         v_origin = Grid._Origin(face=face, origin=vOrigin, mantissa=mantissa)
+    #         if v_origin is None:
+    #             return None
+    #         v_origin_coords = Grid._Coordinates(v_origin, mantissa=mantissa)
+    #         if v_origin_coords is None:
+    #             return None
+
+    #     u_span = Grid._Span(u_vals)
+    #     v_span = Grid._Span(v_vals)
+
+    #     if u_span is None or v_span is None:
+    #         return None
+
+    #     has_face = Grid._IsFace(face)
+    #     grid_edges = []
+
+    #     # Constant-u lines:
+    #     # Offset along u_dir, then span along v_dir.
+    #     for u in u_vals:
+    #         start = Grid._Point(
+    #             origin_coords,
+    #             u_dir,
+    #             v_dir,
+    #             u,
+    #             v_span[0],
+    #             mantissa=mantissa
+    #         )
+    #         end = Grid._Point(
+    #             origin_coords,
+    #             u_dir,
+    #             v_dir,
+    #             u,
+    #             v_span[1],
+    #             mantissa=mantissa
+    #         )
+
+    #         edge = Edge.ByVertices([start, end], tolerance=tolerance)
+
+    #         if edge and clip and has_face:
+    #             edge = Topology.Intersect(edge, face)
+
+    #         Grid._AppendEdgeResult(edge, grid_edges, "u", u)
+
+    #     # Constant-v lines:
+    #     # Offset along v_dir, then span along u_dir.
+    #     # The same u_dir/v_dir basis is used. Only the origin may differ for legacy compatibility.
+    #     for v in v_vals:
+    #         start = Grid._Point(
+    #             v_origin_coords,
+    #             u_dir,
+    #             v_dir,
+    #             u_span[0],
+    #             v,
+    #             mantissa=mantissa
+    #         )
+    #         end = Grid._Point(
+    #             v_origin_coords,
+    #             u_dir,
+    #             v_dir,
+    #             u_span[1],
+    #             v,
+    #             mantissa=mantissa
+    #         )
+
+    #         edge = Edge.ByVertices([start, end], tolerance=tolerance)
+
+    #         if edge and clip and has_face:
+    #             edge = Topology.Intersect(edge, face)
+
+    #         Grid._AppendEdgeResult(edge, grid_edges, "v", v)
+
+    #     if len(grid_edges) < 1:
+    #         return None
+
+    #     return Cluster.ByTopologies(grid_edges)
+
+
     @staticmethod
     def EdgesByDistances(face=None,
-                         uOrigin=None,
-                         vOrigin=None,
-                         uRange=None,
-                         vRange=None,
-                         clip=False,
-                         mantissa: int = 6,
-                         tolerance=0.0001):
+                        uOrigin=None,
+                        vOrigin=None,
+                        uRange=None,
+                        vRange=None,
+                        clip=False,
+                        mantissa: int = 6,
+                        tolerance=0.0001):
         """
         Creates a grid of edges by distance offsets.
+
+        This method converts physical distances along the face's local u and v
+        parameter directions into normalized parameters in the range [0, 1], then
+        calls Grid.EdgesByParameters.
 
         Parameters
         ----------
         face : topologic_core.Face , optional
-            The input face. If set to None, the grid is created on the XY plane. Default is None.
+            The input face. If set to None, the input uRange and vRange are assumed
+            to already be normalized parameters and Grid.EdgesByParameters is called
+            directly. Default is None.
         uOrigin : topologic_core.Vertex , optional
-            The origin used for *u* offsets. If None, it is set to the face's (0,0) parameter vertex
-            or to the world origin when face is None. Default is None.
+            Kept for backward API compatibility. This implementation derives
+            distances from Face.VertexByParameters(face, 0, 0). Default is None.
         vOrigin : topologic_core.Vertex , optional
-            The origin used for *v* offsets. If None, it is set to the face's (0,0) parameter vertex
-            or to the world origin when face is None. Default is None.
+            Kept for backward API compatibility. This implementation derives
+            distances from Face.VertexByParameters(face, 0, 0). Default is None.
         uRange : list , optional
-            A list of distance offsets in the *u* direction. Default is [-0.5,-0.25,0,0.25,0.5].
+            A list of physical distances along the face's u direction. If None, five
+            distances are generated between 0 and the full u-direction distance.
         vRange : list , optional
-            A list of distance offsets in the *v* direction. Default is [-0.5,-0.25,0,0.25,0.5].
+            A list of physical distances along the face's v direction. If None, five
+            distances are generated between 0 and the full v-direction distance.
         clip : bool , optional
-            If True, the grid is clipped by the input face. Default is False.
+            Passed to Grid.EdgesByParameters. Default is False.
         mantissa : int , optional
-            The number of decimal places to round coordinates to. Default is 6.
+            The number of decimal places to round parameters to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
         Returns
         -------
         topologic_core.Cluster
-            The created grid. Edges in the grid have a dictionary with keys "dir" and "offset".
+            The created grid. Edges in the grid have a dictionary with keys "dir" and
+            "offset", as assigned by Grid.EdgesByParameters.
         """
-        from topologicpy.Edge import Edge
-        from topologicpy.Cluster import Cluster
-        from topologicpy.Topology import Topology
+        from topologicpy.Face import Face
+        from topologicpy.Vertex import Vertex
 
-        u_vals = Grid._FloatList(uRange, Grid._DefaultDistanceRange())
-        v_vals = Grid._FloatList(vRange, Grid._DefaultDistanceRange())
-        if u_vals is None or v_vals is None:
+        def _float_list(values):
+            if values is None:
+                return None
+            if not isinstance(values, list):
+                values = [values]
+            result = []
+            for value in values:
+                try:
+                    result.append(float(value))
+                except:
+                    continue
+            return result
+
+        def _default_distances(total_distance):
+            return [
+                0.0,
+                0.25 * total_distance,
+                0.50 * total_distance,
+                0.75 * total_distance,
+                total_distance
+            ]
+
+        def _clamp(value, low=0.0, high=1.0):
+            return max(low, min(high, value))
+
+        def _safe_vertex_by_parameters(face, u, v):
+            try:
+                return Face.VertexByParameters(face, u, v)
+            except:
+                return None
+
+        def _safe_distance(vertex_a, vertex_b):
+            if vertex_a is None or vertex_b is None:
+                return None
+            try:
+                return float(Vertex.Distance(vertex_a, vertex_b))
+            except:
+                return None
+
+        def _axis_distance(face, axis, parameter):
+            parameter = _clamp(parameter)
+
+            origin = _safe_vertex_by_parameters(face, 0.0, 0.0)
+            if origin is None:
+                return None
+
+            if axis == "u":
+                vertex = _safe_vertex_by_parameters(face, parameter, 0.0)
+            else:
+                vertex = _safe_vertex_by_parameters(face, 0.0, parameter)
+
+            return _safe_distance(origin, vertex)
+
+        def _distance_to_parameter(face, axis, distance, total_distance):
+            if total_distance is None or total_distance <= tolerance:
+                return 0.0
+
+            try:
+                distance = float(distance)
+            except:
+                return None
+
+            if distance <= tolerance:
+                return 0.0
+
+            if distance >= total_distance - tolerance:
+                return 1.0
+
+            low = 0.0
+            high = 1.0
+
+            # Binary search assumes that distance increases monotonically along
+            # the selected face parameter direction.
+            for _ in range(64):
+                mid = 0.5 * (low + high)
+                mid_distance = _axis_distance(face, axis, mid)
+
+                if mid_distance is None:
+                    return None
+
+                if abs(mid_distance - distance) <= tolerance:
+                    return round(mid, mantissa)
+
+                if mid_distance < distance:
+                    low = mid
+                else:
+                    high = mid
+
+            return round(0.5 * (low + high), mantissa)
+
+        # If no face is supplied, there is no physical face domain from which to
+        # derive distances. In that case, assume the supplied ranges are already
+        # normalized parameters.
+        if face is None:
+            u_params = _float_list(uRange)
+            v_params = _float_list(vRange)
+
+            if u_params is None:
+                u_params = Grid._DefaultParameterRange()
+            if v_params is None:
+                v_params = Grid._DefaultParameterRange()
+
+            return Grid.EdgesByParameters(
+                face=face,
+                uRange=u_params,
+                vRange=v_params,
+                clip=clip,
+                mantissa=mantissa,
+                tolerance=tolerance
+            )
+
+        origin = _safe_vertex_by_parameters(face, 0.0, 0.0)
+        u_end = _safe_vertex_by_parameters(face, 1.0, 0.0)
+        v_end = _safe_vertex_by_parameters(face, 0.0, 1.0)
+
+        if origin is None or u_end is None or v_end is None:
             return None
+
+        u_total_distance = _safe_distance(origin, u_end)
+        v_total_distance = _safe_distance(origin, v_end)
+
+        if u_total_distance is None or v_total_distance is None:
+            return None
+
+        if u_total_distance <= tolerance or v_total_distance <= tolerance:
+            return None
+
+        u_vals = _float_list(uRange)
+        v_vals = _float_list(vRange)
+
+        if u_vals is None:
+            u_vals = _default_distances(u_total_distance)
+
+        if v_vals is None:
+            v_vals = _default_distances(v_total_distance)
+
         if len(u_vals) < 1 and len(v_vals) < 1:
             return None
 
-        u_dir, v_dir = Grid._Basis(face=face, mantissa=mantissa, tolerance=tolerance)
-        if u_dir is None or v_dir is None:
+        u_params = []
+        for u_distance in u_vals:
+            u_param = _distance_to_parameter(
+                face=face,
+                axis="u",
+                distance=u_distance,
+                total_distance=u_total_distance
+            )
+            if u_param is not None:
+                u_params.append(u_param)
+
+        v_params = []
+        for v_distance in v_vals:
+            v_param = _distance_to_parameter(
+                face=face,
+                axis="v",
+                distance=v_distance,
+                total_distance=v_total_distance
+            )
+            if v_param is not None:
+                v_params.append(v_param)
+
+        if len(u_params) < 1 and len(v_params) < 1:
             return None
 
-        u_origin = Grid._Origin(face=face, origin=uOrigin, mantissa=mantissa)
-        v_origin = Grid._Origin(face=face, origin=vOrigin, mantissa=mantissa)
-        u_origin_coords = Grid._Coordinates(u_origin, mantissa=mantissa)
-        v_origin_coords = Grid._Coordinates(v_origin, mantissa=mantissa)
-
-        u_span = Grid._Span(u_vals)
-        v_span = Grid._Span(v_vals)
-        if u_span is None or v_span is None:
-            return None
-
-        has_face = Grid._IsFace(face)
-        grid_edges = []
-
-        # Constant-u lines, parallel to the v direction and spanning vRange.
-        for u in u_vals:
-            start = Grid._Point(u_origin_coords, u_dir, v_dir, u, v_span[0], mantissa=mantissa)
-            end = Grid._Point(u_origin_coords, u_dir, v_dir, u, v_span[1], mantissa=mantissa)
-            edge = Edge.ByVertices([start, end], tolerance=tolerance)
-            if edge and clip and has_face:
-                edge = Topology.Intersect(edge, face)
-            Grid._AppendEdgeResult(edge, grid_edges, "u", u)
-
-        # Constant-v lines, parallel to the u direction and spanning uRange.
-        for v in v_vals:
-            start = Grid._Point(v_origin_coords, u_dir, v_dir, u_span[0], v, mantissa=mantissa)
-            end = Grid._Point(v_origin_coords, u_dir, v_dir, u_span[1], v, mantissa=mantissa)
-            edge = Edge.ByVertices([start, end], tolerance=tolerance)
-            if edge and clip and has_face:
-                edge = Topology.Intersect(edge, face)
-            Grid._AppendEdgeResult(edge, grid_edges, "v", v)
-
-        if len(grid_edges) < 1:
-            return None
-        return Cluster.ByTopologies(grid_edges)
+        return Grid.EdgesByParameters(
+            face=face,
+            uRange=u_params,
+            vRange=v_params,
+            clip=clip,
+            mantissa=mantissa,
+            tolerance=tolerance
+        )
 
     @staticmethod
     def EdgesByParameters(face,
                           uRange=None,
                           vRange=None,
                           clip=False,
+                          mantissa=6,
                           tolerance=0.0001):
         """
         Creates a grid of edges by face parameters.

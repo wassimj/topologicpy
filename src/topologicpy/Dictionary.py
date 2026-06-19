@@ -38,18 +38,221 @@ class Dictionary():
         return method(*args, **kwargs)
 
     @staticmethod
+    def _IsTGraph(obj) -> bool:
+        """
+        Returns True if the input object is a topologicpy.TGraph instance.
+        """
+        try:
+            from topologicpy.TGraph import TGraph
+            return isinstance(obj, TGraph)
+        except Exception:
+            return False
+
+    @staticmethod
+    def _IsTGraphEdgeRecord(obj) -> bool:
+        """
+        Returns True if the input object behaves like a TGraph edge record.
+        """
+        return (
+            isinstance(obj, dict) and
+            "index" in obj and
+            "src" in obj and
+            "dst" in obj and
+            isinstance(obj.get("dictionary", None), dict)
+        )
+
+    @staticmethod
+    def _IsTGraphVertexRecord(obj) -> bool:
+        """
+        Returns True if the input object behaves like a TGraph vertex record.
+        """
+        return (
+            isinstance(obj, dict) and
+            "index" in obj and
+            "src" not in obj and
+            "dst" not in obj and
+            isinstance(obj.get("dictionary", None), dict)
+        )
+
+    @staticmethod
+    def _IsTGraphDictionaryContainer(obj) -> bool:
+        """
+        Returns True if the input object is a TGraph, a TGraph vertex record, or
+        a TGraph edge record.
+        """
+        return (
+            Dictionary._IsTGraph(obj) or
+            Dictionary._IsTGraphVertexRecord(obj) or
+            Dictionary._IsTGraphEdgeRecord(obj)
+        )
+
+    @staticmethod
+    def _TGraphDictionary(obj):
+        """
+        Returns the Python dictionary attached to a TGraph, TGraph vertex record,
+        or TGraph edge record.
+        """
+        if Dictionary._IsTGraph(obj):
+            d = getattr(obj, "_dictionary", None)
+            if not isinstance(d, dict):
+                try:
+                    obj._dictionary = {}
+                    d = obj._dictionary
+                except Exception:
+                    d = {}
+            return d
+
+        if Dictionary._IsTGraphVertexRecord(obj) or Dictionary._IsTGraphEdgeRecord(obj):
+            d = obj.get("dictionary", None)
+            if not isinstance(d, dict):
+                obj["dictionary"] = {}
+                d = obj["dictionary"]
+            return d
+
+        return None
+
+    @staticmethod
+    def _SetTGraphDictionary(obj, py_dict):
+        """
+        Sets the Python dictionary attached to a TGraph, TGraph vertex record, or
+        TGraph edge record and returns the original object.
+        """
+        if not isinstance(py_dict, dict):
+            return obj
+
+        if Dictionary._IsTGraph(obj):
+            try:
+                obj.SetDictionary(dict(py_dict))
+            except Exception:
+                try:
+                    obj._dictionary = dict(py_dict)
+                    if callable(getattr(obj, "_invalidate_cache", None)):
+                        obj._invalidate_cache()
+                except Exception:
+                    pass
+            return obj
+
+        if Dictionary._IsTGraphVertexRecord(obj) or Dictionary._IsTGraphEdgeRecord(obj):
+            obj["dictionary"] = dict(py_dict)
+
+            # Preserve structural metadata inside the dictionary when useful.
+            if "index" in obj:
+                obj["dictionary"].setdefault("index", obj.get("index"))
+            if "active" in obj:
+                obj["dictionary"].setdefault("active", obj.get("active", True))
+            if Dictionary._IsTGraphEdgeRecord(obj):
+                obj["dictionary"].setdefault("src", obj.get("src"))
+                obj["dictionary"].setdefault("dst", obj.get("dst"))
+                obj["dictionary"].setdefault("directed", obj.get("directed", False))
+            return obj
+
+        return obj
+
+    @staticmethod
+    def _ToPythonDictionary(dictionary, copy: bool = True):
+        """
+        Converts any supported dictionary-like object to a Python dictionary.
+
+        Supported inputs include Python dictionaries, Core/topologic dictionaries,
+        backend dictionary objects, topologicpy.TGraph instances, TGraph vertex
+        records, and TGraph edge records.
+        """
+        if dictionary is None:
+            return None
+
+        if Dictionary._IsTGraphDictionaryContainer(dictionary):
+            d = Dictionary._TGraphDictionary(dictionary)
+            if not isinstance(d, dict):
+                return {}
+            return dict(d) if copy else d
+
+        if isinstance(dictionary, dict):
+            return dict(dictionary) if copy else dictionary
+
+        try:
+            if callable(getattr(dictionary, "PythonDictionary", None)):
+                py_dict = dictionary.PythonDictionary()
+                if isinstance(py_dict, dict):
+                    return dict(py_dict) if copy else py_dict
+        except Exception:
+            pass
+
+        if not Dictionary._IsDictionary(dictionary):
+            return None
+
+        keys = Dictionary._Keys(dictionary)
+        if keys is None:
+            return None
+
+        py = {}
+        for key in keys:
+            raw_value = Dictionary._RawValueAtKey(dictionary, key)
+            py[key] = Dictionary._ConvertAttribute(raw_value)
+        return py
+
+    @staticmethod
+    def _SetPythonDictionary(dictionary, py_dict):
+        """
+        Writes a Python dictionary back into a supported mutable container where
+        possible. For immutable Core/topologic dictionaries, a new Core/topologic
+        dictionary is returned.
+        """
+        if not isinstance(py_dict, dict):
+            return None
+
+        if Dictionary._IsTGraphDictionaryContainer(dictionary):
+            return Dictionary._SetTGraphDictionary(dictionary, py_dict)
+
+        if isinstance(dictionary, dict):
+            dictionary.clear()
+            dictionary.update(py_dict)
+            return dictionary
+
+        return Dictionary.ByPythonDictionary(py_dict, silent=True)
+
+    @staticmethod
+    def _ValuesMatch(a, b, caseSensitive: bool = True) -> bool:
+        """
+        Returns True if two dictionary values should be considered equal.
+        """
+        if a == b:
+            return True
+
+        try:
+            if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+                return float(a) == float(b)
+        except Exception:
+            pass
+
+        try:
+            sa = str(a)
+            sb = str(b)
+            if not caseSensitive:
+                sa = sa.lower()
+                sb = sb.lower()
+            return sa == sb
+        except Exception:
+            return False
+
+    @staticmethod
     def _IsDictionary(dictionary) -> bool:
         """
         Returns True if the input behaves like a supported dictionary.
 
         Supported inputs are:
         - native Python dictionaries;
+        - topologicpy.TGraph instances;
+        - TGraph vertex records;
+        - TGraph edge records;
         - the active Core/topologic dictionary class;
         - backend dictionary objects exposing Keys() and ValueAtKey(key);
         - backend dictionary objects exposing PythonDictionary().
         """
         if dictionary is None:
             return False
+
+        if Dictionary._IsTGraphDictionaryContainer(dictionary):
+            return True
 
         if isinstance(dictionary, dict):
             return True
@@ -82,6 +285,10 @@ class Dictionary():
         """
         Returns dictionary keys without printing diagnostics.
         """
+        if Dictionary._IsTGraphDictionaryContainer(dictionary):
+            d = Dictionary._TGraphDictionary(dictionary)
+            return list(d.keys()) if isinstance(d, dict) else []
+
         if isinstance(dictionary, dict):
             return list(dictionary.keys())
 
@@ -117,6 +324,12 @@ class Dictionary():
         """
         Returns a raw dictionary value or Core attribute without converting it.
         """
+        if Dictionary._IsTGraphDictionaryContainer(dictionary):
+            d = Dictionary._TGraphDictionary(dictionary)
+            if isinstance(d, dict):
+                return d.get(key, None)
+            return None
+
         if isinstance(dictionary, dict):
             return dictionary.get(key, None)
 
@@ -258,14 +471,14 @@ class Dictionary():
         return StringAttribute("__NONE__")
 
     @staticmethod
-    def AdjacencyDictionary(topology, subTopologyType: str = None, labelKey: str = None,  weightKey: str = None, includeWeights: bool = False, mantissa: int = 6, silent: bool = False):
+    def AdjacencyDictionary(topology, subTopologyType: str = None, labelKey: str = None, weightKey: str = None, includeWeights: bool = False, mantissa: int = 6, silent: bool = False):
         """
-        Returns the adjacency dictionary of the input Shell.
+        Returns the adjacency dictionary of the input topology or graph.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         subTopologyType : str , optional
             The type of subTopology on which to base the adjacency dictionary.
         labelKey : str , optional
@@ -276,105 +489,217 @@ class Dictionary():
         includeWeights : bool , optional
             If set to True, edge weights are included. Otherwise, they are not. Default is False.
         mantissa : int , optional
-                The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the result to. Default is 6.
         silent : bool , optional
-                If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         dict
             The adjacency dictionary.
+
         """
+
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Topology import Topology
-        from topologicpy.Graph import Graph
         from topologicpy.Helper import Helper
 
-        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
-            if not silent:
-                print("Dictionary.AdjacencyDictionary - Error: The input topology input parameter is not a valid topology. Returning None.")
-            return None
-        # Special Case for Graphs
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
 
+        # ------------------------------------------------------------------
+        # Special case for TGraph. This must come before the legacy Graph
+        # branch because Topology.IsInstance(tgraph, "Graph") may return True.
+        # ------------------------------------------------------------------
+        if is_tgraph:
+            return TGraph.AdjacencyDictionary(
+                topology,
+                vertexLabelKey=labelKey,
+                edgeKey=weightKey,
+                includeWeights=includeWeights
+            )
+
+        # ------------------------------------------------------------------
+        # Special case for legacy Graph.
+        # ------------------------------------------------------------------
         if Topology.IsInstance(topology, "Graph"):
-            return Graph.AdjacencyDictionary(topology, vertexLabelKey=labelKey, edgeKey=weightKey, includeWeights=includeWeights, mantissa=mantissa)
-        if labelKey == None:
+            from topologicpy.Graph import Graph
+
+            return Graph.AdjacencyDictionary(
+                topology,
+                vertexLabelKey=labelKey,
+                edgeKey=weightKey,
+                includeWeights=includeWeights,
+                mantissa=mantissa
+            )
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input topology parameter is not a valid topology or graph. Returning None.")
+            return None
+
+        internalLabelKey = labelKey is None
+
+        if labelKey is None:
             labelKey = "__label__"
+
         if not isinstance(labelKey, str):
             if not silent:
                 print("Dictionary.AdjacencyDictionary - Error: The input labelKey is not a valid string. Returning None.")
             return None
+
+        if subTopologyType is not None and not isinstance(subTopologyType, str):
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input subTopologyType is not a valid string. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Determine default subtopology type.
+        # ------------------------------------------------------------------
         if Topology.IsInstance(topology, "cellcomplex"):
-            if subTopologyType == None:
+            if subTopologyType is None:
                 subTopologyType = "cell"
-            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
         elif Topology.IsInstance(topology, "cell") or Topology.IsInstance(topology, "shell"):
-            if subTopologyType == None:
+            if subTopologyType is None:
                 subTopologyType = "face"
-            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
         elif Topology.IsInstance(topology, "face") or Topology.IsInstance(topology, "wire"):
-            if subTopologyType == None:
+            if subTopologyType is None:
                 subTopologyType = "edge"
-            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+        else:
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input topology type is not supported. Returning None.")
+            return None
+
+        subTopologyType = subTopologyType.lower()
+
+        if subTopologyType not in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex"]:
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: The input subTopologyType parameter is not recognized. Returning None.")
+            return None
+
+        all_subtopologies = Topology.SubTopologies(
+            topology,
+            subTopologyType=subTopologyType,
+            silent=silent
+        )
+
+        if not isinstance(all_subtopologies, list):
+            if not silent:
+                print("Dictionary.AdjacencyDictionary - Error: Could not retrieve subtopologies. Returning None.")
+            return None
+
+        if len(all_subtopologies) < 1:
+            return {}
+
+        # ------------------------------------------------------------------
+        # Label subtopologies.
+        # ------------------------------------------------------------------
         labels = []
         n = max(len(str(len(all_subtopologies))), 3)
+
         for i, subtopology in enumerate(all_subtopologies):
             d = Topology.Dictionary(subtopology)
-            value = Dictionary.ValueAtKey(d, labelKey)
-            if value == None:
-                value = str(i+1).zfill(n)
-            if d == None:
+            value = Dictionary.ValueAtKey(d, labelKey, None)
+
+            if value is None:
+                value = str(i + 1).zfill(n)
+
+            if d is None:
                 d = Dictionary.ByKeyValue(labelKey, value)
             else:
                 d = Dictionary.SetValueAtKey(d, labelKey, value, silent=silent)
-            subtopology = Topology.SetDictionary(subtopology, d)
+
+            subtopology = Topology.SetDictionary(subtopology, d, silent=silent)
+            all_subtopologies[i] = subtopology
             labels.append(value)
+
         all_subtopologies = Helper.Sort(all_subtopologies, labels)
-        labels.sort()
-        order = len(all_subtopologies)
+        labels = sorted(labels)
+
         adjDict = {}
-        for i in range(order):
-            subtopology = all_subtopologies[i]
+
+        # ------------------------------------------------------------------
+        # Build adjacency dictionary.
+        # ------------------------------------------------------------------
+        for i, subtopology in enumerate(all_subtopologies):
             subt_label = labels[i]
-            adjacent_topologies = Topology.AdjacentTopologies(subtopology, hostTopology=topology, topologyType=subTopologyType)
+
+            adjacent_topologies = Topology.AdjacentTopologies(
+                subtopology,
+                hostTopology=topology,
+                topologyType=subTopologyType
+            )
+
+            if not isinstance(adjacent_topologies, list):
+                adjacent_topologies = []
+
             temp_list = []
+
             for adj_topology in adjacent_topologies:
-                adj_label = Dictionary.ValueAtKey(Topology.Dictionary(adj_topology), labelKey, silent=silent)
-                adj_index = labels.index(adj_label)
-                if includeWeights == True:
-                    if weightKey == None:
+                adj_label = Dictionary.ValueAtKey(
+                    Topology.Dictionary(adj_topology),
+                    labelKey,
+                    None
+                )
+
+                if adj_label not in labels:
+                    continue
+
+                if includeWeights:
+                    if weightKey is None:
                         weight = 1
-                    elif "length" in weightKey.lower():
+
+                    elif isinstance(weightKey, str) and "length" in weightKey.lower():
                         shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
-                        edges = shared_topologies.get("edges", [])
+                        edges = shared_topologies.get("edges", []) if isinstance(shared_topologies, dict) else []
                         weight = sum([Edge.Length(edge, mantissa=mantissa) for edge in edges])
-                    elif "area" in weightKey.lower():
+
+                    elif isinstance(weightKey, str) and "area" in weightKey.lower():
                         shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
-                        faces = shared_topologies.get("faces", [])
+                        faces = shared_topologies.get("faces", []) if isinstance(shared_topologies, dict) else []
                         weight = sum([Face.Area(face, mantissa=mantissa) for face in faces])
+
                     else:
                         shared_topologies = Topology.SharedTopologies(subtopology, adj_topology)
-                        vertices = shared_topologies.get("vertices", [])
-                        edges = shared_topologies.get("edges", [])
-                        wires = shared_topologies.get("wires", [])
-                        faces = shared_topologies.get("faces", [])
-                        everything = vertices+edges+wires+faces
-                        weight = sum([Dictionary.ValueAtKey(Topology.Dictionary(x),weightKey, 0) for x in everything])
+                        if isinstance(shared_topologies, dict):
+                            vertices = shared_topologies.get("vertices", [])
+                            edges = shared_topologies.get("edges", [])
+                            wires = shared_topologies.get("wires", [])
+                            faces = shared_topologies.get("faces", [])
+                            everything = vertices + edges + wires + faces
+                        else:
+                            everything = []
+
+                        weight = sum([
+                            Dictionary.ValueAtKey(Topology.Dictionary(x), weightKey, 0)
+                            for x in everything
+                        ])
                         weight = round(weight, mantissa)
-                    if not adj_index == None:
-                        temp_list.append((adj_label, weight))
+
+                    temp_list.append((adj_label, weight))
+
                 else:
-                    if not adj_index == None:
-                        temp_list.append(adj_label)
+                    temp_list.append(adj_label)
+
             temp_list.sort()
             adjDict[subt_label] = temp_list
-        if labelKey == "__label__": # This is label we added, so remove it
+
+        # ------------------------------------------------------------------
+        # Remove temporary labels if this method created them.
+        # ------------------------------------------------------------------
+        if internalLabelKey:
             for subtopology in all_subtopologies:
                 d = Topology.Dictionary(subtopology)
                 d = Dictionary.RemoveKey(d, labelKey)
-                subtopology = Topology.SetDictionary(subtopology, d)
+                subtopology = Topology.SetDictionary(subtopology, d, silent=silent)
+
         return adjDict
 
     @staticmethod
@@ -522,12 +847,17 @@ class Dictionary():
     @staticmethod
     def ByMergedDictionaries(*dictionaries, silent: bool = False):
         """
-        Creates a dictionary by merging the list of input dictionaries.
+        Creates a dictionary by merging the input dictionaries.
+
+        The inputs can be Python dictionaries, Core/topologic dictionaries,
+        backend dictionary objects, topologicpy.TGraph instances, TGraph vertex
+        records, or TGraph edge records. None values are preserved when the key
+        exists; missing keys and stored None values are not conflated.
 
         Parameters
         ----------
         dictionaries : list or comma separated dictionaries
-            The input list of dictionaries to be merged.
+            The input dictionaries to be merged.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -535,141 +865,50 @@ class Dictionary():
         -------
         topologic_core.Dictionary
             The created dictionary.
-
         """
         from topologicpy.Helper import Helper
-        from topologicpy.Topology import Topology
 
         if isinstance(dictionaries, tuple):
             dictionaries = Helper.Flatten(list(dictionaries))
         elif not isinstance(dictionaries, list):
             dictionaries = [dictionaries]
 
-        valid_dictionaries = []
-
+        py_dicts = []
         for d in dictionaries:
-            if Topology.IsInstance(d, "Dictionary"):
-                valid_dictionaries.append(d)
-            elif isinstance(d, dict):
-                try:
-                    valid_dictionaries.append(Dictionary.ByPythonDictionary(d))
-                except Exception:
-                    continue
+            py = Dictionary._ToPythonDictionary(d, copy=True)
+            if isinstance(py, dict):
+                py_dicts.append(py)
 
-        if len(valid_dictionaries) == 0:
+        if len(py_dicts) == 0:
             if not silent:
                 print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
             return None
 
-        if len(valid_dictionaries) == 1:
+        if len(py_dicts) == 1:
             if not silent:
                 print("Dictionary.ByMergedDictionaries - Warning: the input dictionaries parameter contains only one valid dictionary. Returning that dictionary.")
-            return valid_dictionaries[0]
+            return Dictionary.ByPythonDictionary(py_dicts[0], silent=silent)
 
-        first_dictionary = valid_dictionaries[0]
+        sink = {}
 
-        try:
-            sinkKeys = Dictionary.Keys(first_dictionary)
-            sinkValues = Dictionary.Values(first_dictionary)
-        except Exception:
-            sinkKeys = []
-            sinkValues = []
-
-        if sinkKeys is None:
-            sinkKeys = []
-        if sinkValues is None:
-            sinkValues = []
-
-        key_to_index = {key: i for i, key in enumerate(sinkKeys)}
-
-        for d in valid_dictionaries[1:]:
-            if d is None:
-                continue
-
-            try:
-                sourceKeys = Dictionary.Keys(d)
-            except Exception:
-                sourceKeys = []
-
-            if not sourceKeys:
-                continue
-
-            for sourceKey in sourceKeys:
-                try:
-                    sourceValue = Dictionary.ValueAtKey(d, sourceKey, None)
-                except Exception:
-                    sourceValue = None
-
-                if sourceValue is None:
+        for py in py_dicts:
+            for sourceKey, sourceValue in py.items():
+                if sourceKey not in sink:
+                    sink[sourceKey] = sourceValue
                     continue
 
-                index = key_to_index.get(sourceKey)
-
-                if index is None:
-                    key_to_index[sourceKey] = len(sinkKeys)
-                    sinkKeys.append(sourceKey)
-                    sinkValues.append(sourceValue)
-                    continue
-
-                sinkValue = sinkValues[index]
+                sinkValue = sink[sourceKey]
 
                 if sinkValue is None or sinkValue == "":
-                    sinkValues[index] = sourceValue
+                    sink[sourceKey] = sourceValue
                 elif isinstance(sinkValue, list):
                     if sourceValue not in sinkValue:
                         sinkValue.append(sourceValue)
                 elif sourceValue != sinkValue:
-                    sinkValues[index] = [sinkValue, sourceValue]
+                    sink[sourceKey] = [sinkValue, sourceValue]
 
-        if len(sinkKeys) > 0 and len(sinkValues) > 0:
-            return Dictionary.ByKeysValues(sinkKeys, sinkValues)
+        return Dictionary.ByPythonDictionary(sink, silent=silent)
 
-        return None
-
-    @staticmethod
-    def ByMergedDictionaries_old(*dictionaries, silent: bool = False):
-        """
-        Creates a dictionary by merging the list of input dictionaries.
-        """
-        from topologicpy.Helper import Helper
-
-        if isinstance(dictionaries, tuple):
-            dictionaries = Helper.Flatten(list(dictionaries))
-        elif not isinstance(dictionaries, list):
-            dictionaries = [dictionaries]
-
-        dictionaries = [d for d in dictionaries if Dictionary._IsDictionary(d)]
-        if len(dictionaries) == 0:
-            if not silent:
-                print("Dictionary.ByMergedDictionaries - Error: the input dictionaries parameter does not contain any valid dictionaries. Returning None.")
-            return None
-        if len(dictionaries) == 1:
-            if not silent:
-                print("Dictionary.ByMergedDictionaries - Warning: the input dictionaries parameter contains only one dictionary. Returning input dictionary.")
-            return dictionaries[0]
-
-        sinkKeys = []
-        sinkValues = []
-        for d in dictionaries:
-            sourceKeys = Dictionary.Keys(d, silent=silent) or []
-            for sourceKey in sourceKeys:
-                sourceValue = Dictionary.ValueAtKey(d, sourceKey, silent=silent)
-                if sourceKey not in sinkKeys:
-                    sinkKeys.append(sourceKey)
-                    sinkValues.append(sourceValue)
-                    continue
-                index = sinkKeys.index(sourceKey)
-                if sourceValue is None:
-                    continue
-                if sinkValues[index] is None or sinkValues[index] == "":
-                    sinkValues[index] = sourceValue
-                elif isinstance(sinkValues[index], list):
-                    if sourceValue not in sinkValues[index]:
-                        sinkValues[index].append(sourceValue)
-                elif sourceValue != sinkValues[index]:
-                    sinkValues[index] = [sinkValues[index], sourceValue]
-
-        return Dictionary.ByKeysValues(sinkKeys, sinkValues, silent=silent)
 
     @staticmethod
     def ByObjectProperties(bObject, keys, importAll):
@@ -750,77 +989,88 @@ class Dictionary():
     @staticmethod
     def ByPythonDictionary(pythonDictionary, silent: bool = False):
         """
-        Creates a dictionary equivalent to the input python dictionary.
+        Creates a Core/topologic dictionary equivalent to the input Python
+        dictionary or dictionary-bearing TGraph object/record.
 
         Parameters
         ----------
-        pythonDictionary : dict
-            The input python dictionary.
+        pythonDictionary : dict, topologicpy.TGraph, TGraph vertex record, or TGraph edge record
+            The input dictionary-like object.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Dictionary
-            The dictionary equivalent to the input python dictionary.
-
+            The dictionary equivalent to the input dictionary.
         """
+        if Dictionary._IsTGraphDictionaryContainer(pythonDictionary):
+            pythonDictionary = Dictionary._ToPythonDictionary(pythonDictionary, copy=True)
+
         if not isinstance(pythonDictionary, dict):
             if not silent:
                 print("Dictionary.ByPythonDictionary - Error: The input dictionary parameter is not a valid python dictionary. Returning None.")
             return None
+
         keys = list(pythonDictionary.keys())
-        values = []
-        for key in keys:
-            values.append(pythonDictionary[key])
-        return Dictionary.ByKeysValues(keys, values)
+        values = [pythonDictionary[key] for key in keys]
+        return Dictionary.ByKeysValues(keys, values, silent=silent)
 
     @staticmethod
     def Copy(dictionary, silent: bool = False):
         """
-        Creates a copy of the input dictionary.
+        Creates a copy of the input dictionary-like object as a Core/topologic
+        dictionary.
         """
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
                 print("Dictionary.Copy - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
             return None
-        keys = Dictionary.Keys(dictionary, silent=silent)
-        values = Dictionary.Values(dictionary, silent=silent)
-        return Dictionary.ByKeysValues(keys, values, silent=silent)
+        return Dictionary.ByPythonDictionary(py, silent=silent)
 
     @staticmethod
     def Difference(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the difference of dictionaryA and dictionaryB (A \\ B), based on keys.
         """
-        if dictionaryA is None:
-            if not silent:
-                print("Dictionary.Difference - Warning: The dictionaryA input parameter is None. Returning None.")
-            return None
-        if not Dictionary._IsDictionary(dictionaryA):
-            if not silent:
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        if pyA is None:
+            if dictionaryA is None:
+                if not silent:
+                    print("Dictionary.Difference - Warning: The dictionaryA input parameter is None. Returning None.")
+            elif not silent:
                 print("Dictionary.Difference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Difference - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+            return Dictionary.ByPythonDictionary(pyA, silent=silent)
+
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+        if pyB is None:
             if not silent:
                 print("Dictionary.Difference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB]
-        out_vals = [Dictionary.ValueAtKey(dictionaryA, k, silent=silent) for k in out_keys]
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        return Dictionary.ByPythonDictionary({k: v for k, v in pyA.items() if k not in pyB}, silent=silent)
 
     @staticmethod
     def Filter(elements, dictionaries, searchType="any", key=None, value=None):
         """
         Filters the input list of dictionaries based on the input parameters.
+
+        If searchType is "any", all dictionary values are searched for the input
+        value. Otherwise, the supplied key is used.
         """
+        import re
+
+        if not isinstance(dictionaries, list):
+            dictionaries = []
+        if not isinstance(elements, list):
+            elements = []
+
         filteredDictionaries = []
         otherDictionaries = []
         filteredElements = []
@@ -828,43 +1078,48 @@ class Dictionary():
         filteredIndices = []
         otherIndices = []
 
+        def _match(candidate, query, st):
+            if st in ["equal to", "equals", "=", "=="]:
+                return Dictionary._ValuesMatch(candidate, query, caseSensitive=False)
+            if st in ["not equal to", "not equals", "!="]:
+                return not Dictionary._ValuesMatch(candidate, query, caseSensitive=False)
+
+            c = str(candidate).lower()
+            q = str(query).replace("*", ".+").lower()
+
+            if st == "contains":
+                return q in c
+            if st == "starts with":
+                return c.startswith(q)
+            if st == "ends with":
+                return c.endswith(q)
+            if st == "does not contain":
+                return q not in c
+            if st == "matches":
+                try:
+                    return re.search(q, c) is not None
+                except Exception:
+                    return False
+            if st == "any":
+                return q in c
+            return False
+
+        st = str(searchType or "any").strip().lower()
+
         for i, aDictionary in enumerate(dictionaries):
-            if not Dictionary._IsDictionary(aDictionary):
-                continue
-            if value == "" or key == "" or value is None or key is None:
-                filteredDictionaries.append(aDictionary)
-                filteredIndices.append(i)
-                if i < len(elements):
-                    filteredElements.append(elements[i])
+            py = Dictionary._ToPythonDictionary(aDictionary, copy=True)
+            if py is None:
                 continue
 
-            if isinstance(value, list):
-                value = sorted(value)
-            value_str = str(value).replace("*", ".+").lower()
-            v = Dictionary.ValueAtKey(aDictionary, key)
-            if v is None:
-                otherDictionaries.append(aDictionary)
-                otherIndices.append(i)
-                if i < len(elements):
-                    otherElements.append(elements[i])
-                continue
-
-            v_str = str(v).lower()
-            st = searchType.lower()
-            if st == "equal to":
-                searchResult = value_str == v_str
-            elif st == "contains":
-                searchResult = value_str in v_str
-            elif st == "starts with":
-                searchResult = value_str == v_str[:len(value_str)]
-            elif st == "ends with":
-                searchResult = value_str == v_str[-len(value_str):]
-            elif st == "not equal to":
-                searchResult = value_str != v_str
-            elif st == "does not contain":
-                searchResult = value_str not in v_str
+            if value == "" or value is None:
+                searchResult = True
+            elif st == "any" or key in [None, ""]:
+                searchResult = any(_match(v, value, "any") for v in py.values())
             else:
-                searchResult = False
+                if key not in py:
+                    searchResult = False
+                else:
+                    searchResult = _match(py.get(key), value, st)
 
             if searchResult:
                 filteredDictionaries.append(aDictionary)
@@ -877,7 +1132,14 @@ class Dictionary():
                 if i < len(elements):
                     otherElements.append(elements[i])
 
-        return {"filteredDictionaries": filteredDictionaries, "otherDictionaries": otherDictionaries, "filteredIndices": filteredIndices, "otherIndices": otherIndices, "filteredElements": filteredElements, "otherElements": otherElements}
+        return {
+            "filteredDictionaries": filteredDictionaries,
+            "otherDictionaries": otherDictionaries,
+            "filteredIndices": filteredIndices,
+            "otherIndices": otherIndices,
+            "filteredElements": filteredElements,
+            "otherElements": otherElements,
+        }
 
     @staticmethod
     def Intersection(dictionaryA, dictionaryB, silent: bool = False):
@@ -888,79 +1150,89 @@ class Dictionary():
             if not silent:
                 print("Dictionary.Intersection - Warning: One or both of the input dictionaries is None. Returning an empty dictionary.")
             return Dictionary.ByKeysValues([], [], silent=silent)
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+
+        if pyA is None:
             if not silent:
                 print("Dictionary.Intersection - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if pyB is None:
             if not silent:
                 print("Dictionary.Intersection - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        common_keys = [k for k in keysA if k in keysB]
-        if len(common_keys) == 0:
+        common = {k: pyA[k] for k in pyA.keys() if k in pyB}
+        if not common:
             return Dictionary.ByKeysValues([], [], silent=silent)
 
-        dA_1 = Dictionary.ByKeysValues(common_keys, [Dictionary.ValueAtKey(dictionaryA, k, silent=silent) for k in common_keys], silent=silent)
-        dB_1 = Dictionary.ByKeysValues(common_keys, [Dictionary.ValueAtKey(dictionaryB, k, silent=silent) for k in common_keys], silent=silent)
-        return Dictionary.ByMergedDictionaries(dA_1, dB_1, silent=silent)
+        # Preserve previous merge semantics for common keys: equal values stay
+        # scalar; different values become a two-value list.
+        merged = {}
+        for k in common:
+            a = pyA.get(k)
+            b = pyB.get(k)
+            merged[k] = a if a == b else [a, b]
+
+        return Dictionary.ByPythonDictionary(merged, silent=silent)
 
     @staticmethod
     def Impose(dictionaryA, dictionaryB, silent: bool = False):
         """
         Imposes dictionaryB onto dictionaryA.
         """
-        if dictionaryA is None:
-            if not silent:
-                print("Dictionary.Impose - Warning: The dictionaryA input parameter is None. Returning None.")
-            return None
-        if not Dictionary._IsDictionary(dictionaryA):
-            if not silent:
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        if pyA is None:
+            if dictionaryA is None:
+                if not silent:
+                    print("Dictionary.Impose - Warning: The dictionaryA input parameter is None. Returning None.")
+            elif not silent:
                 print("Dictionary.Impose - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Impose - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+            return Dictionary.ByPythonDictionary(pyA, silent=silent)
+
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+        if pyB is None:
             if not silent:
                 print("Dictionary.Impose - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        py = Dictionary.PythonDictionary(dictionaryA, silent=True) or {}
-        for k in Dictionary.Keys(dictionaryB, silent=silent) or []:
-            py[k] = Dictionary.ValueAtKey(dictionaryB, k, silent=silent)
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+        pyA.update(pyB)
+        return Dictionary.ByPythonDictionary(pyA, silent=silent)
 
     @staticmethod
     def Imprint(dictionaryA, dictionaryB, silent: bool = False):
         """
-        Imprints dictionaryB onto dictionaryA.
+        Imprints dictionaryB onto dictionaryA by replacing values only for keys
+        already present in dictionaryA.
         """
-        if dictionaryA is None:
-            if not silent:
-                print("Dictionary.Imprint - Warning: The dictionaryA input parameter is None. Returning None.")
-            return None
-        if not Dictionary._IsDictionary(dictionaryA):
-            if not silent:
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        if pyA is None:
+            if dictionaryA is None:
+                if not silent:
+                    print("Dictionary.Imprint - Warning: The dictionaryA input parameter is None. Returning None.")
+            elif not silent:
                 print("Dictionary.Imprint - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
+
         if dictionaryB is None:
             if not silent:
                 print("Dictionary.Imprint - Warning: The dictionaryB input parameter is None. Returning dictionaryA.")
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryB):
+            return Dictionary.ByPythonDictionary(pyA, silent=silent)
+
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+        if pyB is None:
             if not silent:
                 print("Dictionary.Imprint - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = set(Dictionary.Keys(dictionaryB, silent=silent) or [])
-        out_keys = list(keysA)
-        out_vals = [Dictionary.ValueAtKey(dictionaryB if k in keysB else dictionaryA, k, silent=silent) for k in out_keys]
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        out = {k: (pyB[k] if k in pyB else pyA[k]) for k in pyA.keys()}
+        return Dictionary.ByPythonDictionary(out, silent=silent)
 
     @staticmethod
     def Keys(dictionary, silent: bool = False):
@@ -984,71 +1256,13 @@ class Dictionary():
     def KeysAtValue(dictionary, value, silent=False):
         """
         Returns all keys in the input dictionary whose value matches the input value.
-
-        Parameters
-        ----------
-        dictionary : dict or topologic_core.Dictionary
-            The input dictionary.
-        value : any
-            The value to search for.
-        silent : bool , optional
-            If set to True, error messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of keys whose associated value matches the input value.
-            Returns an empty list if no matches are found or if the input dictionary
-            is invalid.
         """
-
-        def _values_match(a, b):
-            if a == b:
-                return True
-
-            # Numeric tolerance-free comparison across int/float-like values.
-            try:
-                if isinstance(a, (int, float)) and isinstance(b, (int, float)):
-                    return float(a) == float(b)
-            except Exception:
-                pass
-
-            # Useful for cases where Topologic converts values to strings.
-            try:
-                if str(a) == str(b):
-                    return True
-            except Exception:
-                pass
-
-            return False
-
-        if isinstance(dictionary, dict):
-            return [k for k, v in dictionary.items() if _values_match(v, value)]
-
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.KeysAtValue - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning empty list.")
+                print("Dictionary.KeysAtValue - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning empty list.")
             return []
-
-        keys = Dictionary.Keys(dictionary, silent=True)
-
-        if not isinstance(keys, list):
-            return []
-
-        result = []
-
-        for key in keys:
-            raw_value = Dictionary._RawValueAtKey(dictionary, key)
-
-            if raw_value is None:
-                continue
-
-            converted_value = Dictionary._ConvertAttribute(raw_value)
-
-            if _values_match(converted_value, value):
-                result.append(key)
-
-        return result
+        return [k for k, v in py.items() if Dictionary._ValuesMatch(v, value)]
 
     @staticmethod
     def ListAttributeValues(listAttribute):
@@ -1070,36 +1284,39 @@ class Dictionary():
     @staticmethod
     def OneHotEncode(d, keys, categoriesByKey, silent=False):
         """
-        One-hot encodes multiple categorical dictionary values in one pass. See https://en.wikipedia.org/wiki/One-hot
+        One-hot encodes multiple categorical dictionary values in one pass.
+
+        For Python dictionaries, TGraphs, and TGraph vertex/edge records, the
+        original container is updated and returned. For Core/topologic
+        dictionaries, a new Core/topologic dictionary is returned.
+        See https://en.wikipedia.org/wiki/One-hot.
         """
-        if not Dictionary._IsDictionary(d):
+        py = Dictionary._ToPythonDictionary(d, copy=True)
+        if py is None:
             if not silent:
                 print("Dictionary.OneHotEncode - Error: Input is not a valid Dictionary.")
             return None
+
         if keys is None:
             if not silent:
                 print("Dictionary.OneHotEncode - Error: keys is None.")
             return None
-        keys = list(keys)
+
+        if not isinstance(keys, list):
+            keys = list(keys)
+
         if len(keys) == 0:
             return d
+
         if not isinstance(categoriesByKey, dict):
             if not silent:
                 print("Dictionary.OneHotEncode - Error: categoriesByKey must be a dict mapping key -> categories.")
             return None
 
-        orig_keys = Dictionary.Keys(d, silent=silent) or []
-        orig_vals = [Dictionary.ValueAtKey(d, k, silent=silent) for k in orig_keys]
-        orig_index = {k: i for i, k in enumerate(orig_keys)}
-        values_by_key = {k: orig_vals[orig_index[k]] if k in orig_index else None for k in keys}
+        values_by_key = {k: py.get(k, None) for k in keys}
 
-        remove_set = set(keys)
-        out_keys = []
-        out_vals = []
-        for k, v in zip(orig_keys, orig_vals):
-            if k not in remove_set:
-                out_keys.append(k)
-                out_vals.append(v)
+        for k in keys:
+            py.pop(k, None)
 
         for k in keys:
             cats = categoriesByKey.get(k, None)
@@ -1107,173 +1324,136 @@ class Dictionary():
                 if not silent:
                     print(f"Dictionary.OneHotEncode - Warning: No categories provided for key '{k}'. Skipping.")
                 continue
+
             value = values_by_key.get(k, None)
             for i, cat in enumerate(cats):
-                out_keys.append(f"{k}_{i}")
-                out_vals.append(1 if value == cat else 0)
+                py[f"{k}_{i}"] = 1 if value == cat else 0
 
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        return Dictionary._SetPythonDictionary(d, py)
 
     @staticmethod
     def PythonDictionary(dictionary, silent: bool = False):
         """
-        Returns the input dictionary as a python dictionary.
+        Returns the input dictionary-like object as a Python dictionary.
+
+        Parameters
+        ----------
+        dictionary : dict, topologic_core.Dictionary, backend dictionary, topologicpy.TGraph, TGraph vertex record, or TGraph edge record
+            The input dictionary or dictionary-bearing object.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        dict or None
+            A Python dictionary copy.
         """
-        if isinstance(dictionary, dict):
-            if not silent:
-                print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning that dictionary.")
-            return dictionary
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is not None:
+            if isinstance(dictionary, dict) and not silent:
+                print("Dictionary.PythonDictionary - Warning: The input dictionary parameter is already a python dictionary. Returning a copy of that dictionary.")
+            return py
 
-        if not Dictionary._IsDictionary(dictionary):
-            if not silent:
-                print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
-            return None
-
-        try:
-            if callable(getattr(dictionary, "PythonDictionary", None)):
-                py_dict = dictionary.PythonDictionary()
-                if isinstance(py_dict, dict):
-                    return dict(py_dict)
-        except Exception:
-            pass
-
-        keys = Dictionary.Keys(dictionary, silent=silent)
-        if keys is None:
-            return None
-
-        pythonDict = {}
-        for key in keys:
-            raw_value = Dictionary._RawValueAtKey(dictionary, key)
-            pythonDict[key] = Dictionary._ConvertAttribute(raw_value)
-        return pythonDict
+        if not silent:
+            print("Dictionary.PythonDictionary - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning None.")
+        return None
 
     @staticmethod
-    def RemoveKey(dictionary, key, silent: bool = False):
+    def RemoveKey(dictionary, key, silent: bool = False, caseSensitive: bool = False):
         """
         Removes the key and its associated value from the input dictionary.
+
+        For Python dictionaries, TGraphs, and TGraph vertex/edge records, the
+        original container is updated and returned. For Core/topologic
+        dictionaries, a new Core/topologic dictionary is returned.
         """
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.RemoveKey - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning None.")
             return None
         if not isinstance(key, str):
             if not silent:
                 print("Dictionary.RemoveKey - Error: The input key parameter is not a valid string. Returning None.")
             return None
 
-        py = Dictionary.PythonDictionary(dictionary, silent=True) or {}
         remove_key = None
-        for k in py.keys():
-            if isinstance(k, str) and k.lower() == key.lower():
+        for k in list(py.keys()):
+            if caseSensitive:
+                if k == key:
+                    remove_key = k
+                    break
+            elif isinstance(k, str) and k.lower() == key.lower():
                 remove_key = k
                 break
+
         if remove_key is not None:
             py.pop(remove_key, None)
 
-        if isinstance(dictionary, dict):
-            return py
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+        return Dictionary._SetPythonDictionary(dictionary, py)
 
     @staticmethod
     def SetValueAtKey(dictionary, key, value, silent: bool = False):
         """
         Creates or updates a key/value pair in the input dictionary.
+
+        For Python dictionaries, TGraphs, and TGraph vertex/edge records, the
+        original container is updated and returned. For Core/topologic
+        dictionaries, a new Core/topologic dictionary is returned.
         """
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.SetValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning None.")
             return None
         if not isinstance(key, str):
             if not silent:
                 print("Dictionary.SetValueAtKey - Error: The input key parameter is not a valid string. Returning None.")
             return None
 
-        if isinstance(dictionary, dict):
-            dictionary[key] = value
-            return dictionary
-
-        py = Dictionary.PythonDictionary(dictionary, silent=True) or {}
         py[key] = value
-        return Dictionary.ByPythonDictionary(py, silent=silent)
+        return Dictionary._SetPythonDictionary(dictionary, py)
 
     @staticmethod
     def SetValuesAtKeys(dictionary, keys, values, silent: bool = False):
         """
-        Creates a key/value pair in the input dictionary.
+        Creates or updates multiple key/value pairs in the input dictionary.
 
-        Parameters
-        ----------
-        keys : list
-            A list of strings representing the keys of the dictionary.
-        values : list
-            A list of values corresponding to the list of keys. Values can be integers, floats, strings, or lists
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        topologic_core.Dictionary
-            The created dictionary.
-
+        For Python dictionaries, TGraphs, and TGraph vertex/edge records, the
+        original container is updated and returned. For Core/topologic
+        dictionaries, a new Core/topologic dictionary is returned.
         """
-        
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
+            if not silent:
+                print("Dictionary.SetValuesAtKeys - Error: The input dictionary parameter is not a valid dictionary. Returning None.")
+            return None
         if not isinstance(keys, list):
             if not silent:
                 print("Dictionary.SetValuesAtKeys - Error: The input keys parameter is not a valid list. Returning None.")
             return None
         if not isinstance(values, list):
             if not silent:
-                print("Dictionary.SetValuesAtkeys - Error: The input values parameter is not a valid list. Returning None.")
+                print("Dictionary.SetValuesAtKeys - Error: The input values parameter is not a valid list. Returning None.")
             return None
         if len(keys) != len(values):
             if not silent:
                 print("Dictionary.SetValuesAtKeys - Error: The input keys and values parameters are not of equal length. Returning None.")
             return None
-        
-        for i, key in enumerate(keys):
-            dictionary = Dictionary.SetValueAtKey(dictionary, key, values[i], silent=silent)
-        return dictionary
+
+        for key, value in zip(keys, values):
+            if not isinstance(key, str):
+                key = str(key)
+            py[key] = value
+
+        return Dictionary._SetPythonDictionary(dictionary, py)
     
     @staticmethod
     def SymDif(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
         """
-        if dictionaryA is None and dictionaryB is None:
-            if not silent:
-                print("Dictionary.SymDif - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
-        if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
-                if not silent:
-                    print("Dictionary.SymDif - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryB
-        if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
-                if not silent:
-                    print("Dictionary.SymDif - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
-            if not silent:
-                print("Dictionary.SymDif - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-            return None
-        if not Dictionary._IsDictionary(dictionaryB):
-            if not silent:
-                print("Dictionary.SymDif - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-            return None
-
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
-        out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        return Dictionary.SymmetricDifference(dictionaryA, dictionaryB, silent=silent)
 
     @staticmethod
     def SymmetricDifference(dictionaryA, dictionaryB, silent: bool = False):
@@ -1284,37 +1464,31 @@ class Dictionary():
             if not silent:
                 print("Dictionary.SymmetricDifference - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
             return Dictionary.ByKeysValues([], [], silent=silent)
-        if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
-                if not silent:
-                    print("Dictionary.SymmetricDifference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryB
-        if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
-                if not silent:
-                    print("Dictionary.SymmetricDifference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+
+        if pyA is None and dictionaryA is not None:
             if not silent:
                 print("Dictionary.SymmetricDifference - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if pyB is None and dictionaryB is not None:
             if not silent:
                 print("Dictionary.SymmetricDifference - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
 
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
-        out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        pyA = pyA or {}
+        pyB = pyB or {}
+        out = {}
+
+        for k, v in pyA.items():
+            if k not in pyB:
+                out[k] = v
+        for k, v in pyB.items():
+            if k not in pyA:
+                out[k] = v
+
+        return Dictionary.ByPythonDictionary(out, silent=silent)
 
     @staticmethod
     def Union(dictionaryA, dictionaryB, silent: bool = False):
@@ -1325,103 +1499,71 @@ class Dictionary():
             if not silent:
                 print("Dictionary.Union - Warning: Both of the input dictionaries are None. Returning None.")
             return None
-        if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
-                if not silent:
-                    print("Dictionary.Union - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryB
-        if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
-                if not silent:
-                    print("Dictionary.Union - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
+
+        pyA = Dictionary._ToPythonDictionary(dictionaryA, copy=True)
+        pyB = Dictionary._ToPythonDictionary(dictionaryB, copy=True)
+
+        if pyA is None and dictionaryA is not None:
             if not silent:
                 print("Dictionary.Union - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
             return None
-        if not Dictionary._IsDictionary(dictionaryB):
+        if pyB is None and dictionaryB is not None:
             if not silent:
                 print("Dictionary.Union - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
             return None
-        return Dictionary.ByMergedDictionaries(dictionaryA, dictionaryB, silent=silent)
+
+        if pyA is None:
+            return Dictionary.ByPythonDictionary(pyB or {}, silent=silent)
+        if pyB is None:
+            return Dictionary.ByPythonDictionary(pyA or {}, silent=silent)
+
+        return Dictionary.ByMergedDictionaries(pyA, pyB, silent=silent)
 
     @staticmethod
     def ValueAtKey(dictionary, key, defaultValue=None, silent=False):
         """
         Returns the value at the input key in the input dictionary.
-        If the dictionary or key is invalid, or the key does not exist, defaultValue is returned.
+
+        If the dictionary or key is invalid, or the key does not exist,
+        defaultValue is returned. If a key exists with value None, None is
+        returned, matching Python dict.get semantics.
         """
         if not isinstance(key, str):
             if not silent:
                 print("Dictionary.ValueAtKey - Error: The input key parameter is not a valid str. Returning defaultValue.")
             return defaultValue
 
-        if isinstance(dictionary, dict):
-            return dictionary.get(key, defaultValue)
-
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning defaultValue.")
+                print("Dictionary.ValueAtKey - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning defaultValue.")
             return defaultValue
 
-        keys = Dictionary.Keys(dictionary, silent=True)
-        if not isinstance(keys, list) or key not in keys:
+        if key not in py:
             return defaultValue
-
-        raw_value = Dictionary._RawValueAtKey(dictionary, key)
-        if raw_value is None:
-            return defaultValue
-
-        value = Dictionary._ConvertAttribute(raw_value)
-        if value is None:
-            return defaultValue
-        return value
+        return py.get(key)
 
     @staticmethod
     def Values(dictionary, silent: bool = False):
         """
-        Returns the list of values in the input dictionary.
+        Returns the list of values in the input dictionary-like object.
         """
-        if isinstance(dictionary, dict):
-            return list(dictionary.values())
-
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.Values - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning None.")
             return None
-
-        keys = Dictionary.Keys(dictionary, silent=silent)
-        if keys is None:
-            return None
-        return [Dictionary.ValueAtKey(dictionary, key, silent=silent) for key in keys]
+        return list(py.values())
 
     @staticmethod
     def ValuesAtKeys(dictionary, keys, defaultValue=None, silent: bool = False):
         """
         Returns the list of values of the input list of keys in the input dictionary.
-
-        Parameters
-        ----------
-        dictionary : topologic_core.Dictionary, dict, or backend dictionary
-            The input dictionary.
-        keys : list
-            The input list of keys.
-        defaultValue : any , optional
-            The default value to return if the key or value are not found. Default is None.
-        silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-
-        Returns
-        -------
-        list
-            The list of values found at the input list of keys in the input dictionary.
-
         """
-        if not Dictionary._IsDictionary(dictionary):
+        py = Dictionary._ToPythonDictionary(dictionary, copy=True)
+        if py is None:
             if not silent:
-                print("Dictionary.ValuesAtKeys - Error: The input dictionary parameter is not a valid topologic, python, or backend dictionary. Returning None.")
+                print("Dictionary.ValuesAtKeys - Error: The input dictionary parameter is not a valid topologic, python, backend, TGraph, TGraph vertex, or TGraph edge dictionary. Returning None.")
             return None
         if not isinstance(keys, list):
             if not silent:
@@ -1431,46 +1573,12 @@ class Dictionary():
             if not silent:
                 print("Dictionary.ValuesAtKeys - Error: The input keys parameter contains invalid values. Returning None.")
             return None
-        return [Dictionary.ValueAtKey(dictionary, key, defaultValue=defaultValue, silent=silent) for key in keys]
+        return [py[k] if k in py else defaultValue for k in keys]
 
     @staticmethod
     def XOR(dictionaryA, dictionaryB, silent: bool = False):
         """
         Returns the symmetric difference (XOR) of dictionaryA and dictionaryB, based on keys.
         """
-        if dictionaryA is None and dictionaryB is None:
-            if not silent:
-                print("Dictionary.XOR - Warning: Both of the input dictionaries are None. Returning an empty dictionary.")
-            return Dictionary.ByKeysValues([], [], silent=silent)
-        if dictionaryA is None:
-            if not Dictionary._IsDictionary(dictionaryB):
-                if not silent:
-                    print("Dictionary.XOR - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryB
-        if dictionaryB is None:
-            if not Dictionary._IsDictionary(dictionaryA):
-                if not silent:
-                    print("Dictionary.XOR - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-                return None
-            return dictionaryA
-        if not Dictionary._IsDictionary(dictionaryA):
-            if not silent:
-                print("Dictionary.XOR - Error: the dictionaryA input parameter is not a valid dictionary. Returning None.")
-            return None
-        if not Dictionary._IsDictionary(dictionaryB):
-            if not silent:
-                print("Dictionary.XOR - Error: the dictionaryB input parameter is not a valid dictionary. Returning None.")
-            return None
-
-        keysA = Dictionary.Keys(dictionaryA, silent=silent) or []
-        keysB = Dictionary.Keys(dictionaryB, silent=silent) or []
-        out_keys = [k for k in keysA if k not in keysB] + [k for k in keysB if k not in keysA]
-        out_vals = []
-        for k in out_keys:
-            if k in keysA:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryA, k, silent=silent))
-            else:
-                out_vals.append(Dictionary.ValueAtKey(dictionaryB, k, silent=silent))
-        return Dictionary.ByKeysValues(out_keys, out_vals, silent=silent)
+        return Dictionary.SymmetricDifference(dictionaryA, dictionaryB, silent=silent)
 

@@ -38,102 +38,77 @@ except:
 
 class Plotly:
     @staticmethod
-    @staticmethod
-    def AddColorBar(figure, values=None, nTicks=5, xPosition=-0.15, width=15,
-                    outlineWidth=0, title="", subTitle="", units="",
-                    colorScale="viridis", mantissa: int = 6):
+    def AddColorBar(figure, values=[], nTicks=5, xPosition=-0.15, width=15, outlineWidth=0, title="", subTitle="", units="", colorScale="viridis", mantissa: int = 6):
         """
-        Adds a scalar colour bar to a Plotly figure without adding visible data.
+        Adds a color bar to the input figure
 
         Parameters
         ----------
         figure : plotly.graph_objs._figure.Figure
-            The input Plotly figure.
-        values : list, optional
-            Numeric values used to derive the colour-bar range. If omitted or
-            empty, the method returns the input figure unchanged.
-        nTicks : int, optional
-            Number of tick labels to draw. Values below 2 are clamped to 2.
-        xPosition : float, optional
-            Horizontal colour-bar position in Plotly paper coordinates.
-        width : int, optional
-            Colour-bar thickness in pixels.
-        outlineWidth : int, optional
-            Colour-bar outline width in pixels.
-        title, subTitle, units : str, optional
-            Text displayed above the colour bar.
-        colorScale : str, optional
-            Plotly colour scale name or one of TopologicPy's colour-blind
-            friendly aliases: protanopia, deuteranopia, tritanopia.
-        mantissa : int, optional
-            Number of decimal places used for tick labels.
-
+            The input plotly figure.
+        values : list , optional
+            The input list of values to use for the color bar. Default is [].
+        nTicks : int , optional
+            The number of ticks to use on the color bar. Default is 5.
+        xPosition : float , optional
+            The x location of the color bar. Default is -0.15.
+        width : int , optional
+            The width in pixels of the color bar. Default is 15
+        outlineWidth : int , optional
+            The width in pixels of the outline of the color bar. Default is 0.
+        title : str , optional
+            The title of the color bar. Default is "".
+        subTitle : str , optional
+            The subtitle of the color bar. Default is "".
+        units: str , optional
+            The units used in the color bar. Default is ""
+        colorScale : str , optional
+            The desired type of plotly color scales to use (e.g. "viridis", "plasma"). Default is "viridis". For a full list of names, see https://plotly.com/python/builtin-colorscales/.
+            In addition to these, three color-blind friendly scales are included. These are "protanopia", "deuteranopia", and "tritanopia" for red, green, and blue colorblindness respectively.
+        mantissa : int , optional
+            The desired length of the mantissa for the values listed on the color bar. Default is 6.
         Returns
         -------
-        plotly.graph_objs._figure.Figure or None
-            The updated figure, or None if the input is not a Plotly figure.
+        plotly.graph_objs._figure.Figure
+            The input figure with the color bar added.
+
         """
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             return None
-
-        if values is None:
-            return figure
-
-        clean_values = []
-        for value in values:
-            try:
-                clean_values.append(float(value))
-            except Exception:
-                pass
-        if not clean_values:
-            return figure
-
-        nTicks = max(2, int(nTicks or 2))
-        minValue = min(clean_values)
-        maxValue = max(clean_values)
-        if maxValue == minValue:
-            tickvals = [round(minValue, mantissa)]
-        else:
-            step = (maxValue - minValue) / float(nTicks - 1)
-            tickvals = [round(minValue + i * step, mantissa) for i in range(nTicks)]
-            tickvals[-1] = round(maxValue, mantissa)
-        ticktext = [str(x) for x in tickvals]
-
-        title_parts = []
-        if title:
-            title_parts.append("<b>" + str(title) + "</b>")
-        if subTitle:
-            title_parts.append(str(subTitle))
         if units:
-            title_parts.append("Units: " + str(units))
-        colorbar_title = "<br>".join(title_parts)
+            units = "Units: "+units
+        minValue = min(values)
+        maxValue = max(values)
+        step = (maxValue - minValue)/float(nTicks-1)
+        r = [round(minValue+i*step, mantissa) for i in range(nTicks)]
+        r[-1] = round(maxValue, mantissa)
+                # Define the minimum and maximum range of the colorbar
+        rs = [str(x) for x in r]
 
-        # Use a marker with transparent colour and no visible size. This is the
-        # lightest reliable way to attach an independent colour bar to a figure.
+        # Define the colorbar as a trace with no data, x or y coordinates
         colorbar_trace = go.Scatter(
-            x=[None],
-            y=[None],
+            x=[0],
+            y=[0],
             mode="markers",
             showlegend=False,
-            hoverinfo="skip",
             marker=dict(
                 size=0,
-                colorscale=Plotly.ColorScale(colorScale),
+                colorscale=Plotly.ColorScale(colorScale), # choose the colorscale
                 cmin=minValue,
                 cmax=maxValue,
-                color=[minValue],
-                opacity=0,
+                color=['rgba(0,0,0,0)'],
                 colorbar=dict(
                     x=xPosition,
-                    title=colorbar_title,
-                    ticks="outside",
-                    tickvals=tickvals,
-                    ticktext=ticktext,
+                    title="<b>"+title+"</b><br>"+subTitle+"<br>"+units, # title of the colorbar
+                    ticks="outside", # position of the ticks
+                    tickvals=r, # values of the ticks
+                    ticktext=rs, # text of the ticks
                     tickmode="array",
                     thickness=width,
                     outlinewidth=outlineWidth,
-                ),
-            ),
+
+                )
+            )
         )
         figure.add_trace(colorbar_trace)
         return figure
@@ -167,7 +142,7 @@ class Plotly:
                 "floralwhite","forestgreen","fuchsia",
                 "gainsboro","ghostwhite","gold",
                 "goldenrod","gray","grey",
-                "green","greenyellow","honeydew",
+                "green"," greenyellow","honeydew",
                 "hotpink","indianred","indigo",
                 "ivory","khaki","lavender",
                 "lavenderblush","lawngreen","lemonchiffon",
@@ -474,7 +449,6 @@ class Plotly:
         return data
 
     @staticmethod
-    @staticmethod
     def DataByTGraph(
         graph,
         sagitta: float = 0,
@@ -497,7 +471,7 @@ class Plotly:
         vertexBorderColorKey: str = None,
         vertexBorderWidthKey: str = None,
         vertexGroupKey: str = None,
-        vertexGroups: list = None,
+        vertexGroups: list = [],
         vertexMinGroup=None,
         vertexMaxGroup=None,
         showVertices: bool = True,
@@ -515,7 +489,7 @@ class Plotly:
         edgeDashKey: str = None,
         edgeLabelKey: str = None,
         edgeGroupKey: str = None,
-        edgeGroups: list = None,
+        edgeGroups: list = [],
         edgeMinGroup=None,
         edgeMaxGroup=None,
         showEdges: bool = True,
@@ -539,46 +513,43 @@ class Plotly:
         silent: bool = False,
     ):
         """
-        Creates Plotly traces from a ``topologicpy.TGraph``.
+        Creates Plotly data traces from a TGraph.
 
-        The implementation is optimised for large graphs. Instead of creating
-        one ``Scatter3d`` trace per edge, edges are bucketed by visual style and
-        rendered in aggregated traces. Labels and cone arrowheads are emitted as
-        separate traces only when requested. Self-loops are supported without
-        conversion to topologic_core geometry.
+        This method is designed specifically for TGraph and does not rely on
+        topologic_core.Graph. It draws graph incidence directly from TGraph records
+        and uses TGraph geometry only as optional representation.
 
-        Parameters
-        ----------
-        graph : topologicpy.TGraph
-            The input TGraph.
-        sagitta : float, optional
-            If non-zero, non-loop edges are drawn as quadratic arcs. If
-            ``absolute`` is False, sagitta is interpreted as a ratio of chord
-            length. If True, it is interpreted as model units.
-        directed : bool or None, optional
-            If None, each edge's directed flag is used. If True or False, the
-            input value overrides edge-level directionality.
-        splitVertexTracesByStyle : bool, optional
-            If True, vertices are split by marker symbol and border style. This
-            enables per-style borders but creates more traces.
+        Notes
+        -----
+        Plotly Scatter3d supports per-vertex marker size, colour, and symbol, but
+        marker.line.width must be a scalar for each trace. Therefore, by default,
+        vertexBorderColorKey and vertexBorderWidthKey are ignored and a single
+        border colour/width is used for the full vertex trace.
+
+        If splitVertexTracesByStyle is True, vertices are split into several traces
+        by symbol, border colour, and border width. This enables per-style border
+        control, but can create more traces and may be slower for large graphs.
 
         Returns
         -------
-        list or None
-            A list of Plotly graph objects, or None if the input is invalid.
+        list
+            A list of Plotly graph objects.
         """
-        import math
-        import plotly.graph_objs as go
+
         from topologicpy.TGraph import TGraph
+        import plotly.graph_objs as go
+        import math
 
         if not isinstance(graph, TGraph):
             if not silent:
                 print("Plotly.DataByTGraph - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
-        vertexGroups = list(vertexGroups) if vertexGroups is not None else []
-        edgeGroups = list(edgeGroups) if edgeGroups is not None else []
         data = []
+
+        # ---------------------------------------------------------------------
+        # Helpers
+        # ---------------------------------------------------------------------
 
         def _value(d, key, default=None):
             if key is None or not isinstance(d, dict):
@@ -610,298 +581,567 @@ class Plotly:
             value = d.get(key, default)
             return "" if value is None else str(value)
 
-        def _unit(vector, default=None):
+        def _vector_normalised(vector, default=None):
             if default is None:
                 default = [0.0, 0.0, 1.0]
+            if not isinstance(vector, (list, tuple)) or len(vector) < 3:
+                vector = default
             try:
                 x, y, z = float(vector[0]), float(vector[1]), float(vector[2])
             except Exception:
                 x, y, z = float(default[0]), float(default[1]), float(default[2])
             length = math.sqrt(x*x + y*y + z*z)
-            if length <= 1e-12:
+            if length <= 0:
                 return [float(default[0]), float(default[1]), float(default[2])]
             return [x/length, y/length, z/length]
 
         def _cross(a, b):
-            return [a[1]*b[2] - a[2]*b[1], a[2]*b[0] - a[0]*b[2], a[0]*b[1] - a[1]*b[0]]
+            return [
+                a[1]*b[2] - a[2]*b[1],
+                a[2]*b[0] - a[0]*b[2],
+                a[0]*b[1] - a[1]*b[0],
+            ]
 
         def _dot(a, b):
             return float(a[0]*b[0] + a[1]*b[1] + a[2]*b[2])
 
         def _frame_from_normal(normal=None):
-            n = _unit(normal if normal is not None else [0, 0, 1], [0, 0, 1])
-            ref = [1, 0, 0] if abs(_dot(n, [1, 0, 0])) <= 0.9 else [0, 1, 0]
-            u = _unit(_cross(n, ref), [1, 0, 0])
-            v = _unit(_cross(n, u), [0, 1, 0])
+            n = _vector_normalised(normal, default=[0.0, 0.0, 1.0])
+            ref = [1.0, 0.0, 0.0]
+            if abs(_dot(n, ref)) > 0.9:
+                ref = [0.0, 1.0, 0.0]
+            u = _vector_normalised(_cross(n, ref), default=[1.0, 0.0, 0.0])
+            v = _vector_normalised(_cross(n, u), default=[0.0, 1.0, 0.0])
             return u, v, n
 
         def _distance(a, b):
             return math.sqrt((b[0]-a[0])**2 + (b[1]-a[1])**2 + (b[2]-a[2])**2)
 
+        def _midpoint(points):
+            if not points:
+                return [0, 0, 0]
+            p = points[len(points)//2]
+            return [p[0], p[1], p[2]]
+
+        def _direction_at_end(points, reverse=False):
+            if len(points) < 2:
+                return [1, 0, 0]
+            if reverse:
+                a = points[1]
+                b = points[0]
+            else:
+                a = points[-2]
+                b = points[-1]
+            d = [b[0]-a[0], b[1]-a[1], b[2]-a[2]]
+            return _vector_normalised(d, default=[1, 0, 0])
+
         def _plotly_symbol(symbol):
             if symbol is None:
                 return "circle"
-            table = {
-                "sphere": "circle", "dot": "circle", "box": "square",
-                "triangle": "diamond", "triangle-up": "diamond",
-                "triangle-down": "diamond", "star": "diamond",
-            }
             s = str(symbol).lower().strip()
+            table = {
+                "circle": "circle",
+                "sphere": "circle",
+                "dot": "circle",
+                "square": "square",
+                "box": "square",
+                "diamond": "diamond",
+                "cross": "cross",
+                "x": "x",
+                "triangle": "diamond",
+                "triangle-up": "diamond",
+                "triangle-down": "diamond",
+                "star": "diamond",
+            }
             return table.get(s, s)
 
-        def _sample_line(a, b, n=2):
+        def _sample_polyline(a, b, n=16):
             n = max(2, int(n))
-            return [[a[0]*(1-t)+b[0]*t, a[1]*(1-t)+b[1]*t, a[2]*(1-t)+b[2]*t]
-                    for t in [i / float(n - 1) for i in range(n)]]
+            pts = []
+            for i in range(n):
+                t = float(i) / float(n - 1)
+                pts.append([
+                    a[0]*(1-t) + b[0]*t,
+                    a[1]*(1-t) + b[1]*t,
+                    a[2]*(1-t) + b[2]*t,
+                ])
+            return pts
 
         def _dashed_xyz(points):
             x, y, z = [], [], []
+            if len(points) < 2:
+                return x, y, z
             for i in range(len(points) - 1):
                 if i % 2 == 0:
-                    a, b = points[i], points[i + 1]
-                    x.extend([a[0], b[0], None]); y.extend([a[1], b[1], None]); z.extend([a[2], b[2], None])
+                    p = points[i]
+                    q = points[i + 1]
+                    x.extend([p[0], q[0], None])
+                    y.extend([p[1], q[1], None])
+                    z.extend([p[2], q[2], None])
             return x, y, z
 
         def _solid_xyz(points):
-            x, y, z = [], [], []
-            for p in points:
-                x.append(p[0]); y.append(p[1]); z.append(p[2])
-            x.append(None); y.append(None); z.append(None)
-            return x, y, z
+            return (
+                [p[0] for p in points],
+                [p[1] for p in points],
+                [p[2] for p in points],
+            )
 
         def _colour_from_group(value, groups, minGroup=None, maxGroup=None, default="black"):
             if value is None:
                 return default
-            palette = ["#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd",
-                       "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf"]
+
+            palette = [
+                "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728",
+                "#9467bd", "#8c564b", "#e377c2", "#7f7f7f",
+                "#bcbd22", "#17becf",
+            ]
+
             try:
                 import plotly.colors as pc
-                numeric_value = float(value)
-                numeric_groups = []
-                for item in groups or []:
-                    try:
-                        numeric_groups.append(float(item))
-                    except Exception:
-                        pass
-                mn = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
-                mx = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
-                t = 0.0 if abs(mx - mn) <= 1e-12 else (numeric_value - mn) / (mx - mn)
-                return pc.sample_colorscale(Plotly.ColorScale(colorScale), [max(0.0, min(1.0, t))])[0]
+                v = float(value)
+                if minGroup is None or maxGroup is None:
+                    numeric_groups = []
+                    for g in groups or []:
+                        try:
+                            numeric_groups.append(float(g))
+                        except Exception:
+                            pass
+                    if numeric_groups:
+                        mn = min(numeric_groups) if minGroup is None else float(minGroup)
+                        mx = max(numeric_groups) if maxGroup is None else float(maxGroup)
+                    else:
+                        mn = 0.0 if minGroup is None else float(minGroup)
+                        mx = 1.0 if maxGroup is None else float(maxGroup)
+                else:
+                    mn = float(minGroup)
+                    mx = float(maxGroup)
+
+                t = 0.0 if abs(mx - mn) <= 1e-12 else (v - mn) / (mx - mn)
+                t = max(0.0, min(1.0, t))
+                return pc.sample_colorscale(colorScale, [t])[0]
             except Exception:
                 pass
-            if groups and value in groups:
-                return palette[groups.index(value) % len(palette)]
+
+            try:
+                if groups and value in groups:
+                    return palette[groups.index(value) % len(palette)]
+            except Exception:
+                pass
+
             try:
                 return palette[abs(hash(value)) % len(palette)]
             except Exception:
                 return default
 
-        vertex_records = TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
-        edge_records = TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+        # ---------------------------------------------------------------------
+        # Gather vertex records and coordinates.
+        # ---------------------------------------------------------------------
+
+        vertex_records = TGraph.Vertices(graph, asTopologic=False, activeOnly=True)
+        edge_records = TGraph.Edges(graph, asTopologic=False, activeOnly=True)
 
         coords_by_index = {}
         fallback_n = max(1, len(vertex_records))
+
         for i, record in enumerate(vertex_records):
             idx = record.get("index")
             coords = TGraph.Coordinates(graph, idx, default=None)
+
             if coords is None:
-                a = 2.0 * math.pi * float(i) / float(fallback_n)
-                coords = [math.cos(a), math.sin(a), 0.0]
-            coords_by_index[idx] = [round(float(coords[0]), mantissa), round(float(coords[1]), mantissa), round(float(coords[2]), mantissa)]
+                angle_i = 2.0 * math.pi * float(i) / float(fallback_n)
+                coords = [math.cos(angle_i), math.sin(angle_i), 0.0]
+
+            coords_by_index[idx] = [
+                round(float(coords[0]), mantissa),
+                round(float(coords[1]), mantissa),
+                round(float(coords[2]), mantissa),
+            ]
+
+        # ---------------------------------------------------------------------
+        # Edge geometry.
+        # ---------------------------------------------------------------------
 
         def _self_loop_points(anchor, edge_dict):
-            d = edge_dict if isinstance(edge_dict, dict) else {}
-            mode = str(d.get("self_loop_mode", d.get("mode", selfLoopMode))).lower()
+            rep = edge_dict if isinstance(edge_dict, dict) else {}
+
+            mode = str(rep.get("self_loop_mode", rep.get("mode", selfLoopMode))).lower()
             if mode in ("selfloop", "self_loop", "loop"):
-                mode = str(d.get("shape", selfLoopMode)).lower()
+                mode = str(rep.get("shape", selfLoopMode)).lower()
             if mode not in ("circle", "ellipse"):
                 mode = selfLoopMode
-            radius = _number(d.get("self_loop_radius", d.get("radius", None)), selfLoopRadius)
-            major = _number(d.get("self_loop_major_radius", d.get("major_radius", d.get("majorRadius", None))), selfLoopMajorRadius if selfLoopMajorRadius is not None else radius)
-            minor = _number(d.get("self_loop_minor_radius", d.get("minor_radius", d.get("minorRadius", None))), selfLoopMinorRadius if selfLoopMinorRadius is not None else radius * 0.65)
+
+            radius = _number(rep.get("self_loop_radius", rep.get("radius", None)), selfLoopRadius)
+
+            major = _number(
+                rep.get("self_loop_major_radius", rep.get("major_radius", rep.get("majorRadius", None))),
+                selfLoopMajorRadius if selfLoopMajorRadius is not None else radius,
+            )
+            minor = _number(
+                rep.get("self_loop_minor_radius", rep.get("minor_radius", rep.get("minorRadius", None))),
+                selfLoopMinorRadius if selfLoopMinorRadius is not None else radius * 0.65,
+            )
+
             if mode == "circle":
-                major = radius; minor = radius
-            loop_sides = max(8, int(_number(d.get("self_loop_sides", d.get("sides", None)), selfLoopSides)))
-            normal = d.get("self_loop_normal", d.get("normal", selfLoopNormal))
+                major = radius
+                minor = radius
+
+            loop_sides = int(_number(rep.get("self_loop_sides", rep.get("sides", None)), selfLoopSides))
+            loop_sides = max(8, loop_sides)
+
+            normal = rep.get("self_loop_normal", rep.get("normal", selfLoopNormal))
             u, v, _ = _frame_from_normal(normal)
-            centre = [anchor[0] + major*u[0], anchor[1] + major*u[1], anchor[2] + major*u[2]]
+
+            # Tangent loop: graph vertex lies on the loop perimeter.
+            centre = [
+                anchor[0] + major * u[0],
+                anchor[1] + major * u[1],
+                anchor[2] + major * u[2],
+            ]
+
             pts = []
             for k in range(loop_sides + 1):
                 a = math.pi + 2.0 * math.pi * float(k) / float(loop_sides)
-                ca, sa = math.cos(a), math.sin(a)
-                pts.append([centre[0] + major*ca*u[0] + minor*sa*v[0],
-                            centre[1] + major*ca*u[1] + minor*sa*v[1],
-                            centre[2] + major*ca*u[2] + minor*sa*v[2]])
+                ca = math.cos(a)
+                sa = math.sin(a)
+                pts.append([
+                    centre[0] + major * ca * u[0] + minor * sa * v[0],
+                    centre[1] + major * ca * u[1] + minor * sa * v[1],
+                    centre[2] + major * ca * u[2] + minor * sa * v[2],
+                ])
             return pts
 
         def _arc_points(a, b, edge_dict):
-            d = edge_dict if isinstance(edge_dict, dict) else {}
-            edge_sagitta = _number(d.get("sagitta", sagitta), 0.0)
+            edge_sagitta = _value(edge_dict, "sagitta", sagitta)
+            try:
+                edge_sagitta = float(edge_sagitta)
+            except Exception:
+                edge_sagitta = 0.0
+
             if abs(edge_sagitta) <= tolerance:
-                return _sample_line(a, b, max(2, sides if edgeDash else 2))
+                return _sample_polyline(a, b, max(2, sides if edgeDash else 2))
+
+            chord = [b[0]-a[0], b[1]-a[1], b[2]-a[2]]
             length = _distance(a, b)
             if length <= tolerance:
                 return [a, b]
+
             actual_sagitta = edge_sagitta if absolute else edge_sagitta * length
-            tangent = _unit([b[0]-a[0], b[1]-a[1], b[2]-a[2]], [1, 0, 0])
-            normal = _unit(d.get("normal", d.get("arc_normal", [0, 0, 1])), [0, 0, 1])
+
+            tangent = _vector_normalised(chord, default=[1.0, 0.0, 0.0])
+            normal = _value(edge_dict, "normal", _value(edge_dict, "arc_normal", [0.0, 0.0, 1.0]))
+            normal = _vector_normalised(normal, default=[0.0, 0.0, 1.0])
+
             perp = _cross(normal, tangent)
             if math.sqrt(sum(x*x for x in perp)) <= tolerance:
                 _, perp, _ = _frame_from_normal(normal)
-            perp = _unit(perp, [0, 1, 0])
-            mid = [(a[0]+b[0])*0.5 + actual_sagitta*perp[0],
-                   (a[1]+b[1])*0.5 + actual_sagitta*perp[1],
-                   (a[2]+b[2])*0.5 + actual_sagitta*perp[2]]
+            perp = _vector_normalised(perp, default=[0.0, 1.0, 0.0])
+
+            mid = [
+                (a[0]+b[0])*0.5 + actual_sagitta*perp[0],
+                (a[1]+b[1])*0.5 + actual_sagitta*perp[1],
+                (a[2]+b[2])*0.5 + actual_sagitta*perp[2],
+            ]
+
             arc_sides = max(4, int(sides))
             pts = []
             for k in range(arc_sides + 1):
-                t = float(k) / float(arc_sides); omt = 1.0 - t
-                pts.append([omt*omt*a[0] + 2*omt*t*mid[0] + t*t*b[0],
-                            omt*omt*a[1] + 2*omt*t*mid[1] + t*t*b[1],
-                            omt*omt*a[2] + 2*omt*t*mid[2] + t*t*b[2]])
-            if abs(float(angle or 0)) > 1e-12:
-                theta = math.radians(float(angle)); ca, sa = math.cos(theta), math.sin(theta)
-                origin = [(a[0]+b[0])*0.5, (a[1]+b[1])*0.5, (a[2]+b[2])*0.5]
-                axis = tangent
-                rotated = []
-                for p in pts:
-                    x = [p[0]-origin[0], p[1]-origin[1], p[2]-origin[2]]
-                    cr = _cross(axis, x); dt = _dot(axis, x)
-                    r = [x[0]*ca + cr[0]*sa + axis[0]*dt*(1-ca),
-                         x[1]*ca + cr[1]*sa + axis[1]*dt*(1-ca),
-                         x[2]*ca + cr[2]*sa + axis[2]*dt*(1-ca)]
-                    rotated.append([origin[0]+r[0], origin[1]+r[1], origin[2]+r[2]])
-                pts = rotated
+                t = float(k) / float(arc_sides)
+                omt = 1.0 - t
+                pts.append([
+                    omt*omt*a[0] + 2*omt*t*mid[0] + t*t*b[0],
+                    omt*omt*a[1] + 2*omt*t*mid[1] + t*t*b[1],
+                    omt*omt*a[2] + 2*omt*t*mid[2] + t*t*b[2],
+                ])
+
+            if abs(float(angle)) > 1e-12:
+                try:
+                    theta = math.radians(float(angle))
+                    axis = tangent
+                    ca = math.cos(theta)
+                    sa = math.sin(theta)
+                    origin = [(a[0]+b[0])*0.5, (a[1]+b[1])*0.5, (a[2]+b[2])*0.5]
+
+                    def rotate_point(p):
+                        x = [p[0]-origin[0], p[1]-origin[1], p[2]-origin[2]]
+                        cross = _cross(axis, x)
+                        dot = _dot(axis, x)
+                        r = [
+                            x[0]*ca + cross[0]*sa + axis[0]*dot*(1-ca),
+                            x[1]*ca + cross[1]*sa + axis[1]*dot*(1-ca),
+                            x[2]*ca + cross[2]*sa + axis[2]*dot*(1-ca),
+                        ]
+                        return [origin[0]+r[0], origin[1]+r[1], origin[2]+r[2]]
+
+                    pts = [rotate_point(p) for p in pts]
+                except Exception:
+                    pass
+
             return pts
 
         def _edge_points(record):
-            src, dst = record.get("src"), record.get("dst")
+            src = record.get("src")
+            dst = record.get("dst")
             d = record.get("dictionary", {}) if isinstance(record, dict) else {}
-            a, b = coords_by_index.get(src), coords_by_index.get(dst)
+
+            a = coords_by_index.get(src, None)
+            b = coords_by_index.get(dst, None)
+
             if a is None or b is None:
                 return []
-            return _self_loop_points(a, d) if src == dst else _arc_points(a, b, d)
 
-        def _direction(points, reverse=False):
-            if len(points) < 2:
-                return [1, 0, 0]
-            a, b = (points[1], points[0]) if reverse else (points[-2], points[-1])
-            return _unit([b[0]-a[0], b[1]-a[1], b[2]-a[2]], [1, 0, 0])
+            if src == dst:
+                return _self_loop_points(a, d)
+
+            return _arc_points(a, b, d)
+
+        # ---------------------------------------------------------------------
+        # Draw edges.
+        # ---------------------------------------------------------------------
 
         if showEdges:
-            edge_buckets = {}
-            arrow_buckets = {}
-            label_x, label_y, label_z, label_text, label_color = [], [], [], [], []
+            first_edge_trace = True
+
             for record in edge_records:
                 d = record.get("dictionary", {}) if isinstance(record, dict) else {}
                 points = _edge_points(record)
+
                 if len(points) < 2:
                     continue
-                this_color = _value(d, edgeColorKey, None)
-                if this_color is None and edgeGroupKey is not None:
-                    this_color = _colour_from_group(_value(d, edgeGroupKey, None), edgeGroups, edgeMinGroup, edgeMaxGroup, default=edgeColor)
-                if this_color is None:
-                    this_color = edgeColor
-                this_width = _number(_value(d, edgeWidthKey, None), edgeWidth)
-                this_dash = _bool(_value(d, edgeDashKey, None), edgeDash)
-                key = (str(this_color), float(this_width), bool(this_dash))
-                bucket = edge_buckets.setdefault(key, {"x": [], "y": [], "z": [], "text": []})
-                if this_dash:
-                    x, y, z = _dashed_xyz(points if len(points) > 2 else _sample_line(points[0], points[1], max(8, int(sides) * 2)))
+
+                this_edge_color = _value(d, edgeColorKey, None)
+                if this_edge_color is None and edgeGroupKey is not None:
+                    this_edge_color = _colour_from_group(
+                        _value(d, edgeGroupKey, None),
+                        edgeGroups,
+                        edgeMinGroup,
+                        edgeMaxGroup,
+                        default=edgeColor,
+                    )
+                if this_edge_color is None:
+                    this_edge_color = edgeColor
+
+                this_edge_width = _number(_value(d, edgeWidthKey, None), edgeWidth)
+                this_edge_dash = _bool(_value(d, edgeDashKey, None), edgeDash)
+
+                if this_edge_dash:
+                    if len(points) == 2:
+                        points_for_dash = _sample_polyline(points[0], points[1], max(8, sides * 2))
+                    else:
+                        points_for_dash = points
+                    x, y, z = _dashed_xyz(points_for_dash)
                 else:
                     x, y, z = _solid_xyz(points)
-                bucket["x"].extend(x); bucket["y"].extend(y); bucket["z"].extend(z)
-                edge_label = _label(d, edgeLabelKey, "")
-                bucket["text"].extend([edge_label] * len(x))
-                if showEdgeLabel and edgeLabelKey is not None and edge_label:
-                    mp = points[len(points)//2]
-                    label_x.append(mp[0]); label_y.append(mp[1]); label_z.append(mp[2]); label_text.append(edge_label); label_color.append(this_color)
-                edge_is_directed = bool(record.get("directed", getattr(graph, "_directed", False)))
+
+                data.append(
+                    go.Scatter3d(
+                        x=x,
+                        y=y,
+                        z=z,
+                        mode="lines",
+                        line=dict(color=this_edge_color, width=this_edge_width),
+                        name=edgeLegendLabel,
+                        legendgroup=str(edgeLegendGroup),
+                        legendrank=edgeLegendRank,
+                        showlegend=bool(showEdgeLegend and first_edge_trace),
+                        hoverinfo="text",
+                        text=[_label(d, edgeLabelKey, "")] * len(x),
+                    )
+                )
+                first_edge_trace = False
+
+                if showEdgeLabel and edgeLabelKey is not None:
+                    mp = _midpoint(points)
+                    label = _label(d, edgeLabelKey, "")
+                    if label:
+                        data.append(
+                            go.Scatter3d(
+                                x=[mp[0]],
+                                y=[mp[1]],
+                                z=[mp[2]],
+                                mode="text",
+                                text=[label],
+                                textfont=dict(size=edgeLabelFontSize, color=this_edge_color),
+                                showlegend=False,
+                                hoverinfo="skip",
+                            )
+                        )
+
+                edge_is_directed = bool(record.get("directed", graph._directed))
                 draw_directed = edge_is_directed if directed is None else bool(directed)
                 draw_both = (not edge_is_directed) and bool(directed) and bool(showBidirectionalArrows)
+
                 if draw_directed or draw_both:
                     this_arrow_size = _number(_value(d, arrowSizeKey, None), arrowSize)
-                    akey = (str(this_color), float(this_arrow_size))
-                    ab = arrow_buckets.setdefault(akey, {"x": [], "y": [], "z": [], "u": [], "v": [], "w": []})
-                    end = points[-1]; vec = _direction(points, reverse=False)
-                    ab["x"].append(end[0]); ab["y"].append(end[1]); ab["z"].append(end[2]); ab["u"].append(vec[0]); ab["v"].append(vec[1]); ab["w"].append(vec[2])
+
+                    end = points[-1]
+                    vec = _direction_at_end(points, reverse=False)
+                    data.append(
+                        go.Cone(
+                            x=[end[0]],
+                            y=[end[1]],
+                            z=[end[2]],
+                            u=[vec[0]],
+                            v=[vec[1]],
+                            w=[vec[2]],
+                            sizemode="absolute",
+                            sizeref=this_arrow_size,
+                            anchor="tip",
+                            showscale=False,
+                            colorscale=[[0, this_edge_color], [1, this_edge_color]],
+                            showlegend=False,
+                            hoverinfo="skip",
+                        )
+                    )
+
                     if draw_both:
-                        start = points[0]; vec = _direction(points, reverse=True)
-                        ab["x"].append(start[0]); ab["y"].append(start[1]); ab["z"].append(start[2]); ab["u"].append(vec[0]); ab["v"].append(vec[1]); ab["w"].append(vec[2])
-            first = True
-            for (this_color, this_width, _), bucket in edge_buckets.items():
-                data.append(go.Scatter3d(x=bucket["x"], y=bucket["y"], z=bucket["z"], mode="lines",
-                                         line=dict(color=this_color, width=this_width), name=edgeLegendLabel,
-                                         legendgroup=str(edgeLegendGroup), legendrank=edgeLegendRank,
-                                         showlegend=bool(showEdgeLegend and first), hoverinfo="text",
-                                         hovertext=bucket["text"]))
-                first = False
-            if showEdgeLabel and label_text:
-                data.append(go.Scatter3d(x=label_x, y=label_y, z=label_z, mode="text", text=label_text,
-                                         textfont=dict(size=edgeLabelFontSize), showlegend=False, hoverinfo="skip"))
-            for (this_color, this_arrow_size), bucket in arrow_buckets.items():
-                data.append(go.Cone(x=bucket["x"], y=bucket["y"], z=bucket["z"],
-                                    u=bucket["u"], v=bucket["v"], w=bucket["w"],
-                                    sizemode="absolute", sizeref=this_arrow_size, anchor="tip",
-                                    showscale=False, colorscale=[[0, this_color], [1, this_color]],
-                                    showlegend=False, hoverinfo="skip"))
+                        start = points[0]
+                        vec2 = _direction_at_end(points, reverse=True)
+                        data.append(
+                            go.Cone(
+                                x=[start[0]],
+                                y=[start[1]],
+                                z=[start[2]],
+                                u=[vec2[0]],
+                                v=[vec2[1]],
+                                w=[vec2[2]],
+                                sizemode="absolute",
+                                sizeref=this_arrow_size,
+                                anchor="tip",
+                                showscale=False,
+                                colorscale=[[0, this_edge_color], [1, this_edge_color]],
+                                showlegend=False,
+                                hoverinfo="skip",
+                            )
+                        )
+
+        # ---------------------------------------------------------------------
+        # Draw vertices.
+        # ---------------------------------------------------------------------
 
         if showVertices and vertex_records:
             vertex_items = []
+
             for record in vertex_records:
                 idx = record.get("index")
                 d = record.get("dictionary", {}) if isinstance(record, dict) else {}
-                c = coords_by_index.get(idx)
+                c = coords_by_index.get(idx, None)
+
                 if c is None:
                     continue
-                this_color = _value(d, vertexColorKey, None)
-                if this_color is None and vertexGroupKey is not None:
-                    this_color = _colour_from_group(_value(d, vertexGroupKey, None), vertexGroups, vertexMinGroup, vertexMaxGroup, default=vertexColor)
-                if this_color is None:
-                    this_color = vertexColor
+
+                label = _label(d, vertexLabelKey, str(idx) if vertexLabelKey is None else "")
+                hover = "<br>".join([f"{k}: {v}" for k, v in d.items()])
+
+                this_vertex_color = _value(d, vertexColorKey, None)
+                if this_vertex_color is None and vertexGroupKey is not None:
+                    this_vertex_color = _colour_from_group(
+                        _value(d, vertexGroupKey, None),
+                        vertexGroups,
+                        vertexMinGroup,
+                        vertexMaxGroup,
+                        default=vertexColor,
+                    )
+                if this_vertex_color is None:
+                    this_vertex_color = vertexColor
+
+                this_size = _number(_value(d, vertexSizeKey, None), vertexSize)
+                this_symbol = _plotly_symbol(_value(d, vertexShapeKey, vertexShape))
+
+                if splitVertexTracesByStyle:
+                    this_border_color = _value(d, vertexBorderColorKey, vertexBorderColor)
+                    this_border_width = _number(_value(d, vertexBorderWidthKey, None), vertexBorderWidth)
+                else:
+                    # Scatter3d marker.line.width must be scalar. Keep one scalable
+                    # vertex trace and use global border settings.
+                    this_border_color = vertexBorderColor
+                    this_border_width = vertexBorderWidth
+
                 vertex_items.append({
-                    "x": c[0], "y": c[1], "z": c[2],
-                    "label": _label(d, vertexLabelKey, str(idx) if vertexLabelKey is None else ""),
-                    "hover": "<br>".join([f"{k}: {v}" for k, v in d.items()]) if d else str(idx),
-                    "color": this_color,
-                    "size": _number(_value(d, vertexSizeKey, None), vertexSize),
-                    "symbol": _plotly_symbol(_value(d, vertexShapeKey, vertexShape)),
-                    "border_color": _value(d, vertexBorderColorKey, vertexBorderColor) if splitVertexTracesByStyle else vertexBorderColor,
-                    "border_width": _number(_value(d, vertexBorderWidthKey, None), vertexBorderWidth) if splitVertexTracesByStyle else vertexBorderWidth,
+                    "x": c[0],
+                    "y": c[1],
+                    "z": c[2],
+                    "label": label,
+                    "hover": hover,
+                    "color": this_vertex_color,
+                    "size": this_size,
+                    "symbol": this_symbol,
+                    "border_color": this_border_color,
+                    "border_width": this_border_width,
                 })
-            if vertex_items and not splitVertexTracesByStyle:
-                data.append(go.Scatter3d(
-                    x=[i["x"] for i in vertex_items], y=[i["y"] for i in vertex_items], z=[i["z"] for i in vertex_items],
-                    mode="markers+text" if showVertexLabel else "markers",
-                    marker=dict(size=[i["size"] for i in vertex_items], color=[i["color"] for i in vertex_items],
-                                symbol=[i["symbol"] for i in vertex_items], line=dict(color=vertexBorderColor, width=vertexBorderWidth)),
-                    text=[i["label"] for i in vertex_items] if showVertexLabel else None,
-                    textfont=dict(size=vertexLabelFontSize), hoverinfo="text", hovertext=[i["hover"] for i in vertex_items],
-                    name=vertexLegendLabel, legendgroup=str(vertexLegendGroup), legendrank=vertexLegendRank,
-                    showlegend=showVertexLegend))
-            elif vertex_items:
-                buckets = {}
-                for item in vertex_items:
-                    buckets.setdefault((item["symbol"], item["border_color"], float(item["border_width"])), []).append(item)
-                first = True
-                for (symbol, border_color, border_width), items in buckets.items():
-                    data.append(go.Scatter3d(
-                        x=[i["x"] for i in items], y=[i["y"] for i in items], z=[i["z"] for i in items],
-                        mode="markers+text" if showVertexLabel else "markers",
-                        marker=dict(size=[i["size"] for i in items], color=[i["color"] for i in items], symbol=symbol,
-                                    line=dict(color=border_color, width=border_width)),
-                        text=[i["label"] for i in items] if showVertexLabel else None,
-                        textfont=dict(size=vertexLabelFontSize), hoverinfo="text", hovertext=[i["hover"] for i in items],
-                        name=vertexLegendLabel, legendgroup=str(vertexLegendGroup), legendrank=vertexLegendRank,
-                        showlegend=bool(showVertexLegend and first)))
-                    first = False
+
+            if vertex_items:
+                if not splitVertexTracesByStyle:
+                    data.append(
+                        go.Scatter3d(
+                            x=[item["x"] for item in vertex_items],
+                            y=[item["y"] for item in vertex_items],
+                            z=[item["z"] for item in vertex_items],
+                            mode="markers+text" if showVertexLabel else "markers",
+                            marker=dict(
+                                size=[item["size"] for item in vertex_items],
+                                color=[item["color"] for item in vertex_items],
+                                symbol=[item["symbol"] for item in vertex_items],
+                                line=dict(
+                                    color=vertexBorderColor,
+                                    width=vertexBorderWidth,
+                                ),
+                            ),
+                            text=[item["label"] for item in vertex_items] if showVertexLabel else None,
+                            textfont=dict(size=vertexLabelFontSize),
+                            hoverinfo="text",
+                            hovertext=[item["hover"] for item in vertex_items],
+                            name=vertexLegendLabel,
+                            legendgroup=str(vertexLegendGroup),
+                            legendrank=vertexLegendRank,
+                            showlegend=showVertexLegend,
+                        )
+                    )
+                else:
+                    groups = {}
+                    for item in vertex_items:
+                        key = (
+                            item["symbol"],
+                            item["border_color"],
+                            float(item["border_width"]),
+                        )
+                        groups.setdefault(key, []).append(item)
+
+                    first_vertex_trace = True
+                    for key, items in groups.items():
+                        symbol, border_color, border_width = key
+                        data.append(
+                            go.Scatter3d(
+                                x=[item["x"] for item in items],
+                                y=[item["y"] for item in items],
+                                z=[item["z"] for item in items],
+                                mode="markers+text" if showVertexLabel else "markers",
+                                marker=dict(
+                                    size=[item["size"] for item in items],
+                                    color=[item["color"] for item in items],
+                                    symbol=symbol,
+                                    line=dict(
+                                        color=border_color,
+                                        width=border_width,
+                                    ),
+                                ),
+                                text=[item["label"] for item in items] if showVertexLabel else None,
+                                textfont=dict(size=vertexLabelFontSize),
+                                hoverinfo="text",
+                                hovertext=[item["hover"] for item in items],
+                                name=vertexLegendLabel,
+                                legendgroup=str(vertexLegendGroup),
+                                legendrank=vertexLegendRank,
+                                showlegend=bool(showVertexLegend and first_vertex_trace),
+                            )
+                        )
+                        first_vertex_trace = False
 
         return data
 
     @staticmethod
-    @staticmethod
     def vertexData(vertices,
-                   dictionaries=None,
+                   dictionaries=[],
                    color="black",
                    colorKey=None,
                    size=1.1,
@@ -911,330 +1151,350 @@ class Plotly:
                    borderColorKey=None,
                    borderWidthKey=None,
                    labelKey=None,
-                   showVertexLabel=False,
-                   vertexLabelFontSize=5,
+                   showVertexLabel = False,
+                   vertexLabelFontSize = 5,
                    groupKey=None,
                    minGroup=None,
                    maxGroup=None,
-                   groups=None,
+                   groups=[],
                    legendLabel="Topology Vertices",
                    legendGroup=1,
                    legendRank=1,
                    showLegend=True,
                    colorScale="Viridis"):
-        """
-        Creates efficient Plotly Scatter3d traces for vertices.
-
-        The method keeps the legacy API but avoids shared mutable defaults,
-        handles missing dictionaries safely, and guards against group values not
-        present in the supplied group list. When vertex borders are requested,
-        an underlay marker trace is emitted before the main marker trace.
-        """
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Color import Color
-
-        if not vertices:
-            return []
-        dictionaries = list(dictionaries) if dictionaries is not None else []
-        groups = list(groups) if groups is not None else []
-
-        def _value(d, key, default=None):
-            if key is None or not d:
-                return default
-            try:
-                return Dictionary.ValueAtKey(d, key=key, defaultValue=default)
-            except TypeError:
-                return Dictionary.ValueAtKey(d, key, default)
-            except Exception:
-                return default
-
-        def _float(value, default):
-            try:
-                return float(value)
-            except Exception:
-                return default
-
-        def _hex(value, default="black"):
-            try:
-                return Color.AnyToHex(value)
-            except Exception:
-                try:
-                    return Color.AnyToHex(default)
-                except Exception:
-                    return default
-
-        def _group_color(value, default):
-            if value is None:
-                return default
-            try:
-                numeric_value = float(value)
-                numeric_groups = []
-                for g in groups:
-                    try:
-                        numeric_groups.append(float(g))
-                    except Exception:
-                        pass
-                mn = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
-                mx = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
-                numeric_value = max(mn, min(mx, numeric_value))
-                return _hex(Color.ByValueInRange(numeric_value, minValue=mn, maxValue=mx, colorScale=colorScale), default)
-            except Exception:
-                pass
-            if groups and value in groups:
-                mn = 0 if minGroup is None else minGroup
-                mx = max(len(groups) - 1, 1) if maxGroup is None else maxGroup
-                return _hex(Color.ByValueInRange(groups.index(value), minValue=mn, maxValue=mx, colorScale=colorScale), default)
-            return default
-
-        x, y, z = [], [], []
-        sizes, labels, colors = [], [], []
-        border_colors, border_sizes = [], []
-        default_color = _hex(color)
-        default_border_color = _hex(borderColor)
-        default_size = max(_float(size, 1.1), 0.1)
-        default_border_width = max(_float(borderWidth, 0), 0)
+        x = []
+        y = []
+        z = []
         n = len(str(len(vertices)))
+        sizes = []
+        labels = []
+        colors = []
+        borderColors = []
+        borderSizes = []
+        for i in range(len(vertices)):
+            sizes.append(size)
+            labels.append("")
+            colors.append(Color.AnyToHex(color))
+            borderColors.append(borderColor)
+            borderSizes.append(size+borderWidth*2)
+        if colorKey or sizeKey or borderColorKey or borderWidthKey or labelKey or groupKey:
+            if groups:
+                if len(groups) > 0:
+                    if type(groups[0]) == int or type(groups[0]) == float:
+                        if not minGroup:
+                            minGroup = min(groups)
+                        if not maxGroup:
+                            maxGroup = max(groups)
+                    else:
+                        minGroup = 0
+                        maxGroup = len(groups) - 1
+            else:
+                minGroup = 0
+                maxGroup = 1
+            n = len(str(len(vertices)))
+            for m, v in enumerate(vertices):
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
+                if len(dictionaries) > 0:
 
-        for i, v in enumerate(vertices):
-            try:
-                x.append(v[0]); y.append(v[1]); z.append(v[2])
-            except Exception:
-                continue
-            d = dictionaries[i] if i < len(dictionaries) else None
-            label = str(_value(d, labelKey, "Vertex_" + str(i + 1).zfill(n))) if labelKey else "Vertex_" + str(i + 1).zfill(n)
-            this_size = max(_float(_value(d, sizeKey, default_size), default_size), 0.1)
-            this_color = _hex(_value(d, colorKey, default_color), default_color) if colorKey else default_color
-            if groupKey is not None:
-                this_color = _group_color(_value(d, groupKey, None), this_color)
-            this_border_color = _hex(_value(d, borderColorKey, default_border_color), default_border_color) if borderColorKey else default_border_color
-            this_border_width = max(_float(_value(d, borderWidthKey, default_border_width), default_border_width), 0)
-            labels.append(label)
-            sizes.append(this_size)
-            colors.append(this_color)
-            border_colors.append(this_border_color)
-            border_sizes.append(this_size + this_border_width * 2 if this_border_width > 0 else 0)
+                    d = dictionaries[m]
+                    if d:
+                        if not colorKey == None:
+                            temp_color = Dictionary.ValueAtKey(d, key=colorKey)
+                            if not temp_color == None:
+                                colors[m] = Color.AnyToHex(temp_color)
+                        if not labelKey == None:
+                            labels[m] = str(Dictionary.ValueAtKey(d, key=labelKey, defaultValue=" "))
+                        if not sizeKey == None:
+                            sizes[m] = float(Dictionary.ValueAtKey(d, key=sizeKey, defaultValue=sizes[m]))
+                            if sizes[m] == None:
+                               sizes[m] = size
+                            if float(sizes[m]) <= 0:
+                                sizes[m] = 1.1
+                        if not borderColorKey == None:
+                            temp_color = Dictionary.ValueAtKey(d, key=borderColorKey)
+                            if not temp_color == None:
+                                borderColors[m] = Color.AnyToHex(temp_color)
+                        if not borderWidthKey == None:
+                            temp_width = Dictionary.ValueAtKey(d, key=borderWidthKey, defaultValue=borderWidth)
+                            if temp_width == None or temp_width <= 0:
+                               borderSizes[m] = 0
+                            else:
+                                borderSizes[m] = sizes[m] + temp_width*2
+                        if not groupKey == None:
+                            c_value = Dictionary.ValueAtKey(d, key=groupKey)
+                            if not c_value == None:
+                                if type(c_value) == int or type(c_value) == float:
+                                    if c_value < minGroup:
+                                        c_value = minGroup
+                                    if c_value > maxGroup:
+                                        c_value = maxGroup
+                                    temp_color = Color.ByValueInRange(c_value,
+                                                                        minValue=minGroup,
+                                                                        maxValue=maxGroup,
+                                                                        colorScale=colorScale)
+                                    colors[m] = Color.AnyToHex(temp_color)
+                                elif isinstance(c_value, str):
+                                    temp_color = Color.ByValueInRange(groups.index(c_value), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                                    colors[m] = Color.AnyToHex(temp_color)
+        else:
+            for v in vertices:
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
+        
+        # if len(list(set(colors))) < 2:
+        #     colors = Color.AnyToHex(color)
+        if len(labels) < 1:
+            labels = "Vertex_1"
+        if len(sizes) < 1:
+            sizes = [size]*len(x)
+        if showVertexLabel == True:
+            mode = "markers+text"
+        else:
+            mode = "markers"
 
-        if not x:
-            return []
-
-        mode = "markers+text" if showVertexLabel else "markers"
-        traces = []
+        vData2 = go.Scatter3d(x=x,
+                            y=y,
+                            z=z,
+                            name=legendLabel,
+                            showlegend=showLegend,
+                            marker=dict(color=colors,
+                                        size=sizes,
+                                        symbol="circle",
+                                        opacity=1,
+                                        line=dict(width=0),
+                                        sizemode="diameter"),
+                            mode=mode,
+                            customdata = labels,
+                            legendgroup=legendGroup,
+                            legendrank=legendRank,
+                            text=labels,
+                            textfont=dict(size=vertexLabelFontSize),   # Font size for displayed text labels
+                            hoverinfo='text',
+                            hovertext=labels,
+                            hovertemplate=["Click "+label for label in labels]
+                            )
         if borderWidth > 0 or borderWidthKey:
-            traces.append(go.Scatter3d(
-                x=x, y=y, z=z,
-                name=legendLabel,
-                showlegend=False,
-                marker=dict(color=border_colors, size=border_sizes, symbol="circle", opacity=1, line=dict(width=0), sizemode="diameter"),
-                mode="markers",
-                hoverinfo="skip",
-                legendgroup=str(legendGroup),
-                legendrank=legendRank,
-            ))
-
-        traces.append(go.Scatter3d(
-            x=x, y=y, z=z,
-            name=legendLabel,
-            showlegend=showLegend,
-            marker=dict(color=colors, size=sizes, symbol="circle", opacity=1, line=dict(width=0), sizemode="diameter"),
-            mode=mode,
-            customdata=labels,
-            legendgroup=str(legendGroup),
-            legendrank=legendRank,
-            text=labels if showVertexLabel else None,
-            textfont=dict(size=vertexLabelFontSize),
-            hoverinfo="text",
-            hovertext=labels,
-            hovertemplate=["Click " + str(label) for label in labels],
-        ))
-        return traces
+            vData1 = go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name=legendLabel,
+                                showlegend=showLegend,
+                                marker=dict(color=borderColors,
+                                            size=borderSizes,
+                                            symbol="circle", 
+                                            opacity=1,
+                                            line=dict(width=0),
+                                            sizemode="diameter"),
+                                mode=mode
+                                )
+            
+            return_value = [vData1]+[vData2]
+        else:
+            return_value = [vData2]
+        return return_value
 
     @staticmethod
-    @staticmethod
-    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None,
-                 width=1, widthKey=None, dash=False, dashKey=None, directed=False,
-                 arrowSize=0.1, arrowSizeKey=None, labelKey=None,
-                 showEdgeLabel=False, groupKey=None, minGroup=None, maxGroup=None,
-                 groups=None, legendLabel="Topology Edges", legendGroup=2,
-                 legendRank=2, showLegend=True, colorScale="Viridis"):
-        """
-        Creates efficient Plotly Scatter3d traces for topology or graph edges.
-
-        Edges are grouped by visual style (colour, width, dash state, and arrow
-        size) so large graphs are drawn with far fewer traces. This greatly
-        improves browser-side rendering speed compared with one trace per edge.
-
-        Parameters are intentionally compatible with the legacy implementation.
-        """
-        import math
+    def edgeData(vertices, edges, dictionaries=None, color="black", colorKey=None, width=1, widthKey=None, dash=False, dashKey=None, directed=False, arrowSize=0.1, arrowSizeKey=None, labelKey=None, showEdgeLabel = False, groupKey=None, minGroup=None, maxGroup=None, groups=[], legendLabel="Topology Edges", legendGroup=2, legendRank=2, showLegend=True, colorScale="Viridis"):
+    
         from topologicpy.Color import Color
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Helper import Helper
 
-        if vertices is None or edges is None:
-            return []
-        groups = list(groups) if groups is not None else []
-        dictionaries = list(dictionaries) if dictionaries is not None else []
+        def create_arrowheads(x, y, z, arrowSize=4):
+            import plotly.graph_objects as go
+            import numpy as np
 
-        def _value(d, key, default=None):
-            if key is None or not d:
-                return default
-            try:
-                return Dictionary.ValueAtKey(d, key=key, defaultValue=default)
-            except TypeError:
-                return Dictionary.ValueAtKey(d, key, default)
-            except Exception:
-                return default
+            arrow_traces = []
 
-        def _float(value, default):
-            try:
-                return float(value)
-            except Exception:
-                return default
+            # Compute segment directions
+            cone_x, cone_y, cone_z = [], [], []
+            cone_u, cone_v, cone_w = [], [], []
 
-        def _bool(value, default=False):
-            if isinstance(value, bool):
-                return value
-            if isinstance(value, (int, float)):
-                return bool(value)
-            if isinstance(value, str):
-                return value.strip().lower() in ("true", "1", "yes", "y", "t")
-            return default
+            for i in range(len(x) - 1):
+                if x[i] == None or x[i+1] == None:
+                    continue
+                u = x[i+1] - x[i]
+                v = y[i+1] - y[i]
+                w = z[i+1] - z[i]
 
-        def _hex(value, default="black"):
-            try:
-                return Color.AnyToHex(value)
-            except Exception:
-                try:
-                    return Color.AnyToHex(default)
-                except Exception:
-                    return default
+                norm = np.linalg.norm([u, v, w])
+                if norm > 0:
+                    u /= norm
+                    v /= norm
+                    w /= norm
+                    cone_x.append(x[i+1])
+                    cone_y.append(y[i+1])
+                    cone_z.append(z[i+1])
+                    cone_u.append(u)
+                    cone_v.append(v)
+                    cone_w.append(w)
 
-        def _group_color(value, default):
-            if value is None:
-                return default
-            try:
-                numeric_value = float(value)
-                numeric_groups = []
-                for item in groups:
-                    try:
-                        numeric_groups.append(float(item))
-                    except Exception:
-                        pass
-                mn = float(minGroup) if minGroup is not None else (min(numeric_groups) if numeric_groups else 0.0)
-                mx = float(maxGroup) if maxGroup is not None else (max(numeric_groups) if numeric_groups else 1.0)
-                numeric_value = max(mn, min(mx, numeric_value))
-                return _hex(Color.ByValueInRange(numeric_value, minValue=mn, maxValue=mx, colorScale=colorScale), default)
-            except Exception:
-                pass
-            if groups and value in groups:
-                mn = 0 if minGroup is None else minGroup
-                mx = max(len(groups) - 1, 1) if maxGroup is None else maxGroup
-                return _hex(Color.ByValueInRange(groups.index(value), minValue=mn, maxValue=mx, colorScale=colorScale), default)
-            return default
-
-        def _dash_xyz(points):
-            x, y, z = [], [], []
-            for a, b in zip(points[:-1], points[1:]):
-                x.extend([a[0], b[0], None])
-                y.extend([a[1], b[1], None])
-                z.extend([a[2], b[2], None])
-            return x, y, z
-
-        def _unit(a, b):
-            u = b[0] - a[0]
-            v = b[1] - a[1]
-            w = b[2] - a[2]
-            length = math.sqrt(u*u + v*v + w*w)
-            if length <= 1e-12:
-                return None
-            return (u / length, v / length, w / length)
-
-        trace_buckets = {}
-        arrow_buckets = {}
-        label_x, label_y, label_z, label_text = [], [], [], []
-
-        default_color = _hex(color)
-        for index, edge in enumerate(edges):
-            try:
-                sv = vertices[edge[0]]
-                ev = vertices[edge[1]]
-            except Exception:
-                continue
-
-            d = dictionaries[index] if index < len(dictionaries) else None
-            this_color = _hex(_value(d, colorKey, default_color), default_color) if colorKey else default_color
-            if groupKey is not None:
-                this_color = _group_color(_value(d, groupKey, None), this_color)
-            this_width = _float(_value(d, widthKey, width), width) if widthKey else _float(width, 1.0)
-            this_dash = _bool(_value(d, dashKey, dash), dash) if dashKey else bool(dash)
-            this_arrow_size = _float(_value(d, arrowSizeKey, arrowSize), arrowSize) if arrowSizeKey else _float(arrowSize, 0.1)
-
-            key = (this_color, this_width, this_dash)
-            bucket = trace_buckets.setdefault(key, {"x": [], "y": [], "z": [], "text": []})
-            bucket["x"].extend([sv[0], ev[0], None])
-            bucket["y"].extend([sv[1], ev[1], None])
-            bucket["z"].extend([sv[2], ev[2], None])
-            edge_label = str(_value(d, labelKey, "")) if labelKey else ""
-            bucket["text"].extend([edge_label, edge_label, None])
-
-            if showEdgeLabel and edge_label:
-                label_x.append((sv[0] + ev[0]) * 0.5)
-                label_y.append((sv[1] + ev[1]) * 0.5)
-                label_z.append((sv[2] + ev[2]) * 0.5)
-                label_text.append(edge_label)
-
-            if directed:
-                direction = _unit(sv, ev)
-                if direction:
-                    akey = (this_color, this_arrow_size)
-                    ab = arrow_buckets.setdefault(akey, {"x": [], "y": [], "z": [], "u": [], "v": [], "w": []})
-                    ab["x"].append(ev[0]); ab["y"].append(ev[1]); ab["z"].append(ev[2])
-                    ab["u"].append(direction[0]); ab["v"].append(direction[1]); ab["w"].append(direction[2])
-
-        traces = []
-        first_trace = True
-        for (this_color, this_width, this_dash), bucket in trace_buckets.items():
-            line = dict(color=this_color, width=this_width)
-            # Scatter3d does not reliably support line.dash across Plotly
-            # versions, so dashed lines are represented as dotted markers plus
-            # line segments where possible.
-            mode = "lines+markers" if this_dash else "lines"
-            marker = dict(size=max(1, this_width * 0.25), color=this_color) if this_dash else None
-            traces.append(go.Scatter3d(
-                x=bucket["x"], y=bucket["y"], z=bucket["z"],
-                mode=mode,
-                line=line,
-                marker=marker,
-                name=legendLabel,
-                showlegend=bool(showLegend and first_trace),
-                legendgroup=str(legendGroup),
-                legendrank=legendRank,
-                hoverinfo="text",
-                hovertext=bucket["text"],
-            ))
-            first_trace = False
-
-        if showEdgeLabel and label_text:
-            traces.append(go.Scatter3d(
-                x=label_x, y=label_y, z=label_z,
-                mode="text",
-                text=label_text,
-                showlegend=False,
-                hoverinfo="skip",
-            ))
-
-        for (this_color, this_arrow_size), bucket in arrow_buckets.items():
-            traces.append(go.Cone(
-                x=bucket["x"], y=bucket["y"], z=bucket["z"],
-                u=bucket["u"], v=bucket["v"], w=bucket["w"],
-                sizemode="absolute",
-                sizeref=this_arrow_size,
-                anchor="tip",
+            cone_trace = go.Cone(
+                x=cone_x,
+                y=cone_y,
+                z=cone_z,
+                u=cone_u,
+                v=cone_v,
+                w=cone_w,
+                sizemode="raw",
+                sizeref=arrowSize,
                 showscale=False,
-                colorscale=[[0, this_color], [1, this_color]],
-                showlegend=False,
+                colorscale=[[0, color], [1, color]],
+                anchor="tip",
+                name="",  # Hide legend
                 hoverinfo="skip",
-            ))
+                showlegend=False
+            )
+            arrow_traces.append(cone_trace)
 
+            return arrow_traces
+        traces = []
+        x = []
+        y = []
+        z = []
+        labels = []
+        groupList = []
+        label = ""
+        group = ""
+
+        if showEdgeLabel == True:
+            mode = "lines+text"
+        else:
+            mode = "lines"
+        
+        if showEdgeLabel == True:
+            mode = "lines+text"
+        else:
+            mode = "lines"
+        if groups:
+            if len(groups) > 0:
+                if type(groups[0]) == int or type(groups[0]) == float:
+                    if not minGroup:
+                        minGroup = min(groups)
+                    if not maxGroup:
+                        maxGroup = max(groups)
+                else:
+                    minGroup = 0
+                    maxGroup = len(groups) - 1
+        else:
+            minGroup = 0
+            maxGroup = 1
+        
+
+        if colorKey or widthKey or labelKey or groupKey or dashKey or arrowSizeKey:
+            keys = [x for x in [colorKey, widthKey, labelKey, groupKey, dashKey, arrowSizeKey] if not x == None]
+            temp_dict = Helper.ClusterByKeys(edges, dictionaries, keys, silent=False)
+            dict_clusters = temp_dict["dictionaries"]
+            elements_clusters = temp_dict['elements']
+            n = len(str(len(elements_clusters)))
+            labels = []
+            for j, elements_cluster in enumerate(elements_clusters):
+                d_color = color
+                d_arrowSize = arrowSize
+                d_dash = dash
+                d = dict_clusters[j][0] # All dictionaries have same values in dictionaries, so take first one.
+                if d:
+                    if not colorKey == None:
+                        d_color = Color.AnyToHex(Dictionary.ValueAtKey(d, key=colorKey, defaultValue=color))
+                    if not dashKey == None:
+                        d_dash = Dictionary.ValueAtKey(d, key=dashKey, defaultValue=dash)
+                    if not arrowSizeKey == None:
+                        d_arrowSize = Dictionary.ValueAtKey(d, key=arrowSizeKey, defaultValue=arrowSize)
+                    if not labelKey == None:
+                        labels.append(str(Dictionary.ValueAtKey(d, labelKey, "")))
+                    if not widthKey == None:
+                        e_width = Dictionary.ValueAtKey(d, key=widthKey)
+                        if not e_width == None:
+                            width = e_width
+                    if not groupKey == None:
+                        group = Dictionary.ValueAtKey(d, key=groupKey)
+                        if not group == None:
+                            if type(group) == int or type(group) == float:
+                                if group < minGroup:
+                                    group = minGroup
+                                if group > maxGroup:
+                                    group = maxGroup
+                                d_color = Color.ByValueInRange(group, minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+                            else:
+                                d_color = Color.ByValueInRange(groups.index(group), minValue=minGroup, maxValue=maxGroup, colorScale=colorScale)
+
+                x = []
+                y = []
+                z = []
+                for e in elements_cluster:
+                    sv = vertices[e[0]]
+                    ev = vertices[e[1]]
+                    x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                    y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                    z+=[sv[2], ev[2], None] # z-coordinates of edge ends
+                if showEdgeLabel == True:
+                    mode = "markers+lines+text"
+                else:
+                    mode = "markers+lines"
+                if isinstance(width, list):
+                    marker_width = width[0]*0.25
+                else:
+                    marker_width = width*0.25
+                if d_dash:
+                    dot = "dot"
+                else:
+                    dot = "solid"
+                trace = go.Scatter3d(x=x,
+                                    y=y,
+                                    z=z,
+                                    name=legendLabel,
+                                    showlegend=showLegend,
+                                    marker=dict(symbol="circle", size=marker_width, color=d_color),
+                                    mode=mode,
+                                    line=dict(color=d_color, width=width, dash=dot),
+                                    legendgroup=legendGroup,
+                                    legendrank=legendRank,
+                                    text=labels,
+                                    hoverinfo='text',
+                                    hovertext=labels)
+                if directed:
+                    arrow_traces = create_arrowheads(x, y, z, arrowSize=d_arrowSize)
+                    traces += arrow_traces
+                traces.append(trace)
+        else:
+            x = []
+            y = []
+            z = []
+            for e in edges:
+                sv = vertices[e[0]]
+                ev = vertices[e[1]]
+                x+=[sv[0], ev[0], None] # x-coordinates of edge ends
+                y+=[sv[1], ev[1], None] # y-coordinates of edge ends
+                z+=[sv[2], ev[2], None] # z-coordinates of edge ends
+            if showEdgeLabel == True:
+                mode = "lines+text"
+            else:
+                mode = "lines"
+            if dash:
+                dot = "dot"
+            else:
+                dot = "solid"
+            trace = go.Scatter3d(x=x,
+                                y=y,
+                                z=z,
+                                name=legendLabel,
+                                showlegend=showLegend,
+                                marker_size=0,
+                                mode=mode,
+                                line=dict(color=color, width=width, dash=dot),
+                                legendgroup=legendGroup,
+                                legendrank=legendRank,
+                                text=label,
+                                hoverinfo='text')
+            if directed:
+                arrow_traces = create_arrowheads(x, y, z, arrowSize=arrowSize)
+                traces += arrow_traces
+            traces.append(trace)
         return traces
 
     @staticmethod
@@ -1690,7 +1950,7 @@ class Plotly:
                 for i, tp_v in enumerate(tp_vertices):
                     v = v_list[i]      
                     ci = closest_index(v_list[i], alt_intensities)
-                    value = (intensities[ci] if isinstance(intensities, list) and len(intensities) > ci else alt_intensities[ci])
+                    value = intensities[ci]
                     if (max_i - min_i) == 0:
                         value = 0
                     else:
@@ -1744,7 +2004,7 @@ class Plotly:
                 vertices = geo['vertices']
                 edges = geo['edges']
                 if len(edges) > 0:
-                    data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, dash=edgeDash, dashKey=edgeDashKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
+                    data.extend(Plotly.edgeData(vertices, edges, dictionaries=e_dictionaries, color=edgeColor, colorKey=edgeColorKey, width=edgeWidth, widthKey=edgeWidthKey, directed=directed, arrowSize=arrowSize, arrowSizeKey=arrowSizeKey, labelKey=edgeLabelKey, showEdgeLabel=showEdgeLabel, groupKey=edgeGroupKey, minGroup=edgeMinGroup, maxGroup=edgeMaxGroup, groups=edgeGroups, legendLabel=edgeLegendLabel, legendGroup=edgeLegendGroup, legendRank=edgeLegendRank, showLegend=showEdgeLegend, colorScale=colorScale))
         
         if showFaces and Topology.Type(topology) >= Topology.TypeID("Face"):
             d = Topology.Dictionary(topology)
@@ -1759,7 +2019,7 @@ class Plotly:
             if not materialKey == None:
                 d_material = Dictionary.ValueAtKey(d, key=materialKey)
                 if not d_material == None and isinstance(d_material, str):
-                    if d_material.lower() in list(materials.keys()):
+                    if material in list(materials.keys()):
                         material = d_material
             if not material == None and isinstance(material, str):
                 material = material.lower()
@@ -1822,7 +2082,7 @@ class Plotly:
 
     @staticmethod
     def FigureByConfusionMatrix(matrix,
-            categories=None,
+            categories=[],
             minValue=None,
             maxValue=None,
             title="Confusion Matrix",
@@ -2035,8 +2295,8 @@ class Plotly:
     
     @staticmethod
     def FigureByMatrix(matrix,
-            xCategories=None,
-            yCategories=None,
+            xCategories=[],
+            yCategories=[],
             minValue=None,
             maxValue=None,
             title="Matrix",
@@ -3210,7 +3470,7 @@ class Plotly:
         return True
     
     @staticmethod
-    def SetCamera(figure, camera=None, center=None, up=None, projection="perspective"):
+    def SetCamera(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], projection="perspective"):
         """
         Sets the camera for the input figure.
 
@@ -3254,7 +3514,7 @@ class Plotly:
         return figure
 
     @staticmethod
-    def Show(figure, camera=None, center=None, up=None, renderer=None, projection="perspective"):
+    def Show(figure, camera=[-1.25, -1.25, 1.25], center=[0, 0, 0], up=[0, 0, 1], renderer=None, projection="perspective"):
         """
         Shows the input figure.
 
@@ -3283,12 +3543,6 @@ class Plotly:
         if figure == None:
             print("Plotly.Show - Error: The input is NULL. Returning None.")
             return None
-        if not isinstance(camera, list):
-            camera = [-1.25, -1.25, 1.25]
-        if not isinstance(center, list):
-            center = [0, 0, 0]
-        if not isinstance(up, list):
-            up = [0, 0, 1]
         if not isinstance(figure, plotly.graph_objs._figure.Figure):
             print("Plotly.Show - Error: The input is not a figure. Returning None.")
             return None

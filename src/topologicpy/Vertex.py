@@ -1263,113 +1263,241 @@ class Vertex():
     @staticmethod
     def InterpolateValue(vertex, vertices: list, n: int = 3, key: str = "intensity", mantissa: int = 6, tolerance: float = 0.0001):
         """
-        Interpolates the value of the input vertex based on the values of the *n* nearest vertices.
+        Interpolates the value of the input vertex based on the values of the n nearest vertices.
+
+        The input vertex and the vertices in the input list can be either:
+        - topologic_core.Vertex objects, or
+        - TGraph vertex records of the form:
+        {"index": ..., "dictionary": {"x": ..., "y": ..., "z": ..., key: ...}, ...}
 
         Parameters
         ----------
-        vertex : topologic_core.Vertex
-            The input vertex.
+        vertex : topologic_core.Vertex or dict
+            The input vertex. This can be a Topologic vertex or a TGraph vertex record.
         vertices : list
-            The input list of vertices.
+            The input list of vertices. The list can contain Topologic vertices, TGraph
+            vertex records, or a mixture of both.
         n : int , optional
             The maximum number of nearest vertices to consider. Default is 3.
         key : str , optional
-            The key that holds the value to be interpolated in the dictionaries of the vertices. Default is "intensity".
+            The key that holds the value to be interpolated in the dictionaries of the
+            vertices. Default is "intensity".
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
-            The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. Default is 0.0001.
+            The tolerance for computing if the input vertex is coincident with another
+            vertex in the input list. Default is 0.0001.
 
         Returns
         -------
-        topologic_core.vertex
-            The input vertex with the interpolated value stored in its dictionary at the key specified by the input key. Other keys and values in the dictionary are preserved.
-
+        topologic_core.Vertex or dict or None
+            The input vertex with the interpolated value stored in its dictionary at
+            the specified key. Other keys and values are preserved. If the input vertex
+            is a TGraph vertex record, the record is updated in place and returned.
         """
 
-        def interpolate_value(point, data_points, n, tolerance=0.0001):
-            """
-            Interpolates the value associated with a point in 3D by averaging the values of the n nearest points.
-            The influence of the adjacent points is inversely proportional to their distance from the input point.
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Dictionary import Dictionary
+        import numbers
 
-            Args:
-                data_points (list): A list of tuples, each representing a data point in 3D space as (x, y, z, value).
-                                    The 'value' represents the value associated with that data point.
-                point (tuple): A tuple representing the point in 3D space as (x, y, z) for which we want to interpolate a value.
-                n (int): The number of nearest points to consider for interpolation.
+        def _is_topologic_vertex(v):
+            try:
+                return Topology.IsInstance(v, "Vertex")
+            except Exception:
+                return False
 
-            Returns:
-                The interpolated value for the input point.
-            """
-            # Calculate the distances between the input point and all data points
-            distances = [(distance(p[:3], point), p[3]) for p in data_points]
+        def _is_tgraph_vertex_record(v):
+            if not isinstance(v, dict):
+                return False
+            if "dictionary" in v and isinstance(v.get("dictionary"), dict):
+                d = v.get("dictionary", {})
+                return any(k in d for k in ["x", "y", "z"]) or "representation" in v
+            return all(k in v for k in ["x", "y", "z"])
 
-            # Sort the distances in ascending order
+        def _unwrap(value):
+            if isinstance(value, list) and len(value) == 1:
+                return value[0]
+            return value
+
+        def _numeric(value, default=None):
+            value = _unwrap(value)
+            if isinstance(value, numbers.Number):
+                return float(value)
+            try:
+                return float(value)
+            except Exception:
+                return default
+
+        def _coordinates(v):
+            if _is_topologic_vertex(v):
+                try:
+                    return (
+                        Vertex.X(v, mantissa=mantissa),
+                        Vertex.Y(v, mantissa=mantissa),
+                        Vertex.Z(v, mantissa=mantissa),
+                    )
+                except Exception:
+                    return None
+
+            if isinstance(v, dict):
+                d = v.get("dictionary", v)
+                if isinstance(d, dict):
+                    x = _numeric(d.get("x", None), None)
+                    y = _numeric(d.get("y", None), None)
+                    z = _numeric(d.get("z", None), None)
+
+                    if x is not None and y is not None and z is not None:
+                        if mantissa is not None and mantissa >= 0:
+                            return (round(x, mantissa), round(y, mantissa), round(z, mantissa))
+                        return (x, y, z)
+
+                # Fallback: a TGraph vertex record may carry a Topologic vertex as its representation.
+                rep = v.get("representation", None)
+                if _is_topologic_vertex(rep):
+                    try:
+                        return (
+                            Vertex.X(rep, mantissa=mantissa),
+                            Vertex.Y(rep, mantissa=mantissa),
+                            Vertex.Z(rep, mantissa=mantissa),
+                        )
+                    except Exception:
+                        return None
+
+            return None
+
+        def _dictionary(v):
+            if _is_topologic_vertex(v):
+                try:
+                    return Topology.Dictionary(v)
+                except Exception:
+                    return None
+
+            if isinstance(v, dict):
+                d = v.get("dictionary", None)
+                if isinstance(d, dict):
+                    return d
+
+            return None
+
+        def _value_at_key(v, k):
+            d = _dictionary(v)
+
+            if d is None:
+                return None
+
+            if isinstance(d, dict):
+                return d.get(k, None)
+
+            try:
+                return Dictionary.ValueAtKey(d, k, None)
+            except TypeError:
+                try:
+                    return Dictionary.ValueAtKey(d, k)
+                except Exception:
+                    return None
+            except Exception:
+                return None
+
+        def _set_value_at_key(v, k, value):
+            if _is_topologic_vertex(v):
+                try:
+                    d = Topology.Dictionary(v)
+                    if d is None:
+                        d = Dictionary.ByKeysValues([k], [value])
+                    else:
+                        d = Dictionary.SetValueAtKey(d, k, value)
+                    return Topology.SetDictionary(v, d)
+                except Exception:
+                    return None
+
+            if isinstance(v, dict):
+                d = v.setdefault("dictionary", {})
+                if isinstance(d, dict):
+                    d[k] = value
+                    return v
+
+            return None
+
+        def _distance(point1, point2):
+            return (
+                (point1[0] - point2[0]) ** 2 +
+                (point1[1] - point2[1]) ** 2 +
+                (point1[2] - point2[2]) ** 2
+            ) ** 0.5
+
+        def _interpolate_value(point, data_points, n, tolerance=0.0001):
+            distances = [(_distance(p[:3], point), p[3]) for p in data_points]
             sorted_distances = sorted(distances, key=lambda x: x[0])
-
-            # Take the n nearest points
             nearest_points = sorted_distances[:n]
 
-            n_p = nearest_points[0]
-            n_d = n_p[0]
-            if n_d <= tolerance:
-                return n_p[1]
+            nearest_distance, nearest_value = nearest_points[0]
 
-            # Calculate the weights for each nearest point based on inverse distance
+            if nearest_distance <= tolerance:
+                return nearest_value
 
-            weights = [(1/d[0], d[1]) for d in nearest_points]
+            weights = [(1.0 / d, value) for d, value in nearest_points if d > tolerance]
 
-            # Normalize the weights so they sum to 1
+            if not weights:
+                return nearest_value
+
             total_weight = sum(w[0] for w in weights)
-            normalized_weights = [(w[0]/total_weight, w[1]) for w in weights]
 
-            # Interpolate the value as the weighted average of the nearest points
-            interpolated_value = sum(w[0]*w[1] for w in normalized_weights)
+            if total_weight <= 0:
+                return nearest_value
+
+            interpolated_value = sum((w / total_weight) * value for w, value in weights)
 
             return interpolated_value
 
-        def distance(point1, point2):
-            """
-            Calculates the Euclidean distance between two points in 3D space.
-
-            Args:
-                point1 (tuple): A tuple representing a point in 3D space as (x, y, z).
-                point2 (tuple): A tuple representing a point in 3D space as (x, y, z).
-
-            Returns:
-                The Euclidean distance between the two points.
-            """
-            return ((point1[0]-point2[0])**2 + (point1[1]-point2[1])**2 + (point1[2]-point2[2])**2)**0.5
-        
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
-
-        if not Topology.IsInstance(vertex, "Vertex"):
+        if not (_is_topologic_vertex(vertex) or _is_tgraph_vertex_record(vertex)):
             return None
+
         if not isinstance(vertices, list):
             return None
-        
-        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
-        if len(vertices) == 0:
+
+        point = _coordinates(vertex)
+
+        if point is None:
             return None
-        
-        point = (Vertex.X(vertex, mantissa=mantissa), Vertex.Y(vertex, mantissa=mantissa), Vertex.Z(vertex, mantissa=mantissa))
+
         data_points = []
+
         for v in vertices:
-            d = Topology.Dictionary(v)
-            value = Dictionary.ValueAtKey(d, key)
-            if not value == None:
-                if type(value) == int or type(value) == float:
-                    data_points.append((Vertex.X(v, mantissa=mantissa), Vertex.Y(v, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa), value))
+            if not (_is_topologic_vertex(v) or _is_tgraph_vertex_record(v)):
+                continue
+
+            coords = _coordinates(v)
+
+            if coords is None:
+                continue
+
+            value = _numeric(_value_at_key(v, key), None)
+
+            if value is None:
+                continue
+
+            data_points.append((coords[0], coords[1], coords[2], value))
+
         if len(data_points) == 0:
             return None
-        if n > len(data_points):
-            n = len(data_points)
-        value = interpolate_value(point, data_points, n, tolerance=0.0001)
-        d = Topology.Dictionary(vertex)
-        d = Dictionary.SetValueAtKey(d, key, value)
-        vertex = Topology.SetDictionary(vertex, d)
-        return vertex
+
+        try:
+            n = int(n)
+        except Exception:
+            n = 3
+
+        n = max(1, min(n, len(data_points)))
+
+        value = _interpolate_value(point, data_points, n, tolerance=tolerance)
+
+        if mantissa is not None and mantissa >= 0:
+            try:
+                value = round(float(value), mantissa)
+            except Exception:
+                pass
+
+        return _set_value_at_key(vertex, key, value)
 
     @staticmethod
     def IsCoincident(vertexA, vertexB, tolerance: float = 0.0001, silent: bool = False) -> bool:

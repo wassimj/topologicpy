@@ -493,6 +493,7 @@ class Wire():
         from topologicpy.Vertex import Vertex
         from topologicpy.Topology import Topology
         from topologicpy.Dictionary import Dictionary
+        from topologicpy.Wire import Wire
         import math
 
         def round_xyz(v):
@@ -534,6 +535,7 @@ class Wire():
 
             a = vertices[0]
             b = None
+
             for i in range(1, n):
                 if magnitude(vector(a, vertices[i])) > tol:
                     b = vertices[i]
@@ -548,15 +550,18 @@ class Wire():
                     continue
                 if not are_three_collinear(a, b, vi, tol=tol):
                     return False
+
             return True
 
         def first_non_collinear_triplet(vertices, tol=tolerance):
             n = len(vertices)
+
             for i in range(n - 2):
                 for j in range(i + 1, n - 1):
                     for k in range(j + 1, n):
                         if not are_three_collinear(vertices[i], vertices[j], vertices[k], tol=tol):
                             return [vertices[i], vertices[j], vertices[k]]
+
             return None
 
         def triplet_normal(vertices3, tol=tolerance):
@@ -565,16 +570,20 @@ class Wire():
             v = vector(v1, v3)
             n = cross(u, v)
             mag = magnitude(n)
+
             if mag <= tol:
                 return None
+
             return [n[0] / mag, n[1] / mag, n[2] / mag]
 
         def br(tp):
             verts = Topology.Vertices(tp)
             if not verts:
                 return None
+
             xs = [round(Vertex.X(v), mantissa) for v in verts]
             ys = [round(Vertex.Y(v), mantissa) for v in verts]
+
             return [min(xs), min(ys), max(xs), max(ys)]
 
         if not Topology.IsInstance(topology, "Topology"):
@@ -617,30 +626,40 @@ class Wire():
             return None
 
         x_min, y_min, x_max, y_max = boundingRectangle
+
         width = abs(x_max - x_min)
         length = abs(y_max - y_min)
+
         best_area = width * length
         orig_area = best_area
         best_z = 0
         best_br = [x_min, y_min, x_max, y_max]
+
         origin = Topology.Centroid(topology)
 
         optimize = min(max(int(optimize), 0), 10)
+
         if optimize > 0:
             factor = 1.0 - float(optimize) * 0.05
             flag = False
+
             for n in range(10, 0, -1):
                 if flag:
                     break
+
                 za = n
                 zb = 90 + n
                 zc = n
+
                 for z in range(za, zb, zc):
                     t = Topology.Rotate(topology, origin=origin, axis=[0, 0, 1], angle=z)
                     bb = br(t)
+
                     if not bb:
                         continue
+
                     bx_min, by_min, bx_max, by_max = bb
+
                     bwidth = abs(bx_max - bx_min)
                     blength = abs(by_max - by_min)
                     area = bwidth * blength
@@ -657,26 +676,12 @@ class Wire():
                         best_z = z
                         best_br = [bx_min, by_min, bx_max, by_max]
 
-        x_min, y_min, x_max, y_max = best_br
+        local_x_min, local_y_min, local_x_max, local_y_max = best_br
 
-        vb1 = Vertex.ByCoordinates(x_min, y_min, 0)
-        vb2 = Vertex.ByCoordinates(x_max, y_min, 0)
-        vb3 = Vertex.ByCoordinates(x_max, y_max, 0)
-        vb4 = Vertex.ByCoordinates(x_min, y_max, 0)
-
-        # Compute width and length before unflattening
-        x_min, y_min, z_min = Vertex.Coordinates(vb1)
-        x_max, y_max, z_max = Vertex.Coordinates(vb3)
-        width = x_max - x_min
-        length = y_max - y_min
-
-
-        # Unflatten the corners
-        vb1_uf = Topology.Unflatten(vb1, origin=f_origin, direction=normal)
-        vb3_uf = Topology.Unflatten(vb3, origin=f_origin, direction=normal)
-
-        x_min, y_min, z_min = Vertex.Coordinates(vb1_uf)
-        x_max, y_max, z_max = Vertex.Coordinates(vb3_uf)
+        vb1 = Vertex.ByCoordinates(local_x_min, local_y_min, 0)
+        vb2 = Vertex.ByCoordinates(local_x_max, local_y_min, 0)
+        vb3 = Vertex.ByCoordinates(local_x_max, local_y_max, 0)
+        vb4 = Vertex.ByCoordinates(local_x_min, local_y_max, 0)
 
         boundingRectangle = Wire.ByVertices([vb1, vb2, vb3, vb4], close=True, tolerance=tolerance, silent=silent)
         if not Topology.IsInstance(boundingRectangle, "Wire"):
@@ -684,24 +689,78 @@ class Wire():
                 print("Wire.BoundingRectangle - Error: Could not create the bounding rectangle wire. Returning None.")
             return None
 
-        boundingRectangle = Topology.Rotate(boundingRectangle, origin=origin, axis=[0, 0, 1], angle=-best_z)
-        boundingRectangle = Topology.Unflatten(boundingRectangle, origin=f_origin, direction=normal)
+        # width and length are intentionally measured in the local flattened rectangle frame.
+        # They should not be recomputed from world-space diagonal coordinates.
+        width = abs(local_x_max - local_x_min)
+        length = abs(local_y_max - local_y_min)
+
+        # Rotate the rectangle back from the optimized frame to the flattened topology frame.
+        if abs(best_z) > tolerance:
+            boundingRectangle = Topology.Rotate(
+                boundingRectangle,
+                origin=origin,
+                axis=[0, 0, 1],
+                angle=-best_z
+            )
+
+        # Unflatten the rectangle back to the original topology plane.
+        boundingRectangle = Topology.Unflatten(
+            boundingRectangle,
+            origin=f_origin,
+            direction=normal
+        )
+
+        if not Topology.IsInstance(boundingRectangle, "Wire"):
+            if not silent:
+                print("Wire.BoundingRectangle - Error: Could not unflatten the bounding rectangle wire. Returning None.")
+            return None
+
+        # Compute world-space extents from the final returned wire.
+        final_vertices = Topology.Vertices(boundingRectangle)
+        if not final_vertices:
+            if not silent:
+                print("Wire.BoundingRectangle - Error: Could not retrieve vertices from the final bounding rectangle wire. Returning None.")
+            return None
+
+        xs = [Vertex.X(v) for v in final_vertices]
+        ys = [Vertex.Y(v) for v in final_vertices]
+        zs = [Vertex.Z(v) for v in final_vertices]
+
+        world_x_min = min(xs)
+        world_y_min = min(ys)
+        world_z_min = min(zs)
+
+        world_x_max = max(xs)
+        world_y_max = max(ys)
+        world_z_max = max(zs)
 
         dictionary = Dictionary.ByKeysValues(
-            ["zrot", "xmin", "ymin", "zmin", "xmax", "ymax", "zmax", "width", "length"],
+            [
+                "zrot",
+                "xmin",
+                "ymin",
+                "zmin",
+                "xmax",
+                "ymax",
+                "zmax",
+                "width",
+                "length"
+            ],
             [
                 round(best_z, mantissa),
-                round(x_min, mantissa),
-                round(y_min, mantissa),
-                round(z_min, mantissa),
-                round(x_max, mantissa),
-                round(y_max, mantissa),
-                round(z_max, mantissa),
+                round(world_x_min, mantissa),
+                round(world_y_min, mantissa),
+                round(world_z_min, mantissa),
+                round(world_x_max, mantissa),
+                round(world_y_max, mantissa),
+                round(world_z_max, mantissa),
                 round(width, mantissa),
                 round(length, mantissa)
             ]
         )
+
         boundingRectangle = Topology.SetDictionary(boundingRectangle, dictionary)
+
         return boundingRectangle
 
     # @staticmethod

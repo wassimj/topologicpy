@@ -600,179 +600,358 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.graph
-            The input topology.
-        hostTopology : topologic_core.Topology
-            The host topology in which to search.
+        topology : topologic_core.Topology, topologic_core.Graph entity, TGraph vertex/edge index, or TGraph vertex/edge record
+            The input topology or graph entity.
+        hostTopology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The host topology or graph in which to search.
         topologyType : str
-            The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex". It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. Default is None.
+            The type of topology for which to search. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex".
+            It is case-insensitive. If it is set to None, the type will be inferred from the input topology where possible. Default is None.
 
         Returns
         -------
         adjacentTopologies : list
-            The list of adjacent topologies.
+            The list of adjacent topologies or TGraph records.
 
         """
 
         from topologicpy.Graph import Graph
 
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph_host = isinstance(hostTopology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph_host = False
+
+        # ------------------------------------------------------------------
+        # TGraph path
+        # ------------------------------------------------------------------
+
+        if is_tgraph_host:
+            def _is_valid_vertex_index(index):
+                try:
+                    return isinstance(index, int) and hostTopology._validate_vertex_index(index)
+                except Exception:
+                    return False
+
+            def _is_valid_edge_index(index):
+                try:
+                    return isinstance(index, int) and hostTopology._validate_edge_index(index)
+                except Exception:
+                    return False
+
+            def _record_index(item):
+                if isinstance(item, int):
+                    return item
+                if isinstance(item, dict):
+                    idx = item.get("index", None)
+                    return idx if isinstance(idx, int) else None
+                return None
+
+            def _resolve_vertex_index(item):
+                idx = _record_index(item)
+                if _is_valid_vertex_index(idx):
+                    return idx
+
+                try:
+                    for rec in hostTopology._vertices:
+                        if not rec.get("active", True):
+                            continue
+                        rep = rec.get("representation", None)
+                        if rep is item:
+                            return rec.get("index")
+                except Exception:
+                    pass
+
+                try:
+                    from topologicpy.Topology import Topology
+                    for rec in hostTopology._vertices:
+                        if not rec.get("active", True):
+                            continue
+                        rep = rec.get("representation", None)
+                        if rep is not None and Topology.IsSame(rep, item):
+                            return rec.get("index")
+                except Exception:
+                    pass
+
+                return None
+
+            def _resolve_edge_index(item):
+                idx = _record_index(item)
+                if _is_valid_edge_index(idx):
+                    return idx
+
+                try:
+                    for rec in hostTopology._edges:
+                        if not rec.get("active", True):
+                            continue
+                        rep = rec.get("representation", None)
+                        if rep is item:
+                            return rec.get("index")
+                except Exception:
+                    pass
+
+                try:
+                    from topologicpy.Topology import Topology
+                    for rec in hostTopology._edges:
+                        if not rec.get("active", True):
+                            continue
+                        rep = rec.get("representation", None)
+                        if rep is not None and Topology.IsSame(rep, item):
+                            return rec.get("index")
+                except Exception:
+                    pass
+
+                return None
+
+            def _infer_input_type(item):
+                if isinstance(item, dict):
+                    if "src" in item and "dst" in item:
+                        return "edge"
+                    return "vertex"
+
+                if isinstance(item, int):
+                    if _is_valid_vertex_index(item):
+                        return "vertex"
+                    if _is_valid_edge_index(item):
+                        return "edge"
+
+                try:
+                    if Topology.IsInstance(item, "Vertex"):
+                        return "vertex"
+                    if Topology.IsInstance(item, "Edge"):
+                        return "edge"
+                except Exception:
+                    pass
+
+                if _resolve_vertex_index(item) is not None:
+                    return "vertex"
+                if _resolve_edge_index(item) is not None:
+                    return "edge"
+
+                return None
+
+            if not topologyType:
+                topologyType = _infer_input_type(topology)
+
+            if not isinstance(topologyType, str):
+                print("Topology.AdjacentTopologies - Error: the input topologyType parameter is not a string. Returning None.")
+                return None
+
+            topologyType = topologyType.lower()
+
+            if topologyType not in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex"]:
+                print("Topology.AdjacentTopologies - Error: the input topologyType parameter is not a recognized type. Returning None.")
+                return None
+
+            input_type = _infer_input_type(topology)
+
+            if input_type == "vertex":
+                vertex_index = _resolve_vertex_index(topology)
+                if vertex_index is None:
+                    print("Topology.AdjacentTopologies - Error: Could not resolve the input topology as a TGraph vertex. Returning None.")
+                    return None
+
+                if topologyType == "vertex":
+                    return TGraph.AdjacentVertices(hostTopology, vertex_index, mode="all")
+
+                if topologyType == "edge":
+                    return TGraph.IncidentEdges(hostTopology, vertex_index, mode="all")
+
+                return []
+
+            if input_type == "edge":
+                edge_index = _resolve_edge_index(topology)
+                if edge_index is None:
+                    print("Topology.AdjacentTopologies - Error: Could not resolve the input topology as a TGraph edge. Returning None.")
+                    return None
+
+                if topologyType == "edge":
+                    return TGraph.AdjacentEdges(hostTopology, edge_index)
+
+                if topologyType == "vertex":
+                    edge_record = TGraph.Edge(hostTopology, edge_index)
+                    if not isinstance(edge_record, dict):
+                        return []
+                    src = edge_record.get("src", None)
+                    dst = edge_record.get("dst", None)
+                    result = []
+                    if _is_valid_vertex_index(src):
+                        result.append(TGraph.Vertex(hostTopology, src))
+                    if _is_valid_vertex_index(dst) and dst != src:
+                        result.append(TGraph.Vertex(hostTopology, dst))
+                    return result
+
+                return []
+
+            print("Topology.AdjacentTopologies - Error: Could not resolve the input topology as a TGraph vertex or edge. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Legacy Topology / Graph path
+        # ------------------------------------------------------------------
+
         if not Topology.IsInstance(topology, "Topology"):
             print("Topology.AdjacentTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
+
         if not Topology.IsInstance(hostTopology, "Topology") and not Topology.IsInstance(hostTopology, "Graph"):
             print("Topology.AdjacentTopologies - Error: the input hostTopology parameter is not a valid topology or graph. Returning None.")
             return None
+
         if not topologyType:
             topologyType = Topology.TypeAsString(topology).lower()
+
         if not isinstance(topologyType, str):
             print("Topology.AdjacentTopologies - Error: the input topologyType parameter is not a string. Returning None.")
             return None
+
         if not topologyType.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex"]:
             print("Topology.AdjacentTopologies - Error: the input topologyType parameter is not a recognized type. Returning None.")
             return None
+
         adjacentTopologies = []
         error = False
+
         if Topology.IsInstance(topology, "Vertex"):
             if topologyType.lower() == "vertex":
                 if Topology.IsInstance(hostTopology, "graph"):
                     adjacentTopologies = Graph.AdjacentVertices(hostTopology, topology)
                 else:
                     try:
-                        # _ = topology.AdjacentVertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'AdjacentVertices', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "AdjacentVertices", hostTopology, adjacentTopologies)
                     except:
                         try:
-                            # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                            _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                            _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                         except:
                             error = True
+
             elif topologyType.lower() == "edge":
                 if Topology.IsInstance(hostTopology, "graph"):
                     adjacentTopologies = Graph.Edges(hostTopology, [topology])
-                    print("Topology.AdjacentTopologies - adjacentTopologies:", adjacentTopologies)
                 else:
                     try:
                         _ = Core.VertexUtility.AdjacentEdges(topology, hostTopology, adjacentTopologies)
                     except:
                         try:
-                            # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                            _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                            _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                         except:
                             error = True
+
             elif topologyType.lower() == "wire":
                 try:
                     _ = Core.VertexUtility.AdjacentWires(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "face":
                 try:
                     _ = Core.VertexUtility.AdjacentFaces(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "shell":
                 try:
                     _ = Core.VertexUtility.AdjacentShells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "cell":
                 try:
                     _ = Core.VertexUtility.AdjacentCells(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = Core.VertexUtility.AdjacentCellComplexes(topology, hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "Edge"):
             if topologyType.lower() == "vertex":
                 try:
-                    # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                 except:
                     error = True
+
             elif topologyType.lower() == "edge":
                 if Topology.IsInstance(hostTopology, "graph"):
                     adjacentTopologies = Graph.AdjacentEdges(hostTopology, topology)
                 else:
                     try:
-                        # _ = topology.AdjacentEdges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'AdjacentEdges', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "AdjacentEdges", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "wire":
                 try:
                     _ = Core.EdgeUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "face":
                 try:
                     _ = Core.EdgeUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "shell":
                 try:
                     _ = Core.EdgeUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "cell":
                 try:
                     _ = Core.EdgeUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
             elif topologyType.lower() == "cellcomplex":
                 try:
                     _ = Core.EdgeUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "Wire"):
             if topologyType.lower() == "vertex":
                 try:
                     _ = Core.WireUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -780,8 +959,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -789,8 +967,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -798,8 +975,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -807,8 +983,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -816,8 +991,7 @@ class Topology():
                     _ = Core.WireUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -825,18 +999,17 @@ class Topology():
                     _ = Core.WireUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "Face"):
             if topologyType.lower() == "vertex":
                 try:
                     _ = Core.FaceUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -844,8 +1017,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -853,20 +1025,17 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "face":
-                # _ = topology.AdjacentFaces(hostTopology, adjacentTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'AdjacentFaces', hostTopology, adjacentTopologies)
+                _ = Core.InstanceCall(topology, "AdjacentFaces", hostTopology, adjacentTopologies)
             elif topologyType.lower() == "shell":
                 try:
                     _ = Core.FaceUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -874,8 +1043,7 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -883,18 +1051,17 @@ class Topology():
                     _ = Core.FaceUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "Shell"):
             if topologyType.lower() == "vertex":
                 try:
                     _ = Core.ShellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -902,8 +1069,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -911,8 +1077,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -920,8 +1085,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -929,8 +1093,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cell":
@@ -938,8 +1101,7 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentCells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -947,18 +1109,17 @@ class Topology():
                     _ = Core.ShellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "Cell"):
             if topologyType.lower() == "vertex":
                 try:
                     _ = Core.CellUtility.AdjacentVertices(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "edge":
@@ -966,8 +1127,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentEdges(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "wire":
@@ -975,8 +1135,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentWires(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "face":
@@ -984,8 +1143,7 @@ class Topology():
                     _ = Core.CellUtility.AdjacentFaces(topology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "shell":
@@ -993,18 +1151,15 @@ class Topology():
                     _ = Core.CellUtility.AdjacentShells(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cell":
                 try:
-                    # _ = topology.AdjacentCells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'AdjacentCells', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "AdjacentCells", hostTopology, adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                     except:
                         error = True
             elif topologyType.lower() == "cellcomplex":
@@ -1012,53 +1167,50 @@ class Topology():
                     _ = Core.CellUtility.AdjacentCellComplexes(adjacentTopologies)
                 except:
                     try:
-                        # _ = topology.CellComplexes(hostTopology, adjacentTopologies) # H to Core
-                        _ = Core.InstanceCall(topology, 'CellComplexes', hostTopology, adjacentTopologies)
+                        _ = Core.InstanceCall(topology, "CellComplexes", hostTopology, adjacentTopologies)
                     except:
                         error = True
+
         elif Topology.IsInstance(topology, "CellComplex"):
             if topologyType.lower() == "vertex":
                 try:
-                    # _ = topology.Vertices(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Vertices', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Vertices", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "edge":
                 try:
-                    # _ = topology.Edges(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Edges', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Edges", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "wire":
                 try:
-                    # _ = topology.Wires(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Wires', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "face":
                 try:
-                    # _ = topology.Faces(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Faces', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Faces", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "shell":
                 try:
-                    # _ = topology.Shells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Shells', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Shells", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "cell":
                 try:
-                    # _ = topology.Cells(hostTopology, adjacentTopologies) # H to Core
-                    _ = Core.InstanceCall(topology, 'Cells', hostTopology, adjacentTopologies)
+                    _ = Core.InstanceCall(topology, "Cells", hostTopology, adjacentTopologies)
                 except:
                     error = True
             elif topologyType.lower() == "cellcomplex":
                 raise Exception("Topology.AdjacentTopologies - Error: Cannot search for adjacent topologies of a CellComplex")
+
         elif Topology.IsInstance(topology, "Cluster"):
             raise Exception("Topology.AdjacentTopologies - Error: Cannot search for adjacent topologies of a Cluster")
+
         if error:
-            raise Exception("Topology.AdjacentTopologies - Error: Failure in search for adjacent topologies of type "+topologyType)
+            raise Exception("Topology.AdjacentTopologies - Error: Failure in search for adjacent topologies of type " + topologyType)
+
         return adjacentTopologies
 
     @staticmethod
@@ -6434,67 +6586,107 @@ class Topology():
     @staticmethod
     def Dictionary(topology, silent: bool = False):
         """
-        Returns the dictionary of the input topology
+        Returns the dictionary of the input topology.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Dictionary
-            The dictionary of the input topology.
+            The dictionary of the input topology or graph.
 
         """
+
         import inspect
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if is_tgraph:
+            try:
+                from topologicpy.Dictionary import Dictionary
+                d = TGraph.Dictionary(topology)
+                if isinstance(d, dict):
+                    if len(d) == 0:
+                        return None
+                    return Dictionary.ByKeysValues(list(d.keys()), [d[k] for k in d.keys()])
+                return d
+            except Exception:
+                return None
+
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
                 print("Topology.Dictionary - Error: the input topology parameter is not a valid topology. Returning None.")
                 print("Topology:", topology)
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
-        # return topology.GetDictionary() # H to Core
-        return Core.InstanceCall(topology, 'GetDictionary')
+
+        return Core.InstanceCall(topology, "GetDictionary")
     
     @staticmethod
     def Dimensionality(topology, silent: bool = False):
         """
-        Returns the dimensionality of the input topology
+        Returns the dimensionality of the input topology.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         int
-            The dimensionality of the input topology.
+            The dimensionality of the input topology or graph.
 
         """
+
         from topologicpy.Graph import Graph
         from topologicpy.Cluster import Cluster
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if is_tgraph:
+            return 1 if TGraph.Size(topology) > 0 else 0
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Dimensionality - Error: the input topology parameter is not a valid topology. Returning None.")
             return None
-        if Topology.IsInstance(topology, "Vertex"): return 0
-        if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Wire"): return 1
-        if Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Shell"): return 2
-        if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex"): return 3
+
+        if Topology.IsInstance(topology, "Vertex"):
+            return 0
+
+        if Topology.IsInstance(topology, "Edge") or Topology.IsInstance(topology, "Wire"):
+            return 1
+
+        if Topology.IsInstance(topology, "Face") or Topology.IsInstance(topology, "Shell"):
+            return 2
+
+        if Topology.IsInstance(topology, "Cell") or Topology.IsInstance(topology, "CellComplex"):
+            return 3
+
         if Topology.IsInstance(topology, "Graph"):
             edges = Graph.Edges(topology)
-            if len(edges) > 0:
-                return 1
-            else:
-                return 0
+            return 1 if len(edges) > 0 else 0
+
         if Topology.IsInstance(topology, "Cluster"):
             if len(Cluster.CellComplexes(topology)) > 0 or len(Cluster.Cells(topology)) > 0:
                 return 3
@@ -6503,6 +6695,7 @@ class Topology():
             if len(Cluster.Wires(topology)) > 0 or len(Cluster.Edges(topology)) > 0:
                 return 1
             return 0
+
         return 3
     
     @staticmethod
@@ -6602,12 +6795,12 @@ class Topology():
     @staticmethod
     def Edges(topology, silent: bool = False):
         """
-        Returns the edges of the input topology.
+        Returns the edges of the input topology or graph.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -6617,27 +6810,37 @@ class Topology():
             The list of edges.
 
         """
-        
+
         from topologicpy.Graph import Graph
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if is_tgraph:
+            return TGraph.Edges(topology)
 
         if Topology.IsInstance(topology, "Graph"):
             return Graph.Edges(topology)
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.Edges - Error: The input is not a valid topology. Returning None")
+                print("Topology.Edges - Error: The input is not a valid topology or graph. Returning None")
             return None
 
         if Topology.IsInstance(topology, "Edge"):
             if not silent:
                 print("Topology.Edges - Warning: The input is an Edge. Returning the same edge embedded in a list.")
             return [topology]
-        
+
         if Topology.IsInstance(topology, "Vertex"):
             if not silent:
-                print("Topology.Wires - Warning: The input is a lower dimension than an edge. Returning an empty list.")
+                print("Topology.Edges - Warning: The input is a lower dimension than an edge. Returning an empty list.")
             return []
-        
+
         return Topology.SubTopologies(topology=topology, subTopologyType="edge")
     
     @staticmethod
@@ -6647,8 +6850,8 @@ class Topology():
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         origin : topologic_core.Vertex , optional
             The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.
         scale : float , optional
@@ -6665,17 +6868,25 @@ class Topology():
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
-        
+
         Returns
         -------
         topologic_core.Cluster
             The exploded topology.
 
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Cluster import Cluster
         from topologicpy.Graph import Graph
-        from topologicpy.Dictionary import Dictionary
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
 
         def processClusterTypeFilter(cluster):
             if len(Cluster.CellComplexes(cluster)) > 0:
@@ -6695,6 +6906,10 @@ class Topology():
 
         def getTypeFilter(topology):
             typeFilter = "self"
+
+            if is_tgraph:
+                return "edge"
+
             if Topology.IsInstance(topology, "Vertex"):
                 typeFilter = "self"
             elif Topology.IsInstance(topology, "Edge"):
@@ -6714,69 +6929,92 @@ class Topology():
             elif Topology.IsInstance(topology, "Graph"):
                 typeFilter = "edge"
             return typeFilter
-        
+
+        if is_tgraph:
+            topology = TGraph.Topology(
+                topology,
+                includeVertices=True,
+                includeEdges=True,
+                useRepresentations=True,
+                segmentCurves=True,
+                tolerance=tolerance,
+                silent=silent,
+            )
+        elif Topology.IsInstance(topology, "Graph"):
+            topology = Graph.Topology(topology)
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.Explode - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology.Explode - Error: the input topology parameter is not a valid topology or graph. Returning None.")
             return None
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Topology.CenterOfMass(topology)
+
         if not typeFilter:
             typeFilter = getTypeFilter(topology)
+
         if not isinstance(typeFilter, str):
             if not silent:
                 print("Topology.Explode - Error: the input typeFilter parameter is not a valid string. Returning None.")
             return None
+
         if not isinstance(axes, str):
             if not silent:
                 print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
-        # if Topology.IsInstance(topology, "Topology"):
-        #     # Hack to fix a weird bug that seems to be a problem with OCCT memory handling.
-        #     topology = Topology.ByJSONString(Topology.JSONString([topology]))[0]
+
         axes = axes.lower()
         x_flag = "x" in axes
         y_flag = "y" in axes
         z_flag = "z" in axes
+
         if not x_flag and not y_flag and not z_flag:
             if not silent:
                 print("Topology.Explode - Error: the input axes parameter is not a valid string. Returning None.")
             return None
 
-        topologies = []
-        newTopologies = []
-        if Topology.IsInstance(topology, "Graph"):
-            topology = Graph.Topology(topology)
-
         if typeFilter.lower() == "self":
             topologies = [topology]
         else:
             topologies = Topology.SubTopologies(topology, subTopologyType=typeFilter.lower())
+
+        newTopologies = []
+
         for aTopology in topologies:
             c = Topology.InternalVertex(aTopology, tolerance=tolerance)
+
             oldX = Vertex.X(c, mantissa=mantissa)
             oldY = Vertex.Y(c, mantissa=mantissa)
             oldZ = Vertex.Z(c, mantissa=mantissa)
+
             if x_flag:
-                newX = (oldX - Vertex.X(origin, mantissa=mantissa))*scale + Vertex.X(origin, mantissa=mantissa)
+                newX = (oldX - Vertex.X(origin, mantissa=mantissa)) * scale + Vertex.X(origin, mantissa=mantissa)
             else:
                 newX = oldX
+
             if y_flag:
-                newY = (oldY - Vertex.Y(origin, mantissa=mantissa))*scale + Vertex.Y(origin, mantissa=mantissa)
+                newY = (oldY - Vertex.Y(origin, mantissa=mantissa)) * scale + Vertex.Y(origin, mantissa=mantissa)
             else:
                 newY = oldY
+
             if z_flag:
-                newZ = (oldZ - Vertex.Z(origin, mantissa=mantissa))*scale + Vertex.Z(origin, mantissa=mantissa)
+                newZ = (oldZ - Vertex.Z(origin, mantissa=mantissa)) * scale + Vertex.Z(origin, mantissa=mantissa)
             else:
                 newZ = oldZ
+
             xT = newX - oldX
             yT = newY - oldY
             zT = newZ - oldZ
+
             newTopology = Topology.Copy(aTopology)
             newTopology = Topology.Translate(newTopology, xT, yT, zT)
+
             if transferDictionaries == True:
                 newTopology = Topology.SetDictionary(newTopology, Topology.Dictionary(aTopology))
+
             newTopologies.append(newTopology)
+
         return Cluster.ByTopologies(newTopologies, silent=silent)
     
     @staticmethod
@@ -8121,20 +8359,20 @@ class Topology():
     
     @staticmethod
     def Geometry(topology,
-                 transferDictionaries: bool = False,
-                 triangulate: bool = False,
-                 mode : int = 0,
-                 meshSize : float = None,
-                 mantissa: int = 6,
-                 tolerance: float = 0.0001,
-                 silent: bool = False):
+                transferDictionaries: bool = False,
+                triangulate: bool = False,
+                mode : int = 0,
+                meshSize : float = None,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
         Returns the geometry (mesh data format) of the input topology as a dictionary of vertices, edges, and faces.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         transferDictionaries : bool , optional
             If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.
         triangulate : bool , optional
@@ -8167,26 +8405,172 @@ class Topology():
             A dictionary containing the vertices, edges, and faces data. The keys found in the dictionary are "vertices", "edges", and "faces".
 
         """
+
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Dictionary import Dictionary
 
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
+
+        # ------------------------------------------------------------------
+        # TGraph path.
+        # ------------------------------------------------------------------
+        if is_tgraph:
+            vertices = []
+            edges = []
+            faces = []
+            vertex_dicts = []
+            edge_dicts = []
+            face_dicts = []
+
+            index_map = {}
+
+            records = TGraph.Vertices(topology, asTopologic=False, activeOnly=True)
+            n = max(1, len(records))
+
+            for i, record in enumerate(records):
+                if not isinstance(record, dict):
+                    continue
+
+                old_index = record.get("index", i)
+                d = dict(record.get("dictionary", {}))
+                coords = TGraph.Coordinates(topology, old_index, default=None)
+
+                if coords is None:
+                    angle = 2.0 * math.pi * float(i) / float(n)
+                    coords = [math.cos(angle), math.sin(angle), 0.0]
+
+                coords = [
+                    round(float(coords[0]), mantissa),
+                    round(float(coords[1]), mantissa),
+                    round(float(coords[2]), mantissa),
+                ]
+
+                index_map[old_index] = len(vertices)
+                vertices.append(coords)
+
+                if transferDictionaries == True:
+                    vertex_dicts.append(d)
+
+            edge_records = TGraph.Edges(topology, asTopologic=False, activeOnly=True)
+
+            for edge_record in edge_records:
+                if not isinstance(edge_record, dict):
+                    continue
+
+                src = edge_record.get("src", None)
+                dst = edge_record.get("dst", None)
+
+                if src not in index_map or dst not in index_map:
+                    continue
+
+                edges.append([index_map[src], index_map[dst]])
+
+                if transferDictionaries == True:
+                    edge_dicts.append(dict(edge_record.get("dictionary", {})))
+
+            return {
+                "vertices": vertices,
+                "edges": edges,
+                "faces": faces,
+                "vertex_dicts": vertex_dicts,
+                "edge_dicts": edge_dicts,
+                "face_dicts": face_dicts,
+            }
+
+        # ------------------------------------------------------------------
+        # Legacy Graph path.
+        # ------------------------------------------------------------------
+        if Topology.IsInstance(topology, "Graph"):
+            from topologicpy.Graph import Graph
+
+            vertices = []
+            edges = []
+            faces = []
+            vertex_dicts = []
+            edge_dicts = []
+            face_dicts = []
+
+            graph_vertices = Graph.Vertices(topology)
+            graph_edges = Graph.Edges(topology)
+
+            for aVertex in graph_vertices:
+                py_dict = {}
+                if transferDictionaries == True:
+                    d = Topology.Dictionary(aVertex)
+                    if len(Dictionary.Keys(d)) > 0:
+                        py_dict = Dictionary.PythonDictionary(d)
+
+                try:
+                    vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
+                except:
+                    vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
+                    vertex_dicts.append(py_dict)
+
+            for anEdge in graph_edges:
+                e = []
+                sv = Edge.StartVertex(anEdge)
+                ev = Edge.EndVertex(anEdge)
+
+                try:
+                    svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
+                except:
+                    vertices.append(Vertex.Coordinates(sv, mantissa=mantissa))
+                    svIndex = len(vertices) - 1
+
+                try:
+                    evIndex = vertices.index(Vertex.Coordinates(ev, mantissa=mantissa))
+                except:
+                    vertices.append(Vertex.Coordinates(ev, mantissa=mantissa))
+                    evIndex = len(vertices) - 1
+
+                e.append(svIndex)
+                e.append(evIndex)
+                edges.append(e)
+
+                py_dict = {}
+                if transferDictionaries == True:
+                    d = Topology.Dictionary(anEdge)
+                    if len(Dictionary.Keys(d)) > 0:
+                        py_dict = Dictionary.PythonDictionary(d)
+                    edge_dicts.append(py_dict)
+
+            return {
+                "vertices": vertices,
+                "edges": edges,
+                "faces": faces,
+                "vertex_dicts": vertex_dicts,
+                "edge_dicts": edge_dicts,
+                "face_dicts": face_dicts,
+            }
+
+        # ------------------------------------------------------------------
+        # Topology path.
+        # ------------------------------------------------------------------
         vertices = []
         edges = []
         faces = []
         vertex_dicts = []
         edge_dicts = []
         face_dicts = []
+
         if not Topology.IsInstance(topology, "topology"):
             if not silent:
-                print("Topology.Geometry - Error: The input topology parameter is not a valid topology. Returning None.")
+                print("Topology.Geometry - Error: The input topology parameter is not a valid topology or graph. Returning None.")
             return None
+
         topVerts = []
         if Topology.Type(topology) == Topology.TypeID("Vertex"): #input is a vertex, just add it and process it
             topVerts.append(topology)
         else:
             topVerts = Topology.Vertices(topology)
+
         for aVertex in topVerts:
             py_dict = {}
             if transferDictionaries == True:
@@ -8198,42 +8582,51 @@ class Topology():
             except:
                 vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex not in list, add it.
                 vertex_dicts.append(py_dict)
+
         topEdges = []
         if (Topology.Type(topology) == Topology.TypeID("Edge")): #Input is an Edge, just add it and process it
             topEdges.append(topology)
         elif (Topology.Type(topology) > Topology.TypeID("Vertex")):
             topEdges = Topology.Edges(topology)
+
         for anEdge in topEdges:
             e = []
             sv = Edge.StartVertex(anEdge)
             ev = Edge.EndVertex(anEdge)
+
             try:
                 svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
             except:
                 vertices.append(Vertex.Coordinates(sv, mantissa=mantissa))
                 svIndex = len(vertices)-1
+
             try:
                 evIndex = vertices.index(Vertex.Coordinates(ev, mantissa=mantissa))
             except:
                 vertices.append(Vertex.Coordinates(ev, mantissa=mantissa))
                 evIndex = len(vertices)-1
+
             e.append(svIndex)
             e.append(evIndex)
             edges.append(e)
+
             py_dict = {}
             if transferDictionaries == True:
                 d = Topology.Dictionary(anEdge)
                 if len(Dictionary.Keys(d)) > 0:
                     py_dict = Dictionary.PythonDictionary(d)
                 edge_dicts.append(py_dict)
+
         topFaces = []
         if (Topology.Type(topology) == Topology.TypeID("Face")): # Input is a Face, just add it and process it
             topFaces.append(topology)
         elif (Topology.Type(topology) > Topology.TypeID("Face")):
             topFaces = Topology.Faces(topology)
+
         for aFace in topFaces:
             ib = []
             ib = Face.InternalBoundaries(aFace)
+
             if(len(ib) > 0 or triangulate == True):
                 triFaces = Face.Triangulate(aFace,
                                             mode=mode,
@@ -8245,6 +8638,7 @@ class Topology():
                     wire = Face.ExternalBoundary(aTriFace)
                     faceVertices = Topology.Vertices(wire)
                     f = []
+
                     for aVertex in faceVertices:
                         try:
                             fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
@@ -8252,11 +8646,13 @@ class Topology():
                             vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                             fVertexIndex = len(vertices)-1
                         f.append(fVertexIndex)
+
                     faces.append(f)
             else:
                 wire =  Face.ExternalBoundary(aFace)
                 faceVertices = Topology.Vertices(wire)
                 f = []
+
                 for aVertex in faceVertices:
                     try:
                         fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
@@ -8264,14 +8660,24 @@ class Topology():
                         vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                         fVertexIndex = len(vertices)-1
                     f.append(fVertexIndex)
+
                 faces.append(f)
+
             py_dict = {}
             if transferDictionaries == True:
                 d = Topology.Dictionary(aFace)
                 if len(Dictionary.Keys(d)) > 0:
                     py_dict = Dictionary.PythonDictionary(d)
                 face_dicts.append(py_dict)
-        return {"vertices":vertices, "edges":edges, "faces":faces, "vertex_dicts": vertex_dicts, "edge_dicts": edge_dicts, "face_dicts": face_dicts}
+
+        return {
+            "vertices": vertices,
+            "edges": edges,
+            "faces": faces,
+            "vertex_dicts": vertex_dicts,
+            "edge_dicts": edge_dicts,
+            "face_dicts": face_dicts,
+        }
 
     @staticmethod
     def HighestType(topology):
@@ -8409,12 +8815,31 @@ class Topology():
         """
         Returns True if the input topology is an instance of the class specified by the input type string.
         """
+
         from topologicpy.Core import Core
 
         if not isinstance(type, str):
             return False
 
         t = type.lower()
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        # Check TGraph before Graph. Otherwise "tgraph" could be accidentally
+        # captured by broad graph-related logic elsewhere.
+        if "tgraph" in t:
+            return is_tgraph
+
+        # Treat TGraph as a graph for transparent Graph/TGraph compatibility.
+        if "graph" in t:
+            if is_tgraph:
+                return True
+            return isinstance(topology, Core.Namespace("Graph"))
 
         if "cellcomplex" in t:
             return isinstance(topology, Core.Namespace("CellComplex"))
@@ -8434,8 +8859,6 @@ class Topology():
             return isinstance(topology, Core.Namespace("Cluster"))
         elif "topology" in t:
             return isinstance(topology, Core.Namespace("Topology"))
-        elif "graph" in t:
-            return isinstance(topology, Core.Namespace("Graph"))
         elif "aperture" in t:
             return isinstance(topology, Core.Namespace("Aperture"))
         elif "dictionary" in t:
@@ -8444,6 +8867,7 @@ class Topology():
             return isinstance(topology, Core.Namespace("Context"))
 
         return False
+    
     @staticmethod
     def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001):
         """
@@ -8509,19 +8933,37 @@ class Topology():
 
         Parameters
         ----------
-        topologyA : topologic_core.Topology
-            The first input topology.
-        topologyB : topologic_core.Topology
-            The second input topology.
+        topologyA : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The first input topology or graph.
+        topologyB : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The second input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         bool
-            True of the input topologies are the same topology. False otherwise.
+            True if the input topologies or graphs are the same. False otherwise.
 
         """
+
+        try:
+            from topologicpy.TGraph import TGraph
+            a_is_tgraph = isinstance(topologyA, TGraph)
+            b_is_tgraph = isinstance(topologyB, TGraph)
+        except Exception:
+            TGraph = None
+            a_is_tgraph = False
+            b_is_tgraph = False
+
+        if a_is_tgraph or b_is_tgraph:
+            if a_is_tgraph and b_is_tgraph:
+                return topologyA is topologyB
+
+            if not silent:
+                print("Topology.IsSame - Warning: Cannot compare TGraph with non-TGraph using Core.Topology.IsSame. Returning False.")
+            return False
+
         valid_types = [
             "Vertex", "Edge", "Wire", "Face", "Shell",
             "Cell", "CellComplex", "Cluster", "Aperture", "Graph"
@@ -8536,7 +8978,7 @@ class Topology():
             if not silent:
                 print("Topology.IsSame - Error: the input topologyB parameter is not a valid topology. Returning None.")
             return None
-        
+
         return Core.Topology.IsSame(topologyA, topologyB)
 
     @staticmethod
@@ -9435,17 +9877,174 @@ class Topology():
 
         """
         from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
         from topologicpy.Dictionary import Dictionary
 
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
+
+        # ------------------------------------------------------------------
+        # TGraph path
+        # ------------------------------------------------------------------
+        if is_tgraph:
+            vertex_dicts = []
+            edge_dicts = []
+            face_dicts = []
+            cell_dicts = []
+
+            m_verts = []
+            m_edges = []
+            m_faces = []
+            m_cells = []
+
+            index_map = {}
+
+            vertex_records = TGraph.Vertices(topology, asTopologic=False, activeOnly=True)
+            n = max(1, len(vertex_records))
+
+            for i, v_record in enumerate(vertex_records):
+                if not isinstance(v_record, dict):
+                    continue
+
+                old_index = v_record.get("index", i)
+                d = dict(v_record.get("dictionary", {}))
+
+                coords = TGraph.Coordinates(topology, old_index, default=None)
+                if coords is None:
+                    angle = 2.0 * math.pi * float(i) / float(n)
+                    coords = [math.cos(angle), math.sin(angle), 0.0]
+
+                coords = [
+                    round(float(coords[0]), mantissa),
+                    round(float(coords[1]), mantissa),
+                    round(float(coords[2]), mantissa),
+                ]
+
+                index_map[old_index] = len(m_verts)
+                m_verts.append(coords)
+                vertex_dicts.append(d)
+
+            edge_records = TGraph.Edges(topology, asTopologic=False, activeOnly=True)
+
+            for e_record in edge_records:
+                if not isinstance(e_record, dict):
+                    continue
+
+                src = e_record.get("src", None)
+                dst = e_record.get("dst", None)
+
+                if src not in index_map or dst not in index_map:
+                    continue
+
+                m_edges.append([index_map[src], index_map[dst]])
+                edge_dicts.append(dict(e_record.get("dictionary", {})))
+
+            return {
+                "mode": mode,
+                "vertices": m_verts,
+                "edges": m_edges,
+                "faces": m_faces,
+                "cells": m_cells,
+                "vertex_dicts": vertex_dicts,
+                "edge_dicts": edge_dicts,
+                "face_dicts": face_dicts,
+                "cell_dicts": cell_dicts
+            }
+
+        # ------------------------------------------------------------------
+        # Legacy Graph path
+        # ------------------------------------------------------------------
+        if Topology.IsInstance(topology, "Graph"):
+            from topologicpy.Graph import Graph
+
+            vertex_dicts = []
+            edge_dicts = []
+            face_dicts = []
+            cell_dicts = []
+
+            m_verts = []
+            m_edges = []
+            m_faces = []
+            m_cells = []
+
+            graph_vertices = Graph.Vertices(topology)
+            graph_edges = Graph.Edges(topology)
+
+            coord_to_index = {}
+
+            def _coord_key(vertex):
+                return tuple(Vertex.Coordinates(vertex, mantissa=mantissa))
+
+            for v in graph_vertices:
+                coords = Vertex.Coordinates(v, mantissa=mantissa)
+                key = tuple(coords)
+
+                if key not in coord_to_index:
+                    coord_to_index[key] = len(m_verts)
+                    m_verts.append(coords)
+
+                    d = Topology.Dictionary(v)
+                    try:
+                        vertex_dicts.append(Dictionary.PythonDictionary(d))
+                    except Exception:
+                        vertex_dicts.append({})
+
+            for e in graph_edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+
+                sv_key = _coord_key(sv)
+                ev_key = _coord_key(ev)
+
+                if sv_key not in coord_to_index:
+                    coord_to_index[sv_key] = len(m_verts)
+                    m_verts.append(list(sv_key))
+                    vertex_dicts.append({})
+
+                if ev_key not in coord_to_index:
+                    coord_to_index[ev_key] = len(m_verts)
+                    m_verts.append(list(ev_key))
+                    vertex_dicts.append({})
+
+                m_edges.append([coord_to_index[sv_key], coord_to_index[ev_key]])
+
+                d = Topology.Dictionary(e)
+                try:
+                    edge_dicts.append(Dictionary.PythonDictionary(d))
+                except Exception:
+                    edge_dicts.append({})
+
+            return {
+                "mode": mode,
+                "vertices": m_verts,
+                "edges": m_edges,
+                "faces": m_faces,
+                "cells": m_cells,
+                "vertex_dicts": vertex_dicts,
+                "edge_dicts": edge_dicts,
+                "face_dicts": face_dicts,
+                "cell_dicts": cell_dicts
+            }
+
+        # ------------------------------------------------------------------
+        # Topologic topology path
+        # ------------------------------------------------------------------
         vertex_dicts = []
         edge_dicts = []
         face_dicts = []
         cell_dicts = []
+
         top = Topology.Copy(topology)
         top = Topology.Triangulate(top, transferDictionaries=transferDictionaries)
+
         vertices = Topology.Vertices(top)
         edges = Topology.Edges(top)
         faces = Topology.Faces(top)
+
         if Topology.IsInstance(top, "Vertex"):
             vertices = [top]
             edges = []
@@ -9538,17 +10137,18 @@ class Topology():
                 face_indices.append(Dictionary.ValueAtKey(Topology.Dictionary(c_face), key))
             m_cells.append(face_indices)
             cell_dicts.append(Dictionary.PythonDictionary(d))
-        
-        return {"mode": mode,
-                "vertices": m_verts,
-                "edges": m_edges,
-                "faces": m_faces,
-                "cells": m_cells,
-                "vertex_dicts": vertex_dicts,
-                "edge_dicts": edge_dicts,
-                "face_dicts": face_dicts,
-                "cell_dicts": cell_dicts
-                }
+
+        return {
+            "mode": mode,
+            "vertices": m_verts,
+            "edges": m_edges,
+            "faces": m_faces,
+            "cells": m_cells,
+            "vertex_dicts": vertex_dicts,
+            "edge_dicts": edge_dicts,
+            "face_dicts": face_dicts,
+            "cell_dicts": cell_dicts
+        }
 
     @staticmethod
     def Move(topology, x=0, y=0, z=0):
@@ -11162,44 +11762,160 @@ class Topology():
     @staticmethod
     def SetDictionary(topology, dictionary, silent=False):
         """
-        Sets the input topology's dictionary to the input dictionary
+        Sets the input topology's dictionary to the input dictionary.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
-        dictionary : topologic_core.Dictionary
+        topology : topologic_core.Topology, topologic_core.Graph, topologicpy.TGraph, dict
+            The input topology, graph, TGraph, TGraph vertex record, or TGraph edge record.
+        dictionary : topologic_core.Dictionary or dict
             The input dictionary.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Topology
-            The input topology with the input dictionary set in it.
+        topologic_core.Topology, topologic_core.Graph, topologicpy.TGraph, dict, or None
+            The input object with the input dictionary set in it.
 
         """
+
         from topologicpy.Dictionary import Dictionary
         import inspect
 
-        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
-            if not silent:
-                print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology or graph. Returning None.")
+        def _caller():
+            try:
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
+            except Exception:
+                pass
+
+        def _is_tgraph_vertex_record(obj):
+            if not isinstance(obj, dict):
+                return False
+            if "dictionary" not in obj or not isinstance(obj.get("dictionary"), dict):
+                return False
+            if "src" in obj and "dst" in obj:
+                return False
+            return "index" in obj
+
+        def _is_tgraph_edge_record(obj):
+            if not isinstance(obj, dict):
+                return False
+            if "dictionary" not in obj or not isinstance(obj.get("dictionary"), dict):
+                return False
+            return "index" in obj and "src" in obj and "dst" in obj
+
+        def _dictionary_to_python(d):
+            if isinstance(d, dict):
+                return dict(d)
+
+            try:
+                from topologicpy.TGraph import TGraph
+                py_dict = TGraph._DictionaryToPython(d)
+                if isinstance(py_dict, dict):
+                    return py_dict
+            except Exception:
+                pass
+
+            try:
+                py_dict = Dictionary.PythonDictionary(d)
+                if isinstance(py_dict, dict):
+                    return py_dict
+            except Exception:
+                pass
+
+            try:
+                keys = Dictionary.Keys(d)
+                if isinstance(keys, list):
+                    return {k: Dictionary.ValueAtKey(d, k, None) for k in keys}
+            except TypeError:
+                try:
+                    keys = Dictionary.Keys(d)
+                    if isinstance(keys, list):
+                        return {k: Dictionary.ValueAtKey(d, k) for k in keys}
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
             return None
+
+        py_dict = _dictionary_to_python(dictionary)
+
+        if not isinstance(py_dict, dict):
+            if not silent:
+                print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
+                _caller()
+            return topology
+
+        # ---------------------------------------------------------------------
+        # TGraph object.
+        # ---------------------------------------------------------------------
+
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if is_tgraph:
+            try:
+                topology.SetDictionary(py_dict)
+            except Exception:
+                try:
+                    topology._dictionary = dict(py_dict)
+                    topology._invalidate_cache()
+                except Exception:
+                    if not silent:
+                        print("Topology.SetDictionary - Error: Could not set the dictionary of the input TGraph. Returning original input.")
+                        _caller()
+            return topology
+
+        # ---------------------------------------------------------------------
+        # TGraph vertex or edge record.
+        # ---------------------------------------------------------------------
+
+        if _is_tgraph_vertex_record(topology) or _is_tgraph_edge_record(topology):
+            topology["dictionary"] = dict(py_dict)
+
+            # Preserve TGraph structural metadata inside the dictionary for consistency
+            # with records created by TGraph.AddVertex and TGraph.AddEdge.
+            if "index" in topology:
+                topology["dictionary"].setdefault("index", topology.get("index"))
+
+            if "active" in topology:
+                topology["dictionary"].setdefault("active", topology.get("active", True))
+
+            if _is_tgraph_edge_record(topology):
+                topology["dictionary"].setdefault("src", topology.get("src"))
+                topology["dictionary"].setdefault("dst", topology.get("dst"))
+                topology["dictionary"].setdefault("directed", topology.get("directed", False))
+
+            return topology
+
+        # ---------------------------------------------------------------------
+        # Topologic topology or graph.
+        # ---------------------------------------------------------------------
+
+        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+            if not silent:
+                print("Topology.SetDictionary - Error: the input topology parameter is not a valid topology, graph, TGraph, TGraph vertex, or TGraph edge. Returning None.")
+                _caller()
+            return None
+
         if isinstance(dictionary, dict):
             dictionary = Dictionary.ByPythonDictionary(dictionary)
+
         if not Topology.IsInstance(dictionary, "Dictionary"):
             if not silent:
                 print("Topology.SetDictionary - Warning: the input dictionary parameter is not a valid dictionary. Returning original input.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                _caller()
             return topology
-        # _ = topology.SetDictionary(dictionary) # H to Core
-        _ = Core.InstanceCall(topology, 'SetDictionary', dictionary)
+
+        _ = Core.InstanceCall(topology, "SetDictionary", dictionary)
         return topology
     
     @staticmethod
@@ -11985,111 +12701,111 @@ class Topology():
 
     @staticmethod
     def Show(*topologies,
-             nameKey = "name",
-             opacityKey = "opacity",
-             showVertices=True,
-             vertexSize=None,
-             vertexSizeKey = None,
-             vertexColor="black",
-             vertexColorKey = None,
-             vertexBorderWidth=0,
-             vertexBorderColor="black",
-             vertexBorderWidthKey=None,
-             vertexBorderColorKey=None,
-             vertexLabelKey=None,
-             showVertexLabel= False,
-             vertexLabelFontSize=5,
-             vertexGroupKey=None,
-             vertexGroups=[], 
-             vertexMinGroup=None,
-             vertexMaxGroup=None, 
-             showVertexLegend=False,
-             vertexLegendLabel="Vertices",
-             
-             directed=False,
-             arrowSize=0.1,
-             arrowSizeKey=None,
-             showEdges=True,
-             edgeWidth=None,
-             edgeWidthKey=None,
-             edgeColor=None,
-             edgeColorKey=None,
-             edgeDash=False,
-             edgeDashKey=None,
+            nameKey="name",
+            opacityKey="opacity",
+            showVertices=True,
+            vertexSize=None,
+            vertexSizeKey=None,
+            vertexColor="black",
+            vertexColorKey=None,
+            vertexBorderWidth=0,
+            vertexBorderColor="black",
+            vertexBorderWidthKey=None,
+            vertexBorderColorKey=None,
+            vertexLabelKey=None,
+            showVertexLabel=False,
+            vertexLabelFontSize=5,
+            vertexGroupKey=None,
+            vertexGroups=[],
+            vertexMinGroup=None,
+            vertexMaxGroup=None,
+            showVertexLegend=False,
+            vertexLegendLabel="Vertices",
 
-             edgeLabelKey=None,
-             showEdgeLabel = False,
-             edgeGroupKey=None,
-             edgeGroups=[], 
-             edgeMinGroup=None,
-             edgeMaxGroup=None, 
-             showEdgeLegend=False,
-             edgeLegendLabel="Edges",
+            directed=False,
+            arrowSize=0.1,
+            arrowSizeKey=None,
+            showEdges=True,
+            edgeWidth=None,
+            edgeWidthKey=None,
+            edgeColor=None,
+            edgeColorKey=None,
+            edgeDash=False,
+            edgeDashKey=None,
 
-             showFaces=True,
-             faceOpacity=0.5,
-             faceOpacityKey=None,
-             faceColor="#FAFAFA",
-             faceColorKey=None,
-             faceLabelKey=None,
-             faceGroupKey=None,
-             faceGroups=[], 
-             faceMinGroup=None,
-             faceMaxGroup=None, 
-             showFaceLegend=False,
-             faceLegendLabel="Faces",
-             intensityKey=None,
-             intensities=[],
+            edgeLabelKey=None,
+            showEdgeLabel=False,
+            edgeGroupKey=None,
+            edgeGroups=[],
+            edgeMinGroup=None,
+            edgeMaxGroup=None,
+            showEdgeLegend=False,
+            edgeLegendLabel="Edges",
 
-             material = "default",
-             materialKey=None,
-             flatShading = True,
-             ambient = None,
-             ambientKey=None,
-             diffuse = None,
-             diffuseKey=None,
-             specular = None,
-             specularKey=None,
-             roughness = None,
-             roughnessKey=None,
-             
-             width=950,
-             height=500,
-             xAxis=False,
-             yAxis=False,
-             zAxis=False,
-             axisSize=1, 
-             backgroundColor='rgba(0,0,0,0)',
-             marginLeft=0,
-             marginRight=0,
-             marginTop=20,
-             marginBottom=0,
-             camera=[-1.25, -1.25, 1.25],
-             center=[0, 0, 0],
-             up=[0, 0, 1],
-             projection="perspective",
-             renderer="notebook",
-             showScale=False,
-             
-             cbValues=[],
-             cbTicks=5,
-             cbX=-0.15,
-             cbWidth=15,
-             cbOutlineWidth=0,
-             cbTitle="",
-             cbSubTitle="",
-             cbUnits="",
-             colorScale="Viridis",
-             
-             sagitta=0,
-             absolute=False,
-             sides=8,
-             angle=0,
+            showFaces=True,
+            faceOpacity=0.5,
+            faceOpacityKey=None,
+            faceColor="#FAFAFA",
+            faceColorKey=None,
+            faceLabelKey=None,
+            faceGroupKey=None,
+            faceGroups=[],
+            faceMinGroup=None,
+            faceMaxGroup=None,
+            showFaceLegend=False,
+            faceLegendLabel="Faces",
+            intensityKey=None,
+            intensities=[],
 
-             showFigure=True,
-             mantissa=6,
-             tolerance=0.0001,
-             silent=False):
+            material="default",
+            materialKey=None,
+            flatShading=True,
+            ambient=None,
+            ambientKey=None,
+            diffuse=None,
+            diffuseKey=None,
+            specular=None,
+            specularKey=None,
+            roughness=None,
+            roughnessKey=None,
+
+            width=950,
+            height=500,
+            xAxis=False,
+            yAxis=False,
+            zAxis=False,
+            axisSize=1,
+            backgroundColor='rgba(0,0,0,0)',
+            marginLeft=0,
+            marginRight=0,
+            marginTop=20,
+            marginBottom=0,
+            camera=[-1.25, -1.25, 1.25],
+            center=[0, 0, 0],
+            up=[0, 0, 1],
+            projection="perspective",
+            renderer="notebook",
+            showScale=False,
+
+            cbValues=[],
+            cbTicks=5,
+            cbX=-0.15,
+            cbWidth=15,
+            cbOutlineWidth=0,
+            cbTitle="",
+            cbSubTitle="",
+            cbUnits="",
+            colorScale="Viridis",
+
+            sagitta=0,
+            absolute=False,
+            sides=8,
+            angle=0,
+
+            showFigure=True,
+            mantissa=6,
+            tolerance=0.0001,
+            silent=False):
         """
             Shows the input topology on screen.
 
@@ -12334,213 +13050,376 @@ class Topology():
 
         """
 
-        from topologicpy.Dictionary import Dictionary
         from topologicpy.Plotly import Plotly
-        from topologicpy.Helper import Helper
-        
-        if isinstance(topologies, tuple):
-            topologies = Helper.Flatten(list(topologies))
-        if isinstance(topologies, list):
-            new_topologies = [t for t in topologies if Topology.IsInstance(t, "Topology") or Topology.IsInstance(t, "Graph")]
-        if len(new_topologies) == 0:
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Graph import Graph
+
+        try:
+            from topologicpy.TGraph import TGraph
+        except Exception:
+            TGraph = None
+
+        def _is_tgraph(obj):
+            return TGraph is not None and isinstance(obj, TGraph)
+
+        def _flatten(items):
+            result = []
+            for item in items:
+                if isinstance(item, list):
+                    result.extend(_flatten(item))
+                else:
+                    result.append(item)
+            return result
+
+        def _dict_value(d, key, default=None):
+            if d is None or key is None:
+                return default
+            if isinstance(d, dict):
+                value = d.get(key, default)
+                return default if value is None else value
+            try:
+                value = Dictionary.ValueAtKey(d, key, default)
+                return default if value is None else value
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(d, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _dictionary(obj):
+            if _is_tgraph(obj):
+                try:
+                    return TGraph.Dictionary(obj)
+                except Exception:
+                    return {}
+            try:
+                return Topology.Dictionary(obj, silent=True)
+            except Exception:
+                return None
+
+        input_topologies = _flatten(list(topologies))
+
+        if len(input_topologies) == 0:
             if not silent:
-                print("Topology.Show - Error: the input topologies parameter does not contain any valid topology. Returning None.")
+                print("Topology.Show - Error: No valid topology, graph, or TGraph was input. Returning None.")
             return None
-        
-        if camera[0] == 0 and camera[1] == 0 and up == [0,0,1]:
-            up = [0,1,0] #default to positive Y axis being up if looking down or up at the XY plane
+
         data = []
         topology_counter = 0
-        offset = 1
-        if showEdges == True:
-            offset += 1
-        if showFaces == True:
-            offset +=2
-        temp_graphs = [g for g in new_topologies if Topology.IsInstance(g, "Graph")]
-        graph_counter = len(new_topologies)*offset - len(temp_graphs)*offset
-        for i, topology in enumerate(new_topologies):
-            d = Topology.Dictionary(topology)
+        graph_counter = 0
+        offset = 3
+
+        for i, topology in enumerate(input_topologies):
+            if topology is None:
+                continue
+
+            d = _dictionary(topology)
+            name = _dict_value(d, nameKey, "Untitled")
+
+            vSize = 1.1 if vertexSize is None else vertexSize
+            eWidth = 1 if edgeWidth is None else edgeWidth
+            eColor = "black" if edgeColor is None else edgeColor
+            fOpacity = _dict_value(d, opacityKey, faceOpacity)
+
+            # ------------------------------------------------------------
+            # TGraph branch must come before legacy Graph branch.
+            # Topology.IsInstance(tgraph, "Graph") may intentionally return True.
+            # ------------------------------------------------------------
+            if _is_tgraph(topology):
+                try:
+                    tgraph_data = Plotly.DataByTGraph(
+                        topology,
+                        sagitta=sagitta,
+                        absolute=absolute,
+                        sides=sides,
+                        angle=angle,
+                        directed=directed,
+                        arrowSize=arrowSize,
+                        arrowSizeKey=arrowSizeKey,
+
+                        vertexColor=vertexColor,
+                        vertexColorKey=vertexColorKey,
+                        vertexSize=vSize,
+                        vertexSizeKey=vertexSizeKey,
+                        vertexLabelKey=vertexLabelKey,
+                        vertexBorderColor=vertexBorderColor,
+                        vertexBorderWidth=vertexBorderWidth,
+                        vertexBorderColorKey=vertexBorderColorKey,
+                        vertexBorderWidthKey=vertexBorderWidthKey,
+                        vertexGroupKey=vertexGroupKey,
+                        vertexGroups=vertexGroups,
+                        vertexMinGroup=vertexMinGroup,
+                        vertexMaxGroup=vertexMaxGroup,
+                        showVertices=showVertices,
+                        showVertexLabel=showVertexLabel,
+                        vertexLabelFontSize=vertexLabelFontSize,
+                        showVertexLegend=showVertexLegend,
+                        vertexLegendLabel=str(i + 1) + ": " + str(name) + " (" + vertexLegendLabel + ")",
+                        vertexLegendRank=graph_counter + 1,
+                        vertexLegendGroup=graph_counter + 1,
+
+                        edgeColor=eColor,
+                        edgeColorKey=edgeColorKey,
+                        edgeWidth=eWidth,
+                        edgeWidthKey=edgeWidthKey,
+                        edgeDash=edgeDash,
+                        edgeDashKey=edgeDashKey,
+                        edgeLabelKey=edgeLabelKey,
+                        edgeGroupKey=edgeGroupKey,
+                        edgeGroups=edgeGroups,
+                        edgeMinGroup=edgeMinGroup,
+                        edgeMaxGroup=edgeMaxGroup,
+                        showEdges=showEdges,
+                        showEdgeLabel=showEdgeLabel,
+                        showEdgeLegend=showEdgeLegend,
+                        edgeLegendLabel=str(i + 1) + ": " + str(name) + " (" + edgeLegendLabel + ")",
+                        edgeLegendRank=graph_counter + 2,
+                        edgeLegendGroup=graph_counter + 2,
+
+                        colorScale=colorScale,
+                        mantissa=mantissa,
+                        tolerance=tolerance,
+                        silent=silent,
+                    )
+                    if isinstance(tgraph_data, list):
+                        data.extend(tgraph_data)
+                    graph_counter += offset
+                except Exception as e:
+                    if not silent:
+                        print("Topology.Show - Error: Could not create Plotly data from TGraph.")
+                        print("Error:", e)
+                continue
+
+            # ------------------------------------------------------------
+            # Legacy Graph branch.
+            # ------------------------------------------------------------
             if Topology.IsInstance(topology, "Graph"):
-                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled Graph"
-                
-                if vertexSize == None:
-                    vSize = 10
-                else:
-                    vSize = vertexSize
-                if edgeWidth == None:
-                    eWidth = 1
-                else:
-                    eWidth = edgeWidth
-                if edgeColor == None:
-                    eColor = "red"
-                else:
-                    eColor = edgeColor
-                vll = name+" ("+vertexLegendLabel+")"
-                ell = name+" ("+edgeLegendLabel+")"
+                try:
+                    graph_data = Plotly.DataByGraph(
+                        topology,
+                        sagitta=sagitta,
+                        absolute=absolute,
+                        sides=sides,
+                        angle=angle,
+                        directed=directed,
+                        arrowSize=arrowSize,
+                        arrowSizeKey=arrowSizeKey,
 
+                        vertexColor=vertexColor,
+                        vertexColorKey=vertexColorKey,
+                        vertexSize=vSize,
+                        vertexSizeKey=vertexSizeKey,
+                        vertexLabelKey=vertexLabelKey,
+                        vertexBorderColor=vertexBorderColor,
+                        vertexBorderWidth=vertexBorderWidth,
+                        vertexBorderColorKey=vertexBorderColorKey,
+                        vertexBorderWidthKey=vertexBorderWidthKey,
+                        vertexGroupKey=vertexGroupKey,
+                        vertexGroups=vertexGroups,
+                        vertexMinGroup=vertexMinGroup,
+                        vertexMaxGroup=vertexMaxGroup,
+                        showVertices=showVertices,
+                        showVertexLabel=showVertexLabel,
+                        vertexLabelFontSize=vertexLabelFontSize,
+                        showVertexLegend=showVertexLegend,
+                        vertexLegendLabel=str(i + 1) + ": " + str(name) + " (" + vertexLegendLabel + ")",
+                        vertexLegendRank=graph_counter + 1,
+                        vertexLegendGroup=graph_counter + 1,
 
-                
-                data.extend(Plotly.DataByGraph(topology,
-                                           sagitta=sagitta,
-                                           absolute=absolute,
-                                           sides=sides,
-                                           angle=angle,
-                                           directed=directed,
-                                           arrowSize=arrowSize,
-                                           arrowSizeKey=arrowSizeKey,
-                                           vertexColor=vertexColor,
-                                           vertexColorKey=vertexColorKey,
-                                           vertexSize=vSize,
-                                           vertexSizeKey=vertexSizeKey,
-                                           vertexBorderColor= vertexBorderColor,
-                                           vertexBorderWidth=vertexBorderWidth,
-                                           vertexBorderColorKey= vertexBorderColorKey,
-                                           vertexBorderWidthKey=vertexBorderWidthKey,
-                                           vertexLabelKey=vertexLabelKey,
-                                           vertexGroupKey=vertexGroupKey,
-                                           vertexGroups=vertexGroups,
-                                           vertexMinGroup=vertexMinGroup,
-                                           vertexMaxGroup=vertexMaxGroup,
-                                           showVertices=showVertices,
-                                           showVertexLabel=showVertexLabel,
-                                           vertexLabelFontSize=vertexLabelFontSize,
-                                           showVertexLegend=showVertexLegend,
-                                           vertexLegendLabel= str(i+1)+": "+vll,
-                                           vertexLegendRank= (graph_counter+1),
-                                           vertexLegendGroup= (graph_counter+1),
-                                           edgeColor=eColor,
-                                           edgeColorKey=edgeColorKey,
-                                           edgeWidth=eWidth,
-                                           edgeWidthKey=edgeWidthKey,
-                                           edgeLabelKey=edgeLabelKey,
-                                           edgeGroupKey=edgeGroupKey,
-                                           edgeGroups=edgeGroups,
-                                           edgeMinGroup=edgeMinGroup,
-                                           edgeMaxGroup=edgeMaxGroup,
-                                           showEdges=showEdges,
-                                           showEdgeLabel=showEdgeLabel,
-                                           showEdgeLegend=showEdgeLegend,
-                                           edgeLegendLabel = str(i+1)+": "+ell,
-                                           edgeLegendRank= (graph_counter+2),
-                                           edgeLegendGroup=(graph_counter+2),
-                                           colorScale=colorScale,
-                                           silent=silent))
-                graph_counter += offset
-            else:
-                name = Dictionary.ValueAtKey(d, nameKey) or "Untitled"
-                if vertexSize == None:
-                    vSize = 1.1
-                else:
-                    vSize = vertexSize
-                if edgeWidth == None:
-                    eWidth = 1
-                else:
-                    eWidth = edgeWidth
-                if edgeColor == None:
-                    eColor = "black"
-                else:
-                    eColor = edgeColor
-                if not d == None:
-                    faceOpacity = Dictionary.ValueAtKey(d, opacityKey) or faceOpacity
-                data.extend(Plotly.DataByTopology(topology=topology,
-                                              showVertices=showVertices,
-                                              vertexSize=vSize,
-                                              vertexSizeKey=vertexSizeKey,
-                                              vertexColor=vertexColor,
-                                              vertexColorKey=vertexColorKey,
-                                              vertexBorderWidth=vertexBorderWidth,
-                                              vertexBorderColor=vertexBorderColor,
-                                              vertexBorderColorKey= vertexBorderColorKey,
-                                              vertexBorderWidthKey=vertexBorderWidthKey,
-                                              vertexLabelKey=vertexLabelKey,
-                                              showVertexLabel=showVertexLabel,
-                                              vertexLabelFontSize=vertexLabelFontSize,
-                                              vertexGroupKey=vertexGroupKey,
-                                              vertexGroups=vertexGroups,
-                                              vertexMinGroup=vertexMinGroup,
-                                              vertexMaxGroup=vertexMaxGroup,
-                                              showVertexLegend=showVertexLegend,
-                                              vertexLegendLabel=str(i+1)+": "+name+" ("+vertexLegendLabel+")",
-                                              vertexLegendRank=topology_counter+1,
-                                              vertexLegendGroup=topology_counter+1,
-                                              directed=directed,
-                                              arrowSize=arrowSize,
-                                              arrowSizeKey=arrowSizeKey,
-                                              showEdges=showEdges,
-                                              edgeWidth=eWidth,
-                                              edgeWidthKey=edgeWidthKey,
-                                              edgeColor=eColor,
-                                              edgeColorKey=edgeColorKey,
-                                              edgeLabelKey=edgeLabelKey,
-                                              showEdgeLabel=showEdgeLabel,
-                                              edgeGroupKey=edgeGroupKey,
-                                              edgeGroups=edgeGroups,
-                                              edgeMinGroup=edgeMinGroup,
-                                              edgeMaxGroup=edgeMaxGroup,
-                                              showEdgeLegend=showEdgeLegend,
-                                              edgeLegendLabel=str(i+1)+": "+name+" ("+edgeLegendLabel+")",
-                                              edgeLegendRank=topology_counter+2,
-                                              edgeLegendGroup=topology_counter+2,
-                                              showFaces=showFaces,
-                                              faceOpacity=faceOpacity,
-                                              faceOpacityKey=faceOpacityKey,
-                                              faceColor=faceColor,
-                                              faceColorKey=faceColorKey,
-                                              faceLabelKey=faceLabelKey,
-                                              faceGroupKey=faceGroupKey,
-                                              faceGroups=faceGroups,
-                                              faceMinGroup=faceMinGroup,
-                                              faceMaxGroup=faceMaxGroup,
-                                              showFaceLegend=showFaceLegend,
-                                              faceLegendLabel=str(i+1)+": "+name+" ("+faceLegendLabel+")",
-                                              faceLegendRank=topology_counter+3,
-                                              faceLegendGroup=topology_counter+3,
-                                              intensityKey=intensityKey,
-                                              intensities=intensities,
-                                              material=material,
-                                              flatShading=flatShading,
-                                              materialKey=materialKey,
-                                              ambient=ambient,
-                                              ambientKey=ambientKey,
-                                              diffuse=diffuse,
-                                              diffuseKey=diffuseKey,
-                                              specular=specular,
-                                              specularKey=specularKey,
-                                              roughness=roughness,
-                                              roughnessKey=roughnessKey,
-                                              colorScale=colorScale,
-                                              mantissa=mantissa,
-                                              tolerance=tolerance,
-                                              silent=silent))
-                topology_counter += offset
-        figure = Plotly.FigureByData(data=data, width=width, height=height,
-                                     xAxis=xAxis, yAxis=yAxis, zAxis=zAxis, axisSize=axisSize,
-                                     backgroundColor=backgroundColor,
-                                     marginLeft=marginLeft, marginRight=marginRight,
-                                     marginTop=marginTop, marginBottom=marginBottom,
-                                     tolerance=tolerance)
+                        edgeColor=eColor,
+                        edgeColorKey=edgeColorKey,
+                        edgeWidth=eWidth,
+                        edgeWidthKey=edgeWidthKey,
+                        edgeDash=edgeDash,
+                        edgeDashKey=edgeDashKey,
+                        edgeLabelKey=edgeLabelKey,
+                        edgeGroupKey=edgeGroupKey,
+                        edgeGroups=edgeGroups,
+                        edgeMinGroup=edgeMinGroup,
+                        edgeMaxGroup=edgeMaxGroup,
+                        showEdges=showEdges,
+                        showEdgeLabel=showEdgeLabel,
+                        showEdgeLegend=showEdgeLegend,
+                        edgeLegendLabel=str(i + 1) + ": " + str(name) + " (" + edgeLegendLabel + ")",
+                        edgeLegendRank=graph_counter + 2,
+                        edgeLegendGroup=graph_counter + 2,
+
+                        colorScale=colorScale,
+                        mantissa=mantissa,
+                        silent=silent,
+                    )
+                    if isinstance(graph_data, list):
+                        data.extend(graph_data)
+                    graph_counter += offset
+                except Exception as e:
+                    if not silent:
+                        print("Topology.Show - Error: Could not create Plotly data from Graph.")
+                        print("Error:", e)
+                continue
+
+            # ------------------------------------------------------------
+            # Topologic topology branch.
+            # ------------------------------------------------------------
+            if Topology.IsInstance(topology, "Topology"):
+                try:
+                    topology_data = Plotly.DataByTopology(
+                        topology=topology,
+
+                        showVertices=showVertices,
+                        vertexSize=vSize,
+                        vertexSizeKey=vertexSizeKey,
+                        vertexColor=vertexColor,
+                        vertexColorKey=vertexColorKey,
+                        vertexBorderWidth=vertexBorderWidth,
+                        vertexBorderColor=vertexBorderColor,
+                        vertexBorderColorKey=vertexBorderColorKey,
+                        vertexBorderWidthKey=vertexBorderWidthKey,
+                        vertexLabelKey=vertexLabelKey,
+                        showVertexLabel=showVertexLabel,
+                        vertexLabelFontSize=vertexLabelFontSize,
+                        vertexGroupKey=vertexGroupKey,
+                        vertexGroups=vertexGroups,
+                        vertexMinGroup=vertexMinGroup,
+                        vertexMaxGroup=vertexMaxGroup,
+                        showVertexLegend=showVertexLegend,
+                        vertexLegendLabel=str(i + 1) + ": " + str(name) + " (" + vertexLegendLabel + ")",
+                        vertexLegendRank=topology_counter + 1,
+                        vertexLegendGroup=topology_counter + 1,
+
+                        directed=directed,
+                        arrowSize=arrowSize,
+                        arrowSizeKey=arrowSizeKey,
+                        showEdges=showEdges,
+                        edgeWidth=eWidth,
+                        edgeWidthKey=edgeWidthKey,
+                        edgeColor=eColor,
+                        edgeColorKey=edgeColorKey,
+                        edgeLabelKey=edgeLabelKey,
+                        showEdgeLabel=showEdgeLabel,
+                        edgeGroupKey=edgeGroupKey,
+                        edgeGroups=edgeGroups,
+                        edgeMinGroup=edgeMinGroup,
+                        edgeMaxGroup=edgeMaxGroup,
+                        showEdgeLegend=showEdgeLegend,
+                        edgeLegendLabel=str(i + 1) + ": " + str(name) + " (" + edgeLegendLabel + ")",
+                        edgeLegendRank=topology_counter + 2,
+                        edgeLegendGroup=topology_counter + 2,
+
+                        showFaces=showFaces,
+                        faceOpacity=fOpacity,
+                        faceOpacityKey=faceOpacityKey,
+                        faceColor=faceColor,
+                        faceColorKey=faceColorKey,
+                        faceLabelKey=faceLabelKey,
+                        faceGroupKey=faceGroupKey,
+                        faceGroups=faceGroups,
+                        faceMinGroup=faceMinGroup,
+                        faceMaxGroup=faceMaxGroup,
+                        showFaceLegend=showFaceLegend,
+                        faceLegendLabel=str(i + 1) + ": " + str(name) + " (" + faceLegendLabel + ")",
+                        faceLegendRank=topology_counter + 3,
+                        faceLegendGroup=topology_counter + 3,
+
+                        intensityKey=intensityKey,
+                        intensities=intensities,
+
+                        material=material,
+                        flatShading=flatShading,
+                        materialKey=materialKey,
+                        ambient=ambient,
+                        ambientKey=ambientKey,
+                        diffuse=diffuse,
+                        diffuseKey=diffuseKey,
+                        specular=specular,
+                        specularKey=specularKey,
+                        roughness=roughness,
+                        roughnessKey=roughnessKey,
+
+                        colorScale=colorScale,
+                        mantissa=mantissa,
+                        tolerance=tolerance,
+                        silent=silent,
+                    )
+                    if isinstance(topology_data, list):
+                        data.extend(topology_data)
+                    topology_counter += offset
+                except Exception as e:
+                    if not silent:
+                        print("Topology.Show - Error: Could not create Plotly data from Topology.")
+                        print("Error:", e)
+                continue
+
+            if not silent:
+                print("Topology.Show - Warning: Input item is not a valid topology, graph, or TGraph. Skipping item.")
+                print("Item:", topology)
+
+        figure = Plotly.FigureByData(
+            data=data,
+            width=width,
+            height=height,
+            xAxis=xAxis,
+            yAxis=yAxis,
+            zAxis=zAxis,
+            axisSize=axisSize,
+            backgroundColor=backgroundColor,
+            marginLeft=marginLeft,
+            marginRight=marginRight,
+            marginTop=marginTop,
+            marginBottom=marginBottom,
+            tolerance=tolerance,
+        )
+
         if showScale:
-            figure = Plotly.AddColorBar(figure, values=cbValues, nTicks=cbTicks, xPosition=cbX, width=cbWidth, outlineWidth=cbOutlineWidth, title=cbTitle, subTitle=cbSubTitle, units=cbUnits, colorScale=colorScale, mantissa=mantissa)
-        if showFigure:
-            Plotly.Show(figure=figure, renderer=renderer, camera=camera, center=center, up=up, projection=projection)
-            return None
-        if "ortho" in projection.lower():
-            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-                                center=dict(x=center[0], y=center[1], z=center[2]),
-                                up=dict(x=up[0], y=up[1], z=up[2]),
-                                projection=dict(type="orthographic"))
+            figure = Plotly.AddColorBar(
+                figure,
+                values=cbValues,
+                nTicks=cbTicks,
+                xPosition=cbX,
+                width=cbWidth,
+                outlineWidth=cbOutlineWidth,
+                title=cbTitle,
+                subTitle=cbSubTitle,
+                units=cbUnits,
+                colorScale=colorScale,
+                mantissa=mantissa,
+            )
+
+        if "ortho" in str(projection).lower():
+            camera_settings = dict(
+                eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                center=dict(x=center[0], y=center[1], z=center[2]),
+                up=dict(x=up[0], y=up[1], z=up[2]),
+                projection=dict(type="orthographic"),
+            )
         else:
-            camera_settings = dict(eye=dict(x=camera[0], y=camera[1], z=camera[2]),
-                                center=dict(x=center[0], y=center[1], z=center[2]),
-                                up=dict(x=up[0], y=up[1], z=up[2]),
-                                projection=dict(type="perspective"))
+            camera_settings = dict(
+                eye=dict(x=camera[0], y=camera[1], z=camera[2]),
+                center=dict(x=center[0], y=center[1], z=center[2]),
+                up=dict(x=up[0], y=up[1], z=up[2]),
+                projection=dict(type="perspective"),
+            )
 
         figure.update_layout(
-            scene_camera = camera_settings,
+            scene_camera=camera_settings,
             scene=dict(aspectmode="data"),
             autosize=True,
-            margin=dict(l=40, r=40, t=40, b=40)
+            margin=dict(l=40, r=40, t=40, b=40),
+        )
+
+        if showFigure:
+            Plotly.Show(
+                figure=figure,
+                renderer=renderer,
+                camera=camera,
+                center=center,
+                up=up,
+                projection=projection,
             )
+            return None
+
         return figure
 
     @staticmethod
@@ -13202,43 +14081,34 @@ class Topology():
                         tolerance: float = 0.001,
                         silent: bool = False):
         """
-        Creates connected sub-combination topologies of the input topology. Warning: This is prone to combinatorial explosion.
+        Creates connected sub-combination topologies of the input topology.
+        Warning: This is prone to combinatorial explosion.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology. This cannot be vertex or edge.
         subTopologyType : str , optional except when topology is a Cluster
             The type of subTopology to include in the combinations.
-            If the input is a Cluster, you must specify the subTopologyType.
-            The options are (case insensitive):
-                - "CellComplex"
-                - "Shell"
-                - "Wire"
-            If set to None, it will be set according to the input topology type as follows:
-                - "Cluster" -> User-defined
-                - "CellComplex" -> "CellComplexes"
-                - "Cell" -> "Shells"
-                - "Shell" -> "Shells"
-                - "Face" -> "Wires"
-                - "Wire" -> "Wires"
-                - "Edge" -> None
-                - "Vertex" -> None
-                - "Graph" -> "Graphs"
         minSize : int , optional
-            The minimum number of subtopologies to include in a combination. This number cannot be less than 2. Default is 2.
+            The minimum number of subtopologies to include in a combination.
+            This number cannot be less than 2. Default is 2.
         maxSize : int , optional
-            The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. Default is None which means the maximum will be set to the number of subtopologies minus 1.
+            The maximum number of subtopologies to include in a combination.
+            Default is None which means the maximum will be set to the number of
+            subtopologies minus 1.
         maxCombinations : int , optional
             The maximum number of combinations to create. Default is 100.
         timeLimit : int , optional
-                The time limit in seconds. Default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.
+            The time limit in seconds. Default is 10 seconds.
         removeCoplanarFaces : bool , optional
-            If set to True, coplanar faces are removed. Otherwise they are not. Default is False.
+            If set to True, coplanar faces are removed. Otherwise they are not.
+            Default is False.
         removeCollinearEdges : bool , optional
-            If set to True, collinear edges are removed. Otherwise they are not. Default is False.
+            If set to True, collinear edges are removed. Otherwise they are not.
+            Default is False.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired tolerance. Default is 0.001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -13248,6 +14118,7 @@ class Topology():
             The list of created sub-combinations.
 
         """
+
         from topologicpy.Cluster import Cluster
         from topologicpy.Graph import Graph
         from topologicpy.Topology import Topology
@@ -13256,14 +14127,26 @@ class Topology():
         import random
         import time
 
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
+
         if Topology.IsInstance(topology, "cluster") and subTopologyType is None:
             if not silent:
                 print("Topology.SubCombinations - Error: The topology input parameter is a cluster but the subTopologyType is not specified. Returning None.")
             return None
 
-        if Topology.IsInstance(topology, "vertex") or Topology.IsInstance(topology, "edge"):
+        if not is_tgraph and (Topology.IsInstance(topology, "vertex") or Topology.IsInstance(topology, "edge")):
             if not silent:
                 print("Topology.SubCombinations - Error: The topology input parameter cannot be a vertex or an edge. Returning None.")
+            return None
+
+        if not is_tgraph and not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+            if not silent:
+                print("Topology.SubCombinations - Error: The topology input parameter is not a valid topology or graph. Returning None.")
             return None
 
         mapping = {
@@ -13272,10 +14155,17 @@ class Topology():
             "shell": "face",
             "face": "edge",
             "wire": "edge",
-            "graph": "vertex"
+            "graph": "vertex",
+            "tgraph": "vertex",
         }
 
-        type_string = Topology.TypeAsString(topology).lower()
+        if is_tgraph:
+            type_string = "tgraph"
+        else:
+            type_string = Topology.TypeAsString(topology).lower()
+            if type_string == "graph":
+                type_string = "graph"
+
         if type_string not in mapping:
             if not silent:
                 print(f"Topology.SubCombinations - Error: The input topology type ({type_string}) is not supported. Returning None.")
@@ -13283,11 +14173,17 @@ class Topology():
 
         if subTopologyType is None:
             subTopologyType = mapping[type_string]
+
         subTopologyType = subTopologyType.lower()
 
         if subTopologyType not in ["cell", "face", "edge", "vertex"]:
             if not silent:
                 print(f"Topology.SubCombinations - Error: Unknown subTopologyType: {subTopologyType}. Returning None.")
+            return None
+
+        if is_tgraph and subTopologyType != "vertex":
+            if not silent:
+                print("Topology.SubCombinations - Error: TGraph only supports subTopologyType='vertex'. Returning None.")
             return None
 
         if ((type_string in ["cell", "shell"]) and subTopologyType not in ["face", "edge"]) or \
@@ -13296,26 +14192,70 @@ class Topology():
                 print(f"Topology.SubCombinations - Error: The subTopology type {subTopologyType} is not appropriate for topology of type {type_string}. Returning None.")
             return None
 
-        all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
-        num_subtopologies = len(all_subtopologies)
-        if num_subtopologies < 2:
-            if not silent:
-                print("Topology.SubCombinations - Warning: Not enough subtopologies found. Returning empty list.")
-            return []
+        if is_tgraph:
+            active_vertex_indices = TGraph._ActiveVertexIndices(topology)
+            num_subtopologies = len(active_vertex_indices)
+
+            if num_subtopologies < 2:
+                if not silent:
+                    print("Topology.SubCombinations - Warning: Not enough vertices found. Returning empty list.")
+                return []
+
+            position_by_vertex_index = {vertex_index: i for i, vertex_index in enumerate(active_vertex_indices)}
+
+            adjacency = {i: [] for i in range(num_subtopologies)}
+            for vertex_index in active_vertex_indices:
+                i = position_by_vertex_index[vertex_index]
+                neighbours = TGraph.AdjacentIndices(topology, vertex_index, mode="all")
+                for neighbour in neighbours:
+                    if neighbour in position_by_vertex_index:
+                        j = position_by_vertex_index[neighbour]
+                        if j != i and j not in adjacency[i]:
+                            adjacency[i].append(j)
+
+            all_subtopologies = active_vertex_indices
+
+        else:
+            all_subtopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType, silent=silent)
+            num_subtopologies = len(all_subtopologies)
+
+            if num_subtopologies < 2:
+                if not silent:
+                    print("Topology.SubCombinations - Warning: Not enough subtopologies found. Returning empty list.")
+                return []
+
+            subt_label_key = "__index__"
+            all_subtopologies = [
+                Topology.SetDictionary(subt, Dictionary.ByKeyValue(subt_label_key, i))
+                for i, subt in enumerate(all_subtopologies)
+            ]
+
+            adjacency = Dictionary.AdjacencyDictionary(
+                topology,
+                subTopologyType=subTopologyType,
+                labelKey=subt_label_key,
+                weightKey=None,
+                includeWeights=False
+            )
 
         indices = list(range(num_subtopologies))
-        minSize = max(2, minSize)
-        maxSize = num_subtopologies - 1 if maxSize is None else min(maxSize, num_subtopologies - 1)
 
-        subt_label_key = "__index__"
-        all_subtopologies = [Topology.SetDictionary(subt, Dictionary.ByKeyValue(subt_label_key, i)) for i, subt in enumerate(all_subtopologies)]
+        minSize = max(2, int(minSize))
+        maxSize = num_subtopologies - 1 if maxSize is None else min(int(maxSize), num_subtopologies - 1)
+
+        if maxSize < minSize:
+            if not silent:
+                print("Topology.SubCombinations - Warning: The requested size range is empty. Returning empty list.")
+            return []
 
         group_sizes = list(range(minSize, maxSize + 1))
         num_sizes = len(group_sizes)
-        per_size_combinations = maxCombinations // num_sizes
-        per_size_time = timeLimit / num_sizes
 
-        adjacency = Dictionary.AdjacencyDictionary(topology, subTopologyType=subTopologyType, labelKey=subt_label_key, weightKey=None, includeWeights=False)
+        if num_sizes < 1:
+            return []
+
+        per_size_combinations = max(1, int(maxCombinations) // num_sizes)
+        per_size_time = float(timeLimit) / float(num_sizes) if num_sizes > 0 else float(timeLimit)
 
         results = []
         seen_groups = set()
@@ -13324,14 +14264,17 @@ class Topology():
             size_start_time = time.time()
             remaining = per_size_combinations
             tries = 0
-            max_tries = per_size_combinations * 10
+            max_tries = max(10, per_size_combinations * 10)
 
             while remaining > 0 and (time.time() - size_start_time) < per_size_time and tries < max_tries:
                 random.shuffle(indices)
+
                 for seed in indices:
                     if (time.time() - size_start_time) > per_size_time:
                         break
+
                     group = Helper.Grow(seed, group_size, adjacency, visited_global=seen_groups)
+
                     if group:
                         key = tuple(sorted(group))
                         if key not in seen_groups:
@@ -13339,24 +14282,36 @@ class Topology():
                             seen_groups.add(key)
                             results.append(group)
                             remaining -= 1
+
                     if remaining <= 0 or tries >= max_tries:
                         break
 
         return_combinations = []
+
         for result in reversed(results):
+            if is_tgraph:
+                original_vertex_indices = [all_subtopologies[i] for i in result]
+                combination = TGraph.Subgraph(topology, original_vertex_indices, induced=True)
+                return_combinations.append(combination)
+                continue
+
             subtopologies = [all_subtopologies[i] for i in result]
-            # Special case for graphs
+
             if Topology.IsInstance(topology, "Graph"):
-                edges = Graph.Edges(topology, vertices = subtopologies)
+                edges = Graph.Edges(topology, vertices=subtopologies)
                 combination = Graph.ByVerticesEdges(subtopologies, edges)
+
             else:
                 combination = Topology.SelfMerge(Cluster.ByTopologies(subtopologies), tolerance=tolerance)
+
                 if removeCollinearEdges:
                     if Topology.IsInstance(combination, "face") or Topology.IsInstance(combination, "wire"):
                         combination = Topology.RemoveCollinearEdges(combination, tolerance=tolerance)
+
                 if removeCoplanarFaces:
                     if Topology.IsInstance(combination, "cellcomplex") or Topology.IsInstance(combination, "cell") or Topology.IsInstance(combination, "shell"):
                         combination = Topology.RemoveCoplanarFaces(combination, tolerance=tolerance)
+
             return_combinations.append(combination)
 
         return return_combinations
@@ -13572,14 +14527,14 @@ class Topology():
     @staticmethod
     def Vertices(topology, silent: bool = True):
         """
-        Returns the vertices of the input topology.
+        Returns the vertices of the input topology or graph.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed. Default is True.
 
         Returns
         -------
@@ -13587,28 +14542,39 @@ class Topology():
             The list of vertices.
 
         """
+
         from topologicpy.Graph import Graph
         import inspect
 
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if is_tgraph:
+            return TGraph.Vertices(topology)
+
         if Topology.IsInstance(topology, "graph"):
             return Graph.Vertices(topology)
-        
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.Vertices - Error: The input is not a valid topology. Returning None")
+                print("Topology.Vertices - Error: The input is not a valid topology or graph. Returning None")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
-        
+
         if Topology.IsInstance(topology, "Vertex"):
             if not silent:
                 print("Topology.Vertices - Warning: The input is a Vertex. Returning the same vertex embedded in a list.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return [topology]
-        
+
         return Topology.SubTopologies(topology=topology, subTopologyType="vertex")
     
     @staticmethod
@@ -13654,80 +14620,110 @@ class Topology():
     @staticmethod
     def SubTopologies(topology, subTopologyType="vertex", silent: bool = False):
         """
-        Returns the subtopologies of the input topology as specified by the subTopologyType input string.
+        Returns the subtopologies of the input topology or graph as specified by the subTopologyType input string.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         subTopologyType : str , optional
-            The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster". It is case insensitive. Default is "vertex".
+            The requested subtopology type. This can be one of "vertex", "edge", "wire", "face", "shell",
+            "cell", "cellcomplex", "cluster", or "aperture". It is case insensitive. Default is "vertex".
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
+
         Returns
         -------
         list
             The list of subtopologies.
 
         """
+
         from topologicpy.Face import Face
         from topologicpy.Graph import Graph
 
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            is_tgraph = False
+
+        if not isinstance(subTopologyType, str):
+            if not silent:
+                print("Topology.SubTopologies - Error: the input subTopologyType parameter is not a valid string. Returning None.")
+            return None
+
+        subTopologyType = subTopologyType.lower()
+
+        if subTopologyType not in [
+            "vertex", "edge", "wire", "face", "shell",
+            "cell", "cellcomplex", "cluster", "aperture"
+        ]:
+            if not silent:
+                print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not recognized. Returning None.")
+            return None
+
+        # Special case for TGraph
+        if is_tgraph:
+            if subTopologyType == "vertex":
+                return TGraph.Vertices(topology)
+            elif subTopologyType == "edge":
+                return TGraph.Edges(topology)
+            else:
+                if not silent:
+                    print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not a valid subTopology of TGraphs. Returning None.")
+                return None
+
         if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
-                print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology or graph. Returning None.")
             return None
-        if Topology.TypeAsString(topology).lower() == subTopologyType.lower():
-            return [topology]
-        
-        subTopologies = []
 
         # Special case for Graphs
         if Topology.IsInstance(topology, "graph"):
-            if subTopologyType.lower() == "vertex":
+            if subTopologyType == "vertex":
                 return Graph.Vertices(topology)
-            elif subTopologyType.lower() == "edge":
+            elif subTopologyType == "edge":
                 return Graph.Edges(topology)
             else:
                 if not silent:
                     print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not a valid subTopology of Graphs. Returning None.")
                 return None
 
-        # Spcecial case for faces to return vertices in CW/CCW order.
-        if Topology.IsInstance(topology, "face") and (subTopologyType.lower() == "vertex" or subTopologyType.lower() == "edge"):
+        if Topology.TypeAsString(topology).lower() == subTopologyType:
+            return [topology]
+
+        subTopologies = []
+
+        # Special case for faces to return vertices/edges in CW/CCW order.
+        if Topology.IsInstance(topology, "face") and subTopologyType in ["vertex", "edge"]:
             wires = Face.Wires(topology)
             for wire in wires:
-                subTopologies += Topology.SubTopologies(wire, subTopologyType=subTopologyType)
+                subTopologies += Topology.SubTopologies(wire, subTopologyType=subTopologyType, silent=silent)
         else:
-            if subTopologyType.lower() == "vertex":
-                # _ = topology.Vertices(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Vertices', None, subTopologies)
-            elif subTopologyType.lower() == "edge":
-                # _ = topology.Edges(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Edges', None, subTopologies)
-            elif subTopologyType.lower() == "wire":
-                # _ = topology.Wires(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Wires', None, subTopologies)
-            elif subTopologyType.lower() == "face":
-                # _ = topology.Faces(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Faces', None, subTopologies)
-            elif subTopologyType.lower() == "shell":
-                # _ = topology.Shells(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Shells', None, subTopologies)
-            elif subTopologyType.lower() == "cell":
-                # _ = topology.Cells(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Cells', None, subTopologies)
-            elif subTopologyType.lower() == "cellcomplex":
-                # _ = topology.CellComplexes(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'CellComplexes', None, subTopologies)
-            elif subTopologyType.lower() == "cluster":
-                # _ = topology.Clusters(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Clusters', None, subTopologies)
-            elif subTopologyType.lower() == "aperture":
-                # _ = topology.Apertures(None, subTopologies) # H to Core
-                _ = Core.InstanceCall(topology, 'Apertures', None, subTopologies)
-            if not subTopologies:
-                return [] # Make sure to return an empty list instead of None
+            if subTopologyType == "vertex":
+                _ = Core.InstanceCall(topology, "Vertices", None, subTopologies)
+            elif subTopologyType == "edge":
+                _ = Core.InstanceCall(topology, "Edges", None, subTopologies)
+            elif subTopologyType == "wire":
+                _ = Core.InstanceCall(topology, "Wires", None, subTopologies)
+            elif subTopologyType == "face":
+                _ = Core.InstanceCall(topology, "Faces", None, subTopologies)
+            elif subTopologyType == "shell":
+                _ = Core.InstanceCall(topology, "Shells", None, subTopologies)
+            elif subTopologyType == "cell":
+                _ = Core.InstanceCall(topology, "Cells", None, subTopologies)
+            elif subTopologyType == "cellcomplex":
+                _ = Core.InstanceCall(topology, "CellComplexes", None, subTopologies)
+            elif subTopologyType == "cluster":
+                _ = Core.InstanceCall(topology, "Clusters", None, subTopologies)
+            elif subTopologyType == "aperture":
+                _ = Core.InstanceCall(topology, "Apertures", None, subTopologies)
+
+        if not subTopologies:
+            return []
+
         return subTopologies
 
     
@@ -14615,32 +15611,42 @@ class Topology():
     @staticmethod
     def TypeAsString(topology, silent: bool = False):
         """
-        Returns the type of the input topology as a string.
+        Returns the type of the input topology or graph as a string.
 
         Parameters
         ----------
-        topology : topologic_core.Topology
-            The input topology.
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
+            The input topology or graph.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         str
-            The type of the topology as a string.
+            The type of the topology or graph as a string.
 
         """
+
+        try:
+            from topologicpy.TGraph import TGraph
+            if isinstance(topology, TGraph):
+                return "TGraph"
+        except Exception:
+            pass
+
         if Topology.IsInstance(topology, "Graph"):
             return "Graph"
-        elif Topology.IsInstance(topology, "Topology"):
-            # return topology.GetTypeAsString() # H to Core
-            return Core.InstanceCall(topology, 'GetTypeAsString')
+
+        if Topology.IsInstance(topology, "Topology"):
+            return Core.InstanceCall(topology, "GetTypeAsString")
+
         if not silent:
             print("Topology.TypeAsString - Error: The input topology parameter is not a valid topology or graph. Returning None.")
+
         return None
     
     @staticmethod
-    def TypeID(name : str = None) -> int:
+    def TypeID(name: str = None) -> int:
         """
         Returns the type id of the input name string.
 
@@ -14660,8 +15666,9 @@ class Topology():
                 "context",
                 "dictionary",
                 "graph",
+                "tgraph",
                 "topology"
-            
+
             It is case insensitive. Default is None.
 
         Returns
@@ -14670,44 +15677,53 @@ class Topology():
             The type id of the input topologyType string.
 
         """
+
         if not isinstance(name, str):
             print("Topology.TypeID - Error: The input topologyType parameter is not a valid string. Returning None.")
             return None
+
         name = name.lower()
-        if not name in ["vertex", "edge", "wire",
-                                "face", "shell", "cell",
-                                "cellcomplex", "cluster", "aperture",
-                                "context", "dictionary", "graph", "topology"]:
+
+        if name not in [
+            "vertex", "edge", "wire",
+            "face", "shell", "cell",
+            "cellcomplex", "cluster", "aperture",
+            "context", "dictionary", "graph",
+            "tgraph", "topology"
+        ]:
             print("Topology.TypeID - Error: The input name parameter is not a recognized string. Returning None.")
             return None
-        typeID = None
+
         if name == "vertex":
-            typeID = 1
+            return 1
         elif name == "edge":
-            typeID = 2
+            return 2
         elif name == "wire":
-            typeID = 4
+            return 4
         elif name == "face":
-            typeID = 8
+            return 8
         elif name == "shell":
-            typeID = 16
+            return 16
         elif name == "cell":
-            typeID = 32
+            return 32
         elif name == "cellcomplex":
-            typeID = 64
+            return 64
         elif name == "cluster":
-            typeID = 128
+            return 128
         elif name == "aperture":
-            typeID = 256
+            return 256
         elif name == "context":
-            typeID = 512
+            return 512
         elif name == "dictionary":
-            typeID = 1024
+            return 1024
         elif name == "graph":
-            typeID = 2048
+            return 2048
+        elif name == "tgraph":
+            return 2048
         elif name == "topology":
-            typeID = 4096
-        return typeID
+            return 4096
+
+        return None
     
     @staticmethod
     def Union(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -14780,7 +15796,7 @@ class Topology():
     @staticmethod
     def UUID(topology, namespace: str = "topologicpy", uuidKey: str = "uuid", deterministic: bool = False, silent: bool = False):
         """
-        Returns the UUID of the input topology.
+        Returns the UUID of the input topology or graph.
 
         If deterministic is False, this method returns an existing UUID stored in the
         topology dictionary. If no UUID exists, a new UUID v4 is created, stored in
@@ -14788,11 +15804,11 @@ class Topology():
 
         If deterministic is True, this method computes a UUID v5 from the topology's
         geometry and dictionaries. This is slower because it traverses the full
-        topology.
+        topology or graph.
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologicpy.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         namespace : str , optional
             The namespace string to use when deterministic is True. Default is "topologicpy".
@@ -14807,7 +15823,7 @@ class Topology():
         Returns
         -------
         str
-            The UUID string of the input topology.
+            The UUID string of the input topology or graph.
 
         """
 
@@ -14815,13 +15831,33 @@ class Topology():
 
         from topologicpy.Dictionary import Dictionary
 
-        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+        is_tgraph = False
+        try:
+            from topologicpy.TGraph import TGraph
+            is_tgraph = isinstance(topology, TGraph)
+        except Exception:
+            TGraph = None
+            is_tgraph = False
+
+        if not is_tgraph and not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
             if not silent:
                 print("Topology.UUID - Error: The input topology parameter is not a valid topology or graph. Returning None.")
             return None
 
         # Fast path: dictionary lookup, then create and store a UUID if missing.
         if not deterministic:
+            if is_tgraph:
+                d = TGraph.Dictionary(topology)
+                uuid_value = d.get(uuidKey, None) if isinstance(d, dict) else None
+
+                if uuid_value is None:
+                    uuid_value = str(uuid.uuid4())
+                    d = dict(d) if isinstance(d, dict) else {}
+                    d[uuidKey] = uuid_value
+                    topology.SetDictionary(d)
+
+                return str(uuid_value)
+
             d = Topology.Dictionary(topology)
             uuid_value = Dictionary.ValueAtKey(d, uuidKey, None)
 
@@ -14832,9 +15868,56 @@ class Topology():
 
             return str(uuid_value)
 
-        # Slow path: deterministic UUID based on current topology content.
+        # Slow path: deterministic UUID based on current topology/graph content.
         predefined_namespace_dns = uuid.UUID("6ba7b810-9dad-11d1-80b4-00c04fd430c8")
         namespace_uuid = uuid.uuid5(predefined_namespace_dns, namespace)
+
+        if is_tgraph:
+            data = TGraph.ToPython(topology, includeRepresentations=False)
+
+            # Exclude the UUID key itself from deterministic hashing if present.
+            graph_dict = dict(data.get("dictionary", {}))
+            graph_dict.pop(uuidKey, None)
+
+            vertices = []
+            for v in data.get("vertices", []):
+                if not isinstance(v, dict):
+                    continue
+                vd = dict(v.get("dictionary", {}))
+                vd.pop(uuidKey, None)
+                vertices.append({
+                    "index": v.get("index"),
+                    "active": v.get("active", True),
+                    "dictionary": dict(sorted(vd.items(), key=lambda item: str(item[0]))),
+                })
+
+            edges = []
+            for e in data.get("edges", []):
+                if not isinstance(e, dict):
+                    continue
+                ed = dict(e.get("dictionary", {}))
+                ed.pop(uuidKey, None)
+                edges.append({
+                    "index": e.get("index"),
+                    "src": e.get("src"),
+                    "dst": e.get("dst"),
+                    "directed": e.get("directed", False),
+                    "active": e.get("active", True),
+                    "dictionary": dict(sorted(ed.items(), key=lambda item: str(item[0]))),
+                })
+
+            final_data = {
+                "type": "TGraph",
+                "directed": data.get("directed", False),
+                "allowSelfLoops": data.get("allowSelfLoops", True),
+                "allowParallelEdges": data.get("allowParallelEdges", False),
+                "dictionary": dict(sorted(graph_dict.items(), key=lambda item: str(item[0]))),
+                "vertices": sorted(vertices, key=lambda item: item.get("index", 0)),
+                "edges": sorted(edges, key=lambda item: item.get("index", 0)),
+            }
+
+            final_str = json.dumps(final_data, sort_keys=True, default=str)
+            return str(uuid.uuid5(namespace_uuid, final_str))
 
         if Topology.IsInstance(topology, "Graph"):
             from topologicpy.Graph import Graph

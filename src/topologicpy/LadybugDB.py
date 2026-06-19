@@ -24,19 +24,33 @@ import time
 import warnings
 from typing import Any, Dict, List, Optional
 
+
+"""
+LadybugDB backend adapter for TopologicPy GraphDB.
+
+LadybugDB is the actively developed successor/fork of Kuzu. The public Python
+package is currently installed as ``ladybug`` and is expected to expose a
+Kuzu-compatible embedded database API with ``Database`` and ``Connection``
+classes. This class mirrors the TopologicPy Kuzu backend API so GraphDB can
+dispatch to it in the same way it dispatches to Kuzu and Neo4j.
+"""
+
 try:
-    import kuzu
+    import real_ladybug as ladybug
 except Exception:
-    print("Kuzu - Installing required kuzu library.")
     try:
-        os.system("pip install kuzu")
+        import ladybug
     except Exception:
-        os.system("pip install kuzu --user")
-    try:
-        import kuzu
-    except Exception:
-        warnings.warn("Kuzu - Error: Could not import Kuzu.")
-        kuzu = None
+        print("LadybugDB - Installing required LadybugDB library.")
+        import os
+        try:
+            os.system("pip install real_ladybug")
+        except Exception:
+            os.system("pip install real_ladybug --user")
+        try:
+            import real_ladybug as ladybug
+        except Exception:
+            ladybug = None
 
 
 # -----------------------------------------------------------------------------
@@ -147,7 +161,7 @@ def _unique_preserve_order(values: List[Any]) -> List[Any]:
 
 
 def _object_to_dict(value: Any) -> Dict[str, Any]:
-    """Best-effort conversion of Kuzu node/rel values to dictionaries."""
+    """Best-effort conversion of LadybugDB node/rel values to dictionaries."""
     if value is None:
         return {}
     if isinstance(value, dict):
@@ -166,7 +180,7 @@ def _object_to_dict(value: Any) -> Dict[str, Any]:
             except Exception:
                 pass
     try:
-        # Some Kuzu objects expose properties through _properties.
+        # Some LadybugDB objects expose properties through _properties.
         props = getattr(value, "_properties")
         if isinstance(props, dict):
             out.update(props)
@@ -339,12 +353,12 @@ def _graph_mesh_data(graph: Any, mantissa: int = 6, tolerance: float = 0.0001) -
         return {"vertices": [], "edges": [], "vertexDictionaries": [], "edgeDictionaries": []}
 
 
-def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str = "Kuzu.UpsertGraph", silent: bool = True):
+def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str = "LadybugDB.UpsertGraph", silent: bool = True):
     """
     Best-effort ontology annotation before graph persistence.
 
     Supports topologicpy.TGraph first and legacy topologic_core.Graph as a
-    fallback. This intentionally fails silently so Kuzu remains usable without
+    fallback. This intentionally fails silently so LadybugDB remains usable without
     Ontology.py.
     """
     if not ontology or graph is None:
@@ -425,18 +439,18 @@ def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str 
 class _DBCache:
     def __init__(self):
         self._lock = threading.RLock()
-        self._cache: Dict[str, "kuzu.Database"] = {}
+        self._cache: Dict[str, "ladybug.Database"] = {}
 
-    def get(self, path: str) -> "kuzu.Database":
-        if kuzu is None:
-            raise RuntimeError("Kuzu - Error: Kuzu is not available.")
+    def get(self, path: str) -> "ladybug.Database":
+        if ladybug is None:
+            raise RuntimeError("LadybugDB - Error: LadybugDB is not available.")
         if path is None:
-            raise ValueError("Kuzu - Error: The input path is None.")
+            raise ValueError("LadybugDB - Error: The input path is None.")
         path = os.path.abspath(os.path.expanduser(str(path)))
         with self._lock:
             db = self._cache.get(path)
             if db is None:
-                db = kuzu.Database(path)
+                db = ladybug.Database(path)
                 self._cache[path] = db
             return db
 
@@ -456,13 +470,13 @@ _write_gate = _WriteGate()
 
 
 class _ConnectionPool:
-    def __init__(self, db: "kuzu.Database"):
+    def __init__(self, db: "ladybug.Database"):
         self.db = db
         self._local = threading.local()
 
-    def _ensure(self) -> "kuzu.Connection":
+    def _ensure(self) -> "ladybug.Connection":
         if not hasattr(self._local, "conn"):
-            self._local.conn = kuzu.Connection(self.db)
+            self._local.conn = ladybug.Connection(self.db)
         return self._local.conn
 
     @contextlib.contextmanager
@@ -529,7 +543,7 @@ class _Mgr:
             """,
             write=True,
         )
-        # Kuzu node tables currently require a single-column primary key. We keep
+        # LadybugDB node tables currently require a single-column primary key. We keep
         # Vertex.id as a backend-global storage key and preserve the local vertex id
         # in props[vertexIDKey]. The storage key is normally "<graph_id>:<local_id>".
         self.exec(
@@ -576,7 +590,7 @@ class _Mgr:
         )
 
 
-class Kuzu:
+class LadybugDB:
     # -------------------------------------------------------------------------
     # Core
     # -------------------------------------------------------------------------
@@ -588,7 +602,7 @@ class Kuzu:
             return True
         except Exception as e:
             if not silent:
-                print(f"Kuzu.EnsureSchema - Error: {e}. Returning False.")
+                print(f"LadybugDB.EnsureSchema - Error: {e}. Returning False.")
             return False
 
     @staticmethod
@@ -597,7 +611,7 @@ class Kuzu:
             return _db_cache.get(path)
         except Exception as e:
             if not silent:
-                print(f"Kuzu.Database - Error: {e}. Returning None.")
+                print(f"LadybugDB.Database - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -606,7 +620,7 @@ class Kuzu:
             return manager._pool._ensure()
         except Exception as e:
             if not silent:
-                print(f"Kuzu.Connection - Error: {e}. Returning None.")
+                print(f"LadybugDB.Connection - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -615,7 +629,7 @@ class Kuzu:
             return _Mgr(path)
         except Exception as e:
             if not silent:
-                print(f"Kuzu.Manager - Error: {e}. Returning None.")
+                print(f"LadybugDB.Manager - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -624,12 +638,12 @@ class Kuzu:
             return manager.exec(query, parameters or {}, write=write)
         except Exception as e:
             if not silent:
-                print(f"Kuzu.Execute - Error: {e}. Returning None.")
+                print(f"LadybugDB.Execute - Error: {e}. Returning None.")
             return None
 
     @staticmethod
     def Query(manager, query: str, parameters: dict = None, silent: bool = False):
-        return Kuzu.Execute(manager, query, parameters=parameters, write=False, silent=silent)
+        return LadybugDB.Execute(manager, query, parameters=parameters, write=False, silent=silent)
 
     # -------------------------------------------------------------------------
     # Persistence
@@ -656,15 +670,15 @@ class Kuzu:
                     ontology: bool = True,
                     silent: bool = False) -> str:
         """
-        Upserts a TopologicPy Graph or TGraph into Kuzu using the canonical GraphDB schema.
+        Upserts a TopologicPy Graph or TGraph into LadybugDB using the canonical GraphDB schema.
 
         The signature mirrors Neo4j.UpsertGraph. The database argument is accepted
-        for GraphDB compatibility and ignored because Kuzu database identity is the
+        for GraphDB compatibility and ignored because LadybugDB database identity is the
         manager/path. If ontology is True, the graph, vertices, and edges are
         annotated with TopologicPy ontology metadata before persistence.
         """
         try:
-            graph = _annotate_graph_for_ontology(graph, ontology=ontology, generatedBy="Kuzu.UpsertGraph", silent=True)
+            graph = _annotate_graph_for_ontology(graph, ontology=ontology, generatedBy="LadybugDB.UpsertGraph", silent=True)
 
             manager.ensure_schema()
 
@@ -678,7 +692,7 @@ class Kuzu:
                 """
                 MATCH (g:Graph)
                 WHERE g.id = $gid
-                RETURN COUNT(g) > 0 AS exists;
+                RETURN COUNT(g) > 0 AS graph_exists;
                 """,
                 {"gid": gid},
                 write=False,
@@ -686,17 +700,17 @@ class Kuzu:
             exists = False
             if exists_rows:
                 try:
-                    exists = bool(exists_rows[0].get("exists"))
+                    exists = bool(exists_rows[0].get("graph_exists"))
                 except Exception:
                     exists = False
 
             if exists and not overwrite:
                 if not silent:
-                    print("Kuzu.UpsertGraph - Error: The graph already exists and overwrite is False. Returning None.")
+                    print("LadybugDB.UpsertGraph - Error: The graph already exists and overwrite is False. Returning None.")
                 return None
 
             if overwrite:
-                Kuzu.DeleteGraph(manager, gid, silent=True)
+                LadybugDB.DeleteGraph(manager, gid, silent=True)
 
             g_props = dict(graph_dict or {})
             g_label = str(g_props.get("label", ""))
@@ -731,7 +745,7 @@ class Kuzu:
                     "category": _ontology_scalar(g_props, "category", "graph"),
                     "uri": _ontology_scalar(g_props, "uri", ""),
                     "source": _ontology_scalar(g_props, "source", ""),
-                    "generated_by": _ontology_scalar(g_props, "generated_by", "Kuzu.UpsertGraph"),
+                    "generated_by": _ontology_scalar(g_props, "generated_by", "LadybugDB.UpsertGraph"),
                     "derived_from": _ontology_scalar(g_props, "derived_from", ""),
                     "num_nodes": int(len(verts)),
                     "num_edges": int(edge_count),
@@ -748,7 +762,7 @@ class Kuzu:
                     x, y, z = xyz
                 except Exception:
                     if not silent:
-                        print(f"Kuzu.UpsertGraph - Warning: Invalid vertex coordinates at index {i}. Skipping vertex.")
+                        print(f"LadybugDB.UpsertGraph - Warning: Invalid vertex coordinates at index {i}. Skipping vertex.")
                     vertex_ids.append(None)
                     continue
 
@@ -890,18 +904,18 @@ class Kuzu:
             return gid
         except Exception as e:
             if not silent:
-                print(f"Kuzu.UpsertGraph - Error: {e}. Returning None.")
+                print(f"LadybugDB.UpsertGraph - Error: {e}. Returning None.")
             return None
 
     @staticmethod
     def GraphByID(manager, graphID: str, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
         """
-        Constructs a TopologicPy Graph or TGraph from Kuzu using the canonical graph id.
+        Constructs a TopologicPy Graph or TGraph from LadybugDB using the canonical graph id.
 
         Parameters
         ----------
-        manager : Kuzu manager
-            The input Kuzu manager.
+        manager : LadybugDB manager
+            The input LadybugDB manager.
         graphID : str
             The graph id to retrieve.
         ontology : bool , optional
@@ -982,7 +996,7 @@ class Kuzu:
                     from topologicpy.TGraph import TGraph
                 except Exception:
                     if not silent:
-                        print("Kuzu.GraphByID - Error: Could not import TGraph. Returning None.")
+                        print("LadybugDB.GraphByID - Error: Could not import TGraph. Returning None.")
                     return None
 
                 vertex_records = []
@@ -1079,17 +1093,17 @@ class Kuzu:
             g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
             g = Topology.SetDictionary(g, g_dict)
             if ontology:
-                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="Kuzu.GraphByID", silent=True)
+                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="LadybugDB.GraphByID", silent=True)
             return g
         except Exception as e:
             if not silent:
-                print(f"Kuzu.GraphByID - Error: {e}. Returning None.")
+                print(f"LadybugDB.GraphByID - Error: {e}. Returning None.")
             return None
 
     @staticmethod
     def GraphsByQuery(manager, query: str, parameters: dict = None, params: dict = None, ontology: bool = True, asTGraph: bool = False, silent: bool = False):
         """
-        Executes a Kuzu query and returns a list containing a TopologicPy Graph or TGraph
+        Executes a LadybugDB query and returns a list containing a TopologicPy Graph or TGraph
         constructed from the returned rows. If rows return graph_id/gid only,
         full graphs are reconstructed using GraphByID.
         """
@@ -1113,7 +1127,7 @@ class Kuzu:
             if gids and not has_graph_objects:
                 graphs = []
                 for gid in gids:
-                    g = Kuzu.GraphByID(manager, str(gid), ontology=ontology, asTGraph=asTGraph, silent=silent)
+                    g = LadybugDB.GraphByID(manager, str(gid), ontology=ontology, asTGraph=asTGraph, silent=silent)
                     if g is not None:
                         graphs.append(g)
                 return graphs
@@ -1166,7 +1180,7 @@ class Kuzu:
                     from topologicpy.TGraph import TGraph
                 except Exception:
                     if not silent:
-                        print("Kuzu.GraphsByQuery - Error: Could not import TGraph. Returning None.")
+                        print("LadybugDB.GraphsByQuery - Error: Could not import TGraph. Returning None.")
                     return None
                 vertex_records = []
                 id_to_index = {}
@@ -1267,11 +1281,11 @@ class Kuzu:
 
             g = Graph.ByVerticesEdges(vertices, edges_out, ontology=ontology)
             if ontology:
-                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="Kuzu.GraphsByQuery", silent=True)
+                g = _annotate_graph_for_ontology(g, ontology=True, generatedBy="LadybugDB.GraphsByQuery", silent=True)
             return [g]
         except Exception as e:
             if not silent:
-                print(f"Kuzu.GraphsByQuery - Error: {e}. Returning None.")
+                print(f"LadybugDB.GraphsByQuery - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1306,7 +1320,7 @@ class Kuzu:
             return True
         except Exception as e:
             if not silent:
-                print(f"Kuzu.DeleteGraph - Error: {e}. Returning False.")
+                print(f"LadybugDB.DeleteGraph - Error: {e}. Returning False.")
             return False
 
     @staticmethod
@@ -1322,7 +1336,7 @@ class Kuzu:
                         manager.exec(stmt, write=True)
                     except Exception as e:
                         if not silent:
-                            print(f"Kuzu.EmptyDatabase - Warning: {e}")
+                            print(f"LadybugDB.EmptyDatabase - Warning: {e}")
                 if recreateSchema:
                     manager.ensure_schema()
                 return True
@@ -1334,7 +1348,7 @@ class Kuzu:
             return True
         except Exception as e:
             if not silent:
-                print(f"Kuzu.EmptyDatabase - Error: {e}. Returning False.")
+                print(f"LadybugDB.EmptyDatabase - Error: {e}. Returning False.")
             return False
 
     @staticmethod
@@ -1400,11 +1414,11 @@ class Kuzu:
             ) or []
         except Exception as e:
             if not silent:
-                print(f"Kuzu.ListGraphs - Error: {e}. Returning None.")
+                print(f"LadybugDB.ListGraphs - Error: {e}. Returning None.")
             return None
 
     # -------------------------------------------------------------------------
-    # CSV import: Graph.ByCSVPath -> Kuzu.UpsertGraph
+    # CSV import: Graph.ByCSVPath -> LadybugDB.UpsertGraph
     # -------------------------------------------------------------------------
 
     @staticmethod
@@ -1422,7 +1436,7 @@ class Kuzu:
         tolerance=0.0001, ontology: bool = True, silent=False):
         """
         Reads CSV graph data using TGraph.ByCSVPath when available, falling back to
-        Graph.ByCSVPath, and upserts all returned graphs into Kuzu.
+        Graph.ByCSVPath, and upserts all returned graphs into LadybugDB.
         """
         try:
             manager.ensure_schema()
@@ -1466,13 +1480,13 @@ class Kuzu:
 
             if graphs is None:
                 if not silent:
-                    print("Kuzu.ByCSVPath - Error: ByCSVPath returned None. Returning None.")
+                    print("LadybugDB.ByCSVPath - Error: ByCSVPath returned None. Returning None.")
                 return None
             if not isinstance(graphs, list):
                 graphs = [graphs]
             graph_ids = []
             for graph in graphs:
-                gid = Kuzu.UpsertGraph(
+                gid = LadybugDB.UpsertGraph(
                     manager,
                     graph,
                     graphIDKey=graphIDHeader,
@@ -1490,7 +1504,7 @@ class Kuzu:
             return {"graphs_upserted": len(graph_ids), "graph_ids": graph_ids}
         except Exception as e:
             if not silent:
-                print(f"Kuzu.ByCSVPath - Error: {e}. Returning None.")
+                print(f"LadybugDB.ByCSVPath - Error: {e}. Returning None.")
             return None
 
     # -------------------------------------------------------------------------
@@ -1524,7 +1538,7 @@ class Kuzu:
             return out
         except Exception as e:
             if not silent:
-                print(f"Kuzu.FetchAllPairs - Error: {e}. Returning None.")
+                print(f"LadybugDB.FetchAllPairs - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1571,7 +1585,7 @@ class Kuzu:
             return out[: max(1, int(limit or 50))]
         except Exception as e:
             if not silent:
-                print(f"Kuzu.CandidateCountsForLabels - Error: {e}. Returning None.")
+                print(f"LadybugDB.CandidateCountsForLabels - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1598,7 +1612,7 @@ class Kuzu:
             return None if value is None else int(value)
         except Exception as e:
             if not silent:
-                print(f"Kuzu.MaxNeighborsForLabel - Error: {e}. Returning None.")
+                print(f"LadybugDB.MaxNeighborsForLabel - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1667,7 +1681,7 @@ class Kuzu:
             return row
         except Exception as e:
             if not silent:
-                print(f"Kuzu.FindBestExampleForLabel - Error: {e}. Returning None.")
+                print(f"LadybugDB.FindBestExampleForLabel - Error: {e}. Returning None.")
             return None
 
 
@@ -1682,8 +1696,8 @@ class Kuzu:
 
         Parameters
         ----------
-        manager : Kuzu manager
-            The input Kuzu manager.
+        manager : LadybugDB manager
+            The input LadybugDB manager.
         elementType : str , optional
             One of "graph", "vertex", "edge", or "all". Default is "all".
         silent : bool , optional
@@ -1731,7 +1745,7 @@ class Kuzu:
             return rows
         except Exception as e:
             if not silent:
-                print(f"Kuzu.OntologyClasses - Error: {e}. Returning None.")
+                print(f"LadybugDB.OntologyClasses - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1757,13 +1771,13 @@ class Kuzu:
                 gid = row.get("graph_id")
                 if gid is None:
                     continue
-                graph = Kuzu.GraphByID(manager, str(gid), ontology=ontology, asTGraph=asTGraph, silent=silent)
+                graph = LadybugDB.GraphByID(manager, str(gid), ontology=ontology, asTGraph=asTGraph, silent=silent)
                 if graph is not None:
                     graphs.append(graph)
             return graphs
         except Exception as e:
             if not silent:
-                print(f"Kuzu.GraphsByOntologyClass - Error: {e}. Returning None.")
+                print(f"LadybugDB.GraphsByOntologyClass - Error: {e}. Returning None.")
             return None
 
     @staticmethod
@@ -1773,8 +1787,8 @@ class Kuzu:
 
         Parameters
         ----------
-        manager : Kuzu manager
-            The input Kuzu manager.
+        manager : LadybugDB manager
+            The input LadybugDB manager.
         ontologyClass : str
             The ontology class, for example "top:Room".
         graphID : str , optional
@@ -1818,6 +1832,6 @@ class Kuzu:
             return rows
         except Exception as e:
             if not silent:
-                print(f"Kuzu.VerticesByOntologyClass - Error: {e}. Returning None.")
+                print(f"LadybugDB.VerticesByOntologyClass - Error: {e}. Returning None.")
             return None
 

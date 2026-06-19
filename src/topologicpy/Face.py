@@ -6032,6 +6032,7 @@ class Face():
         if not Topology.IsInstance(face, "Face"):
             return None
         return Core.FaceUtility.VertexAtParameters(face, u, v)
+    
     @staticmethod
     def VertexParameters(face, vertex, outputType: str = "uv", mantissa: int = 6) -> list:
         """

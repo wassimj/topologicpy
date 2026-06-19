@@ -80,7 +80,7 @@ class LLM:
         "openai": {
             "requires_api_key": True,
             "default_base_url": None,
-            "default_model": "gpt-5.4-mini",
+            "default_model": "gpt-5-mini",
             "mode": "openai",
         },
         "anthropic": {
@@ -535,16 +535,45 @@ class LLM:
         try:
             from openai import OpenAI
             client = LLM._openai_client(llm, provider)
+
             request = {
                 "model": model,
                 "messages": messages,
-                "temperature": temperature,
                 "timeout": timeout,
             }
-            if max_tokens is not None:
-                request["max_tokens"] = max_tokens
 
-            resp = client.chat.completions.create(**request)
+            # Newer OpenAI reasoning/frontier models may reject explicit
+            # temperature values through chat-completions. For those models,
+            # omit the parameter and let the API use its default. Third-party
+            # OpenAI-compatible providers usually still accept temperature, so
+            # keep it there unless an error-driven retry proves otherwise.
+            if temperature is not None and LLM._openai_supports_temperature(provider, model):
+                request["temperature"] = temperature
+
+            token_parameter = LLM._openai_token_parameter(provider, model)
+            if max_tokens is not None and token_parameter:
+                request[token_parameter] = max_tokens
+
+            resp = None
+            last_exception = None
+            attempted_requests = []
+            current_request = dict(request)
+
+            for _ in range(4):
+                attempted_requests.append(dict(current_request))
+                try:
+                    resp = client.chat.completions.create(**current_request)
+                    break
+                except Exception as e:
+                    last_exception = e
+                    retry_request = LLM._openai_compatible_retry_request(current_request, e)
+                    if retry_request is None or retry_request in attempted_requests:
+                        raise e
+                    current_request = retry_request
+
+            if resp is None:
+                raise last_exception
+
             text = ""
             try:
                 text = resp.choices[0].message.content or ""
@@ -708,6 +737,93 @@ class LLM:
     # -------------------------------------------------------------------------
     # Internal helpers
     # -------------------------------------------------------------------------
+    @staticmethod
+    def _openai_reasoning_or_frontier_model(model):
+        """
+        Returns True for OpenAI model families that commonly use newer
+        chat-completions semantics, such as ``max_completion_tokens`` and
+        restricted sampling controls.
+        """
+        model_name = str(model or "").strip().lower()
+        return model_name.startswith((
+            "gpt-5",
+            "o1",
+            "o3",
+            "o4",
+        ))
+
+    @staticmethod
+    def _openai_supports_temperature(provider, model):
+        """
+        Returns whether to send an explicit ``temperature`` parameter on the
+        first OpenAI-compatible request attempt.
+
+        For OpenAI reasoning/frontier model families, the safest default is to
+        omit ``temperature`` and let the API use its default. Other OpenAI and
+        third-party OpenAI-compatible endpoints normally accept it. The caller
+        still has an error-driven retry path that removes temperature if any
+        endpoint rejects it.
+        """
+        provider_name = LLM._normalize_provider(provider)
+        if provider_name == "openai" and LLM._openai_reasoning_or_frontier_model(model):
+            return False
+        return True
+
+    @staticmethod
+    def _openai_token_parameter(provider, model):
+        """
+        Returns the token-limit request parameter to use for OpenAI-compatible
+        chat-completions calls.
+
+        Some newer OpenAI models reject the legacy ``max_tokens`` parameter and
+        expect ``max_completion_tokens`` instead. Many third-party
+        OpenAI-compatible servers still expect ``max_tokens``. This helper uses
+        provider/model heuristics for the first attempt; the request function
+        also has an error-driven retry path for future API changes.
+        """
+        provider_name = LLM._normalize_provider(provider)
+
+        if provider_name == "openai":
+            if LLM._openai_reasoning_or_frontier_model(model):
+                return "max_completion_tokens"
+            return "max_tokens"
+
+        return "max_tokens"
+
+    @staticmethod
+    def _openai_compatible_retry_request(request, exception):
+        """
+        Returns a modified request for one safe retry when an OpenAI-compatible
+        endpoint rejects a request parameter. Returns None if no safe retry is
+        indicated.
+        """
+        message = str(exception).lower()
+        retry = dict(request)
+
+        if "max_tokens" in retry and "max_completion_tokens" in message:
+            retry["max_completion_tokens"] = retry.pop("max_tokens")
+            return retry
+
+        if "max_completion_tokens" in retry and "max_tokens" in message:
+            retry["max_tokens"] = retry.pop("max_completion_tokens")
+            return retry
+
+        if "temperature" in message and "temperature" in retry:
+            temperature_error_markers = (
+                "unsupported parameter",
+                "unsupported value",
+                "does not support",
+                "not supported",
+                "only the default",
+                "default value",
+                "invalid_request_error",
+            )
+            if any(marker in message for marker in temperature_error_markers):
+                retry.pop("temperature", None)
+                return retry
+
+        return None
+
     @staticmethod
     def _openai_client(llm, provider):
         from openai import OpenAI

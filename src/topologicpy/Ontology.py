@@ -321,22 +321,156 @@ class Ontology:
 
     @staticmethod
     def _dictionary(topology):
-        """Returns a TopologicPy dictionary from the input topology or graph."""
-        from topologicpy.Topology import Topology
-
+        """Returns a TopologicPy or Python dictionary from the input topology or graph."""
         if topology is None:
             return None
 
+        record_dict = Ontology._record_dictionary(topology)
+        if record_dict is not None:
+            return record_dict
+
+        if Ontology._is_tgraph(topology):
+            try:
+                from topologicpy.TGraph import TGraph
+                return TGraph.Dictionary(topology)
+            except Exception:
+                return None
+
         try:
+            from topologicpy.Topology import Topology
             return Topology.Dictionary(topology)
         except Exception:
             return None
+    @staticmethod
+    def _is_tgraph(obj):
+        """Returns True if the input object is a TGraph."""
+        try:
+            from topologicpy.TGraph import TGraph
+            return isinstance(obj, TGraph)
+        except Exception:
+            return False
+
+    @staticmethod
+    def _is_graph_like(obj):
+        """Returns True if the input object is a legacy Graph or TGraph."""
+        if obj is None:
+            return False
+        if Ontology._is_tgraph(obj):
+            return True
+        try:
+            from topologicpy.Topology import Topology
+            return bool(Topology.IsInstance(obj, "graph"))
+        except Exception:
+            return False
+
+    @staticmethod
+    def _graph_vertices(graph, asTopologic: bool = False):
+        """Returns graph vertices from either a legacy Graph or TGraph."""
+        if graph is None:
+            return []
+        if Ontology._is_tgraph(graph):
+            try:
+                from topologicpy.TGraph import TGraph
+                return TGraph.Vertices(graph, asTopologic=asTopologic, activeOnly=True) or []
+            except Exception:
+                return []
+        try:
+            from topologicpy.Graph import Graph
+            return Graph.Vertices(graph) or []
+        except Exception:
+            return []
+
+    @staticmethod
+    def _graph_edges(graph, asTopologic: bool = False):
+        """Returns graph edges from either a legacy Graph or TGraph."""
+        if graph is None:
+            return []
+        if Ontology._is_tgraph(graph):
+            try:
+                from topologicpy.TGraph import TGraph
+                return TGraph.Edges(graph, asTopologic=asTopologic, activeOnly=True) or []
+            except Exception:
+                return []
+        try:
+            from topologicpy.Graph import Graph
+            return Graph.Edges(graph) or []
+        except Exception:
+            return []
+
+    @staticmethod
+    def _graph_edge_endpoints(graph, edge, vertex_records=None):
+        """Returns the start and end vertices/records of a graph edge."""
+        if graph is None or edge is None:
+            return None, None
+        if Ontology._is_tgraph(graph):
+            try:
+                src = edge.get("src", None) if isinstance(edge, dict) else None
+                dst = edge.get("dst", None) if isinstance(edge, dict) else None
+                if isinstance(src, int) and isinstance(dst, int):
+                    if vertex_records is None:
+                        vertex_records = Ontology._graph_vertices(graph, asTopologic=False)
+                    by_index = {}
+                    for i, v in enumerate(vertex_records or []):
+                        if isinstance(v, dict):
+                            by_index[v.get("index", i)] = v
+                    return by_index.get(src), by_index.get(dst)
+            except Exception:
+                return None, None
+            return None, None
+        try:
+            from topologicpy.Edge import Edge
+            return Edge.StartVertex(edge), Edge.EndVertex(edge)
+        except Exception:
+            pass
+        try:
+            from topologicpy.Topology import Topology
+            return Topology.StartVertex(edge), Topology.EndVertex(edge)
+        except Exception:
+            pass
+        try:
+            from topologicpy.Graph import Graph
+            return Graph.StartVertex(graph, edge), Graph.EndVertex(graph, edge)
+        except Exception:
+            return None, None
+
+    @staticmethod
+    def _record_dictionary(obj):
+        """Returns a Python dictionary from a TGraph record-like object."""
+        if isinstance(obj, dict):
+            d = obj.get("dictionary", obj)
+            if isinstance(d, dict):
+                return d
+        return None
+
+    @staticmethod
+    def _record_coordinates(obj, default=None):
+        """Returns XYZ coordinates from a TGraph vertex record-like object."""
+        default = default if default is not None else [0.0, 0.0, 0.0]
+        if isinstance(obj, dict):
+            d = obj.get("dictionary", obj)
+            if isinstance(d, dict):
+                x = d.get("x", obj.get("x", None))
+                y = d.get("y", obj.get("y", None))
+                z = d.get("z", obj.get("z", None))
+                try:
+                    return [float(x), float(y), float(z)]
+                except Exception:
+                    pass
+            try:
+                coords = obj.get("coordinates", None)
+                if isinstance(coords, (list, tuple)) and len(coords) >= 3:
+                    return [float(coords[0]), float(coords[1]), float(coords[2])]
+            except Exception:
+                pass
+        return list(default)
 
     @staticmethod
     def _set_value(topology, key, value, silent=False):
-        """Sets a dictionary key/value pair on the input topology."""
-        from topologicpy.Topology import Topology
-        from topologicpy.Dictionary import Dictionary
+        """Sets a dictionary key/value pair on the input topology, graph, or TGraph record."""
+        try:
+            from topologicpy.Dictionary import Dictionary
+        except Exception:
+            Dictionary = None
 
         if topology is None:
             if not silent:
@@ -348,7 +482,30 @@ class Ontology:
                 print("Ontology._set_value - Error: The input key is None. Returning None.")
             return None
 
+        if isinstance(topology, dict):
+            d = topology.get("dictionary", topology)
+            if not isinstance(d, dict):
+                d = {}
+            d[key] = value
+            if "dictionary" in topology:
+                topology["dictionary"] = d
+            return topology
+
+        if Ontology._is_tgraph(topology):
+            try:
+                from topologicpy.TGraph import TGraph
+                d = TGraph.Dictionary(topology)
+                d[key] = value
+                topology.SetDictionary(d)
+                return topology
+            except Exception as e:
+                if not silent:
+                    print("Ontology._set_value - Error: Could not set the TGraph dictionary value. Returning None.")
+                    print("Error:", e)
+                return None
+
         try:
+            from topologicpy.Topology import Topology
             d = Topology.Dictionary(topology)
             d = Dictionary.SetValueAtKey(d, key, value)
             Topology.SetDictionary(topology, d)
@@ -361,11 +518,15 @@ class Ontology:
 
     @staticmethod
     def _value(topology, key, defaultValue=None):
-        """Returns a dictionary value from the input topology."""
-        from topologicpy.Dictionary import Dictionary
-
+        """Returns a dictionary value from the input topology, graph, or TGraph record."""
         d = Ontology._dictionary(topology)
-        return Dictionary.ValueAtKey(d, key, defaultValue)
+        if isinstance(d, dict):
+            return d.get(key, defaultValue)
+        try:
+            from topologicpy.Dictionary import Dictionary
+            return Dictionary.ValueAtKey(d, key, defaultValue)
+        except Exception:
+            return defaultValue
 
     @staticmethod
     def _as_list(item):
@@ -420,13 +581,11 @@ class Ontology:
 
     @staticmethod
     def _uri_for_topology(topology, prefix="inst"):
-        """Returns a stable URI-like QName for a topology or graph entity."""
-        from topologicpy.Dictionary import Dictionary
-
-        d = Ontology._dictionary(topology)
-        guid = Dictionary.ValueAtKey(d, Ontology.IFC_GUID_KEY, None)
-        uri = Dictionary.ValueAtKey(d, Ontology.URI_KEY, None)
-        label = Dictionary.ValueAtKey(d, Ontology.LABEL_KEY, None)
+        """Returns a stable URI-like QName for a topology, graph, or TGraph entity."""
+        guid = Ontology._value(topology, Ontology.IFC_GUID_KEY, None)
+        uri = Ontology._value(topology, Ontology.URI_KEY, None)
+        label = Ontology._value(topology, Ontology.LABEL_KEY, None)
+        local_id = Ontology._value(topology, "id", None)
 
         if uri:
             if ":" in str(uri):
@@ -435,6 +594,9 @@ class Ontology:
 
         if guid:
             return prefix + ":" + Ontology._safe_local_name(guid)
+
+        if local_id:
+            return prefix + ":" + Ontology._safe_local_name(local_id)
 
         if label:
             return prefix + ":" + Ontology._safe_local_name(label)
@@ -524,7 +686,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         defaultValue : any , optional
             The value to return if no ontology class is found. Default is None.
@@ -544,7 +706,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         ontologyClass : str
             The ontology class, for example "top:Room".
@@ -557,7 +719,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         """
 
@@ -592,7 +754,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         defaultValue : any , optional
             The value to return if no category is found. Default is None.
@@ -612,7 +774,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         category : str
             The category.
@@ -621,7 +783,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         """
 
@@ -638,7 +800,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         defaultValue : any , optional
             The value to return if no label is found. Default is None.
@@ -658,7 +820,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         label : str
             The label.
@@ -667,7 +829,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         """
 
@@ -680,7 +842,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         defaultValue : any , optional
             The value to return if no URI is found. Default is None.
@@ -700,7 +862,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         uri : str
             The URI.
@@ -709,7 +871,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         """
 
@@ -783,7 +945,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         ontologyClass : str
             The ontology class to test against.
@@ -881,7 +1043,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         ifcClass : str , optional
             The IFC class. Default is None.
@@ -896,7 +1058,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The annotated topology or graph.
         """
 
@@ -933,7 +1095,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         defaultValue : any , optional
             The value to return if the topology type cannot be inferred. Default is "top:Topology".
@@ -946,6 +1108,9 @@ class Ontology:
 
         if topology is None:
             return defaultValue
+
+        if Ontology._is_tgraph(topology):
+            return "top:Graph"
 
         try:
             from topologicpy.Topology import Topology
@@ -968,6 +1133,7 @@ class Ontology:
                     "cellcomplex": "top:CellComplex",
                     "cluster": "top:Cluster",
                     "graph": "top:Graph",
+                    "tgraph": "top:Graph",
                 }
                 if type_name_lower in mapping:
                     return mapping[type_name_lower]
@@ -1011,7 +1177,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         ontologyClass : str , optional
             The ontology class. Default is None.
@@ -1035,7 +1201,7 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The annotated topology or graph.
         """
 
@@ -1167,7 +1333,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         labelKeys : list , optional
             Candidate keys for the label. Default is ["name", "Name", "LongName", "ifc_name", "label"].
@@ -1182,11 +1348,14 @@ class Ontology:
 
         Returns
         -------
-        topologic_core.Topology or topologic_core.Graph
+        topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         """
 
-        from topologicpy.Dictionary import Dictionary
+        try:
+            from topologicpy.Dictionary import Dictionary
+        except Exception:
+            Dictionary = None
 
         if topology is None:
             if not silent:
@@ -1244,7 +1413,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         subject : str , optional
             The subject QName. If None, one is inferred. Default is None.
@@ -1269,7 +1438,10 @@ class Ontology:
             A list of triples. Each triple is a tuple of the form (subject, predicate, object).
         """
 
-        from topologicpy.Dictionary import Dictionary
+        try:
+            from topologicpy.Dictionary import Dictionary
+        except Exception:
+            Dictionary = None
 
         if topology is None:
             if not silent:
@@ -1300,10 +1472,20 @@ class Ontology:
         if includeDictionaries:
             d = Ontology._dictionary(topology)
             if d is not None:
-                try:
-                    keys = Dictionary.Keys(d)
-                except Exception:
-                    keys = []
+                if isinstance(d, dict):
+                    keys = list(d.keys())
+                    def _dict_value(_d, _key):
+                        return _d.get(_key, None)
+                else:
+                    try:
+                        keys = Dictionary.Keys(d)
+                    except Exception:
+                        keys = []
+                    def _dict_value(_d, _key):
+                        try:
+                            return Dictionary.ValueAtKey(_d, _key, None)
+                        except Exception:
+                            return None
                 skip_keys = {
                     Ontology.ONTOLOGY_CLASS_KEY,
                     Ontology.ONTOLOGY_URI_KEY,
@@ -1314,10 +1496,7 @@ class Ontology:
                 for key in keys:
                     if key in skip_keys:
                         continue
-                    try:
-                        value = Dictionary.ValueAtKey(d, key, None)
-                    except Exception:
-                        value = None
+                    value = _dict_value(d, key)
                     if value is None:
                         continue
                     predicate = Ontology.PropertyQName(key)
@@ -1342,7 +1521,7 @@ class Ontology:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : topologic_core.Graph or topologicpy.TGraph
             The input graph.
         includeVertices : bool , optional
             If True, vertex triples are exported. Default is True.
@@ -1371,9 +1550,6 @@ class Ontology:
             return triples
 
         try:
-            from topologicpy.Graph import Graph
-            from topologicpy.Topology import Topology
-
             graph_subject = Ontology._uri_for_topology(graph, prefix=namespacePrefix)
             triples.extend(Ontology.Triples(graph,
                                             subject=graph_subject,
@@ -1382,15 +1558,10 @@ class Ontology:
                                             namespacePrefix=namespacePrefix,
                                             silent=True))
 
-            vertices = []
-            edges = []
-
+            vertex_records = []
             if includeVertices:
-                try:
-                    vertices = Graph.Vertices(graph)
-                except Exception:
-                    vertices = []
-                for i, vertex in enumerate(vertices):
+                vertex_records = Ontology._graph_vertices(graph, asTopologic=False)
+                for i, vertex in enumerate(vertex_records):
                     if Ontology.Class(vertex) is None:
                         Ontology.Annotate(vertex, ontologyClass="top:Node", silent=True)
                     v_subject = Ontology._uri_for_topology(vertex, prefix=namespacePrefix)
@@ -1403,14 +1574,21 @@ class Ontology:
                                                     silent=True))
 
             if includeEdges:
-                try:
-                    edges = Graph.Edges(graph)
-                except Exception:
-                    edges = []
+                if not vertex_records:
+                    vertex_records = Ontology._graph_vertices(graph, asTopologic=False)
+                edges = Ontology._graph_edges(graph, asTopologic=False)
                 for i, edge in enumerate(edges):
                     if Ontology.Class(edge) is None:
                         Ontology.Annotate(edge, ontologyClass="top:Relationship", silent=True)
                     e_subject = Ontology._uri_for_topology(edge, prefix=namespacePrefix)
+                    # TGraph edge records commonly lack stable labels/URIs, so provide
+                    # a deterministic fallback edge subject.
+                    if isinstance(edge, dict):
+                        d = Ontology._record_dictionary(edge) or {}
+                        if not any(d.get(k) for k in [Ontology.URI_KEY, Ontology.IFC_GUID_KEY, Ontology.LABEL_KEY, "id"]):
+                            src = edge.get("src", "u")
+                            dst = edge.get("dst", "v")
+                            e_subject = f"{namespacePrefix}:edge_{Ontology._safe_local_name(str(src))}_{Ontology._safe_local_name(str(dst))}_{i}"
                     triples.append((graph_subject, "top:hasRelationship", e_subject))
                     triples.extend(Ontology.Triples(edge,
                                                     subject=e_subject,
@@ -1419,22 +1597,7 @@ class Ontology:
                                                     namespacePrefix=namespacePrefix,
                                                     silent=True))
 
-                    sv = None
-                    ev = None
-                    try:
-                        sv = Topology.StartVertex(edge)
-                    except Exception:
-                        try:
-                            sv = Graph.StartVertex(graph, edge)
-                        except Exception:
-                            sv = None
-                    try:
-                        ev = Topology.EndVertex(edge)
-                    except Exception:
-                        try:
-                            ev = Graph.EndVertex(graph, edge)
-                        except Exception:
-                            ev = None
+                    sv, ev = Ontology._graph_edge_endpoints(graph, edge, vertex_records=vertex_records)
 
                     if sv is not None:
                         triples.append((e_subject, "top:hasStartVertex", Ontology._uri_for_topology(sv, prefix=namespacePrefix)))
@@ -1682,7 +1845,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         path : str
             The output Turtle file path.
@@ -1719,7 +1882,7 @@ class Ontology:
         try:
             from topologicpy.Topology import Topology
 
-            if includeGraph and Topology.IsInstance(topology, "graph"):
+            if includeGraph and Ontology._is_graph_like(topology):
                 triples = Ontology.GraphTriples(topology,
                                                 includeDictionaries=includeDictionaries,
                                                 includeBOT=includeBOT,
@@ -1755,7 +1918,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         includeGraph : bool , optional
             If True and the input is a graph, graph vertices and edges are exported.
@@ -1785,7 +1948,7 @@ class Ontology:
         try:
             from topologicpy.Topology import Topology
 
-            if includeGraph and Topology.IsInstance(topology, "graph"):
+            if includeGraph and Ontology._is_graph_like(topology):
                 triples = Ontology.GraphTriples(topology,
                                                 includeDictionaries=includeDictionaries,
                                                 includeBOT=includeBOT,
@@ -1824,7 +1987,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         requireClass : bool , optional
             If True, ``ontology_class`` must be present. Default is True.
@@ -1861,12 +2024,15 @@ class Ontology:
             return report
 
         d = Ontology._dictionary(topology)
-        try:
-            from topologicpy.Dictionary import Dictionary
-            if d is not None:
-                report["dictionary"] = dict(Dictionary.PythonDictionary(d) or {})
-        except Exception:
-            report["dictionary"] = {}
+        if isinstance(d, dict):
+            report["dictionary"] = dict(d)
+        else:
+            try:
+                from topologicpy.Dictionary import Dictionary
+                if d is not None:
+                    report["dictionary"] = dict(Dictionary.PythonDictionary(d) or {})
+            except Exception:
+                report["dictionary"] = {}
 
         ontologyClass = report["dictionary"].get(Ontology.ONTOLOGY_CLASS_KEY, None)
         category = report["dictionary"].get(Ontology.CATEGORY_KEY, None)
@@ -1935,7 +2101,7 @@ class Ontology:
 
         Parameters
         ----------
-        graph : topologic_core.Graph
+        graph : topologic_core.Graph or topologicpy.TGraph
             The input graph.
         requireClass : bool , optional
             If True, the graph itself must have ``ontology_class``. Default is True.
@@ -1969,14 +2135,6 @@ class Ontology:
             report["errors"].append("The input graph is None.")
             return report
 
-        try:
-            from topologicpy.Graph import Graph
-            from topologicpy.Topology import Topology
-            from topologicpy.Edge import Edge
-        except Exception as e:
-            report["errors"].append(f"Could not import required TopologicPy classes: {e}.")
-            return report
-
         report["graph"] = Ontology.Validate(graph,
                                              requireClass=requireClass,
                                              requireLabel=requireLabels,
@@ -1987,14 +2145,8 @@ class Ontology:
         for warning in report["graph"].get("warnings", []):
             report["warnings"].append("Graph: " + warning)
 
-        try:
-            vertices = Graph.Vertices(graph) or []
-        except Exception:
-            vertices = []
-        try:
-            edges = Graph.Edges(graph) or []
-        except Exception:
-            edges = []
+        vertices = Ontology._graph_vertices(graph, asTopologic=False)
+        edges = Ontology._graph_edges(graph, asTopologic=False)
 
         for i, vertex in enumerate(vertices):
             r = Ontology.Validate(vertex,
@@ -2017,17 +2169,7 @@ class Ontology:
             r["index"] = i
 
             if checkConnectivity:
-                sv = None
-                ev = None
-                try:
-                    sv = Edge.StartVertex(edge)
-                    ev = Edge.EndVertex(edge)
-                except Exception:
-                    try:
-                        sv = Topology.StartVertex(edge)
-                        ev = Topology.EndVertex(edge)
-                    except Exception:
-                        sv = ev = None
+                sv, ev = Ontology._graph_edge_endpoints(graph, edge, vertex_records=vertices)
                 if sv is None or ev is None:
                     r.setdefault("errors", []).append("Could not resolve edge start/end vertices.")
                     r["ok"] = False
@@ -2134,7 +2276,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         includeGraph : bool , optional
             If True and the input is a graph, vertices and edges are exported. Default is True.
@@ -2211,7 +2353,7 @@ class Ontology:
 
         try:
             from topologicpy.Topology import Topology
-            if includeGraph and Topology.IsInstance(topology, "graph"):
+            if includeGraph and Ontology._is_graph_like(topology):
                 triples = Ontology.GraphTriples(topology,
                                                 includeDictionaries=includeDictionaries,
                                                 includeBOT=includeBOT,
@@ -2246,7 +2388,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         format : str , optional
             RDFLib serialization format, e.g. "turtle", "xml", "json-ld", "nt". Default is "turtle".
@@ -2304,7 +2446,7 @@ class Ontology:
 
         Parameters
         ----------
-        topology : topologic_core.Topology or topologic_core.Graph
+        topology : topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph
             The input topology or graph.
         path : str
             The output file path.
@@ -2367,6 +2509,7 @@ class Ontology:
                         graphSubject=None,
                         namespacePrefix="inst",
                         tolerance=0.0001,
+                        asTGraph: bool = False,
                         silent=False):
         """
         Reconstructs a TopologicPy graph from an RDFLib graph exported by Ontology.RDFGraph or Ontology.ExportRDF.
@@ -2381,12 +2524,14 @@ class Ontology:
             The preferred instance namespace prefix for stored ``uri`` values. Default is "inst".
         tolerance : float , optional
             The graph creation tolerance. Default is 0.0001.
+        asTGraph : bool , optional
+            If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.
         silent : bool , optional
             If True, warnings are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph
+        topologic_core.Graph or topologicpy.TGraph
             The reconstructed graph, or None on failure.
         """
 
@@ -2396,7 +2541,6 @@ class Ontology:
             from rdflib.namespace import RDF, RDFS
             from topologicpy.Vertex import Vertex
             from topologicpy.Edge import Edge
-            from topologicpy.Graph import Graph
             from topologicpy.Topology import Topology
             from topologicpy.Dictionary import Dictionary
         except Exception as e:
@@ -2415,52 +2559,43 @@ class Ontology:
         RDF_TYPE = RDF.type
         RDFS_LABEL = RDFS.label
 
-        def uri(term):
-            if term is None:
+        def uri(qname):
+            if qname is None:
                 return None
-            if isinstance(term, URIRef):
-                return term
-            term = str(term)
-            if ":" in term and not term.startswith("http"):
-                prefix, local = term.split(":", 1)
-                namespace = Ontology.NAMESPACES.get(prefix)
-                if namespace is not None:
-                    return URIRef(namespace + local)
-            return URIRef(term)
+            if isinstance(qname, URIRef):
+                return qname
+            qname = str(qname)
+            if qname.startswith("http://") or qname.startswith("https://"):
+                return URIRef(qname)
+            if ":" in qname:
+                prefix, local = qname.split(":", 1)
+                if prefix in Ontology.NAMESPACES:
+                    return URIRef(Ontology.NAMESPACES[prefix] + local)
+            return URIRef(qname)
 
         def qname(term):
-            if term is None:
-                return None
             try:
                 return rdfGraph.namespace_manager.normalizeUri(term).replace("<", "").replace(">", "")
             except Exception:
-                s = str(term)
-                for prefix, namespace in Ontology.NAMESPACES.items():
-                    if s.startswith(namespace):
-                        return prefix + ":" + s[len(namespace):]
-                return s
+                return str(term)
+
+        def local_key(term):
+            q = qname(term)
+            if ":" in q:
+                return q.split(":", 1)[1]
+            if "#" in q:
+                return q.rsplit("#", 1)[1]
+            if "/" in q:
+                return q.rsplit("/", 1)[1]
+            return q
 
         def literal_value(value):
             if isinstance(value, Literal):
-                return value.toPython()
-            return str(value) if value is not None else None
-
-        def local_key(predicate):
-            s = str(predicate)
-            for prefix, namespace in Ontology.NAMESPACES.items():
-                if s.startswith(namespace):
-                    local = s[len(namespace):]
-                    for alias, canonical in Ontology.PROPERTY_ALIASES.items():
-                        if canonical == local:
-                            return alias
-                    reverse = {
-                        "category": Ontology.CATEGORY_KEY,
-                        "hasX": "x",
-                        "hasY": "y",
-                        "hasZ": "z",
-                    }
-                    return reverse.get(local, local)
-            return s.rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+                try:
+                    return value.toPython()
+                except Exception:
+                    return str(value)
+            return str(value)
 
         hasNode = uri("top:hasNode")
         hasRelationship = uri("top:hasRelationship")
@@ -2516,6 +2651,8 @@ class Ontology:
             return props
 
         vertices = []
+        vertex_dictionaries = []
+        subject_to_index = {}
         subject_to_vertex = {}
         for i, subject in enumerate(node_subjects):
             props = subject_props(subject)
@@ -2544,51 +2681,92 @@ class Ontology:
             except Exception:
                 z = 0.0
             props.setdefault("id", Ontology._safe_local_name(qname(subject)))
-            v = Vertex.ByCoordinates(x, y, z)
-            v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(props))
-            subject_to_vertex[subject] = v
-            vertices.append(v)
+            props.setdefault("x", x)
+            props.setdefault("y", y)
+            props.setdefault("z", z)
+            vertex_dictionaries.append(props)
+            subject_to_index[subject] = i
+            if not asTGraph:
+                v = Vertex.ByCoordinates(x, y, z)
+                v = Topology.SetDictionary(v, Dictionary.ByPythonDictionary(props))
+                subject_to_vertex[subject] = v
+                vertices.append(v)
+            else:
+                vertices.append(dict(props))
 
+        edge_dictionaries = []
         edges = []
         for subject in rel_subjects:
             start_objs = list(rdfGraph.objects(subject, hasStartVertex))
             end_objs = list(rdfGraph.objects(subject, hasEndVertex))
             if not start_objs or not end_objs:
                 continue
-            sv = subject_to_vertex.get(start_objs[0])
-            ev = subject_to_vertex.get(end_objs[0])
-            if sv is None or ev is None:
-                continue
-            try:
-                e = Edge.ByStartVertexEndVertex(sv, ev)
-            except Exception:
-                try:
-                    e = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
-                except Exception:
-                    e = None
-            if e is None:
-                continue
             props = subject_props(subject)
             props.setdefault("id", Ontology._safe_local_name(qname(subject)))
-            e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(props))
-            edges.append(e)
+            if asTGraph:
+                src = subject_to_index.get(start_objs[0])
+                dst = subject_to_index.get(end_objs[0])
+                if src is None or dst is None:
+                    continue
+                ed = dict(props)
+                ed["src"] = src
+                ed["dst"] = dst
+                edge_dictionaries.append(ed)
+            else:
+                sv = subject_to_vertex.get(start_objs[0])
+                ev = subject_to_vertex.get(end_objs[0])
+                if sv is None or ev is None:
+                    continue
+                try:
+                    e = Edge.ByStartVertexEndVertex(sv, ev)
+                except Exception:
+                    try:
+                        e = Edge.ByVertices([sv, ev], tolerance=tolerance, silent=True)
+                    except Exception:
+                        e = None
+                if e is None:
+                    continue
+                e = Topology.SetDictionary(e, Dictionary.ByPythonDictionary(props))
+                edges.append(e)
 
         if not vertices:
             return None
 
+        graph_props = subject_props(graph_subject)
+        graph_props.setdefault(Ontology.ONTOLOGY_CLASS_KEY, "top:Graph")
+        graph_props.setdefault(Ontology.CATEGORY_KEY, "graph")
+
+        if asTGraph:
+            try:
+                from topologicpy.TGraph import TGraph
+                graph = TGraph.ByVerticesEdges(vertices=vertices,
+                                               edges=edge_dictionaries,
+                                               dictionary=graph_props,
+                                               directed=True,
+                                               allowSelfLoops=True,
+                                               allowParallelEdges=True,
+                                               tolerance=tolerance,
+                                               silent=silent,
+                                               ontology=False)
+                return graph
+            except Exception as e:
+                if not silent:
+                    print("Ontology.GraphByRDFGraph - Error: Could not create TGraph. Returning None.")
+                    print("Error:", e)
+                return None
+
         try:
+            from topologicpy.Graph import Graph
             graph = Graph.ByVerticesEdges(vertices, edges, tolerance=tolerance, silent=silent)
         except TypeError:
             try:
+                from topologicpy.Graph import Graph
                 graph = Graph.ByVerticesEdges(vertices, edges)
             except Exception:
                 graph = None
         if graph is None:
             return None
 
-        graph_props = subject_props(graph_subject)
-        graph_props.setdefault(Ontology.ONTOLOGY_CLASS_KEY, "top:Graph")
-        graph_props.setdefault(Ontology.CATEGORY_KEY, "graph")
         graph = Topology.SetDictionary(graph, Dictionary.ByPythonDictionary(graph_props))
         return graph
 
@@ -2598,6 +2776,7 @@ class Ontology:
                        graphSubject=None,
                        namespacePrefix="inst",
                        tolerance=0.0001,
+                       asTGraph: bool = False,
                        silent=False):
         """
         Reconstructs a TopologicPy graph from an RDF/Turtle file.
@@ -2614,12 +2793,14 @@ class Ontology:
             The instance namespace prefix. Default is "inst".
         tolerance : float , optional
             Graph creation tolerance. Default is 0.0001.
+        asTGraph : bool , optional
+            If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.
         silent : bool , optional
             If True, warnings are suppressed. Default is False.
 
         Returns
         -------
-        topologic_core.Graph
+        topologic_core.Graph or topologicpy.TGraph
             The reconstructed graph, or None on failure.
         """
 
@@ -2654,6 +2835,7 @@ class Ontology:
                                             graphSubject=graphSubject,
                                             namespacePrefix=namespacePrefix,
                                             tolerance=tolerance,
+                                            asTGraph=asTGraph,
                                             silent=silent)
         except Exception as e:
             if not silent:
@@ -2666,9 +2848,30 @@ class Ontology:
                    graphSubject=None,
                    namespacePrefix="inst",
                    tolerance=0.0001,
+                   asTGraph: bool = False,
                    silent=False):
         """
         Reconstructs a TopologicPy graph from a Turtle file.
+
+        Parameters
+        ----------
+        path : str
+            The Turtle file path.
+        graphSubject : str , optional
+            The graph subject URI or QName. Default is None.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        tolerance : float , optional
+            Graph creation tolerance. Default is 0.0001.
+        asTGraph : bool , optional
+            If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph or topologicpy.TGraph
+            The reconstructed graph, or None on failure.
         """
 
         return Ontology.GraphByRDFFile(path,
@@ -2676,6 +2879,7 @@ class Ontology:
                                        graphSubject=graphSubject,
                                        namespacePrefix=namespacePrefix,
                                        tolerance=tolerance,
+                                       asTGraph=asTGraph,
                                        silent=silent)
 
     @staticmethod
@@ -2683,9 +2887,30 @@ class Ontology:
                          graphSubject=None,
                          namespacePrefix="inst",
                          tolerance=0.0001,
+                         asTGraph: bool = False,
                          silent=False):
         """
         Reconstructs a TopologicPy graph from a Turtle string.
+
+        Parameters
+        ----------
+        ttlString : str
+            The Turtle string.
+        graphSubject : str , optional
+            The graph subject URI or QName. Default is None.
+        namespacePrefix : str , optional
+            The instance namespace prefix. Default is "inst".
+        tolerance : float , optional
+            Graph creation tolerance. Default is 0.0001.
+        asTGraph : bool , optional
+            If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Graph or topologicpy.TGraph
+            The reconstructed graph, or None on failure.
         """
 
         try:
@@ -2708,6 +2933,7 @@ class Ontology:
                                             graphSubject=graphSubject,
                                             namespacePrefix=namespacePrefix,
                                             tolerance=tolerance,
+                                            asTGraph=asTGraph,
                                             silent=silent)
         except Exception as e:
             if not silent:
