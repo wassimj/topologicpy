@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.43 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.50 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -22,7 +22,7 @@
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
     <link rel="next" title="topologicpy.Vector module" href="topologicpy.Vector.html" />
-    <link rel="prev" title="topologicpy.Sun module" href="topologicpy.Sun.html" /> 
+    <link rel="prev" title="topologicpy.TGraph module" href="topologicpy.TGraph.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.43
+                0.9.50
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,6 +83,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Topology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
@@ -482,19 +483,19 @@
 <td><p>Computes the diameter of the convex hull of the given topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dictionary" title="topologicpy.Topology.Topology.Dictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dictionary</span></code></a>(topology[, silent])</p></td>
-<td><p>Returns the dictionary of the input topology</p></td>
+<td><p>Returns the dictionary of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Difference" title="topologicpy.Topology.Topology.Difference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Difference</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>Subtracts topologyB from topologyA.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Dimensionality" title="topologicpy.Topology.Topology.Dimensionality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Dimensionality</span></code></a>(topology[, silent])</p></td>
-<td><p>Returns the dimensionality of the input topology</p></td>
+<td><p>Returns the dimensionality of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Divide" title="topologicpy.Topology.Topology.Divide"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Divide</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Divides the input topology by the input tool and places the results in the contents of the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Edges" title="topologicpy.Topology.Topology.Edges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Edges</span></code></a>(topology[, silent])</p></td>
-<td><p>Returns the edges of the input topology.</p></td>
+<td><p>Returns the edges of the input topology or graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Explode" title="topologicpy.Topology.Topology.Explode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Explode</span></code></a>(topology[, origin, scale, ...])</p></td>
 <td><p>Explodes the input topology.</p></td>
@@ -665,7 +666,7 @@
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary[, silent])</p></td>
-<td><p>Sets the input topology's dictionary to the input dictionary</p></td>
+<td><p>Sets the input topology's dictionary to the input dictionary.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetOntology" title="topologicpy.Topology.Topology.SetOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntology</span></code></a>(topology[, ontologyClass, ...])</p></td>
 <td><p>Annotates the input topology with TopologicPy ontology metadata.</p></td>
@@ -719,7 +720,7 @@
 <td><p>Creates connected sub-combination topologies of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubTopologies" title="topologicpy.Topology.Topology.SubTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code></a>(topology[, subTopologyType, ...])</p></td>
-<td><p>Returns the subtopologies of the input topology as specified by the subTopologyType input string.</p></td>
+<td><p>Returns the subtopologies of the input topology or graph as specified by the subTopologyType input string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SuperTopologies" title="topologicpy.Topology.Topology.SuperTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
 <td><p>Returns the supertopologies connected to the input topology.</p></td>
@@ -761,13 +762,13 @@
 <td><p>Returns the type of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeAsString" title="topologicpy.Topology.Topology.TypeAsString"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeAsString</span></code></a>(topology[, silent])</p></td>
-<td><p>Returns the type of the input topology as a string.</p></td>
+<td><p>Returns the type of the input topology or graph as a string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TypeID" title="topologicpy.Topology.Topology.TypeID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TypeID</span></code></a>([name])</p></td>
 <td><p>Returns the type id of the input name string.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.UUID" title="topologicpy.Topology.Topology.UUID"><code class="xref py py-obj docutils literal notranslate"><span class="pre">UUID</span></code></a>(topology[, namespace, uuidKey, ...])</p></td>
-<td><p>Returns the UUID of the input topology.</p></td>
+<td><p>Returns the UUID of the input topology or graph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Unflatten" title="topologicpy.Topology.Topology.Unflatten"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Unflatten</span></code></a>(topology[, origin, direction, ...])</p></td>
 <td><p>Unflattens the input topology such that the world origin is translated to the input origin and the input topology is rotated such that the Up direction (see Vector.Up()) is aligned with the input vector.</p></td>
@@ -776,7 +777,7 @@
 <td><p>Unions the input operand topologies.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Vertices" title="topologicpy.Topology.Topology.Vertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Vertices</span></code></a>(topology[, silent])</p></td>
-<td><p>Returns the vertices of the input topology.</p></td>
+<td><p>Returns the vertices of the input topology or graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.VerticesCentroid" title="topologicpy.Topology.Topology.VerticesCentroid"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VerticesCentroid</span></code></a>(topology[, mantissa, silent])</p></td>
 <td><p>Returns the centroid of the vertices of the input topology.</p></td>
@@ -889,17 +890,18 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.graph</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph entity, TGraph vertex/edge index, or TGraph vertex/edge record</span></dt><dd><p>The input topology or graph entity.</p>
 </dd>
-<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The host topology in which to search.</p>
+<dt><strong>hostTopology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The host topology or graph in which to search.</p>
 </dd>
-<dt><strong>topologyType</strong><span class="classifier">str</span></dt><dd><p>The type of topology for which to search. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”. It is case-insensitive. If it is set to None, the type will be set to the same type as the input topology. Default is None.</p>
+<dt><strong>topologyType</strong><span class="classifier">str</span></dt><dd><p>The type of topology for which to search. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”.
+It is case-insensitive. If it is set to None, the type will be inferred from the input topology where possible. Default is None.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt><strong>adjacentTopologies</strong><span class="classifier">list</span></dt><dd><p>The list of adjacent topologies.</p>
+<dt><strong>adjacentTopologies</strong><span class="classifier">list</span></dt><dd><p>The list of adjacent topologies or TGraph records.</p>
 </dd>
 </dl>
 </dd>
@@ -2372,11 +2374,11 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Dictionary">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Dictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Dictionary" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the dictionary of the input topology</p>
+<dd><p>Returns the dictionary of the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2384,7 +2386,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Dictionary</dt><dd><p>The dictionary of the input topology.</p>
+<dt>topologic_core.Dictionary</dt><dd><p>The dictionary of the input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -2422,11 +2424,11 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Dimensionality">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Dimensionality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Dimensionality" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the dimensionality of the input topology</p>
+<dd><p>Returns the dimensionality of the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2434,7 +2436,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>int</dt><dd><p>The dimensionality of the input topology.</p>
+<dt>int</dt><dd><p>The dimensionality of the input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -2472,11 +2474,11 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Edges">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Edges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Edges" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the edges of the input topology.</p>
+<dd><p>Returns the edges of the input topology or graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -2498,7 +2500,7 @@ The diameter is the maximum distance between any two vertices on the convex hull
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin of the explosion. If set to None, the centroid of the input topology will be used. Default is None.</p>
 </dd>
@@ -2852,7 +2854,7 @@ it will filter by topology type only.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, vertex, edge, and face dictionaries will be included in the output. Otherwise, they are not. Default is False.</p>
 </dd>
@@ -3087,9 +3089,9 @@ calculated automatically and set to 10% of the overall size of the face. Default
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The first input topology.</p>
+<dt><strong>topologyA</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The first input topology or graph.</p>
 </dd>
-<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
+<dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The second input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -3097,7 +3099,7 @@ calculated automatically and set to 10% of the overall size of the face. Default
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True of the input topologies are the same topology. False otherwise.</p>
+<dt>bool</dt><dd><p>True if the input topologies or graphs are the same. False otherwise.</p>
 </dd>
 </dl>
 </dd>
@@ -4107,13 +4109,13 @@ to the created/imported topology or graph. Default is True.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.SetDictionary">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetDictionary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.SetDictionary" title="Permalink to this definition"></a></dt>
-<dd><p>Sets the input topology’s dictionary to the input dictionary</p>
+<dd><p>Sets the input topology’s dictionary to the input dictionary.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, topologicpy.TGraph, dict</span></dt><dd><p>The input topology, graph, TGraph, TGraph vertex record, or TGraph edge record.</p>
 </dd>
-<dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary</span></dt><dd><p>The input dictionary.</p>
+<dt><strong>dictionary</strong><span class="classifier">topologic_core.Dictionary or dict</span></dt><dd><p>The input dictionary.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -4121,7 +4123,7 @@ to the created/imported topology or graph. Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The input topology with the input dictionary set in it.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, topologicpy.TGraph, dict, or None</dt><dd><p>The input object with the input dictionary set in it.</p>
 </dd>
 </dl>
 </dd>
@@ -4842,50 +4844,33 @@ The list must have the same number of elements as the proximityValues list. Defa
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.SubCombinations">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SubCombinations</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxCombinations</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">100</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeLimit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCoplanarFaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">removeCollinearEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.SubCombinations" title="Permalink to this definition"></a></dt>
-<dd><p>Creates connected sub-combination topologies of the input topology. Warning: This is prone to combinatorial explosion.</p>
-<dl class="field-list">
+<dd><p>Creates connected sub-combination topologies of the input topology.
+Warning: This is prone to combinatorial explosion.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology. This cannot be vertex or edge.</p>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology. This cannot be vertex or edge.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">str , optional except when topology is a Cluster</span></dt><dd><p>The type of subTopology to include in the combinations.
-If the input is a Cluster, you must specify the subTopologyType.
-The options are (case insensitive):</p>
-<blockquote>
-<div><ul class="simple">
-<li><p>“CellComplex”</p></li>
-<li><p>“Shell”</p></li>
-<li><p>“Wire”</p></li>
-</ul>
-</div></blockquote>
-<dl class="simple">
-<dt>If set to None, it will be set according to the input topology type as follows:</dt><dd><ul class="simple">
-<li><p>“Cluster” -&gt; User-defined</p></li>
-<li><p>“CellComplex” -&gt; “CellComplexes”</p></li>
-<li><p>“Cell” -&gt; “Shells”</p></li>
-<li><p>“Shell” -&gt; “Shells”</p></li>
-<li><p>“Face” -&gt; “Wires”</p></li>
-<li><p>“Wire” -&gt; “Wires”</p></li>
-<li><p>“Edge” -&gt; None</p></li>
-<li><p>“Vertex” -&gt; None</p></li>
-<li><p>“Graph” -&gt; “Graphs”</p></li>
-</ul>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional except when topology is a Cluster</span></dt><dd><p>The type of subTopology to include in the combinations.</p>
 </dd>
-</dl>
+<dt><strong>minSize</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of subtopologies to include in a combination.
+This number cannot be less than 2. Default is 2.</p>
 </dd>
-<dt><strong>minSize</strong><span class="classifier">int , optional</span></dt><dd><p>The minimum number of subtopologies to include in a combination. This number cannot be less than 2. Default is 2.</p>
-</dd>
-<dt><strong>maxSize</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of faces to include in a combinations. This number cannot be less than the number of subtopologies minus 1. Default is None which means the maximum will be set to the number of subtopologies minus 1.</p>
+<dt><strong>maxSize</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of subtopologies to include in a combination.
+Default is None which means the maximum will be set to the number of
+subtopologies minus 1.</p>
 </dd>
 <dt><strong>maxCombinations</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of combinations to create. Default is 100.</p>
 </dd>
-<dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in seconds. Default is 10 seconds. Note that this time limit only applies to creating the combination indices and not the actual Shells.</p>
+<dt><strong>timeLimit</strong><span class="classifier">int , optional</span></dt><dd><p>The time limit in seconds. Default is 10 seconds.</p>
 </dd>
-<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not. Default is False.</p>
+<dt><strong>removeCoplanarFaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, coplanar faces are removed. Otherwise they are not.
+Default is False.</p>
 </dd>
-<dt><strong>removeCollinearEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear edges are removed. Otherwise they are not. Default is False.</p>
+<dt><strong>removeCollinearEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear edges are removed. Otherwise they are not.
+Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -4903,19 +4888,22 @@ The options are (case insensitive):</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.SubTopologies">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SubTopologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'vertex'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.SubTopologies" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the subtopologies of the input topology as specified by the subTopologyType input string.</p>
+<dd><p>Returns the subtopologies of the input topology or graph as specified by the subTopologyType input string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The requested subtopology type. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”, “cell”, “cellcomplex”, “cluster”. It is case insensitive. Default is “vertex”.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The requested subtopology type. This can be one of “vertex”, “edge”, “wire”, “face”, “shell”,
+“cell”, “cellcomplex”, “cluster”, or “aperture”. It is case insensitive. Default is “vertex”.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
-<dt><strong>Returns</strong></dt><dd></dd>
-<dt><strong>——-</strong></dt><dd></dd>
-<dt><strong>list</strong></dt><dd><p>The list of subtopologies.</p>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The list of subtopologies.</p>
 </dd>
 </dl>
 </dd>
@@ -5321,11 +5309,11 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.TypeAsString">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TypeAsString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.TypeAsString" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the type of the input topology as a string.</p>
+<dd><p>Returns the type of the input topology or graph as a string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5333,7 +5321,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The type of the topology as a string.</p>
+<dt>str</dt><dd><p>The type of the topology or graph as a string.</p>
 </dd>
 </dl>
 </dd>
@@ -5360,6 +5348,7 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 “context”,
 “dictionary”,
 “graph”,
+“tgraph”,
 “topology”</p>
 </dd>
 </dl>
@@ -5379,17 +5368,17 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.UUID">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">UUID</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topologicpy'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">uuidKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'uuid'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deterministic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.UUID" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the UUID of the input topology.</p>
+<dd><p>Returns the UUID of the input topology or graph.</p>
 <p>If deterministic is False, this method returns an existing UUID stored in the
 topology dictionary. If no UUID exists, a new UUID v4 is created, stored in
 the topology dictionary, and returned. This is the fast path.</p>
 <p>If deterministic is True, this method computes a UUID v5 from the topology’s
 geometry and dictionaries. This is slower because it traverses the full
-topology.</p>
+topology or graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologicpy.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>namespace</strong><span class="classifier">str , optional</span></dt><dd><p>The namespace string to use when deterministic is True. Default is “topologicpy”.</p>
 </dd>
@@ -5404,7 +5393,7 @@ False, return or create a persistent stored UUID. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The UUID string of the input topology.</p>
+<dt>str</dt><dd><p>The UUID string of the input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -5470,13 +5459,13 @@ False, return or create a persistent stored UUID. Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Vertices">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Vertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Vertices" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the vertices of the input topology.</p>
+<dd><p>Returns the vertices of the input topology or graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is True.</p>
 </dd>
 </dl>
 </dd>
@@ -5732,7 +5721,7 @@ transfers the dictionaries from a subset of sources to the list of sinks.</p>
            </div>
           </div>
           <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
-        <a href="topologicpy.Sun.html" class="btn btn-neutral float-left" title="topologicpy.Sun module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="topologicpy.TGraph.html" class="btn btn-neutral float-left" title="topologicpy.TGraph module" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
         <a href="topologicpy.Vector.html" class="btn btn-neutral float-right" title="topologicpy.Vector module" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
     </div>
 

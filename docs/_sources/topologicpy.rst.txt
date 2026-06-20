@@ -42,6 +42,7 @@ Submodules
    topologicpy.Shell
    topologicpy.Speckle
    topologicpy.Sun
+   topologicpy.TGraph
    topologicpy.Topology
    topologicpy.Vector
    topologicpy.Vertex

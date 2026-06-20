@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.CSG module &mdash; topologicpy 0.9.43 documentation</title>
+  <title>topologicpy.CSG module &mdash; topologicpy 0.9.50 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.43
+                0.9.50
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,6 +83,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
@@ -161,41 +162,43 @@
 </colgroup>
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.AddOperationVertex" title="topologicpy.CSG.CSG.AddOperationVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddOperationVertex</span></code></a>(graph, operation, a, b[, ...])</p></td>
-<td><p>Adds an operation vertex to the graph that performs a CSG operation on two child vertices.</p></td>
+<td><p>Adds an operation vertex to the input CSG graph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.AddTopologyVertex" title="topologicpy.CSG.CSG.AddTopologyVertex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddTopologyVertex</span></code></a>(graph, topology[, matrix, ...])</p></td>
-<td><p>Adds a topology vertex to the graph.</p></td>
+<td><p>Adds a topology vertex to the input CSG graph.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Connect" title="topologicpy.CSG.CSG.Connect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connect</span></code></a>(graph, vertexA, vertexB[, ...])</p></td>
-<td><p>Connects two vertices in the graph with a directional edge from vertexA to vertexB.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Connect" title="topologicpy.CSG.CSG.Connect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Connect</span></code></a>(graph, vertexA, vertexB[, asTGraph, ...])</p></td>
+<td><p>Connects two vertices in the CSG graph with a directional edge from vertexA to vertexB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Init" title="topologicpy.CSG.CSG.Init"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Init</span></code></a>()</p></td>
-<td><p>Returns an initial empty graph.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Init" title="topologicpy.CSG.CSG.Init"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Init</span></code></a>([asTGraph, silent])</p></td>
+<td><p>Returns an initial empty CSG graph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Invoke" title="topologicpy.CSG.CSG.Invoke"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Invoke</span></code></a>(graph[, silent])</p></td>
-<td><p>Traverses the graph and evaluates all CSG operations from leaves to root, returning the final result.</p></td>
+<td><p>Traverses the CSG graph and evaluates operations from leaves to root.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Topologies" title="topologicpy.CSG.CSG.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>([xOffset, yOffset, zOffset, ...])</p></td>
-<td><p>Places each geometry (using its centroid) at its corresponding vertex location in the graph.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.CSG.CSG.Topologies" title="topologicpy.CSG.CSG.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(graph[, xOffset, yOffset, ...])</p></td>
+<td><p>Places each stored topology at its corresponding graph vertex location.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.AddOperationVertex">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddOperationVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">operation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.AddOperationVertex" title="Permalink to this definition"></a></dt>
-<dd><p>Adds an operation vertex to the graph that performs a CSG operation on two child vertices. For ordered operations, the order of a and b inputs is important.</p>
+<dd><p>Adds an operation vertex to the input CSG graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input CSG graph.</p>
 </dd>
-<dt><strong>operation</strong><span class="classifier">str</span></dt><dd><p>The operation to perform. One of “union”, “difference”, “intersection”, “xor”, “merge”, “impose”, “imprint”, “slice”.</p>
+<dt><strong>operation</strong><span class="classifier">str</span></dt><dd><p>The operation to perform. Options include “union”, “difference”,
+“intersection”, “xor”, “merge”, “impose”, “imprint”, and “slice”.</p>
 </dd>
-<dt><strong>a</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
+<dt><strong>a</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The first input vertex. For ordered operations, this is operand A.</p>
 </dd>
-<dt><strong>b</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
+<dt><strong>b</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The second input vertex. For ordered operations, this is operand B.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any
+further operations. Default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -207,7 +210,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The added vertex.</p>
+<dt>topologic_core.Vertex</dt><dd><p>The added operation vertex.</p>
 </dd>
 </dl>
 </dd>
@@ -217,15 +220,17 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.AddTopologyVertex">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddTopologyVertex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.AddTopologyVertex" title="Permalink to this definition"></a></dt>
-<dd><p>Adds a topology vertex to the graph.</p>
+<dd><p>Adds a topology vertex to the input CSG graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input CSG graph. If set to None, the vertex is created and returned
+without requiring an existing graph.</p>
 </dd>
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology..</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology represented by the created graph vertex.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the topology before
+any further operations. Default is None.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
@@ -246,18 +251,20 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.Connect">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Connect" title="Permalink to this definition"></a></dt>
-<dd><p>Connects two vertices in the graph with a directional edge from vertexA to vertexB.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Connect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Connect" title="Permalink to this definition"></a></dt>
+<dd><p>Connects two vertices in the CSG graph with a directional edge from vertexA to vertexB.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input graph. If set to None, a new graph is created.</p>
 </dd>
-<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The first input vertex.</p>
+<dt><strong>vertexA</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The start vertex.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The second input vertex.</p>
+<dt><strong>vertexB</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The end vertex.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list , optional</span></dt><dd><p>The desired 4X4 transformation matrix to apply to the result before any further operations. Default is None.</p>
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If graph is None and asTGraph is True, a TGraph is created. If graph is
+already a TGraph, this option is ignored and a TGraph is returned.
+Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -267,7 +274,7 @@
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Vertex</dt><dd><p>The added vertex.</p>
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The updated graph.</p>
 </dd>
 </dl>
 </dd>
@@ -276,16 +283,21 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.Init">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Init" title="Permalink to this definition"></a></dt>
-<dd><p>Returns an initial empty graph.</p>
-<dl class="field-list">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Init" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an initial empty CSG graph.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><blockquote>
-<div></div></blockquote>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, returns a TGraph. Otherwise returns a legacy Graph.
+Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The initialized empty graph.</p>
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The initialized empty graph.</p>
 </dd>
 </dl>
 </dd>
@@ -295,11 +307,11 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.Invoke">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Invoke</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Invoke" title="Permalink to this definition"></a></dt>
-<dd><p>Traverses the graph and evaluates all CSG operations from leaves to root, returning the final result.</p>
+<dd><p>Traverses the CSG graph and evaluates operations from leaves to root.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input CSG graph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -316,12 +328,12 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.CSG.CSG.Topologies">
-<span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">xOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Topologies" title="Permalink to this definition"></a></dt>
-<dd><p>Places each geometry (using its centroid) at its corresponding vertex location in the graph.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">xOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">zOffset</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.CSG.CSG.Topologies" title="Permalink to this definition"></a></dt>
+<dd><p>Places each stored topology at its corresponding graph vertex location.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input CSG graph.</p>
 </dd>
 <dt><strong>xOffset</strong><span class="classifier">float , optional</span></dt><dd><p>An additional x offset. Default is 0.</p>
 </dd>

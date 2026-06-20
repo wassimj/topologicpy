@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Ontology module &mdash; topologicpy 0.9.43 documentation</title>
+  <title>topologicpy.Ontology module &mdash; topologicpy 0.9.50 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.43
+                0.9.50
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,6 +83,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
@@ -300,7 +301,7 @@ graph connectivity.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>ontologyClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class. Default is None.</p>
 </dd>
@@ -325,7 +326,7 @@ the Topologic type. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The annotated topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The annotated topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -339,7 +340,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>ifcClass</strong><span class="classifier">str , optional</span></dt><dd><p>The IFC class. Default is None.</p>
 </dd>
@@ -355,7 +356,7 @@ the Topologic type. Default is False.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The annotated topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The annotated topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -439,7 +440,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The value to return if no category is found. Default is None.</p>
 </dd>
@@ -483,7 +484,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The value to return if no ontology class is found. Default is None.</p>
 </dd>
@@ -527,7 +528,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The value to return if the topology type cannot be inferred. Default is “top:Topology”.</p>
 </dd>
@@ -607,7 +608,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The output file path.</p>
 </dd>
@@ -643,7 +644,7 @@ the Topologic type. Default is False.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The output Turtle file path.</p>
 </dd>
@@ -678,7 +679,7 @@ Default is True.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.GraphByRDFFile">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByRDFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByRDFFile" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByRDFFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByRDFFile" title="Permalink to this definition"></a></dt>
 <dd><p>Reconstructs a TopologicPy graph from an RDF/Turtle file.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -693,13 +694,15 @@ Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Graph creation tolerance. Default is 0.0001.</p>
 </dd>
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.</p>
+</dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, warnings are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The reconstructed graph, or None on failure.</p>
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The reconstructed graph, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -708,7 +711,7 @@ Default is True.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.GraphByRDFGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByRDFGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rdfGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByRDFGraph" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByRDFGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rdfGraph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByRDFGraph" title="Permalink to this definition"></a></dt>
 <dd><p>Reconstructs a TopologicPy graph from an RDFLib graph exported by Ontology.RDFGraph or Ontology.ExportRDF.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
@@ -721,13 +724,15 @@ Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The graph creation tolerance. Default is 0.0001.</p>
 </dd>
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.</p>
+</dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, warnings are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The reconstructed graph, or None on failure.</p>
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The reconstructed graph, or None on failure.</p>
 </dd>
 </dl>
 </dd>
@@ -736,14 +741,62 @@ Default is True.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.GraphByTTL">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByTTL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByTTL" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByTTL</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByTTL" title="Permalink to this definition"></a></dt>
 <dd><p>Reconstructs a TopologicPy graph from a Turtle file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The Turtle file path.</p>
+</dd>
+<dt><strong>graphSubject</strong><span class="classifier">str , optional</span></dt><dd><p>The graph subject URI or QName. Default is None.</p>
+</dd>
+<dt><strong>namespacePrefix</strong><span class="classifier">str , optional</span></dt><dd><p>The instance namespace prefix. Default is “inst”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Graph creation tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, warnings are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The reconstructed graph, or None on failure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Ontology.Ontology.GraphByTTLString">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByTTLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ttlString</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByTTLString" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">GraphByTTLString</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ttlString</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphSubject</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'inst'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Ontology.Ontology.GraphByTTLString" title="Permalink to this definition"></a></dt>
 <dd><p>Reconstructs a TopologicPy graph from a Turtle string.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>ttlString</strong><span class="classifier">str</span></dt><dd><p>The Turtle string.</p>
+</dd>
+<dt><strong>graphSubject</strong><span class="classifier">str , optional</span></dt><dd><p>The graph subject URI or QName. Default is None.</p>
+</dd>
+<dt><strong>namespacePrefix</strong><span class="classifier">str , optional</span></dt><dd><p>The instance namespace prefix. Default is “inst”.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Graph creation tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, returns a topologicpy.TGraph. If False, returns a legacy Graph. Default is False.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, warnings are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>The reconstructed graph, or None on failure.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -753,7 +806,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>includeVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, vertex triples are exported. Default is True.</p>
 </dd>
@@ -800,7 +853,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The ontology class to test against.</p>
 </dd>
@@ -829,7 +882,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The value to return if no label is found. Default is None.</p>
 </dd>
@@ -892,7 +945,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>labelKeys</strong><span class="classifier">list , optional</span></dt><dd><p>Candidate keys for the label. Default is [“name”, “Name”, “LongName”, “ifc_name”, “label”].</p>
 </dd>
@@ -908,7 +961,7 @@ Default is True.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The input topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -1007,7 +1060,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>includeGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and the input is a graph, vertices and edges are exported. Default is True.</p>
 </dd>
@@ -1039,7 +1092,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>format</strong><span class="classifier">str , optional</span></dt><dd><p>RDFLib serialization format, e.g. “turtle”, “xml”, “json-ld”, “nt”. Default is “turtle”.</p>
 </dd>
@@ -1078,7 +1131,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>category</strong><span class="classifier">str</span></dt><dd><p>The category.</p>
 </dd>
@@ -1088,7 +1141,7 @@ Default is “top”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The input topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -1102,7 +1155,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The ontology class, for example “top:Room”.</p>
 </dd>
@@ -1116,7 +1169,7 @@ Default is “top”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The input topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -1130,7 +1183,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>label</strong><span class="classifier">str</span></dt><dd><p>The label.</p>
 </dd>
@@ -1140,7 +1193,7 @@ Default is “top”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The input topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -1154,7 +1207,7 @@ Default is “top”.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>uri</strong><span class="classifier">str</span></dt><dd><p>The URI.</p>
 </dd>
@@ -1164,7 +1217,7 @@ Default is “top”.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology or topologic_core.Graph</dt><dd><p>The input topology or graph.</p>
+<dt>topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</dt><dd><p>The input topology or graph.</p>
 </dd>
 </dl>
 </dd>
@@ -1216,7 +1269,7 @@ superclasses are returned. Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>includeGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and the input is a graph, graph vertices and edges are exported.
 Default is True.</p>
@@ -1249,7 +1302,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>subject</strong><span class="classifier">str , optional</span></dt><dd><p>The subject QName. If None, one is inferred. Default is None.</p>
 </dd>
@@ -1312,7 +1365,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>defaultValue</strong><span class="classifier">any , optional</span></dt><dd><p>The value to return if no URI is found. Default is None.</p>
 </dd>
@@ -1339,7 +1392,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology or topologic_core.Graph</span></dt><dd><p>The input topology or graph.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology, topologic_core.Graph, or topologicpy.TGraph</span></dt><dd><p>The input topology or graph.</p>
 </dd>
 <dt><strong>requireClass</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, <code class="docutils literal notranslate"><span class="pre">ontology_class</span></code> must be present. Default is True.</p>
 </dd>
@@ -1375,7 +1428,7 @@ Default is True.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph</span></dt><dd><p>The input graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The input graph.</p>
 </dd>
 <dt><strong>requireClass</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the graph itself must have <code class="docutils literal notranslate"><span class="pre">ontology_class</span></code>. Default is True.</p>
 </dd>

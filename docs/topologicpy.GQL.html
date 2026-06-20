@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.GQL module &mdash; topologicpy 0.9.43 documentation</title>
+  <title>topologicpy.GQL module &mdash; topologicpy 0.9.50 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.43
+                0.9.50
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,6 +83,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vertex.html">topologicpy.Vertex module</a></li>
@@ -149,30 +150,6 @@
 </style>
 <section id="module-topologicpy.GQL">
 <span id="topologicpy-gql-module"></span><h1>topologicpy.GQL module<a class="headerlink" href="#module-topologicpy.GQL" title="Permalink to this heading"></a></h1>
-<p>Convenience wrapper for the TopologicPy GQL pipeline.</p>
-<p>This module lives at <code class="docutils literal notranslate"><span class="pre">topologicpy/GQL.py</span></code> so it can be imported like the
-other TopologicPy classes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.GQL</span><span class="w"> </span><span class="kn">import</span> <span class="n">GQL</span>
-</pre></div>
-</div>
-<p>The parser and executor implementation live in the lowercase internal package
-<code class="docutils literal notranslate"><span class="pre">topologicpy/gql</span></code>.</p>
-<p>Read queries return <code class="docutils literal notranslate"><span class="pre">list[dict]</span></code>. Mutation queries return a dictionary
-containing at least the updated graph or GQL working graph and projected rows.</p>
-<section id="ontology-support">
-<h2>Ontology support<a class="headerlink" href="#ontology-support" title="Permalink to this heading"></a></h2>
-<p>This wrapper preserves TopologicPy ontology metadata during GQL execution and
-conversion. It does not make ontology mandatory inside the internal parser or
-executor. Instead, it provides a lightweight compatibility layer:</p>
-<ul class="simple">
-<li><p><code class="docutils literal notranslate"><span class="pre">ontology=True</span></code> annotates TopologicPy graph results where possible.</p></li>
-<li><p><code class="docutils literal notranslate"><span class="pre">top:Class</span></code> query labels can be normalised to parser-safe labels when
-<code class="docutils literal notranslate"><span class="pre">normalizeOntologyLabels=True</span></code>.</p></li>
-<li><p>Query results can be enriched with ontology metadata copied from returned
-graph elements or working-graph dictionaries.</p></li>
-<li><p>Returned TopologicPy graphs can be annotated with <code class="docutils literal notranslate"><span class="pre">top:Graph</span></code>.</p></li>
-</ul>
-</section>
 <dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.GQL.GQL">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.GQL.</span></span><span class="sig-name descname"><span class="pre">GQL</span></span><a class="headerlink" href="#topologicpy.GQL.GQL" title="Permalink to this definition"></a></dt>
@@ -197,8 +174,11 @@ graph elements or working-graph dictionaries.</p></li>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GQL.GQL.Query" title="topologicpy.GQL.GQL.Query"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Query</span></code></a>(graph, query[, ontology, ...])</p></td>
 <td><p>Parses and executes a GQL-like query.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GQL.GQL.TopologicGraph" title="topologicpy.GQL.GQL.TopologicGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicGraph</span></code></a>(graph[, ontology, ...])</p></td>
-<td><p>Returns a TopologicPy Graph from a TopologicPy graph or GQL working graph.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.GQL.GQL.TGraph" title="topologicpy.GQL.GQL.TGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TGraph</span></code></a>(graph[, ontology, ontologyClass, ...])</p></td>
+<td><p>Returns a TGraph from a TGraph or GQL working graph.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.GQL.GQL.TopologicGraph" title="topologicpy.GQL.GQL.TopologicGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologicGraph</span></code></a>(graph[, ontology, ...])</p></td>
+<td><p>Compatibility alias for <code class="docutils literal notranslate"><span class="pre">GQL.TGraph</span></code>.</p></td>
 </tr>
 </tbody>
 </table>
@@ -239,7 +219,7 @@ graph elements or working-graph dictionaries.</p></li>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or dict</span></dt><dd><p>The input TopologicPy graph or GQL working graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologicpy.TGraph or dict</span></dt><dd><p>The input TGraph or GQL working graph.</p>
 </dd>
 <dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>The GQL-like mutation query.</p>
 </dd>
@@ -355,19 +335,19 @@ the parser grammar may vary.</p></li>
 <dt class="sig sig-object py" id="topologicpy.GQL.GQL.Query">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Query</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">query</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalizeOntologyLabels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyLabelMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'label'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GQL.GQL.Query" title="Permalink to this definition"></a></dt>
 <dd><p>Parses and executes a GQL-like query.</p>
-<p>The executor accepts either a TopologicPy graph or the internal GQL
+<p>The executor accepts either a TopologicPy TGraph or the internal GQL
 working graph returned by a previous mutation. For best performance,
 continue passing the returned <code class="docutils literal notranslate"><span class="pre">result[&quot;graph&quot;]</span></code> between mutation and
-read queries. Convert back to a TopologicPy graph only when needed by
-calling <code class="docutils literal notranslate"><span class="pre">GQL.TopologicGraph(...)</span></code>.</p>
+read queries. Convert back to a TopologicPy TGraph only when needed by
+calling <code class="docutils literal notranslate"><span class="pre">GQL.TGraph(...)</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or dict</span></dt><dd><p>The input TopologicPy graph or GQL working graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologicpy.TGraph or dict</span></dt><dd><p>The input TGraph or GQL working graph.</p>
 </dd>
 <dt><strong>query</strong><span class="classifier">str</span></dt><dd><p>The GQL-like query string to parse and execute.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, GQL annotates returned TopologicPy graphs with
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, GQL annotates returned TopologicPy TGraphs with
 ontology metadata where possible and preserves ontology dictionaries
 in result rows. Default is True.</p>
 </dd>
@@ -392,18 +372,49 @@ Default is False.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.GQL.GQL.TopologicGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologicGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generatedBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GQL.TopologicGraph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GQL.GQL.TopologicGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a TopologicPy Graph from a TopologicPy graph or GQL working graph.</p>
+<dt class="sig sig-object py" id="topologicpy.GQL.GQL.TGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generatedBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GQL.TGraph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GQL.GQL.TGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a TGraph from a TGraph or GQL working graph.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">topologic_core.Graph or dict</span></dt><dd><p>The input TopologicPy graph or GQL working graph.</p>
+<dt><strong>graph</strong><span class="classifier">topologicpy.TGraph or dict</span></dt><dd><p>The input TGraph or GQL working graph.</p>
 </dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned graph is annotated with ontology metadata.
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned TGraph is annotated with ontology metadata.
 Default is True.</p>
 </dd>
-<dt><strong>ontologyClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to the returned graph when missing.
+<dt><strong>ontologyClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to the returned TGraph when missing.
+Default is <code class="docutils literal notranslate"><span class="pre">&quot;top:Graph&quot;</span></code>.</p>
+</dd>
+<dt><strong>generatedBy</strong><span class="classifier">str , optional</span></dt><dd><p>The value stored under <code class="docutils literal notranslate"><span class="pre">generated_by</span></code> when missing.
+Default is <code class="docutils literal notranslate"><span class="pre">&quot;GQL.TGraph&quot;</span></code>.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>Suppress warnings/errors. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologicpy.TGraph</dt><dd><p>The returned TGraph, or None.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.GQL.GQL.TopologicGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologicGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">generatedBy</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'GQL.TopologicGraph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.GQL.GQL.TopologicGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Compatibility alias for <code class="docutils literal notranslate"><span class="pre">GQL.TGraph</span></code>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>graph</strong><span class="classifier">topologicpy.TGraph or dict</span></dt><dd><p>The input TGraph or GQL working graph.</p>
+</dd>
+<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned TGraph is annotated with ontology metadata.
+Default is True.</p>
+</dd>
+<dt><strong>ontologyClass</strong><span class="classifier">str , optional</span></dt><dd><p>The ontology class assigned to the returned TGraph when missing.
 Default is <code class="docutils literal notranslate"><span class="pre">&quot;top:Graph&quot;</span></code>.</p>
 </dd>
 <dt><strong>generatedBy</strong><span class="classifier">str , optional</span></dt><dd><p>The value stored under <code class="docutils literal notranslate"><span class="pre">generated_by</span></code> when missing.
@@ -415,7 +426,7 @@ Default is <code class="docutils literal notranslate"><span class="pre">&quot;GQ
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph</dt><dd><p>The returned TopologicPy Graph, or None.</p>
+<dt>topologicpy.TGraph</dt><dd><p>The returned TGraph, or None.</p>
 </dd>
 </dl>
 </dd>

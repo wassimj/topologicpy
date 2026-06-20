@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Vertex module &mdash; topologicpy 0.9.43 documentation</title>
+  <title>topologicpy.Vertex module &mdash; topologicpy 0.9.50 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.43
+                0.9.50
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -83,6 +83,7 @@
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Shell.html">topologicpy.Shell module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Speckle.html">topologicpy.Speckle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Sun.html">topologicpy.Sun module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="topologicpy.TGraph.html">topologicpy.TGraph module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Topology.html">topologicpy.Topology module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="topologicpy.Vector.html">topologicpy.Vector module</a></li>
 <li class="toctree-l4 current"><a class="current reference internal" href="#">topologicpy.Vertex module</a></li>
@@ -227,7 +228,7 @@
 <td><p>Returns the index of the input vertex in the input list of vertices.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="topologicpy.Vertex.Vertex.InterpolateValue"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InterpolateValue</span></code></a>(vertex, vertices[, n, key, ...])</p></td>
-<td><p>Interpolates the value of the input vertex based on the values of the <em>n</em> nearest vertices.</p></td>
+<td><p>Interpolates the value of the input vertex based on the values of the n nearest vertices.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Vertex.Vertex.IsCoincident" title="topologicpy.Vertex.Vertex.IsCoincident"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsCoincident</span></code></a>(vertexA, vertexB[, tolerance, ...])</p></td>
 <td><p>Returns True if the input vertexA is coincident with the input vertexB.</p></td>
@@ -865,27 +866,36 @@ from the list. Default is 0.0001.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Vertex.Vertex.InterpolateValue">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InterpolateValue</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">vertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">3</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'intensity'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Vertex.Vertex.InterpolateValue" title="Permalink to this definition"></a></dt>
-<dd><p>Interpolates the value of the input vertex based on the values of the <em>n</em> nearest vertices.</p>
+<dd><p>Interpolates the value of the input vertex based on the values of the n nearest vertices.</p>
+<p>The input vertex and the vertices in the input list can be either:
+- topologic_core.Vertex objects, or
+- TGraph vertex records of the form:
+{“index”: …, “dictionary”: {“x”: …, “y”: …, “z”: …, key: …}, …}</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex</span></dt><dd><p>The input vertex.</p>
+<dt><strong>vertex</strong><span class="classifier">topologic_core.Vertex or dict</span></dt><dd><p>The input vertex. This can be a Topologic vertex or a TGraph vertex record.</p>
 </dd>
-<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices.</p>
+<dt><strong>vertices</strong><span class="classifier">list</span></dt><dd><p>The input list of vertices. The list can contain Topologic vertices, TGraph
+vertex records, or a mixture of both.</p>
 </dd>
 <dt><strong>n</strong><span class="classifier">int , optional</span></dt><dd><p>The maximum number of nearest vertices to consider. Default is 3.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The key that holds the value to be interpolated in the dictionaries of the vertices. Default is “intensity”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The key that holds the value to be interpolated in the dictionaries of the
+vertices. Default is “intensity”.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is coincident with another vertex in the input list of vertices. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The tolerance for computing if the input vertex is coincident with another
+vertex in the input list. Default is 0.0001.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.vertex</dt><dd><p>The input vertex with the interpolated value stored in its dictionary at the key specified by the input key. Other keys and values in the dictionary are preserved.</p>
+<dt>topologic_core.Vertex or dict or None</dt><dd><p>The input vertex with the interpolated value stored in its dictionary at
+the specified key. Other keys and values are preserved. If the input vertex
+is a TGraph vertex record, the record is updated in place and returned.</p>
 </dd>
 </dl>
 </dd>
