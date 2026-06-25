@@ -1,0 +1,2 @@
+operation,winner,winning_time_ms,NetworkX_ms,TGraph_ms,NetworkX_slowdown_vs_winner,TGraph_slowdown_vs_winner
+Degree centrality,NetworkX,0.7535999175161123,0.7535999175161123,1.2012999504804611,1.0,1.5940818497432714

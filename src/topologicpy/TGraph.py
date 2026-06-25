@@ -2170,26 +2170,37 @@ class TGraph:
         """
         Returns the BOT class corresponding to the input TopologicPy ontology class.
 
-        Parameters
-        ----------
-        ontologyClass : str
-            The ontology class value.
-        defaultValue : Any , optional
-            The default value to return when no valid value is found. Default is None.
-
-        Returns
-        -------
-        Any
-            The resulting botclass by ontology class object or value.
+        This method is a TGraph convenience wrapper around Ontology.BOTClassByClass
+        when Ontology.py is available. The local fallback keeps TGraph usable as a
+        standalone file.
         """
         if ontologyClass is None:
             return defaultValue
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.BOTClassByClass(ontologyClass, defaultValue=defaultValue)
+        except Exception:
+            pass
         ontologyClass = str(ontologyClass).strip()
         config = TGraph._OntologyConfig()
         if ontologyClass in config["top_to_bot"]:
-            return config["top_to_bot"][ontologyClass]
+            return config["top_to_bot"].get(ontologyClass, defaultValue)
+        # Fallback superclass walk for common classes when Ontology.py is unavailable.
+        fallback_superclasses = {
+            "top:Room": ["top:Space", "top:Zone", "top:Cell", "top:Topology"],
+            "top:Space": ["top:Zone", "top:Cell", "top:Topology"],
+            "top:Wall": ["top:Element", "top:Topology"],
+            "top:Door": ["top:Element", "top:Topology"],
+            "top:Window": ["top:Element", "top:Topology"],
+            "top:Slab": ["top:Element", "top:Topology"],
+            "top:Roof": ["top:Element", "top:Topology"],
+            "top:Column": ["top:Element", "top:Topology"],
+            "top:Beam": ["top:Element", "top:Topology"],
+        }
+        for superclass in fallback_superclasses.get(ontologyClass, []):
+            if superclass in config["top_to_bot"]:
+                return config["top_to_bot"].get(superclass, defaultValue)
         return defaultValue
-
     @staticmethod
     def BOTString(*args, **kwargs) -> Optional[str]:
         """
@@ -6122,27 +6133,17 @@ class TGraph:
         """
         Returns the ontology category corresponding to the input ontology class.
 
-        Parameters
-        ----------
-        ontologyClass : str
-            The ontology class value.
-        defaultValue : Any , optional
-            The default value to return when no valid value is found. Default is None.
-
-        Returns
-        -------
-        Any
-            The resulting category by ontology class object or value.
+        This method delegates to Ontology.CategoryByClass when available so that
+        Ontology.py remains the canonical source of ontology class/category logic.
         """
         if ontologyClass is None:
             return defaultValue
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.CategoryByClass(ontologyClass, defaultValue=defaultValue)
+        except Exception:
+            pass
         return TGraph._OntologyConfig()["categories"].get(str(ontologyClass).strip(), defaultValue)
-
-
-
-
-
-    # START CSV-RELATED METHODS
     @staticmethod
     def _CSVFlatten(items: Any) -> List[Any]:
         """
@@ -10386,49 +10387,56 @@ class TGraph:
         silent: bool = False,
     ) -> Optional[List[float]]:
         """
-        Computes the degree centrality of the input TGraph and stores the result
-        in the dictionary of each vertex or edge.
+        Computes degree centrality for the input TGraph and stores the result in the
+        dictionary of each vertex or edge.
+
+        This implementation keeps the richer DegreeCentrality API, but restores the
+        fast compiled path used by the previous implementation for the common
+        unweighted vertex-centrality case.
 
         Parameters
         ----------
         graph : TGraph
             The input TGraph.
         weightKey : str , optional
-            If set to None, each edge is assumed to have a weight of 1. If set to
+            If set to None, each edge contributes 1 to the degree. If set to
             "length" or "distance", the geometric length of each edge is used as its
             weight. If set to any other value, the value associated with that key in
             each edge dictionary is used as the edge weight. Default is None.
         normalize : bool , optional
-            If set to True, the values are normalized between 0 and 1. Default is False.
+            If nxCompatible is False, this controls whether values are min-max
+            normalised between 0 and 1. Default is False.
         nxCompatible : bool , optional
-            Kept for consistency with other centrality functions. If set to True,
-            NetworkX-style degree centrality scaling is applied. Default is True.
+            If True, NetworkX-style degree centrality scaling is applied, i.e.
+            degree / (n - 1). Default is True.
         useEdges : bool , optional
-            If set to True, the calculation uses the edges rather than the vertices.
+            If True, degree centrality is calculated on the implicit line graph:
+            each original edge becomes an entity and adjacent edges share a vertex.
             Default is False.
         edgeKey : str , optional
-            If not None, the value associated with that key in each edge dictionary is
-            used to bundle the edges into one entity for the calculation. Otherwise,
-            each edge segment is assumed to be an independent entity. Default is None.
+            If not None and useEdges is True, edges are bundled by this dictionary
+            key before normalisation. Default is None.
         key : str , optional
-            The desired dictionary key name under which to store the calculated value.
-            Default is "degree_centrality".
+            Dictionary key under which to store the calculated value. If None, values
+            are returned but not stored. Default is "degree_centrality".
         colorKey : str , optional
-            The desired dictionary key name under which to store the calculated color.
-            Default is "dc_color".
+            Dictionary key under which to store the colour value. If None, colours
+            are not calculated or stored. For benchmarking against NetworkX, set this
+            to None. Default is "dc_color".
         colorScale : str , optional
-            The desired color scale name to use for colors. Default is "viridis".
+            Desired colour scale name. Default is "viridis".
         mantissa : int , optional
-            The desired length of the mantissa. Default is 6.
+            Number of decimal places. If None or negative, values are not rounded.
+            Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.001.
+            Tolerance used for normalisation and colour ranges. Default is 0.001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error/warning messages are suppressed. Default is False.
 
         Returns
         -------
         list or None
-            The list of centralities in the order matching the vertices or edges as requested.
+            The list of centrality values in vertex or edge order.
         """
 
         import math
@@ -10439,15 +10447,9 @@ class TGraph:
                 print("TGraph.DegreeCentrality - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
-        # ---------------------------------------------------------------------
-        # Helpers
-        # ---------------------------------------------------------------------
-
-        def _active_vertex_indices(g):
-            return [v.get("index") for v in g._vertices if v.get("active", True)]
-
-        def _active_edge_records(g):
-            return [e for e in g._edges if e.get("active", True)]
+        # -------------------------------------------------------------------------
+        # Small local helpers.
+        # -------------------------------------------------------------------------
 
         def _unwrap(x):
             if isinstance(x, list) and len(x) == 1:
@@ -10480,6 +10482,8 @@ class TGraph:
             return [(x - mn) / (mx - mn) for x in xs]
 
         def _color(value, minValue, maxValue):
+            if colorKey is None:
+                return None
             try:
                 from topologicpy.Color import Color
                 return Color.AnyToHex(
@@ -10507,50 +10511,6 @@ class TGraph:
                 mx = mn + eps
 
             return mn, mx
-
-        def _apply_values_to_vertices(g, vertexIndices, values, unit_range=False):
-            if not vertexIndices or not values:
-                return
-
-            mn, mx = _color_range(values, unit_range=unit_range)
-
-            for vertexIndex, value in zip(vertexIndices, values):
-                if not g._validate_vertex_index(vertexIndex, active=False):
-                    continue
-
-                d = g._vertices[vertexIndex].setdefault("dictionary", {})
-                v = float(value)
-
-                if key is not None:
-                    d[key] = v
-
-                if colorKey is not None:
-                    c = _color(v, mn, mx)
-                    if c is not None:
-                        d[colorKey] = c
-
-        def _apply_values_to_edges(g, edgeRecords, values, unit_range=False):
-            if not edgeRecords or not values:
-                return
-
-            mn, mx = _color_range(values, unit_range=unit_range)
-
-            for edgeRecord, value in zip(edgeRecords, values):
-                edgeIndex = edgeRecord.get("index", None)
-
-                if not g._validate_edge_index(edgeIndex, active=False):
-                    continue
-
-                d = g._edges[edgeIndex].setdefault("dictionary", {})
-                v = float(value)
-
-                if key is not None:
-                    d[key] = v
-
-                if colorKey is not None:
-                    c = _color(v, mn, mx)
-                    if c is not None:
-                        d[colorKey] = c
 
         def _edge_length(g, edgeRecord):
             srcIndex = edgeRecord.get("src", None)
@@ -10582,12 +10542,158 @@ class TGraph:
 
             return 1.0
 
-        # ---------------------------------------------------------------------
-        # Edge mode.
-        # This computes degree centrality on the implicit line graph:
-        # each original edge becomes a node, and two line-graph nodes are adjacent
-        # when their original edges share a vertex.
-        # ---------------------------------------------------------------------
+        def _active_vertex_indices(g):
+            return [v.get("index") for v in g._vertices if v.get("active", True)]
+
+        def _active_edge_records(g):
+            return [e for e in g._edges if e.get("active", True)]
+
+        def _apply_values_to_vertices_fast(g, vertexIndices, values, unit_range=False):
+            if not vertexIndices or not values:
+                return
+
+            write_value = key is not None
+            write_color = colorKey is not None
+
+            if not write_value and not write_color:
+                return
+
+            mn, mx = _color_range(values, unit_range=unit_range) if write_color else (0.0, 1.0)
+
+            vertices = g._vertices
+
+            for vertexIndex, value in zip(vertexIndices, values):
+                # Avoid _validate_vertex_index here. The compiled vertex list already
+                # contains valid active vertex indices.
+                try:
+                    d = vertices[vertexIndex].setdefault("dictionary", {})
+                except Exception:
+                    continue
+
+                v = float(value)
+
+                if write_value:
+                    d[key] = v
+
+                if write_color:
+                    c = _color(v, mn, mx)
+                    if c is not None:
+                        d[colorKey] = c
+
+        def _apply_values_to_edges_fast(g, edgeRecords, values, unit_range=False):
+            if not edgeRecords or not values:
+                return
+
+            write_value = key is not None
+            write_color = colorKey is not None
+
+            if not write_value and not write_color:
+                return
+
+            mn, mx = _color_range(values, unit_range=unit_range) if write_color else (0.0, 1.0)
+
+            edges = g._edges
+
+            for edgeRecord, value in zip(edgeRecords, values):
+                edgeIndex = edgeRecord.get("index", None)
+
+                try:
+                    d = edges[edgeIndex].setdefault("dictionary", {})
+                except Exception:
+                    continue
+
+                v = float(value)
+
+                if write_value:
+                    d[key] = v
+
+                if write_color:
+                    c = _color(v, mn, mx)
+                    if c is not None:
+                        d[colorKey] = c
+
+        # -------------------------------------------------------------------------
+        # Fast path:
+        # Unweighted vertex degree centrality. This restores the old competitive
+        # behaviour by using TGraph.Compile and its precomputed degree arrays.
+        # -------------------------------------------------------------------------
+
+        if (not useEdges) and (weightKey is None) and (edgeKey is None):
+            c = TGraph.Compile(graph, useNumpy=True, useSciPy=False)
+
+            if not isinstance(c, dict):
+                return []
+
+            n = int(c.get("n", 0))
+            if n == 0:
+                if not silent:
+                    print("TGraph.DegreeCentrality - Warning: TGraph has no active vertices. Returning [].")
+                return []
+
+            # The previous implementation used degree_all. That corresponds to
+            # undirected/all-mode degree centrality and is NetworkX-compatible for
+            # ordinary undirected graphs.
+            degrees = c.get("degree_all", None)
+
+            if degrees is None:
+                # Defensive fallback if Compile returns a minimal dictionary.
+                vertexIndices = _active_vertex_indices(graph)
+                edgeRecords = _active_edge_records(graph)
+                pos = {vi: i for i, vi in enumerate(vertexIndices)}
+                degrees = [0.0] * len(vertexIndices)
+
+                for edgeRecord in edgeRecords:
+                    srcIndex = edgeRecord.get("src", None)
+                    dstIndex = edgeRecord.get("dst", None)
+
+                    if srcIndex not in pos or dstIndex not in pos:
+                        continue
+
+                    if srcIndex == dstIndex:
+                        degrees[pos[srcIndex]] += 2.0
+                    else:
+                        degrees[pos[srcIndex]] += 1.0
+                        degrees[pos[dstIndex]] += 1.0
+
+                vertices = vertexIndices
+                n = len(vertices)
+            else:
+                vertices = c.get("vertices", None)
+                if vertices is None:
+                    vertices = _active_vertex_indices(graph)
+
+            if nxCompatible:
+                if n <= 1:
+                    values = [0.0 for _ in degrees]
+                else:
+                    denom = float(n - 1)
+                    values = [float(d) / denom for d in degrees]
+                unit_range_for_color = True
+            else:
+                values = [float(d) for d in degrees]
+                if normalize:
+                    values = _normalize_flat(values)
+                    unit_range_for_color = True
+                else:
+                    unit_range_for_color = False
+
+            out_vals = [_round(v) for v in values]
+
+            _apply_values_to_vertices_fast(
+                graph,
+                vertices,
+                out_vals,
+                unit_range=unit_range_for_color,
+            )
+
+            return out_vals
+
+        # -------------------------------------------------------------------------
+        # Edge mode:
+        # Computes degree centrality on the implicit line graph. This remains an
+        # explicit implementation because Compile's vertex degree arrays do not
+        # directly encode edge-as-entity degree.
+        # -------------------------------------------------------------------------
 
         if useEdges:
             edgeRecords = _active_edge_records(graph)
@@ -10604,12 +10710,9 @@ class TGraph:
                 if srcIndex is None or dstIndex is None:
                     continue
 
-                if not graph._validate_vertex_index(srcIndex, active=False):
-                    continue
-
-                if not graph._validate_vertex_index(dstIndex, active=False):
-                    continue
-
+                # Avoid expensive validation. Active edge records should already
+                # refer to valid vertex indices. The dictionary membership check below
+                # is enough for practical robustness.
                 incident.setdefault(srcIndex, set()).add(localEdgeIndex)
                 incident.setdefault(dstIndex, set()).add(localEdgeIndex)
 
@@ -10653,7 +10756,6 @@ class TGraph:
                 else:
                     denom = float(entity_count - 1)
                     values = [v / denom for v in values]
-
                 unit_range_for_color = True
             else:
                 if normalize:
@@ -10664,7 +10766,7 @@ class TGraph:
 
             out_vals = [_round(v) for v in values]
 
-            _apply_values_to_edges(
+            _apply_values_to_edges_fast(
                 graph,
                 edgeRecords,
                 out_vals,
@@ -10673,9 +10775,10 @@ class TGraph:
 
             return out_vals
 
-        # ---------------------------------------------------------------------
-        # Vertex mode.
-        # ---------------------------------------------------------------------
+        # -------------------------------------------------------------------------
+        # Weighted vertex mode:
+        # This remains explicit because Compile's degree arrays are unweighted.
+        # -------------------------------------------------------------------------
 
         vertexIndices = _active_vertex_indices(graph)
         edgeRecords = _active_edge_records(graph)
@@ -10706,7 +10809,6 @@ class TGraph:
                 w = 1.0
 
             if srcIndex == dstIndex:
-                # NetworkX-style degree: a self-loop contributes 2 to degree.
                 degree[vertexIndexToPosition[srcIndex]] += 2.0 * w
             else:
                 degree[vertexIndexToPosition[srcIndex]] += w
@@ -10720,7 +10822,6 @@ class TGraph:
             else:
                 denom = float(n - 1)
                 values = [v / denom for v in values]
-
             unit_range_for_color = True
         else:
             if normalize:
@@ -10731,7 +10832,7 @@ class TGraph:
 
         out_vals = [_round(v) for v in values]
 
-        _apply_values_to_vertices(
+        _apply_values_to_vertices_fast(
             graph,
             vertexIndices,
             out_vals,
@@ -14459,29 +14560,10 @@ class TGraph:
         """
         Normalizes ontology-related dictionary values in the input TGraph.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        labelKeys : Optional[List[str]] , optional
-            The input label keys value. Default is None.
-        categoryKeys : Optional[List[str]] , optional
-            The input category keys value. Default is None.
-        ifcClassKeys : Optional[List[str]] , optional
-            The input ifc class keys value. Default is None.
-        ifcGUIDKeys : Optional[List[str]] , optional
-            The input ifc guidkeys value. Default is None.
-        includeGraph : bool , optional
-            If set to True, include graph are included. Default is True.
-        includeVertices : bool , optional
-            If set to True, include vertices are included. Default is True.
-        includeEdges : bool , optional
-            If set to True, include edges are included. Default is True.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
+        When Ontology.py is available, each graph/vertex/edge dictionary is
+        normalised through Ontology.NormalizeDictionary so that TGraph follows the
+        canonical ontology key policy. A local fallback is retained for standalone
+        operation.
         """
         if not isinstance(graph, TGraph):
             return None
@@ -14490,37 +14572,58 @@ class TGraph:
         ifcClassKeys = ifcClassKeys or ["ifc_class", "IfcClass", "class", "type"]
         ifcGUIDKeys = ifcGUIDKeys or ["ifc_guid", "GlobalId", "global_id", "guid"]
 
+        targets = []
+        if includeGraph:
+            targets.append(graph._dictionary)
+        if includeVertices:
+            targets.extend(v.setdefault("dictionary", {}) for v in graph._vertices)
+        if includeEdges:
+            targets.extend(e.setdefault("dictionary", {}) for e in graph._edges)
+
+        try:
+            from topologicpy.Ontology import Ontology
+            for d in targets:
+                Ontology.NormalizeDictionary(
+                    d,
+                    labelKeys=labelKeys,
+                    categoryKeys=categoryKeys,
+                    ifcClassKeys=ifcClassKeys,
+                    ifcGUIDKeys=ifcGUIDKeys,
+                    silent=True,
+                )
+            return graph
+        except Exception:
+            pass
+
         def _first(d, keys):
             for k in keys:
                 if isinstance(d, dict) and d.get(k, None) not in (None, ""):
                     return d.get(k)
             return None
 
-        targets = []
-        if includeGraph:
-            targets.append(("graph", None, graph._dictionary))
-        if includeVertices:
-            for v in graph._vertices:
-                targets.append(("vertex", v.get("index"), v.get("dictionary", {})))
-        if includeEdges:
-            for e in graph._edges:
-                targets.append(("edge", e.get("index"), e.get("dictionary", {})))
-
-        for element, index, d in targets:
+        for d in targets:
             label = _first(d, labelKeys)
             category = _first(d, categoryKeys)
             ifcClass = _first(d, ifcClassKeys)
             ifcGUID = _first(d, ifcGUIDKeys)
             if label is not None:
-                TGraph.SetOntologyLabel(graph, label, element=element, index=index)
+                d["label"] = label
             if category is not None:
-                TGraph.SetOntologyCategory(graph, str(category).lower(), element=element, index=index)
+                d["category"] = str(category).lower()
             if ifcClass is not None:
-                TGraph.AnnotateIFC(graph, ifcClass=ifcClass, element=element, index=index)
+                d["ifc_class"] = ifcClass
+                ontologyClass = TGraph.OntologyClassByIFCClass(str(ifcClass), defaultValue=None)
+                if ontologyClass is not None:
+                    d["ontology_class"] = ontologyClass
+                    category = TGraph.CategoryByOntologyClass(ontologyClass, defaultValue=None)
+                    if category is not None:
+                        d["category"] = category
+                    uri = TGraph._OntologyExpandQName(ontologyClass, defaultValue=None)
+                    if uri is not None:
+                        d["ontology_uri"] = uri
             if ifcGUID is not None:
-                TGraph._OntologySet(graph, "ifc_guid", ifcGUID, element=element, index=index)
+                d["ifc_guid"] = ifcGUID
         return graph
-
     @staticmethod
     def _NumbaBFSTreeKernel():
         """
@@ -14637,47 +14740,58 @@ class TGraph:
         """
         Annotates a dictionary with ontology metadata.
 
-        Parameters
-        ----------
-        dictionary : Dict[str, Any]
-            The input dictionary.
-        ontologyClass : Optional[str] , optional
-            The ontology class value. Default is None.
-        category : Optional[str] , optional
-            The ontology category value. Default is None.
-        label : Any , optional
-            The label value. Default is None.
-        generatedBy : Any , optional
-            The provenance value identifying the generating method. Default is None.
-        source : Any , optional
-            The input source vertex, vertex index, or source identifier. Default is None.
-        preserveExisting : bool , optional
-            The input preserve existing value. Default is True.
-
-        Returns
-        -------
-        Dict[str, Any]
-            The resulting ontology annotate dictionary dictionary.
+        Delegates actual assignment to Ontology.Annotate where possible, while
+        preserving this method's preserveExisting behaviour.
         """
         d = dictionary if isinstance(dictionary, dict) else {}
-        if ontologyClass is not None and (not preserveExisting or d.get("ontology_class") in (None, "")):
-            d["ontology_class"] = ontologyClass
-        if category is None:
-            category = TGraph._OntologyDefaultCategory(d.get("ontology_class"), fallback=d.get("category", "topology"))
-        if category is not None and (not preserveExisting or d.get("category") in (None, "")):
-            d["category"] = category
-        if label is not None and (not preserveExisting or d.get("label") in (None, "")):
-            d["label"] = label
-        if generatedBy is not None and (not preserveExisting or d.get("generated_by") in (None, "")):
-            d["generated_by"] = generatedBy
-        if source is not None and (not preserveExisting or d.get("source") in (None, "")):
-            d["source"] = source
-        if d.get("ontology_class") not in (None, "") and d.get("ontology_uri") in (None, ""):
-            uri = TGraph._OntologyExpandQName(str(d.get("ontology_class")), defaultValue=None)
-            if uri is not None:
-                d["ontology_uri"] = uri
+        target_class = ontologyClass
+        target_category = category
+        target_label = label
+        target_generated_by = generatedBy
+        target_source = source
+        if preserveExisting:
+            if d.get("ontology_class") not in (None, ""):
+                target_class = None
+            if d.get("category") not in (None, ""):
+                target_category = None
+            if d.get("label") not in (None, ""):
+                target_label = None
+            if d.get("generated_by") not in (None, ""):
+                target_generated_by = None
+            if d.get("source") not in (None, ""):
+                target_source = None
+        if target_category is None:
+            current_class = target_class or d.get("ontology_class")
+            target_category = TGraph._OntologyDefaultCategory(current_class, fallback=d.get("category", "topology"))
+            if preserveExisting and d.get("category") not in (None, ""):
+                target_category = None
+        try:
+            from topologicpy.Ontology import Ontology
+            Ontology.Annotate(
+                d,
+                ontologyClass=target_class,
+                category=target_category,
+                label=target_label,
+                generatedBy=target_generated_by,
+                source=target_source,
+                silent=True,
+            )
+        except Exception:
+            if target_class is not None:
+                d["ontology_class"] = target_class
+            if target_category is not None:
+                d["category"] = target_category
+            if target_label is not None:
+                d["label"] = target_label
+            if target_generated_by is not None:
+                d["generated_by"] = target_generated_by
+            if target_source is not None:
+                d["source"] = target_source
+            if d.get("ontology_class") not in (None, "") and d.get("ontology_uri") in (None, ""):
+                uri = TGraph._OntologyExpandQName(str(d.get("ontology_class")), defaultValue=None)
+                if uri is not None:
+                    d["ontology_uri"] = uri
         return d
-
     @staticmethod
     def _OntologyAnnotateGraph(
         graph: "TGraph",
@@ -14850,22 +14964,16 @@ class TGraph:
         """
         Returns the ontology class corresponding to the input IFC class.
 
-        Parameters
-        ----------
-        ifcClass : str
-            The IFC class value.
-        defaultValue : Any , optional
-            The default value to return when no valid value is found. Default is 'top:Element'.
-
-        Returns
-        -------
-        Any
-            The resulting ontology class by ifcclass object or value.
+        This method delegates to Ontology.ClassByIFCClass when available.
         """
         if ifcClass is None:
             return defaultValue
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.ClassByIFCClass(ifcClass, defaultValue=defaultValue)
+        except Exception:
+            pass
         return TGraph._OntologyConfig()["ifc_to_top"].get(str(ifcClass).strip(), defaultValue)
-
     @staticmethod
     def _OntologyClassFromRepresentation(representation: Any, defaultValue: str = "top:Node") -> str:
         """
@@ -15093,18 +15201,13 @@ class TGraph:
         """
         Expands a QName to a full ontology URI.
 
-        Parameters
-        ----------
-        qname : str
-            The input qname value.
-        defaultValue : Any , optional
-            The default value to return when no valid value is found. Default is None.
-
-        Returns
-        -------
-        Any
-            The resulting ontology expand qname object or value.
+        Delegates to Ontology.ExpandQName when available.
         """
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.ExpandQName(qname, defaultValue=defaultValue)
+        except Exception:
+            pass
         if not isinstance(qname, str) or ":" not in qname:
             return defaultValue
         prefix, local = qname.split(":", 1)
@@ -15112,7 +15215,6 @@ class TGraph:
         if ns is None:
             return defaultValue
         return ns + local
-
     @staticmethod
     def _OntologyGet(graph: "TGraph", key: str, defaultValue: Any = None, element: str = "graph", index: Optional[int] = None) -> Any:
         """
@@ -15172,18 +15274,13 @@ class TGraph:
         """
         Returns the RDF property QName for an ontology dictionary key.
 
-        Parameters
-        ----------
-        key : str
-            The dictionary key to use.
-        defaultPrefix : str , optional
-            The input default prefix value. Default is 'top'.
-
-        Returns
-        -------
-        Optional[str]
-            The resulting ontology property qname string.
+        Delegates to Ontology.PropertyQName when available.
         """
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.PropertyQName(key, defaultPrefix=defaultPrefix)
+        except Exception:
+            pass
         if key is None:
             return None
         key = str(key).strip()
@@ -15194,7 +15291,6 @@ class TGraph:
         aliases = TGraph._OntologyConfig()["aliases"]
         key = aliases.get(key, key)
         return str(defaultPrefix) + ":" + TGraph._OntologySafeLocalName(key)
-
     @staticmethod
     def _OntologyRDFLiteral(value: Any) -> str:
         """
@@ -15339,28 +15435,25 @@ class TGraph:
         """
         Returns ontology triples representing the input TGraph.
 
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        includeVertices : bool , optional
-            If set to True, include vertices are included. Default is True.
-        includeEdges : bool , optional
-            If set to True, include edges are included. Default is True.
-        includeDictionaries : bool , optional
-            If set to True, dictionaries are included in the output. Default is True.
-        includeBOT : bool , optional
-            If set to True, include bot are included. Default is True.
-        namespacePrefix : str , optional
-            The input namespace prefix value. Default is 'inst'.
-
-        Returns
-        -------
-        List[Tuple[str, str, str]]
-            The resulting ontology triples list.
+        Delegates to Ontology.GraphTriples when Ontology.py is available. This
+        keeps TGraph RDF export aligned with the canonical ontology helper while
+        preserving the original fallback implementation strategy.
         """
         if not isinstance(graph, TGraph):
             return []
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.GraphTriples(
+                graph,
+                includeVertices=includeVertices,
+                includeEdges=includeEdges,
+                includeDictionaries=includeDictionaries,
+                includeBOT=includeBOT,
+                namespacePrefix=namespacePrefix,
+                silent=True,
+            )
+        except Exception:
+            pass
         triples: List[Tuple[str, str, str]] = []
         graph_subject = TGraph._OntologySubjectFromDictionary(graph._dictionary, "graph", namespacePrefix=namespacePrefix)
         graph_class = graph._dictionary.get("ontology_class", "top:Graph")
@@ -15439,7 +15532,6 @@ class TGraph:
                 if not e.get("directed", graph._directed):
                     triples.append((tv, "top:connectsTo", sv))
         return triples
-
     @staticmethod
     def OntologyURI(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
         """
@@ -17909,60 +18001,34 @@ class TGraph:
 
     @staticmethod
     def SetOntologyCategory(graph: "TGraph", category: str, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
-        """
-        Sets the ontology category of a graph, vertex, or edge.
-
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        category : str
-            The ontology category value.
-        element : str , optional
-            The graph element to annotate or query. Valid values are typically "graph",
-            "vertex", or "edge". Default is 'graph'.
-        index : Optional[int] , optional
-            The input index. Default is None.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
-        """
+        """Sets the ontology category of a graph, vertex, or edge."""
         if not isinstance(category, str) or category.strip() == "":
             return None
-        return TGraph._OntologySet(graph, "category", category.strip(), element=element, index=index)
-
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if d is None:
+            return None
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.SetCategory(d, category.strip(), silent=True)
+            return graph if result is not None else None
+        except Exception:
+            return TGraph._OntologySet(graph, "category", category.strip(), element=element, index=index)
     @staticmethod
     def SetOntologyClass(graph: "TGraph", ontologyClass: str, element: str = "graph", index: Optional[int] = None,
                          setCategory: bool = True, setURI: bool = True) -> Optional["TGraph"]:
-        """
-        Sets the ontology class of a graph, vertex, or edge.
-
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        ontologyClass : str
-            The ontology class value.
-        element : str , optional
-            The graph element to annotate or query. Valid values are typically "graph",
-            "vertex", or "edge". Default is 'graph'.
-        index : Optional[int] , optional
-            The input index. Default is None.
-        setCategory : bool , optional
-            The input set category value. Default is True.
-        setURI : bool , optional
-            The input set uri value. Default is True.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
-        """
+        """Sets the ontology class of a graph, vertex, or edge."""
         if not isinstance(ontologyClass, str) or ontologyClass.strip() == "":
             return None
         ontologyClass = ontologyClass.strip()
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if d is None:
+            return None
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.SetClass(d, ontologyClass, setCategory=setCategory, setURI=setURI, silent=True)
+            return graph if result is not None else None
+        except Exception:
+            pass
         graph = TGraph._OntologySet(graph, "ontology_class", ontologyClass, element=element, index=index)
         if graph is None:
             return None
@@ -17975,57 +18041,32 @@ class TGraph:
             if uri is not None:
                 TGraph._OntologySet(graph, "ontology_uri", uri, element=element, index=index)
         return graph
-
     @staticmethod
     def SetOntologyLabel(graph: "TGraph", label: Any, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
-        """
-        Sets the ontology label of a graph, vertex, or edge.
-
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        label : Any
-            The label value.
-        element : str , optional
-            The graph element to annotate or query. Valid values are typically "graph",
-            "vertex", or "edge". Default is 'graph'.
-        index : Optional[int] , optional
-            The input index. Default is None.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
-        """
-        return TGraph._OntologySet(graph, "label", label, element=element, index=index)
-
+        """Sets the ontology label of a graph, vertex, or edge."""
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if d is None:
+            return None
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.SetLabel(d, label, silent=True)
+            return graph if result is not None else None
+        except Exception:
+            return TGraph._OntologySet(graph, "label", label, element=element, index=index)
     @staticmethod
     def SetOntologyURI(graph: "TGraph", uri: str, element: str = "graph", index: Optional[int] = None) -> Optional["TGraph"]:
-        """
-        Sets the ontology URI of a graph, vertex, or edge.
-
-        Parameters
-        ----------
-        graph : 'TGraph'
-            The input TGraph.
-        uri : str
-            The URI value.
-        element : str , optional
-            The graph element to annotate or query. Valid values are typically "graph",
-            "vertex", or "edge". Default is 'graph'.
-        index : Optional[int] , optional
-            The input index. Default is None.
-
-        Returns
-        -------
-        Optional[TGraph]
-            The resulting TGraph, or None if the operation fails.
-        """
+        """Sets the URI of a graph, vertex, or edge."""
         if not isinstance(uri, str) or uri.strip() == "":
             return None
-        return TGraph._OntologySet(graph, "uri", uri.strip(), element=element, index=index)
-
+        d = TGraph._OntologyDictionary(graph, element=element, index=index)
+        if d is None:
+            return None
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.SetURI(d, uri.strip(), silent=True)
+            return graph if result is not None else None
+        except Exception:
+            return TGraph._OntologySet(graph, "uri", uri.strip(), element=element, index=index)
     def SetVertexDictionary(self, index: int, dictionary: Optional[Dict[str, Any]] = None) -> "TGraph":
         """
         Sets the dictionary of a vertex in this TGraph.
@@ -19594,23 +19635,18 @@ class TGraph:
         """
         Returns a Turtle string generated from triples.
 
-        Parameters
-        ----------
-        triples : List[Tuple[str, str, str]]
-            The input triples value.
-        namespaces : Optional[Dict[str, str]] , optional
-            The input namespaces value. Default is None.
-        instanceNamespace : str , optional
-            The input instance namespace value. Default is
-            'http://w3id.org/topologicpy/instance#'.
-        includeHeader : bool , optional
-            If set to True, include header are included. Default is True.
-
-        Returns
-        -------
-        str
-            The resulting turtle from triples string.
+        Delegates to Ontology.TurtleFromTriples when available.
         """
+        try:
+            from topologicpy.Ontology import Ontology
+            return Ontology.TurtleFromTriples(
+                triples,
+                namespaces=namespaces,
+                instanceNamespace=instanceNamespace,
+                includeHeader=includeHeader,
+            )
+        except Exception:
+            pass
         namespaces = dict(namespaces or TGraph._OntologyConfig()["namespaces"])
         if "inst" not in namespaces:
             namespaces["inst"] = instanceNamespace
@@ -19627,7 +19663,6 @@ class TGraph:
                 continue
             lines.append(f"{s} {p} {o} .")
         return "\n".join(lines) + "\n"
-
     @staticmethod
     def _UndirectedAdjacency(graph: "TGraph") -> Dict[int, Set[int]]:
         """
@@ -21693,7 +21728,7 @@ class TGraph:
             si = _ensure(s)
             oi = _ensure(o)
             g.AddEdge(si, oi, directed=True, dictionary={"uri": str(p), "label": _label(p), "predicate": _label(p), "relationship": _label(p)})
-        return TGraph._OntologyAnnotateGraph(g, graphClass="top:BOTGraph", vertexClass="top:Node", edgeClass="top:Relationship", generatedBy="TGraph.ByBOTGraph", ontology=ontology, silent=True)
+        return TGraph._OntologyAnnotateGraph(g, graphClass="top:KnowledgeGraph", vertexClass="top:Node", edgeClass="top:Relationship", generatedBy="TGraph.ByBOTGraph", ontology=ontology, silent=True)
 
     @staticmethod
     def ByBOTPath(path, includeContext: bool = False, xMin: float = -0.5,

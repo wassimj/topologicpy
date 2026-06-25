@@ -259,17 +259,17 @@ class Ontology:
 
     OBJECT_PROPERTIES = {
         "top:hasDictionary": ("top:Topology", "top:Dictionary", "The dictionary of a topology or graph."),
-        "top:hasStartVertex": ("top:Edge", "top:Vertex", "The starting vertex of an edge."),
-        "top:hasEndVertex": ("top:Edge", "top:Vertex", "The ending vertex of an edge."),
-        "top:hasVertices": ("top:Topology", "top:Vertex", "The vertices that belong to a topology or graph."),
-        "top:hasEdges": ("top:Topology", "top:Edge", "The edges that belong to a topology or graph."),
-        "top:hasWires": ("top:Topology", "top:Wire", "The wires that belong to a topology."),
-        "top:hasFaces": ("top:Topology", "top:Face", "The faces that belong to a topology."),
-        "top:hasShells": ("top:Topology", "top:Shell", "The shells that belong to a topology."),
-        "top:hasCells": ("top:Topology", "top:Cell", "The cells that belong to a topology."),
-        "top:hasCellComplexes": ("top:Cluster", "top:CellComplex", "The cell complexes that belong to a cluster."),
+        "top:startsAt": ("top:Edge", "top:Vertex", "The starting vertex of an edge."),
+        "top:endsAt": ("top:Edge", "top:Vertex", "The ending vertex of an edge."),
+        "top:hasVertex": ("top:Topology", "top:Vertex", "The vertices that belong to a topology or graph."),
+        "top:hasEdge": ("top:Topology", "top:Edge", "The edges that belong to a topology or graph."),
+        "top:hasWire": ("top:Topology", "top:Wire", "The wires that belong to a topology."),
+        "top:hasFace": ("top:Topology", "top:Face", "The faces that belong to a topology."),
+        "top:hasShell": ("top:Topology", "top:Shell", "The shells that belong to a topology."),
+        "top:hasCell": ("top:Topology", "top:Cell", "The cells that belong to a topology."),
+        "top:hasCellComplex": ("top:Cluster", "top:CellComplex", "The cell complexes that belong to a cluster."),
         "top:hasExternalBoundary": ("top:Topology", "top:Topology", "The external boundary of a topology."),
-        "top:hasInternalBoundaries": ("top:Topology", "top:Topology", "The internal boundaries of a topology."),
+        "top:hasInternalBoundary": ("top:Topology", "top:Topology", "The internal boundaries of a topology."),
         "top:hasFreeVertices": ("top:Cluster", "top:Vertex", "Free vertices in a cluster."),
         "top:hasFreeEdges": ("top:Cluster", "top:Edge", "Free edges in a cluster."),
         "top:hasFreeWires": ("top:Cluster", "top:Wire", "Free wires in a cluster."),
@@ -297,22 +297,22 @@ class Ontology:
         "top:hasMantissa": ("top:Topology", "xsd:integer", "The number of decimal places used to report values."),
         "top:hasUnit": ("top:Topology", "xsd:string", "The unit of measurement."),
         "top:createdAt": ("top:Topology", "xsd:dateTime", "The creation timestamp."),
-        "top:updatedAt": ("top:Topology", "xsd:dateTime", "The last update timestamp."),
+        "top:modifiedAt": ("top:Topology", "xsd:dateTime", "The last update timestamp."),
         "top:category": ("top:Topology", "xsd:string", "The broad category of a topology or graph."),
     }
 
     PROPERTY_ALIASES = {
-        "startsAt": "hasStartVertex",
-        "endsAt": "hasEndVertex",
+        "startsAt": "startsAt",
+        "endsAt": "endsAt",
         "connectedTo": "connectsTo",
-        "x": "hasX",
-        "y": "hasY",
-        "z": "hasZ",
-        "length": "hasLength",
-        "area": "hasArea",
-        "volume": "hasVolume",
-        "mantissa": "hasMantissa",
-        "unit": "hasUnit",
+        "x": "x",
+        "y": "y",
+        "z": "z",
+        "length": "length",
+        "area": "area",
+        "volume": "volume",
+        "mantissa": "mantissa",
+        "unit": "unit",
     }
 
     # -------------------------------------------------------------------------
@@ -1600,9 +1600,9 @@ class Ontology:
                     sv, ev = Ontology._graph_edge_endpoints(graph, edge, vertex_records=vertex_records)
 
                     if sv is not None:
-                        triples.append((e_subject, "top:hasStartVertex", Ontology._uri_for_topology(sv, prefix=namespacePrefix)))
+                        triples.append((e_subject, "top:startsAt", Ontology._uri_for_topology(sv, prefix=namespacePrefix)))
                     if ev is not None:
-                        triples.append((e_subject, "top:hasEndVertex", Ontology._uri_for_topology(ev, prefix=namespacePrefix)))
+                        triples.append((e_subject, "top:endsAt", Ontology._uri_for_topology(ev, prefix=namespacePrefix)))
                     if sv is not None and ev is not None:
                         triples.append((Ontology._uri_for_topology(sv, prefix=namespacePrefix), "top:connectsTo", Ontology._uri_for_topology(ev, prefix=namespacePrefix)))
             return triples
@@ -1741,13 +1741,13 @@ class Ontology:
 
         if includeBOT:
             bot_subproperties = {
-                "top:hasVertices": "bot:hasSubElement",
-                "top:hasEdges": "bot:hasSubElement",
-                "top:hasWires": "bot:hasSubElement",
-                "top:hasFaces": "bot:hasSubElement",
-                "top:hasShells": "bot:hasSubElement",
-                "top:hasCells": "bot:hasSubElement",
-                "top:hasCellComplexes": "bot:hasSubElement",
+                "top:hasVertex": "bot:hasSubElement",
+                "top:hasEdge": "bot:hasSubElement",
+                "top:hasWire": "bot:hasSubElement",
+                "top:hasFace": "bot:hasSubElement",
+                "top:hasShell": "bot:hasSubElement",
+                "top:hasCell": "bot:hasSubElement",
+                "top:hasCellComplex": "bot:hasSubElement",
                 "top:hasFreeVertices": "bot:hasSubElement",
                 "top:hasFreeEdges": "bot:hasSubElement",
                 "top:hasFreeWires": "bot:hasSubElement",
@@ -2599,8 +2599,8 @@ class Ontology:
 
         hasNode = uri("top:hasNode")
         hasRelationship = uri("top:hasRelationship")
-        hasStartVertex = uri("top:hasStartVertex")
-        hasEndVertex = uri("top:hasEndVertex")
+        hasStartVertex = uri("top:startsAt")
+        hasEndVertex = uri("top:endsAt")
         hasX = uri("top:hasX")
         hasY = uri("top:hasY")
         hasZ = uri("top:hasZ")
@@ -2940,4 +2940,320 @@ class Ontology:
                 print("Ontology.GraphByTTLString - Error: Could not parse Turtle string. Returning None.")
                 print("Error:", e)
             return None
+
+# -----------------------------------------------------------------------------
+# Canonical TTL alignment patch
+# -----------------------------------------------------------------------------
+# The published ontology/topologicpy.ttl is the canonical vocabulary.  The
+# original lightweight Ontology class predates parts of that TTL file and used
+# a few implementation-oriented property names such as top:hasStartVertex,
+# top:hasVertices, top:hasX, and top:updatedAt.  The assignments below keep the
+# public Python dictionary keys stable while aligning ontology metadata and
+# RDF/Turtle export with the canonical TTL vocabulary.
+
+# Additional namespaces used by ontology/topologicpy.ttl.
+Ontology.NAMESPACES.update({
+    "ifc": "https://standards.buildingsmart.org/IFC/DEV/IFC4/ADD2_TC1/OWL#",
+    "geo": "http://www.opengis.net/ont/geosparql#",
+    "prov": "http://www.w3.org/ns/prov#",
+    "dcterms": "http://purl.org/dc/terms/",
+    "vann": "http://purl.org/vocab/vann/",
+    "schema": "https://schema.org/",
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+})
+
+# Classes present in the canonical TTL but not in the initial lightweight helper.
+Ontology.TOP_SUPERCLASSES.update({
+    "top:Attribute": [],
+    "top:CoordinateSystem": [],
+    "top:Transform": [],
+    "top:FunctionalZone": ["top:Zone"],
+    "top:CirculationZone": ["top:Zone"],
+    "top:Sensor": ["top:Element", "brick:Point"],
+    "top:Boundary": ["top:Topology"],
+    "top:ExternalBoundary": ["top:Boundary"],
+    "top:InternalBoundary": ["top:Boundary"],
+    "top:DirectedRelationship": ["top:Relationship"],
+    "top:UndirectedRelationship": ["top:Relationship"],
+    "top:GraphDataset": ["prov:Entity"],
+    "top:GraphFeature": ["top:Attribute"],
+    "top:NodeFeature": ["top:Attribute"],
+    "top:EdgeFeature": ["top:Attribute"],
+    "top:AnalysisMetric": [],
+    "top:SpaceSyntaxMetric": ["top:AnalysisMetric"],
+    "top:Isovist": ["top:AnalysisMetric"],
+    "top:QualityIssue": [],
+    "top:ValidationRule": [],
+    "top:Path": ["top:Graph"],
+})
+
+Ontology.CLASS_COMMENTS.update({
+    "top:Attribute": "A semantic or analytical key-value attribute associated with an entity.",
+    "top:CoordinateSystem": "A spatial reference frame for coordinates and transformations.",
+    "top:Transform": "A geometric or topological transformation.",
+    "top:FunctionalZone": "A zone grouped by function or programme.",
+    "top:CirculationZone": "A zone primarily used for movement or circulation.",
+    "top:Sensor": "A sensor or observation point.",
+    "top:Boundary": "A topology that bounds another topology.",
+    "top:ExternalBoundary": "An external boundary of a topology.",
+    "top:InternalBoundary": "An internal boundary, hole, or void boundary.",
+    "top:DirectedRelationship": "A relationship with a start node and an end node.",
+    "top:UndirectedRelationship": "A relationship without intrinsic direction.",
+    "top:GraphDataset": "A dataset containing graphs, nodes, edges, labels, and features.",
+    "top:GraphFeature": "A numerical or categorical feature associated with a graph.",
+    "top:NodeFeature": "A numerical or categorical feature associated with a graph node.",
+    "top:EdgeFeature": "A numerical or categorical feature associated with a graph edge.",
+    "top:AnalysisMetric": "A computed metric associated with geometry, topology, graphs, or buildings.",
+    "top:SpaceSyntaxMetric": "A spatial network metric commonly used in space syntax analysis.",
+    "top:Isovist": "A visibility polygon, volume, or related visibility field from an observer point.",
+    "top:QualityIssue": "A validation, quality-control, or model-checking issue.",
+    "top:ValidationRule": "A rule used to validate model content, geometry, topology, semantics, or provenance.",
+    "top:Path": "An ordered sequence of graph nodes and relationships.",
+})
+
+Ontology.TOP_CATEGORIES.update({
+    "top:Attribute": "metadata",
+    "top:CoordinateSystem": "mathematics",
+    "top:Transform": "mathematics",
+    "top:FunctionalZone": "space",
+    "top:CirculationZone": "space",
+    "top:Sensor": "element",
+    "top:Boundary": "boundary",
+    "top:ExternalBoundary": "boundary",
+    "top:InternalBoundary": "boundary",
+    "top:DirectedRelationship": "relationship",
+    "top:UndirectedRelationship": "relationship",
+    "top:GraphDataset": "dataset",
+    "top:GraphFeature": "feature",
+    "top:NodeFeature": "feature",
+    "top:EdgeFeature": "feature",
+    "top:AnalysisMetric": "metric",
+    "top:SpaceSyntaxMetric": "metric",
+    "top:Isovist": "metric",
+    "top:QualityIssue": "quality",
+    "top:ValidationRule": "validation",
+    "top:Path": "graph",
+})
+
+# Canonical object properties from ontology/topologicpy.ttl.  Domains for
+# hasVertex/hasEdge are intentionally kept as top:Topology for TTL consistency;
+# top:hasNode/top:hasRelationship specialise them for top:Graph.
+Ontology.OBJECT_PROPERTIES.update({
+    "top:hasTopology": ("top:Topology", "top:Topology", "Associates an entity with a topology."),
+    "top:isTopologyOf": ("top:Topology", "top:Topology", "Inverse of top:hasTopology."),
+    "top:hasSubTopology": ("top:Topology", "top:Topology", "Associates a topology with a subtopology."),
+    "top:isSubTopologyOf": ("top:Topology", "top:Topology", "Associates a topology with a parent topology."),
+    "top:hasFreeTopology": ("top:Cluster", "top:Topology", "Associates a cluster with a free or heterogeneous contained topology."),
+    "top:isFreeTopologyOf": ("top:Topology", "top:Cluster", "Associates a topology with a containing cluster."),
+    "top:hasVertex": ("top:Topology", "top:Vertex", "Associates a topology or graph with a vertex."),
+    "top:isVertexOf": ("top:Vertex", "top:Topology", "Associates a vertex with its parent topology or graph."),
+    "top:hasEdge": ("top:Topology", "top:Edge", "Associates a topology or graph with an edge."),
+    "top:isEdgeOf": ("top:Edge", "top:Topology", "Associates an edge with its parent topology or graph."),
+    "top:hasWire": ("top:Topology", "top:Wire", "Associates a topology with a wire."),
+    "top:isWireOf": ("top:Wire", "top:Topology", "Associates a wire with its parent topology."),
+    "top:hasFace": ("top:Topology", "top:Face", "Associates a topology with a face."),
+    "top:isFaceOf": ("top:Face", "top:Topology", "Associates a face with its parent topology."),
+    "top:hasShell": ("top:Topology", "top:Shell", "Associates a topology with a shell."),
+    "top:isShellOf": ("top:Shell", "top:Topology", "Associates a shell with its parent topology."),
+    "top:hasCell": ("top:Topology", "top:Cell", "Associates a topology with a cell."),
+    "top:isCellOf": ("top:Cell", "top:Topology", "Associates a cell with its parent topology."),
+    "top:hasCellComplex": ("top:Topology", "top:CellComplex", "Associates a topology with a cell complex."),
+    "top:isCellComplexOf": ("top:CellComplex", "top:Topology", "Associates a cell complex with its parent topology."),
+    "top:hasAperture": ("top:Topology", "top:Aperture", "Associates a topology with an aperture."),
+    "top:isApertureOf": ("top:Aperture", "top:Topology", "Associates an aperture with the topology it belongs to."),
+    "top:bounds": ("top:Topology", "top:Topology", "Indicates that one topology bounds another."),
+    "top:isBoundedBy": ("top:Topology", "top:Topology", "Indicates that one topology is bounded by another."),
+    "top:hasExternalBoundary": ("top:Topology", "top:Boundary", "Associates a topology with an external boundary."),
+    "top:isExternalBoundaryOf": ("top:Boundary", "top:Topology", "Associates an external boundary with the topology it bounds."),
+    "top:hasInternalBoundary": ("top:Topology", "top:Boundary", "Associates a topology with an internal boundary, hole, or void boundary."),
+    "top:isInternalBoundaryOf": ("top:Boundary", "top:Topology", "Associates an internal boundary with the topology it bounds."),
+    "top:hasInterface": ("top:Topology", "top:Interface", "Associates a topology with an interface."),
+    "top:isInterfaceOf": ("top:Interface", "top:Topology", "Associates an interface with the topology, zone, or element it interfaces."),
+    "top:contains": ("top:Topology", "top:Topology", "Indicates topological, geometric, or semantic containment."),
+    "top:isContainedIn": ("top:Topology", "top:Topology", "Inverse of top:contains."),
+    "top:containsElement": ("top:Topology", "top:Element", "Associates a topology or zone with a contained element."),
+    "top:isElementOf": ("top:Element", "top:Topology", "Associates an element with its container."),
+    "top:containsZone": ("top:Zone", "top:Zone", "Associates a zone with a contained zone."),
+    "top:isZoneOf": ("top:Zone", "top:Zone", "Associates a zone with a containing zone."),
+    "top:adjacentTo": ("top:Topology", "top:Topology", "Indicates that two topologies are adjacent."),
+    "top:intersects": ("top:Topology", "top:Topology", "Indicates that two topologies intersect."),
+    "top:overlaps": ("top:Topology", "top:Topology", "Indicates that two topologies overlap."),
+    "top:touches": ("top:Topology", "top:Topology", "Indicates that two topologies touch."),
+    "top:hasDictionary": ("top:Topology", "top:Dictionary", "Associates an entity with a TopologicPy dictionary."),
+    "top:isDictionaryOf": ("top:Dictionary", "top:Topology", "Associates a dictionary with the entity it describes."),
+    "top:hasAttribute": ("top:Topology", "top:Attribute", "Associates an entity with an attribute."),
+    "top:isAttributeOf": ("top:Attribute", "top:Topology", "Associates an attribute with the entity it describes."),
+    "top:hasContext": ("top:Topology", "top:Context", "Associates an entity with a context."),
+    "top:isContextOf": ("top:Context", "top:Topology", "Associates a context with an entity."),
+    "top:hasTransform": ("top:Topology", "top:Transform", "Associates a topology with a transformation."),
+    "top:isTransformOf": ("top:Transform", "top:Topology", "Associates a transformation with a topology."),
+    "top:hasMatrix": ("top:Transform", "top:Matrix", "Associates a transform with a matrix."),
+    "top:isMatrixOf": ("top:Matrix", "top:Transform", "Associates a matrix with a transform."),
+    "top:hasVector": ("top:Topology", "top:Vector", "Associates an entity with a vector."),
+    "top:isVectorOf": ("top:Vector", "top:Topology", "Associates a vector with an entity."),
+    "top:hasNode": ("top:Graph", "top:Node", "Associates a graph with a node."),
+    "top:isNodeOf": ("top:Node", "top:Graph", "Associates a node with a graph."),
+    "top:hasRelationship": ("top:Graph", "top:Relationship", "Associates a graph with a relationship."),
+    "top:isRelationshipOf": ("top:Relationship", "top:Graph", "Associates a relationship with a graph."),
+    "top:startsAt": ("top:DirectedRelationship", "top:Node", "Associates a directed relationship with its start node."),
+    "top:endsAt": ("top:DirectedRelationship", "top:Node", "Associates a directed relationship with its end node."),
+    "top:connects": ("top:Relationship", "top:Node", "Associates a relationship with one of the nodes it connects."),
+    "top:connectsTo": ("top:Node", "top:Node", "Indicates that one node is connected to another node."),
+    "top:hasSource": ("top:Relationship", "top:Node", "Associates a relationship with a source node."),
+    "top:hasTarget": ("top:Relationship", "top:Node", "Associates a relationship with a target node."),
+    "top:hasPath": ("top:Graph", "top:Path", "Associates a graph with a path."),
+    "top:isPathOf": ("top:Path", "top:Graph", "Associates a path with a graph."),
+    "top:hasMetric": ("top:Topology", "top:AnalysisMetric", "Associates an entity with a computed metric."),
+    "top:isMetricOf": ("top:AnalysisMetric", "top:Topology", "Associates a metric with the entity it describes."),
+    "top:hasQualityIssue": ("top:Topology", "top:QualityIssue", "Associates an entity with a quality issue."),
+    "top:isQualityIssueOf": ("top:QualityIssue", "top:Topology", "Associates a quality issue with an entity."),
+    "top:validatedBy": ("top:Topology", "top:ValidationRule", "Associates an entity with a validation rule."),
+    "top:validates": ("top:ValidationRule", "top:Topology", "Associates a validation rule with the entity it validates."),
+    "top:derivedFrom": ("top:Topology", "top:Topology", "Associates an entity with the entity, file, model, or process it was derived from."),
+    "top:generatedBy": ("top:Topology", "top:Topology", "Associates an entity with the method, agent, or process that generated it."),
+})
+
+# Keep old implementation-oriented predicates documented as aliases when reading
+# historical files, but do not emit them from PropertyQName or GraphTriples.
+Ontology.PROPERTY_ALIASES.update({
+    "hasStartVertex": "startsAt",
+    "hasEndVertex": "endsAt",
+    "hasVertices": "hasVertex",
+    "hasEdges": "hasEdge",
+    "hasWires": "hasWire",
+    "hasFaces": "hasFace",
+    "hasShells": "hasShell",
+    "hasCells": "hasCell",
+    "hasCellComplexes": "hasCellComplex",
+    "hasInternalBoundaries": "hasInternalBoundary",
+    "startVertex": "startsAt",
+    "endVertex": "endsAt",
+    "connectedTo": "connectsTo",
+    "ontology_class": "ontologyClass",
+    "ontology_uri": "uri",
+    "ifc_class": "ifcClass",
+    "ifc_guid": "ifcGlobalId",
+    "ifc_name": "ifcName",
+    "ifc_type": "ifcType",
+    "source_file": "sourceFile",
+    "generated_by": "generatedByMethod",
+    "derived_from": "derivedFrom",
+    "created_at": "createdAt",
+    "updated_at": "modifiedAt",
+    "modified_at": "modifiedAt",
+    "x": "x",
+    "y": "y",
+    "z": "z",
+    "u": "u",
+    "v": "v",
+    "w": "w",
+    "length": "length",
+    "area": "area",
+    "volume": "volume",
+    "perimeter": "perimeter",
+    "width": "width",
+    "height": "height",
+    "depth": "depth",
+    "radius": "radius",
+    "diameter": "diameter",
+    "mantissa": "mantissa",
+    "tolerance": "tolerance",
+    "unit": "unit",
+    "weight": "hasWeight",
+    "cost": "hasCost",
+    "degree_centrality": "degree",
+    "closeness_centrality": "closenessCentrality",
+    "betweenness_centrality": "betweennessCentrality",
+    "eigenvector_centrality": "eigenvectorCentrality",
+    "pagerank": "pageRank",
+    "shortest_path_distance": "shortestPathDistance",
+    "isovist_area": "isovistArea",
+    "isovist_perimeter": "isovistPerimeter",
+})
+
+Ontology.DATA_PROPERTIES.update({
+    "top:id": ("top:Topology", "xsd:string", "A local identifier."),
+    "top:uuid": ("top:Topology", "xsd:string", "A UUID derived from, or assigned to, an entity."),
+    "top:label": ("top:Topology", "xsd:string", "A human-readable label."),
+    "top:ontologyClass": ("top:Topology", "xsd:string", "The ontology class as a compact string, typically top:ClassName."),
+    "top:uri": ("top:Topology", "xsd:anyURI", "A URI identifying an entity."),
+    "top:comment": ("top:Topology", "xsd:string", "A human-readable comment."),
+    "top:x": ("top:Vertex", "xsd:double", "The X coordinate of a vertex or point."),
+    "top:y": ("top:Vertex", "xsd:double", "The Y coordinate of a vertex or point."),
+    "top:z": ("top:Vertex", "xsd:double", "The Z coordinate of a vertex or point."),
+    "top:u": ("top:Topology", "xsd:double", "The U coordinate in a parametric or local coordinate system."),
+    "top:v": ("top:Topology", "xsd:double", "The V coordinate in a parametric or local coordinate system."),
+    "top:w": ("top:Topology", "xsd:double", "The W coordinate or scalar component."),
+    "top:length": ("top:Topology", "xsd:double", "The length of an edge, wire, path, or other linear entity."),
+    "top:area": ("top:Topology", "xsd:double", "The area of a face, shell, surface, or spatial entity."),
+    "top:volume": ("top:Topology", "xsd:double", "The volume of a cell, cell complex, or spatial entity."),
+    "top:perimeter": ("top:Topology", "xsd:double", "The perimeter of a face, boundary, or region."),
+    "top:width": ("top:Topology", "xsd:double", "The width of an entity or bounding rectangle."),
+    "top:height": ("top:Topology", "xsd:double", "The height of an entity or bounding box."),
+    "top:depth": ("top:Topology", "xsd:double", "The depth of an entity or graph traversal."),
+    "top:radius": ("top:Topology", "xsd:double", "The radius of a circular, spherical, or radial entity."),
+    "top:diameter": ("top:Topology", "xsd:double", "The diameter of a circular or spherical entity."),
+    "top:normalX": ("top:Face", "xsd:double", "The X component of a normal vector."),
+    "top:normalY": ("top:Face", "xsd:double", "The Y component of a normal vector."),
+    "top:normalZ": ("top:Face", "xsd:double", "The Z component of a normal vector."),
+    "top:azimuth": ("top:Topology", "xsd:double", "An azimuth angle."),
+    "top:inclination": ("top:Topology", "xsd:double", "An inclination or tilt angle."),
+    "top:mantissa": ("top:Topology", "xsd:integer", "The number of decimal places used for rounding."),
+    "top:tolerance": ("top:Topology", "xsd:double", "A geometric or numerical tolerance."),
+    "top:unit": ("top:Topology", "xsd:string", "A unit label or unit symbol."),
+    "top:hasWeight": ("top:Relationship", "xsd:double", "A numerical edge or relationship weight."),
+    "top:hasCost": ("top:Relationship", "xsd:double", "A numerical traversal or optimisation cost."),
+    "top:degree": ("top:Node", "xsd:double", "The graph degree of a node."),
+    "top:inDegree": ("top:Node", "xsd:double", "The incoming degree of a node."),
+    "top:outDegree": ("top:Node", "xsd:double", "The outgoing degree of a node."),
+    "top:closenessCentrality": ("top:Node", "xsd:double", "A closeness centrality score."),
+    "top:betweennessCentrality": ("top:Node", "xsd:double", "A betweenness centrality score."),
+    "top:eigenvectorCentrality": ("top:Node", "xsd:double", "An eigenvector centrality score."),
+    "top:pageRank": ("top:Node", "xsd:double", "A PageRank score."),
+    "top:community": ("top:Node", "xsd:string", "A community or cluster assignment."),
+    "top:shortestPathDistance": ("top:Topology", "xsd:double", "A shortest-path distance or cost."),
+    "top:isovistArea": ("top:Topology", "xsd:double", "The area of an isovist."),
+    "top:isovistPerimeter": ("top:Topology", "xsd:double", "The perimeter of an isovist."),
+    "top:visibility": ("top:Topology", "xsd:double", "A visibility metric."),
+    "top:compactness": ("top:Topology", "xsd:double", "A compactness metric."),
+    "top:integration": ("top:Topology", "xsd:double", "A spatial integration metric."),
+    "top:choice": ("top:Topology", "xsd:double", "A spatial choice metric."),
+    "top:connectivity": ("top:Topology", "xsd:double", "A connectivity metric."),
+    "top:control": ("top:Topology", "xsd:double", "A control value in spatial graph analysis."),
+    "top:ifcClass": ("top:Topology", "xsd:string", "The IFC entity class name, for example IfcSpace."),
+    "top:ifcGlobalId": ("top:Topology", "xsd:string", "The IFC GlobalId."),
+    "top:ifcName": ("top:Topology", "xsd:string", "The IFC Name attribute."),
+    "top:ifcType": ("top:Topology", "xsd:string", "The IFC type, object type, or type object label."),
+    "top:source": ("top:Topology", "xsd:string", "A source identifier."),
+    "top:sourceFile": ("top:Topology", "xsd:string", "The source file from which an entity was read or generated."),
+    "top:generatedByMethod": ("top:Topology", "xsd:string", "The TopologicPy method or process that generated the entity."),
+    "top:createdAt": ("top:Topology", "xsd:dateTime", "The creation timestamp."),
+    "top:modifiedAt": ("top:Topology", "xsd:dateTime", "The modification timestamp."),
+    "top:version": ("top:Topology", "xsd:string", "A version string."),
+    "top:severity": ("top:QualityIssue", "xsd:string", "The severity of a quality issue."),
+    "top:issueCode": ("top:QualityIssue", "xsd:string", "A machine-readable quality issue code."),
+    "top:issueMessage": ("top:QualityIssue", "xsd:string", "A human-readable quality issue message."),
+    "top:ruleExpression": ("top:ValidationRule", "xsd:string", "The expression or description of a validation rule."),
+})
+
+# Backwards-compatible RDF import helpers for older files that used
+# top:hasStartVertex/top:hasEndVertex instead of top:startsAt/top:endsAt.
+_old_GraphByRDFGraph = Ontology.GraphByRDFGraph
+
+def _GraphByRDFGraph_TTLAligned(rdfGraph, graphSubject=None, asTGraph=True, directed=False, silent=False):
+    try:
+        from rdflib import URIRef
+        old_start = URIRef(Ontology.ExpandQName("top:hasStartVertex"))
+        old_end = URIRef(Ontology.ExpandQName("top:hasEndVertex"))
+        new_start = URIRef(Ontology.ExpandQName("top:startsAt"))
+        new_end = URIRef(Ontology.ExpandQName("top:endsAt"))
+        for s, _, o in list(rdfGraph.triples((None, old_start, None))):
+            rdfGraph.add((s, new_start, o))
+        for s, _, o in list(rdfGraph.triples((None, old_end, None))):
+            rdfGraph.add((s, new_end, o))
+    except Exception:
+        pass
+    return _old_GraphByRDFGraph(rdfGraph, graphSubject=graphSubject, asTGraph=asTGraph, directed=directed, silent=silent)
+
+Ontology.GraphByRDFGraph = staticmethod(_GraphByRDFGraph_TTLAligned)
 

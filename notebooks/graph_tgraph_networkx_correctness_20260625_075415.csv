@@ -1,0 +1,6 @@
+check,Graph vs TGraph,Graph vs NetworkX,TGraph vs NetworkX,details
+vertex/node count,False,False,False,"Graph=None, TGraph=None, NetworkX=None"
+edge count,False,False,False,"Graph=None, TGraph=None, NetworkX=None"
+shortest path length,False,False,False,"Graph=None, TGraph=None, NetworkX=None"
+overall graph metrics,False,False,False,"Graph=None, TGraph=None, NetworkX=None"
+degree centrality,False,False,True,"lengths: Graph=None, TGraph=4624, NetworkX=4624"
