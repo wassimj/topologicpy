@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.50 documentation</title>
+  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.51 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.50
+                0.9.51
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -420,7 +420,7 @@
 <td><p>Returns the degree of the input vertex.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.DegreeCentrality" title="topologicpy.TGraph.TGraph.DegreeCentrality"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeCentrality</span></code></a>(graph[, weightKey, ...])</p></td>
-<td><p>Computes the degree centrality of the input TGraph and stores the result in the dictionary of each vertex or edge.</p></td>
+<td><p>Computes degree centrality for the input TGraph and stores the result in the dictionary of each vertex or edge.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.DegreeCentrality_old" title="topologicpy.TGraph.TGraph.DegreeCentrality_old"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DegreeCentrality_old</span></code></a>(graph[, mode, ...])</p></td>
 <td><p>Computes degree centrality values for the vertices of the input TGraph.</p></td>
@@ -783,7 +783,7 @@
 <td><p>Sets the ontology label of a graph, vertex, or edge.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetOntologyURI" title="topologicpy.TGraph.TGraph.SetOntologyURI"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntologyURI</span></code></a>(graph, uri[, element, index])</p></td>
-<td><p>Sets the ontology URI of a graph, vertex, or edge.</p></td>
+<td><p>Sets the URI of a graph, vertex, or edge.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.SetVertexDictionary" title="topologicpy.TGraph.TGraph.SetVertexDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetVertexDictionary</span></code></a>(index[, dictionary])</p></td>
 <td><p>Sets the dictionary of a vertex in this TGraph.</p></td>
@@ -1749,22 +1749,9 @@ Default is ‘all’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.BOTClassByOntologyClass">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BOTClassByOntologyClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.BOTClassByOntologyClass" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the BOT class corresponding to the input TopologicPy ontology class.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The ontology class value.</p>
-</dd>
-<dt><strong>defaultValue</strong><span class="classifier">Any , optional</span></dt><dd><p>The default value to return when no valid value is found. Default is None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Any</dt><dd><p>The resulting botclass by ontology class object or value.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>This method is a TGraph convenience wrapper around Ontology.BOTClassByClass
+when Ontology.py is available. The local fallback keeps TGraph usable as a
+standalone file.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -2948,22 +2935,8 @@ Default is “both”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.CategoryByOntologyClass">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CategoryByOntologyClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.CategoryByOntologyClass" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the ontology category corresponding to the input ontology class.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The ontology class value.</p>
-</dd>
-<dt><strong>defaultValue</strong><span class="classifier">Any , optional</span></dt><dd><p>The default value to return when no valid value is found. Default is None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Any</dt><dd><p>The resulting category by ontology class object or value.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>This method delegates to Ontology.CategoryByClass when available so that
+Ontology.py remains the canonical source of ontology class/category logic.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -3677,49 +3650,55 @@ Default is ‘all’.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.DegreeCentrality">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">DegreeCentrality</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">weightKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">normalize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nxCompatible</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'degree_centrality'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'dc_color'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'viridis'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.DegreeCentrality" title="Permalink to this definition"></a></dt>
-<dd><p>Computes the degree centrality of the input TGraph and stores the result
-in the dictionary of each vertex or edge.</p>
+<dd><p>Computes degree centrality for the input TGraph and stores the result in the
+dictionary of each vertex or edge.</p>
+<p>This implementation keeps the richer DegreeCentrality API, but restores the
+fast compiled path used by the previous implementation for the common
+unweighted vertex-centrality case.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>weightKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set to None, each edge is assumed to have a weight of 1. If set to
+<dt><strong>weightKey</strong><span class="classifier">str , optional</span></dt><dd><p>If set to None, each edge contributes 1 to the degree. If set to
 “length” or “distance”, the geometric length of each edge is used as its
 weight. If set to any other value, the value associated with that key in
 each edge dictionary is used as the edge weight. Default is None.</p>
 </dd>
-<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the values are normalized between 0 and 1. Default is False.</p>
+<dt><strong>normalize</strong><span class="classifier">bool , optional</span></dt><dd><p>If nxCompatible is False, this controls whether values are min-max
+normalised between 0 and 1. Default is False.</p>
 </dd>
-<dt><strong>nxCompatible</strong><span class="classifier">bool , optional</span></dt><dd><p>Kept for consistency with other centrality functions. If set to True,
-NetworkX-style degree centrality scaling is applied. Default is True.</p>
+<dt><strong>nxCompatible</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, NetworkX-style degree centrality scaling is applied, i.e.
+degree / (n - 1). Default is True.</p>
 </dd>
-<dt><strong>useEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the calculation uses the edges rather than the vertices.
+<dt><strong>useEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, degree centrality is calculated on the implicit line graph:
+each original edge becomes an entity and adjacent edges share a vertex.
 Default is False.</p>
 </dd>
-<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None, the value associated with that key in each edge dictionary is
-used to bundle the edges into one entity for the calculation. Otherwise,
-each edge segment is assumed to be an independent entity. Default is None.</p>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>If not None and useEdges is True, edges are bundled by this dictionary
+key before normalisation. Default is None.</p>
 </dd>
-<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key name under which to store the calculated value.
-Default is “degree_centrality”.</p>
+<dt><strong>key</strong><span class="classifier">str , optional</span></dt><dd><p>Dictionary key under which to store the calculated value. If None, values
+are returned but not stored. Default is “degree_centrality”.</p>
 </dd>
-<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>The desired dictionary key name under which to store the calculated color.
-Default is “dc_color”.</p>
+<dt><strong>colorKey</strong><span class="classifier">str , optional</span></dt><dd><p>Dictionary key under which to store the colour value. If None, colours
+are not calculated or stored. For benchmarking against NetworkX, set this
+to None. Default is “dc_color”.</p>
 </dd>
-<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>The desired color scale name to use for colors. Default is “viridis”.</p>
+<dt><strong>colorScale</strong><span class="classifier">str , optional</span></dt><dd><p>Desired colour scale name. Default is “viridis”.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The desired length of the mantissa. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Number of decimal places. If None or negative, values are not rounded.
+Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Tolerance used for normalisation and colour ranges. Default is 0.001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error/warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list or None</dt><dd><p>The list of centralities in the order matching the vertices or edges as requested.</p>
+<dt>list or None</dt><dd><p>The list of centrality values in vertex or edge order.</p>
 </dd>
 </dl>
 </dd>
@@ -6268,34 +6247,10 @@ Used only when key is specified. Default is “equal to”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">NormalizeOntologyDictionaries</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">labelKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">categoryKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcClassKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcGUIDKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.NormalizeOntologyDictionaries" title="Permalink to this definition"></a></dt>
 <dd><p>Normalizes ontology-related dictionary values in the input TGraph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>labelKeys</strong><span class="classifier">Optional[List[str]] , optional</span></dt><dd><p>The input label keys value. Default is None.</p>
-</dd>
-<dt><strong>categoryKeys</strong><span class="classifier">Optional[List[str]] , optional</span></dt><dd><p>The input category keys value. Default is None.</p>
-</dd>
-<dt><strong>ifcClassKeys</strong><span class="classifier">Optional[List[str]] , optional</span></dt><dd><p>The input ifc class keys value. Default is None.</p>
-</dd>
-<dt><strong>ifcGUIDKeys</strong><span class="classifier">Optional[List[str]] , optional</span></dt><dd><p>The input ifc guidkeys value. Default is None.</p>
-</dd>
-<dt><strong>includeGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include graph are included. Default is True.</p>
-</dd>
-<dt><strong>includeVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include vertices are included. Default is True.</p>
-</dd>
-<dt><strong>includeEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include edges are included. Default is True.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>When Ontology.py is available, each graph/vertex/edge dictionary is
+normalised through Ontology.NormalizeDictionary so that TGraph follows the
+canonical ontology key policy. A local fallback is retained for standalone
+operation.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6378,22 +6333,7 @@ Used only when key is specified. Default is “equal to”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.OntologyClassByIFCClass">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OntologyClassByIFCClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifcClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Element'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.OntologyClassByIFCClass" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the ontology class corresponding to the input IFC class.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>ifcClass</strong><span class="classifier">str</span></dt><dd><p>The IFC class value.</p>
-</dd>
-<dt><strong>defaultValue</strong><span class="classifier">Any , optional</span></dt><dd><p>The default value to return when no valid value is found. Default is ‘top:Element’.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Any</dt><dd><p>The resulting ontology class by ifcclass object or value.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>This method delegates to Ontology.ClassByIFCClass when available.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -6427,30 +6367,9 @@ Used only when key is specified. Default is “equal to”.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.OntologyTriples">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OntologyTriples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBOT</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespacePrefix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'inst'</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.OntologyTriples" title="Permalink to this definition"></a></dt>
 <dd><p>Returns ontology triples representing the input TGraph.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>includeVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include vertices are included. Default is True.</p>
-</dd>
-<dt><strong>includeEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include edges are included. Default is True.</p>
-</dd>
-<dt><strong>includeDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, dictionaries are included in the output. Default is True.</p>
-</dd>
-<dt><strong>includeBOT</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include bot are included. Default is True.</p>
-</dd>
-<dt><strong>namespacePrefix</strong><span class="classifier">str , optional</span></dt><dd><p>The input namespace prefix value. Default is ‘inst’.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>List[Tuple[str, str, str]]</dt><dd><p>The resulting ontology triples list.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>Delegates to Ontology.GraphTriples when Ontology.py is available. This
+keeps TGraph RDF export aligned with the canonical ontology helper while
+preserving the original fallback implementation strategy.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -7025,112 +6944,24 @@ Default is ‘all’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.SetOntologyCategory">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetOntologyCategory</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">category</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.SetOntologyCategory" title="Permalink to this definition"></a></dt>
 <dd><p>Sets the ontology category of a graph, vertex, or edge.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>category</strong><span class="classifier">str</span></dt><dd><p>The ontology category value.</p>
-</dd>
-<dt><strong>element</strong><span class="classifier">str , optional</span></dt><dd><p>The graph element to annotate or query. Valid values are typically “graph”,
-“vertex”, or “edge”. Default is ‘graph’.</p>
-</dd>
-<dt><strong>index</strong><span class="classifier">Optional[int] , optional</span></dt><dd><p>The input index. Default is None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.SetOntologyClass">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetOntologyClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontologyClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setCategory</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">setURI</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.SetOntologyClass" title="Permalink to this definition"></a></dt>
 <dd><p>Sets the ontology class of a graph, vertex, or edge.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>ontologyClass</strong><span class="classifier">str</span></dt><dd><p>The ontology class value.</p>
-</dd>
-<dt><strong>element</strong><span class="classifier">str , optional</span></dt><dd><p>The graph element to annotate or query. Valid values are typically “graph”,
-“vertex”, or “edge”. Default is ‘graph’.</p>
-</dd>
-<dt><strong>index</strong><span class="classifier">Optional[int] , optional</span></dt><dd><p>The input index. Default is None.</p>
-</dd>
-<dt><strong>setCategory</strong><span class="classifier">bool , optional</span></dt><dd><p>The input set category value. Default is True.</p>
-</dd>
-<dt><strong>setURI</strong><span class="classifier">bool , optional</span></dt><dd><p>The input set uri value. Default is True.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.SetOntologyLabel">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetOntologyLabel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">label</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.SetOntologyLabel" title="Permalink to this definition"></a></dt>
 <dd><p>Sets the ontology label of a graph, vertex, or edge.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>label</strong><span class="classifier">Any</span></dt><dd><p>The label value.</p>
-</dd>
-<dt><strong>element</strong><span class="classifier">str , optional</span></dt><dd><p>The graph element to annotate or query. Valid values are typically “graph”,
-“vertex”, or “edge”. Default is ‘graph’.</p>
-</dd>
-<dt><strong>index</strong><span class="classifier">Optional[int] , optional</span></dt><dd><p>The input index. Default is None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.SetOntologyURI">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SetOntologyURI</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">uri</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'graph'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.SetOntologyURI" title="Permalink to this definition"></a></dt>
-<dd><p>Sets the ontology URI of a graph, vertex, or edge.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
-</dd>
-<dt><strong>uri</strong><span class="classifier">str</span></dt><dd><p>The URI value.</p>
-</dd>
-<dt><strong>element</strong><span class="classifier">str , optional</span></dt><dd><p>The graph element to annotate or query. Valid values are typically “graph”,
-“vertex”, or “edge”. Default is ‘graph’.</p>
-</dd>
-<dt><strong>index</strong><span class="classifier">Optional[int] , optional</span></dt><dd><p>The input index. Default is None.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Optional[TGraph]</dt><dd><p>The resulting TGraph, or None if the operation fails.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Sets the URI of a graph, vertex, or edge.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -7788,27 +7619,7 @@ Default is ‘all’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.TurtleFromTriples">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TurtleFromTriples</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">triples</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">namespaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">str</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">instanceNamespace</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'http://w3id.org/topologicpy/instance#'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeHeader</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.TurtleFromTriples" title="Permalink to this definition"></a></dt>
 <dd><p>Returns a Turtle string generated from triples.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>triples</strong><span class="classifier">List[Tuple[str, str, str]]</span></dt><dd><p>The input triples value.</p>
-</dd>
-<dt><strong>namespaces</strong><span class="classifier">Optional[Dict[str, str]] , optional</span></dt><dd><p>The input namespaces value. Default is None.</p>
-</dd>
-<dt><strong>instanceNamespace</strong><span class="classifier">str , optional</span></dt><dd><p>The input instance namespace value. Default is
-‘<a class="reference external" href="http://w3id.org/topologicpy">http://w3id.org/topologicpy</a>/instance#’.</p>
-</dd>
-<dt><strong>includeHeader</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include header are included. Default is True.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>The resulting turtle from triples string.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<p>Delegates to Ontology.TurtleFromTriples when available.</p>
 </dd></dl>
 
 <dl class="py method">
