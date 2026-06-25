@@ -896,6 +896,828 @@ class Plotly:
 
         return data
 
+
+    @staticmethod
+    def DataByProofGraph(
+        proofGraphData=None,
+        result=None,
+        triple=None,
+        graph=None,
+        layout: str = "tree",
+        useExistingCoordinates: bool = True,
+        showNodes: bool = True,
+        showEdges: bool = True,
+        showNodeLabel: bool = True,
+        showEdgeLabel: bool = False,
+        nodeLabelKey: str = "label",
+        edgeLabelKey: str = "label",
+        nodeTypeKey: str = "type",
+        edgeTypeKey: str = "type",
+        nodeSize: float = 12,
+        ruleNodeSize: float = 15,
+        factNodeSize: float = 12,
+        literalNodeSize: float = 9,
+        edgeWidth: float = 3,
+        levelSpacing: float = 1.8,
+        nodeSpacing: float = 1.35,
+        radialRadiusStep: float = 1.5,
+        forceIterations: int = 120,
+        forceScale: float = 1.0,
+        showLegend: bool = True,
+        hover: bool = True,
+        mantissa: int = 6,
+        silent: bool = False,
+    ):
+        """
+        Creates Plotly traces for a proof graph.
+
+        This method is designed for the explainable reasoning workflow in
+        ``topologicpy.Reasoner``. It accepts a proof-graph data dictionary,
+        a proof ``TGraph``, or an inference ``result`` and ``triple`` from
+        which proof-graph data can be requested.
+
+        The expected dictionary format is intentionally permissive:
+
+        ``{"nodes": [...], "edges": [...]}``
+
+        where each node may contain ``id``, ``label``, ``type``/``kind``,
+        ``depth``/``level``, ``x``, ``y``, and ``z``; and each edge may contain
+        ``source``/``src``/``from``, ``target``/``dst``/``to``, ``label``, and
+        ``type``/``role``. This loose contract allows the method to consume
+        proof data from ``Reasoner``, ``KnowledgeGraph``, or user-authored
+        dictionaries.
+
+        Parameters
+        ----------
+        proofGraphData : dict or topologicpy.TGraph , optional
+            The proof graph data or proof TGraph. Default is None.
+        result : object , optional
+            An inference result returned by Reasoner.Infer or
+            TGraph.InferOntology. Used only when proofGraphData is None.
+        triple : tuple or list , optional
+            The inferred triple to explain. Used only when proofGraphData is
+            None.
+        graph : object , optional
+            Optional source TGraph/RDF graph to pass to Reasoner when deriving
+            proofGraphData. Default is None.
+        layout : str , optional
+            The layout to use. Options include "tree", "radial", and "force".
+            Default is "tree".
+        useExistingCoordinates : bool , optional
+            If True, existing node coordinates in proofGraphData are used when
+            available. Default is True.
+        showNodes, showEdges : bool , optional
+            Controls visibility of proof graph nodes and edges.
+        showNodeLabel, showEdgeLabel : bool , optional
+            Controls permanent text labels.
+        nodeLabelKey, edgeLabelKey : str , optional
+            Dictionary keys used for node and edge labels.
+        nodeTypeKey, edgeTypeKey : str , optional
+            Dictionary keys used for node and edge type classification.
+        nodeSize, ruleNodeSize, factNodeSize, literalNodeSize : float , optional
+            Marker sizes.
+        edgeWidth : float , optional
+            Line width for proof graph edges.
+        levelSpacing, nodeSpacing, radialRadiusStep : float , optional
+            Layout spacing controls.
+        forceIterations : int , optional
+            Number of iterations for the force-directed layout.
+        forceScale : float , optional
+            Scale factor for force-directed layout coordinates.
+        showLegend : bool , optional
+            If True, show node/edge legends.
+        hover : bool , optional
+            If True, attach dictionary metadata to hover text.
+        mantissa : int , optional
+            Number of decimal places to round coordinates.
+        silent : bool , optional
+            If True, suppress warnings.
+
+        Returns
+        -------
+        list or None
+            A list of Plotly traces, or None if proof graph data cannot be
+            derived.
+        """
+        import math
+        import plotly.graph_objs as go
+
+        def _is_tgraph(obj):
+            try:
+                from topologicpy.TGraph import TGraph
+                return isinstance(obj, TGraph)
+            except Exception:
+                try:
+                    from TGraph import TGraph
+                    return isinstance(obj, TGraph)
+                except Exception:
+                    return False
+
+        def _call_reasoner_for_data():
+            if proofGraphData is not None:
+                return proofGraphData
+            # Prefer the new Reasoner plotting-neutral proof data path.
+            try:
+                from topologicpy.Reasoner import Reasoner
+            except Exception:
+                try:
+                    from Reasoner import Reasoner
+                except Exception:
+                    Reasoner = None
+            if Reasoner is not None and hasattr(Reasoner, "ProofGraphData"):
+                call_variants = [
+                    dict(graph=graph, result=result, triple=triple, layout=layout),
+                    dict(result=result, triple=triple, layout=layout),
+                    dict(result=result, triple=triple),
+                    dict(triple=triple),
+                ]
+                for kwargs in call_variants:
+                    try:
+                        return Reasoner.ProofGraphData(**kwargs)
+                    except TypeError:
+                        continue
+                    except Exception:
+                        continue
+            # Some result containers may expose their own proof graph data.
+            if result is not None:
+                for attr in ["ProofGraphData", "proofGraphData", "proof_graph_data", "ProofData", "proofData"]:
+                    obj = getattr(result, attr, None)
+                    if callable(obj):
+                        try:
+                            return obj(triple=triple, layout=layout)
+                        except TypeError:
+                            try:
+                                return obj(triple)
+                            except Exception:
+                                pass
+                        except Exception:
+                            pass
+                    elif obj is not None:
+                        return obj
+            return None
+
+        data = _call_reasoner_for_data()
+
+        if data is None:
+            if not silent:
+                print("Plotly.DataByProofGraph - Error: Could not derive proof graph data. Returning None.")
+            return None
+
+        if _is_tgraph(data):
+            return Plotly.DataByTGraph(
+                data,
+                directed=True,
+                vertexColorKey="color",
+                vertexSizeKey="size",
+                vertexShapeKey="shape",
+                vertexLabelKey=nodeLabelKey,
+                showVertexLabel=showNodeLabel,
+                edgeColorKey="color",
+                edgeWidthKey="width",
+                edgeLabelKey=edgeLabelKey,
+                showEdgeLabel=showEdgeLabel,
+                edgeWidth=edgeWidth,
+                vertexSize=nodeSize,
+                showVertexLegend=showLegend,
+                showEdgeLegend=showLegend,
+                silent=silent,
+            )
+
+        if not isinstance(data, dict):
+            if not silent:
+                print("Plotly.DataByProofGraph - Error: The proof graph data must be a dictionary or TGraph. Returning None.")
+            return None
+
+        raw_nodes = data.get("nodes", data.get("vertices", []))
+        raw_edges = data.get("edges", data.get("links", data.get("relationships", [])))
+
+        if not isinstance(raw_nodes, list):
+            raw_nodes = []
+        if not isinstance(raw_edges, list):
+            raw_edges = []
+
+        nodes = []
+        node_index = {}
+
+        def _as_dict_node(item, i):
+            if isinstance(item, dict):
+                d = dict(item)
+            else:
+                d = {"id": str(item), "label": str(item)}
+            node_id = d.get("id", d.get("key", d.get("uri", d.get("name", i))))
+            node_id = str(node_id)
+            d["id"] = node_id
+            d.setdefault("label", d.get(nodeLabelKey, node_id))
+            ntype = d.get(nodeTypeKey, d.get("kind", d.get("category", d.get("role", "node"))))
+            d[nodeTypeKey] = str(ntype if ntype is not None else "node")
+            return d
+
+        for i, item in enumerate(raw_nodes):
+            d = _as_dict_node(item, i)
+            if d["id"] in node_index:
+                continue
+            node_index[d["id"]] = len(nodes)
+            nodes.append(d)
+
+        def _edge_source(edge):
+            if not isinstance(edge, dict):
+                if isinstance(edge, (list, tuple)) and len(edge) >= 2:
+                    return str(edge[0])
+                return None
+            return edge.get("source", edge.get("src", edge.get("from", edge.get("subject", edge.get("s")))))
+
+        def _edge_target(edge):
+            if not isinstance(edge, dict):
+                if isinstance(edge, (list, tuple)) and len(edge) >= 2:
+                    return str(edge[1])
+                return None
+            return edge.get("target", edge.get("dst", edge.get("to", edge.get("object", edge.get("o")))))
+
+        edges = []
+        for i, item in enumerate(raw_edges):
+            if isinstance(item, dict):
+                e = dict(item)
+            elif isinstance(item, (list, tuple)) and len(item) >= 2:
+                e = {"source": item[0], "target": item[1]}
+                if len(item) >= 3:
+                    e["label"] = item[2]
+            else:
+                continue
+            s = _edge_source(e)
+            t = _edge_target(e)
+            if s is None or t is None:
+                continue
+            s = str(s)
+            t = str(t)
+            for node_id in [s, t]:
+                if node_id not in node_index:
+                    node_index[node_id] = len(nodes)
+                    nodes.append({"id": node_id, "label": node_id, nodeTypeKey: "node"})
+            e["source"] = s
+            e["target"] = t
+            e.setdefault("label", e.get(edgeLabelKey, e.get("role", e.get("predicate", ""))))
+            e.setdefault(edgeTypeKey, e.get("kind", e.get("role", "edge")))
+            edges.append(e)
+
+        if not nodes:
+            if not silent:
+                print("Plotly.DataByProofGraph - Error: The proof graph contains no nodes. Returning None.")
+            return None
+
+        def _num(value, default=0.0):
+            try:
+                if value is None:
+                    return float(default)
+                return float(value)
+            except Exception:
+                return float(default)
+
+        def _type(value):
+            return str(value if value is not None else "node").strip().lower()
+
+        def _display_label(d, key, fallback):
+            value = d.get(key, d.get("label", fallback))
+            if value is None:
+                value = fallback
+            return str(value)
+
+        def _hover(d):
+            if not hover:
+                return ""
+            parts = []
+            for k in sorted(d.keys()):
+                try:
+                    v = d[k]
+                    if isinstance(v, (list, tuple, set)):
+                        v = ", ".join(str(x) for x in v)
+                    elif isinstance(v, dict):
+                        v = "; ".join(f"{kk}: {vv}" for kk, vv in v.items())
+                    parts.append(f"<b>{k}</b>: {v}")
+                except Exception:
+                    pass
+            return "<br>".join(parts)
+
+        node_palette = {
+            "conclusion": "#D55E00",
+            "target": "#D55E00",
+            "inferred": "#0072B2",
+            "inferred_fact": "#0072B2",
+            "fact": "#0072B2",
+            "asserted": "#009E73",
+            "asserted_fact": "#009E73",
+            "premise": "#56B4E9",
+            "rule": "#CC79A7",
+            "inference_rule": "#CC79A7",
+            "class": "#E69F00",
+            "ontology_class": "#E69F00",
+            "property": "#999999",
+            "predicate": "#999999",
+            "literal": "#666666",
+            "node": "#7f7f7f",
+        }
+
+        edge_palette = {
+            "derived_by": "#CC79A7",
+            "derived-by": "#CC79A7",
+            "supports": "#0072B2",
+            "premise": "#56B4E9",
+            "uses": "#56B4E9",
+            "subclass": "#E69F00",
+            "subclassof": "#E69F00",
+            "subproperty": "#999999",
+            "edge": "#999999",
+        }
+
+        def _node_color(d):
+            explicit = d.get("color", d.get("colour", None))
+            if explicit:
+                return str(explicit)
+            t = _type(d.get(nodeTypeKey, d.get("kind", d.get("category", "node"))))
+            if t in node_palette:
+                return node_palette[t]
+            if "rule" in t:
+                return node_palette["rule"]
+            if "assert" in t:
+                return node_palette["asserted"]
+            if "infer" in t or "fact" in t:
+                return node_palette["inferred"]
+            if "literal" in t:
+                return node_palette["literal"]
+            return node_palette["node"]
+
+        def _edge_color(e):
+            explicit = e.get("color", e.get("colour", None))
+            if explicit:
+                return str(explicit)
+            t = _type(e.get(edgeTypeKey, e.get("kind", e.get("role", "edge"))))
+            compact = t.replace("_", "").replace("-", "").replace(" ", "")
+            if t in edge_palette:
+                return edge_palette[t]
+            if compact in edge_palette:
+                return edge_palette[compact]
+            if "premise" in compact or "support" in compact:
+                return edge_palette["premise"]
+            if "derive" in compact:
+                return edge_palette["derived_by"]
+            return edge_palette["edge"]
+
+        def _node_symbol(d):
+            explicit = d.get("symbol", d.get("shape", None))
+            if explicit is not None:
+                s = str(explicit).lower()
+                if s in ["circle", "square", "diamond", "cross", "x", "circle-open", "square-open", "diamond-open"]:
+                    return s
+            t = _type(d.get(nodeTypeKey, d.get("kind", d.get("category", "node"))))
+            if "rule" in t:
+                return "diamond"
+            if "literal" in t:
+                return "square"
+            if "class" in t:
+                return "square"
+            if "assert" in t:
+                return "circle-open"
+            return "circle"
+
+        def _node_size(d):
+            explicit = d.get("size", None)
+            if explicit is not None:
+                return max(1.0, _num(explicit, nodeSize))
+            t = _type(d.get(nodeTypeKey, d.get("kind", d.get("category", "node"))))
+            if "rule" in t:
+                return ruleNodeSize
+            if "literal" in t:
+                return literalNodeSize
+            if "fact" in t or "infer" in t or "assert" in t:
+                return factNodeSize
+            return nodeSize
+
+        def _has_coordinates():
+            if not useExistingCoordinates:
+                return False
+            for d in nodes:
+                if not all(k in d for k in ["x", "y", "z"]):
+                    return False
+                try:
+                    float(d["x"]); float(d["y"]); float(d["z"])
+                except Exception:
+                    return False
+            return True
+
+        coords = {}
+
+        if _has_coordinates():
+            for d in nodes:
+                coords[d["id"]] = [round(_num(d.get("x")), mantissa), round(_num(d.get("y")), mantissa), round(_num(d.get("z")), mantissa)]
+        else:
+            layout_l = str(layout or "tree").strip().lower()
+
+            # Establish levels. Prefer explicit depth/level; otherwise derive
+            # them from directed edge incidence.
+            levels = {}
+            for d in nodes:
+                val = d.get("level", d.get("depth", None))
+                if val is not None:
+                    try:
+                        levels[d["id"]] = int(float(val))
+                    except Exception:
+                        pass
+
+            if len(levels) < len(nodes):
+                indeg = {d["id"]: 0 for d in nodes}
+                out = {d["id"]: [] for d in nodes}
+                for e in edges:
+                    s, t = e["source"], e["target"]
+                    out.setdefault(s, []).append(t)
+                    indeg[t] = indeg.get(t, 0) + 1
+                    indeg.setdefault(s, 0)
+                roots = [node_id for node_id, deg in indeg.items() if deg == 0]
+                if not roots:
+                    roots = [nodes[0]["id"]]
+                queue = [(r, 0) for r in roots]
+                seen = set()
+                while queue:
+                    node_id, lev = queue.pop(0)
+                    if node_id in seen:
+                        continue
+                    seen.add(node_id)
+                    if node_id not in levels:
+                        levels[node_id] = lev
+                    for nb in out.get(node_id, []):
+                        queue.append((nb, lev + 1))
+                for d in nodes:
+                    levels.setdefault(d["id"], 0)
+
+            if "rad" in layout_l:
+                by_level = {}
+                for d in nodes:
+                    by_level.setdefault(levels.get(d["id"], 0), []).append(d["id"])
+                for lev, ids in by_level.items():
+                    radius = max(0.1, (lev + 1) * radialRadiusStep)
+                    count = max(1, len(ids))
+                    for i, node_id in enumerate(ids):
+                        angle = 2.0 * math.pi * float(i) / float(count)
+                        coords[node_id] = [
+                            round(radius * math.cos(angle), mantissa),
+                            round(radius * math.sin(angle), mantissa),
+                            round(-0.15 * lev, mantissa),
+                        ]
+            elif "force" in layout_l or "spring" in layout_l:
+                n = len(nodes)
+                index = {d["id"]: i for i, d in enumerate(nodes)}
+                pos = {}
+                for i, d in enumerate(nodes):
+                    a = 2.0 * math.pi * float(i) / float(max(1, n))
+                    pos[d["id"]] = [math.cos(a) * forceScale, math.sin(a) * forceScale, 0.0]
+                edge_pairs = [(e["source"], e["target"]) for e in edges]
+                k = math.sqrt(1.0 / float(max(1, n))) * forceScale
+                iterations = max(1, int(forceIterations))
+                for it in range(iterations):
+                    disp = {d["id"]: [0.0, 0.0, 0.0] for d in nodes}
+                    temperature = forceScale * (1.0 - float(it) / float(iterations + 1))
+                    ids = [d["id"] for d in nodes]
+                    for i in range(n):
+                        vi = ids[i]
+                        for j in range(i + 1, n):
+                            vj = ids[j]
+                            dx = pos[vi][0] - pos[vj][0]
+                            dy = pos[vi][1] - pos[vj][1]
+                            dist = max(1e-6, math.sqrt(dx * dx + dy * dy))
+                            force = (k * k) / dist
+                            ux, uy = dx / dist, dy / dist
+                            disp[vi][0] += ux * force
+                            disp[vi][1] += uy * force
+                            disp[vj][0] -= ux * force
+                            disp[vj][1] -= uy * force
+                    for s, t in edge_pairs:
+                        if s not in pos or t not in pos:
+                            continue
+                        dx = pos[s][0] - pos[t][0]
+                        dy = pos[s][1] - pos[t][1]
+                        dist = max(1e-6, math.sqrt(dx * dx + dy * dy))
+                        force = (dist * dist) / max(k, 1e-6)
+                        ux, uy = dx / dist, dy / dist
+                        disp[s][0] -= ux * force
+                        disp[s][1] -= uy * force
+                        disp[t][0] += ux * force
+                        disp[t][1] += uy * force
+                    for node_id in pos:
+                        dx, dy = disp[node_id][0], disp[node_id][1]
+                        dist = max(1e-6, math.sqrt(dx * dx + dy * dy))
+                        step = min(dist, temperature)
+                        pos[node_id][0] += (dx / dist) * step
+                        pos[node_id][1] += (dy / dist) * step
+                for d in nodes:
+                    lev = levels.get(d["id"], 0)
+                    coords[d["id"]] = [round(pos[d["id"]][0], mantissa), round(pos[d["id"]][1], mantissa), round(-0.05 * lev, mantissa)]
+            else:
+                # Layered tree layout. Edges usually flow from premises to
+                # conclusion; deeper levels are placed lower on the y-axis.
+                by_level = {}
+                for d in nodes:
+                    by_level.setdefault(levels.get(d["id"], 0), []).append(d["id"])
+                for lev in sorted(by_level.keys()):
+                    ids = by_level[lev]
+                    count = len(ids)
+                    for i, node_id in enumerate(ids):
+                        x = (float(i) - float(count - 1) * 0.5) * nodeSpacing
+                        y = -float(lev) * levelSpacing
+                        coords[node_id] = [round(x, mantissa), round(y, mantissa), 0.0]
+
+        traces = []
+
+        if showEdges and edges:
+            edge_buckets = {}
+            label_x, label_y, label_z, label_text = [], [], [], []
+            for e in edges:
+                s = e.get("source")
+                t = e.get("target")
+                if s not in coords or t not in coords:
+                    continue
+                c1 = coords[s]
+                c2 = coords[t]
+                this_color = _edge_color(e)
+                this_width = _num(e.get("width", edgeWidth), edgeWidth)
+                key = (this_color, this_width)
+                bucket = edge_buckets.setdefault(key, {"x": [], "y": [], "z": [], "text": []})
+                bucket["x"].extend([c1[0], c2[0], None])
+                bucket["y"].extend([c1[1], c2[1], None])
+                bucket["z"].extend([c1[2], c2[2], None])
+                elabel = _display_label(e, edgeLabelKey, e.get("role", ""))
+                bucket["text"].extend([elabel, elabel, None])
+                if showEdgeLabel and elabel:
+                    label_x.append((c1[0] + c2[0]) * 0.5)
+                    label_y.append((c1[1] + c2[1]) * 0.5)
+                    label_z.append((c1[2] + c2[2]) * 0.5)
+                    label_text.append(elabel)
+
+            first = True
+            for (this_color, this_width), bucket in edge_buckets.items():
+                traces.append(go.Scatter3d(
+                    x=bucket["x"], y=bucket["y"], z=bucket["z"],
+                    mode="lines",
+                    line=dict(color=this_color, width=this_width),
+                    hoverinfo="text" if hover else "skip",
+                    hovertext=bucket["text"],
+                    name="Proof dependencies",
+                    legendgroup="proof_edges",
+                    showlegend=bool(showLegend and first),
+                ))
+                first = False
+
+            if showEdgeLabel and label_text:
+                traces.append(go.Scatter3d(
+                    x=label_x, y=label_y, z=label_z,
+                    mode="text",
+                    text=label_text,
+                    textfont=dict(size=10),
+                    hoverinfo="skip",
+                    showlegend=False,
+                ))
+
+        if showNodes:
+            buckets = {}
+            for d in nodes:
+                node_id = d["id"]
+                if node_id not in coords:
+                    continue
+                ntype = _type(d.get(nodeTypeKey, d.get("kind", d.get("category", "node"))))
+                color = _node_color(d)
+                symbol = _node_symbol(d)
+                buckets.setdefault((ntype, color, symbol), []).append(d)
+
+            for (ntype, color, symbol), items in buckets.items():
+                xs, ys, zs, labels, hovers, sizes = [], [], [], [], [], []
+                for d in items:
+                    c = coords[d["id"]]
+                    xs.append(c[0]); ys.append(c[1]); zs.append(c[2])
+                    labels.append(_display_label(d, nodeLabelKey, d["id"]))
+                    hovers.append(_hover(d))
+                    sizes.append(_node_size(d))
+                traces.append(go.Scatter3d(
+                    x=xs, y=ys, z=zs,
+                    mode="markers+text" if showNodeLabel else "markers",
+                    marker=dict(
+                        size=sizes,
+                        color=color,
+                        symbol=symbol,
+                        line=dict(color="rgba(0,0,0,0.35)", width=1),
+                    ),
+                    text=labels if showNodeLabel else None,
+                    textposition="top center",
+                    textfont=dict(size=10),
+                    hoverinfo="text" if hover else "skip",
+                    hovertext=hovers,
+                    name=ntype.replace("_", " ").title(),
+                    legendgroup="proof_nodes_" + ntype,
+                    showlegend=showLegend,
+                ))
+
+        return traces
+
+    @staticmethod
+    def FigureByProofGraph(
+        proofGraphData=None,
+        result=None,
+        triple=None,
+        graph=None,
+        layout: str = "tree",
+        title: str = "Proof Graph",
+        width: int = 950,
+        height: int = 700,
+        backgroundColor="rgba(0,0,0,0)",
+        showNodeLabel: bool = True,
+        showEdgeLabel: bool = False,
+        showLegend: bool = True,
+        xAxis: bool = False,
+        yAxis: bool = False,
+        zAxis: bool = False,
+        marginLeft: int = 0,
+        marginRight: int = 0,
+        marginTop: int = 40,
+        marginBottom: int = 0,
+        silent: bool = False,
+        **kwargs,
+    ):
+        """
+        Creates a Plotly figure for a proof graph.
+
+        Parameters
+        ----------
+        proofGraphData : dict or topologicpy.TGraph , optional
+            The proof graph data or proof TGraph.
+        result : object , optional
+            An inference result returned by Reasoner.Infer or TGraph.InferOntology.
+        triple : tuple or list , optional
+            The inferred triple to explain.
+        graph : object , optional
+            Optional source graph passed to Reasoner when deriving proof data.
+        layout : str , optional
+            Layout type: "tree", "radial", or "force".
+        title : str , optional
+            Figure title.
+        width, height : int , optional
+            Figure size in pixels.
+        backgroundColor : str or list , optional
+            Figure background colour.
+        showNodeLabel, showEdgeLabel, showLegend : bool , optional
+            Display controls.
+        xAxis, yAxis, zAxis : bool , optional
+            Axis visibility controls.
+        marginLeft, marginRight, marginTop, marginBottom : int , optional
+            Figure margins.
+        silent : bool , optional
+            If True, suppress warnings.
+        **kwargs : dict
+            Additional arguments passed to Plotly.DataByProofGraph.
+
+        Returns
+        -------
+        plotly.graph_objs._figure.Figure or None
+            The resulting figure.
+        """
+        try:
+            from topologicpy.Color import Color
+            background = Color.AnyToHex(backgroundColor)
+        except Exception:
+            background = backgroundColor
+
+        data = Plotly.DataByProofGraph(
+            proofGraphData=proofGraphData,
+            result=result,
+            triple=triple,
+            graph=graph,
+            layout=layout,
+            showNodeLabel=showNodeLabel,
+            showEdgeLabel=showEdgeLabel,
+            showLegend=showLegend,
+            silent=silent,
+            **kwargs,
+        )
+
+        if data is None:
+            return None
+
+        # Prefer the established Plotly.py figure pathway so proof graph
+        # visualisation behaves like the rest of TopologicPy's Plotly output.
+        # Fall back to a direct go.Figure when Topologic geometry helpers are
+        # unavailable, for example in a lightweight reasoning-only environment.
+        try:
+            figure = Plotly.FigureByData(
+                data=data,
+                width=width,
+                height=height,
+                xAxis=xAxis,
+                yAxis=yAxis,
+                zAxis=zAxis,
+                axisSize=1,
+                backgroundColor=background,
+                marginLeft=marginLeft,
+                marginRight=marginRight,
+                marginTop=marginTop,
+                marginBottom=marginBottom,
+            )
+        except Exception:
+            figure = None
+
+        if figure is None:
+            figure = go.Figure(data=data)
+            figure.update_layout(
+                width=width,
+                height=height,
+                scene=dict(
+                    xaxis=dict(visible=bool(xAxis)),
+                    yaxis=dict(visible=bool(yAxis)),
+                    zaxis=dict(visible=bool(zAxis)),
+                    aspectmode="data",
+                ),
+                paper_bgcolor=background,
+                plot_bgcolor=background,
+                margin=dict(l=marginLeft, r=marginRight, t=marginTop, b=marginBottom),
+            )
+
+        figure.update_layout(title=title, showlegend=showLegend)
+        figure.update_xaxes(showgrid=False, zeroline=False, visible=False)
+        figure.update_yaxes(showgrid=False, zeroline=False, visible=False)
+        return figure
+
+    @staticmethod
+    def ProofGraphHTML(
+        proofGraphData=None,
+        result=None,
+        triple=None,
+        graph=None,
+        path: str = "proof_graph.html",
+        layout: str = "tree",
+        title: str = "Proof Graph",
+        includePlotlyJS: str = "cdn",
+        autoOpen: bool = False,
+        silent: bool = False,
+        **kwargs,
+    ):
+        """
+        Exports a proof graph visualisation to an HTML file.
+
+        Parameters
+        ----------
+        proofGraphData : dict or topologicpy.TGraph , optional
+            The proof graph data or proof TGraph.
+        result : object , optional
+            An inference result returned by Reasoner.Infer or TGraph.InferOntology.
+        triple : tuple or list , optional
+            The inferred triple to explain.
+        graph : object , optional
+            Optional source graph passed to Reasoner when deriving proof data.
+        path : str , optional
+            The output HTML path. Default is "proof_graph.html".
+        layout : str , optional
+            Layout type: "tree", "radial", or "force".
+        title : str , optional
+            Figure title.
+        includePlotlyJS : str or bool , optional
+            Passed to plotly.io.write_html. Common values are "cdn", True, or
+            False. Default is "cdn".
+        autoOpen : bool , optional
+            If True, open the HTML file after writing it.
+        silent : bool , optional
+            If True, suppress warnings.
+        **kwargs : dict
+            Additional arguments passed to Plotly.FigureByProofGraph.
+
+        Returns
+        -------
+        str or None
+            The output path if successful; otherwise None.
+        """
+        if not isinstance(path, str) or len(path.strip()) == 0:
+            if not silent:
+                print("Plotly.ProofGraphHTML - Error: The input path is invalid. Returning None.")
+            return None
+
+        figure = Plotly.FigureByProofGraph(
+            proofGraphData=proofGraphData,
+            result=result,
+            triple=triple,
+            graph=graph,
+            layout=layout,
+            title=title,
+            silent=silent,
+            **kwargs,
+        )
+
+        if figure is None:
+            return None
+
+        try:
+            import plotly.io as pio
+            pio.write_html(figure, file=path, include_plotlyjs=includePlotlyJS, auto_open=autoOpen, full_html=True)
+            return path
+        except Exception as exc:
+            if not silent:
+                print("Plotly.ProofGraphHTML - Error: Could not write the HTML file. Returning None.")
+                print("Error:", exc)
+            return None
+
+
     @staticmethod
     def vertexData(vertices,
                    dictionaries=None,

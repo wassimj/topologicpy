@@ -105,6 +105,181 @@ class TGraph:
         kind = "directed" if self._directed else "bidirectional"
         return f"TGraph(vertices={TGraph.Order(self)}, edges={TGraph.Size(self)}, {kind})"
 
+    # ---------------------------------------------------------------------
+    # Semantic knowledge graph, reasoning, and proof-graph integration
+    # ---------------------------------------------------------------------
+
+    @staticmethod
+    def KnowledgeGraph(graph: "TGraph", **kwargs):
+        """
+        Returns a KnowledgeGraph view of the input TGraph.
+        """
+        return _TGraph_KnowledgeGraph(graph, **kwargs)
+
+    @staticmethod
+    def ToKnowledgeGraph(graph: "TGraph", **kwargs):
+        """
+        Alias of TGraph.KnowledgeGraph.
+        """
+        return _TGraph_ToKnowledgeGraph(graph, **kwargs)
+
+    @staticmethod
+    def RDFGraph(graph: "TGraph", includeOntologyAxioms: bool = False,
+                 includeBOT: bool = True, silent: bool = False, **kwargs):
+        """
+        Returns an RDFLib graph for the input TGraph when RDFLib is available.
+        """
+        return _TGraph_RDFGraph(graph, includeOntologyAxioms=includeOntologyAxioms,
+                                includeBOT=includeBOT, silent=silent, **kwargs)
+
+    @staticmethod
+    def SemanticGraph(graph: "TGraph", **kwargs):
+        """
+        Returns the semantic KnowledgeGraph converted back to a TGraph view.
+        """
+        return _TGraph_SemanticGraph(graph, **kwargs)
+
+    @staticmethod
+    def KnowledgeGraphView(graph: "TGraph", **kwargs):
+        """
+        Alias of TGraph.SemanticGraph for semantic graph visualisation.
+        """
+        return _TGraph_KnowledgeGraphView(graph, **kwargs)
+
+    @staticmethod
+    def InferOntology(graph: "TGraph", profile: str = "rdfs",
+                      includeOntologyAxioms: bool = True, includeBOT: bool = True,
+                      applyToGraph: bool = False, returnResult: bool = False,
+                      inplace: bool = False, maxIterations: int = 64,
+                      namespacePrefix: str = "inst", silent: bool = False,
+                      **kwargs):
+        """
+        Runs ontology inference for the input TGraph.
+        """
+        return _TGraph_InferOntology(graph, profile=profile,
+                                     includeOntologyAxioms=includeOntologyAxioms,
+                                     includeBOT=includeBOT,
+                                     applyToGraph=applyToGraph,
+                                     returnResult=returnResult,
+                                     inplace=inplace,
+                                     maxIterations=maxIterations,
+                                     namespacePrefix=namespacePrefix,
+                                     silent=silent,
+                                     **kwargs)
+
+    @staticmethod
+    def Reason(graph: "TGraph", **kwargs):
+        """
+        Alias of TGraph.InferOntology.
+        """
+        return _TGraph_Reason(graph, **kwargs)
+
+    @staticmethod
+    def ApplyInferences(graph: "TGraph", result=None, inferredGraph=None,
+                        namespacePrefix: str = "inst", silent: bool = False,
+                        **kwargs):
+        """
+        Applies inferred semantic facts to TGraph dictionaries.
+        """
+        return _TGraph_ApplyInferences(graph, result=result, inferredGraph=inferredGraph,
+                                       namespacePrefix=namespacePrefix, silent=silent,
+                                       **kwargs)
+
+    @staticmethod
+    def ExplainInference(graph: "TGraph", triple=None, subject=None, predicate=None,
+                         object=None, result=None, silent: bool = False, **kwargs):
+        """
+        Explains an asserted or inferred semantic fact for the TGraph.
+        """
+        return _TGraph_ExplainInference(graph, triple=triple, subject=subject,
+                                        predicate=predicate, object=object,
+                                        result=result, silent=silent, **kwargs)
+
+    @staticmethod
+    def ProofGraph(graph: "TGraph", triple=None, subject=None, predicate=None,
+                   object=None, result=None, silent: bool = False, **kwargs):
+        """
+        Returns proof-graph data for a semantic fact.
+        """
+        return _TGraph_ProofGraph(graph, triple=triple, subject=subject,
+                                  predicate=predicate, object=object,
+                                  result=result, silent=silent, **kwargs)
+
+    @staticmethod
+    def ProofGraphData(graph: "TGraph", triple=None, subject=None, predicate=None,
+                       object=None, result=None, silent: bool = False, **kwargs):
+        """
+        Returns Plotly-ready proof-graph data for a semantic fact.
+        """
+        return _TGraph_ProofGraphData(graph, triple=triple, subject=subject,
+                                      predicate=predicate, object=object,
+                                      result=result, silent=silent, **kwargs)
+
+    @staticmethod
+    def ProofGraphFigure(graph: "TGraph", triple=None, subject=None, predicate=None,
+                         object=None, result=None, silent: bool = False, **kwargs):
+        """
+        Returns a Plotly figure visualising a proof graph.
+        """
+        return _TGraph_ProofGraphFigure(graph, triple=triple, subject=subject,
+                                        predicate=predicate, object=object,
+                                        result=result, silent=silent, **kwargs)
+
+    @staticmethod
+    def ProofGraphHTML(graph: "TGraph", triple=None, subject=None, predicate=None,
+                       object=None, result=None, path: str = "proof_graph.html",
+                       silent: bool = False, **kwargs):
+        """
+        Exports a proof-graph visualisation to an HTML file.
+        """
+        return _TGraph_ProofGraphHTML(graph, triple=triple, subject=subject,
+                                      predicate=predicate, object=object,
+                                      result=result, path=path, silent=silent,
+                                      **kwargs)
+
+    @staticmethod
+    def SemanticFingerprint(graph: "TGraph", includeOntologyAxioms: bool = False,
+                            **kwargs):
+        """
+        Returns a deterministic hash of the TGraph semantic triples.
+        """
+        return _TGraph_SemanticFingerprint(graph, includeOntologyAxioms=includeOntologyAxioms,
+                                           **kwargs)
+
+    @staticmethod
+    def NeedsSemanticSync(graph: "TGraph", key: str = "semantic_fingerprint",
+                          **kwargs):
+        """
+        Returns True if the stored semantic fingerprint differs from the current one.
+        """
+        return _TGraph_NeedsSemanticSync(graph, key=key, **kwargs)
+
+    @staticmethod
+    def SyncSemantics(graph: "TGraph", key: str = "semantic_fingerprint",
+                      applyInferences: bool = False, returnResult: bool = False,
+                      silent: bool = False, **kwargs):
+        """
+        Updates semantic metadata and optionally applies inferred facts.
+        """
+        return _TGraph_SyncSemantics(graph, key=key,
+                                     applyInferences=applyInferences,
+                                     returnResult=returnResult, silent=silent,
+                                     **kwargs)
+
+    @staticmethod
+    def SemanticDiff(graphA, graphB, **kwargs):
+        """
+        Returns a semantic triple diff between two TGraphs or knowledge graphs.
+        """
+        return _TGraph_SemanticDiff(graphA, graphB, **kwargs)
+
+    @staticmethod
+    def SemanticSummary(graph: "TGraph", **kwargs):
+        """
+        Returns a summary of semantic content in the TGraph.
+        """
+        return _TGraph_SemanticSummary(graph, **kwargs)
+
     @staticmethod
     def AABB(graph: "TGraph", pad: float = 0.0) -> Optional[Any]:
         """
@@ -22062,3 +22237,435 @@ class TGraph:
     AngularIntegration = Integration
     AngularBetweenness = Choice
 
+
+# -----------------------------------------------------------------------------
+# Semantic KnowledgeGraph / Reasoner integration extension methods
+# -----------------------------------------------------------------------------
+# These methods are attached after class definition so the integration remains
+# drop-in compatible with the existing TGraph storage model and __slots__.
+
+
+def _tgraph_import_knowledge_graph():
+    try:
+        from topologicpy.KnowledgeGraph import KnowledgeGraph
+        return KnowledgeGraph
+    except Exception:
+        try:
+            from KnowledgeGraph import KnowledgeGraph
+            return KnowledgeGraph
+        except Exception:
+            return None
+
+
+def _tgraph_import_reasoner():
+    try:
+        from topologicpy.Reasoner import Reasoner
+        return Reasoner
+    except Exception:
+        try:
+            from Reasoner import Reasoner
+            return Reasoner
+        except Exception:
+            return None
+
+
+def _tgraph_import_plotly():
+    try:
+        from topologicpy.Plotly import Plotly
+        return Plotly
+    except Exception:
+        try:
+            from Plotly import Plotly
+            return Plotly
+        except Exception:
+            return None
+
+
+def _TGraph_KnowledgeGraph(graph, **kwargs):
+    """Returns a KnowledgeGraph view of the input TGraph."""
+    if not isinstance(graph, TGraph):
+        return None
+    KnowledgeGraph = _tgraph_import_knowledge_graph()
+    if KnowledgeGraph is not None:
+        try:
+            return KnowledgeGraph.ByTGraph(graph, **kwargs)
+        except Exception:
+            pass
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is not None:
+        try:
+            triples = Reasoner.TriplesByTopology(graph, **kwargs)
+            if KnowledgeGraph is not None:
+                return KnowledgeGraph(triples=triples)
+            return triples
+        except Exception:
+            return None
+    return None
+
+
+def _TGraph_ToKnowledgeGraph(graph, **kwargs):
+    """Alias of TGraph.KnowledgeGraph."""
+    return _TGraph_KnowledgeGraph(graph, **kwargs)
+
+
+def _TGraph_RDFGraph(graph, includeOntologyAxioms=False, includeBOT=True, silent=False, **kwargs):
+    """Returns an RDFLib graph for the input TGraph when RDFLib is available."""
+    if not isinstance(graph, TGraph):
+        return None
+    KnowledgeGraph = _tgraph_import_knowledge_graph()
+    if KnowledgeGraph is not None:
+        try:
+            kg = KnowledgeGraph.ByTGraph(graph, **kwargs)
+            rdf = kg.RDFGraph(silent=silent) if kg is not None else None
+            if includeOntologyAxioms:
+                Reasoner = _tgraph_import_reasoner()
+                if Reasoner is not None:
+                    rdf = Reasoner.AddOntologyAxioms(rdf, includeBOT=includeBOT, silent=silent)
+            return rdf
+        except Exception:
+            pass
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    try:
+        return Reasoner.RDFGraphByTopology(graph, includeOntologyAxioms=includeOntologyAxioms, includeBOT=includeBOT, silent=silent, **kwargs)
+    except Exception:
+        return None
+
+
+def _TGraph_SemanticGraph(graph, **kwargs):
+    """Returns the semantic KnowledgeGraph converted back to a TGraph view."""
+    if not isinstance(graph, TGraph):
+        return None
+    kg = _TGraph_KnowledgeGraph(graph, **kwargs)
+    if kg is None:
+        return None
+    try:
+        return kg.ToTGraph()
+    except Exception:
+        KnowledgeGraph = _tgraph_import_knowledge_graph()
+        if KnowledgeGraph is not None:
+            try:
+                return KnowledgeGraph.ToTGraph(kg)
+            except Exception:
+                pass
+    return None
+
+
+def _TGraph_KnowledgeGraphView(graph, **kwargs):
+    """Alias of TGraph.SemanticGraph for semantic graph visualisation."""
+    return _TGraph_SemanticGraph(graph, **kwargs)
+
+
+def _TGraph_InferOntology(
+    graph,
+    profile="rdfs",
+    includeOntologyAxioms=True,
+    includeBOT=True,
+    applyToGraph=False,
+    returnResult=False,
+    inplace=False,
+    maxIterations=64,
+    namespacePrefix="inst",
+    silent=False,
+    **kwargs,
+):
+    """Runs ontology inference for a TGraph.
+
+    Parameters mirror Reasoner.Infer where possible. If returnResult is True,
+    an explainable Reasoner.InferenceResult is returned. If applyToGraph is True,
+    inferred rdf:type values are written back to graph dictionaries.
+    """
+    if not isinstance(graph, TGraph):
+        return None
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        if not silent:
+            print("TGraph.InferOntology - Error: Could not import Reasoner. Returning None.")
+        return None
+    try:
+        before = Reasoner.RDFGraphByTopology(
+            graph,
+            includeGraph=True,
+            includeDictionaries=True,
+            includeBOT=includeBOT,
+            includeOntologyAxioms=includeOntologyAxioms,
+            namespacePrefix=namespacePrefix,
+            silent=silent,
+        )
+        after = Reasoner.Infer(
+            before,
+            profile=profile,
+            includeOntologyAxioms=includeOntologyAxioms,
+            includeBOT=includeBOT,
+            inplace=inplace,
+            maxIterations=maxIterations,
+            silent=silent,
+        )
+        result = Reasoner.Result(before, after, profile=profile) if hasattr(Reasoner, "Result") else after
+        if applyToGraph:
+            Reasoner.ApplyInferences(graph, after, namespacePrefix=namespacePrefix, silent=silent)
+        if returnResult:
+            return result
+        return graph if applyToGraph else after
+    except Exception as exc:
+        if not silent:
+            print("TGraph.InferOntology - Error: Could not run ontology inference. Returning None.")
+            print("Error:", exc)
+        return None
+
+
+def _TGraph_Reason(graph, **kwargs):
+    """Alias of TGraph.InferOntology."""
+    return _TGraph_InferOntology(graph, **kwargs)
+
+
+def _TGraph_ApplyInferences(graph, result=None, inferredGraph=None, namespacePrefix="inst", silent=False, **kwargs):
+    """Applies inferred facts to TGraph dictionaries."""
+    if not isinstance(graph, TGraph):
+        return None
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return graph
+    if inferredGraph is None:
+        if result is not None and hasattr(result, "after_graph"):
+            inferredGraph = result.after_graph
+        elif result is not None:
+            inferredGraph = result
+        else:
+            result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, namespacePrefix=namespacePrefix, silent=silent, **kwargs)
+            inferredGraph = getattr(result, "after_graph", None)
+    try:
+        return Reasoner.ApplyInferences(graph, inferredGraph, namespacePrefix=namespacePrefix, silent=silent, **kwargs)
+    except Exception as exc:
+        if not silent:
+            print("TGraph.ApplyInferences - Warning: Could not apply inferences.")
+            print("Error:", exc)
+        return graph
+
+
+def _TGraph_ExplainInference(graph, triple=None, subject=None, predicate=None, object=None, result=None, silent=False, **kwargs):
+    """Explains an asserted or inferred semantic fact for the TGraph."""
+    if not isinstance(graph, TGraph):
+        return None
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    if result is None:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, silent=silent)
+    target = triple if triple is not None else (subject, predicate, object)
+    try:
+        if triple is not None:
+            return Reasoner.Explain(result, triple, **kwargs)
+        return Reasoner.Explain(result, subject, predicate, object, **kwargs)
+    except Exception as exc:
+        if not silent:
+            print("TGraph.ExplainInference - Error: Could not explain inference.")
+            print("Error:", exc)
+        return None
+
+
+def _TGraph_ProofGraph(graph, triple=None, subject=None, predicate=None, object=None, result=None, silent=False, **kwargs):
+    """Returns proof graph data for a semantic fact."""
+    if not isinstance(graph, TGraph):
+        return None
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    if result is None:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, silent=silent)
+    try:
+        return Reasoner.ProofGraph(resultOrGraph=result, subject=subject, predicate=predicate, object=object, triple=triple, **kwargs)
+    except TypeError:
+        return Reasoner.ProofGraph(result, subject, predicate, object, triple=triple, **kwargs)
+    except Exception:
+        return None
+
+
+def _TGraph_ProofGraphData(graph, triple=None, subject=None, predicate=None, object=None, result=None, silent=False, **kwargs):
+    """Returns Plotly-ready proof graph data for a semantic fact."""
+    if not isinstance(graph, TGraph):
+        return None
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    if result is None:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, silent=silent)
+    try:
+        return Reasoner.ProofGraphData(resultOrGraph=result, subject=subject, predicate=predicate, object=object, triple=triple, **kwargs)
+    except TypeError:
+        return Reasoner.ProofGraphData(result, subject, predicate, object, triple=triple, **kwargs)
+    except Exception as exc:
+        if not silent:
+            print("TGraph.ProofGraphData - Error: Could not create proof graph data.")
+            print("Error:", exc)
+        return None
+
+
+def _TGraph_ProofGraphFigure(graph, triple=None, subject=None, predicate=None, object=None, result=None, silent=False, **kwargs):
+    """Returns a Plotly figure visualising a proof graph."""
+    Plotly = _tgraph_import_plotly()
+    if Plotly is not None:
+        try:
+            return Plotly.FigureByProofGraph(result=result, graph=graph, subject=subject, predicate=predicate, object=object, triple=triple, **kwargs)
+        except TypeError:
+            try:
+                return Plotly.FigureByProofGraph(resultOrGraph=result, graph=graph, subject=subject, predicate=predicate, object=object, triple=triple, **kwargs)
+            except Exception:
+                pass
+        except Exception:
+            pass
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    if result is None:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, silent=silent)
+    return Reasoner.ProofGraphFigure(result, subject=subject, predicate=predicate, object=object, triple=triple, **kwargs)
+
+
+def _TGraph_ProofGraphHTML(graph, triple=None, subject=None, predicate=None, object=None, result=None, path="proof_graph.html", silent=False, **kwargs):
+    """Exports a proof graph visualisation to an HTML file."""
+    Plotly = _tgraph_import_plotly()
+    if Plotly is not None:
+        try:
+            return Plotly.ProofGraphHTML(result=result, graph=graph, subject=subject, predicate=predicate, object=object, triple=triple, path=path, **kwargs)
+        except TypeError:
+            try:
+                return Plotly.ProofGraphHTML(resultOrGraph=result, graph=graph, subject=subject, predicate=predicate, object=object, triple=triple, path=path, **kwargs)
+            except Exception:
+                pass
+        except Exception:
+            pass
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is None:
+        return None
+    if result is None:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=False, silent=silent)
+    return Reasoner.ProofGraphHTML(result, subject=subject, predicate=predicate, object=object, triple=triple, path=path, **kwargs)
+
+
+def _TGraph_SemanticFingerprint(graph, includeOntologyAxioms=False, **kwargs):
+    """Returns a deterministic hash of the TGraph's semantic triples."""
+    if not isinstance(graph, TGraph):
+        return None
+    import hashlib
+    import json
+    kg = _TGraph_KnowledgeGraph(graph, **kwargs)
+    triples = []
+    if kg is not None:
+        try:
+            triples = list(kg.Triples(sort=True))
+        except TypeError:
+            triples = list(kg.Triples())
+        except Exception:
+            try:
+                triples = list(kg)
+            except Exception:
+                triples = []
+    text = json.dumps(sorted([tuple(map(str, t)) for t in triples]), sort_keys=True, ensure_ascii=True)
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
+def _TGraph_NeedsSemanticSync(graph, key="semantic_fingerprint", **kwargs):
+    """Returns True if the stored semantic fingerprint differs from the current one."""
+    if not isinstance(graph, TGraph):
+        return False
+    current = _TGraph_SemanticFingerprint(graph, **kwargs)
+    stored = graph._dictionary.get(key)
+    return current != stored
+
+
+def _TGraph_SyncSemantics(graph, key="semantic_fingerprint", applyInferences=False, returnResult=False, silent=False, **kwargs):
+    """Updates semantic metadata and optionally applies inferred facts."""
+    if not isinstance(graph, TGraph):
+        return None
+    result = None
+    if applyInferences:
+        result = _TGraph_InferOntology(graph, returnResult=True, applyToGraph=True, silent=silent, **kwargs)
+    graph._dictionary[key] = _TGraph_SemanticFingerprint(graph, **kwargs)
+    graph._dictionary["semantic_synced"] = True
+    return result if returnResult else graph
+
+
+def _TGraph_SemanticDiff(graphA, graphB, **kwargs):
+    """Returns a semantic triple diff between two TGraphs or knowledge graphs."""
+    KnowledgeGraph = _tgraph_import_knowledge_graph()
+    kgA = _TGraph_KnowledgeGraph(graphA, **kwargs) if isinstance(graphA, TGraph) else graphA
+    kgB = _TGraph_KnowledgeGraph(graphB, **kwargs) if isinstance(graphB, TGraph) else graphB
+    if kgA is None or kgB is None:
+        return None
+    try:
+        return kgA.Diff(kgB)
+    except Exception:
+        pass
+    Reasoner = _tgraph_import_reasoner()
+    if Reasoner is not None:
+        return Reasoner.Diff(kgA, kgB)
+    try:
+        a = set(kgA.Triples(sort=True)); b = set(kgB.Triples(sort=True))
+        return {"added": sorted(b-a), "removed": sorted(a-b), "changed": [], "count_added": len(b-a), "count_removed": len(a-b)}
+    except Exception:
+        return None
+
+
+def _TGraph_SemanticSummary(graph, **kwargs):
+    """Returns a summary of semantic content in the TGraph."""
+    if not isinstance(graph, TGraph):
+        return None
+    kg = _TGraph_KnowledgeGraph(graph, **kwargs)
+    summary = {}
+    if kg is not None:
+        try:
+            summary.update(kg.Summary())
+        except Exception:
+            try:
+                summary["triple_count"] = len(list(kg.Triples()))
+            except Exception:
+                pass
+    class_counts = {}
+    category_counts = {}
+    def count_dict(d):
+        if not isinstance(d, dict):
+            return
+        oc = d.get("ontology_class")
+        cat = d.get("category")
+        if oc is not None:
+            class_counts[str(oc)] = class_counts.get(str(oc), 0) + 1
+        if cat is not None:
+            category_counts[str(cat)] = category_counts.get(str(cat), 0) + 1
+    count_dict(graph._dictionary)
+    for v in graph._vertices:
+        if v.get("active", True):
+            count_dict(v.get("dictionary", {}))
+    for e in graph._edges:
+        if e.get("active", True):
+            count_dict(e.get("dictionary", {}))
+    summary.update({
+        "vertices": TGraph.Order(graph),
+        "edges": TGraph.Size(graph),
+        "ontology_class_counts": dict(sorted(class_counts.items())),
+        "category_counts": dict(sorted(category_counts.items())),
+        "semantic_fingerprint": _TGraph_SemanticFingerprint(graph, **kwargs),
+    })
+    return summary
+
+
+# Attach methods to TGraph.
+TGraph.KnowledgeGraph = staticmethod(_TGraph_KnowledgeGraph)
+TGraph.ToKnowledgeGraph = staticmethod(_TGraph_ToKnowledgeGraph)
+TGraph.RDFGraph = staticmethod(_TGraph_RDFGraph)
+TGraph.SemanticGraph = staticmethod(_TGraph_SemanticGraph)
+TGraph.KnowledgeGraphView = staticmethod(_TGraph_KnowledgeGraphView)
+TGraph.InferOntology = staticmethod(_TGraph_InferOntology)
+TGraph.Reason = staticmethod(_TGraph_Reason)
+TGraph.ApplyInferences = staticmethod(_TGraph_ApplyInferences)
+TGraph.ExplainInference = staticmethod(_TGraph_ExplainInference)
+TGraph.ProofGraph = staticmethod(_TGraph_ProofGraph)
+TGraph.ProofGraphData = staticmethod(_TGraph_ProofGraphData)
+TGraph.ProofGraphFigure = staticmethod(_TGraph_ProofGraphFigure)
+TGraph.ProofGraphHTML = staticmethod(_TGraph_ProofGraphHTML)
+TGraph.SemanticFingerprint = staticmethod(_TGraph_SemanticFingerprint)
+TGraph.NeedsSemanticSync = staticmethod(_TGraph_NeedsSemanticSync)
+TGraph.SyncSemantics = staticmethod(_TGraph_SyncSemantics)
+TGraph.SemanticDiff = staticmethod(_TGraph_SemanticDiff)
+TGraph.SemanticSummary = staticmethod(_TGraph_SemanticSummary)
