@@ -1304,14 +1304,206 @@ class IFCFastTopology:
         return s
 
     @staticmethod
+    def _ifc_to_brick_maps():
+        """
+        Returns curated IFC-to-Brick mapping tables.
+
+        The table is deliberately split into:
+        - direct: concrete IFC classes/types that can be mapped safely.
+        - generic: abstract IFC MEP supertypes that must remain conservative.
+        - keyword: optional controlled refinement tokens for explicit type/predefined
+          metadata. Current class-level mapping does not use loose keyword
+          refinement for abstract supertypes to avoid false positives.
+        """
+        direct = {
+            # Air-side equipment and terminals.
+            "IFCAIRTERMINAL": "brick:Air_Terminal",
+            "IFCAIRTERMINALTYPE": "brick:Air_Terminal",
+            "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
+            "IFCAIRTERMINALBOXTYPE": "brick:Terminal_Unit",
+            "IFCAIRTOAIRHEATRECOVERY": "brick:Heat_Exchanger",
+            "IFCAIRTOAIRHEATRECOVERYTYPE": "brick:Heat_Exchanger",
+            "IFCCOOLEDBEAM": "brick:Chilled_Beam",
+            "IFCCOOLEDBEAMTYPE": "brick:Chilled_Beam",
+            "IFCDAMPER": "brick:Damper",
+            "IFCDAMPERTYPE": "brick:Damper",
+            "IFCDUCTSEGMENT": "brick:Duct",
+            "IFCDUCTSEGMENTTYPE": "brick:Duct",
+            "IFCDUCTFITTING": "brick:Duct_Fitting",
+            "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
+            "IFCDUCTSILENCER": "brick:Duct",
+            "IFCDUCTSILENCERTYPE": "brick:Duct",
+            "IFCFAN": "brick:Fan",
+            "IFCFANTYPE": "brick:Fan",
+            "IFCFILTER": "brick:Filter",
+            "IFCFILTERTYPE": "brick:Filter",
+            "IFCHUMIDIFIER": "brick:Humidifier",
+            "IFCHUMIDIFIERTYPE": "brick:Humidifier",
+            "IFCSTACKTERMINAL": "brick:Exhaust_Fan",
+            "IFCSTACKTERMINALTYPE": "brick:Exhaust_Fan",
+
+            # Hydronic / plant / energy conversion equipment.
+            "IFCBOILER": "brick:Boiler",
+            "IFCBOILERTYPE": "brick:Boiler",
+            "IFCBURNER": "brick:Burner",
+            "IFCBURNERTYPE": "brick:Burner",
+            "IFCCHILLER": "brick:Chiller",
+            "IFCCHILLERTYPE": "brick:Chiller",
+            "IFCCOIL": "brick:Coil",
+            "IFCCOILTYPE": "brick:Coil",
+            "IFCCOMPRESSOR": "brick:Compressor",
+            "IFCCOMPRESSORTYPE": "brick:Compressor",
+            "IFCCONDENSER": "brick:Condenser",
+            "IFCCONDENSERTYPE": "brick:Condenser",
+            "IFCCOOLINGTOWER": "brick:Cooling_Tower",
+            "IFCCOOLINGTOWERTYPE": "brick:Cooling_Tower",
+            "IFCEVAPORATIVECOOLER": "brick:Evaporative_Cooler",
+            "IFCEVAPORATIVECOOLERTYPE": "brick:Evaporative_Cooler",
+            "IFCEVAPORATOR": "brick:Evaporator",
+            "IFCEVAPORATORTYPE": "brick:Evaporator",
+            "IFCHEATEXCHANGER": "brick:Heat_Exchanger",
+            "IFCHEATEXCHANGERTYPE": "brick:Heat_Exchanger",
+            "IFCPUMP": "brick:Pump",
+            "IFCPUMPTYPE": "brick:Pump",
+            "IFCTANK": "brick:Storage_Tank",
+            "IFCTANKTYPE": "brick:Storage_Tank",
+            "IFCTUBEBUNDLE": "brick:Heat_Exchanger",
+            "IFCTUBEBUNDLETYPE": "brick:Heat_Exchanger",
+            "IFCUNITARYEQUIPMENT": "brick:Unitary_HVAC",
+            "IFCUNITARYEQUIPMENTTYPE": "brick:Unitary_HVAC",
+
+            # Piping and plumbing.
+            "IFCPIPESEGMENT": "brick:Pipe",
+            "IFCPIPESEGMENTTYPE": "brick:Pipe",
+            "IFCPIPEFITTING": "brick:Pipe_Fitting",
+            "IFCPIPEFITTINGTYPE": "brick:Pipe_Fitting",
+            "IFCVALVE": "brick:Valve",
+            "IFCVALVETYPE": "brick:Valve",
+            "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture",
+            "IFCSANITARYTERMINALTYPE": "brick:Plumbing_Fixture",
+            "IFCWASTETERMINAL": "brick:Plumbing_Fixture",
+            "IFCWASTETERMINALTYPE": "brick:Plumbing_Fixture",
+            "IFCINTERCEPTOR": "brick:Plumbing_Equipment",
+            "IFCINTERCEPTORTYPE": "brick:Plumbing_Equipment",
+
+            # Electrical equipment and distribution.
+            "IFCCABLECARRIERSEGMENT": "brick:Cable",
+            "IFCCABLECARRIERSEGMENTTYPE": "brick:Cable",
+            "IFCCABLECARRIERFITTING": "brick:Cable",
+            "IFCCABLECARRIERFITTINGTYPE": "brick:Cable",
+            "IFCCABLESEGMENT": "brick:Cable",
+            "IFCCABLESEGMENTTYPE": "brick:Cable",
+            "IFCELECTRICAPPLIANCE": "brick:Electrical_Equipment",
+            "IFCELECTRICAPPLIANCETYPE": "brick:Electrical_Equipment",
+            "IFCELECTRICDISTRIBUTIONBOARD": "brick:Electrical_Panel",
+            "IFCELECTRICDISTRIBUTIONBOARDTYPE": "brick:Electrical_Panel",
+            "IFCELECTRICFLOWSTORAGEDEVICE": "brick:Battery",
+            "IFCELECTRICFLOWSTORAGEDEVICETYPE": "brick:Battery",
+            "IFCELECTRICGENERATOR": "brick:Generator",
+            "IFCELECTRICGENERATORTYPE": "brick:Generator",
+            "IFCELECTRICMOTOR": "brick:Motor",
+            "IFCELECTRICMOTORTYPE": "brick:Motor",
+            "IFCLIGHTFIXTURE": "brick:Luminaire",
+            "IFCLIGHTFIXTURETYPE": "brick:Luminaire",
+            "IFCMOTORCONNECTION": "brick:Motor",
+            "IFCMOTORCONNECTIONTYPE": "brick:Motor",
+            "IFCOUTLET": "brick:Outlet",
+            "IFCOUTLETTYPE": "brick:Outlet",
+            "IFCPROTECTIVEDEVICE": "brick:Electrical_Equipment",
+            "IFCPROTECTIVEDEVICETYPE": "brick:Electrical_Equipment",
+            "IFCPROTECTIVEDEVICETRIPPINGUNIT": "brick:Electrical_Equipment",
+            "IFCPROTECTIVEDEVICETRIPPINGUNITTYPE": "brick:Electrical_Equipment",
+            "IFCSWITCHINGDEVICE": "brick:Switch",
+            "IFCSWITCHINGDEVICETYPE": "brick:Switch",
+
+            # Controls, instruments, sensors, and meters.
+            "IFCACTUATOR": "brick:Actuator",
+            "IFCACTUATORTYPE": "brick:Actuator",
+            "IFCALARM": "brick:Alarm",
+            "IFCALARMTYPE": "brick:Alarm",
+            "IFCCONTROLLER": "brick:Controller",
+            "IFCCONTROLLERTYPE": "brick:Controller",
+            "IFCFLOWINSTRUMENT": "brick:Meter",
+            "IFCFLOWINSTRUMENTTYPE": "brick:Meter",
+            "IFCFLOWMETER": "brick:Meter",
+            "IFCFLOWMETERTYPE": "brick:Meter",
+            "IFCSENSOR": "brick:Sensor",
+            "IFCSENSORTYPE": "brick:Sensor",
+            "IFCUNITARYCONTROLELEMENT": "brick:Controller",
+            "IFCUNITARYCONTROLELEMENTTYPE": "brick:Controller",
+
+            # Fire/life-safety terminals.
+            "IFCFIRESUPPRESSIONTERMINAL": "brick:Fire_Safety_System",
+            "IFCFIRESUPPRESSIONTERMINALTYPE": "brick:Fire_Safety_System",
+        }
+        generic = {
+            "IFCDISTRIBUTIONCONTROLELEMENT": "brick:Control_Equipment",
+            "IFCDISTRIBUTIONCONTROLELEMENTTYPE": "brick:Control_Equipment",
+            "IFCDISTRIBUTIONELEMENT": "brick:Equipment",
+            "IFCDISTRIBUTIONELEMENTTYPE": "brick:Equipment",
+            "IFCDISTRIBUTIONFLOWELEMENT": "brick:Equipment",
+            "IFCDISTRIBUTIONFLOWELEMENTTYPE": "brick:Equipment",
+            "IFCENERGYCONVERSIONDEVICE": "brick:Equipment",
+            "IFCENERGYCONVERSIONDEVICETYPE": "brick:Equipment",
+            "IFCFLOWCONTROLLER": "brick:Equipment",
+            "IFCFLOWCONTROLLERTYPE": "brick:Equipment",
+            "IFCFLOWFITTING": "brick:Equipment",
+            "IFCFLOWFITTINGTYPE": "brick:Equipment",
+            "IFCFLOWMOVINGDEVICE": "brick:Equipment",
+            "IFCFLOWMOVINGDEVICETYPE": "brick:Equipment",
+            "IFCFLOWSEGMENT": "brick:Equipment",
+            "IFCFLOWSEGMENTTYPE": "brick:Equipment",
+            "IFCFLOWSTORAGEDEVICE": "brick:Equipment",
+            "IFCFLOWSTORAGEDEVICETYPE": "brick:Equipment",
+            "IFCFLOWTERMINAL": "brick:Terminal_Unit",
+            "IFCFLOWTERMINALTYPE": "brick:Terminal_Unit",
+            "IFCFLOWTREATMENTDEVICE": "brick:Equipment",
+            "IFCFLOWTREATMENTDEVICETYPE": "brick:Equipment",
+        }
+        keyword = {
+            "AIRTERMINAL": "brick:Air_Terminal",
+            "AIR_TERMINAL": "brick:Air_Terminal",
+            "BOILER": "brick:Boiler",
+            "CABLE": "brick:Cable",
+            "CHILLER": "brick:Chiller",
+            "COIL": "brick:Coil",
+            "COMPRESSOR": "brick:Compressor",
+            "CONDENSER": "brick:Condenser",
+            "CONTROLLER": "brick:Controller",
+            "COOLINGTOWER": "brick:Cooling_Tower",
+            "COOLING_TOWER": "brick:Cooling_Tower",
+            "DAMPER": "brick:Damper",
+            "DUCT": "brick:Duct",
+            "FAN": "brick:Fan",
+            "FILTER": "brick:Filter",
+            "HEATEXCHANGER": "brick:Heat_Exchanger",
+            "HEAT_EXCHANGER": "brick:Heat_Exchanger",
+            "HUMIDIFIER": "brick:Humidifier",
+            "LIGHT": "brick:Luminaire",
+            "LUMINAIRE": "brick:Luminaire",
+            "METER": "brick:Meter",
+            "PIPE": "brick:Pipe",
+            "PLUMBING": "brick:Plumbing_Fixture",
+            "PUMP": "brick:Pump",
+            "SANITARY": "brick:Plumbing_Fixture",
+            "SENSOR": "brick:Sensor",
+            "TERMINALBOX": "brick:Terminal_Unit",
+            "TERMINAL_BOX": "brick:Terminal_Unit",
+            "VAV": "brick:VAV",
+            "VALVE": "brick:Valve",
+        }
+        return {"direct": direct, "generic": generic, "keyword": keyword}
+
+    @staticmethod
     def _brick_class_by_ifc_class(ifcClass, predefinedType=None, objectType=None, metadata=None, defaultValue=None):
         """
         Returns the closest Brick class for an IFC MEP entity.
 
-        The mapping is intentionally conservative. It first uses explicit IFC
-        classes, then refines generic IFC2X3 distribution classes using
-        PredefinedType, ObjectType, name-like values, and flattened property-set
-        metadata when available.
+        The mapping is intentionally conservative. Concrete IFC classes and IFC
+        type entities use a curated direct map. Abstract IFC distribution/flow
+        supertypes return generic Brick classes and are not specialised from
+        incidental property-set/name text. This prevents errors such as mapping
+        IfcFlowSegment or IfcSpace to brick:Duct or brick:Luminaire.
         """
         if ifcClass is None:
             return defaultValue
@@ -1326,12 +1518,6 @@ class IFCFastTopology:
 
         key = _norm(ifcClass)
 
-        # Brick is an MEP/building-systems ontology. Do not infer Brick classes
-        # for spatial, architectural, structural, or annotation entities from
-        # loose property-set/name clues. In real IFC files, spaces often contain
-        # properties such as LightingLevel, LightFixtureCount, or system names;
-        # those are attributes of the space, not evidence that the space itself
-        # is a Luminaire or equipment item.
         non_mep = {
             "IFCPROJECT", "IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE",
             "IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE", "IFCSLAB",
@@ -1341,158 +1527,20 @@ class IFCFastTopology:
             "IFCWINDOWSTANDARDCASE", "IFCSTAIR", "IFCSTAIRFLIGHT", "IFCRAMP",
             "IFCRAMPFLIGHT", "IFCRAILING", "IFCCOVERING", "IFCFURNISHINGELEMENT",
             "IFCFURNITURE", "IFCANNOTATION", "IFCGRID", "IFCGRIDAXIS", "IFCOPENINGELEMENT",
+            "IFCRELAGGREGATES", "IFCRELCONTAINEDINSPATIALSTRUCTURE", "IFCRELDEFINESBYPROPERTIES",
+            "IFCRELDEFINESBYTYPE", "IFCRELSPACEBOUNDARY", "IFCPROPERTYSET", "IFCELEMENTQUANTITY",
         }
         if key in non_mep:
             return defaultValue
 
-        clues = []
-        for value in (predefinedType, objectType):
-            value = _norm(value)
-            if value:
-                clues.append(value)
-        if isinstance(metadata, dict):
-            for mk, mv in metadata.items():
-                lk = str(mk).lower()
-                if any(token in lk for token in ["predefined", "objecttype", "system", "flow", "service", "name", "type"]):
-                    value = _norm(mv)
-                    if value:
-                        clues.append(value)
-        clue = " ".join(clues)
+        maps = IFCFastTopology._ifc_to_brick_maps()
+        direct = maps["direct"]
+        generic = maps["generic"]
 
-        direct = {
-            "IFCAIRTERMINAL": "brick:Air_Terminal",
-            "IFCAIRTERMINALTYPE": "brick:Air_Terminal",
-            "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
-            "IFCAIRTERMINALBOXTYPE": "brick:Terminal_Unit",
-            "IFCAIRTOAIRHEATRECOVERY": "brick:Heat_Exchanger",
-            "IFCBOILER": "brick:Boiler",
-            "IFCBOILERTYPE": "brick:Boiler",
-            "IFCBURNER": "brick:Burner",
-            "IFCCHILLER": "brick:Chiller",
-            "IFCCOIL": "brick:Coil",
-            "IFCCOMPRESSOR": "brick:Compressor",
-            "IFCCONDENSER": "brick:Condenser",
-            "IFCCONTROLLER": "brick:Controller",
-            "IFCCONTROLLERTYPE": "brick:Controller",
-            "IFCCOOLEDBEAM": "brick:Chilled_Beam",
-            "IFCCOOLINGTOWER": "brick:Cooling_Tower",
-            "IFCDAMPER": "brick:Damper",
-            "IFCELECTRICAPPLIANCE": "brick:Electrical_Equipment",
-            "IFCELECTRICAPPLIANCETYPE": "brick:Electrical_Equipment",
-            "IFCELECTRICDISTRIBUTIONBOARD": "brick:Electrical_Panel",
-            "IFCELECTRICDISTRIBUTIONBOARDTYPE": "brick:Electrical_Panel",
-            "IFCELECTRICFLOWSTORAGEDEVICE": "brick:Battery",
-            "IFCELECTRICGENERATOR": "brick:Generator",
-            "IFCELECTRICMOTOR": "brick:Motor",
-            "IFCEVAPORATIVECOOLER": "brick:Evaporative_Cooler",
-            "IFCEVAPORATOR": "brick:Evaporator",
-            "IFCFAN": "brick:Fan",
-            "IFCFANTYPE": "brick:Fan",
-            "IFCFILTER": "brick:Filter",
-            "IFCFLOWINSTRUMENT": "brick:Meter",
-            "IFCFLOWMETER": "brick:Meter",
-            "IFCFIRESUPPRESSIONTERMINAL": "brick:Fire_Safety_System",
-            "IFCHEATEXCHANGER": "brick:Heat_Exchanger",
-            "IFCHEATEXCHANGERTYPE": "brick:Heat_Exchanger",
-            "IFCHUMIDIFIER": "brick:Humidifier",
-            "IFCLIGHTFIXTURE": "brick:Luminaire",
-            "IFCLIGHTFIXTURETYPE": "brick:Luminaire",
-            "IFCOUTLET": "brick:Outlet",
-            "IFCOUTLETTYPE": "brick:Outlet",
-            "IFCMOTORCONNECTION": "brick:Motor",
-            "IFCPROTECTIVEDEVICE": "brick:Electrical_Equipment",
-            "IFCPROTECTIVEDEVICETYPE": "brick:Electrical_Equipment",
-            "IFCPUMP": "brick:Pump",
-            "IFCPUMPTYPE": "brick:Pump",
-            "IFCSENSOR": "brick:Sensor",
-            "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture",
-            "IFCSANITARYTERMINALTYPE": "brick:Plumbing_Fixture",
-            "IFCSTACKTERMINAL": "brick:Exhaust_Fan",
-            "IFCSWITCHINGDEVICE": "brick:Switch",
-            "IFCTANK": "brick:Storage_Tank",
-            "IFCTUBEBUNDLE": "brick:Heat_Exchanger",
-            "IFCUNITARYCONTROLELEMENT": "brick:Controller",
-            "IFCUNITARYEQUIPMENT": "brick:Unitary_HVAC",
-            "IFCVALVE": "brick:Valve",
-            "IFCVALVETYPE": "brick:Valve",
-            "IFCWASTETERMINAL": "brick:Plumbing_Fixture",
-        }
         if key in direct:
             return direct[key]
-
-        # Generic IFC2X3 distribution classes require keyword refinement.
-        keyword_map = [
-            ("PUMP", "brick:Pump"),
-            ("FAN", "brick:Fan"),
-            ("VALVE", "brick:Valve"),
-            ("DAMPER", "brick:Damper"),
-            ("FILTER", "brick:Filter"),
-            ("BOILER", "brick:Boiler"),
-            ("CHILLER", "brick:Chiller"),
-            ("COOLINGTOWER", "brick:Cooling_Tower"),
-            ("COOLING_TOWER", "brick:Cooling_Tower"),
-            ("HEATEXCHANGER", "brick:Heat_Exchanger"),
-            ("HEAT_EXCHANGER", "brick:Heat_Exchanger"),
-            ("HUMIDIFIER", "brick:Humidifier"),
-            ("TERMINALBOX", "brick:Terminal_Unit"),
-            ("TERMINAL_BOX", "brick:Terminal_Unit"),
-            ("AIRTERMINAL", "brick:Air_Terminal"),
-            ("AIR_TERMINAL", "brick:Air_Terminal"),
-            ("VAV", "brick:VAV"),
-            ("CAV", "brick:CAV"),
-            ("DUCT", "brick:Duct"),
-            ("PIPE", "brick:Pipe"),
-            ("CABLE", "brick:Electrical_Equipment"),
-            ("PANEL", "brick:Electrical_Panel"),
-            ("DISTRIBUTIONBOARD", "brick:Electrical_Panel"),
-            ("SENSOR", "brick:Sensor"),
-            ("METER", "brick:Meter"),
-            ("CONTROLLER", "brick:Controller"),
-            ("LIGHT", "brick:Luminaire"),
-            ("LUMINAIRE", "brick:Luminaire"),
-            ("SANITARY", "brick:Plumbing_Fixture"),
-            ("PLUMBING", "brick:Plumbing_Fixture"),
-        ]
-        generic = {
-            "IFCDUCTSEGMENT": "brick:Duct",
-            "IFCDUCTSEGMENTTYPE": "brick:Duct",
-            "IFCDUCTFITTING": "brick:Duct_Fitting",
-            "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
-            "IFCDUCTSILENCER": "brick:Duct",
-            "IFCPIPESEGMENT": "brick:Pipe",
-            "IFCPIPESEGMENTTYPE": "brick:Pipe",
-            "IFCPIPEFITTING": "brick:Pipe_Fitting",
-            "IFCPIPEFITTINGTYPE": "brick:Pipe_Fitting",
-            "IFCCABLECARRIERSEGMENT": "brick:Cable",
-            "IFCCABLECARRIERFITTING": "brick:Cable",
-            "IFCCABLESEGMENT": "brick:Cable",
-            "IFCCABLESEGMENTTYPE": "brick:Cable",
-            "IFCFLOWSEGMENT": "brick:Equipment",
-            "IFCFLOWFITTING": "brick:Equipment",
-            "IFCFLOWTERMINAL": "brick:Terminal_Unit",
-            "IFCFLOWCONTROLLER": "brick:Equipment",
-            "IFCFLOWMOVINGDEVICE": "brick:Equipment",
-            "IFCFLOWSTORAGEDEVICE": "brick:Equipment",
-            "IFCFLOWTREATMENTDEVICE": "brick:Equipment",
-            "IFCDISTRIBUTIONFLOWELEMENT": "brick:Equipment",
-            "IFCDISTRIBUTIONELEMENT": "brick:Equipment",
-            "IFCDISTRIBUTIONCONTROLELEMENT": "brick:Control_Equipment",
-            "IFCENERGYCONVERSIONDEVICE": "brick:Equipment",
-        }
-        # Only generic IFC distribution/flow classes are allowed to use
-        # keyword-based refinement. This prevents unrelated classes from being
-        # classified as MEP equipment because a property name contains words such
-        # as LIGHT, PIPE, FAN, or TERMINAL.
         if key in generic:
-            # Class-level IFC → Brick mapping must be conservative and must not
-            # be over-specialised by loose ObjectType/name/pset text. Concrete
-            # IFC classes such as IfcDuctSegmentType and IfcPipeFittingType map
-            # directly here; abstract IFC MEP supertypes such as IfcFlowSegment
-            # remain generic Equipment/Terminal/Control equipment. More specific
-            # entity-level annotation should come from explicit IFC subtype/type
-            # relationships, not from incidental words in surrounding metadata.
-            return generic.get(key, defaultValue)
-
+            return generic[key]
         return defaultValue
 
     @staticmethod
@@ -1566,14 +1614,6 @@ class IFCFastTopology:
         if ifcClass is None:
             return defaultValue
 
-        try:
-            from topologicpy.Ontology import Ontology
-            result = Ontology.ClassByIFCClass(ifcClass, defaultValue=None)
-            if result not in [None, ""]:
-                return result
-        except Exception:
-            pass
-
         key = str(ifcClass).strip()
         key_upper = key.upper()
 
@@ -1584,6 +1624,7 @@ class IFCFastTopology:
             "IFCBUILDINGSTOREY": "top:Storey",
             "IFCSPACE": "top:Space",
             "IFCZONE": "top:Zone",
+            "IFCSYSTEM": "top:System",
 
             "IFCWALL": "top:Wall",
             "IFCWALLSTANDARDCASE": "top:Wall",
@@ -1606,6 +1647,7 @@ class IFCFastTopology:
             "IFCSTAIRFLIGHT": "top:Stair",
             "IFCRAILING": "top:Railing",
             "IFCOPENINGELEMENT": "top:Opening",
+            "IFCDISTRIBUTIONPORT": "top:Port",
             "IFCVIRTUALELEMENT": "top:Element",
             "IFCFURNISHINGELEMENT": "top:Furniture",
             "IFCFURNITURE": "top:Furniture",
@@ -1649,6 +1691,17 @@ class IFCFastTopology:
             "IFCOUTLETTYPE": "top:Equipment",
             "IFCSANITARYTERMINALTYPE": "top:Equipment",
             "IFCBUILDINGELEMENTPROXY": "top:Element",
+            "IFCSPACETYPE": "top:Space",
+
+            "IFCDOORLININGPROPERTIES": "top:PropertySet",
+            "IFCDOORPANELPROPERTIES": "top:PropertySet",
+            "IFCWINDOWLININGPROPERTIES": "top:PropertySet",
+            "IFCWINDOWPANELPROPERTIES": "top:PropertySet",
+            "IFCMATERIAL": "top:Material",
+            "IFCMATERIALLIST": "top:MaterialSet",
+            "IFCMATERIALLAYERSET": "top:MaterialSet",
+            "IFCMATERIALCONSTITUENTSET": "top:MaterialSet",
+            "IFCCLASSIFICATIONREFERENCE": "top:ClassificationReference",
 
             "IFCELEMENTQUANTITY": "top:Quantity",
             "IFCPROPERTYSET": "top:PropertySet",
@@ -1656,13 +1709,39 @@ class IFCFastTopology:
             "IFCRELAGGREGATES": "top:Relationship",
             "IFCRELDEFINESBYPROPERTIES": "top:Relationship",
             "IFCRELDEFINESBYTYPE": "top:Relationship",
+            "IFCRELASSIGNSTOGROUP": "top:Relationship",
+            "IFCRELASSOCIATESCLASSIFICATION": "top:Relationship",
+            "IFCRELASSOCIATESMATERIAL": "top:Relationship",
+            "IFCRELCONNECTSPORTS": "top:Relationship",
+            "IFCRELFILLSELEMENT": "top:Relationship",
+            "IFCRELSERVICESBUILDINGS": "top:Relationship",
+            "IFCRELNESTS": "top:Relationship",
+            "IFCRELVOIDSELEMENT": "top:Relationship",
 
             "IFCRELSPACEBOUNDARY": "top:Interface",
             "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",
             "IFCRELSPACEBOUNDARY2NDLEVEL": "top:Interface",
         }
 
-        return mapping.get(key_upper, defaultValue)
+        if key_upper in mapping:
+            return mapping[key_upper]
+
+        try:
+            from topologicpy.Ontology import Ontology
+            result = Ontology.ClassByIFCClass(ifcClass, defaultValue=None)
+            if result not in [None, ""]:
+                return result
+        except Exception:
+            pass
+
+        if key_upper.startswith("IFCREL"):
+            return "top:Relationship"
+        if key_upper.endswith("PROPERTIES") or key_upper.endswith("PROPERTYSET"):
+            return "top:PropertySet"
+        if key_upper.startswith("IFCMATERIAL"):
+            return "top:MaterialSet"
+
+        return defaultValue
 
     @staticmethod
     def _ontology_category_by_class(ontologyClass, defaultValue="element"):
@@ -5905,6 +5984,11 @@ class IFC:
         return sorted_types
 
     @staticmethod
+    def OntologyClassByIFCClass(ifcClass: str, defaultValue: Any = "top:Element"):
+        """Returns the TopologicPy ontology class for an IFC class."""
+        return IFCFastTopology._ontology_class_by_ifc_class(ifcClass, defaultValue=defaultValue)
+
+    @staticmethod
     def BrickClassByIFCClass(ifcClass: str, predefinedType: str = None, objectType: str = None, metadata: dict = None, defaultValue: Any = None):
         """Returns the closest Brick class for an IFC MEP class."""
         return IFCFastTopology._brick_class_by_ifc_class(
@@ -5914,6 +5998,61 @@ class IFC:
             metadata=metadata,
             defaultValue=defaultValue,
         )
+
+    @staticmethod
+    def BrickMappingTable(includeGeneric: bool = True, includeKeywordHints: bool = False):
+        """Returns the curated IFC-to-Brick mapping table used by the IFC importer."""
+        maps = IFCFastTopology._ifc_to_brick_maps()
+        result = dict(maps["direct"])
+        if includeGeneric:
+            result.update(maps["generic"])
+        if includeKeywordHints:
+            result["__keyword_hints__"] = dict(maps["keyword"])
+        return dict(sorted(result.items(), key=lambda item: item[0]))
+
+    @staticmethod
+    def ValidateBrickMappings(brickTTLPath: str = None, includeGeneric: bool = True, silent: bool = False):
+        """
+        Validates the mapped Brick classes against a Brick TTL/RDF file when supplied.
+
+        If brickTTLPath is omitted or RDFLib is unavailable, this method still
+        returns the unique mapped Brick terms but marks ontology validation as not run.
+        """
+        table = IFC.BrickMappingTable(includeGeneric=includeGeneric, includeKeywordHints=False)
+        classes = sorted(set(v for v in table.values() if isinstance(v, str) and v.startswith("brick:")))
+        result = {
+            "mapping_count": len(table),
+            "brick_class_count": len(classes),
+            "brick_classes": classes,
+            "checked_against_ttl": False,
+            "valid": None,
+            "missing": [],
+        }
+        if not brickTTLPath:
+            return result
+        if not os.path.exists(brickTTLPath):
+            if not silent:
+                print("IFC.ValidateBrickMappings - Warning: brickTTLPath does not exist. Validation skipped.")
+            return result
+        try:
+            import rdflib
+            from rdflib import URIRef
+            g = rdflib.Graph()
+            g.parse(brickTTLPath)
+            base = "https://brickschema.org/schema/Brick#"
+            missing = []
+            for cls in classes:
+                uri = URIRef(base + cls.split(":", 1)[1])
+                if (uri, None, None) not in g and (None, None, uri) not in g:
+                    missing.append(cls)
+            result["checked_against_ttl"] = True
+            result["missing"] = missing
+            result["valid"] = len(missing) == 0
+            return result
+        except Exception as exc:
+            if not silent:
+                print(f"IFC.ValidateBrickMappings - Warning: validation failed: {exc}")
+            return result
 
     @staticmethod
     def TGraphByPath(

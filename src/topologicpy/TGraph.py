@@ -3375,6 +3375,19 @@ class TGraph:
                 "IFCBUILDING": "top:Building",
                 "IFCBUILDINGSTOREY": "top:Storey",
                 "IFCSPACE": "top:Space",
+                "IFCSPACETYPE": "top:Space",
+                "IFCZONE": "top:Zone",
+                "IFCSYSTEM": "top:System",
+                "IFCDISTRIBUTIONPORT": "top:Port",
+                "IFCDOORLININGPROPERTIES": "top:PropertySet",
+                "IFCDOORPANELPROPERTIES": "top:PropertySet",
+                "IFCWINDOWLININGPROPERTIES": "top:PropertySet",
+                "IFCWINDOWPANELPROPERTIES": "top:PropertySet",
+                "IFCMATERIAL": "top:Material",
+                "IFCMATERIALLIST": "top:MaterialSet",
+                "IFCMATERIALLAYERSET": "top:MaterialSet",
+                "IFCMATERIALCONSTITUENTSET": "top:MaterialSet",
+                "IFCCLASSIFICATIONREFERENCE": "top:ClassificationReference",
                 "IFCRELSPACEBOUNDARY": "top:Interface",
                 "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",
                 "IFCRELSPACEBOUNDARY2NDLEVEL": "top:Interface",
@@ -3384,9 +3397,23 @@ class TGraph:
                 "IFCRELAGGREGATES": "top:Relationship",
                 "IFCRELDEFINESBYPROPERTIES": "top:Relationship",
                 "IFCRELDEFINESBYTYPE": "top:Relationship",
+                "IFCRELASSIGNSTOGROUP": "top:Relationship",
+                "IFCRELASSOCIATESCLASSIFICATION": "top:Relationship",
+                "IFCRELASSOCIATESMATERIAL": "top:Relationship",
+                "IFCRELCONNECTSPORTS": "top:Relationship",
+                "IFCRELFILLSELEMENT": "top:Relationship",
+                "IFCRELSERVICESBUILDINGS": "top:Relationship",
+                "IFCRELNESTS": "top:Relationship",
+                "IFCRELVOIDSELEMENT": "top:Relationship",
             }
             if key in mapping:
                 return mapping[key]
+            if key.startswith("IFCREL"):
+                return "top:Relationship"
+            if key.endswith("PROPERTIES") or key.endswith("PROPERTYSET"):
+                return "top:PropertySet"
+            if key.startswith("IFCMATERIAL"):
+                return "top:MaterialSet"
             equipment_prefixes = (
                 "IFCDISTRIBUTION", "IFCFLOW", "IFCENERGYCONVERSION", "IFCDUCT", "IFCPIPE",
                 "IFCCABLE", "IFCBOILER", "IFCHEATEXCHANGER", "IFCPROTECTIVEDEVICE",
@@ -3399,96 +3426,98 @@ class TGraph:
             return TGraph.OntologyClassByIFCClass(str(ifc_class), defaultValue="top:Element")
 
         def _ifc_brick_class(ifc_class, entity=None, metadata=None):
+            """
+            Returns the Brick class for an IFC entity using IFC.py as the
+            authoritative mapping source. A small conservative fallback is kept
+            only for partial installations where IFC.py cannot be imported.
+            """
+            predefined = None
+            object_type = None
+            for attr in ["PredefinedType", "predefinedType"]:
+                try:
+                    predefined = getattr(entity, attr, None)
+                    if predefined not in [None, "", "$", "*"]:
+                        break
+                except Exception:
+                    predefined = None
+            for attr in ["ObjectType", "objectType"]:
+                try:
+                    object_type = getattr(entity, attr, None)
+                    if object_type not in [None, "", "$", "*"]:
+                        break
+                except Exception:
+                    object_type = None
+
             try:
                 from topologicpy.IFC import IFC
                 result = IFC.BrickClassByIFCClass(
                     ifc_class,
-                    predefinedType=getattr(entity, "PredefinedType", None),
-                    objectType=getattr(entity, "ObjectType", None),
+                    predefinedType=predefined,
+                    objectType=object_type,
                     metadata=metadata,
                     defaultValue=None,
                 )
                 if result not in [None, ""]:
                     return result
+                return None
             except Exception:
                 pass
 
             key = str(ifc_class or "").upper().replace(" ", "")
-            non_mep = {
-                "IFCPROJECT", "IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE",
-                "IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE", "IFCSLAB",
-                "IFCSLABSTANDARDCASE", "IFCSLABELEMENTEDCASE", "IFCROOF", "IFCBEAM",
-                "IFCBEAMSTANDARDCASE", "IFCCOLUMN", "IFCCOLUMNSTANDARDCASE", "IFCMEMBER",
-                "IFCPLATE", "IFCDOOR", "IFCDOORSTANDARDCASE", "IFCWINDOW",
-                "IFCWINDOWSTANDARDCASE", "IFCSTAIR", "IFCSTAIRFLIGHT", "IFCRAMP",
-                "IFCRAMPFLIGHT", "IFCRAILING", "IFCCOVERING", "IFCFURNISHINGELEMENT",
-                "IFCFURNITURE", "IFCANNOTATION", "IFCGRID", "IFCGRIDAXIS", "IFCOPENINGELEMENT",
-            }
-            if key in non_mep:
+            if not key:
                 return None
-
-            text = ""
-            for value in [getattr(entity, "PredefinedType", None), getattr(entity, "ObjectType", None), getattr(entity, "Name", None)]:
-                if value not in [None, "", "$", "*"]:
-                    text += " " + str(value).upper().replace(".", " ")
-            if isinstance(metadata, dict):
-                for k, v in metadata.items():
-                    lk = str(k).lower()
-                    if any(token in lk for token in ["predefined", "objecttype", "system", "flow", "service", "name", "type"]):
-                        text += " " + str(v).upper()
-
             direct = {
-                "IFCAIRTERMINAL": "brick:Air_Terminal",
-                "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
+                "IFCACTUATOR": "brick:Actuator", "IFCACTUATORTYPE": "brick:Actuator",
+                "IFCALARM": "brick:Alarm", "IFCALARMTYPE": "brick:Alarm",
+                "IFCAIRTERMINAL": "brick:Air_Terminal", "IFCAIRTERMINALTYPE": "brick:Air_Terminal",
+                "IFCAIRTERMINALBOX": "brick:Terminal_Unit", "IFCAIRTERMINALBOXTYPE": "brick:Terminal_Unit",
                 "IFCBOILER": "brick:Boiler", "IFCBOILERTYPE": "brick:Boiler",
+                "IFCBURNER": "brick:Burner", "IFCBURNERTYPE": "brick:Burner",
                 "IFCCHILLER": "brick:Chiller", "IFCCHILLERTYPE": "brick:Chiller",
-                "IFCDAMPER": "brick:Damper",
+                "IFCCOIL": "brick:Coil", "IFCCOILTYPE": "brick:Coil",
+                "IFCCOMPRESSOR": "brick:Compressor", "IFCCOMPRESSORTYPE": "brick:Compressor",
+                "IFCCONDENSER": "brick:Condenser", "IFCCONDENSERTYPE": "brick:Condenser",
+                "IFCCONTROLLER": "brick:Controller", "IFCCONTROLLERTYPE": "brick:Controller",
+                "IFCCOOLINGTOWER": "brick:Cooling_Tower", "IFCCOOLINGTOWERTYPE": "brick:Cooling_Tower",
+                "IFCDAMPER": "brick:Damper", "IFCDAMPERTYPE": "brick:Damper",
+                "IFCDUCTSEGMENT": "brick:Duct", "IFCDUCTSEGMENTTYPE": "brick:Duct",
+                "IFCDUCTFITTING": "brick:Duct_Fitting", "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
+                "IFCELECTRICDISTRIBUTIONBOARD": "brick:Electrical_Panel", "IFCELECTRICDISTRIBUTIONBOARDTYPE": "brick:Electrical_Panel",
+                "IFCELECTRICFLOWSTORAGEDEVICE": "brick:Battery", "IFCELECTRICFLOWSTORAGEDEVICETYPE": "brick:Battery",
                 "IFCFAN": "brick:Fan", "IFCFANTYPE": "brick:Fan",
-                "IFCFILTER": "brick:Filter",
+                "IFCFILTER": "brick:Filter", "IFCFILTERTYPE": "brick:Filter",
+                "IFCFLOWINSTRUMENT": "brick:Meter", "IFCFLOWINSTRUMENTTYPE": "brick:Meter",
+                "IFCFLOWMETER": "brick:Meter", "IFCFLOWMETERTYPE": "brick:Meter",
                 "IFCHEATEXCHANGER": "brick:Heat_Exchanger", "IFCHEATEXCHANGERTYPE": "brick:Heat_Exchanger",
-                "IFCELECTRICAPPLIANCE": "brick:Electrical_Equipment", "IFCELECTRICAPPLIANCETYPE": "brick:Electrical_Equipment",
+                "IFCHUMIDIFIER": "brick:Humidifier", "IFCHUMIDIFIERTYPE": "brick:Humidifier",
                 "IFCLIGHTFIXTURE": "brick:Luminaire", "IFCLIGHTFIXTURETYPE": "brick:Luminaire",
                 "IFCOUTLET": "brick:Outlet", "IFCOUTLETTYPE": "brick:Outlet",
                 "IFCPIPESEGMENT": "brick:Pipe", "IFCPIPESEGMENTTYPE": "brick:Pipe",
                 "IFCPIPEFITTING": "brick:Pipe_Fitting", "IFCPIPEFITTINGTYPE": "brick:Pipe_Fitting",
-                "IFCCABLESEGMENT": "brick:Cable", "IFCCABLESEGMENTTYPE": "brick:Cable",
-                "IFCDUCTSEGMENT": "brick:Duct", "IFCDUCTSEGMENTTYPE": "brick:Duct",
-                "IFCDUCTFITTING": "brick:Duct_Fitting", "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
                 "IFCPUMP": "brick:Pump", "IFCPUMPTYPE": "brick:Pump",
                 "IFCSENSOR": "brick:Sensor", "IFCSENSORTYPE": "brick:Sensor",
                 "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture", "IFCSANITARYTERMINALTYPE": "brick:Plumbing_Fixture",
-                "IFCTANK": "brick:Storage_Tank",
+                "IFCTANK": "brick:Storage_Tank", "IFCTANKTYPE": "brick:Storage_Tank",
                 "IFCVALVE": "brick:Valve", "IFCVALVETYPE": "brick:Valve",
+                "IFCCABLESEGMENT": "brick:Cable", "IFCCABLESEGMENTTYPE": "brick:Cable",
+                "IFCCABLECARRIERSEGMENT": "brick:Cable", "IFCCABLECARRIERSEGMENTTYPE": "brick:Cable",
             }
             if key in direct:
                 return direct[key]
-
-            generic_keys = {"IFCFLOWSEGMENT", "IFCFLOWFITTING", "IFCFLOWCONTROLLER", "IFCFLOWMOVINGDEVICE", "IFCFLOWTERMINAL", "IFCFLOWSTORAGEDEVICE", "IFCFLOWTREATMENTDEVICE", "IFCDISTRIBUTIONFLOWELEMENT", "IFCDISTRIBUTIONELEMENT", "IFCDISTRIBUTIONCONTROLELEMENT", "IFCENERGYCONVERSIONDEVICE", "IFCBUILDINGELEMENTPROXY"}
-            if key not in generic_keys:
-                return None
-
-            # Keep abstract IFC MEP supertypes conservative. Do not infer Duct,
-            # Fan, Pipe, etc. from loose text on these base classes; specific
-            # classes or IFC type objects should carry the specialisation.
-            if key == "IFCFLOWTERMINAL":
-                return "brick:Terminal_Unit"
-            if key == "IFCDISTRIBUTIONCONTROLELEMENT":
-                return "brick:Control_Equipment"
-            if key in generic_keys and key != "IFCBUILDINGELEMENTPROXY":
-                return "brick:Equipment"
-
-            for token, cls in [
-                ("PUMP", "brick:Pump"), ("FAN", "brick:Fan"), ("VALVE", "brick:Valve"),
-                ("DAMPER", "brick:Damper"), ("FILTER", "brick:Filter"), ("BOILER", "brick:Boiler"),
-                ("CHILLER", "brick:Chiller"), ("HEATEXCHANGER", "brick:Heat_Exchanger"),
-                ("HEAT EXCHANGER", "brick:Heat_Exchanger"), ("TERMINAL", "brick:Air_Terminal"),
-                ("VAV", "brick:VAV"), ("DUCT", "brick:Duct"), ("PIPE", "brick:Pipe"),
-                ("SENSOR", "brick:Sensor"), ("METER", "brick:Meter"), ("CONTROLLER", "brick:Controller"),
-                ("LIGHT", "brick:Luminaire"), ("SANITARY", "brick:Plumbing_Fixture"),
-            ]:
-                if token in text:
-                    return cls
-            return None
+            generic = {
+                "IFCDISTRIBUTIONCONTROLELEMENT": "brick:Control_Equipment",
+                "IFCDISTRIBUTIONELEMENT": "brick:Equipment",
+                "IFCDISTRIBUTIONFLOWELEMENT": "brick:Equipment",
+                "IFCENERGYCONVERSIONDEVICE": "brick:Equipment",
+                "IFCFLOWCONTROLLER": "brick:Equipment",
+                "IFCFLOWFITTING": "brick:Equipment",
+                "IFCFLOWMOVINGDEVICE": "brick:Equipment",
+                "IFCFLOWSEGMENT": "brick:Equipment",
+                "IFCFLOWSTORAGEDEVICE": "brick:Equipment",
+                "IFCFLOWTERMINAL": "brick:Terminal_Unit",
+                "IFCFLOWTREATMENTDEVICE": "brick:Equipment",
+            }
+            return generic.get(key, None)
 
         def _brick_uri(brick_class):
             if brick_class and ":" in str(brick_class):
@@ -15287,12 +15316,62 @@ class TGraph:
         """
         if ifcClass is None:
             return defaultValue
+        key_text = str(ifcClass).strip()
+        key_upper = key_text.upper().replace(" ", "")
+        local = {
+            "IFCPROJECT": "top:Project",
+            "IFCSITE": "top:Site",
+            "IFCBUILDING": "top:Building",
+            "IFCBUILDINGSTOREY": "top:Storey",
+            "IFCSPACE": "top:Space",
+            "IFCSPACETYPE": "top:Space",
+            "IFCZONE": "top:Zone",
+            "IFCSYSTEM": "top:System",
+            "IFCDISTRIBUTIONPORT": "top:Port",
+            "IFCELEMENTQUANTITY": "top:Quantity",
+            "IFCPROPERTYSET": "top:PropertySet",
+            "IFCDOORLININGPROPERTIES": "top:PropertySet",
+            "IFCDOORPANELPROPERTIES": "top:PropertySet",
+            "IFCWINDOWLININGPROPERTIES": "top:PropertySet",
+            "IFCWINDOWPANELPROPERTIES": "top:PropertySet",
+            "IFCMATERIAL": "top:Material",
+            "IFCMATERIALLIST": "top:MaterialSet",
+            "IFCMATERIALLAYERSET": "top:MaterialSet",
+            "IFCMATERIALCONSTITUENTSET": "top:MaterialSet",
+            "IFCCLASSIFICATIONREFERENCE": "top:ClassificationReference",
+            "IFCRELSPACEBOUNDARY": "top:Interface",
+            "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",
+            "IFCRELSPACEBOUNDARY2NDLEVEL": "top:Interface",
+            "IFCRELCONTAINEDINSPATIALSTRUCTURE": "top:Relationship",
+            "IFCRELAGGREGATES": "top:Relationship",
+            "IFCRELDEFINESBYPROPERTIES": "top:Relationship",
+            "IFCRELDEFINESBYTYPE": "top:Relationship",
+            "IFCRELASSIGNSTOGROUP": "top:Relationship",
+            "IFCRELASSOCIATESCLASSIFICATION": "top:Relationship",
+            "IFCRELASSOCIATESMATERIAL": "top:Relationship",
+            "IFCRELCONNECTSPORTS": "top:Relationship",
+            "IFCRELFILLSELEMENT": "top:Relationship",
+            "IFCRELSERVICESBUILDINGS": "top:Relationship",
+            "IFCRELNESTS": "top:Relationship",
+            "IFCRELVOIDSELEMENT": "top:Relationship",
+        }
+        if key_upper in local:
+            return local[key_upper]
         try:
             from topologicpy.Ontology import Ontology
-            return Ontology.ClassByIFCClass(ifcClass, defaultValue=defaultValue)
+            result = Ontology.ClassByIFCClass(ifcClass, defaultValue=None)
+            if result not in [None, ""]:
+                return result
         except Exception:
             pass
-        return TGraph._OntologyConfig()["ifc_to_top"].get(str(ifcClass).strip(), defaultValue)
+        if key_upper.startswith("IFCREL"):
+            return "top:Relationship"
+        if key_upper.endswith("PROPERTIES") or key_upper.endswith("PROPERTYSET"):
+            return "top:PropertySet"
+        if key_upper.startswith("IFCMATERIAL"):
+            return "top:MaterialSet"
+        cfg = TGraph._OntologyConfig().get("ifc_to_top", {})
+        return cfg.get(key_text, cfg.get(key_upper, defaultValue))
     @staticmethod
     def _OntologyClassFromRepresentation(representation: Any, defaultValue: str = "top:Node") -> str:
         """
@@ -15411,7 +15490,10 @@ class TGraph:
             "IfcBuilding": "top:Building",
             "IfcBuildingStorey": "top:Storey",
             "IfcSpace": "top:Space",
+            "IfcSpaceType": "top:Space",
             "IfcZone": "top:Zone",
+            "IfcSystem": "top:System",
+            "IfcDistributionPort": "top:Port",
             "IfcWall": "top:Wall",
             "IfcWallStandardCase": "top:Wall",
             "IfcCurtainWall": "top:Wall",
@@ -15447,6 +15529,30 @@ class TGraph:
             "IfcSensor": "top:Equipment",
             "IfcLightFixture": "top:Equipment",
             "IfcBuildingElementProxy": "top:Element",
+            "IfcElementQuantity": "top:Quantity",
+            "IfcPropertySet": "top:PropertySet",
+            "IfcDoorLiningProperties": "top:PropertySet",
+            "IfcDoorPanelProperties": "top:PropertySet",
+            "IfcWindowLiningProperties": "top:PropertySet",
+            "IfcWindowPanelProperties": "top:PropertySet",
+            "IfcMaterial": "top:Material",
+            "IfcMaterialList": "top:MaterialSet",
+            "IfcMaterialLayerSet": "top:MaterialSet",
+            "IfcMaterialConstituentSet": "top:MaterialSet",
+            "IfcClassificationReference": "top:ClassificationReference",
+            "IfcRelContainedInSpatialStructure": "top:Relationship",
+            "IfcRelAggregates": "top:Relationship",
+            "IfcRelDefinesByProperties": "top:Relationship",
+            "IfcRelDefinesByType": "top:Relationship",
+            "IfcRelAssignsToGroup": "top:Relationship",
+            "IfcRelAssociatesClassification": "top:Relationship",
+            "IfcRelAssociatesMaterial": "top:Relationship",
+            "IfcRelConnectsPorts": "top:Relationship",
+            "IfcRelFillsElement": "top:Relationship",
+            "IfcRelServicesBuildings": "top:Relationship",
+            "IfcRelNests": "top:Relationship",
+            "IfcRelVoidsElement": "top:Relationship",
+            "IfcRelSpaceBoundary": "top:Interface",
         }
         fallback_aliases = {
             "startsAt": "hasStartVertex",
