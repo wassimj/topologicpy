@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.IFC module &mdash; topologicpy 0.9.54 documentation</title>
+  <title>topologicpy.IFC module &mdash; topologicpy 0.9.55 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.54
+                0.9.55
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -167,35 +167,41 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.BrickClassByIFCClass" title="topologicpy.IFC.IFC.BrickClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BrickClassByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
 <td><p>Returns the closest Brick class for an IFC MEP class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.DoorSpaceCardinalityReport" title="topologicpy.IFC.IFC.DoorSpaceCardinalityReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DoorSpaceCardinalityReport</span></code></a>(file[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.BrickMappingTable" title="topologicpy.IFC.IFC.BrickMappingTable"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BrickMappingTable</span></code></a>([includeGeneric, ...])</p></td>
+<td><p>Returns the curated IFC-to-Brick mapping table used by the IFC importer.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.DoorSpaceCardinalityReport" title="topologicpy.IFC.IFC.DoorSpaceCardinalityReport"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DoorSpaceCardinalityReport</span></code></a>(file[, ...])</p></td>
 <td><p>Returns a diagnostic report of door/opening-to-space cardinalities in an IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ElementTypes" title="topologicpy.IFC.IFC.ElementTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElementTypes</span></code></a>(file[, includeCounts, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ElementTypes" title="topologicpy.IFC.IFC.ElementTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ElementTypes</span></code></a>(file[, includeCounts, silent])</p></td>
 <td><p>Returns the IFC element/entity types found in the input IFC file, sorted alphabetically.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Entities" title="topologicpy.IFC.IFC.Entities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Entities</span></code></a>(file[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Entities" title="topologicpy.IFC.IFC.Entities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Entities</span></code></a>(file[, silent])</p></td>
 <td><p>Returns the parsed IFC STEP entity dictionary from the input IFC file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.EntitiesByPath" title="topologicpy.IFC.IFC.EntitiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EntitiesByPath</span></code></a>(path[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.EntitiesByPath" title="topologicpy.IFC.IFC.EntitiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EntitiesByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Returns the parsed IFC STEP entity dictionary from the IFC file at the input path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ExportReferenceView" title="topologicpy.IFC.IFC.ExportReferenceView"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportReferenceView</span></code></a>(model, path[, schema, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ExportReferenceView" title="topologicpy.IFC.IFC.ExportReferenceView"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportReferenceView</span></code></a>(model, path[, schema, ...])</p></td>
 <td><p>Export a TopologicPy-authored model to an IFC4 Reference View-compatible IFC.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.FileByPath" title="topologicpy.IFC.IFC.FileByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FileByPath</span></code></a>(path[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.FileByPath" title="topologicpy.IFC.IFC.FileByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FileByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Returns the parsed IFC STEP entity dictionary found at the input path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.MeshDataByPath" title="topologicpy.IFC.IFC.MeshDataByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshDataByPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.MeshDataByPath" title="topologicpy.IFC.IFC.MeshDataByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshDataByPath</span></code></a>(path[, includeTypes, ...])</p></td>
 <td><p>Returns extracted mesh data using the pure-Python parser.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
 <td><p>Returns a dynamic IFCEntity wrapper for one IFC entity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for IFC entities in a file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for entities of one IFC type.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="topologicpy.IFC.IFC.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
+<td><p>Returns the TopologicPy ontology class for an IFC class.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Properties" title="topologicpy.IFC.IFC.Properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Properties</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Extracts semantic properties, quantities, classifications, and materials from an IFC file.</p></td>
@@ -223,6 +229,9 @@
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Triples" title="topologicpy.IFC.IFC.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
 <td><p>Returns IFC relationship triples from the input IFC file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="topologicpy.IFC.IFC.ValidateBrickMappings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateBrickMappings</span></code></a>([brickTTLPath, ...])</p></td>
+<td><p>Validates the mapped Brick classes against a Brick TTL/RDF file when supplied.</p></td>
 </tr>
 </tbody>
 </table>
@@ -303,6 +312,12 @@ returned. Returns None if the IFC file cannot be parsed.</p>
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.BrickClassByIFCClass">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BrickClassByIFCClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifcClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">predefinedType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">objectType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.BrickClassByIFCClass" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the closest Brick class for an IFC MEP class.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.BrickMappingTable">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">BrickMappingTable</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">includeGeneric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeKeywordHints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.BrickMappingTable" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the curated IFC-to-Brick mapping table used by the IFC importer.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -488,6 +503,12 @@ Default is True.</p>
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.ObjectsByType">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ObjectsByType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ifcType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeEmpty</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.ObjectsByType" title="Permalink to this definition"></a></dt>
 <dd><p>Returns dynamic IFCEntity wrappers for entities of one IFC type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.OntologyClassByIFCClass">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OntologyClassByIFCClass</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ifcClass</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">defaultValue</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'top:Element'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the TopologicPy ontology class for an IFC class.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -754,6 +775,14 @@ Default is False.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.ValidateBrickMappings">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ValidateBrickMappings</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">brickTTLPath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeGeneric</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="Permalink to this definition"></a></dt>
+<dd><p>Validates the mapped Brick classes against a Brick TTL/RDF file when supplied.</p>
+<p>If brickTTLPath is omitted or RDFLib is unavailable, this method still
+returns the unique mapped Brick terms but marks ontology validation as not run.</p>
 </dd></dl>
 
 </dd></dl>
