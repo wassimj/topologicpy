@@ -3367,6 +3367,75 @@ class TGraph:
 
             return result
 
+        def _ifc_brick_class(ifc_class, entity=None, metadata=None):
+            try:
+                from topologicpy.IFC import IFC
+                result = IFC.BrickClassByIFCClass(
+                    ifc_class,
+                    predefinedType=getattr(entity, "PredefinedType", None),
+                    objectType=getattr(entity, "ObjectType", None),
+                    metadata=metadata,
+                    defaultValue=None,
+                )
+                if result not in [None, ""]:
+                    return result
+            except Exception:
+                pass
+
+            text = ""
+            for value in [ifc_class, getattr(entity, "PredefinedType", None), getattr(entity, "ObjectType", None), getattr(entity, "Name", None)]:
+                if value not in [None, "", "$", "*"]:
+                    text += " " + str(value).upper().replace(".", " ")
+            if isinstance(metadata, dict):
+                for k, v in metadata.items():
+                    lk = str(k).lower()
+                    if any(token in lk for token in ["predefined", "objecttype", "system", "flow", "service", "name", "type"]):
+                        text += " " + str(v).upper()
+
+            direct = {
+                "IFCAIRTERMINAL": "brick:Air_Terminal",
+                "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
+                "IFCBOILER": "brick:Boiler",
+                "IFCCHILLER": "brick:Chiller",
+                "IFCDAMPER": "brick:Damper",
+                "IFCFAN": "brick:Fan",
+                "IFCFILTER": "brick:Filter",
+                "IFCHEATEXCHANGER": "brick:Heat_Exchanger",
+                "IFCLIGHTFIXTURE": "brick:Luminaire",
+                "IFCPIPESEGMENT": "brick:Pipe",
+                "IFCPIPEFITTING": "brick:Pipe",
+                "IFCDUCTSEGMENT": "brick:Duct",
+                "IFCDUCTFITTING": "brick:Duct",
+                "IFCPUMP": "brick:Pump",
+                "IFCSENSOR": "brick:Sensor",
+                "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture",
+                "IFCTANK": "brick:Storage_Tank",
+                "IFCVALVE": "brick:Valve",
+            }
+            key = str(ifc_class or "").upper().replace(" ", "")
+            if key in direct:
+                return direct[key]
+
+            for token, cls in [
+                ("PUMP", "brick:Pump"), ("FAN", "brick:Fan"), ("VALVE", "brick:Valve"),
+                ("DAMPER", "brick:Damper"), ("FILTER", "brick:Filter"), ("BOILER", "brick:Boiler"),
+                ("CHILLER", "brick:Chiller"), ("HEATEXCHANGER", "brick:Heat_Exchanger"),
+                ("HEAT EXCHANGER", "brick:Heat_Exchanger"), ("TERMINAL", "brick:Air_Terminal"),
+                ("VAV", "brick:VAV"), ("DUCT", "brick:Duct"), ("PIPE", "brick:Pipe"),
+                ("SENSOR", "brick:Sensor"), ("METER", "brick:Meter"), ("CONTROLLER", "brick:Controller"),
+                ("LIGHT", "brick:Luminaire"), ("SANITARY", "brick:Plumbing_Fixture"),
+            ]:
+                if token in text:
+                    return cls
+            if key in ["IFCFLOWSEGMENT", "IFCFLOWFITTING", "IFCFLOWCONTROLLER", "IFCFLOWMOVINGDEVICE", "IFCFLOWTERMINAL", "IFCFLOWSTORAGEDEVICE", "IFCFLOWTREATMENTDEVICE", "IFCDISTRIBUTIONFLOWELEMENT", "IFCDISTRIBUTIONELEMENT", "IFCENERGYCONVERSIONDEVICE"]:
+                return "brick:Equipment"
+            return None
+
+        def _brick_uri(brick_class):
+            if brick_class and ":" in str(brick_class):
+                return "https://brickschema.org/schema/Brick#" + str(brick_class).split(":", 1)[1]
+            return ""
+
         def _dictionary_from_ifc_entity(entity):
             if dictionaryMode in ["none", "no", "false"]:
                 return {}
@@ -3395,6 +3464,22 @@ class TGraph:
 
             if dictionaryMode in ["psets", "all", "full"]:
                 d.update(_flatten_psets(entity))
+
+            etype = d.get("IFC_type", None)
+            if etype is not None:
+                topologic_class = TGraph.OntologyClassByIFCClass(str(etype), defaultValue="top:Element")
+                brick_class = _ifc_brick_class(str(etype), entity=entity, metadata=d)
+                if brick_class:
+                    d["ontology_class"] = brick_class
+                    d["ontology_uri"] = _brick_uri(brick_class)
+                    d["brick_class"] = brick_class
+                    d["brick_uri"] = _brick_uri(brick_class)
+                    d["topologic_class"] = topologic_class
+                    d["category"] = "equipment"
+                    d["bot_class"] = "bot:Element"
+                else:
+                    d.setdefault("ontology_class", topologic_class)
+                    d.setdefault("category", TGraph.CategoryByOntologyClass(topologic_class, defaultValue="element"))
 
             return d
 
@@ -15231,6 +15316,7 @@ class TGraph:
             "top:Space": "bot:Space",
             "top:Room": "bot:Space",
             "top:Element": "bot:Element",
+            "top:Equipment": "bot:Element",
             "top:Wall": "bot:Element",
             "top:Door": "bot:Element",
             "top:Window": "bot:Element",
@@ -15258,6 +15344,7 @@ class TGraph:
             "top:Door": "element",
             "top:Window": "element",
             "top:Element": "element",
+            "top:Equipment": "equipment",
         }
         fallback_ifc = {
             "IfcProject": "top:Project",
@@ -15279,6 +15366,27 @@ class TGraph:
             "IfcFurnishingElement": "top:Furniture",
             "IfcFurniture": "top:Furniture",
             "IfcDistributionElement": "top:Equipment",
+            "IfcDistributionFlowElement": "top:Equipment",
+            "IfcEnergyConversionDevice": "top:Equipment",
+            "IfcFlowSegment": "top:Equipment",
+            "IfcFlowFitting": "top:Equipment",
+            "IfcFlowController": "top:Equipment",
+            "IfcFlowMovingDevice": "top:Equipment",
+            "IfcFlowTerminal": "top:Equipment",
+            "IfcFlowStorageDevice": "top:Equipment",
+            "IfcFlowTreatmentDevice": "top:Equipment",
+            "IfcDuctSegment": "top:Equipment",
+            "IfcDuctFitting": "top:Equipment",
+            "IfcPipeSegment": "top:Equipment",
+            "IfcPipeFitting": "top:Equipment",
+            "IfcPump": "top:Equipment",
+            "IfcFan": "top:Equipment",
+            "IfcValve": "top:Equipment",
+            "IfcDamper": "top:Equipment",
+            "IfcBoiler": "top:Equipment",
+            "IfcChiller": "top:Equipment",
+            "IfcSensor": "top:Equipment",
+            "IfcLightFixture": "top:Equipment",
             "IfcBuildingElementProxy": "top:Element",
         }
         fallback_aliases = {
