@@ -1325,6 +1325,26 @@ class IFCFastTopology:
             return "".join(ch for ch in text.upper() if ch.isalnum() or ch == "_")
 
         key = _norm(ifcClass)
+
+        # Brick is an MEP/building-systems ontology. Do not infer Brick classes
+        # for spatial, architectural, structural, or annotation entities from
+        # loose property-set/name clues. In real IFC files, spaces often contain
+        # properties such as LightingLevel, LightFixtureCount, or system names;
+        # those are attributes of the space, not evidence that the space itself
+        # is a Luminaire or equipment item.
+        non_mep = {
+            "IFCPROJECT", "IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE",
+            "IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE", "IFCSLAB",
+            "IFCSLABSTANDARDCASE", "IFCSLABELEMENTEDCASE", "IFCROOF", "IFCBEAM",
+            "IFCBEAMSTANDARDCASE", "IFCCOLUMN", "IFCCOLUMNSTANDARDCASE", "IFCMEMBER",
+            "IFCPLATE", "IFCDOOR", "IFCDOORSTANDARDCASE", "IFCWINDOW",
+            "IFCWINDOWSTANDARDCASE", "IFCSTAIR", "IFCSTAIRFLIGHT", "IFCRAMP",
+            "IFCRAMPFLIGHT", "IFCRAILING", "IFCCOVERING", "IFCFURNISHINGELEMENT",
+            "IFCFURNITURE", "IFCANNOTATION", "IFCGRID", "IFCGRIDAXIS", "IFCOPENINGELEMENT",
+        }
+        if key in non_mep:
+            return defaultValue
+
         clues = []
         for value in (predefinedType, objectType):
             value = _norm(value)
@@ -1341,37 +1361,52 @@ class IFCFastTopology:
 
         direct = {
             "IFCAIRTERMINAL": "brick:Air_Terminal",
+            "IFCAIRTERMINALTYPE": "brick:Air_Terminal",
             "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
+            "IFCAIRTERMINALBOXTYPE": "brick:Terminal_Unit",
             "IFCAIRTOAIRHEATRECOVERY": "brick:Heat_Exchanger",
             "IFCBOILER": "brick:Boiler",
+            "IFCBOILERTYPE": "brick:Boiler",
             "IFCBURNER": "brick:Burner",
             "IFCCHILLER": "brick:Chiller",
             "IFCCOIL": "brick:Coil",
             "IFCCOMPRESSOR": "brick:Compressor",
             "IFCCONDENSER": "brick:Condenser",
             "IFCCONTROLLER": "brick:Controller",
+            "IFCCONTROLLERTYPE": "brick:Controller",
             "IFCCOOLEDBEAM": "brick:Chilled_Beam",
             "IFCCOOLINGTOWER": "brick:Cooling_Tower",
             "IFCDAMPER": "brick:Damper",
+            "IFCELECTRICAPPLIANCE": "brick:Electrical_Equipment",
+            "IFCELECTRICAPPLIANCETYPE": "brick:Electrical_Equipment",
             "IFCELECTRICDISTRIBUTIONBOARD": "brick:Electrical_Panel",
+            "IFCELECTRICDISTRIBUTIONBOARDTYPE": "brick:Electrical_Panel",
             "IFCELECTRICFLOWSTORAGEDEVICE": "brick:Battery",
             "IFCELECTRICGENERATOR": "brick:Generator",
             "IFCELECTRICMOTOR": "brick:Motor",
             "IFCEVAPORATIVECOOLER": "brick:Evaporative_Cooler",
             "IFCEVAPORATOR": "brick:Evaporator",
             "IFCFAN": "brick:Fan",
+            "IFCFANTYPE": "brick:Fan",
             "IFCFILTER": "brick:Filter",
             "IFCFLOWINSTRUMENT": "brick:Meter",
             "IFCFLOWMETER": "brick:Meter",
             "IFCFIRESUPPRESSIONTERMINAL": "brick:Fire_Safety_System",
             "IFCHEATEXCHANGER": "brick:Heat_Exchanger",
+            "IFCHEATEXCHANGERTYPE": "brick:Heat_Exchanger",
             "IFCHUMIDIFIER": "brick:Humidifier",
             "IFCLIGHTFIXTURE": "brick:Luminaire",
+            "IFCLIGHTFIXTURETYPE": "brick:Luminaire",
+            "IFCOUTLET": "brick:Outlet",
+            "IFCOUTLETTYPE": "brick:Outlet",
             "IFCMOTORCONNECTION": "brick:Motor",
             "IFCPROTECTIVEDEVICE": "brick:Electrical_Equipment",
+            "IFCPROTECTIVEDEVICETYPE": "brick:Electrical_Equipment",
             "IFCPUMP": "brick:Pump",
+            "IFCPUMPTYPE": "brick:Pump",
             "IFCSENSOR": "brick:Sensor",
             "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture",
+            "IFCSANITARYTERMINALTYPE": "brick:Plumbing_Fixture",
             "IFCSTACKTERMINAL": "brick:Exhaust_Fan",
             "IFCSWITCHINGDEVICE": "brick:Switch",
             "IFCTANK": "brick:Storage_Tank",
@@ -1379,6 +1414,7 @@ class IFCFastTopology:
             "IFCUNITARYCONTROLELEMENT": "brick:Controller",
             "IFCUNITARYEQUIPMENT": "brick:Unitary_HVAC",
             "IFCVALVE": "brick:Valve",
+            "IFCVALVETYPE": "brick:Valve",
             "IFCWASTETERMINAL": "brick:Plumbing_Fixture",
         }
         if key in direct:
@@ -1417,31 +1453,47 @@ class IFCFastTopology:
             ("SANITARY", "brick:Plumbing_Fixture"),
             ("PLUMBING", "brick:Plumbing_Fixture"),
         ]
-        for token, brick_class in keyword_map:
-            if token in clue:
-                return brick_class
-
         generic = {
             "IFCDUCTSEGMENT": "brick:Duct",
-            "IFCDUCTFITTING": "brick:Duct",
+            "IFCDUCTSEGMENTTYPE": "brick:Duct",
+            "IFCDUCTFITTING": "brick:Duct_Fitting",
+            "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
             "IFCDUCTSILENCER": "brick:Duct",
             "IFCPIPESEGMENT": "brick:Pipe",
-            "IFCPIPEFITTING": "brick:Pipe",
-            "IFCCABLECARRIERSEGMENT": "brick:Electrical_Equipment",
-            "IFCCABLECARRIERFITTING": "brick:Electrical_Equipment",
-            "IFCCABLESEGMENT": "brick:Electrical_Equipment",
+            "IFCPIPESEGMENTTYPE": "brick:Pipe",
+            "IFCPIPEFITTING": "brick:Pipe_Fitting",
+            "IFCPIPEFITTINGTYPE": "brick:Pipe_Fitting",
+            "IFCCABLECARRIERSEGMENT": "brick:Cable",
+            "IFCCABLECARRIERFITTING": "brick:Cable",
+            "IFCCABLESEGMENT": "brick:Cable",
+            "IFCCABLESEGMENTTYPE": "brick:Cable",
             "IFCFLOWSEGMENT": "brick:Equipment",
             "IFCFLOWFITTING": "brick:Equipment",
-            "IFCFLOWTERMINAL": "brick:Equipment",
+            "IFCFLOWTERMINAL": "brick:Terminal_Unit",
             "IFCFLOWCONTROLLER": "brick:Equipment",
             "IFCFLOWMOVINGDEVICE": "brick:Equipment",
             "IFCFLOWSTORAGEDEVICE": "brick:Equipment",
             "IFCFLOWTREATMENTDEVICE": "brick:Equipment",
             "IFCDISTRIBUTIONFLOWELEMENT": "brick:Equipment",
             "IFCDISTRIBUTIONELEMENT": "brick:Equipment",
+            "IFCDISTRIBUTIONCONTROLELEMENT": "brick:Control_Equipment",
             "IFCENERGYCONVERSIONDEVICE": "brick:Equipment",
         }
-        return generic.get(key, defaultValue)
+        # Only generic IFC distribution/flow classes are allowed to use
+        # keyword-based refinement. This prevents unrelated classes from being
+        # classified as MEP equipment because a property name contains words such
+        # as LIGHT, PIPE, FAN, or TERMINAL.
+        if key in generic:
+            # Class-level IFC → Brick mapping must be conservative and must not
+            # be over-specialised by loose ObjectType/name/pset text. Concrete
+            # IFC classes such as IfcDuctSegmentType and IfcPipeFittingType map
+            # directly here; abstract IFC MEP supertypes such as IfcFlowSegment
+            # remain generic Equipment/Terminal/Control equipment. More specific
+            # entity-level annotation should come from explicit IFC subtype/type
+            # relationships, not from incidental words in surrounding metadata.
+            return generic.get(key, defaultValue)
+
+        return defaultValue
 
     @staticmethod
     def _brick_uri(brickClass):
@@ -1579,7 +1631,31 @@ class IFCFastTopology:
             "IFCCHILLER": "top:Equipment",
             "IFCSENSOR": "top:Equipment",
             "IFCLIGHTFIXTURE": "top:Equipment",
+            "IFCDISTRIBUTIONCONTROLELEMENT": "top:Equipment",
+            "IFCCONTROLLERTYPE": "top:Equipment",
+            "IFCBOILERTYPE": "top:Equipment",
+            "IFCHEATEXCHANGERTYPE": "top:Equipment",
+            "IFCPROTECTIVEDEVICETYPE": "top:Equipment",
+            "IFCVALVETYPE": "top:Equipment",
+            "IFCDUCTFITTINGTYPE": "top:Equipment",
+            "IFCPIPEFITTINGTYPE": "top:Equipment",
+            "IFCFANTYPE": "top:Equipment",
+            "IFCPUMPTYPE": "top:Equipment",
+            "IFCCABLESEGMENTTYPE": "top:Equipment",
+            "IFCDUCTSEGMENTTYPE": "top:Equipment",
+            "IFCPIPESEGMENTTYPE": "top:Equipment",
+            "IFCELECTRICAPPLIANCETYPE": "top:Equipment",
+            "IFCLIGHTFIXTURETYPE": "top:Equipment",
+            "IFCOUTLETTYPE": "top:Equipment",
+            "IFCSANITARYTERMINALTYPE": "top:Equipment",
             "IFCBUILDINGELEMENTPROXY": "top:Element",
+
+            "IFCELEMENTQUANTITY": "top:Quantity",
+            "IFCPROPERTYSET": "top:PropertySet",
+            "IFCRELCONTAINEDINSPATIALSTRUCTURE": "top:Relationship",
+            "IFCRELAGGREGATES": "top:Relationship",
+            "IFCRELDEFINESBYPROPERTIES": "top:Relationship",
+            "IFCRELDEFINESBYTYPE": "top:Relationship",
 
             "IFCRELSPACEBOUNDARY": "top:Interface",
             "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",

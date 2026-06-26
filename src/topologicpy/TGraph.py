@@ -3367,6 +3367,37 @@ class TGraph:
 
             return result
 
+        def _ifc_topologic_class(ifc_class):
+            key = str(ifc_class or "").upper().replace(" ", "")
+            mapping = {
+                "IFCPROJECT": "top:Project",
+                "IFCSITE": "top:Site",
+                "IFCBUILDING": "top:Building",
+                "IFCBUILDINGSTOREY": "top:Storey",
+                "IFCSPACE": "top:Space",
+                "IFCRELSPACEBOUNDARY": "top:Interface",
+                "IFCRELSPACEBOUNDARY1STLEVEL": "top:Interface",
+                "IFCRELSPACEBOUNDARY2NDLEVEL": "top:Interface",
+                "IFCELEMENTQUANTITY": "top:Quantity",
+                "IFCPROPERTYSET": "top:PropertySet",
+                "IFCRELCONTAINEDINSPATIALSTRUCTURE": "top:Relationship",
+                "IFCRELAGGREGATES": "top:Relationship",
+                "IFCRELDEFINESBYPROPERTIES": "top:Relationship",
+                "IFCRELDEFINESBYTYPE": "top:Relationship",
+            }
+            if key in mapping:
+                return mapping[key]
+            equipment_prefixes = (
+                "IFCDISTRIBUTION", "IFCFLOW", "IFCENERGYCONVERSION", "IFCDUCT", "IFCPIPE",
+                "IFCCABLE", "IFCBOILER", "IFCHEATEXCHANGER", "IFCPROTECTIVEDEVICE",
+                "IFCVALVE", "IFCFAN", "IFCPUMP", "IFCELECTRIC", "IFCLIGHTFIXTURE",
+                "IFCOUTLET", "IFCSANITARYTERMINAL", "IFCCONTROLLER", "IFCSENSOR",
+                "IFCDAMPER", "IFCFILTER", "IFCTANK"
+            )
+            if any(key.startswith(prefix) for prefix in equipment_prefixes):
+                return "top:Equipment"
+            return TGraph.OntologyClassByIFCClass(str(ifc_class), defaultValue="top:Element")
+
         def _ifc_brick_class(ifc_class, entity=None, metadata=None):
             try:
                 from topologicpy.IFC import IFC
@@ -3382,8 +3413,22 @@ class TGraph:
             except Exception:
                 pass
 
+            key = str(ifc_class or "").upper().replace(" ", "")
+            non_mep = {
+                "IFCPROJECT", "IFCSITE", "IFCBUILDING", "IFCBUILDINGSTOREY", "IFCSPACE",
+                "IFCWALL", "IFCWALLSTANDARDCASE", "IFCWALLELEMENTEDCASE", "IFCSLAB",
+                "IFCSLABSTANDARDCASE", "IFCSLABELEMENTEDCASE", "IFCROOF", "IFCBEAM",
+                "IFCBEAMSTANDARDCASE", "IFCCOLUMN", "IFCCOLUMNSTANDARDCASE", "IFCMEMBER",
+                "IFCPLATE", "IFCDOOR", "IFCDOORSTANDARDCASE", "IFCWINDOW",
+                "IFCWINDOWSTANDARDCASE", "IFCSTAIR", "IFCSTAIRFLIGHT", "IFCRAMP",
+                "IFCRAMPFLIGHT", "IFCRAILING", "IFCCOVERING", "IFCFURNISHINGELEMENT",
+                "IFCFURNITURE", "IFCANNOTATION", "IFCGRID", "IFCGRIDAXIS", "IFCOPENINGELEMENT",
+            }
+            if key in non_mep:
+                return None
+
             text = ""
-            for value in [ifc_class, getattr(entity, "PredefinedType", None), getattr(entity, "ObjectType", None), getattr(entity, "Name", None)]:
+            for value in [getattr(entity, "PredefinedType", None), getattr(entity, "ObjectType", None), getattr(entity, "Name", None)]:
                 if value not in [None, "", "$", "*"]:
                     text += " " + str(value).upper().replace(".", " ")
             if isinstance(metadata, dict):
@@ -3395,26 +3440,42 @@ class TGraph:
             direct = {
                 "IFCAIRTERMINAL": "brick:Air_Terminal",
                 "IFCAIRTERMINALBOX": "brick:Terminal_Unit",
-                "IFCBOILER": "brick:Boiler",
-                "IFCCHILLER": "brick:Chiller",
+                "IFCBOILER": "brick:Boiler", "IFCBOILERTYPE": "brick:Boiler",
+                "IFCCHILLER": "brick:Chiller", "IFCCHILLERTYPE": "brick:Chiller",
                 "IFCDAMPER": "brick:Damper",
-                "IFCFAN": "brick:Fan",
+                "IFCFAN": "brick:Fan", "IFCFANTYPE": "brick:Fan",
                 "IFCFILTER": "brick:Filter",
-                "IFCHEATEXCHANGER": "brick:Heat_Exchanger",
-                "IFCLIGHTFIXTURE": "brick:Luminaire",
-                "IFCPIPESEGMENT": "brick:Pipe",
-                "IFCPIPEFITTING": "brick:Pipe",
-                "IFCDUCTSEGMENT": "brick:Duct",
-                "IFCDUCTFITTING": "brick:Duct",
-                "IFCPUMP": "brick:Pump",
-                "IFCSENSOR": "brick:Sensor",
-                "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture",
+                "IFCHEATEXCHANGER": "brick:Heat_Exchanger", "IFCHEATEXCHANGERTYPE": "brick:Heat_Exchanger",
+                "IFCELECTRICAPPLIANCE": "brick:Electrical_Equipment", "IFCELECTRICAPPLIANCETYPE": "brick:Electrical_Equipment",
+                "IFCLIGHTFIXTURE": "brick:Luminaire", "IFCLIGHTFIXTURETYPE": "brick:Luminaire",
+                "IFCOUTLET": "brick:Outlet", "IFCOUTLETTYPE": "brick:Outlet",
+                "IFCPIPESEGMENT": "brick:Pipe", "IFCPIPESEGMENTTYPE": "brick:Pipe",
+                "IFCPIPEFITTING": "brick:Pipe_Fitting", "IFCPIPEFITTINGTYPE": "brick:Pipe_Fitting",
+                "IFCCABLESEGMENT": "brick:Cable", "IFCCABLESEGMENTTYPE": "brick:Cable",
+                "IFCDUCTSEGMENT": "brick:Duct", "IFCDUCTSEGMENTTYPE": "brick:Duct",
+                "IFCDUCTFITTING": "brick:Duct_Fitting", "IFCDUCTFITTINGTYPE": "brick:Duct_Fitting",
+                "IFCPUMP": "brick:Pump", "IFCPUMPTYPE": "brick:Pump",
+                "IFCSENSOR": "brick:Sensor", "IFCSENSORTYPE": "brick:Sensor",
+                "IFCSANITARYTERMINAL": "brick:Plumbing_Fixture", "IFCSANITARYTERMINALTYPE": "brick:Plumbing_Fixture",
                 "IFCTANK": "brick:Storage_Tank",
-                "IFCVALVE": "brick:Valve",
+                "IFCVALVE": "brick:Valve", "IFCVALVETYPE": "brick:Valve",
             }
-            key = str(ifc_class or "").upper().replace(" ", "")
             if key in direct:
                 return direct[key]
+
+            generic_keys = {"IFCFLOWSEGMENT", "IFCFLOWFITTING", "IFCFLOWCONTROLLER", "IFCFLOWMOVINGDEVICE", "IFCFLOWTERMINAL", "IFCFLOWSTORAGEDEVICE", "IFCFLOWTREATMENTDEVICE", "IFCDISTRIBUTIONFLOWELEMENT", "IFCDISTRIBUTIONELEMENT", "IFCDISTRIBUTIONCONTROLELEMENT", "IFCENERGYCONVERSIONDEVICE", "IFCBUILDINGELEMENTPROXY"}
+            if key not in generic_keys:
+                return None
+
+            # Keep abstract IFC MEP supertypes conservative. Do not infer Duct,
+            # Fan, Pipe, etc. from loose text on these base classes; specific
+            # classes or IFC type objects should carry the specialisation.
+            if key == "IFCFLOWTERMINAL":
+                return "brick:Terminal_Unit"
+            if key == "IFCDISTRIBUTIONCONTROLELEMENT":
+                return "brick:Control_Equipment"
+            if key in generic_keys and key != "IFCBUILDINGELEMENTPROXY":
+                return "brick:Equipment"
 
             for token, cls in [
                 ("PUMP", "brick:Pump"), ("FAN", "brick:Fan"), ("VALVE", "brick:Valve"),
@@ -3427,8 +3488,6 @@ class TGraph:
             ]:
                 if token in text:
                     return cls
-            if key in ["IFCFLOWSEGMENT", "IFCFLOWFITTING", "IFCFLOWCONTROLLER", "IFCFLOWMOVINGDEVICE", "IFCFLOWTERMINAL", "IFCFLOWSTORAGEDEVICE", "IFCFLOWTREATMENTDEVICE", "IFCDISTRIBUTIONFLOWELEMENT", "IFCDISTRIBUTIONELEMENT", "IFCENERGYCONVERSIONDEVICE"]:
-                return "brick:Equipment"
             return None
 
         def _brick_uri(brick_class):
@@ -3467,7 +3526,7 @@ class TGraph:
 
             etype = d.get("IFC_type", None)
             if etype is not None:
-                topologic_class = TGraph.OntologyClassByIFCClass(str(etype), defaultValue="top:Element")
+                topologic_class = _ifc_topologic_class(str(etype))
                 brick_class = _ifc_brick_class(str(etype), entity=entity, metadata=d)
                 if brick_class:
                     d["ontology_class"] = brick_class
