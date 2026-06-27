@@ -8430,7 +8430,7 @@ class Topology():
 
             index_map = {}
 
-            records = TGraph.Vertices(topology, asTopologic=False, activeOnly=True)
+            records = TGraph.Vertices(topology, asTopologic=False, active=True)
             n = max(1, len(records))
 
             for i, record in enumerate(records):
@@ -8457,7 +8457,7 @@ class Topology():
                 if transferDictionaries == True:
                     vertex_dicts.append(d)
 
-            edge_records = TGraph.Edges(topology, asTopologic=False, activeOnly=True)
+            edge_records = TGraph.Edges(topology, asTopologic=False, active=True)
 
             for edge_record in edge_records:
                 if not isinstance(edge_record, dict):
@@ -9902,7 +9902,7 @@ class Topology():
 
             index_map = {}
 
-            vertex_records = TGraph.Vertices(topology, asTopologic=False, activeOnly=True)
+            vertex_records = TGraph.Vertices(topology, asTopologic=False, active=True)
             n = max(1, len(vertex_records))
 
             for i, v_record in enumerate(vertex_records):
@@ -9927,7 +9927,7 @@ class Topology():
                 m_verts.append(coords)
                 vertex_dicts.append(d)
 
-            edge_records = TGraph.Edges(topology, asTopologic=False, activeOnly=True)
+            edge_records = TGraph.Edges(topology, asTopologic=False, active=True)
 
             for e_record in edge_records:
                 if not isinstance(e_record, dict):
@@ -13386,6 +13386,117 @@ class Topology():
                 mantissa=mantissa,
             )
 
+        def _fit_3d_scene_ranges(figure, padding=0.08, equalize=True):
+            """
+            Fits Plotly 3D scene axis ranges to all 3D trace coordinates.
+
+            This is especially important for orthographic projection, where camera eye
+            distance is not a reliable way to zoom out and fit the object.
+
+            Parameters
+            ----------
+            figure : plotly.graph_objects.Figure
+                The Plotly figure.
+            padding : float , optional
+                Fractional padding around the bounding box. Default is 0.08.
+            equalize : bool , optional
+                If True, all axes are expanded to the same span so the object sits
+                inside a cubic scene. This is usually safer for orthographic projection.
+                Default is True.
+
+            Returns
+            -------
+            dict or None
+                A scene dictionary with xaxis/yaxis/zaxis ranges, or None if no 3D
+                coordinates were found.
+            """
+
+            import math
+
+            xs = []
+            ys = []
+            zs = []
+
+            def _extend_numeric(values, target):
+                if values is None:
+                    return
+
+                try:
+                    iterator = list(values)
+                except Exception:
+                    iterator = [values]
+
+                for v in iterator:
+                    if v is None:
+                        continue
+
+                    try:
+                        f = float(v)
+                    except Exception:
+                        continue
+
+                    if math.isfinite(f):
+                        target.append(f)
+
+            try:
+                traces = list(figure.data)
+            except Exception:
+                traces = []
+
+            for trace in traces:
+                # Mesh3d and Scatter3d both expose x, y, z.
+                _extend_numeric(getattr(trace, "x", None), xs)
+                _extend_numeric(getattr(trace, "y", None), ys)
+                _extend_numeric(getattr(trace, "z", None), zs)
+
+            if not xs or not ys or not zs:
+                return None
+
+            xmin = min(xs)
+            xmax = max(xs)
+            ymin = min(ys)
+            ymax = max(ys)
+            zmin = min(zs)
+            zmax = max(zs)
+
+            xspan = xmax - xmin
+            yspan = ymax - ymin
+            zspan = zmax - zmin
+
+            maxspan = max(xspan, yspan, zspan)
+
+            if maxspan <= 0:
+                maxspan = 1.0
+
+            pad = maxspan * float(padding)
+
+            if equalize:
+                cx = 0.5 * (xmin + xmax)
+                cy = 0.5 * (ymin + ymax)
+                cz = 0.5 * (zmin + zmax)
+
+                half = 0.5 * maxspan + pad
+
+                xmin = cx - half
+                xmax = cx + half
+                ymin = cy - half
+                ymax = cy + half
+                zmin = cz - half
+                zmax = cz + half
+            else:
+                xmin -= pad
+                xmax += pad
+                ymin -= pad
+                ymax += pad
+                zmin -= pad
+                zmax += pad
+
+            return dict(
+                xaxis=dict(range=[xmin, xmax], autorange=False),
+                yaxis=dict(range=[ymin, ymax], autorange=False),
+                zaxis=dict(range=[zmin, zmax], autorange=False),
+                aspectmode="data",
+            )
         if "ortho" in str(projection).lower():
             camera_settings = dict(
                 eye=dict(x=camera[0], y=camera[1], z=camera[2]),
@@ -13393,6 +13504,16 @@ class Topology():
                 up=dict(x=up[0], y=up[1], z=up[2]),
                 projection=dict(type="orthographic"),
             )
+
+            fitted_scene = _fit_3d_scene_ranges(
+                figure,
+                padding=0.10,
+                equalize=True,
+            )
+
+            if fitted_scene is None:
+                fitted_scene = dict(aspectmode="data")
+
         else:
             camera_settings = dict(
                 eye=dict(x=camera[0], y=camera[1], z=camera[2]),
@@ -13401,11 +13522,20 @@ class Topology():
                 projection=dict(type="perspective"),
             )
 
+            fitted_scene = dict(aspectmode="data")
+
         figure.update_layout(
             scene_camera=camera_settings,
-            scene=dict(aspectmode="data"),
-            autosize=True,
-            margin=dict(l=40, r=40, t=40, b=40),
+            scene=fitted_scene,
+            autosize=False,
+            width=width,
+            height=height,
+            margin=dict(
+                l=marginLeft,
+                r=marginRight,
+                t=marginTop,
+                b=marginBottom,
+            ),
         )
 
         if showFigure:

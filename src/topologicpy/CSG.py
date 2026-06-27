@@ -177,7 +177,7 @@ class CSG():
             try:
                 from topologicpy.TGraph import TGraph
                 try:
-                    return TGraph.Vertices(graph, asTopologic=asTopologic, activeOnly=True) or []
+                    return TGraph.Vertices(graph, asTopologic=asTopologic, active=True) or []
                 except TypeError:
                     try:
                         return TGraph.Vertices(graph, asTopologic=asTopologic) or []
@@ -200,7 +200,7 @@ class CSG():
             try:
                 from topologicpy.TGraph import TGraph
                 try:
-                    return TGraph.Edges(graph, asTopologic=asTopologic, activeOnly=True) or []
+                    return TGraph.Edges(graph, asTopologic=asTopologic, active=True) or []
                 except TypeError:
                     try:
                         return TGraph.Edges(graph, asTopologic=asTopologic) or []

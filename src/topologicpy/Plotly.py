@@ -694,8 +694,8 @@ class Plotly:
             except Exception:
                 return default
 
-        vertex_records = TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
-        edge_records = TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+        vertex_records = TGraph.Vertices(graph, asTopologic=False, active=True) or []
+        edge_records = TGraph.Edges(graph, asTopologic=False, active=True) or []
 
         coords_by_index = {}
         fallback_n = max(1, len(vertex_records))
@@ -1820,7 +1820,10 @@ class Plotly:
             except Exception:
                 continue
             d = dictionaries[i] if i < len(dictionaries) else None
-            label = str(_value(d, labelKey, "Vertex_" + str(i + 1).zfill(n))) if labelKey else "Vertex_" + str(i + 1).zfill(n)
+            if labelKey:
+                label = str(_value(d, labelKey, ""))
+            else:
+                label = ""
             this_size = max(_float(_value(d, sizeKey, default_size), default_size), 0.1)
             this_color = _hex(_value(d, colorKey, default_color), default_color) if colorKey else default_color
             if groupKey is not None:
@@ -2055,8 +2058,1070 @@ class Plotly:
 
         return traces
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     @staticmethod
     def DataByTopology(topology,
+                    showVertices=True,
+                    vertexSize=2.8,
+                    vertexSizeKey=None,
+                    vertexColor="black",
+                    vertexColorKey=None,
+                    vertexLabelKey=None,
+                    vertexBorderColor: str = "black",
+                    vertexBorderWidth: float = 0,
+                    vertexBorderColorKey: str = None,
+                    vertexBorderWidthKey: float = None,
+                    showVertexLabel=False,
+                    vertexLabelFontSize=5,
+                    vertexGroupKey=None,
+                    vertexGroups=[],
+                    vertexMinGroup=None,
+                    vertexMaxGroup=None,
+                    showVertexLegend=False,
+                    vertexLegendLabel="Topology Vertices",
+                    vertexLegendRank=1,
+                    vertexLegendGroup=1,
+                    directed=False,
+                    arrowSize=0.1,
+                    arrowSizeKey=None,
+                    showEdges=True,
+                    edgeWidth=1,
+                    edgeWidthKey=None,
+                    edgeColor="black",
+                    edgeColorKey=None,
+                    edgeDash=False,
+                    edgeDashKey=None,
+                    edgeLabelKey=None,
+                    showEdgeLabel=False,
+                    edgeGroupKey=None,
+                    edgeGroups=[],
+                    edgeMinGroup=None,
+                    edgeMaxGroup=None,
+                    showEdgeLegend=False,
+                    edgeLegendLabel="Topology Edges",
+                    edgeLegendRank=2,
+                    edgeLegendGroup=2,
+                    showFaces=True,
+                    faceOpacity=0.5,
+                    faceOpacityKey=None,
+                    faceColor="#FAFAFA",
+                    faceColorKey=None,
+                    faceLabelKey=None,
+                    faceGroupKey=None,
+                    faceGroups=[],
+                    faceMinGroup=None,
+                    faceMaxGroup=None,
+                    showFaceLegend=False,
+                    faceLegendLabel="Topology Faces",
+                    faceLegendRank=3,
+                    faceLegendGroup=3,
+                    intensityKey=None,
+                    intensities=[],
+                    material="default",
+                    materialKey=None,
+                    flatShading=True,
+                    ambient=None,
+                    ambientKey=None,
+                    diffuse=None,
+                    diffuseKey=None,
+                    specular=None,
+                    specularKey=None,
+                    roughness=None,
+                    roughnessKey=None,
+                    colorScale="viridis",
+                    mantissa=6,
+                    tolerance=0.0001,
+                    silent=False):
+        """
+        Creates Plotly vertex, edge, and face data from a Topologic topology.
+
+        This replacement keeps the original public API, but improves performance and
+        robustness for large face-heavy topologies.
+
+        Main changes
+        ------------
+        1. Vertices are extracted only when needed.
+        2. Edges are extracted only when showEdges is True.
+        3. Face rendering avoids the expensive generated-triangles -> Cluster ->
+        Topology.Geometry pathway.
+        4. Direct fast triangulation is used only for triangles and convex quads.
+        5. Arbitrary n-gons, concave faces, faces with holes, and problematic faces
+        fall back to Face.Triangulate.
+        6. Face dictionaries are fetched once per source face and assigned to the
+        generated Plotly triangles.
+        7. Failed triangulations are skipped instead of failing the whole render.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Face import Face
+        from topologicpy.Wire import Wire
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Color import Color
+
+        try:
+            import plotly.graph_objects as go
+        except Exception:
+            try:
+                from plotly import graph_objects as go
+            except Exception:
+                if not silent:
+                    print("Plotly.DataByTopology - Error: Could not import plotly.graph_objects. Returning None.")
+                return None
+
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Plotly.DataByTopology - Error: The input is not a valid topology. Returning None.")
+            return None
+
+        materials = {
+            "chalk": {"ambient": 1.0, "diffuse": 0.4, "specular": 0.0, "roughness": 1.0},
+            "concrete": {"ambient": 0.85, "diffuse": 0.75, "specular": 0.05, "roughness": 0.9},
+            "eggshell": {"ambient": 0.65, "diffuse": 0.85, "specular": 0.25, "roughness": 0.45},
+            "glossy": {"ambient": 0.5, "diffuse": 0.9, "specular": 0.6, "roughness": 0.1},
+            "matte": {"ambient": 0.9, "diffuse": 0.7, "specular": 0.0, "roughness": 1.0},
+            "metallic": {"ambient": 0.3, "diffuse": 0.8, "specular": 0.9, "roughness": 0.2},
+            "plastic": {"ambient": 0.6, "diffuse": 0.9, "specular": 0.2, "roughness": 0.4},
+            "default": {"ambient": None, "diffuse": None, "specular": None, "roughness": None},
+        }
+
+        # -------------------------------------------------------------------------
+        # Basic helpers
+        # -------------------------------------------------------------------------
+
+        def _dict_value(d, key, default=None):
+            if d is None or key is None:
+                return default
+
+            if isinstance(d, dict):
+                value = d.get(key, default)
+                return default if value is None else value
+
+            try:
+                value = Dictionary.ValueAtKey(d, key=key, defaultValue=default)
+                return default if value is None else value
+            except TypeError:
+                try:
+                    value = Dictionary.ValueAtKey(d, key)
+                    return default if value is None else value
+                except Exception:
+                    return default
+            except Exception:
+                return default
+
+        def _topology_dictionary(tp):
+            try:
+                return Topology.Dictionary(tp, silent=True)
+            except TypeError:
+                try:
+                    return Topology.Dictionary(tp)
+                except Exception:
+                    return None
+            except Exception:
+                return None
+
+        def _vertex_coordinates(v):
+            try:
+                c = Vertex.Coordinates(v, mantissa=mantissa)
+                if isinstance(c, (list, tuple)) and len(c) >= 3:
+                    return [float(c[0]), float(c[1]), float(c[2])]
+            except Exception:
+                pass
+
+            try:
+                return [
+                    float(Vertex.X(v, mantissa=mantissa)),
+                    float(Vertex.Y(v, mantissa=mantissa)),
+                    float(Vertex.Z(v, mantissa=mantissa)),
+                ]
+            except Exception:
+                return None
+
+        def _point_key_from_vertex(v):
+            c = _vertex_coordinates(v)
+
+            if c is None:
+                return None
+
+            try:
+                return (
+                    round(float(c[0]), mantissa),
+                    round(float(c[1]), mantissa),
+                    round(float(c[2]), mantissa),
+                )
+            except Exception:
+                return None
+
+        def _clean_polygon_indices(indices):
+            if not indices:
+                return []
+
+            clean = []
+
+            for idx in indices:
+                if idx is None:
+                    continue
+
+                if not clean or clean[-1] != idx:
+                    clean.append(idx)
+
+            if len(clean) > 1 and clean[0] == clean[-1]:
+                clean.pop()
+
+            return clean
+
+        def _triangle_area_squared_from_indices(vertices, tri):
+            try:
+                a = vertices[tri[0]]
+                b = vertices[tri[1]]
+                c = vertices[tri[2]]
+            except Exception:
+                return 0.0
+
+            ux = b[0] - a[0]
+            uy = b[1] - a[1]
+            uz = b[2] - a[2]
+
+            vx = c[0] - a[0]
+            vy = c[1] - a[1]
+            vz = c[2] - a[2]
+
+            cx = uy * vz - uz * vy
+            cy = uz * vx - ux * vz
+            cz = ux * vy - uy * vx
+
+            return cx * cx + cy * cy + cz * cz
+
+        def _polygon_normal(points):
+            """
+            Computes an approximate polygon normal using Newell's method.
+            """
+            if not isinstance(points, list) or len(points) < 3:
+                return None
+
+            nx = 0.0
+            ny = 0.0
+            nz = 0.0
+            n = len(points)
+
+            for i in range(n):
+                x1, y1, z1 = points[i]
+                x2, y2, z2 = points[(i + 1) % n]
+
+                nx += (y1 - y2) * (z1 + z2)
+                ny += (z1 - z2) * (x1 + x2)
+                nz += (x1 - x2) * (y1 + y2)
+
+            length = (nx * nx + ny * ny + nz * nz) ** 0.5
+
+            if length <= 1e-12:
+                return None
+
+            return (nx / length, ny / length, nz / length)
+
+        def _is_convex_quad(points, eps=1e-9):
+            """
+            Returns True only if the four ordered points form a simple convex quad.
+            """
+            if not isinstance(points, list) or len(points) != 4:
+                return False
+
+            normal = _polygon_normal(points)
+
+            if normal is None:
+                return False
+
+            signs = []
+
+            for i in range(4):
+                p0 = points[i]
+                p1 = points[(i + 1) % 4]
+                p2 = points[(i + 2) % 4]
+
+                ux = p1[0] - p0[0]
+                uy = p1[1] - p0[1]
+                uz = p1[2] - p0[2]
+
+                vx = p2[0] - p1[0]
+                vy = p2[1] - p1[1]
+                vz = p2[2] - p1[2]
+
+                cx = uy * vz - uz * vy
+                cy = uz * vx - ux * vz
+                cz = ux * vy - uy * vx
+
+                dot = cx * normal[0] + cy * normal[1] + cz * normal[2]
+
+                if abs(dot) <= eps:
+                    return False
+
+                signs.append(dot > 0)
+
+            return all(signs) or not any(signs)
+
+        def _safe_direct_triangles(indices, vertices, tolerance=0.0001):
+            """
+            Conservative direct triangulation.
+
+            Accepts only:
+            - true triangles
+            - convex quads
+
+            Returns None for all arbitrary n-gons, concave faces, or degenerate
+            cases so that the caller can fall back to Face.Triangulate.
+            """
+            indices = _clean_polygon_indices(indices)
+
+            if len(indices) < 3:
+                return None
+
+            tol2 = tolerance * tolerance
+
+            if len(indices) == 3:
+                tri = [indices[0], indices[1], indices[2]]
+
+                if len(set(tri)) != 3:
+                    return None
+
+                if _triangle_area_squared_from_indices(vertices, tri) <= tol2:
+                    return None
+
+                return [tri]
+
+            if len(indices) == 4:
+                if len(set(indices)) != 4:
+                    return None
+
+                points = [vertices[i] for i in indices]
+
+                if not _is_convex_quad(points):
+                    return None
+
+                tri1 = [indices[0], indices[1], indices[2]]
+                tri2 = [indices[0], indices[2], indices[3]]
+
+                if _triangle_area_squared_from_indices(vertices, tri1) <= tol2:
+                    return None
+
+                if _triangle_area_squared_from_indices(vertices, tri2) <= tol2:
+                    return None
+
+                return [tri1, tri2]
+
+            return None
+
+        def _face_has_internal_boundaries(face):
+            try:
+                ib = Face.InternalBoundaries(face)
+                return isinstance(ib, list) and len(ib) > 0
+            except Exception:
+                return False
+
+        def _face_external_vertices_ordered(face):
+            """
+            Returns ordered external-boundary vertices.
+
+            This is safer than Face.Vertices(face), because Face.Vertices may return
+            a set-like collection that is not always boundary ordered.
+            """
+            try:
+                eb = Face.ExternalBoundary(face)
+                if eb is not None:
+                    verts = Wire.Vertices(eb)
+                    if isinstance(verts, list) and len(verts) > 0:
+                        return verts
+            except Exception:
+                pass
+
+            try:
+                verts = Face.Vertices(face)
+                if isinstance(verts, list) and len(verts) > 0:
+                    return verts
+            except Exception:
+                pass
+
+            try:
+                verts = Topology.Vertices(face, silent=True)
+                if isinstance(verts, list):
+                    return verts
+            except TypeError:
+                try:
+                    verts = Topology.Vertices(face)
+                    if isinstance(verts, list):
+                        return verts
+                except Exception:
+                    pass
+            except Exception:
+                pass
+
+            return []
+
+        def _closest_index(input_value, values):
+            return int(min(range(len(values)), key=lambda i: abs(values[i] - input_value)))
+
+        # -------------------------------------------------------------------------
+        # Plotly face trace helper
+        # -------------------------------------------------------------------------
+
+        def faceData(vertices, faces, dictionaries=None,
+                    color="#FAFAFA",
+                    colorKey=None,
+                    opacity=0.5,
+                    opacityKey=None,
+                    ambient=0.6,
+                    diffuse=0.9,
+                    specular=0.2,
+                    roughness=0.4,
+                    labelKey=None,
+                    groupKey=None,
+                    minGroup=None,
+                    maxGroup=None,
+                    groups=[],
+                    legendLabel="Topology Faces",
+                    legendGroup=3,
+                    legendRank=3,
+                    showLegend=True,
+                    intensities=None,
+                    colorScale="viridis"):
+
+            if dictionaries is None:
+                dictionaries = []
+
+            if not isinstance(vertices, list) or not isinstance(faces, list):
+                return None
+
+            if len(vertices) == 0 or len(faces) == 0:
+                return None
+
+            x = []
+            y = []
+            z = []
+
+            for v in vertices:
+                x.append(v[0])
+                y.append(v[1])
+                z.append(v[2])
+
+            i = []
+            j = []
+            k = []
+
+            labels = []
+            groupList = []
+
+            try:
+                base_color = Color.AnyToHex(color)
+            except Exception:
+                base_color = "#FAFAFA"
+
+            use_face_metadata = (
+                colorKey is not None or
+                labelKey is not None or
+                groupKey is not None or
+                opacityKey is not None
+            )
+
+            if groups and len(groups) > 0:
+                if isinstance(groups[0], (int, float)):
+                    if minGroup is None:
+                        minGroup = min(groups)
+                    if maxGroup is None:
+                        maxGroup = max(groups)
+                else:
+                    if minGroup is None:
+                        minGroup = 0
+                    if maxGroup is None:
+                        maxGroup = max(1, len(groups) - 1)
+            else:
+                if minGroup is None:
+                    minGroup = 0
+                if maxGroup is None:
+                    maxGroup = 1
+
+            n_digits = len(str(max(1, len(faces))))
+
+            for m, f in enumerate(faces):
+                if not isinstance(f, (list, tuple)) or len(f) < 3:
+                    continue
+
+                if f[0] == f[1] or f[1] == f[2] or f[2] == f[0]:
+                    continue
+
+                i.append(f[0])
+                j.append(f[1])
+                k.append(f[2])
+
+                label = "Face_" + str(m + 1).zfill(n_digits)
+                face_color = base_color
+
+                d = dictionaries[m] if m < len(dictionaries) else None
+
+                if use_face_metadata and d is not None:
+                    if colorKey is not None:
+                        d_color = _dict_value(d, colorKey, None)
+                        if d_color is not None:
+                            try:
+                                face_color = Color.AnyToHex(d_color)
+                            except Exception:
+                                face_color = base_color
+
+                    if labelKey is not None:
+                        d_label = _dict_value(d, labelKey, None)
+                        if d_label is not None:
+                            label = str(d_label)
+
+                    if groupKey is not None:
+                        group = _dict_value(d, groupKey, None)
+
+                        if group is not None:
+                            try:
+                                if isinstance(group, (int, float)):
+                                    g = float(group)
+
+                                    if g < minGroup:
+                                        g = minGroup
+                                    if g > maxGroup:
+                                        g = maxGroup
+
+                                    face_color = Color.AnyToHex(
+                                        Color.ByValueInRange(
+                                            g,
+                                            minValue=minGroup,
+                                            maxValue=maxGroup,
+                                            colorScale=colorScale,
+                                        )
+                                    )
+                                else:
+                                    if groups and group in groups:
+                                        g_index = groups.index(group)
+                                        face_color = Color.AnyToHex(
+                                            Color.ByValueInRange(
+                                                g_index,
+                                                minValue=minGroup,
+                                                maxValue=maxGroup,
+                                                colorScale=colorScale,
+                                            )
+                                        )
+                            except Exception:
+                                pass
+
+                labels.append(label)
+                groupList.append(face_color)
+
+            if len(i) == 0:
+                return None
+
+            facecolor = groupList if (use_face_metadata or groupKey is not None) else None
+            text = labels if len(labels) > 0 else ""
+
+            if material == "default":
+                lighting = {"facenormalsepsilon": 0}
+            else:
+                lighting = dict(
+                    ambient=ambient,
+                    diffuse=diffuse,
+                    specular=specular,
+                    roughness=roughness,
+                )
+
+            return go.Mesh3d(
+                x=x,
+                y=y,
+                z=z,
+                i=i,
+                j=j,
+                k=k,
+                name=legendLabel,
+                showlegend=showLegend,
+                legendgroup=legendGroup,
+                legendrank=legendRank,
+                color=base_color,
+                facecolor=facecolor,
+                colorscale=Plotly.ColorScale(colorScale),
+                cmin=0,
+                cmax=1,
+                intensity=intensities,
+                opacity=opacity,
+                hoverinfo="text",
+                text=text,
+                hovertext=text,
+                showscale=False,
+                flatshading=flatShading,
+                lighting=lighting,
+            )
+
+        # -------------------------------------------------------------------------
+        # Conservative face mesh extraction
+        # -------------------------------------------------------------------------
+
+        def _mesh_from_faces_fast(tp_faces, mantissa=6, tolerance=0.0001, silent=False):
+            """
+            Builds Plotly-ready vertices/faces from Topologic faces.
+
+            Fast path:
+                - boundary-ordered triangles
+                - boundary-ordered convex quads
+
+            Fallback:
+                - Face.Triangulate for n-gons, concave faces, faces with holes,
+                malformed faces, or anything not confidently handled by the fast
+                path.
+
+            This keeps most of the speed benefit by avoiding Cluster.ByTopologies
+            and Topology.Geometry on generated triangles.
+            """
+            vertices = []
+            faces = []
+            dictionaries = []
+            vertex_map = {}
+
+            def add_vertex(v):
+                key = _point_key_from_vertex(v)
+
+                if key is None:
+                    return None
+
+                if key in vertex_map:
+                    return vertex_map[key]
+
+                idx = len(vertices)
+                vertex_map[key] = idx
+                vertices.append([key[0], key[1], key[2]])
+                return idx
+
+            def add_triangle_from_vertices(tri_vertices, source_dictionary):
+                if not isinstance(tri_vertices, list) or len(tri_vertices) < 3:
+                    return
+
+                indices = [add_vertex(v) for v in tri_vertices]
+
+                if any(idx is None for idx in indices):
+                    return
+
+                indices = _clean_polygon_indices(indices)
+
+                if len(indices) != 3:
+                    tris = _safe_direct_triangles(indices, vertices, tolerance=tolerance)
+                    if not tris:
+                        return
+                else:
+                    tris = [indices]
+
+                tol2 = tolerance * tolerance
+
+                for tri in tris:
+                    if len(set(tri)) != 3:
+                        continue
+
+                    if _triangle_area_squared_from_indices(vertices, tri) <= tol2:
+                        continue
+
+                    faces.append(tri)
+                    dictionaries.append(source_dictionary)
+
+            for tp_face in tp_faces:
+                d = _topology_dictionary(tp_face)
+
+                use_fallback = _face_has_internal_boundaries(tp_face)
+
+                if not use_fallback:
+                    ordered_vertices = _face_external_vertices_ordered(tp_face)
+                    indices = [add_vertex(v) for v in ordered_vertices]
+
+                    if not any(idx is None for idx in indices):
+                        direct_tris = _safe_direct_triangles(indices, vertices, tolerance=tolerance)
+
+                        if direct_tris:
+                            for tri in direct_tris:
+                                faces.append(tri)
+                                dictionaries.append(d)
+                            continue
+
+                # Fallback path for anything not safely handled above.
+                try:
+                    triangles = Face.Triangulate(tp_face, tolerance=tolerance, silent=True)
+                except Exception as e:
+                    if not silent:
+                        print("Plotly.DataByTopology - Warning: Face triangulation failed. Skipping face.")
+                        print("Error:", e)
+                    continue
+
+                if not isinstance(triangles, list):
+                    continue
+
+                for tri in triangles:
+                    try:
+                        tri_vertices = Topology.Vertices(tri, silent=True)
+                    except TypeError:
+                        try:
+                            tri_vertices = Topology.Vertices(tri)
+                        except Exception:
+                            tri_vertices = []
+                    except Exception:
+                        tri_vertices = []
+
+                    add_triangle_from_vertices(tri_vertices, d)
+
+            return vertices, faces, dictionaries
+
+        # -------------------------------------------------------------------------
+        # Start processing
+        # -------------------------------------------------------------------------
+
+        data = []
+
+        if not isinstance(colorScale, str):
+            colorScale = "viridis"
+
+        if isinstance(intensities, list) and len(intensities) == 0:
+            intensities = None
+
+        topology_type = Topology.Type(topology)
+        vertex_type = Topology.TypeID("Vertex")
+        edge_type = Topology.TypeID("Edge")
+        face_type = Topology.TypeID("Face")
+
+        # -------------------------------------------------------------------------
+        # Vertex data
+        # -------------------------------------------------------------------------
+
+        intensityList = None
+        tp_vertices = []
+
+        needs_vertices = bool(showVertices or intensityKey is not None)
+
+        if needs_vertices:
+            if topology_type == vertex_type:
+                tp_vertices = [topology]
+            else:
+                try:
+                    tp_vertices = Topology.Vertices(topology, silent=True)
+                except TypeError:
+                    try:
+                        tp_vertices = Topology.Vertices(topology)
+                    except Exception:
+                        tp_vertices = []
+                except Exception:
+                    tp_vertices = []
+
+            if tp_vertices is None:
+                tp_vertices = []
+
+        if len(tp_vertices) > 0:
+            vertices = []
+            v_dictionaries = []
+            alt_intensities = []
+            v_list = []
+
+            if intensityKey is not None:
+                for tp_v in tp_vertices:
+                    c = _vertex_coordinates(tp_v)
+                    if c is not None:
+                        vertices.append(c)
+
+                    d = _topology_dictionary(tp_v)
+                    v = _dict_value(d, intensityKey, 0)
+
+                    try:
+                        v = float(v)
+                    except Exception:
+                        v = 0
+
+                    alt_intensities.append(v)
+                    v_list.append(v)
+
+                alt_intensities = list(set(alt_intensities))
+                alt_intensities.sort()
+
+                if isinstance(intensities, list) and len(intensities) > 0:
+                    alt_intensities = intensities
+
+                if len(alt_intensities) > 0:
+                    min_i = min(alt_intensities)
+                    max_i = max(alt_intensities)
+                    intensityList = []
+
+                    for v in v_list:
+                        ci = _closest_index(v, alt_intensities)
+                        value = (
+                            intensities[ci]
+                            if isinstance(intensities, list) and len(intensities) > ci
+                            else alt_intensities[ci]
+                        )
+
+                        if (max_i - min_i) == 0:
+                            value = 0
+                        else:
+                            value = (value - min_i) / (max_i - min_i)
+
+                        intensityList.append(value)
+
+                    if all(x == 0 for x in intensityList):
+                        intensityList = None
+
+            if showVertices:
+                if len(vertices) == 0:
+                    for tp_v in tp_vertices:
+                        if (
+                            vertexColorKey is not None or
+                            vertexSizeKey is not None or
+                            vertexBorderColorKey is not None or
+                            vertexBorderWidthKey is not None or
+                            vertexLabelKey is not None or
+                            vertexGroupKey is not None
+                        ):
+                            v_dictionaries.append(_topology_dictionary(tp_v))
+
+                        c = _vertex_coordinates(tp_v)
+                        if c is not None:
+                            vertices.append(c)
+
+                if len(vertices) > 0:
+                    data.extend(
+                        Plotly.vertexData(
+                            vertices,
+                            dictionaries=v_dictionaries,
+                            color=vertexColor,
+                            colorKey=vertexColorKey,
+                            size=vertexSize,
+                            sizeKey=vertexSizeKey,
+                            borderColor=vertexBorderColor,
+                            borderWidth=vertexBorderWidth,
+                            borderColorKey=vertexBorderColorKey,
+                            borderWidthKey=vertexBorderWidthKey,
+                            labelKey=vertexLabelKey,
+                            showVertexLabel=showVertexLabel,
+                            vertexLabelFontSize=vertexLabelFontSize,
+                            groupKey=vertexGroupKey,
+                            minGroup=vertexMinGroup,
+                            maxGroup=vertexMaxGroup,
+                            groups=vertexGroups,
+                            legendLabel=vertexLegendLabel,
+                            legendGroup=vertexLegendGroup,
+                            legendRank=vertexLegendRank,
+                            showLegend=showVertexLegend,
+                            colorScale=colorScale,
+                        )
+                    )
+
+        # -------------------------------------------------------------------------
+        # Edge data
+        # -------------------------------------------------------------------------
+
+        if showEdges and topology_type > vertex_type:
+            if topology_type == edge_type:
+                tp_edges = [topology]
+            else:
+                try:
+                    tp_edges = Topology.Edges(topology, silent=True)
+                except TypeError:
+                    try:
+                        tp_edges = Topology.Edges(topology)
+                    except Exception:
+                        tp_edges = []
+                except Exception:
+                    tp_edges = []
+
+            if tp_edges is None:
+                tp_edges = []
+
+            if len(tp_edges) > 0:
+                e_dictionaries = []
+
+                if (
+                    edgeColorKey is not None or
+                    edgeWidthKey is not None or
+                    edgeLabelKey is not None or
+                    edgeGroupKey is not None or
+                    edgeDashKey is not None or
+                    arrowSizeKey is not None
+                ):
+                    for tp_edge in tp_edges:
+                        e_dictionaries.append(_topology_dictionary(tp_edge))
+
+                try:
+                    e_cluster = Cluster.ByTopologies(tp_edges)
+                    geo = Topology.Geometry(e_cluster, mantissa=mantissa)
+
+                    e_vertices = geo.get("vertices", [])
+                    e_edges = geo.get("edges", [])
+
+                    if len(e_edges) > 0:
+                        data.extend(
+                            Plotly.edgeData(
+                                e_vertices,
+                                e_edges,
+                                dictionaries=e_dictionaries,
+                                color=edgeColor,
+                                colorKey=edgeColorKey,
+                                width=edgeWidth,
+                                widthKey=edgeWidthKey,
+                                dash=edgeDash,
+                                dashKey=edgeDashKey,
+                                directed=directed,
+                                arrowSize=arrowSize,
+                                arrowSizeKey=arrowSizeKey,
+                                labelKey=edgeLabelKey,
+                                showEdgeLabel=showEdgeLabel,
+                                groupKey=edgeGroupKey,
+                                minGroup=edgeMinGroup,
+                                maxGroup=edgeMaxGroup,
+                                groups=edgeGroups,
+                                legendLabel=edgeLegendLabel,
+                                legendGroup=edgeLegendGroup,
+                                legendRank=edgeLegendRank,
+                                showLegend=showEdgeLegend,
+                                colorScale=colorScale,
+                            )
+                        )
+                except Exception as e:
+                    if not silent:
+                        print("Plotly.DataByTopology - Warning: Could not create edge data. Skipping edges.")
+                        print("Error:", e)
+
+        # -------------------------------------------------------------------------
+        # Face data
+        # -------------------------------------------------------------------------
+
+        if showFaces and topology_type >= face_type:
+            d_topology = _topology_dictionary(topology)
+
+            if faceColorKey is not None:
+                faceColor = _dict_value(d_topology, faceColorKey, faceColor)
+
+            if faceOpacityKey is not None:
+                d_opacity = _dict_value(d_topology, faceOpacityKey, None)
+                if isinstance(d_opacity, (int, float)) and 0 <= d_opacity <= 1:
+                    faceOpacity = d_opacity
+
+            if materialKey is not None:
+                d_material = _dict_value(d_topology, materialKey, None)
+                if isinstance(d_material, str) and d_material.lower() in materials:
+                    material = d_material.lower()
+
+            if material is not None and isinstance(material, str):
+                material = material.lower()
+
+            if material not in materials:
+                material = "plastic"
+
+            if ambientKey is not None:
+                d_ambient = _dict_value(d_topology, ambientKey, None)
+                if isinstance(d_ambient, (int, float)) and 0 <= d_ambient <= 1:
+                    ambient = d_ambient
+
+            if diffuseKey is not None:
+                d_diffuse = _dict_value(d_topology, diffuseKey, None)
+                if isinstance(d_diffuse, (int, float)) and 0 <= d_diffuse <= 1:
+                    diffuse = d_diffuse
+
+            if specularKey is not None:
+                d_specular = _dict_value(d_topology, specularKey, None)
+                if isinstance(d_specular, (int, float)) and 0 <= d_specular <= 1:
+                    specular = d_specular
+
+            if roughnessKey is not None:
+                d_roughness = _dict_value(d_topology, roughnessKey, None)
+                if isinstance(d_roughness, (int, float)) and 0 <= d_roughness <= 1:
+                    roughness = d_roughness
+
+            if ambient is None:
+                ambient = materials[material]["ambient"]
+            if diffuse is None:
+                diffuse = materials[material]["diffuse"]
+            if specular is None:
+                specular = materials[material]["specular"]
+            if roughness is None:
+                roughness = materials[material]["roughness"]
+
+            if Topology.IsInstance(topology, "Face"):
+                tp_faces = [topology]
+            else:
+                try:
+                    tp_faces = Topology.Faces(topology, silent=True)
+                except TypeError:
+                    try:
+                        tp_faces = Topology.Faces(topology)
+                    except Exception:
+                        tp_faces = []
+                except Exception:
+                    tp_faces = []
+
+            if tp_faces is None:
+                tp_faces = []
+
+            if len(tp_faces) > 0:
+                f_vertices, f_faces, f_dictionaries = _mesh_from_faces_fast(
+                    tp_faces,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+
+                if len(f_faces) > 0:
+                    f_data = faceData(
+                        f_vertices,
+                        f_faces,
+                        dictionaries=f_dictionaries,
+                        color=faceColor,
+                        colorKey=faceColorKey,
+                        opacity=faceOpacity,
+                        opacityKey=faceOpacityKey,
+                        ambient=ambient,
+                        diffuse=diffuse,
+                        specular=specular,
+                        roughness=roughness,
+                        labelKey=faceLabelKey,
+                        groupKey=faceGroupKey,
+                        minGroup=faceMinGroup,
+                        maxGroup=faceMaxGroup,
+                        groups=faceGroups,
+                        legendLabel=faceLegendLabel,
+                        legendGroup=faceLegendGroup,
+                        legendRank=faceLegendRank,
+                        showLegend=showFaceLegend,
+                        intensities=None,
+                        colorScale=colorScale,
+                    )
+
+                    if f_data is not None:
+                        data.append(f_data)
+
+        return data
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @staticmethod
+    def DataByTopolog_orig(topology,
                        showVertices=True,
                        vertexSize=2.8,
                        vertexSizeKey=None,

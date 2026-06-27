@@ -390,7 +390,7 @@ class GraphDB:
 
             # Ensure database-friendly vertex ids and ontology metadata.
             try:
-                vertices = TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
+                vertices = TGraph.Vertices(graph, asTopologic=False, active=True) or []
             except Exception:
                 vertices = []
 
@@ -410,7 +410,7 @@ class GraphDB:
 
             # Ensure edge ontology metadata.
             try:
-                edges = TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+                edges = TGraph.Edges(graph, asTopologic=False, active=True) or []
             except Exception:
                 edges = []
 

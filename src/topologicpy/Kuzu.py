@@ -279,7 +279,7 @@ def _graph_mesh_data(graph: Any, mantissa: int = 6, tolerance: float = 0.0001) -
         vertices = []
         vertex_dicts = []
         index_map = {}
-        records = TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
+        records = TGraph.Vertices(graph, asTopologic=False, active=True) or []
         n = max(1, len(records))
         for i, record in enumerate(records):
             if not isinstance(record, dict):
@@ -307,7 +307,7 @@ def _graph_mesh_data(graph: Any, mantissa: int = 6, tolerance: float = 0.0001) -
 
         edges = []
         edge_dicts = []
-        for record in TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []:
+        for record in TGraph.Edges(graph, asTopologic=False, active=True) or []:
             if not isinstance(record, dict):
                 continue
             src = record.get("src", None)
@@ -363,7 +363,7 @@ def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str 
             except Exception:
                 pass
 
-            for i, v in enumerate(TGraph.Vertices(graph, asTopologic=False, activeOnly=False) or []):
+            for i, v in enumerate(TGraph.Vertices(graph, asTopologic=False, active=False) or []):
                 if not isinstance(v, dict):
                     continue
                 idx = v.get("index", i)
@@ -376,7 +376,7 @@ def _annotate_graph_for_ontology(graph, ontology: bool = True, generatedBy: str 
                 except Exception:
                     pass
 
-            for e in TGraph.Edges(graph, asTopologic=False, activeOnly=False) or []:
+            for e in TGraph.Edges(graph, asTopologic=False, active=False) or []:
                 if not isinstance(e, dict):
                     continue
                 idx = e.get("index", None)

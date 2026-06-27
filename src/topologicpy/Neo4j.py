@@ -245,7 +245,7 @@ def _tgraph_vertices(graph: Any) -> List[Dict[str, Any]]:
     """Returns active TGraph vertex records."""
     try:
         from topologicpy.TGraph import TGraph
-        return TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []
+        return TGraph.Vertices(graph, asTopologic=False, active=True) or []
     except Exception:
         return []
 
@@ -254,7 +254,7 @@ def _tgraph_edges(graph: Any) -> List[Dict[str, Any]]:
     """Returns active TGraph edge records."""
     try:
         from topologicpy.TGraph import TGraph
-        return TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []
+        return TGraph.Edges(graph, asTopologic=False, active=True) or []
     except Exception:
         return []
 

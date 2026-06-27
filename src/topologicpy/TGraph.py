@@ -280,6 +280,141 @@ class TGraph:
         """
         return _TGraph_SemanticSummary(graph, **kwargs)
 
+
+    @staticmethod
+    def PathLength(
+        graph: "TGraph",
+        path: list,
+        mantissa: int = 6,
+        silent: bool = False,
+    ) -> Optional[float]:
+        """
+        Computes the geometric length of a TGraph path by summing the Euclidean
+        distances between consecutive vertex coordinates.
+
+        The path is expected to be a list of TGraph vertex indices.
+        This method reads coordinates directly from the TGraph vertex
+        dictionaries for speed.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        path : list
+            A list of TGraph vertex indices.
+        mantissa : int , optional
+            Number of decimal places in the returned value. If None or negative,
+            the value is not rounded. Default is 6.
+        silent : bool , optional
+            If True, warnings are suppressed. Default is False.
+
+        Returns
+        -------
+        float or None
+            The geometric length of the path, or None if the graph/path is invalid.
+        """
+
+        import math
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.PathLength - Error: The input graph is not a valid TGraph. Returning None.")
+            return None
+
+        if not isinstance(path, list):
+            if not silent:
+                print("TGraph.PathLength - Error: The input path is not a valid list. Returning None.")
+            return None
+
+        if len(path) < 2:
+            return 0.0
+
+        vertices = graph._vertices
+
+        def _coords(vertexIndex):
+            try:
+                vertexIndex = int(vertexIndex)
+            except Exception:
+                return None
+
+            if vertexIndex < 0 or vertexIndex >= len(vertices):
+                return None
+
+            record = vertices[vertexIndex]
+
+            if not isinstance(record, dict):
+                return None
+
+            d = record.get("dictionary", {})
+
+            if isinstance(d, dict):
+                # Preferred TGraph coordinate convention.
+                if ("x" in d) and ("y" in d):
+                    try:
+                        return (
+                            float(d.get("x")),
+                            float(d.get("y")),
+                            float(d.get("z", 0.0)),
+                        )
+                    except Exception:
+                        pass
+
+                # Alternative coordinate storage.
+                for key in ("coordinates", "coords", "xyz"):
+                    c = d.get(key, None)
+                    if isinstance(c, (list, tuple)) and len(c) >= 2:
+                        try:
+                            return (
+                                float(c[0]),
+                                float(c[1]),
+                                float(c[2]) if len(c) >= 3 else 0.0,
+                            )
+                        except Exception:
+                            pass
+
+            # Fallback: direct record-level coordinate fields.
+            if ("x" in record) and ("y" in record):
+                try:
+                    return (
+                        float(record.get("x")),
+                        float(record.get("y")),
+                        float(record.get("z", 0.0)),
+                    )
+                except Exception:
+                    pass
+
+            return None
+
+        previous = _coords(path[0])
+
+        if previous is None:
+            if not silent:
+                print("TGraph.PathLength - Error: Could not resolve coordinates for the first path vertex. Returning None.")
+            return None
+
+        total = 0.0
+
+        for vertexIndex in path[1:]:
+            current = _coords(vertexIndex)
+
+            if current is None:
+                if not silent:
+                    print("TGraph.PathLength - Error: Could not resolve coordinates for one of the path vertices. Returning None.")
+                return None
+
+            dx = current[0] - previous[0]
+            dy = current[1] - previous[1]
+            dz = current[2] - previous[2]
+
+            total += math.sqrt(dx * dx + dy * dy + dz * dz)
+
+            previous = current
+
+        if mantissa is not None and mantissa >= 0:
+            return round(total, mantissa)
+
+        return total
+
     @staticmethod
     def AABB(graph: "TGraph", pad: float = 0.0) -> Optional[Any]:
         """
@@ -1225,7 +1360,7 @@ class TGraph:
             mantissa=mantissa,
             tolerance=tolerance,
         )
-        vertices = TGraph.Vertices(graph, asTopologic=False, activeOnly=True)
+        vertices = TGraph.Vertices(graph, asTopologic=False, active=True)
         labels = []
         for i, v in enumerate(vertices):
             d = v.get("dictionary", {}) if isinstance(v, dict) else {}
@@ -1577,6 +1712,7 @@ class TGraph:
         key: str = "betweenness_centrality",
         colorKey: str = "bc_color",
         colorScale: str = "viridis",
+        colorScaleMode: str = "linear",
         mantissa: int = 6,
         tolerance: float = 0.001,
         silent: bool = False,
@@ -1621,6 +1757,10 @@ class TGraph:
             Default is "bc_color".
         colorScale : str , optional
             The desired color scale name to use for colors. Default is "viridis".
+        colorScaleMode : str , optional
+            The visual remapping used only for color generation. Supported values are
+            "linear", "log", "log1p", and "sqrt". The actual betweenness centrality
+            values stored under key are not modified. Default is "linear".
         mantissa : int , optional
             The desired length of the mantissa. Default is 6.
         tolerance : float , optional
@@ -1695,13 +1835,75 @@ class TGraph:
             return [(x - mn) / (mx - mn) for x in xs]
 
         def _color(value, minValue, maxValue):
+            """
+            Returns a color for the input value.
+
+            colorScaleMode affects only the visual mapping to color. It does not modify
+            the stored betweenness centrality value. This is useful for highly skewed
+            centrality distributions where a few vertices or edges dominate the range.
+            """
             try:
                 from topologicpy.Color import Color
+                import math
+
+                v = float(value)
+                mn = float(minValue)
+                mx = float(maxValue)
+
+                eps = tolerance if tolerance and tolerance > 0 else 1e-12
+
+                if abs(mx - mn) < eps:
+                    mapped = 0.5
+                else:
+                    mode = str(colorScaleMode).lower().strip()
+
+                    # Clamp value to the display range.
+                    if v < mn:
+                        v = mn
+                    if v > mx:
+                        v = mx
+
+                    if mode in ("log", "logarithmic", "log10"):
+                        # Shift so the minimum maps to zero before applying log.
+                        # log10(1 + x) avoids log(0), expands small non-zero values,
+                        # and keeps the mapping monotonic.
+                        shifted = v - mn
+                        shifted_max = mx - mn
+
+                        if shifted_max <= eps:
+                            mapped = 0.5
+                        else:
+                            mapped = math.log10(1.0 + shifted) / math.log10(1.0 + shifted_max)
+
+                    elif mode in ("log1p", "ln", "natural_log"):
+                        shifted = v - mn
+                        shifted_max = mx - mn
+
+                        if shifted_max <= eps:
+                            mapped = 0.5
+                        else:
+                            mapped = math.log1p(shifted) / math.log1p(shifted_max)
+
+                    elif mode in ("sqrt", "square_root"):
+                        shifted = v - mn
+                        shifted_max = mx - mn
+
+                        if shifted_max <= eps:
+                            mapped = 0.5
+                        else:
+                            mapped = math.sqrt(shifted / shifted_max)
+
+                    else:
+                        # Original linear mapping.
+                        mapped = (v - mn) / (mx - mn)
+
+                    mapped = max(0.0, min(1.0, mapped))
+
                 return Color.AnyToHex(
                     Color.ByValueInRange(
-                        value,
-                        minValue=minValue,
-                        maxValue=maxValue,
+                        mapped,
+                        minValue=0.0,
+                        maxValue=1.0,
                         colorScale=colorScale,
                     )
                 )
@@ -1948,9 +2150,10 @@ class TGraph:
                 key=key,
                 colorKey=colorKey,
                 colorScale=colorScale,
+                colorScaleMode=colorScaleMode,
                 mantissa=mantissa,
                 tolerance=tolerance,
-                silent=silent,
+                silent=silent
             )
 
             idToValue = {}
@@ -11821,7 +12024,7 @@ class TGraph:
 
     @staticmethod
     def Edges(graph: "TGraph", asTopologic: bool = False, useRepresentation: bool = True,
-              activeOnly: bool = True, segmentCurves: bool = True, mantissa: int = 6,
+              active: bool = True, segmentCurves: bool = True, mantissa: int = 6,
               tolerance: float = 0.0001, silent: bool = False,
               selfLoopMode: str = "circle", selfLoopRadius: float = 0.25,
               selfLoopMajorRadius: Optional[float] = None, selfLoopMinorRadius: Optional[float] = None,
@@ -11840,7 +12043,7 @@ class TGraph:
         useRepresentation : bool , optional
             If set to True, stored representation objects are used when possible. Default is
             True.
-        activeOnly : bool , optional
+        active : bool , optional
             If set to True, only active records are considered. Default is True.
         segmentCurves : bool , optional
             The input segment curves value. Default is True.
@@ -11872,10 +12075,10 @@ class TGraph:
         """
         if not isinstance(graph, TGraph):
             return []
-        records = [e for e in graph._edges if (not activeOnly or e.get("active", True))]
+        records = [e for e in graph._edges if (not active or e.get("active", True))]
         if not asTopologic:
             return [dict(e, dictionary=dict(e.get("dictionary", {}))) for e in records]
-        vertices = TGraph.Vertices(graph, asTopologic=True, useRepresentation=True, activeOnly=False,
+        vertices = TGraph.Vertices(graph, asTopologic=True, useRepresentation=True, active=False,
                                    mantissa=mantissa, tolerance=tolerance, silent=silent)
         result = []
         for record in records:
@@ -14489,7 +14692,7 @@ class TGraph:
         return g
 
     @staticmethod
-    def MeshData(graph: "TGraph", activeOnly: bool = True) -> Dict[str, Any]:
+    def MeshData(graph: "TGraph", active: bool = True) -> Dict[str, Any]:
         """
         Returns mesh data representing the input TGraph.
 
@@ -14497,7 +14700,7 @@ class TGraph:
         ----------
         graph : 'TGraph'
             The input TGraph.
-        activeOnly : bool , optional
+        active : bool , optional
             If set to True, only active records are considered. Default is True.
 
         Returns
@@ -14510,7 +14713,7 @@ class TGraph:
         coords = []
         index_map = {}
         for rec in graph._vertices:
-            if activeOnly and not rec.get("active", True):
+            if active and not rec.get("active", True):
                 continue
             idx = rec.get("index")
             c = TGraph.Coordinates(graph, idx, default=None)
@@ -14520,7 +14723,7 @@ class TGraph:
             coords.append(c)
         edges = []
         for e in graph._edges:
-            if activeOnly and not e.get("active", True):
+            if active and not e.get("active", True):
                 continue
             srcIndex = e.get("src")
             dstIndex = e.get("dst")
@@ -14740,35 +14943,55 @@ class TGraph:
 
     @staticmethod
     def NearestVertex(graph: "TGraph",
-                      vertex: Any = None,
-                      x: float = 0,
-                      y: float = 0,
-                      z: float = 0,
-                      silent: bool = False) -> Optional[Dict[str, Any]]:
+                    vertex: Any = None,
+                    x: float = 0,
+                    y: float = 0,
+                    z: float = 0,
+                    copy: bool = False,
+                    active: bool = False,
+                    asTopologic: bool = False,
+                    silent: bool = False) -> Optional[Dict[str, Any]]:
         """
-        Returns the nearest active TGraph vertex record to the input coordinates, TGraph vertex,
-        or Topologic vertex.
+        Returns the nearest TGraph vertex record to the input coordinates, TGraph
+        vertex index, TGraph vertex record, Topologic vertex, or coordinate list.
+
+        This implementation deliberately reads coordinates directly from the live
+        TGraph vertex records, prioritising the vertex dictionary keys 'x', 'y',
+        and 'z'. This avoids stale geometric representations or cached coordinate
+        data.
 
         Parameters
         ----------
         graph : TGraph
             The input TGraph.
         vertex : Any , optional
-            A TGraph vertex index, TGraph vertex record, or Topologic vertex. If specified,
-            its coordinates override x, y, and z. Default is None.
+            A TGraph vertex index, TGraph vertex record, Topologic vertex, or
+            coordinate sequence. If specified, its coordinates override x, y, and z.
+            Default is None.
         x : float , optional
             The X coordinate. Default is 0.
         y : float , optional
             The Y coordinate. Default is 0.
         z : float , optional
             The Z coordinate. Default is 0.
+        copy : bool , optional
+            If True, a shallow copy of the record is returned, with a copied
+            dictionary. If False, the live internal record is returned. Default is
+            False.
+        active : bool , optional
+            If True, only active vertices are considered. If False, inactive
+            vertices are also considered. Default is False.
+        asTopologic : bool , optional
+            If True, the result is returned as a Topologic vertex when possible.
+            Default is False.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        dict or None
-            The nearest active TGraph vertex record, or None if no valid active vertex is found.
+        dict or topologic_core.Vertex or None
+            The nearest TGraph vertex record, or a Topologic vertex if asTopologic
+            is True.
         """
 
         if not isinstance(graph, TGraph):
@@ -14776,21 +14999,118 @@ class TGraph:
                 print("TGraph.NearestVertex - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
-        query = None
+        def _as_float(value, default=None):
+            try:
+                return float(value)
+            except Exception:
+                return default
 
-        # First try resolving as a TGraph vertex index or TGraph vertex record.
-        if vertex is not None:
-            query = TGraph.Coordinates(graph, vertex, default=None)
+        def _coords_from_dictionary(d):
+            if not isinstance(d, dict):
+                return None
 
-            # Then try resolving as a Topologic vertex.
-            if query is None:
+            # Preferred TGraph coordinate convention.
+            if ("x" in d) and ("y" in d):
+                cx = _as_float(d.get("x"), None)
+                cy = _as_float(d.get("y"), None)
+                cz = _as_float(d.get("z", 0.0), 0.0)
+
+                if cx is not None and cy is not None and cz is not None:
+                    return [cx, cy, cz]
+
+            # Alternative common forms.
+            for key in ("coordinates", "coords", "xyz"):
+                value = d.get(key, None)
+                if isinstance(value, (list, tuple)) and len(value) >= 2:
+                    cx = _as_float(value[0], None)
+                    cy = _as_float(value[1], None)
+                    cz = _as_float(value[2], 0.0) if len(value) >= 3 else 0.0
+
+                    if cx is not None and cy is not None and cz is not None:
+                        return [cx, cy, cz]
+
+            return None
+
+        def _coords_from_record(record):
+            if not isinstance(record, dict):
+                return None
+
+            # First priority: live TGraph dictionary.
+            coords = _coords_from_dictionary(record.get("dictionary", {}))
+            if coords is not None:
+                return coords
+
+            # Second priority: coordinates directly on the record, if present.
+            coords = _coords_from_dictionary(record)
+            if coords is not None:
+                return coords
+
+            # Last resort: Topologic representation.
+            rep = record.get("representation", None)
+            if rep is not None:
                 try:
                     from topologicpy.Vertex import Vertex
-                    coords = Vertex.Coordinates(vertex)
-                    if coords and len(coords) >= 3:
-                        query = [float(coords[0]), float(coords[1]), float(coords[2])]
+                    c = Vertex.Coordinates(rep)
+                    if c and len(c) >= 2:
+                        cx = _as_float(c[0], None)
+                        cy = _as_float(c[1], None)
+                        cz = _as_float(c[2], 0.0) if len(c) >= 3 else 0.0
+
+                        if cx is not None and cy is not None and cz is not None:
+                            return [cx, cy, cz]
                 except Exception:
-                    query = None
+                    pass
+
+            return None
+
+        def _coords_from_any(obj):
+            if obj is None:
+                return None
+
+            # Coordinate sequence.
+            if isinstance(obj, (list, tuple)) and len(obj) >= 2:
+                cx = _as_float(obj[0], None)
+                cy = _as_float(obj[1], None)
+                cz = _as_float(obj[2], 0.0) if len(obj) >= 3 else 0.0
+
+                if cx is not None and cy is not None and cz is not None:
+                    return [cx, cy, cz]
+
+            # TGraph vertex record.
+            if isinstance(obj, dict):
+                coords = _coords_from_record(obj)
+                if coords is not None:
+                    return coords
+
+            # TGraph vertex index.
+            try:
+                index = int(obj)
+                if graph._validate_vertex_index(index, active=False):
+                    coords = _coords_from_record(graph._vertices[index])
+                    if coords is not None:
+                        return coords
+            except Exception:
+                pass
+
+            # Topologic vertex.
+            try:
+                from topologicpy.Vertex import Vertex
+                c = Vertex.Coordinates(obj)
+                if c and len(c) >= 2:
+                    cx = _as_float(c[0], None)
+                    cy = _as_float(c[1], None)
+                    cz = _as_float(c[2], 0.0) if len(c) >= 3 else 0.0
+
+                    if cx is not None and cy is not None and cz is not None:
+                        return [cx, cy, cz]
+            except Exception:
+                pass
+
+            return None
+
+        # Resolve query coordinates.
+        if vertex is not None:
+            query = _coords_from_any(vertex)
 
             if query is None:
                 if not silent:
@@ -14810,26 +15130,46 @@ class TGraph:
         bestDistanceSquared = None
 
         for vertexRecord in graph._vertices:
-            if not vertexRecord.get("active", True):
+            if not isinstance(vertexRecord, dict):
+                continue
+
+            if active and not vertexRecord.get("active", True):
                 continue
 
             vertexIndex = vertexRecord.get("index", None)
-            coordinates = TGraph.Coordinates(graph, vertexIndex, default=None)
 
-            if coordinates is None or len(coordinates) < 3:
+            if vertexIndex is None:
                 continue
 
-            dx = coordinates[0] - qx
-            dy = coordinates[1] - qy
-            dz = coordinates[2] - qz
+            coords = _coords_from_record(vertexRecord)
+
+            if coords is None:
+                continue
+
+            vx, vy, vz = coords
+
+            dx = vx - qx
+            dy = vy - qy
+            dz = vz - qz
+
             distanceSquared = dx * dx + dy * dy + dz * dz
 
             if bestDistanceSquared is None or distanceSquared < bestDistanceSquared:
                 bestIndex = vertexIndex
                 bestDistanceSquared = distanceSquared
 
-        return TGraph.Vertex(graph, bestIndex) if bestIndex is not None else None
+        if bestIndex is None:
+            return None
 
+        return TGraph.Vertex(
+            graph,
+            bestIndex,
+            copy=copy,
+            asTopologic=asTopologic,
+            active=active,
+            silent=silent,
+        )
+    
     @staticmethod
     def NetworkXGraph(graph: "TGraph", nodeIDKey: str = None, edgeIDKey: str = None,
                       includeInactive: bool = False, scalarAttributes: bool = False) -> Optional[Any]:
@@ -18515,6 +18855,92 @@ class TGraph:
             return graph if result is not None else None
         except Exception:
             return TGraph._OntologySet(graph, "uri", uri.strip(), element=element, index=index)
+    
+    @staticmethod
+    def SetVertexCoordinates(
+        graph: "TGraph",
+        vertexIndex: int,
+        x=None,
+        y=None,
+        z=None,
+        coordinates=None,
+        silent: bool = False,
+    ) -> bool:
+        """
+        Sets the X, Y, Z coordinates of a TGraph vertex in-place.
+
+        Coordinates are stored in the vertex dictionary using keys 'x', 'y', and 'z'.
+        If the vertex has a Topologic representation, this method does not rebuild
+        that representation. It only updates the lightweight TGraph record.
+
+        Parameters
+        ----------
+        graph : TGraph
+            The input TGraph.
+        vertexIndex : int
+            The vertex index.
+        x, y, z : float , optional
+            Coordinate values to set. Omitted values are left unchanged.
+        coordinates : list or tuple , optional
+            Optional coordinate sequence. If supplied, it overrides x, y, z.
+        silent : bool , optional
+            If True, error messages are suppressed. Default is False.
+
+        Returns
+        -------
+        bool
+            True if successful, otherwise False.
+        """
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.SetVertexCoordinates - Error: The input graph is not a valid TGraph. Returning False.")
+            return False
+
+        try:
+            vertexIndex = int(vertexIndex)
+        except Exception:
+            if not silent:
+                print("TGraph.SetVertexCoordinates - Error: The input vertex index is not valid. Returning False.")
+            return False
+
+        if not graph._validate_vertex_index(vertexIndex, active=False):
+            if not silent:
+                print("TGraph.SetVertexCoordinates - Error: The input vertex index is out of range. Returning False.")
+            return False
+
+        if coordinates is not None:
+            try:
+                if len(coordinates) > 0:
+                    x = coordinates[0]
+                if len(coordinates) > 1:
+                    y = coordinates[1]
+                if len(coordinates) > 2:
+                    z = coordinates[2]
+            except Exception:
+                if not silent:
+                    print("TGraph.SetVertexCoordinates - Error: The input coordinates are not valid. Returning False.")
+                return False
+
+        d = graph._vertices[vertexIndex].setdefault("dictionary", {})
+
+        if x is not None:
+            d["x"] = float(x)
+        if y is not None:
+            d["y"] = float(y)
+        if z is not None:
+            d["z"] = float(z)
+
+        # Coordinates can affect distances, edge lengths, spatial indexing, routing,
+        # and compiled metric data.
+        try:
+            graph._invalidate_cache()
+        except Exception:
+            pass
+
+        return True
+    
+    @staticmethod
     def SetVertexDictionary(self, index: int, dictionary: Optional[Dict[str, Any]] = None) -> "TGraph":
         """
         Sets the dictionary of a vertex in this TGraph.
@@ -18971,51 +19397,166 @@ class TGraph:
         return result
 
     @staticmethod
-    def ShortestPathViaVertices(graph: "TGraph", startVertex, endVertex, vertices: list = None, tolerance: float = 0.0001, silent: bool = False) -> Optional[List[int]]:
+    def ShortestPathViaVertices(
+        graph: "TGraph",
+        startVertex,
+        endVertex,
+        vertices: list = None,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
         Returns a shortest path that passes through a sequence of required vertices.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         startVertex : Any
-            The input start vertex value.
+            The start vertex. This can be a TGraph vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input if NearestVertex can
+            resolve it.
         endVertex : Any
-            The input end vertex value.
+            The end vertex. This can be a TGraph vertex index, TGraph vertex record,
+            Topologic vertex, or coordinate-like input if NearestVertex can resolve it.
         vertices : list , optional
-            The input vertices or vertex indices. Default is None.
+            The required intermediate vertices or vertex indices. Default is None.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired tolerance. Currently used only as a compatibility argument
+            for future coordinate-based resolution. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        Optional[List[int]]
-            The resulting shortest path via vertices list.
+        list or None
+            The resulting shortest path as a list of TGraph vertex indices, or None
+            if a required segment cannot be found.
         """
+
         if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.ShortestPathViaVertices - Error: The input graph is not a valid TGraph. Returning None.")
             return None
-        sequence = [TGraph._as_index(startVertex)] + [TGraph._as_index(v) for v in (vertices or [])] + [TGraph._as_index(endVertex)]
-        if any(not graph._validate_vertex_index(v) for v in sequence):
-            return None
-        mode = "out" if graph._directed else "all"
-        final = []
-        seen = set()
-        for a, b in zip(sequence[:-1], sequence[1:]):
-            segment = TGraph.ShortestPath(graph, a, b, mode=mode)
-            if segment is None or len(segment) == 0:
+
+        def _resolve_index(v):
+            """
+            Resolves an input vertex-like object to a TGraph vertex index.
+            """
+
+            if v is None:
                 return None
-            if not final:
-                final.extend(segment)
-                seen.update(segment[:-1])
+
+            # TGraph vertex record.
+            if isinstance(v, dict):
+                if "index" in v:
+                    try:
+                        idx = int(v["index"])
+                        if graph._validate_vertex_index(idx, active=True):
+                            return idx
+                    except Exception:
+                        pass
+
+            # Direct integer-like index.
+            try:
+                idx = int(v)
+                if graph._validate_vertex_index(idx, active=True):
+                    return idx
+            except Exception:
+                pass
+
+            # Existing private resolver, if available.
+            try:
+                idx = TGraph._as_index(v)
+                if idx is not None:
+                    idx = int(idx)
+                    if graph._validate_vertex_index(idx, active=True):
+                        return idx
+            except Exception:
+                pass
+
+            # Coordinate / Topologic vertex fallback using NearestVertex, if present.
+            try:
+                nearest = TGraph.NearestVertex(
+                    graph,
+                    vertex=v,
+                    copy=False,
+                    active=True,
+                    asTopologic=False,
+                    silent=True,
+                )
+                if isinstance(nearest, dict) and "index" in nearest:
+                    idx = int(nearest["index"])
+                    if graph._validate_vertex_index(idx, active=True):
+                        return idx
+            except Exception:
+                pass
+
+            return None
+
+        # Build required sequence.
+        raw_sequence = [startVertex] + list(vertices or []) + [endVertex]
+        sequence = [_resolve_index(v) for v in raw_sequence]
+
+        if any(v is None for v in sequence):
+            if not silent:
+                print("TGraph.ShortestPathViaVertices - Error: Could not resolve one or more input vertices. Returning None.")
+            return None
+
+        # Remove consecutive duplicates. These are valid and should not force a
+        # ShortestPath(a, a) call.
+        compact_sequence = []
+
+        for v in sequence:
+            if not compact_sequence or compact_sequence[-1] != v:
+                compact_sequence.append(v)
+
+        if len(compact_sequence) == 0:
+            return []
+
+        if len(compact_sequence) == 1:
+            return [compact_sequence[0]]
+
+        mode = "out" if getattr(graph, "_directed", False) else "all"
+
+        final = []
+
+        for a, b in zip(compact_sequence[:-1], compact_sequence[1:]):
+            # A same-vertex segment is valid and contributes no additional path.
+            if a == b:
+                segment = [a]
             else:
-                for v in segment[1:]:
-                    if v in seen and v != b:
-                        return None
-                    final.append(v)
-                    seen.add(v)
+                try:
+                    segment = TGraph.ShortestPath(graph, a, b, mode=mode)
+                except TypeError:
+                    # Fallback for ShortestPath implementations without a mode argument.
+                    segment = TGraph.ShortestPath(graph, a, b)
+
+            if segment is None or len(segment) == 0:
+                if not silent:
+                    print(f"TGraph.ShortestPathViaVertices - Warning: No path found between {a} and {b}. Returning None.")
+                return None
+
+            # Ensure segment is a list of indices.
+            clean_segment = []
+
+            for item in segment:
+                idx = _resolve_index(item)
+                if idx is None:
+                    if not silent:
+                        print("TGraph.ShortestPathViaVertices - Error: ShortestPath returned an unresolved vertex. Returning None.")
+                    return None
+                clean_segment.append(idx)
+
+            if not final:
+                final.extend(clean_segment)
+            else:
+                # Avoid duplicating the shared endpoint between consecutive segments.
+                if final[-1] == clean_segment[0]:
+                    final.extend(clean_segment[1:])
+                else:
+                    final.extend(clean_segment)
+
         return final
 
     @staticmethod
@@ -20453,35 +20994,81 @@ class TGraph:
         return [x/length, y/length, z/length]
 
     @staticmethod
-    def Vertex(graph: "TGraph", index: int, asTopologic: bool = False) -> Optional[Any]:
+    def Vertex(
+        graph: "TGraph",
+        index: int,
+        copy: bool = False,
+        active: bool = False,
+        asTopologic: bool = False,
+        silent: bool = False,
+    ):
         """
-        Returns a vertex record or Topologic vertex from the input TGraph.
+        Returns the vertex record at the input vertex index.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         index : int
-            The input index.
+            The desired vertex index.
+        copy : bool , optional
+            If True, a shallow copy of the record is returned, with a copied
+            dictionary. If False, the live internal record is returned and can be
+            modified in-place. Default is False.
+        active : bool , optional
+            If True, the vertex must be active. If False, inactive vertices are also
+            accepted. Default is False.
         asTopologic : bool , optional
             If set to True, records are returned as Topologic objects when possible. Default is
             False.
+        silent : bool , optional
+            If True, error messages are suppressed. Default is False.
 
         Returns
         -------
-        dict or topologic_core.Vertex or None
-            The requested vertex record or Topologic vertex.
+        dict or None
+            The vertex record.
         """
-        if not isinstance(graph, TGraph) or not graph._validate_vertex_index(index):
+
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.VertexRecord - Error: The input graph is not a valid TGraph. Returning None.")
             return None
-        if not asTopologic:
-            v = graph._vertices[index]
-            return dict(v, dictionary=dict(v.get("dictionary", {})))
-        verts = TGraph.Vertices(graph, asTopologic=True, activeOnly=False)
-        return verts[index] if index < len(verts) else None
+
+        try:
+            index = int(index)
+        except Exception:
+            if not silent:
+                print("TGraph.VertexRecord - Error: The input vertex index is not valid. Returning None.")
+            return None
+
+        if not graph._validate_vertex_index(index, active=active):
+            if not silent:
+                print("TGraph.VertexRecord - Error: The input vertex index is out of range or inactive. Returning None.")
+            return None
+
+        if asTopologic:
+            verts = TGraph.Vertices(graph, asTopologic=True, active=False)
+            return verts[index] if index < len(verts) else None
+
+        record = graph._vertices[index]
+
+        if not copy:
+            return record
+
+        new_record = dict(record)
+        d = record.get("dictionary", {})
+        new_record["dictionary"] = dict(d) if isinstance(d, dict) else {}
+        return new_record
 
     @staticmethod
-    def VertexByKeyValue(graph: "TGraph", key: str = None, value: Any = None, silent: bool = False) -> Optional[Dict[str, Any]]:
+    def VertexByKeyValue(graph: "TGraph",
+                         key: str = None,
+                         value: Any = None,
+                         copy: bool = False,
+                         active: bool = False,
+                         asTopologic: bool = False,
+                         silent: bool = False) -> Optional[Dict[str, Any]]:
         """
         Returns the first active vertex whose dictionary contains the requested key-value pair.
 
@@ -20493,6 +21080,16 @@ class TGraph:
             The dictionary key to use. Default is None.
         value : Any , optional
             The input value value. Default is None.
+        copy : bool , optional
+            If True, a shallow copy of the record is returned, with a copied
+            dictionary. If False, the live internal record is returned and can be
+            modified in-place. Default is False.
+        active : bool , optional
+            If True, the vertex must be active. If False, inactive vertices are also
+            accepted. Default is False.
+        asTopologic : bool , optional
+            If set to True, records are returned as Topologic objects when possible. Default is
+            False.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -20504,8 +21101,8 @@ class TGraph:
         if not isinstance(graph, TGraph) or key is None:
             return None
         for v in graph._vertices:
-            if v.get("active", True) and v.get("dictionary", {}).get(key) == value:
-                return TGraph.Vertex(graph, v["index"])
+            if v.get("dictionary", {}).get(key) == value:
+                return TGraph.Vertex(graph, v["index"], copy=copy, active=active, asTopologic=asTopologic, silent=silent)
         return None
 
     @staticmethod
@@ -20619,8 +21216,11 @@ class TGraph:
         return idx if isinstance(graph, TGraph) and graph._validate_vertex_index(idx) else None
 
     @staticmethod
-    def Vertices(graph: "TGraph", asTopologic: bool = False, useRepresentation: bool = True,
-                 activeOnly: bool = True, mantissa: int = 6, tolerance: float = 0.0001,
+    def Vertices(graph: "TGraph",
+                 copy: bool = False,
+                 asTopologic: bool = False,
+                 useRepresentation: bool = True,
+                 active: bool = True, mantissa: int = 6, tolerance: float = 0.0001,
                  silent: bool = False) -> List[Any]:
         """
         Returns the vertices of the input TGraph.
@@ -20629,13 +21229,17 @@ class TGraph:
         ----------
         graph : 'TGraph'
             The input TGraph.
+        copy : bool , optional
+            If True, a shallow copy of the record is returned, with a copied
+            dictionary. If False, the live internal record is returned and can be
+            modified in-place. Default is False.
         asTopologic : bool , optional
             If set to True, records are returned as Topologic objects when possible. Default is
             False.
         useRepresentation : bool , optional
             If set to True, stored representation objects are used when possible. Default is
             True.
-        activeOnly : bool , optional
+        active : bool , optional
             If set to True, only active records are considered. Default is True.
         mantissa : int , optional
             The number of decimal places to round numeric results to. Default is 6.
@@ -20650,9 +21254,13 @@ class TGraph:
             The requested vertex records or Topologic vertices.
         """
         if not isinstance(graph, TGraph):
-            return []
-        records = [v for v in graph._vertices if (not activeOnly or v.get("active", True))]
+            if not silent:
+                print("TGraph.Vertices - Error: The input graph parameter is not a valid TGraph. Returning None.")
+            return None
+        records = [v for v in graph._vertices if (not active or v.get("active", True))]
         if not asTopologic:
+            if not copy:
+                return records
             return [dict(v, dictionary=dict(v.get("dictionary", {}))) for v in records]
         result = []
         n = max(1, len(records))

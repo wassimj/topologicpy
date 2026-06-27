@@ -371,7 +371,7 @@ class Ontology:
         if Ontology._is_tgraph(graph):
             try:
                 from topologicpy.TGraph import TGraph
-                return TGraph.Vertices(graph, asTopologic=asTopologic, activeOnly=True) or []
+                return TGraph.Vertices(graph, asTopologic=asTopologic, active=True) or []
             except Exception:
                 return []
         try:
@@ -388,7 +388,7 @@ class Ontology:
         if Ontology._is_tgraph(graph):
             try:
                 from topologicpy.TGraph import TGraph
-                return TGraph.Edges(graph, asTopologic=asTopologic, activeOnly=True) or []
+                return TGraph.Edges(graph, asTopologic=asTopologic, active=True) or []
             except Exception:
                 return []
         try:

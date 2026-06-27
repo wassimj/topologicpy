@@ -257,7 +257,7 @@ class GQL:
             if changed:
                 graph.SetDictionary(graph_dict)
 
-            for v in TGraph.Vertices(graph, asTopologic=False, activeOnly=True) or []:
+            for v in TGraph.Vertices(graph, asTopologic=False, active=True) or []:
                 idx = v.get("index", None)
                 d = dict(v.get("dictionary", {}))
                 label = d.get(GQL.LABEL_KEY, None)
@@ -277,7 +277,7 @@ class GQL:
                 if changed and isinstance(idx, int):
                     graph.SetVertexDictionary(idx, d)
 
-            for e in TGraph.Edges(graph, asTopologic=False, activeOnly=True) or []:
+            for e in TGraph.Edges(graph, asTopologic=False, active=True) or []:
                 idx = e.get("index", None)
                 d = dict(e.get("dictionary", {}))
                 d, changed = _set_missing_dict(
@@ -588,9 +588,9 @@ class GQL:
                     add_unique(classes, pd.get(ontologyClassKey))
                     add_unique(categories, pd.get(categoryKey))
                     add_unique(labels, pd.get(labelKey))
-                    for v in TGraph.Vertices(value, asTopologic=False, activeOnly=True) or []:
+                    for v in TGraph.Vertices(value, asTopologic=False, active=True) or []:
                         visit(v)
-                    for e in TGraph.Edges(value, asTopologic=False, activeOnly=True) or []:
+                    for e in TGraph.Edges(value, asTopologic=False, active=True) or []:
                         visit(e)
                     return
             except Exception:

@@ -125,8 +125,8 @@ class Executor:
         if graph_kind == "tgraph":
             try:
                 from topologicpy.TGraph import TGraph
-                vertices = TGraph.Vertices(graph, asTopologic=False, activeOnly=True, silent=True) or []
-                edges = TGraph.Edges(graph, asTopologic=False, activeOnly=True, silent=True) or []
+                vertices = TGraph.Vertices(graph, asTopologic=False, active=True, silent=True) or []
+                edges = TGraph.Edges(graph, asTopologic=False, active=True, silent=True) or []
             except Exception as e:
                 if not silent:
                     print("GQL.Executor._ensure_working_graph - Error: Could not read TGraph. Returning None.")

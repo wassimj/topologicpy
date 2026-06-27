@@ -1370,6 +1370,297 @@ class Wire():
         return return_wire
 
     @staticmethod
+    def ByTGraphVertices(tGraph, vertices, close: bool = False, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Creates a topologic Wire from an ordered list of TGraph vertex indices.
+
+        The created Topologic vertices inherit the dictionaries of the corresponding
+        TGraph vertices. The created Topologic edges inherit the dictionaries of the
+        corresponding TGraph edges when such edges exist in the TGraph.
+
+        Parameters
+        ----------
+        tGraph : topologicpy.TGraph
+            The input TGraph.
+        vertices : list
+            An ordered list of TGraph vertex indices.
+        close : bool, optional
+            If True, an additional edge is created from the last vertex back to the
+            first vertex. Default is False.
+        tolerance : float, optional
+            The tolerance used by TopologicPy constructors. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Wire
+            The created Wire. Returns None if the input is invalid or if the Wire
+            cannot be constructed.
+        """
+
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Topology import Topology
+        from topologicpy.Dictionary import Dictionary
+
+        if tGraph is None:
+            if not silent:
+                print("Wire.ByTGraphVertices - Error: The input tGraph is None. Returning None.")
+            return None
+        if not isinstance(vertices, list):
+            if not silent:
+                print("Wire.ByTGraphVertices - Error: The input vertices parameter is not a list. Returning None.")
+            return None
+        if len(vertices) < 2:
+            if not silent:
+                print("Wire.ByTGraphVertices - Error: The input vertices parameter contains less than 2 elements. Returning None.")
+            return None
+
+        # -------------------------------------------------------------------------
+        # Small local helpers to keep this method robust against minor TGraph
+        # implementation differences.
+        # -------------------------------------------------------------------------
+
+        def _vertex_data(tg, v_index):
+            """
+            Returns the internal TGraph vertex data dictionary for v_index.
+            """
+            try:
+                if hasattr(tg, "_vertices"):
+                    return tg._vertices[v_index]
+            except Exception:
+                pass
+
+            try:
+                if hasattr(tg, "vertices"):
+                    return tg.vertices[v_index]
+            except Exception:
+                pass
+
+            try:
+                if hasattr(tg, "Vertices"):
+                    return tg.Vertices()[v_index]
+            except Exception:
+                pass
+
+            return None
+
+        def _edge_data(tg, u, v):
+            """
+            Returns the internal TGraph edge data dictionary between u and v.
+            Tries both directed and undirected storage conventions.
+            """
+            candidate_keys = [
+                (u, v),
+                (v, u),
+                f"{u}-{v}",
+                f"{v}-{u}",
+                f"{u}_{v}",
+                f"{v}_{u}",
+            ]
+
+            for attr_name in ["_edges", "edges"]:
+                try:
+                    edge_store = getattr(tg, attr_name)
+                    if isinstance(edge_store, dict):
+                        for key in candidate_keys:
+                            if key in edge_store:
+                                return edge_store[key]
+                    elif isinstance(edge_store, list):
+                        for e in edge_store:
+                            if not isinstance(e, dict):
+                                continue
+                            eu = e.get("u", e.get("src", e.get("source", e.get("from"))))
+                            ev = e.get("v", e.get("dst", e.get("target", e.get("to"))))
+                            if (eu == u and ev == v) or (eu == v and ev == u):
+                                return e
+                except Exception:
+                    pass
+
+            try:
+                if hasattr(tg, "Edge"):
+                    return tg.Edge(u, v)
+            except Exception:
+                pass
+
+            try:
+                if hasattr(tg, "EdgeData"):
+                    return tg.EdgeData(u, v)
+            except Exception:
+                pass
+
+            return None
+
+        def _dictionary_from_data(data):
+            """
+            Extracts a Topologic dictionary or builds one from plain Python metadata.
+            """
+            if data is None:
+                return None
+
+            # Already a Topologic dictionary.
+            try:
+                if Dictionary.IsInstance(data):
+                    return data
+            except Exception:
+                pass
+
+            if not isinstance(data, dict):
+                return None
+
+            # Common TGraph storage conventions.
+            for key in ["dictionary", "Dictionary", "dict", "attributes", "data"]:
+                value = data.get(key)
+                if value is None:
+                    continue
+
+                try:
+                    if Dictionary.IsInstance(value):
+                        return value
+                except Exception:
+                    pass
+
+                if isinstance(value, dict):
+                    try:
+                        return Dictionary.ByPythonDictionary(value)
+                    except Exception:
+                        pass
+
+            # Fallback: use the whole data dictionary, excluding structural keys.
+            excluded = {
+                "x", "y", "z",
+                "u", "v", "src", "dst", "source", "target", "from", "to",
+                "index", "id"
+            }
+
+            py_dict = {}
+            for k, v in data.items():
+                if k in excluded:
+                    continue
+                if isinstance(v, (str, int, float, bool)):
+                    py_dict[k] = v
+
+            if len(py_dict) == 0:
+                return None
+
+            try:
+                return Dictionary.ByPythonDictionary(py_dict)
+            except Exception:
+                return None
+
+        def _coords_from_vertex_data(data):
+            """
+            Extracts xyz coordinates from a TGraph vertex data dictionary.
+            """
+            if not isinstance(data, dict):
+                return None
+
+            # Common direct convention.
+            if all(k in data for k in ["x", "y", "z"]):
+                return data["x"], data["y"], data["z"]
+
+            # Common uppercase convention.
+            if all(k in data for k in ["X", "Y", "Z"]):
+                return data["X"], data["Y"], data["Z"]
+
+            # Common coordinate tuple/list conventions.
+            for key in ["coordinates", "coords", "point", "position", "xyz"]:
+                value = data.get(key)
+                if isinstance(value, (list, tuple)) and len(value) >= 3:
+                    return value[0], value[1], value[2]
+
+            # Existing topologic vertex convention.
+            for key in ["vertex", "topologic_vertex", "topology"]:
+                value = data.get(key)
+                if value is None:
+                    continue
+                try:
+                    return Vertex.X(value), Vertex.Y(value), Vertex.Z(value)
+                except Exception:
+                    pass
+
+            return None
+
+        # -------------------------------------------------------------------------
+        # Build Topologic vertices.
+        # -------------------------------------------------------------------------
+
+        topologic_vertices = []
+
+        for v_index in vertices:
+            v_data = _vertex_data(tGraph, v_index)
+            coords = _coords_from_vertex_data(v_data)
+
+            if coords is None:
+                return None
+
+            try:
+                tv = Vertex.ByCoordinates(float(coords[0]), float(coords[1]), float(coords[2]))
+            except Exception:
+                return None
+
+            v_dict = _dictionary_from_data(v_data)
+            if v_dict is not None:
+                try:
+                    tv = Topology.SetDictionary(tv, v_dict)
+                except Exception:
+                    pass
+
+            topologic_vertices.append(tv)
+
+        # -------------------------------------------------------------------------
+        # Build Topologic edges and transfer TGraph edge dictionaries.
+        # -------------------------------------------------------------------------
+
+        edges = []
+        index_pairs = list(zip(vertices[:-1], vertices[1:]))
+
+        if close:
+            index_pairs.append((vertices[-1], vertices[0]))
+
+        for i, (u, v) in enumerate(index_pairs):
+            start_vertex = topologic_vertices[i]
+            end_vertex = topologic_vertices[(i + 1) % len(topologic_vertices)]
+
+            try:
+                e = Edge.ByStartVertexEndVertex(start_vertex, end_vertex, tolerance=tolerance)
+            except TypeError:
+                e = Edge.ByStartVertexEndVertex(start_vertex, end_vertex)
+            except Exception:
+                return None
+
+            if e is None:
+                return None
+
+            e_data = _edge_data(tGraph, u, v)
+            e_dict = _dictionary_from_data(e_data)
+
+            if e_dict is not None:
+                try:
+                    e = Topology.SetDictionary(e, e_dict)
+                except Exception:
+                    pass
+
+            edges.append(e)
+
+        if len(edges) == 0:
+            return None
+
+        # -------------------------------------------------------------------------
+        # Build and return Wire.
+        # -------------------------------------------------------------------------
+
+        try:
+            return Wire.ByEdges(edges, tolerance=tolerance)
+        except TypeError:
+            return Wire.ByEdges(edges)
+        except Exception:
+            return None
+
+
+    @staticmethod
     def ByVertices(vertices: list, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
         """
         Creates a wire from the input list of vertices.
@@ -4170,7 +4461,7 @@ class Wire():
         return Topology.SelfMerge(Cluster.ByTopologies(finalWires+ridges), tolerance=tolerance)
     
     @staticmethod
-    def Invert(wire, tolerance: float = 0.0001):
+    def Invert(wire, silent: bool = False, tolerance: float = 0.0001):
         """
         Creates a wire that is an inverse (mirror) of the input wire.
 
@@ -4178,6 +4469,8 @@ class Wire():
         ----------
         wire : topologic_core.Wire
             The input wire.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
 
@@ -4190,10 +4483,12 @@ class Wire():
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(wire, "Wire"):
+            if not silent:
+                print("Wire.Invert - Error: The input wire parameter is not a valid topologic wire. Returning None.")
             return None
         vertices = Topology.Vertices(wire)
         reversed_vertices = vertices[::-1]
-        return Wire.ByVertices(reversed_vertices, close=Wire.IsClosed(wire), tolerance=tolerance)
+        return Wire.ByVertices(reversed_vertices, close=Wire.IsClosed(wire), silent=silent, tolerance=tolerance)
 
     @staticmethod
     def IsClosed(wire) -> bool:

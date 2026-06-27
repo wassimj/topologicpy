@@ -828,100 +828,6 @@ class Face():
             return None
         return Face.ByVertices(vertices, tolerance=tolerance)
 
-    # @staticmethod
-    # def ByWire(wire, tolerance: float = 0.0001, silent: bool = False):
-    #     """
-    #     Creates a face from the input closed wire.
-
-    #     Parameters
-    #     ----------
-    #     wire : topologic_core.Wire
-    #         The input wire.
-    #     tolerance : float , optional
-    #         The desired tolerance. Default is 0.0001.
-    #     silent : bool , optional
-    #         If set to True, error and warning messages are suppressed. Default is False.
-
-    #     Returns
-    #     -------
-    #     topologic_core.Face or list
-    #         The created face. If the wire is non-planar, the method will attempt to triangulate the wire and return a list of faces.
-
-    #     """
-    #     from topologicpy.Vertex import Vertex
-    #     from topologicpy.Wire import Wire
-    #     from topologicpy.Shell import Shell
-    #     from topologicpy.Cluster import Cluster
-    #     from topologicpy.Topology import Topology
-    #     from topologicpy.Dictionary import Dictionary
-    #     import inspect
-
-    #     def triangulateWire(wire):
-    #         wire = Topology.RemoveCollinearEdges(wire, angTolerance=0.1, tolerance=tolerance, silent=silent)
-    #         vertices = Topology.Vertices(wire)
-    #         shell = Shell.Delaunay(vertices)
-    #         if Topology.IsInstance(shell, "Topology"):
-    #             return Topology.Faces(shell)
-    #         else:
-    #             return []
-    #     if not Topology.IsInstance(wire, "Wire"):
-    #         if not silent:
-    #             print("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
-    #             curframe = inspect.currentframe()
-    #             calframe = inspect.getouterframes(curframe, 2)
-    #             print('caller name:', calframe[1][3])
-    #         return None
-    #     if not Wire.IsClosed(wire):
-    #         wire = Wire.Close(wire, tolerance=tolerance, silent=silent)
-    #         if wire is None or Wire.IsClosed(wire) == False:
-    #             if not silent:
-    #                 print("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
-    #                 curframe = inspect.currentframe()
-    #                 calframe = inspect.getouterframes(curframe, 2)
-    #                 print('caller name:', calframe[1][3])
-    #             return None
-        
-    #     edges = Wire.Edges(wire)
-    #     wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
-    #     vertices = Topology.Vertices(wire)
-    #     fList = []
-    #     if Topology.IsInstance(wire, "Wire"):
-    #         try:
-    #             fList = Core.Face.ByExternalBoundary(wire)
-    #         except:
-    #             if not silent:
-    #                 print("Face.ByWire - Warning: Could not create face by external boundary. Trying other methods.")
-    #             if len(vertices) > 3:
-    #                 fList = triangulateWire(wire)
-    #             else:
-    #                 fList = []
-        
-    #     if not isinstance(fList, list):
-    #         fList = [fList]
-
-    #     returnList = []
-    #     for f in fList:
-    #         if Face.Area(f) < 0:
-    #             wire = Face.ExternalBoundary(f)
-    #             wire = Wire.Invert(wire)
-    #             try:
-    #                 f = Core.Face.ByExternalBoundary(wire)
-    #                 returnList.append(f)
-    #             except:
-    #                 pass
-    #         else:
-    #             returnList.append(f)
-    #     if len(returnList) == 0:
-    #         if not silent:
-    #             print("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
-    #         return None
-    #     elif len(returnList) == 1:
-    #         return returnList[0]
-    #     else:
-    #         if not silent:
-    #             print("Face.ByWire - Warning: Could not build a single face from the input wire parameter. Returning a list of faces.")
-    #         return returnList
-
     @staticmethod
     def ByWire(wire, tolerance: float = 0.0001, silent: bool = False):
         """
@@ -952,6 +858,7 @@ class Face():
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
         from topologicpy.Topology import Topology
+        import inspect
 
         def _msg(text):
             if not silent:
@@ -1023,7 +930,7 @@ class Face():
             try:
                 if Face.Area(face) < 0:
                     boundary = Face.ExternalBoundary(face)
-                    inverted = Wire.Invert(boundary)
+                    inverted = Wire.Invert(boundary, silent=silent)
                     rebuilt = _face_by_external_boundary(inverted)
                     if Topology.IsInstance(rebuilt, "Face"):
                         return rebuilt
@@ -1036,7 +943,11 @@ class Face():
         # Validate input
         # -------------------------------------------------------------------------
         if not Topology.IsInstance(wire, "Wire"):
-            _msg("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+            if not silent:
+                _msg("Face.ByWire - Error: The input wire parameter is not a valid topologic wire. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
         # -------------------------------------------------------------------------
@@ -1046,7 +957,11 @@ class Face():
             wire = Wire.Close(wire, tolerance=tolerance, silent=silent)
 
             if wire is None or not Wire.IsClosed(wire):
-                _msg("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+                if not silent:
+                    _msg("Face.ByWire - Error: The input wire parameter is not a closed topologic wire. Returning None.")
+                    curframe = inspect.currentframe()
+                    calframe = inspect.getouterframes(curframe, 2)
+                    print('caller name:', calframe[1][3])
                 return None
 
         # -------------------------------------------------------------------------
@@ -1060,7 +975,11 @@ class Face():
         # Cleanup path: if direct construction failed, try self-merging the wire once.
         # -------------------------------------------------------------------------
         if not faces:
-            _msg("Face.ByWire - Warning: Could not create face by external boundary. Trying cleaned wire.")
+            if not silent:
+                _msg("Face.ByWire - Warning: Could not create face by external boundary. Trying cleaned wire.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
 
             cleaned_wire = _merged_wire(wire)
             if cleaned_wire is not None:
@@ -1083,13 +1002,21 @@ class Face():
         # Return result.
         # -------------------------------------------------------------------------
         if len(faces) == 0:
-            _msg("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
+            if not silent:
+                _msg("Face.ByWire - Error: Could not build a face from the input wire parameter. Returning None.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print('caller name:', calframe[1][3])
             return None
 
         if len(faces) == 1:
             return faces[0]
-
-        _msg("Face.ByWire - Warning: Could not build a single face from the input wire parameter. Returning a list of faces.")
+        
+        if not silent:
+            _msg("Face.ByWire - Warning: Could not build a single face from the input wire parameter. Returning a list of faces.")
+            curframe = inspect.currentframe()
+            calframe = inspect.getouterframes(curframe, 2)
+            print('caller name:', calframe[1][3])
         return faces
 
     @staticmethod
@@ -5846,8 +5773,8 @@ class Face():
             f = Topology.Unflatten(f, origin=origin, direction=normal)
             if Face.Angle(face, f, mantissa=mantissa) > 90:
                 wire = Face.ExternalBoundary(f)
-                wire = Wire.Invert(wire)
-                f = Face.ByWire(wire)
+                wire = Wire.Invert(wire, silent=True)
+                f = Face.ByWire(wire, silent=True)
                 if Topology.IsInstance(f, "Face"):
                     finalFaces.append(f)
             else:
