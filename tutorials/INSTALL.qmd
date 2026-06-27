@@ -1,0 +1,87 @@
+---
+title: "Developer Install"
+---
+
+This website is built by Github Actions with a Linux Ubuntu distribution using Quarto.
+You can replicate the same setup locally to run the tutorials, this will currently only work on Linux.
+See callout below to setup up Linux on your Windows machine using \
+[WSL](https://learn.microsoft.com/en-us/windows/wsl/).
+
+::: {.callout-tip collapse="true"}
+
+## Windows Users - Setup WSL (Windows Subsystem for Linux) to run Tutorials
+
+**Pre-requisites**
+
+- win-Key "Turn Windows features on or off"
+- ensure the following features are enabled:
+  - Hyper-V
+  - Windows Subsystem for Linux
+  - Windows Hypervisor Platform
+- restart your computer. See \
+[GH issue troubleshooting](https://github.com/microsoft/WSL/issues/9521#issuecomment-2385289848)\
+for more details.
+
+**Setup Ubuntu Distribution with Pixi**
+
+```console
+# install Ubuntu distribution
+wsl --install -d Ubuntu
+
+# create a new user with a sensible username and password
+
+# launches Ubuntu distribution (enters the linux bash shell)
+wsl -d Ubuntu
+
+# install pixi (package manager) - https://pixi.prefix.dev/latest/#installation
+curl -fsSL https://pixi.sh/install.sh | bash
+
+```
+
+:::
+
+
+```bash
+# Clone the repository
+git clone https://github.com/wassimj/topologicpy.git
+
+# Change directory
+cd topologicpy
+
+# list available tasks
+pixi run
+
+# launch jupyterlab in tutorials directory
+pixi run lab-tutorials
+```
+
+
+## Pixi Tasks
+
+Common developer tasks are defined in the `pixi.toml` file. To see the available tasks:
+
+```bash
+pixi task list
+```
+
+```{python}
+#| echo: false
+!pixi task list
+```
+
+
+## Notes
+
+- To avoid duplication, Notebooks are copied from the `notebooks` directory to the `tutorials` directory when the Quarto website
+  is built, such that the notebooks in the `notebooks` directory are the source of truth and the ones in the `tutorials` directory are generated.
+- By default in Quarto, [Notebooks are not executed](https://quarto.org/docs/projects/code-execution.html#notebooks) at
+  build time and the saved outputs are used. Adding to the [front matter](https://quarto.org/docs/authoring/front-matter.html) of
+  the notebook will enable execution at build time, this can serve as a test to ensure that the notebook is still working.
+
+  ```yml
+  execute:
+    enabled: true
+  ```
+
+- Alternatively, you can use `.qmd` files instead of `.ipynb` files for your notebooks where the output is not saved, and then
+  the notebook output is generated at build time.

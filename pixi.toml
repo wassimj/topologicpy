@@ -1,0 +1,103 @@
+[workspace]
+authors = ["Wassim Jabi <wassim.jabi@gmail.com>"]
+channels = ["conda-forge", "https://repo.prefix.dev/natlabrockies"] # Note: natlabrockies host energyplus
+name = "topologicpy"
+platforms = ["linux-64", "osx-arm64"]
+
+[pypi-dependencies]
+topologicpy = { path = ".", editable = true }
+
+[environments]
+default = { solve-group = "default" }
+test = { features = ["test"], solve-group = "default" }
+dev = { features = ["dev"], solve-group = "default" }
+
+[feature.test.dependencies]
+pytest-xdist = ">=2.4.0,<3.0.0"
+
+[feature.dev.dependencies]
+python = ">=3.8, <3.14"  # NOTE. pinned here as wasn't getting python ver from pyproject.toml. also
+pytest-xdist = ">=2.4.0,<3.0.0"
+jupyterlab = ">=4.5.5,<4.5.6"
+# jupyterlab-search-replace = "*"
+ipywidgets = "*"
+networkx = "*"
+quarto = "*"
+jupytext = ">=1.19.1,<2"
+ifcopenshell = "*"
+matplotlib = "*"
+pyyaml = "*"
+kagglehub = "*"
+pyvis = "*"
+energyplus = "*" # https://prefix.dev/channels/natlabrockies/packages/energyplus
+
+[feature.dev.pypi-dependencies]
+openstudio = "*"
+honeybee = "*"
+honeybee-energy = "*"
+honeybee-radiance = "*"
+ladybug = "*"
+ladybug-geometry = "*"
+# TODO: consider using lbt-honeybee as a catch all installing all honeybee deps
+jupyterlab-quarto = "*"
+
+[tasks.mk-build-dir]
+cmd = "mkdir -p build"
+cwd = "."
+description = "create build directory"
+
+# NOTE: cmds below can commented out when energyplus added to natlabrockies prefix channel is working
+#     : currently get the following error:
+#   ╰─▶ Cannot solve the request because of: energyplus * cannot be installed because there are no viable options:
+#    └─ energyplus 25.2.0 | 25.2.0 would require
+#       └─ __glibc >=2.34,<3.0.a0, for which no candidates were found.
+# https://prefix.dev/channels/natlabrockies/packages/energyplus
+# -------------------------------------------------------------
+[target.linux-64.tasks.download-openstudio]
+cmd = "wget https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb"
+cwd = "build"
+depends-on = ["mk-build-dir"]
+description = "download OpenStudio for Ubuntu 24.04"
+
+[target.linux-64.tasks.install-openstudio]
+cmd = "sudo dpkg -i ./OpenStudio-3.10.0+86d7e215a1-Ubuntu-24.04-x86_64.deb"
+cwd = "build"
+depends-on = ["download-openstudio"]
+description = "install OpenStudio on Ubuntu"
+
+[target.osx-arm64.tasks.download-openstudio]
+cmd = "curl -LO https://github.com/NREL/OpenStudio/releases/download/v3.10.0/OpenStudio-3.10.0+ce46db07de-Darwin-arm64.dmg"
+cwd = "build"
+depends-on = ["mk-build-dir"]
+description = "download OpenStudio for macOS (Apple Silicon)"
+
+[target.osx-arm64.tasks.install-openstudio]
+cmd = "hdiutil attach ./OpenStudio-3.10.0+ce46db07de-Darwin-arm64.dmg -mountpoint /tmp/openstudio_mount && sudo /tmp/openstudio_mount/OpenStudio-3.10.0+ce46db07de-Darwin-arm64.app/Contents/MacOS/OpenStudio-3.10.0+ce46db07de-Darwin-arm64 --accept-licenses --accept-messages --confirm-command install && hdiutil detach /tmp/openstudio_mount"
+cwd = "build"
+depends-on = ["download-openstudio"]
+description = "install OpenStudio on macOS (Apple Silicon)"
+# -------------------------------------------------------------
+
+[target.linux-64.tasks.open-tutorials]
+cmd= "start index.html"  # on wsl requires bash alias start=/mnt/c/windows/explorer.exe
+cwd="tutorials/_site"
+description="open built tutorials"
+
+[target.osx-arm64.tasks.open-tutorials]
+cmd= "open index.html"
+cwd="tutorials/_site"
+description="open built tutorials"
+# -------------------------------------------------------------
+
+[feature.test.tasks]
+tests = "pytest"
+
+[feature.dev.tasks]
+lab = { cmd="jupyter lab", cwd = "notebooks", description = "open Jupyter Lab for notebooks" }
+lab-tutorials = { cmd="jupyter lab", cwd = "tutorials", description = "open Jupyter Lab for tutorials" }
+test-energy = { cmd = "pytest tests/test_16EnergyModel.py", cwd = ".", description = "run energy model import tests with dev env" }
+del-tutorials = { cmd="rm -rf _site", cwd = "tutorials", description = "delete built tutorials" }
+tutorials = { cmd= "quarto render .", cwd = "tutorials", description = "render tutorials using Quarto" }
+preview = { cmd= "quarto preview .", cwd = "tutorials", description = "preview tutorials using Quarto" }
+list-sidebar = { cmd = "python list_sidebar.py", cwd = "tutorials", description = "list sidebar contents from _quarto.yml" }
+analyse-nb-imports = { cmd = "python analyse_nb_imports.py", description = "analyse notebook imports" }
