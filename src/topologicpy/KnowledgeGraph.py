@@ -941,14 +941,32 @@ class KnowledgeGraph:
         """
 
         Ontology = KnowledgeGraph._ontology_class()
-        if Ontology is None:
-            if not silent:
-                print("KnowledgeGraph.ByTopology - Error: Ontology.py is required for topology conversion. Returning None.")
-            return None
         if topology is None:
             if not silent:
                 print("KnowledgeGraph.ByTopology - Error: The input topology is None. Returning None.")
             return None
+        if Ontology is None:
+            TGraph = KnowledgeGraph._tgraph_class()
+            if TGraph is not None and isinstance(topology, TGraph) and hasattr(TGraph, "OntologyTriples"):
+                try:
+                    if not silent:
+                        print("KnowledgeGraph.ByTopology - Warning: Ontology.py is unavailable; using TGraph.OntologyTriples fallback.")
+                    triples = TGraph.OntologyTriples(
+                        topology,
+                        includeDictionaries=includeDictionaries,
+                        includeBOT=includeBOT,
+                        namespacePrefix=namespacePrefix,
+                    )
+                    return KnowledgeGraph.ByTriples(triples, namespaces=KnowledgeGraph.Namespaces(), useRDFLib=useRDFLib, silent=silent)
+                except Exception as exc:
+                    if not silent:
+                        print("KnowledgeGraph.ByTopology - Error: Could not create a knowledge graph from TGraph fallback. Returning None.")
+                        print("Error:", exc)
+                    return None
+            if not silent:
+                print("KnowledgeGraph.ByTopology - Error: Ontology.py is required for topology conversion. Returning None.")
+            return None
+
         try:
             is_graph_like = False
             try:

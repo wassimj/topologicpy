@@ -1494,6 +1494,152 @@ class IFCFastTopology:
         }
         return {"direct": direct, "generic": generic, "keyword": keyword}
 
+
+    @staticmethod
+    def _relationship_predicate_by_ifc_class(ifcClass: str, defaultValue: Any = None) -> dict:
+        """
+        Returns semantic predicate metadata for an IFC relationship class.
+
+        The returned dictionary is intended for TGraph edge dictionaries and
+        RDF/KG export. ``ontology_class`` should remain ``top:Relationship``;
+        the semantic meaning of the relationship is carried by
+        ``ontology_predicate``. When known, ``inverse_predicate`` is included.
+        """
+        if ifcClass is None:
+            return {"ontology_predicate": defaultValue} if defaultValue is not None else {}
+
+        key = str(ifcClass).strip().upper()
+        if key.startswith("IFC"):
+            key = "IFC" + key[3:].replace("_", "")
+
+        mapping = {
+            # Spatial and decomposition relationships.
+            "IFCRELCONTAINEDINSPATIALSTRUCTURE": {
+                "relationship": "contained_in_spatial_structure",
+                "ontology_predicate": "bot:containsElement",
+                "inverse_predicate": "bot:hasElement",
+            },
+            "IFCRELAGGREGATES": {
+                "relationship": "aggregates",
+                "ontology_predicate": "top:aggregates",
+                "inverse_predicate": "top:isAggregatedBy",
+            },
+            "IFCRELNESTS": {
+                "relationship": "nests",
+                "ontology_predicate": "brick:hasPart",
+                "inverse_predicate": "brick:isPartOf",
+            },
+            "IFCRELASSIGNSTOGROUP": {
+                "relationship": "assigns_to_group",
+                "ontology_predicate": "brick:hasPart",
+                "inverse_predicate": "brick:isPartOf",
+            },
+
+            # Type, property, material, classification, and external metadata.
+            "IFCRELDEFINESBYPROPERTIES": {
+                "relationship": "defines_by_properties",
+                "ontology_predicate": "top:hasPropertySet",
+                "inverse_predicate": "top:isPropertySetOf",
+            },
+            "IFCRELDEFINESBYTYPE": {
+                "relationship": "defines_by_type",
+                "ontology_predicate": "top:hasIFCType",
+                "inverse_predicate": "top:isIFCTypeOf",
+            },
+            "IFCRELASSOCIATESMATERIAL": {
+                "relationship": "associates_material",
+                "ontology_predicate": "top:hasMaterial",
+                "inverse_predicate": "top:isMaterialOf",
+            },
+            "IFCRELASSOCIATESCLASSIFICATION": {
+                "relationship": "associates_classification",
+                "ontology_predicate": "top:hasClassification",
+                "inverse_predicate": "top:isClassificationOf",
+            },
+            "IFCRELASSOCIATESDOCUMENT": {
+                "relationship": "associates_document",
+                "ontology_predicate": "top:hasDocument",
+                "inverse_predicate": "top:isDocumentOf",
+            },
+            "IFCRELASSOCIATESAPPROVAL": {
+                "relationship": "associates_approval",
+                "ontology_predicate": "top:hasApproval",
+                "inverse_predicate": "top:isApprovalOf",
+            },
+            "IFCRELASSOCIATESCONSTRAINT": {
+                "relationship": "associates_constraint",
+                "ontology_predicate": "top:hasConstraint",
+                "inverse_predicate": "top:isConstraintOf",
+            },
+
+            # Openings, fillings, and space boundaries.
+            "IFCRELVOIDSELEMENT": {
+                "relationship": "voids_element",
+                "ontology_predicate": "top:hasOpening",
+                "inverse_predicate": "top:isOpeningIn",
+            },
+            "IFCRELFILLSELEMENT": {
+                "relationship": "fills_element",
+                "ontology_predicate": "top:fillsOpening",
+                "inverse_predicate": "top:isFilledBy",
+            },
+            "IFCRELSPACEBOUNDARY": {
+                "relationship": "space_boundary",
+                "ontology_predicate": "bot:adjacentElement",
+                "inverse_predicate": "bot:interfaceOf",
+            },
+            "IFCRELSPACEBOUNDARY1STLEVEL": {
+                "relationship": "space_boundary",
+                "ontology_predicate": "bot:adjacentElement",
+                "inverse_predicate": "bot:interfaceOf",
+            },
+            "IFCRELSPACEBOUNDARY2NDLEVEL": {
+                "relationship": "space_boundary",
+                "ontology_predicate": "bot:adjacentElement",
+                "inverse_predicate": "bot:interfaceOf",
+            },
+
+            # MEP connectivity/service relationships.
+            "IFCRELCONNECTSPORTS": {
+                "relationship": "connects_ports",
+                "ontology_predicate": "brick:feeds",
+                "inverse_predicate": "brick:isFedBy",
+            },
+            "IFCRELCONNECTSPORTTOELEMENT": {
+                "relationship": "connects_port_to_element",
+                "ontology_predicate": "top:connectsPort",
+                "inverse_predicate": "top:hasConnectedPort",
+            },
+            "IFCRELCONNECTSELEMENTS": {
+                "relationship": "connects_elements",
+                "ontology_predicate": "top:connectsTo",
+                "inverse_predicate": "top:isConnectedTo",
+            },
+            "IFCRELCONNECTSPATHELEMENTS": {
+                "relationship": "connects_path_elements",
+                "ontology_predicate": "brick:feeds",
+                "inverse_predicate": "brick:isFedBy",
+            },
+            "IFCRELSERVICESBUILDINGS": {
+                "relationship": "services_buildings",
+                "ontology_predicate": "top:servesBuilding",
+                "inverse_predicate": "top:isServedBy",
+            },
+        }
+
+        if key in mapping:
+            return dict(mapping[key])
+
+        if key.startswith("IFCREL"):
+            local = key[6:].lower()
+            local = re.sub(r"[^a-z0-9]+", "_", local).strip("_") or "relationship"
+            return {
+                "relationship": local,
+                "ontology_predicate": f"top:{local}",
+            }
+
+        return {"ontology_predicate": defaultValue} if defaultValue is not None else {}
+
     @staticmethod
     def _brick_class_by_ifc_class(ifcClass, predefinedType=None, objectType=None, metadata=None, defaultValue=None):
         """
@@ -3397,7 +3543,7 @@ class IFC:
             except Exception:
                 return None
 
-        def _make_triple(subject_entity, predicate, object_entity, rel_entity):
+        def _make_triple(subject_entity, predicate, object_entity, rel_entity, predicate_meta=None):
             if subject_entity is None or object_entity is None:
                 return None
 
@@ -3425,6 +3571,10 @@ class IFC:
                     "relationship_global_id": IFCFastTopology._root_attr(rel_entity, 0),
                     "relationship_name": IFCFastTopology._root_attr(rel_entity, 2),
                 })
+                if isinstance(predicate_meta, dict):
+                    for k, v in predicate_meta.items():
+                        if v is not None:
+                            triple[k] = v
 
             return triple
 
@@ -3501,7 +3651,8 @@ class IFC:
             if exclude_rel_set and rel_type in exclude_rel_set:
                 continue
 
-            predicate = _display_type(rel_type)
+            predicate_meta = IFCFastTopology._relationship_predicate_by_ifc_class(rel_type, defaultValue=_display_type(rel_type))
+            predicate = predicate_meta.get("ontology_predicate", _display_type(rel_type))
 
             # ----------------------------------------------------------
             # Preferred path: known IFC relationship signatures.
@@ -3521,7 +3672,7 @@ class IFC:
 
                     for object_ref in object_refs:
                         object_entity = _entity_from_ref(object_ref)
-                        triple = _make_triple(subject_entity, predicate, object_entity, rel)
+                        triple = _make_triple(subject_entity, predicate, object_entity, rel, predicate_meta)
 
                         if triple is not None:
                             triples.append(triple)
@@ -3546,7 +3697,7 @@ class IFC:
 
             for object_ref in rel_refs[1:]:
                 object_entity = _entity_from_ref(object_ref)
-                triple = _make_triple(subject_entity, predicate, object_entity, rel)
+                triple = _make_triple(subject_entity, predicate, object_entity, rel, predicate_meta)
 
                 if triple is not None:
                     triples.append(triple)
@@ -5982,6 +6133,20 @@ class IFC:
         if includeCounts:
             return [{"type": rel_type, "count": relationship_data[rel_type]["count"]} for rel_type in sorted_types]
         return sorted_types
+
+
+    @staticmethod
+    def RelationshipPredicateByIFCClass(ifcClass: str, defaultValue: Any = None):
+        """
+        Returns semantic predicate metadata for an IFC relationship class.
+
+        Returns
+        -------
+        dict
+            A dictionary containing ``ontology_predicate`` and, when known,
+            ``inverse_predicate`` plus a normalized ``relationship`` label.
+        """
+        return IFCFastTopology._relationship_predicate_by_ifc_class(ifcClass, defaultValue=defaultValue)
 
     @staticmethod
     def OntologyClassByIFCClass(ifcClass: str, defaultValue: Any = "top:Element"):

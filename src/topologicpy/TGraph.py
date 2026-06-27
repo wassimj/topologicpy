@@ -3774,6 +3774,40 @@ class TGraph:
 
             return d
 
+        def _relationship_predicate_by_ifc_class(ifc_class):
+            key = str(ifc_class).strip().upper() if ifc_class is not None else ""
+            if key.startswith("IFC"):
+                key = "IFC" + key[3:].replace("_", "")
+            mapping = {
+                "IFCRELCONTAINEDINSPATIALSTRUCTURE": {"relationship": "contained_in_spatial_structure", "ontology_predicate": "bot:containsElement", "inverse_predicate": "bot:hasElement"},
+                "IFCRELAGGREGATES": {"relationship": "aggregates", "ontology_predicate": "top:aggregates", "inverse_predicate": "top:isAggregatedBy"},
+                "IFCRELNESTS": {"relationship": "nests", "ontology_predicate": "brick:hasPart", "inverse_predicate": "brick:isPartOf"},
+                "IFCRELASSIGNSTOGROUP": {"relationship": "assigns_to_group", "ontology_predicate": "brick:hasPart", "inverse_predicate": "brick:isPartOf"},
+                "IFCRELDEFINESBYPROPERTIES": {"relationship": "defines_by_properties", "ontology_predicate": "top:hasPropertySet", "inverse_predicate": "top:isPropertySetOf"},
+                "IFCRELDEFINESBYTYPE": {"relationship": "defines_by_type", "ontology_predicate": "top:hasIFCType", "inverse_predicate": "top:isIFCTypeOf"},
+                "IFCRELASSOCIATESMATERIAL": {"relationship": "associates_material", "ontology_predicate": "top:hasMaterial", "inverse_predicate": "top:isMaterialOf"},
+                "IFCRELASSOCIATESCLASSIFICATION": {"relationship": "associates_classification", "ontology_predicate": "top:hasClassification", "inverse_predicate": "top:isClassificationOf"},
+                "IFCRELASSOCIATESDOCUMENT": {"relationship": "associates_document", "ontology_predicate": "top:hasDocument", "inverse_predicate": "top:isDocumentOf"},
+                "IFCRELASSOCIATESAPPROVAL": {"relationship": "associates_approval", "ontology_predicate": "top:hasApproval", "inverse_predicate": "top:isApprovalOf"},
+                "IFCRELASSOCIATESCONSTRAINT": {"relationship": "associates_constraint", "ontology_predicate": "top:hasConstraint", "inverse_predicate": "top:isConstraintOf"},
+                "IFCRELVOIDSELEMENT": {"relationship": "voids_element", "ontology_predicate": "top:hasOpening", "inverse_predicate": "top:isOpeningIn"},
+                "IFCRELFILLSELEMENT": {"relationship": "fills_element", "ontology_predicate": "top:fillsOpening", "inverse_predicate": "top:isFilledBy"},
+                "IFCRELSPACEBOUNDARY": {"relationship": "space_boundary", "ontology_predicate": "bot:adjacentElement", "inverse_predicate": "bot:interfaceOf"},
+                "IFCRELSPACEBOUNDARY1STLEVEL": {"relationship": "space_boundary", "ontology_predicate": "bot:adjacentElement", "inverse_predicate": "bot:interfaceOf"},
+                "IFCRELSPACEBOUNDARY2NDLEVEL": {"relationship": "space_boundary", "ontology_predicate": "bot:adjacentElement", "inverse_predicate": "bot:interfaceOf"},
+                "IFCRELCONNECTSPORTS": {"relationship": "connects_ports", "ontology_predicate": "top:connectsPort", "inverse_predicate": "top:isConnectedPortOf"},
+                "IFCRELCONNECTSPORTTOELEMENT": {"relationship": "connects_port_to_element", "ontology_predicate": "top:connectsPort", "inverse_predicate": "top:hasConnectedPort"},
+                "IFCRELCONNECTSELEMENTS": {"relationship": "connects_elements", "ontology_predicate": "top:connectsTo", "inverse_predicate": "top:isConnectedTo"},
+                "IFCRELCONNECTSPATHELEMENTS": {"relationship": "connects_path_elements", "ontology_predicate": "brick:feeds", "inverse_predicate": "brick:isFedBy"},
+                "IFCRELSERVICESBUILDINGS": {"relationship": "services_buildings", "ontology_predicate": "top:servesBuilding", "inverse_predicate": "top:isServedBy"},
+            }
+            if key in mapping:
+                return dict(mapping[key])
+            if key.startswith("IFCREL"):
+                local = key[6:].lower()
+                return {"relationship": local or "relationship", "ontology_predicate": "top:" + (local or "relationship")}
+            return {}
+
         def _relationship_dictionary(ifc_rel):
             if dictionaryMode in ["none", "no", "false"]:
                 return {}
@@ -3811,7 +3845,28 @@ class TGraph:
 
             if rel_type is not None:
                 d["IFC_type"] = str(rel_type)
-                d["relationship"] = str(rel_type)
+                d["ifc_relationship"] = str(rel_type)
+                d["ontology_class"] = "top:Relationship"
+                d["category"] = "relationship"
+
+                predicate_meta = {}
+                try:
+                    from topologicpy.IFC import IFC
+                    predicate_meta = IFC.RelationshipPredicateByIFCClass(str(rel_type), defaultValue=None)
+                except Exception:
+                    try:
+                        from IFC import IFC
+                        predicate_meta = IFC.RelationshipPredicateByIFCClass(str(rel_type), defaultValue=None)
+                    except Exception:
+                        predicate_meta = _relationship_predicate_by_ifc_class(str(rel_type))
+
+                if isinstance(predicate_meta, dict):
+                    for k, v in predicate_meta.items():
+                        if v is not None:
+                            d[k] = v
+
+                d.setdefault("relationship", str(rel_type))
+                d.setdefault("ontology_predicate", "top:relationship")
 
             return d
 
@@ -16316,9 +16371,17 @@ class TGraph:
                 tv = vertex_subjects.get(dstIndex, namespacePrefix + ":" + TGraph._OntologySafeLocalName(f"vertex_{dstIndex}"))
                 triples.append((subject, "top:hasStartVertex", sv))
                 triples.append((subject, "top:hasEndVertex", tv))
-                triples.append((sv, "top:connectsTo", tv))
-                if not e.get("directed", graph._directed):
-                    triples.append((tv, "top:connectsTo", sv))
+                semantic_predicate = d.get("ontology_predicate", d.get("predicate", None))
+                inverse_predicate = d.get("inverse_predicate", None)
+                if semantic_predicate is not None:
+                    triples.append((subject, "top:hasPredicate", semantic_predicate))
+                    triples.append((sv, semantic_predicate, tv))
+                    if inverse_predicate is not None:
+                        triples.append((tv, inverse_predicate, sv))
+                else:
+                    triples.append((sv, "top:connectsTo", tv))
+                    if not e.get("directed", graph._directed):
+                        triples.append((tv, "top:connectsTo", sv))
         return triples
     @staticmethod
     def OntologyURI(graph: "TGraph", element: str = "graph", index: Optional[int] = None, defaultValue: Any = None) -> Any:
