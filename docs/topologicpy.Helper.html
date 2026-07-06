@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Helper module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.Helper module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -154,6 +154,7 @@
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Helper.</span></span><span class="sig-name descname"><span class="pre">Helper</span></span><a class="headerlink" href="#topologicpy.Helper.Helper" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>General-purpose helper methods used throughout TopologicPy.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -164,7 +165,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.BinAndAverage" title="topologicpy.Helper.Helper.BinAndAverage"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BinAndAverage</span></code></a>(listA[, mantissa, tolerance, ...])</p></td>
 <td><p>Groups numbers within a specified tolerance into bins, calculates the average of each bin, and returns a sorted list of these averages.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.CheckVersion" title="topologicpy.Helper.Helper.CheckVersion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CheckVersion</span></code></a>([version, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.CheckVersion" title="topologicpy.Helper.Helper.CheckVersion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CheckVersion</span></code></a>([library, version, silent])</p></td>
 <td><p>Compare an input version with the latest version of a Python library on PyPI.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Helper.Helper.ClosestMatch" title="topologicpy.Helper.Helper.ClosestMatch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClosestMatch</span></code></a>(item, listA)</p></td>
@@ -252,7 +253,7 @@ of each bin, and returns a sorted list of these averages.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Helper.Helper.CheckVersion">
-<span class="sig-name descname"><span class="pre">CheckVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.CheckVersion" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">CheckVersion</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">library</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">version</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Helper.Helper.CheckVersion" title="Permalink to this definition"></a></dt>
 <dd><p>Compare an input version with the latest version of a Python library on PyPI.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

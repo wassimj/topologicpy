@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.GraphDB module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.GraphDB module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -335,7 +335,7 @@ graphdb = GraphDB.ByParameters(provider=”neo4j”, manager=driver,</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>provider</strong><span class="classifier">str</span></dt><dd><p>The backend provider name. Supported values are “kuzu” and “neo4j” and “ladybug”.</p>
+<dt><strong>provider</strong><span class="classifier">str</span></dt><dd><p>The backend provider name. Supported values are “kuzu”, “neo4j”, and “ladybugdb”.</p>
 </dd>
 <dt><strong>manager</strong><span class="classifier">object , optional</span></dt><dd><p>The backend-specific manager. For Kuzu, this is usually the object
 returned by Kuzu.Manager(…). For Neo4j, this is usually the driver
@@ -786,7 +786,7 @@ preserved by graph database backends.</p>
 </dd>
 <dt><strong>graph</strong><span class="classifier">topologic_core.Graph or topologicpy.TGraph</span></dt><dd><p>The graph to be upserted.</p>
 </dd>
-<dt><strong>graphIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve the graph id. Default is “id”.</p>
+<dt><strong>graphIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve the graph id. Default is “graph_id”.</p>
 </dd>
 <dt><strong>vertexIDKey</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary key used to retrieve each vertex id. Default is “id”.</p>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.ShapeGrammar module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.ShapeGrammar module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -154,6 +154,12 @@
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.ShapeGrammar.</span></span><span class="sig-name descname"><span class="pre">ShapeGrammar</span></span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A lightweight topology shape-grammar container.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">ShapeGrammar</span></code> stores transformation rules. Each rule consists of an
+input topology pattern, an optional output topology, an operation, and an
+optional 4x4 matrix that prepares the rule output relative to the rule
+input. <code class="docutils literal notranslate"><span class="pre">ApplicableRules</span></code> can then compute matching transformations, and
+<code class="docutils literal notranslate"><span class="pre">ApplyRule</span></code> applies a selected rule to a target topology.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -168,22 +174,22 @@
 <td><p>Returns rules applicable to the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ApplyRule</span></code></a>(topology[, rule, matrix, ...])</p></td>
-<td><p>Returns rules applicable to the input topology.</p></td>
+<td><p>Applies a rule to the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByInputOutput</span></code></a>(input, output[, silent])</p></td>
-<td><p>Returns the Plotly figure of the input and output topologies as a rule.</p></td>
+<td><p>Returns a cluster containing the input topology, output topology, and a small arrow between them.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ClusterByRule</span></code></a>(rule[, silent])</p></td>
-<td><p>Returns the Plotly figure of the input rule.</p></td>
+<td><p>Returns a cluster visualising the input rule.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByInputOutput</span></code></a>(input, output[, silent])</p></td>
-<td><p>Returns the Plotly figure of the input and output topologies as a rule.</p></td>
+<td><p>Returns a Plotly figure of the input and output topologies as a rule.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule" title="topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FigureByRule</span></code></a>(rule[, silent])</p></td>
-<td><p>Returns the Plotly figure of the input rule.</p></td>
+<td><p>Returns a Plotly figure visualising the input rule.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle" title="topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OperationByTitle</span></code></a>(title)</p></td>
-<td><p>Returns the operation given the input title string</p></td>
+<td><p>Returns the operation matching the input title string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles" title="topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OperationTitles</span></code></a>()</p></td>
 <td><p>Returns the list of available operation titles.</p></td>
@@ -197,19 +203,24 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The linput topology of the rule.</p>
+<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology of the rule.</p>
 </dd>
-<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology of the rule.</p>
+<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology of the rule. This may be None for transform-like
+rules that only use the input topology.</p>
 </dd>
-<dt><strong>title</strong><span class="classifier">str , optional</span></dt><dd><p>The title of the rule. Default is “Untitled Rule”</p>
+<dt><strong>title</strong><span class="classifier">str, optional</span></dt><dd><p>The title of the rule. Default is <code class="docutils literal notranslate"><span class="pre">&quot;Untitled</span> <span class="pre">Rule&quot;</span></code>.</p>
 </dd>
-<dt><strong>description</strong><span class="classifier">str, optional</span></dt><dd><p>The description of the rule. Default is “”.</p>
+<dt><strong>description</strong><span class="classifier">str, optional</span></dt><dd><p>The description of the rule. Default is <code class="docutils literal notranslate"><span class="pre">&quot;&quot;</span></code>.</p>
 </dd>
-<dt><strong>operation</strong><span class="classifier">dict , optional</span></dt><dd><p>The desired rule operation. See Rule Operations. If set to None, the replacement rule is applied. Default is None.</p>
+<dt><strong>operation</strong><span class="classifier">dict or str, optional</span></dt><dd><p>The desired rule operation. If set to None, the replacement rule is
+applied. Default is None.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. Default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list, optional</span></dt><dd><p>The 4x4 transformation matrix that transforms the output topology to
+the input topology. If set to None, no rule-preparation transform is
+applied. Default is None.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
+False.</p>
 </dd>
 </dl>
 </dd>
@@ -229,17 +240,21 @@
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>keys</strong><span class="classifier">list , optional</span></dt><dd><p>The list of dictionary keys to semantically match the rules. Default is None which means dictionaries are not considered.</p>
+<dt><strong>keys</strong><span class="classifier">list, optional</span></dt><dd><p>The dictionary keys to semantically match. Default is None, meaning
+dictionaries are not considered.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
+False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of applicable rules.</p>
+<dt>tuple</dt><dd><p><code class="docutils literal notranslate"><span class="pre">(rules,</span> <span class="pre">matrices)</span></code> where <code class="docutils literal notranslate"><span class="pre">rules</span></code> is the list of applicable rules
+and <code class="docutils literal notranslate"><span class="pre">matrices</span></code> is the corresponding list of similarity transforms.
+Returns None if the input topology is invalid.</p>
 </dd>
 </dl>
 </dd>
@@ -249,27 +264,30 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule">
 <span class="sig-name descname"><span class="pre">ApplyRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rule</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ApplyRule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns rules applicable to the input topology.</p>
+<dd><p>Applies a rule to the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>rule</strong><span class="classifier">dict , optional</span></dt><dd><p>The desired rule to apply. Default is None.</p>
+<dt><strong>rule</strong><span class="classifier">dict, optional</span></dt><dd><p>The desired rule to apply. If None, the method returns the topology
+transformed by <code class="docutils literal notranslate"><span class="pre">matrix</span></code> when supplied, otherwise the input topology.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The 4x4 transformation matrix that tranforms the output topology to the input topology. If set to None, no transformation is applied. Default is None.</p>
+<dt><strong>matrix</strong><span class="classifier">list, optional</span></dt><dd><p>The 4x4 transformation matrix that transforms the rule result to the
+target topology. If set to None, no final transformation is applied.</p>
 </dd>
 <dt><strong>mantissa</strong><span class="classifier">int, optional</span></dt><dd><p>Decimal precision. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired Tolerance. Not used here but included for API compatibility. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float, optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
+False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The transformed topology</p>
+<dt>topologic_core.Topology or None</dt><dd><p>The transformed topology, or None if validation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -279,108 +297,44 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput">
 <span class="sig-name descname"><span class="pre">ClusterByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByInputOutput" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Plotly figure of the input and output topologies as a rule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
-</dd>
-<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>This function does not return a value</dt><dd></dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns a cluster containing the input topology, output topology, and a
+small arrow between them.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule">
 <span class="sig-name descname"><span class="pre">ClusterByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.ClusterByRule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Plotly figure of the input rule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>rule</strong><span class="classifier">dict</span></dt><dd><p>The input rule</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>topologic_core.Cluster</dt><dd><p>The created rule cluster</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns a cluster visualising the input rule.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput">
 <span class="sig-name descname"><span class="pre">FigureByInputOutput</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">input</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByInputOutput" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Plotly figure of the input and output topologies as a rule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>input</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology</p>
-</dd>
-<dt><strong>output</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The output topology</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Plotly.Figure</dt><dd><p>The created plotly figure.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns a Plotly figure of the input and output topologies as a rule.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule">
 <span class="sig-name descname"><span class="pre">FigureByRule</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">rule</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.FigureByRule" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the Plotly figure of the input rule.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>rule</strong><span class="classifier">dict</span></dt><dd><p>The input rule</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool, optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>Plotly.Figure</dt><dd><p>The create plotly figure</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Returns a Plotly figure visualising the input rule.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle">
 <span class="sig-name descname"><span class="pre">OperationByTitle</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">title</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationByTitle" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the operation given the input title string</p>
+<dd><p>Returns the operation matching the input title string.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>title</strong><span class="classifier">str</span></dt><dd><p>The input operation str. See OperationTitles for list of operations.</p>
+<dt><strong>title</strong><span class="classifier">str</span></dt><dd><p>The input operation title. See <code class="docutils literal notranslate"><span class="pre">OperationTitles</span></code> for available
+operations. Matching is case-insensitive; exact matches are preferred
+over substring matches.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>ShapeGrammar.Operation</dt><dd><p>The requested operation</p>
+<dt>dict or None</dt><dd><p>The requested operation dictionary, or None if no operation matches.</p>
 </dd>
 </dl>
 </dd>
@@ -391,14 +345,10 @@
 <dt class="sig sig-object py" id="topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles">
 <span class="sig-name descname"><span class="pre">OperationTitles</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.ShapeGrammar.ShapeGrammar.OperationTitles" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the list of available operation titles.</p>
-<dl class="field-list">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><blockquote>
-<div></div></blockquote>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The requested list of operation titles</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><dl class="simple">
+<dt>list</dt><dd><p>The requested list of operation titles.</p>
 </dd>
 </dl>
 </dd>

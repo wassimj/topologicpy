@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Dictionary module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.Dictionary module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -177,11 +177,7 @@
 <td><p>Creates a dictionary by merging the input dictionaries.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByObjectProperties" title="topologicpy.Dictionary.Dictionary.ByObjectProperties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByObjectProperties</span></code></a>(bObject, keys, importAll)</p></td>
-<td><p><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-</p></td>
+<td><p>Creates a dictionary from selected Blender object properties.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Dictionary.Dictionary.ByPythonDictionary" title="topologicpy.Dictionary.Dictionary.ByPythonDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ByPythonDictionary</span></code></a>(pythonDictionary[, silent])</p></td>
 <td><p>Creates a Core/topologic dictionary equivalent to the input Python dictionary or dictionary-bearing TGraph object/record.</p></td>
@@ -371,26 +367,21 @@ exists; missing keys and stored None values are not conflated.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Dictionary.Dictionary.ByObjectProperties">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ByObjectProperties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bObject</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">keys</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">importAll</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Dictionary.Dictionary.ByObjectProperties" title="Permalink to this definition"></a></dt>
-<dd><dl class="field-list simple">
+<dd><p>Creates a dictionary from selected Blender object properties.</p>
+<dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>bObject</strong><span class="classifier">TYPE</span></dt><dd><p>DESCRIPTION.</p>
+<dt><strong>bObject</strong><span class="classifier">object</span></dt><dd><p>The input object whose properties are to be imported.</p>
 </dd>
-<dt><strong>keys</strong><span class="classifier">TYPE</span></dt><dd><p>DESCRIPTION.</p>
+<dt><strong>keys</strong><span class="classifier">list or str</span></dt><dd><p>The property keys to import when importAll is False.</p>
 </dd>
-<dt><strong>importAll</strong><span class="classifier">TYPE</span></dt><dd><p>DESCRIPTION.</p>
+<dt><strong>importAll</strong><span class="classifier">bool</span></dt><dd><p>If True, standard object properties and scalar custom properties are imported.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>TYPE</dt><dd><p>DESCRIPTION.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-odd">Raises</dt>
-<dd class="field-odd"><dl class="simple">
-<dt>Exception</dt><dd><p>DESCRIPTION.</p>
+<dt>topologic_core.Dictionary</dt><dd><p>The created dictionary.</p>
 </dd>
 </dl>
 </dd>

@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Shell module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.Shell module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -209,7 +209,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.InternalEdges" title="topologicpy.Shell.Shell.InternalEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">InternalEdges</span></code></a>(shell[, tolerance, silent])</p></td>
 <td><p>Returns the internal edges of the input shell.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsClosed" title="topologicpy.Shell.Shell.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(shell)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsClosed" title="topologicpy.Shell.Shell.IsClosed"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsClosed</span></code></a>(shell[, silent])</p></td>
 <td><p>Returns True if the input shell is closed.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Shell.Shell.IsOnBoundary" title="topologicpy.Shell.Shell.IsOnBoundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">IsOnBoundary</span></code></a>(shell, vertex[, tolerance])</p></td>
@@ -703,13 +703,12 @@ Default is 96.</p>
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.InternalEdges">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">InternalEdges</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Shell.Shell.InternalEdges" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the internal edges of the input shell.</p>
+<p>Internal edges are edges that are shared by more than one face. Edges that
+separate the same set of faces are grouped together and self-merged.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>shell</strong><span class="classifier">topologic_core.Shell</span></dt><dd><p>The input shell.</p>
-</dd>
-<dt><strong>groupKey</strong><span class="classifier">str , optional</span></dt><dd><p>The edge dictionary key under which to save the edge group number. The default is “group”.
-Edges that separate the same faces belong to the same group.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
@@ -719,7 +718,8 @@ Edges that separate the same faces belong to the same group.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of internal boundaries</p>
+<dt>list</dt><dd><p>A list of merged internal-edge groups. Each item is typically an Edge,
+Wire, Cluster, or another valid topology returned by Topology.SelfMerge.</p>
 </dd>
 </dl>
 </dd>
@@ -728,7 +728,7 @@ Edges that separate the same faces belong to the same group.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Shell.Shell.IsClosed">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsClosed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Shell.Shell.IsClosed" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">IsClosed</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">shell</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">bool</span></span></span><a class="headerlink" href="#topologicpy.Shell.Shell.IsClosed" title="Permalink to this definition"></a></dt>
 <dd><p>Returns True if the input shell is closed. Returns False otherwise.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

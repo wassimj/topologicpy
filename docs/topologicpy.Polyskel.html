@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Polyskel module &mdash; topologicpy 0.9.57 documentation</title>
+  <title>topologicpy.Polyskel module &mdash; topologicpy 0.9.58 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.57
+                0.9.58
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -151,6 +151,219 @@
 <section id="module-topologicpy.Polyskel">
 <span id="topologicpy-polyskel-module"></span><h1>topologicpy.Polyskel module<a class="headerlink" href="#module-topologicpy.Polyskel" title="Permalink to this heading"></a></h1>
 <dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Line2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">Line2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p2</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Line2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>An infinite 2-D line represented by point p and unit direction v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>p</strong></dt><dd></dd>
+<dt><strong>v</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 57%" />
+<col style="width: 43%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>distance</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>intersect</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Line2.distance">
+<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Line2.distance" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Line2.intersect">
+<span class="sig-name descname"><span class="pre">intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Line2.intersect" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Line2.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#topologicpy.Polyskel.Line2.p" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Line2.v">
+<span class="sig-name descname"><span class="pre">v</span></span><a class="headerlink" href="#topologicpy.Polyskel.Line2.v" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.LineSegment2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">LineSegment2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">p2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.LineSegment2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <a class="reference internal" href="#topologicpy.Polyskel.Line2" title="topologicpy.Polyskel.Line2"><code class="xref py py-class docutils literal notranslate"><span class="pre">Line2</span></code></a></p>
+<p>A finite 2-D line segment.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>p</strong></dt><dd></dd>
+<dt><strong>p2</strong></dt><dd></dd>
+<dt><strong>v</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 58%" />
+<col style="width: 42%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>distance</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>intersect</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>on_segment</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.LineSegment2.intersect">
+<span class="sig-name descname"><span class="pre">intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.LineSegment2.intersect" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.LineSegment2.on_segment">
+<span class="sig-name descname"><span class="pre">on_segment</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">point</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.LineSegment2.on_segment" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.LineSegment2.p2">
+<span class="sig-name descname"><span class="pre">p2</span></span><a class="headerlink" href="#topologicpy.Polyskel.LineSegment2.p2" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">Point2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">x</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Point2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A lightweight 2-D point/vector used by the straight-skeleton solver.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>x</strong></dt><dd></dd>
+<dt><strong>y</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 58%" />
+<col style="width: 42%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>cross</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>distance</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p><strong>dot</strong></p></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p><strong>normalized</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.cross">
+<span class="sig-name descname"><span class="pre">cross</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Point2.cross" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.distance">
+<span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Point2.distance" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.dot">
+<span class="sig-name descname"><span class="pre">dot</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Point2.dot" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.normalized">
+<span class="sig-name descname"><span class="pre">normalized</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Point2.normalized" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.x">
+<span class="sig-name descname"><span class="pre">x</span></span><a class="headerlink" href="#topologicpy.Polyskel.Point2.x" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Point2.y">
+<span class="sig-name descname"><span class="pre">y</span></span><a class="headerlink" href="#topologicpy.Polyskel.Point2.y" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Ray2">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">Ray2</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">p</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Ray2" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>A half-line represented by origin p and unit direction v.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>p</strong></dt><dd></dd>
+<dt><strong>v</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 57%" />
+<col style="width: 43%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><strong>intersect</strong></p></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Ray2.intersect">
+<span class="sig-name descname"><span class="pre">intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">other</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Ray2.intersect" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Ray2.p">
+<span class="sig-name descname"><span class="pre">p</span></span><a class="headerlink" href="#topologicpy.Polyskel.Ray2.p" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Ray2.v">
+<span class="sig-name descname"><span class="pre">v</span></span><a class="headerlink" href="#topologicpy.Polyskel.Ray2.v" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="topologicpy.Polyskel.Skeletonize">
+<span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">Skeletonize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polygon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTopologic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Skeletonize" title="Permalink to this definition"></a></dt>
+<dd><p>CamelCase alias for skeletonize.</p>
+</dd></dl>
+
+<dl class="py class">
 <dt class="sig sig-object py" id="topologicpy.Polyskel.Subtree">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">Subtree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">height</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sinks</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.Subtree" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">tuple</span></code></p>
@@ -204,26 +417,52 @@
 <dl class="py function">
 <dt class="sig sig-object py" id="topologicpy.Polyskel.bisector">
 <span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">bisector</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v3</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.bisector" title="Permalink to this definition"></a></dt>
-<dd><p>Compute the bisector direction at vertex v2 formed by edges (v1-v2) and (v2-v3).</p>
+<dd><p>Returns the internal angle bisector direction at v2 for v1-v2-v3.</p>
 </dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="topologicpy.Polyskel.distance">
 <span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">distance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">v2</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.distance" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns the XY distance between two coordinate-like or TopologicPy vertices.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="topologicpy.Polyskel.normalize">
 <span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">normalize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">v</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.normalize" title="Permalink to this definition"></a></dt>
-<dd></dd></dl>
+<dd><p>Returns a normalized vector. Coordinate pairs always return Point2.</p>
+</dd></dl>
 
 <dl class="py function">
 <dt class="sig sig-object py" id="topologicpy.Polyskel.skeletonize">
-<span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">skeletonize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polygon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.skeletonize" title="Permalink to this definition"></a></dt>
-<dd><p>Compute the straight skeleton of a polygon using TopologicPy.</p>
-<p>polygon: List of (x, y) tuples defining the outer boundary in CCW order.
-holes: List of inner boundaries (holes), each defined in CW order.</p>
-<p>Returns: List of Subtrees representing the skeleton.</p>
+<span class="sig-prename descclassname"><span class="pre">topologicpy.Polyskel.</span></span><span class="sig-name descname"><span class="pre">skeletonize</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">polygon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">holes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTopologic</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fallback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Polyskel.skeletonize" title="Permalink to this definition"></a></dt>
+<dd><p>Computes a straight skeleton approximation for a simple polygon.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>polygon</strong><span class="classifier">list</span></dt><dd><p>The outer polygon contour as coordinate pairs, Point2 objects, or
+TopologicPy vertices. Repeated first/last vertices are accepted.</p>
+</dd>
+<dt><strong>holes</strong><span class="classifier">list , optional</span></dt><dd><p>Optional inner contours. Hole support follows the original polyskel
+event model and is best-effort for non-degenerate simple holes.</p>
+</dd>
+<dt><strong>asTopologic</strong><span class="classifier">bool , optional</span></dt><dd><p>If True and topologicpy.Vertex can be imported, returned Subtree sources
+and sinks are TopologicPy vertices. If False, Point2 objects are returned.
+Default is True.</p>
+</dd>
+<dt><strong>fallback</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, a centroid-to-edge-midpoint fallback is returned for simple
+polygons when the event algorithm degenerates. Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>A list of Subtree(source, height, sinks) records.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </section>
