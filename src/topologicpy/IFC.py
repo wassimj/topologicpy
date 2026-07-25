@@ -4526,6 +4526,900 @@ class IFC:
             silent=silent,
         )
 
+
+    @staticmethod
+    def AnalyticalFaces(
+        model,
+        circleSides: int = 24,
+        scale: float = 1.0,
+        angTolerance: float = 5.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> list:
+        """
+        Returns analytical faces for IFC walls, slabs, and roofs.
+
+        Exterior constructions are represented by their outer major face.
+        Interior constructions are represented by a medial face halfway between
+        their two major parallel faces.
+
+        Classification first uses physical IfcRelSpaceBoundary relationships.
+        If these are absent, common ``IsExternal`` property values and limited
+        IFC type/name fallbacks are used. Ambiguous elements are skipped.
+
+        Parameters
+        ----------
+        model : IFCModel
+            The input in-memory IFC model.
+        circleSides : int , optional
+            Number of sides used to approximate circular IFC geometry. Default
+            is 24.
+        scale : float , optional
+            Scale factor applied to imported IFC geometry. Default is 1.0.
+        angTolerance : float , optional
+            Maximum angular deviation, in degrees, when pairing the two major
+            parallel faces. Default is 5.0.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, errors, warnings, and summary information are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        list
+            A list of topologic_core.Face objects, or None if no analytical
+            faces can be generated.
+
+        Notes
+        -----
+        This proof of concept assumes each construction is predominantly a thin
+        extrusion with two dominant approximately parallel faces.
+        """
+        import math
+
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        method_name = "IFC.AnalyticalFaces"
+        model = IFC._model_from_input(model, silent=silent)
+        if not isinstance(model, IFCModel):
+            if not silent:
+                print(f"{method_name} - Error: Invalid IFCModel. Returning None.")
+            return None
+
+        construction_types = {
+            "IFCWALL",
+            "IFCWALLSTANDARDCASE",
+            "IFCWALLELEMENTEDCASE",
+            "IFCSLAB",
+            "IFCSLABSTANDARDCASE",
+            "IFCSLABELEMENTEDCASE",
+            "IFCROOF",
+        }
+        boundary_types = {
+            "IFCRELSPACEBOUNDARY",
+            "IFCRELSPACEBOUNDARY1STLEVEL",
+            "IFCRELSPACEBOUNDARY2NDLEVEL",
+        }
+        entities = model.entities
+        metadata = IFC._model_metadata_cache(model, "full")
+
+        def first_entity(value):
+            refs = IFCFastTopology._refs_in_value(value)
+            return IFCFastTopology._entity_from_ref(refs[0], entities) if refs else None
+
+        def coordinates(vertex):
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return None
+            values = Vertex.Coordinates(vertex, mantissa=12)
+            try:
+                return [float(values[0]), float(values[1]), float(values[2])]
+            except Exception:
+                return None
+
+        def dot(a, b):
+            return sum(a[i] * b[i] for i in range(3))
+
+        def normalise(vector):
+            try:
+                length = math.sqrt(sum(float(vector[i]) ** 2 for i in range(3)))
+                if length <= tolerance:
+                    return None
+                return [float(vector[i]) / length for i in range(3)]
+            except Exception:
+                return None
+
+        def as_bool(value):
+            if isinstance(value, bool):
+                return value
+            if isinstance(value, (int, float)):
+                return bool(value)
+            if isinstance(value, str):
+                value = value.strip().lower()
+                if value in {"true", "yes", "1"}:
+                    return True
+                if value in {"false", "no", "0"}:
+                    return False
+            return None
+
+        def entity_name(entity):
+            values = []
+            for index in (2, 4):
+                try:
+                    value = entity.args[index]
+                except Exception:
+                    value = None
+                if isinstance(value, str) and value.strip():
+                    values.append(value.strip())
+            return " ".join(values)
+
+        def predefined_type(entity):
+            value = IFCFastTopology._ifc_predefined_type(entity)
+            if isinstance(value, str) and value.strip():
+                return value.strip().upper()
+            if entity.type.startswith("IFCSLAB") and len(entity.args) > 8:
+                value = entity.args[8]
+                if isinstance(value, str):
+                    return value.strip().upper()
+            return ""
+
+        # Physical space-boundary evidence by construction element.
+        boundaries = {}
+        spaces = {}
+        for relation in entities.values():
+            if relation.type not in boundary_types or len(relation.args) <= 8:
+                continue
+            space = first_entity(relation.args[4])
+            element = first_entity(relation.args[5])
+            if space is None or element is None or element.type not in construction_types:
+                continue
+            if str(relation.args[7] or "").upper() == "VIRTUAL":
+                continue
+            boundaries.setdefault(element.id, []).append(
+                {
+                    "space_id": space.id,
+                    "status": str(relation.args[8] or "").upper(),
+                }
+            )
+            spaces[space.id] = space
+
+        def classify(entity):
+            statuses = {
+                record["status"]
+                for record in boundaries.get(entity.id, [])
+                if record["status"] in {"INTERNAL", "EXTERNAL"}
+            }
+            if statuses == {"INTERNAL"}:
+                return "INTERIOR", "IfcRelSpaceBoundary"
+            if statuses == {"EXTERNAL"}:
+                return "EXTERIOR", "IfcRelSpaceBoundary"
+            if len(statuses) > 1:
+                return "MIXED", "IfcRelSpaceBoundary"
+
+            name = entity_name(entity).upper()
+            ptype = predefined_type(entity)
+            if entity.type == "IFCROOF" or ptype in {"ROOF", "BASESLAB"}:
+                return "EXTERIOR", "IFC type"
+            if any(token in name for token in ("ROOF", "SLAB ON GRADE", "GROUND SLAB", "EXTERIOR SLAB")):
+                return "EXTERIOR", "IFC name"
+
+            for key, value in (metadata.get(entity.id, {}) or {}).items():
+                if str(key).lower().endswith("_isexternal"):
+                    value = as_bool(value)
+                    if value is not None:
+                        return ("EXTERIOR" if value else "INTERIOR"), "Pset IsExternal"
+
+            if any(token in name for token in ("INTERIOR", "PARTITION", "FURRING")):
+                return "INTERIOR", "IFC name"
+            if any(token in name for token in ("EXTERIOR", "FOUNDATION")):
+                return "EXTERIOR", "IFC name"
+            return "UNKNOWN", "insufficient evidence"
+
+        def face_record(face):
+            area = Face.Area(face, mantissa=12)
+            centroid = coordinates(Topology.Centroid(face, silent=True))
+            normal = normalise(Face.Normal(face, outputType="xyz", mantissa=12))
+            if not isinstance(area, (int, float)) or area <= tolerance * tolerance:
+                return None
+            if centroid is None or normal is None:
+                return None
+            return {
+                "face": face,
+                "area": float(area),
+                "centroid": centroid,
+                "normal": normal,
+            }
+
+        cos_tolerance = math.cos(math.radians(float(angTolerance)))
+
+        def major_pair(topology):
+            faces = Topology.Faces(topology, silent=True) or []
+            records = [face_record(face) for face in faces]
+            records = [record for record in records if record is not None]
+            best = None
+            best_score = None
+
+            for i, a in enumerate(records[:-1]):
+                for b in records[i + 1:]:
+                    if abs(dot(a["normal"], b["normal"])) < cos_tolerance:
+                        continue
+                    normal = a["normal"]
+                    offset_a = dot(normal, a["centroid"])
+                    offset_b = dot(normal, b["centroid"])
+                    separation = abs(offset_b - offset_a)
+                    if separation <= tolerance:
+                        continue
+                    area_ratio = min(a["area"], b["area"]) / max(a["area"], b["area"])
+                    score = (
+                        min(a["area"], b["area"]) * (0.5 + 0.5 * area_ratio),
+                        area_ratio,
+                        -separation,
+                    )
+                    if best_score is None or score > best_score:
+                        best_score = score
+                        best = {
+                            "a": a,
+                            "b": b,
+                            "normal": normal,
+                            "offset_a": offset_a,
+                            "offset_b": offset_b,
+                            "thickness": separation,
+                            "area_ratio": area_ratio,
+                        }
+            return best
+
+        candidates = []
+        model_points = []
+        skipped = {
+            "mixed": 0,
+            "unknown": 0,
+            "no_geometry": 0,
+            "no_pair": 0,
+            "failed": 0,
+        }
+
+        products = sorted(
+            (
+                entity for entity in entities.values()
+                if entity.type in construction_types
+                and IFCFastTopology._is_product_like(entity)
+            ),
+            key=lambda entity: entity.id,
+        )
+
+        for entity in products:
+            classification, classification_source = classify(entity)
+            if classification == "MIXED":
+                skipped["mixed"] += 1
+                continue
+            if classification == "UNKNOWN":
+                skipped["unknown"] += 1
+                continue
+
+            topology = IFC._model_topology(
+                model,
+                entity,
+                circleSides=circleSides,
+                scale=scale,
+                topologyType=None,
+                clean=True,
+                epsilon=max(tolerance * 10.0, 0.001),
+                angTolerance=0.1,
+                tolerance=tolerance,
+                copyTopology=True,
+                silent=True,
+            )
+            if not Topology.IsInstance(topology, "Topology"):
+                skipped["no_geometry"] += 1
+                continue
+
+            pair = major_pair(topology)
+            if pair is None:
+                skipped["no_pair"] += 1
+                continue
+
+            for vertex in Topology.Vertices(topology, silent=True) or []:
+                point = coordinates(vertex)
+                if point is not None:
+                    model_points.append(point)
+
+            candidates.append(
+                {
+                    "entity": entity,
+                    "classification": classification,
+                    "classification_source": classification_source,
+                    "pair": pair,
+                }
+            )
+
+        if not candidates:
+            if not silent:
+                print(f"{method_name} - Error: No construction faces could be prepared. Returning None.")
+            return None
+
+        model_centre = [
+            0.5 * (
+                min(point[i] for point in model_points)
+                + max(point[i] for point in model_points)
+            )
+            for i in range(3)
+        ] if model_points else [0.0, 0.0, 0.0]
+
+        space_points = {}
+
+        def space_point(space_id):
+            if space_id in space_points:
+                return space_points[space_id]
+            entity = spaces.get(space_id)
+            topology = IFC._model_topology(
+                model,
+                entity,
+                circleSides=circleSides,
+                scale=scale,
+                topologyType="Cell",
+                clean=False,
+                tolerance=tolerance,
+                copyTopology=False,
+                silent=True,
+            ) if entity is not None else None
+            point = coordinates(Topology.Centroid(topology, silent=True)) \
+                if Topology.IsInstance(topology, "Topology") else None
+            space_points[space_id] = point
+            return point
+
+        def outer_face(candidate):
+            entity = candidate["entity"]
+            pair = candidate["pair"]
+            a, b = pair["a"], pair["b"]
+            normal = pair["normal"]
+            ids = sorted({record["space_id"] for record in boundaries.get(entity.id, [])})
+            points = [space_point(space_id) for space_id in ids]
+            points = [point for point in points if point is not None]
+
+            if points:
+                distance_a = sum(abs(dot(normal, point) - pair["offset_a"]) for point in points)
+                distance_b = sum(abs(dot(normal, point) - pair["offset_b"]) for point in points)
+                if abs(distance_a - distance_b) > tolerance:
+                    return (a["face"], "farthest from related IfcSpace") \
+                        if distance_a > distance_b else (b["face"], "farthest from related IfcSpace")
+
+            name = entity_name(entity).upper()
+            ptype = predefined_type(entity)
+            if entity.type == "IFCROOF" or ptype == "ROOF" or "ROOF" in name:
+                selected = max((a, b), key=lambda record: record["centroid"][2])
+                return selected["face"], "upper major face"
+            if ptype == "BASESLAB" or "SLAB ON GRADE" in name or "GROUND SLAB" in name:
+                selected = min((a, b), key=lambda record: record["centroid"][2])
+                return selected["face"], "lower major face"
+
+            distance_a = sum((a["centroid"][i] - model_centre[i]) ** 2 for i in range(3))
+            distance_b = sum((b["centroid"][i] - model_centre[i]) ** 2 for i in range(3))
+            return (a["face"], "farthest from model centre") \
+                if distance_a >= distance_b else (b["face"], "farthest from model centre")
+
+        def medial_face(pair):
+            a, b = pair["a"], pair["b"]
+            reference, opposite = (a, b) if a["area"] >= b["area"] else (b, a)
+            normal = reference["normal"]
+            reference_offset = dot(normal, reference["centroid"])
+            opposite_offset = dot(normal, opposite["centroid"])
+            distance = 0.5 * (reference_offset + opposite_offset) - reference_offset
+            return Topology.Translate(
+                Topology.Copy(reference["face"]),
+                x=normal[0] * distance,
+                y=normal[1] * distance,
+                z=normal[2] * distance,
+                transferDictionaries=False,
+                silent=True,
+            )
+
+        result = []
+        counts = {"INTERIOR": 0, "EXTERIOR": 0}
+
+        for candidate in candidates:
+            entity = candidate["entity"]
+            pair = candidate["pair"]
+            classification = candidate["classification"]
+
+            if classification == "INTERIOR":
+                face = medial_face(pair)
+                role = "medial_surface"
+                selection = "mid-plane of major face pair"
+            else:
+                source_face, selection = outer_face(candidate)
+                face = Topology.Copy(source_face)
+                role = "outer_surface"
+
+            if not Topology.IsInstance(face, "Face"):
+                skipped["failed"] += 1
+                continue
+
+            related_space_ids = sorted(
+                {record["space_id"] for record in boundaries.get(entity.id, [])}
+            )
+            face = Topology.SetDictionary(
+                face,
+                {
+                    "IFC_id": entity.id,
+                    "IFC_key": f"#{entity.id}",
+                    "IFC_type": IFCFastTopology._ifc_display_class(entity.type),
+                    "IFC_type_upper": entity.type,
+                    "IFC_global_id": IFCFastTopology._root_attr(entity, 0),
+                    "IFC_name": IFCFastTopology._root_attr(entity, 2),
+                    "IFC_predefined_type": predefined_type(entity),
+                    "analytical_role": role,
+                    "construction_classification": classification,
+                    "classification_source": candidate["classification_source"],
+                    "selection_method": selection,
+                    "estimated_thickness": round(pair["thickness"], 8),
+                    "major_face_area_similarity": round(pair["area_ratio"], 8),
+                    "related_space_ids": related_space_ids,
+                    "IFC_model_id": model.modelId,
+                    "IFC_model_revision": model.revision,
+                    "generated_by": method_name,
+                },
+                silent=True,
+            )
+            if Topology.IsInstance(face, "Face"):
+                result.append(face)
+                counts[classification] += 1
+            else:
+                skipped["failed"] += 1
+
+        if not result:
+            if not silent:
+                print(f"{method_name} - Error: No analytical faces were generated. Returning None.")
+            return None
+
+        if not silent:
+            print(
+                f"{method_name} - Information: Generated {len(result)} faces: "
+                f"{counts['EXTERIOR']} exterior outer surfaces and "
+                f"{counts['INTERIOR']} interior medial surfaces."
+            )
+            print(
+                f"{method_name} - Information: Skipped {skipped['no_geometry']} without geometry, "
+                f"{skipped['no_pair']} without a major-face pair, {skipped['mixed']} mixed, "
+                f"{skipped['unknown']} unclassified, and {skipped['failed']} failed generations."
+            )
+
+        return result
+
+
+    @staticmethod
+    def ThermalCellComplex(
+        model,
+        separatorTypes: list = None,
+        margin: float = 0.5,
+        circleSides: int = 24,
+        scale: float = 1.0,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Creates a proof-of-concept thermal CellComplex from an IFCModel.
+
+        Construction elements are reduced to oversized zero-thickness analytical
+        planes. The planes sequentially slice one enclosing cell. IfcSpace
+        geometry is used only to provide interior seed vertices that select and
+        label the resulting construction-derived cells.
+
+        This proof of concept is intended for predominantly planar walls, slabs,
+        roofs, curtain walls, and virtual elements. Each construction element is
+        represented by a plane through its centroid, parallel to its largest face.
+        The plane is enlarged sufficiently to cross the complete model enclosure.
+
+        Parameters
+        ----------
+        model : IFCModel
+            The input in-memory IFC model.
+        separatorTypes : list , optional
+            IFC types used as construction separators. Default is ["IfcWall",
+            "IfcSlab", "IfcRoof", "IfcCurtainWall", "IfcVirtualElement"].
+        margin : float , optional
+            Padding added to the enclosing cell in model units. Default is 0.5.
+        circleSides : int , optional
+            Number of sides used for circular IFC geometry. Default is 24.
+        scale : float , optional
+            Scale factor applied to imported IFC geometry. Default is 1.0.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, suppresses errors, warnings, and progress information.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.CellComplex
+            The construction-derived thermal CellComplex, or None on failure.
+
+        Notes
+        -----
+        This method deliberately extends each separator across the entire model.
+        It can therefore over-partition non-convex or highly articulated buildings.
+        Unwanted regions are discarded by selecting only cells containing an
+        IfcSpace interior seed vertex.
+        """
+        import math
+
+        from topologicpy.Cell import Cell
+        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+
+        method_name = "IFC.ThermalCellComplex"
+
+        model = IFC._model_from_input(model, silent=silent)
+        if not isinstance(model, IFCModel):
+            if not silent:
+                print(f"{method_name} - Error: Invalid IFCModel. Returning None.")
+            return None
+
+        if not isinstance(margin, (int, float)) or margin < 0:
+            if not silent:
+                print(
+                    f"{method_name} - Error: The margin parameter must be a "
+                    "non-negative number. Returning None."
+                )
+            return None
+
+        if separatorTypes is None:
+            separatorTypes = [
+                "IfcWall",
+                "IfcSlab",
+                "IfcRoof",
+                "IfcCurtainWall",
+                "IfcVirtualElement",
+            ]
+        elif not isinstance(separatorTypes, list):
+            separatorTypes = [separatorTypes]
+
+        # Shells are sufficient for extracting construction planes and avoid
+        # unnecessarily reconstructing closed construction solids.
+        separators = IFC.Topologies(
+            model,
+            includeTypes=separatorTypes,
+            dictionaryMode="Basic",
+            clean=False,
+            circleSides=circleSides,
+            scale=scale,
+            topologyType="Shell",
+            ontology=False,
+            tolerance=tolerance,
+            silent=True,
+        ) or []
+
+        # IfcSpace cells are used only as interior selectors. Their boundaries do
+        # not participate in constructing the thermal CellComplex.
+        spaces = IFC.Topologies(
+            model,
+            includeTypes=["IfcSpace"],
+            dictionaryMode="Basic",
+            clean=False,
+            circleSides=circleSides,
+            scale=scale,
+            topologyType="Cell",
+            ontology=False,
+            tolerance=tolerance,
+            silent=True,
+        ) or []
+
+        separators = [
+            topology
+            for topology in separators
+            if Topology.IsInstance(topology, "Topology")
+        ]
+        spaces = [
+            topology
+            for topology in spaces
+            if Topology.IsInstance(topology, "Cell")
+        ]
+
+        if not separators:
+            if not silent:
+                print(
+                    f"{method_name} - Error: No construction separator geometry "
+                    "was imported. Returning None."
+                )
+            return None
+        if not spaces:
+            if not silent:
+                print(
+                    f"{method_name} - Error: No valid IfcSpace cells were imported. "
+                    "Returning None."
+                )
+            return None
+
+        def _coordinates(vertex):
+            values = Vertex.Coordinates(vertex, mantissa=12)
+            if isinstance(values, list) and len(values) >= 3:
+                return [float(values[0]), float(values[1]), float(values[2])]
+            return None
+
+        def _centroid(topology):
+            vertex = Topology.Centroid(topology, silent=True)
+            return vertex if Topology.IsInstance(vertex, "Vertex") else None
+
+        def _normalise(vector):
+            if not isinstance(vector, (list, tuple)) or len(vector) < 3:
+                return None
+            length = math.sqrt(sum(float(vector[i]) ** 2 for i in range(3)))
+            if length <= tolerance:
+                return None
+            result = [float(vector[i]) / length for i in range(3)]
+
+            # Opposite normals describe the same analytical plane. Canonicalise
+            # their sign so coplanar elements can be deduplicated.
+            for value in result:
+                if abs(value) <= tolerance:
+                    continue
+                if value < 0:
+                    result = [-component for component in result]
+                break
+            return result
+
+        def _cells(topology):
+            if Topology.IsInstance(topology, "Cell"):
+                return [topology]
+            result = Topology.Cells(topology, silent=True) or []
+            return [cell for cell in result if Topology.IsInstance(cell, "Cell")]
+
+        # Determine one enclosing axis-aligned cell from construction and space
+        # geometry. This enclosure is intentionally larger than the building.
+        model_vertices = []
+        for topology in separators + spaces:
+            model_vertices += Topology.Vertices(topology, silent=True) or []
+
+        points = [_coordinates(vertex) for vertex in model_vertices]
+        points = [point for point in points if point is not None]
+        if not points:
+            if not silent:
+                print(
+                    f"{method_name} - Error: Could not determine the model bounds. "
+                    "Returning None."
+                )
+            return None
+
+        x_min = min(point[0] for point in points) - margin
+        x_max = max(point[0] for point in points) + margin
+        y_min = min(point[1] for point in points) - margin
+        y_max = max(point[1] for point in points) + margin
+        z_min = min(point[2] for point in points) - margin
+        z_max = max(point[2] for point in points) + margin
+
+        width = x_max - x_min
+        length = y_max - y_min
+        height = z_max - z_min
+        if min(width, length, height) <= tolerance:
+            if not silent:
+                print(
+                    f"{method_name} - Error: The model bounds are degenerate. "
+                    "Returning None."
+                )
+            return None
+
+        enclosure_origin = Vertex.ByCoordinates(
+            0.5 * (x_min + x_max),
+            0.5 * (y_min + y_max),
+            0.5 * (z_min + z_max),
+        )
+        enclosure = Cell.Prism(
+            origin=enclosure_origin,
+            width=width,
+            length=length,
+            height=height,
+            placement="center",
+            tolerance=tolerance,
+        )
+        if not Topology.IsInstance(enclosure, "Cell"):
+            if not silent:
+                print(
+                    f"{method_name} - Error: Could not create the enclosing cell. "
+                    "Returning None."
+                )
+            return None
+
+        # Every cutter must cross the enclosure boundary. A square whose side is
+        # four times the enclosure diagonal is safely larger in every orientation.
+        diagonal = math.sqrt(width * width + length * length + height * height)
+        cutter_size = max(4.0 * diagonal, 1.0)
+
+        # Deduplication tolerances are intentionally looser than boolean tolerance:
+        # normals are grouped by direction and offsets by model-space distance.
+        normal_decimals = 6
+        offset_tolerance = max(tolerance * 10.0, 1.0e-5)
+        plane_keys = set()
+        cutters = []
+
+        for separator in separators:
+            faces = Topology.Faces(separator, silent=True) or []
+            faces = [face for face in faces if Topology.IsInstance(face, "Face")]
+            if not faces and Topology.IsInstance(separator, "Face"):
+                faces = [separator]
+            if not faces:
+                continue
+
+            reference_face = max(
+                faces,
+                key=lambda face: Face.Area(face, mantissa=12) or 0.0,
+            )
+            normal = _normalise(
+                Face.Normal(reference_face, outputType="xyz", mantissa=12)
+            )
+            origin = _centroid(separator)
+            origin_coordinates = _coordinates(origin) if origin else None
+            if normal is None or origin_coordinates is None:
+                continue
+
+            offset = sum(
+                normal[index] * origin_coordinates[index]
+                for index in range(3)
+            )
+            key = (
+                round(normal[0], normal_decimals),
+                round(normal[1], normal_decimals),
+                round(normal[2], normal_decimals),
+                int(round(offset / offset_tolerance)),
+            )
+            if key in plane_keys:
+                continue
+            plane_keys.add(key)
+
+            cutter = Face.Rectangle(
+                origin=origin,
+                width=cutter_size,
+                length=cutter_size,
+                direction=normal,
+                placement="center",
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(cutter, "Face"):
+                continue
+
+            dictionary = Topology.Dictionary(separator, silent=True)
+            if dictionary is not None:
+                cutter = Topology.SetDictionary(cutter, dictionary, silent=True)
+            cutters.append(cutter)
+
+        if not cutters:
+            if not silent:
+                print(
+                    f"{method_name} - Error: No analytical separator planes were "
+                    "created. Returning None."
+                )
+            return None
+
+        # Slice sequentially. A finite construction face can silently fail to split
+        # a cell; sequential application lets us accept only cutters that actually
+        # increase the number of regions.
+        partition = enclosure
+        successful_cutters = 0
+
+        for cutter in cutters:
+            before_count = len(_cells(partition))
+            candidate = Topology.Slice(
+                topologyA=partition,
+                topologyB=cutter,
+                tranDict=False,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(candidate, "Topology"):
+                continue
+
+            after_count = len(_cells(candidate))
+            if after_count <= before_count:
+                continue
+
+            partition = candidate
+            successful_cutters += 1
+
+        partition_cells = _cells(partition)
+        if len(partition_cells) < 2:
+            if not silent:
+                print(
+                    f"{method_name} - Error: None of the {len(cutters)} analytical "
+                    "separator planes divided the enclosure. Returning None."
+                )
+            return None
+
+        # Select only regions occupied by IfcSpace seeds. More than one IfcSpace may
+        # map to the same region when a required separator is absent; report and keep
+        # that region only once.
+        selected = []
+        selected_indices = set()
+        unmatched_spaces = 0
+        duplicate_space_regions = 0
+
+        for space in spaces:
+            seed = Topology.InternalVertex(
+                space,
+                tolerance=tolerance,
+                silent=True,
+            )
+            if not Topology.IsInstance(seed, "Vertex"):
+                unmatched_spaces += 1
+                continue
+
+            containing_index = None
+            for index, cell in enumerate(partition_cells):
+                try:
+                    if Vertex.IsInternal(
+                        seed,
+                        cell,
+                        tolerance=tolerance,
+                        silent=True,
+                    ):
+                        containing_index = index
+                        break
+                except Exception:
+                    continue
+
+            if containing_index is None:
+                unmatched_spaces += 1
+                continue
+            if containing_index in selected_indices:
+                duplicate_space_regions += 1
+                continue
+
+            cell = partition_cells[containing_index]
+            dictionary = Topology.Dictionary(space, silent=True)
+            if dictionary is not None:
+                cell = Topology.SetDictionary(cell, dictionary, silent=True)
+
+            selected.append(cell)
+            selected_indices.add(containing_index)
+
+        if not selected:
+            if not silent:
+                print(
+                    f"{method_name} - Error: No partition cells contained an "
+                    "IfcSpace seed. Returning None."
+                )
+            return None
+
+        # result = CellComplex.ByCells(
+        #     selected,
+        #     transferDictionaries=True,
+        #     tolerance=tolerance,
+        #     silent=True,
+        # )
+        # if not Topology.IsInstance(result, "CellComplex"):
+        #     if not silent:
+        #         print(
+        #             f"{method_name} - Error: The selected thermal cells did not "
+        #             "form one connected CellComplex. Returning None."
+        #         )
+        #     return None
+
+
+        if not silent:
+            print(
+                f"{method_name} - Information: Created a CellComplex with "
+                f"{len(selected)} cells from {len(partition_cells)} partition regions."
+            )
+            print(
+                f"{method_name} - Information: {successful_cutters} of "
+                f"{len(cutters)} unique analytical separator planes produced a split."
+            )
+            if unmatched_spaces:
+                print(
+                    f"{method_name} - Warning: {unmatched_spaces} IfcSpace geometries "
+                    "did not match a partition cell."
+                )
+            if duplicate_space_regions:
+                print(
+                    f"{method_name} - Warning: {duplicate_space_regions} IfcSpace "
+                    "geometries mapped to a region already selected by another space."
+                )
+
+        return selected
+
+
     @staticmethod
     def Topologies(
         model,
