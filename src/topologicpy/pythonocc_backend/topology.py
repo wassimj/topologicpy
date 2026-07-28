@@ -2329,7 +2329,42 @@ class Topology:
 
     def CenterOfMass(self):
         from .vertex import Vertex
+        from .wire import Wire
+        from .face import Face, FaceUtility
         shape = _shape_from_topology(self)
+        
+        # For faces with internal boundaries (holes), calculate centroid correctly
+        # by subtracting hole contributions from the outer face
+        internals = getattr(self, 'internals', []) or []
+        if internals and hasattr(self, 'external') and self.external is not None:
+            # Calculate outer face centroid and area
+            outer_face = Face.ByWire(self.external)
+            if outer_face is not None:
+                outer_com = Topology.CenterOfMass(outer_face)
+                outer_area = FaceUtility.Area(outer_face)
+                
+                if outer_com is not None and outer_area and outer_area > 0:
+                    # Subtract hole contributions
+                    cx = outer_com.x * outer_area
+                    cy = outer_com.y * outer_area
+                    cz = outer_com.z * outer_area
+                    total_area = outer_area
+                    
+                    for wire in internals:
+                        if isinstance(wire, Wire):
+                            hole_face = Face.ByWire(wire)
+                            if hole_face is not None:
+                                hole_com = Topology.CenterOfMass(hole_face)
+                                hole_area = FaceUtility.Area(hole_face)
+                                if hole_com is not None and hole_area and hole_area > 0:
+                                    cx -= hole_com.x * hole_area
+                                    cy -= hole_com.y * hole_area
+                                    cz -= hole_com.z * hole_area
+                                    total_area -= hole_area
+                    
+                    if total_area > 0:
+                        return Vertex.ByCoordinates(cx / total_area, cy / total_area, cz / total_area)
+        
         if not _is_null_shape(shape) and GProp_GProps is not None and brepgprop is not None:
             try:
                 props = GProp_GProps()

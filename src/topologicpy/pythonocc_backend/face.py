@@ -30,11 +30,11 @@ class Face(Topology):
 
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=None):
-        face = Face.ByExternalBoundary(externalBoundary)
-        if face is None:
-            return None
-        face.internals = [w for w in (internalBoundaries or []) if isinstance(w, Wire)]
-        return face
+        internalBoundaries = [w for w in (internalBoundaries or []) if isinstance(w, Wire)]
+        if not internalBoundaries:
+            return Face.ByExternalBoundary(externalBoundary)
+        # Use ByExternalInternalBoundaries to properly add holes to OCCT shape
+        return Face.ByExternalInternalBoundaries(externalBoundary, internalBoundaries)
 
     @staticmethod
     def ByVertices(vertices):
