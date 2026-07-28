@@ -19,15 +19,23 @@ TOPOLOGICPY_CORE_BACKEND=pythonocc pytest tests/pythonocc/ --cov=topologicpy.pyt
 
 | Module | Test File | Tests |
 |--------|-----------|-------|
-| Vertex | test_vertex.py | 20 |
+| Vertex | test_vertex.py | 19 |
 | Edge | test_edge.py | 20 |
-| Wire | test_wire.py | 15 |
-| Face | test_face.py | 15 |
-| Cell | test_cell.py | 15 |
-| Topology | test_topology.py | 20 |
-| Dictionary | test_dictionary.py | 15 |
-| Graph | test_graph.py | 15 |
-| **Total** | | **135** |
+| Wire | test_wire.py | 18 |
+| Face | test_face.py | 20 |
+| Cell | test_cell.py | 18 |
+| Shell | test_shell.py | 15 |
+| CellComplex | test_cell_complex.py | 15 |
+| Cluster | test_cluster.py | 15 |
+| Topology | test_topology.py | 23 |
+| Dictionary | test_dictionary.py | 17 |
+| Graph | test_graph.py | 16 |
+| Boolean/CSG | test_boolean.py | 15 |
+| Transformations | test_transformations.py | 15 |
+| GeometricProperties | test_geometric_properties.py | 20 |
+| Helper | test_helper.py | 15 |
+| Color | test_color.py | 15 |
+| **Total** | | **276** |
 
 ## Comparison with TopologicCore
 
@@ -35,18 +43,29 @@ TOPOLOGICPY_CORE_BACKEND=pythonocc pytest tests/pythonocc/ --cov=topologicpy.pyt
 |---------|----------------|----------|
 | TopologicCore | 675 | 100% |
 | PythonOCC (before) | 29 | 4% |
-| PythonOCC (after) | 164 | 24% |
+| PythonOCC (after) | 305 | 45% |
 
 ## Parity Gap
 
-We've closed 135 tests of the 646-test gap. Remaining modules to test:
+We've closed 276 tests of the 646-test gap. Remaining modules to test:
 
-- Shell, CellComplex, Cluster
-- Boolean/CSG operations
-- Transformations
-- GeometricProperties
-- IFC, EnergyModel, Ontology
-- GraphDB, KnowledgeGraph, etc.
+- IFC
+- EnergyModel
+- Ontology
+- GraphDB
+- KnowledgeGraph
+- GQL
+- TGraph
+- Plotly
+- Polyskel
+- ShapeGrammar
+- LLM
+- Reasoner
+- Neo4j
+- BVH
+- Grid
+- Honeybee
+- etc.
 
 ## Adding New Tests
 
