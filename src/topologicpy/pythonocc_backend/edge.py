@@ -148,6 +148,59 @@ class Edge(Topology):
             return 0
         return result
 
+    @staticmethod
+    def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a new Edge with start and end swapped."""
+        if not isinstance(edge, Edge):
+            return None
+        return Edge.ByStartVertexEndVertex(edge.end, edge.start)
+
+    def Direction(self, mantissa: int = 6):
+        """Returns the direction vector [dx, dy, dz] of the edge."""
+        import math
+        dx = self.end.x - self.start.x
+        dy = self.end.y - self.start.y
+        dz = self.end.z - self.start.z
+        mag = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if mag == 0:
+            return [0, 0, 0]
+        return [round(dx/mag, mantissa), round(dy/mag, mantissa), round(dz/mag, mantissa)]
+
+    def VertexByParameter(self, u: float = 0.0):
+        """Creates a vertex at parameter u along the edge (0=start, 1=end)."""
+        if u == 0:
+            return self.start
+        elif u == 1:
+            return self.end
+        else:
+            return Vertex.ByCoordinates(
+                self.start.x + (self.end.x - self.start.x) * u,
+                self.start.y + (self.end.y - self.start.y) * u,
+                self.start.z + (self.end.z - self.start.z) * u,
+            )
+
+    def ParameterAtVertex(self, vertex, mantissa: int = 6, tolerance: float = 0.0001):
+        """Returns the parameter u at the given vertex location."""
+        if not isinstance(vertex, Vertex):
+            return None
+        length2 = (
+            (self.end.x - self.start.x) ** 2
+            + (self.end.y - self.start.y) ** 2
+            + (self.end.z - self.start.z) ** 2
+        )
+        if length2 == 0:
+            return 0
+        t = (
+            (vertex.x - self.start.x) * (self.end.x - self.start.x)
+            + (vertex.y - self.start.y) * (self.end.y - self.start.y)
+            + (vertex.z - self.start.z) * (self.end.z - self.start.z)
+        ) / length2
+        return round(t, mantissa)
+
+    def Length(self):
+        """Returns the length of the edge."""
+        return distance3(self.start, self.end)
+
     def Intersect(self, otherTopology, transferDictionary: bool = False):
         """
         Instance method (not @staticmethod) so both calling conventions work:

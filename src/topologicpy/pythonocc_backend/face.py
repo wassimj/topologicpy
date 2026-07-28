@@ -191,7 +191,12 @@ class FaceUtility:
     def Area(face):
         if not isinstance(face, Face):
             return None
-        vertices = face.Vertices()
+        # Use only external boundary vertices for the outer area calculation
+        external = getattr(face, 'external', None)
+        if external is not None and hasattr(external, 'Vertices'):
+            vertices = external.Vertices()
+        else:
+            vertices = face.Vertices()
         if len(vertices) < 3:
             return 0.0
         nx = ny = nz = 0.0
