@@ -1,8 +1,5 @@
-# Auto-generated PythonOCC backend parity test
-# Copied from test_Honeybee.py
 
-import os
-os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 
 """Best-effort tests for topologicpy.Honeybee.
 
@@ -13,6 +10,9 @@ Honeybee Energy, Honeybee Radiance, Ladybug, or Ladybug Geometry.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
 
 import importlib
 import json

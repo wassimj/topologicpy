@@ -1,8 +1,5 @@
-# Auto-generated PythonOCC backend parity test
-# Copied from test_ShapeGrammar.py
 
-import os
-os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 
 """Unit tests for topologicpy.ShapeGrammar.
 
@@ -12,6 +9,9 @@ validation, and regression fixes in the audited source.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
 
 import importlib
 import math

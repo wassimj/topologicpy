@@ -1,8 +1,5 @@
-# Auto-generated PythonOCC backend parity test
-# Copied from test_GA.py
 
-import os
-os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 
 """Unit tests for topologicpy.GA.
 
@@ -12,6 +9,9 @@ across the TopologicPy CI matrix without skips or xfails.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
 
 import json
 import warnings

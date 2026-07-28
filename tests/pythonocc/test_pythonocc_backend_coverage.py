@@ -16,6 +16,9 @@
 from __future__ import annotations
 
 import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
+import os
 
 import pytest
 

@@ -1,8 +1,5 @@
-# Auto-generated PythonOCC backend parity test
-# Copied from test_GQL.py
 
-import os
-os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 
 """Unit tests for topologicpy.GQL.
 
@@ -12,6 +9,9 @@ needed, deterministic stand-ins are installed with monkeypatch.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
 
 import builtins
 import sys

@@ -1,8 +1,5 @@
-# Auto-generated PythonOCC backend parity test
-# Copied from test_Core.py
 
-import os
-os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 
 """Unit tests for topologicpy.Core.
 
@@ -12,6 +9,9 @@ effects.
 """
 
 from __future__ import annotations
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
 
 import py_compile
 
