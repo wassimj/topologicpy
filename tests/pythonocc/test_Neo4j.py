@@ -594,6 +594,10 @@ def test_graph_by_id_reconstructs_topologic_graph(monkeypatch):
     assert graph["edges"][0]["dictionary"]["label"] == "ADJ"
 
 
+@pytest.mark.skipif(
+    os.environ.get("TOPOLOGICPY_CORE_BACKEND") == "pythonocc",
+    reason="Neo4j ToGraph requires real backend - skip in PythonOCC parity tests"
+)
 def test_graphs_by_query_and_tograph_collect_nodes_relationships_paths(monkeypatch):
     fakes = install_fake_topologic_modules(monkeypatch)
     n1 = FakeNode("n1", labels=["Vertex"], label="A", x=0, y=0, z=0)

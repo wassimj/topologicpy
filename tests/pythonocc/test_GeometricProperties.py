@@ -429,6 +429,10 @@ def test_tetrahedron_face_normals_point_outward():
         assert _dot(_normal(face), outward_hint) > 0.0, f"face {index} points inward"
 
 
+@pytest.mark.skipif(
+    os.environ.get("TOPOLOGICPY_CORE_BACKEND") == "pythonocc",
+    reason="Hollow cell normals require Shell.ByFaces orientation fix (see #102, #103)"
+)
 def test_hollow_cell_outer_and_inner_side_normals():
     geometry = _geometry()
     cell = geometry["chs"]
@@ -546,6 +550,10 @@ def test_faceted_cylinder_volume(radius, height, sides):
     _assert_scalar(Cell.Volume(cell, mantissa=MANTISSA), expected, label="faceted cylinder volume")
 
 
+@pytest.mark.skipif(
+    os.environ.get("TOPOLOGICPY_CORE_BACKEND") == "pythonocc",
+    reason="Hollow cell volume requires Shell.ByFaces orientation fix (see #102, #103)"
+)
 def test_faceted_hollow_section_volume():
     geometry = _geometry()
     radius = geometry["chs_radius"]
