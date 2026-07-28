@@ -13,3 +13,4 @@
 *.vsidx
 *.sqlite
 .venv/
+graphify-out/
