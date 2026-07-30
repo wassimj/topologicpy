@@ -619,6 +619,17 @@ class Cell():
                 # We try to continue with min length
             count = min(len(edgesA), len(edgesB))
 
+            # Get external boundary edge geometries to identify outer vs inner
+            ext_boundary = Face.ExternalBoundary(faceA)
+            ext_edges = Topology.Edges(ext_boundary) if ext_boundary else []
+            ext_edge_keys = set()
+            for e in ext_edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                key = tuple(sorted([(round(sv.x, 8), round(sv.y, 8), round(sv.z, 8)),
+                                     (round(ev.x, 8), round(ev.y, 8), round(ev.z, 8))]))
+                ext_edge_keys.add(key)
+
             for j in range(count):
                 eA = edgesA[j]
                 eB = edgesB[j]
@@ -632,11 +643,26 @@ class Cell():
                 vA1, vA2 = vA
                 vB1, vB2 = vB
 
+                # Check if this edge is from the inner boundary (hole)
+                svA = Edge.StartVertex(eA)
+                evA = Edge.EndVertex(eA)
+                edge_key = tuple(sorted([(round(svA.x, 8), round(svA.y, 8), round(svA.z, 8)),
+                                         (round(evA.x, 8), round(evA.y, 8), round(evA.z, 8))]))
+                is_inner = edge_key not in ext_edge_keys
+
                 try:
-                    e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
-                    e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
-                    e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
-                    e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
+                    if is_inner:
+                        # Reversed winding for inner hole edges - creates inward-facing normals
+                        e1 = Edge.ByStartVertexEndVertex(vA2, vA1)
+                        e2 = Edge.ByStartVertexEndVertex(vA1, vB1)
+                        e3 = Edge.ByStartVertexEndVertex(vB1, vB2)
+                        e4 = Edge.ByStartVertexEndVertex(vB2, vA2)
+                    else:
+                        # Normal winding for outer boundary edges
+                        e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
+                        e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
+                        e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
+                        e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
 
                     if not (e1 and e2 and e3 and e4):
                         continue
