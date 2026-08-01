@@ -152,9 +152,9 @@ jobs:
   test-pythonocc:
     name: Test PythonOCC backend on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
-    # TEMP (validation-only, see chat): dropped so this job can run without
-    # prepare-build-info, which fails on this fork (no v#.#.# tags pushed
-    # yet). Restore "needs: [prepare-build-info, build]" once verified.
+    needs:
+      - prepare-build-info
+      - build
     continue-on-error: true
     strategy:
       fail-fast: false
