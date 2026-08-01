@@ -143,8 +143,44 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -e '.[test]'
-      - name: Run tests
-        run: pytest
+      - name: Run tests (TopologicCore backend)
+        # tests/pythonocc/ needs pythonocc-core, which is conda-forge-only and
+        # not installed in this pip-based matrix; it is covered separately by
+        # the test-pythonocc job below.
+        run: pytest --ignore=tests/pythonocc
+
+  test-pythonocc:
+    name: Test PythonOCC backend on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    runs-on: ${{ matrix.os }}
+    needs:
+      - prepare-build-info
+      - build
+    continue-on-error: true
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up conda-forge environment with pythonocc-core
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: '3.11'
+          channels: conda-forge
+          channel-priority: strict
+      - name: Install pythonocc-core
+        shell: bash -l {0}
+        run: conda install -y -c conda-forge pythonocc-core
+      - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
+        shell: bash -l {0}
+        run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
+      - name: Install topologicpy with test dependencies
+        shell: bash -l {0}
+        run: pip install -e '.[test]'
+      - name: Run tests (PythonOCC backend)
+        shell: bash -l {0}
+        run: pytest tests/pythonocc
 
   publish-pypi-release:
     runs-on: ubuntu-latest
