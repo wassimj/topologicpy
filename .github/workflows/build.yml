@@ -152,9 +152,9 @@ jobs:
   test-pythonocc:
     name: Test PythonOCC backend on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
-    needs:
-      - prepare-build-info
-      - build
+    # TEMP (validation-only, see chat): dropped so this job can run without
+    # prepare-build-info, which fails on this fork (no v#.#.# tags pushed
+    # yet). Restore "needs: [prepare-build-info, build]" once verified.
     continue-on-error: true
     strategy:
       fail-fast: false
@@ -172,9 +172,6 @@ jobs:
       - name: Install pythonocc-core
         shell: bash -l {0}
         run: conda install -y -c conda-forge pythonocc-core
-      - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
-        shell: bash -l {0}
-        run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
       - name: Install topologicpy with test dependencies
         shell: bash -l {0}
         run: pip install -e '.[test]'
