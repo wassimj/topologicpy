@@ -24,8 +24,16 @@ jobs:
         run: |
             git tag --format='%(refname:strip=2)%09%(objectname:short)%09%(creatordate:short)%09%(authorname)%09%(subject)' --sort=-creatordate
             echo "tagname=`git tag --points-at ${{ github.sha }} | head -n 1`" >> "$GITHUB_OUTPUT"
-            echo "anyname=`git describe --abbrev=0 --tags --always ${{ github.sha }} | head -n 1`" >> "$GITHUB_OUTPUT"
-            echo "anyversion=`git describe --abbrev=0 --tags --always ${{ github.sha }} | head -n 1 | sed 's/^v//'`" >> "$GITHUB_OUTPUT"
+            anyname=`git describe --abbrev=0 --tags --always ${{ github.sha }} | head -n 1`
+            anyversion=`echo "$anyname" | sed 's/^v//'`
+            re='^([0-9]+\.)([0-9]+\.)([0-9]+)(-(dev|prod))?$'
+            if ! [[ "$anyversion" =~ $re ]] ; then
+              echo "No valid semver tag found (got '$anyname' from git describe); defaulting to 0.0.0-dev" >&2
+              anyname="0.0.0-dev"
+              anyversion="0.0.0-dev"
+            fi
+            echo "anyname=$anyname" >> "$GITHUB_OUTPUT"
+            echo "anyversion=$anyversion" >> "$GITHUB_OUTPUT"
       - name: Do not break process if obtained `anyversion` is valid
         run: |
           re='^([0-9]+\.)([0-9]+\.)([0-9]+)(-(dev|prod))?$'
