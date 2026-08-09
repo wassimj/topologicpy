@@ -521,6 +521,7 @@ class Cell():
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Cell import Cell
+        from topologicpy.Vertex import Vertex
 
         # -----------------------------
         # Validation
@@ -626,8 +627,8 @@ class Cell():
             for e in ext_edges:
                 sv = Edge.StartVertex(e)
                 ev = Edge.EndVertex(e)
-                key = tuple(sorted([(round(sv.x, 8), round(sv.y, 8), round(sv.z, 8)),
-                                     (round(ev.x, 8), round(ev.y, 8), round(ev.z, 8))]))
+                key = tuple(sorted([(round(Vertex.X(sv), 8), round(Vertex.Y(sv), 8), round(Vertex.Z(sv), 8)),
+                                     (round(Vertex.X(ev), 8), round(Vertex.Y(ev), 8), round(Vertex.Z(ev), 8))]))
                 ext_edge_keys.add(key)
 
             for j in range(count):
@@ -646,8 +647,8 @@ class Cell():
                 # Check if this edge is from the inner boundary (hole)
                 svA = Edge.StartVertex(eA)
                 evA = Edge.EndVertex(eA)
-                edge_key = tuple(sorted([(round(svA.x, 8), round(svA.y, 8), round(svA.z, 8)),
-                                         (round(evA.x, 8), round(evA.y, 8), round(evA.z, 8))]))
+                edge_key = tuple(sorted([(round(Vertex.X(svA), 8), round(Vertex.Y(svA), 8), round(Vertex.Z(svA), 8)),
+                                         (round(Vertex.X(evA), 8), round(Vertex.Y(evA), 8), round(Vertex.Z(evA), 8))]))
                 is_inner = edge_key not in ext_edge_keys
 
                 try:
