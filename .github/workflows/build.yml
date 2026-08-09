@@ -34,6 +34,12 @@ jobs:
             fi
             echo "anyname=$anyname" >> "$GITHUB_OUTPUT"
             echo "anyversion=$anyversion" >> "$GITHUB_OUTPUT"
+            # setuptools/build normalize a '-dev' suffix to PEP 440's '.dev0' when
+            # naming the built wheel, so filenames referencing anyversion directly
+            # would not match the file build actually produces. Mirror that
+            # normalization here for use in artifact/asset filenames.
+            wheelversion=`echo "$anyversion" | sed -E 's/-dev$/.dev0/'`
+            echo "wheelversion=$wheelversion" >> "$GITHUB_OUTPUT"
       - name: Do not break process if obtained `anyversion` is valid
         run: |
           re='^([0-9]+\.)([0-9]+\.)([0-9]+)(-(dev|prod))?$'
@@ -46,6 +52,7 @@ jobs:
       tagname: ${{ steps.got-tag.outputs.tagname }}
       anyname: ${{ steps.got-tag.outputs.anyname }}
       anyversion: ${{ steps.got-tag.outputs.anyversion }}
+      wheelversion: ${{ steps.got-tag.outputs.wheelversion }}
       branchname: ${{ github.head_ref || github.ref_name }}
 
   build-docs:
@@ -114,8 +121,8 @@ jobs:
       - name: Upload universal wheel artifact (py3, any platform)
         uses: actions/upload-artifact@v6
         with:
-          name: topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
-          path: dist/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          name: topologicpy-${{ needs.prepare-build-info.outputs.wheelversion }}-py3-none-any.whl
+          path: dist/topologicpy-${{ needs.prepare-build-info.outputs.wheelversion }}-py3-none-any.whl
           if-no-files-found: error
           retention-days: 60
 
@@ -266,6 +273,6 @@ jobs:
           name: ${{ needs.prepare-build-info.outputs.tagname }}
           tag_name: ${{ needs.prepare-build-info.outputs.tagname }}
           body: Changes in this Release
-          files: all-artifacts/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl/topologicpy-${{ needs.prepare-build-info.outputs.anyversion }}-py3-none-any.whl
+          files: all-artifacts/topologicpy-${{ needs.prepare-build-info.outputs.wheelversion }}-py3-none-any.whl/topologicpy-${{ needs.prepare-build-info.outputs.wheelversion }}-py3-none-any.whl
         env:
           GITHUB_TOKEN: ${{ github.token }}
