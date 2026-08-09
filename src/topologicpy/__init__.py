@@ -19,7 +19,7 @@ import os, re
 from sys import platform
 from .version import __version__
 
-__version_info__ = tuple([ int(num) for num in __version__.split('.')])
+__version_info__ = tuple([ int(num) for num in __version__.split('-')[0].split('.')])
 
 # Set an alias for ease of access
 version = __version__
