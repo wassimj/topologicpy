@@ -53,7 +53,25 @@ class Graph:
                 vertices.append(edge.start)
             if edge.end not in vertices:
                 vertices.append(edge.end)
-        return Graph(vertices=unique_by_uuid(vertices), edges=unique_by_uuid(edges))
+        # Dedupe by coordinates, not just uuid/shape-identity: the edge's
+        # start/end wrappers and the caller's vertex wrappers for the SAME
+        # point are distinct Python objects (different uuids), so `in` fails
+        # and unique_by_uuid cannot collapse them. Without this a graph of
+        # 3 vertices reports 5-7 vertices (shared endpoints duplicated), which
+        # breaks Vertex/edge adjacency and degree queries.
+        deduped = []
+        seen_coords = set()
+        for v in vertices:
+            try:
+                key = (round(float(v.x) / 1e-4), round(float(v.y) / 1e-4), round(float(v.z) / 1e-4))
+            except Exception:
+                key = None
+            if key is not None:
+                if key in seen_coords:
+                    continue
+                seen_coords.add(key)
+            deduped.append(v)
+        return Graph(vertices=unique_by_uuid(deduped), edges=unique_by_uuid(edges))
 
     @staticmethod
     def ByVertices(vertices):
@@ -272,14 +290,8 @@ class Graph:
     @staticmethod
     def _oriented_edge_chain(path_edges, start_vertex, tolerance=0.0001):
         """
-        Given a list of edges that form a connected chain (as produced by a
-        vertex-to-vertex traversal starting at start_vertex), return a new list
-        of edges whose .start/.end are oriented head-to-tail along that chain.
-        Edges that already point the right way are reused as-is; edges that
-        point backwards are replaced with a reversed copy (dictionary preserved).
-        This avoids relying on Wire._order_edges' own (buggy) direction-matching
-        when handed edges that are logically chained but not all stored
-        head-to-tail.
+        Reorient a connected edge chain head-to-tail: reuse forward edges, replace
+        backward ones with a reversed copy (dictionary preserved).
         """
         if not path_edges:
             return None

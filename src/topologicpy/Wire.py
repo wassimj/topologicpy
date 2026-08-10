@@ -2372,7 +2372,43 @@ class Wire():
         from topologicpy.Vertex import Vertex
         from topologicpy.Face import Face
         from topologicpy.Topology import Topology
-        from random import sample
+
+        def _cross_mag2(p0, p1, vv):
+            """Squared magnitude of cross((p1-p0),(vv-p0))."""
+            ux = Vertex.X(p1)-Vertex.X(p0)
+            uy = Vertex.Y(p1)-Vertex.Y(p0)
+            uz = Vertex.Z(p1)-Vertex.Z(p0)
+            vx = Vertex.X(vv)-Vertex.X(p0)
+            vy = Vertex.Y(vv)-Vertex.Y(p0)
+            vz = Vertex.Z(vv)-Vertex.Z(p0)
+            cx = uy*vz-uz*vy
+            cy = uz*vx-ux*vz
+            cz = ux*vy-uy*vx
+            return cx*cx+cy*cy+cz*cz
+
+        def _pick_triple(vertices):
+            """Deterministic, order-independent, always-valid non-collinear triple.
+
+            Choose p0 = lexicographically-smallest vertex, p1 = farthest from p0,
+            p2 = farthest from the line through p0-p1.  This guarantees a
+            non-collinear triplet whenever one exists, is stable across both
+            backends, and does not depend on vertex enumeration order.
+            Returns (p0, p1, p2) or None when < 3 distinct points or when all
+            points are collinear.
+            """
+            def _key(vv):
+                return (Vertex.X(vv), Vertex.Y(vv), Vertex.Z(vv))
+            def _d2(a, b):
+                return (Vertex.X(a)-Vertex.X(b))**2 + (Vertex.Y(a)-Vertex.Y(b))**2 + (Vertex.Z(a)-Vertex.Z(b))**2
+            vs = sorted(vertices, key=_key)
+            if len(vs) < 3:
+                return None
+            p0 = vs[0]
+            p1 = max(vs[1:], key=lambda vv: (_d2(p0, vv), _key(vv)))
+            p2 = max(vs, key=lambda vv: (_cross_mag2(p0, p1, vv), _key(vv)))
+            if _cross_mag2(p0, p1, p2) <= 1e-18:
+                return None  # all collinear
+            return p0, p1, p2
 
         def Left_index(points):
             
@@ -2460,16 +2496,36 @@ class Wire():
             # Print Result 
             return hull
 
-        f = None
-        # Create a sample face and flatten
-        while not Topology.IsInstance(f, "Face"):
-            vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
-            v = sample(vertices, 3)
-            w = Wire.ByVertices(v, tolerance=tolerance)
-            f = Face.ByWire(w, tolerance=tolerance)
-            origin = Topology.Centroid(f)
-            normal = Face.Normal(f, mantissa=mantissa)
-            f = Topology.Flatten(f, origin=origin, direction=normal)
+        # Deterministic, order-independent flattening-plane selection.
+        # (The previous implementation used random.sample(vertices, 3), which
+        # produced a different plane on every call -> nondeterministic hull
+        # vertex order and, for near-degenerate inputs, occasionally wrong hull
+        # points. A fixed non-collinear triple gives the same plane to both
+        # backends.)
+        vertices = Topology.SubTopologies(topology=topology, subTopologyType="vertex")
+        triple = _pick_triple(vertices)
+        if triple is None:
+            # Degenerate: fewer than 3 distinct points or all collinear.
+            # Return the extremal segment (the 1D hull) when 2+ distinct points exist.
+            vs = sorted(vertices, key=lambda vv: (Vertex.X(vv), Vertex.Y(vv), Vertex.Z(vv)))
+            if len(vs) >= 2:
+                spans = []
+                for i in range(len(vs)):
+                    for j in range(i+1, len(vs)):
+                        spans.append(((Vertex.X(vs[i])-Vertex.X(vs[j]))**2 + (Vertex.Y(vs[i])-Vertex.Y(vs[j]))**2 + (Vertex.Z(vs[i])-Vertex.Z(vs[j]))**2, vs[i], vs[j]))
+                _, a, b = max(spans)
+                return Wire.ByVertices([a, b], tolerance=tolerance)
+            if len(vs) == 1:
+                return Wire.ByVertices([vs[0]], close=False, tolerance=tolerance)
+            return None
+        p0, p1, p2 = triple
+        w = Wire.ByVertices([p0, p1, p2], tolerance=tolerance)
+        f = Face.ByWire(w, tolerance=tolerance)
+        if not Topology.IsInstance(f, "Face"):
+            return None
+        origin = Topology.Centroid(f)
+        normal = Face.Normal(f, mantissa=mantissa)
+        f = Topology.Flatten(f, origin=origin, direction=normal)
         flat_topology = Topology.Flatten(topology, origin=origin, direction=normal)
         vertices = Topology.Vertices(flat_topology)
         points = []

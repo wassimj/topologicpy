@@ -102,16 +102,9 @@ class Vertex(Topology):
     @staticmethod
     def Project(vertex, topology, direction=None):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (topologicpy.Vertex.Project is a
-        self-contained plane-equation implementation that never reaches
-        Core). Best-effort real implementation for direct Core callers:
-        projects the vertex onto the target topology's OCCT shape.
-
-        If `direction` is given (a 3-sequence), projects along that ray;
-        otherwise returns the nearest point on the target shape (matching
-        BRepExtrema_DistShapeShape's default closest-point behavior, which is
-        what a normal-direction planar projection reduces to for a Face).
+        Not in the guide's checklist and unreferenced by the algorithm layer. Best-effort for
+        direct Core callers: project the vertex along `direction`, else nearest point on the
+        target shape (BRepExtrema_DistShapeShape closest-point).
         """
         if not isinstance(vertex, Vertex):
             return None
