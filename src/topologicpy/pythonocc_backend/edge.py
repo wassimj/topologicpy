@@ -46,16 +46,9 @@ class Edge(Topology):
     @staticmethod
     def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Real
-        best-effort implementation for direct Core callers: builds a
-        (possibly curved) edge by interpolating a B-spline through the given
-        list of Vertex control/interpolation points. `Edge.start`/`Edge.end`
-        remain the straight endpoints (matching how every other Edge in this
-        backend exposes start/end); the underlying OCCT shape is the real
-        curved geometry. `periodic` is accepted for API compatibility but not
-        wired up (periodic B-spline construction needs a distinct OCCT API
-        path); it is silently ignored.
+        Not in the guide's checklist and unreferenced by the algorithm layer. Best-effort for
+        direct Core callers: B-spline through the given points; start/end stay straight
+        endpoints; periodic is accepted but ignored.
         """
         try:
             from OCC.Core.gp import gp_Pnt
@@ -203,20 +196,9 @@ class Edge(Topology):
 
     def Intersect(self, otherTopology, transferDictionary: bool = False):
         """
-        Instance method (not @staticmethod) so both calling conventions work:
-        Core.Topology.Intersect(edge, other) and
-        Core.InstanceCall(edge, 'Intersect', other) (the latter is how
-        topologicpy.Topology.Intersect actually dispatches).
-
-        General BRepAlgoAPI_Common (used by the base Topology.Intersect) only
-        finds a coincident sub-region between two shapes; it does not report a
-        transversal point where two finite 1-D edges merely cross in space
-        (their common region has zero length, so OCCT reports "no
-        intersection"). Handle Edge-vs-Edge specially with an analytic
-        segment/segment closest-point test and fall back to the general
-        boolean-based implementation for every other case (and for the rare
-        collinear/overlapping-edges case, where a real coincident region does
-        exist and BRepAlgoAPI_Common is the right tool).
+        Instance method so both calling conventions work. Edge-vs-edge uses an analytic
+        closest-point test (BRepAlgoAPI_Common misses transversal zero-length crossings); all
+        other cases (incl. collinear overlap) use the general boolean.
         """
         if not isinstance(otherTopology, Edge):
             return Topology._binary_boolean(self, otherTopology, _BRepAlgoAPI_Common, transferDictionary)

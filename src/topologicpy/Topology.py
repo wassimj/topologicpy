@@ -7642,7 +7642,59 @@ class Topology():
         from topologicpy.Cluster import Cluster
         from topologicpy.Dictionary import Dictionary
 
+        # Geometry-stable uuid cache. The PythonOCC backend re-wraps shared
+        # sub-topologies (a vertex/edge common to two adjacent faces) into NEW
+        # Python objects on each extraction, so a per-wrapper uuid (stored in
+        # the dictionary) differs between copies and a Cell's faces->wires->
+        # edges->vertices references can point at uuids that were never emitted
+        # as records -- corrupting ByJSONDictionary with a KeyError. Keying the
+        # uuid on geometry instead (rounded to the project tolerance, 1e-4)
+        # makes every copy of the same entity agree.
+        _geo_uuid_cache = {}
+
+        def _geometry_key(topology, uuidKey="uuid"):
+            try:
+                if Topology.IsInstance(topology, "vertex"):
+                    try:
+                        return ("vertex", tuple(round(float(c), 4) for c in Vertex.Coordinates(topology)))
+                    except Exception:
+                        return None
+                if Topology.IsInstance(topology, "edge"):
+                    ends = []
+                    for v in Topology.Vertices(topology) or []:
+                        try:
+                            ends.append(tuple(round(float(c), 4) for c in Vertex.Coordinates(v)))
+                        except Exception:
+                            return None
+                    if len(ends) == 2:
+                        return ("edge", tuple(sorted(ends)))
+                    return None
+                if Topology.IsInstance(topology, "wire"):
+                    keys = []
+                    for e in Topology.Edges(topology) or []:
+                        k = _geometry_key(e, uuidKey)
+                        if k is None:
+                            return None
+                        keys.append(k)
+                    return ("wire", tuple(sorted(keys)))
+                if Topology.IsInstance(topology, "face"):
+                    keys = []
+                    for w in Topology.Wires(topology) or []:
+                        k = _geometry_key(w, uuidKey)
+                        if k is None:
+                            return None
+                        keys.append(k)
+                    return ("face", tuple(sorted(keys)))
+            except Exception:
+                return None
+            return None
+
         def getUUID(topology, uuidKey="uuid"):
+            gkey = _geometry_key(topology, uuidKey)
+            if gkey is not None:
+                cached = _geo_uuid_cache.get(gkey)
+                if cached is not None:
+                    return cached
             d = Topology.Dictionary(topology)
             if uuidKey not in Dictionary.Keys(d):
                 uuidOne = str(uuid.uuid1())
@@ -7650,6 +7702,8 @@ class Topology():
                 topology = Topology.SetDictionary(topology, d)
             else:
                 uuidOne = Dictionary.ValueAtKey(d, uuidKey)
+            if gkey is not None:
+                _geo_uuid_cache[gkey] = uuidOne
             return uuidOne
 
         def getVertex(topology, uuidKey="uuid"):
@@ -8537,6 +8591,21 @@ class Topology():
             return None
 
         topVerts = []
+        # Tolerance-aware vertex dedup. Shared vertices re-derived by the
+        # PythonOCC backend carry float noise (5th-7th decimal), so exact
+        # list.index(Vertex.Coordinates(...)) equality leaves duplicates that
+        # the TopologicCore kernel would have merged (e.g. a Dodecahedron
+        # reports 45 vertices instead of 20, corrupting consequent rebuilds).
+        vertex_threshold = max(1e-4, 10 ** (-(max(int(mantissa), 3) - 1)))
+
+        def _find_vertex_index(coords):
+            for i, c in enumerate(vertices):
+                if (abs(c[0]-coords[0]) <= vertex_threshold and
+                        abs(c[1]-coords[1]) <= vertex_threshold and
+                        abs(c[2]-coords[2]) <= vertex_threshold):
+                    return i
+            return -1
+
         if Topology.Type(topology) == Topology.TypeID("Vertex"): #input is a vertex, just add it and process it
             topVerts.append(topology)
         else:
@@ -8548,10 +8617,9 @@ class Topology():
                 d = Topology.Dictionary(aVertex)
                 if len(Dictionary.Keys(d)) > 0:
                     py_dict = Dictionary.PythonDictionary(d)
-            try:
-                vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex already in list
-            except:
-                vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa)) # Vertex not in list, add it.
+            idx = _find_vertex_index(Vertex.Coordinates(aVertex, mantissa=mantissa))
+            if idx < 0:
+                vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                 vertex_dicts.append(py_dict)
 
         topEdges = []
@@ -8565,15 +8633,13 @@ class Topology():
             sv = Edge.StartVertex(anEdge)
             ev = Edge.EndVertex(anEdge)
 
-            try:
-                svIndex = vertices.index(Vertex.Coordinates(sv, mantissa=mantissa))
-            except:
+            svIndex = _find_vertex_index(Vertex.Coordinates(sv, mantissa=mantissa))
+            if svIndex < 0:
                 vertices.append(Vertex.Coordinates(sv, mantissa=mantissa))
                 svIndex = len(vertices)-1
 
-            try:
-                evIndex = vertices.index(Vertex.Coordinates(ev, mantissa=mantissa))
-            except:
+            evIndex = _find_vertex_index(Vertex.Coordinates(ev, mantissa=mantissa))
+            if evIndex < 0:
                 vertices.append(Vertex.Coordinates(ev, mantissa=mantissa))
                 evIndex = len(vertices)-1
 
@@ -8611,9 +8677,8 @@ class Topology():
                     f = []
 
                     for aVertex in faceVertices:
-                        try:
-                            fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
-                        except:
+                        fVertexIndex = _find_vertex_index(Vertex.Coordinates(aVertex, mantissa=mantissa))
+                        if fVertexIndex < 0:
                             vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                             fVertexIndex = len(vertices)-1
                         f.append(fVertexIndex)
@@ -8625,9 +8690,8 @@ class Topology():
                 f = []
 
                 for aVertex in faceVertices:
-                    try:
-                        fVertexIndex = vertices.index(Vertex.Coordinates(aVertex, mantissa=mantissa))
-                    except:
+                    fVertexIndex = _find_vertex_index(Vertex.Coordinates(aVertex, mantissa=mantissa))
+                    if fVertexIndex < 0:
                         vertices.append(Vertex.Coordinates(aVertex, mantissa=mantissa))
                         fVertexIndex = len(vertices)-1
                     f.append(fVertexIndex)

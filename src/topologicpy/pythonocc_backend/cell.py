@@ -13,21 +13,9 @@ from .helpers import edge_key, vertex_key, dedupe_vertices_by_distance
 
 def _dedupe_vertices(vertices, tolerance: float = 0.0001):
     """
-    Deduplicates Vertex wrapper objects by geometric coordinate rather than
-    OCCT shape identity/hash.
-
-    unique_by_uuid (helpers.py) prefers hash(shape) for dedup, which is the
-    right call when sub-shapes genuinely come from the same parent shape
-    (e.g. two Edge wrappers extracted from the same shared OCCT edge). But a
-    Cell built via Cell.ByFaces out of independently constructed Faces (e.g.
-    six Face.ByVertices calls forming a box) never shares OCCT vertex/edge
-    sub-shapes between faces even where they are geometrically coincident
-    (each Face.ByVertices call makes its own fresh vertices/edges) -- so
-    shape-hash dedup leaves 3 duplicate Vertex wrappers per shared corner.
-
-    Uses dedupe_vertices_by_distance (helpers.py) rather than a plain
-    vertex_key bucket-equality check, since two truly-coincident vertices
-    can straddle a rounding bucket boundary and fail to merge otherwise.
+    Dedupe Vertex wrappers by distance, not OCCT shape-hash: faces built by separate
+    Face.ByVertices calls never share OCCT vertex sub-shapes even where coincident, so
+    hash-dedup leaves duplicates at shared corners.
     """
     return dedupe_vertices_by_distance((v for v in vertices if isinstance(v, Vertex)), tolerance)
 
@@ -217,15 +205,10 @@ Cell.ByBox = staticmethod(_cell_by_box)
 
 def _cell_by_wires(wires, close: bool = False, tolerance: float = 0.0001, silent: bool = False):
     """
-    Builds a Cell by lofting through a list of profile Wires and capping the
-    first/last profiles: side faces come from Shell.ByWires (loft between
-    consecutive wires), plus a bottom cap Face.ByWire(wires[0]) and a top cap
-    Face.ByWire(wires[-1]).
-
-    The algorithm-layer Cell.ByWires (src/topologicpy/Cell.py) is a larger,
-    fully self-contained implementation that does not call into
-    Core.Cell.ByWires, so this backend-level method only matters to callers
-    that go through Core.Cell.ByWires directly.
+    Loft profiles and cap the ends: side faces via Shell.ByWires, bottom cap
+    Face.ByWire(wires[0]), top cap Face.ByWire(wires[-1]). The algorithm-layer
+    Cell.ByWires is self-contained and never reaches Core; this only serves
+    direct Core.Cell.ByWires callers.
     """
     if not isinstance(wires, list):
         if not silent:
@@ -293,17 +276,11 @@ class CellUtility:
     @staticmethod
     def Contains(cell, vertex, tolerance: float = 0.0001):
         """
-        Classifies vertex against cell's shape using
-        BRepClass3d_SolidClassifier. Returns the topologic_core convention:
-        0 = inside (TopAbs_IN), 1 = on the boundary (TopAbs_ON),
-        2 = outside (TopAbs_OUT or anything else).
-
-        Note: Cells in this backend are boundary-representation shells
-        (faces only), not volume-solid OCCT shapes. So the classifier
-        returns TopAbs_ON for any point on/within the shell — it
-        cannot distinguish INSIDE from ON. The algorithm layer's
-        Cell.ContainmentStatus compensates by testing 8 offset vertices
-        and majority-voting.
+        Classify a vertex against the cell via BRepClass3d_SolidClassifier
+        (0=inside, 1=on-boundary, 2=outside). Cells are boundary-representation
+        shells, so the classifier returns ON for any point on/within the shell;
+        the algorithm layer's Cell.ContainmentStatus compensates with 8 offset
+        vertices + majority vote.
         """
         if not isinstance(cell, Cell) or not isinstance(vertex, Vertex):
             return 2
@@ -328,13 +305,9 @@ class CellUtility:
     @staticmethod
     def InternalVertex(cell, tolerance: float = 0.0001):
         """
-        Returns a Vertex guaranteed to lie strictly inside the Cell.
-
-        Tries Topology.CenterOfMass first (cheap, correct for convex cells
-        and most everyday shapes); confirms it with CellUtility.Contains.
-        If the centroid is not strictly inside (e.g. a non-convex cell whose
-        centroid falls outside or on the boundary), falls back to sampling a
-        small grid of points within the cell's bounding box until one tests
+        Vertex strictly inside the Cell: try CenterOfMass, confirm via
+        CellUtility.Contains; for non-convex cells whose centroid is outside or on
+        the boundary, sample a small grid inside the bounding box until one tests
         strictly inside.
         """
         if not isinstance(cell, Cell):

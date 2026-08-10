@@ -3,20 +3,8 @@ from __future__ import annotations
 
 def _unwrap_attribute(value):
     """
-    Unwraps an IntAttribute/DoubleAttribute/StringAttribute/ListAttribute
-    (attributes.py) to its plain Python value.
-
-    SetValueAtKey stores whatever it is given verbatim, and callers that go
-    through the algorithm layer (topologicpy.Dictionary._ConvertValue) always
-    wrap values before storing them -- so reader methods (Values,
-    ValueAtKey, PythonDictionary) must unwrap on the way out, or callers see
-    a raw StringAttribute object instead of a str (e.g. Topology.Apertures
-    doing `Dictionary.ValueAtKey(d, "type").lower()`). Values stored without
-    going through that wrapping (a plain str/int/float/list) pass through
-    unchanged, since none of the duck-type checks below match them.
-
-    The algorithm layer stores Python None as StringAttribute("__NONE__").
-    When reading back, we convert that sentinel back to Python None.
+    Convert attribute objects back to plain Python values on read (callers expect str not
+    StringAttribute); the "__NONE__" sentinel becomes None; plain values pass through.
     """
     if hasattr(value, "StringValue"):
         s = value.StringValue()

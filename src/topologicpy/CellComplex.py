@@ -1275,57 +1275,45 @@ class CellComplex():
             if len(w1_edges) != len(w2_edges):
                 print("CellComplex.ByWires - Error: The input wires parameter contains wires with different number of edges. Returning None.")
                 return None
-            for j in range (len(w1_edges)):
+
+            def _bridge(v_a, v_b):
+                # One bridge edge between the two rings. The edge builders in
+                # different backends are inconsistent about whether they raise
+                # or return None on failure, so treat BOTH identically -- this
+                # is what prevents the old try/except fallbacks from appending
+                # TWO faces for a single ring-edge pair (which over-built the
+                # loft soup and made BOPAlgo_MakerVolume emit a spurious extra
+                # open shell on closed lofts like CellComplex.Torus).
+                try:
+                    be = Edge.ByStartVertexEndVertex(v_a, v_b, tolerance=tolerance, silent=True)
+                except Exception:
+                    be = None
+                return be
+
+            for j in range(len(w1_edges)):
                 e1 = w1_edges[j]
                 e2 = w2_edges[j]
-                e3 = None
-                e4 = None
-                try:
-                    e3 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.StartVertex(e2), tolerance=tolerance, silent=True)
-                except:
-                    try:
-                        e4 = Edge.ByStartVertexEndVertex(Edge.EndVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
-                        f = Face.ByExternalBoundary(Wire.ByEdges([e1, e2, e4], tolerance=tolerance))
-                        if triangulate == True:
-                            if len(Topology.Vertices(face)) > 3:
-                                triangles = Face.Triangulate(face, tolerance=tolerance)
-                            else:
-                                triangles = [face]
-                            faces += triangles
-                        else:
-                            faces.append(f)
-                    except:
-                        pass
-                try:
-                    e4 = Edge.ByStartVertexEndVertex(Edge.EndVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
-                except:
-                    try:
-                        e3 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.StartVertex(e2), tolerance=tolerance, silent=True)
-                        f = Face.ByWire(Wire.ByEdges([e1, e2, e3], tolerance=tolerance), tolerance=tolerance)
-                        if triangulate == True:
-                            if len(Topology.Vertices(face)) > 3:
-                                triangles = Face.Triangulate(face, tolerance=tolerance)
-                            else:
-                                triangles = [face]
-                            faces += triangles
-                        else:
-                            faces.append(f)
-                    except:
-                        pass
-                if e3 and e4:
-                    if triangulate == True:
-                        e5 = Edge.ByStartVertexEndVertex(Edge.StartVertex(e1), Edge.EndVertex(e2), tolerance=tolerance, silent=True)
-                        faces.append(Face.ByWire(Wire.ByEdges([e1, e5, e4], tolerance=tolerance), tolerance=tolerance))
-                        faces.append(Face.ByWire(Wire.ByEdges([e2, e5, e3], tolerance=tolerance), tolerance=tolerance))
-                    else:
-                        f = Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance) or Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance)
-                        if f:
-                            faces.append(f)
+                e3 = _bridge(Edge.StartVertex(e1), Edge.StartVertex(e2))
+                e4 = _bridge(Edge.EndVertex(e1), Edge.EndVertex(e2))
 
-                elif e3:
-                    faces.append(Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance))
-                elif e4:
-                    faces.append(Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance))
+                f = None
+                if e3 is not None and e4 is not None:
+                    f = Face.ByWire(Wire.ByEdges([e1, e4, e2, e3], tolerance=tolerance), tolerance=tolerance)
+                    if f is None:
+                        f = Face.ByWire(Wire.ByEdges([e1, e3, e2, e4], tolerance=tolerance), tolerance=tolerance)
+                elif e3 is not None:
+                    f = Face.ByWire(Wire.ByEdges([e1, e3, e2], tolerance=tolerance), tolerance=tolerance)
+                elif e4 is not None:
+                    f = Face.ByWire(Wire.ByEdges([e1, e4, e2], tolerance=tolerance), tolerance=tolerance)
+                if f is None:
+                    continue
+                if triangulate == True:
+                    if len(Topology.Vertices(f)) > 3:
+                        faces.extend(Face.Triangulate(f, tolerance=tolerance))
+                    else:
+                        faces.append(f)
+                else:
+                    faces.append(f)
         return CellComplex.ByFaces(faces, tolerance=tolerance)
 
     @staticmethod

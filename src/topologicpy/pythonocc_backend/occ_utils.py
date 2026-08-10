@@ -64,20 +64,9 @@ def make_occ_face(wire):
 
 def make_occ_shell(faces: list):
     """
-    Builds a Shell from independently-constructed Faces.
-
-    Faces built via make_occ_face() are each made from their own fresh,
-    coordinate-only geometry (see make_occ_edge's docstring-equivalent note
-    below) -- two adjacent faces do NOT share the same underlying
-    TopoDS_Vertex/Edge at their common boundary even when geometrically
-    coincident. A BRep_Builder.Add()-only shell is therefore topologically
-    "leaky": BRepCheck_Analyzer reports it invalid, and downstream boolean
-    operations (BOPAlgo_CellsBuilder etc.) silently fail to split it
-    correctly (verified empirically: an "leaky" box built this way did not
-    split when cut by a plane, while a clean BRepPrimAPI_MakeBox did).
-    BRepBuilderAPI_Sewing fuses coincident vertices/edges across face
-    boundaries within tolerance, producing a real watertight shell -- use it
-    instead of a bare BRep_Builder shell.
+    Build a watertight Shell from independently built faces: their coincident edges and
+    vertices don't share OCCT identity, so a bare BRep_Builder shell is invalid and breaks
+    downstream booleans. BRepBuilderAPI_Sewing fuses the coincident boundaries.
     """
     if not faces:
         return None
@@ -112,17 +101,27 @@ def make_occ_shell(faces: list):
         sewn = None
 
     if sewn is not None and not sewn.IsNull():
-        try:
-            if sewn.ShapeType() == 3:  # TopAbs_SHELL
-                return topods.Shell(sewn)
-        except Exception:
-            pass
+        # Keep EVERY sewn shell. Returning only the first shell silently drops
+        # the other half's faces when a face soup sews into two closed shells
+        # (e.g. the Dodecahedron's two half-clusters that never weld into one
+        # shell): the wrapper then reports more faces than the shape actually
+        # carries, which corrupts transforms and geometry-based rebuilds.
         try:
             from OCC.Core.TopExp import TopExp_Explorer
             from OCC.Core.TopAbs import TopAbs_SHELL
+            shells = []
             explorer = TopExp_Explorer(sewn, TopAbs_SHELL)
-            if explorer.More():
-                return topods.Shell(explorer.Current())
+            while explorer.More():
+                shells.append(explorer.Current())
+                explorer.Next()
+            if shells:
+                if sewn.ShapeType() == 3 and len(shells) == 1:
+                    return topods.Shell(sewn)
+                if len(shells) == 1:
+                    return topods.Shell(shells[0])
+                # Multiple shells: return the whole compound so make_occ_cell
+                # can build a solid retaining every shell.
+                return sewn
         except Exception:
             pass
 
@@ -141,6 +140,47 @@ def make_occ_shell(faces: list):
     if added == 0:
         return None
     return occ_shell
+
+
+
+def _build_solid_from_shells(shape):
+    """
+    Build a single TopoDS_Solid retaining EVERY Shell sub-shape of ``shape``,
+    oriented for a positive volume. Used when a face soup sews into several
+    closed shells (e.g. the Dodecahedron's two half-clusters that never weld
+    into one shell): dropping all but the first shell loses half the cell's
+    faces and corrupts everything downstream (transforms, Geometry, rebuilds).
+    """
+    if shape is None:
+        return None
+    try:
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopAbs import TopAbs_SHELL
+        from OCC.Core.TopoDS import TopoDS_Solid
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.BRepLib import breplib
+        shells = []
+        explorer = TopExp_Explorer(shape, TopAbs_SHELL)
+        while explorer.More():
+            shells.append(explorer.Current())
+            explorer.Next()
+        if len(shells) < 2:
+            return None
+        builder = BRep_Builder()
+        solid = TopoDS_Solid()
+        builder.MakeSolid(solid)
+        for shell in shells:
+            try:
+                builder.Add(solid, shell)
+            except Exception:
+                continue
+        try:
+            breplib.OrientClosedSolid(solid)
+        except Exception:
+            pass
+        return solid
+    except Exception:
+        return None
 
 
 def make_occ_cell(shell):
@@ -162,6 +202,12 @@ def make_occ_cell(shell):
         occ_shell = make_occ_shell(faces) if faces else None
     if occ_shell is None:
         return None
+
+    # Multi-shell shape, before the single-shell coercion below: keep every
+    # shell's faces (see _build_solid_from_shells docstring).
+    multi_solid = _build_solid_from_shells(occ_shell)
+    if multi_solid is not None:
+        return multi_solid
 
     try:
         occ_shell = topods.Shell(occ_shell)
@@ -199,6 +245,7 @@ def make_occ_cell(shell):
         except Exception:
             pass
         return solid
+
 
     try:
         solid_maker = BRepBuilderAPI_MakeSolid(occ_shell)
