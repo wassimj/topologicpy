@@ -111,6 +111,7 @@ src/topologicpy/pythonocc_backend/vertex.py
 src/topologicpy/pythonocc_backend/wire.py
 tests/test_Aperture.py
 tests/test_BVH.py
+tests/test_Booleans.py
 tests/test_CSG.py
 tests/test_Cell.py
 tests/test_CellComplex.py
@@ -124,6 +125,7 @@ tests/test_EnergyModel.py
 tests/test_Face.py
 tests/test_GA.py
 tests/test_GQL.py
+tests/test_GeometricProperties.py
 tests/test_Graph.py
 tests/test_GraphDB.py
 tests/test_GraphRAG.py
@@ -142,7 +144,9 @@ tests/test_Reasoner.py
 tests/test_ShapeGrammar.py
 tests/test_Shell.py
 tests/test_TGraph.py
+tests/test_TQueries.py
 tests/test_Topology.py
+tests/test_Transformations.py
 tests/test_Vector.py
 tests/test_Vertex.py
 tests/test_Wire.py

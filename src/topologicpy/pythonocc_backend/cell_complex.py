@@ -92,6 +92,65 @@ def _is_null_shape(shape):
         return True
 
 
+def _drop_open_shells(shape):
+    """
+    Rebuild a single SOLID dropping open (zero-enclosed-volume) shells: closed
+    lofts (e.g. CellComplex.Torus) can carry a degenerate open shell that
+    inflates the Shell count (2 vs core's 1). A genuine cavity shell encloses
+    non-zero volume and is kept; compsolids are untouched.
+    """
+    if shape is None or _is_null_shape(shape):
+        return shape
+    try:
+        from OCC.Core.TopAbs import TopAbs_SOLID, TopAbs_SHELL
+        if shape.ShapeType() != TopAbs_SOLID:
+            return shape
+    except Exception:
+        return shape
+    try:
+        from OCC.Core.TopExp import TopExp_Explorer
+        from OCC.Core.TopoDS import TopoDS_Solid
+        from OCC.Core.BRep import BRep_Builder
+        from OCC.Core.GProp import GProp_GProps
+        from OCC.Core.BRepGProp import brepgprop
+    except Exception:
+        return shape
+
+    shells = []
+    explorer = TopExp_Explorer(shape, TopAbs_SHELL)
+    while explorer.More():
+        shell = explorer.Current()
+        explorer.Next()
+        try:
+            props = GProp_GProps()
+            brepgprop.VolumeProperties(shell, props)
+        except Exception:
+            continue
+        if abs(props.Mass()) > 1e-9:
+            shells.append(shell)
+
+    if not shells:
+        return shape
+    # Count shells actually present to know whether anything was dropped.
+    total = 0
+    exp2 = TopExp_Explorer(shape, TopAbs_SHELL)
+    while exp2.More():
+        total += 1
+        exp2.Next()
+    if total == len(shells):
+        return shape
+
+    try:
+        builder = BRep_Builder()
+        solid = TopoDS_Solid()
+        builder.MakeSolid(solid)
+        for shell in shells:
+            builder.Add(solid, shell)
+        return solid
+    except Exception:
+        return shape
+
+
 @dataclass(eq=False)
 class CellComplex(Topology):
     cells: list = field(default_factory=list)
@@ -99,17 +158,9 @@ class CellComplex(Topology):
     @staticmethod
     def _build_from_shapes(shapes, tolerance=0.0001):
         """
-        Genuine non-manifold CellComplex construction: partitions 3D space
-        bounded by the input Face/Cell shapes into every resulting Solid,
-        sharing Faces between adjacent Solids.
-
-        BOPAlgo_CellsBuilder partitions same-dimensional shapes (fed pure
-        Faces, it builds 2D face-cells, not 3D solids) so it is the wrong
-        tool here. BOPAlgo_MakerVolume is OCCT's dedicated tool for building
-        volumetric cells from a Face/Shell/Solid boundary soup, including
-        shared internal faces between adjacent volumes -- verified
-        empirically to produce 2 distinct Solids from 12 Faces forming two
-        face-adjacent boxes, where BOPAlgo_CellsBuilder produced 0.
+        True non-manifold CellComplex construction: BOPAlgo_MakerVolume partitions the
+        Face/Shell/Solid boundary soup into every resulting Solid with shared internal faces
+        (BOPAlgo_CellsBuilder wrong here: fed pure Faces it builds 2D face-cells).
         """
         shapes = [s for s in (shapes or []) if not _is_null_shape(s)]
         if not shapes or BOPAlgo_MakerVolume is None:
@@ -142,6 +193,14 @@ class CellComplex(Topology):
             compsolid = _as_compsolid(result_shape)
             if compsolid is not None:
                 result_shape = compsolid
+        else:
+            # A single-solid loft/partition can carry an open, zero-volume
+            # shell (e.g. CellComplex.Torus' made-by-Spin solid). topologic_core
+            # builds a single clean shell; our BOPAlgo_MakerVolume emits a
+            # spurious extra shell on such closed lofts, inflating the Shell
+            # count (2 vs 1). Drop zero-volume shells -- a genuine void
+            # (cavity) shell encloses non-zero volume and is preserved.
+            result_shape = _drop_open_shells(result_shape)
 
         result = Topology.ByOcctShape(result_shape)
         if isinstance(result, CellComplex):

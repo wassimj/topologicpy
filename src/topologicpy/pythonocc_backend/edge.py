@@ -46,16 +46,9 @@ class Edge(Topology):
     @staticmethod
     def ByCurve(points, degree: int = 3, periodic: bool = False, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Real
-        best-effort implementation for direct Core callers: builds a
-        (possibly curved) edge by interpolating a B-spline through the given
-        list of Vertex control/interpolation points. `Edge.start`/`Edge.end`
-        remain the straight endpoints (matching how every other Edge in this
-        backend exposes start/end); the underlying OCCT shape is the real
-        curved geometry. `periodic` is accepted for API compatibility but not
-        wired up (periodic B-spline construction needs a distinct OCCT API
-        path); it is silently ignored.
+        Not in the guide's checklist and unreferenced by the algorithm layer. Best-effort for
+        direct Core callers: B-spline through the given points; start/end stay straight
+        endpoints; periodic is accepted but ignored.
         """
         try:
             from OCC.Core.gp import gp_Pnt
@@ -84,8 +77,17 @@ class Edge(Topology):
     def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
         try:
             from OCC.Core.TopExp import topexp
-            v1 = topexp.FirstVertex(shape)
-            v2 = topexp.LastVertex(shape)
+            # CumOri=True makes FirstVertex/LastVertex honor the edge's own
+            # Orientation flag. Without it, a REVERSED edge (e.g. the shared
+            # boundary edge of two adjacent, non-manifold cells, which is
+            # FORWARD on one side and REVERSED on the other) reports the same
+            # start/end regardless of orientation, which used to force
+            # Wire.ByOcctShape to fabricate a brand-new edge shape just to get
+            # walk-order-correct start/end -- silently breaking edge identity
+            # (IsSame/hash) between the two cells and doubling shared-edge
+            # counts on every non-manifold seam.
+            v1 = topexp.FirstVertex(shape, True)
+            v2 = topexp.LastVertex(shape, True)
             start = Vertex.ByOcctShape(v1)
             end = Vertex.ByOcctShape(v2)
         except Exception:
@@ -119,22 +121,84 @@ class Edge(Topology):
             return 0
         return result
 
+    def AdjacentEdges(self, hostTopology=None, output=None):
+        """Edges in hostTopology (other than self) that share a vertex with self."""
+        from .helpers import unique_by_uuid
+        result = []
+        if hostTopology is not None:
+            candidates = Topology.Edges(hostTopology) or []
+            for other in candidates:
+                if other is self or not isinstance(other, Edge) or same_vertex(other.start, self.start) and same_vertex(other.end, self.end):
+                    continue
+                if (
+                    same_vertex(self.start, other.start) or same_vertex(self.start, other.end)
+                    or same_vertex(self.end, other.start) or same_vertex(self.end, other.end)
+                ):
+                    result.append(other)
+            result = unique_by_uuid(result)
+        if output is not None:
+            output.extend(result)
+            return 0
+        return result
+
+    @staticmethod
+    def Reverse(edge, tolerance: float = 0.0001, silent: bool = False):
+        """Returns a new Edge with start and end swapped."""
+        if not isinstance(edge, Edge):
+            return None
+        return Edge.ByStartVertexEndVertex(edge.end, edge.start)
+
+    def Direction(self, mantissa: int = 6):
+        """Returns the direction vector [dx, dy, dz] of the edge."""
+        import math
+        dx = self.end.x - self.start.x
+        dy = self.end.y - self.start.y
+        dz = self.end.z - self.start.z
+        mag = math.sqrt(dx*dx + dy*dy + dz*dz)
+        if mag == 0:
+            return [0, 0, 0]
+        return [round(dx/mag, mantissa), round(dy/mag, mantissa), round(dz/mag, mantissa)]
+
+    def VertexByParameter(self, u: float = 0.0):
+        """Creates a vertex at parameter u along the edge (0=start, 1=end)."""
+        if u == 0:
+            return self.start
+        elif u == 1:
+            return self.end
+        else:
+            return Vertex.ByCoordinates(
+                self.start.x + (self.end.x - self.start.x) * u,
+                self.start.y + (self.end.y - self.start.y) * u,
+                self.start.z + (self.end.z - self.start.z) * u,
+            )
+
+    def ParameterAtVertex(self, vertex, mantissa: int = 6, tolerance: float = 0.0001):
+        """Returns the parameter u at the given vertex location."""
+        if not isinstance(vertex, Vertex):
+            return None
+        length2 = (
+            (self.end.x - self.start.x) ** 2
+            + (self.end.y - self.start.y) ** 2
+            + (self.end.z - self.start.z) ** 2
+        )
+        if length2 == 0:
+            return 0
+        t = (
+            (vertex.x - self.start.x) * (self.end.x - self.start.x)
+            + (vertex.y - self.start.y) * (self.end.y - self.start.y)
+            + (vertex.z - self.start.z) * (self.end.z - self.start.z)
+        ) / length2
+        return round(t, mantissa)
+
+    def Length(self):
+        """Returns the length of the edge."""
+        return distance3(self.start, self.end)
+
     def Intersect(self, otherTopology, transferDictionary: bool = False):
         """
-        Instance method (not @staticmethod) so both calling conventions work:
-        Core.Topology.Intersect(edge, other) and
-        Core.InstanceCall(edge, 'Intersect', other) (the latter is how
-        topologicpy.Topology.Intersect actually dispatches).
-
-        General BRepAlgoAPI_Common (used by the base Topology.Intersect) only
-        finds a coincident sub-region between two shapes; it does not report a
-        transversal point where two finite 1-D edges merely cross in space
-        (their common region has zero length, so OCCT reports "no
-        intersection"). Handle Edge-vs-Edge specially with an analytic
-        segment/segment closest-point test and fall back to the general
-        boolean-based implementation for every other case (and for the rare
-        collinear/overlapping-edges case, where a real coincident region does
-        exist and BRepAlgoAPI_Common is the right tool).
+        Instance method so both calling conventions work. Edge-vs-edge uses an analytic
+        closest-point test (BRepAlgoAPI_Common misses transversal zero-length crossings); all
+        other cases (incl. collinear overlap) use the general boolean.
         """
         if not isinstance(otherTopology, Edge):
             return Topology._binary_boolean(self, otherTopology, _BRepAlgoAPI_Common, transferDictionary)
