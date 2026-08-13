@@ -65,15 +65,9 @@ def edge_key(edge, tolerance: float = 0.0001):
 
 def dedupe_vertices_by_distance(vertices: Iterable[Any], tolerance: float = 0.0001) -> list:
     """
-    Merge vertices that are within `tolerance` of each other.
-
-    Plain round()-based bucketing (vertex_key) can fail to merge two points
-    that are truly within tolerance but happen to straddle a bucket
-    boundary (e.g. 0.00004999 and 0.00005001 round to different buckets).
-    This uses a floor-based spatial grid sized to `tolerance` instead, so
-    any true duplicate is guaranteed to land in the same cell or one of its
-    26 neighbours, and confirms it with a real distance3 check rather than
-    trusting the bucket key alone.
+    Merge vertices within tolerance using a floor-based spatial grid sized to
+    the tolerance (round-bucketing can straddle bucket boundaries), confirming
+    each merge with a real distance3 check.
     """
     if tolerance is None or tolerance <= 0:
         tolerance = 0.0001

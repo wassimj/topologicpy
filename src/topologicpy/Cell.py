@@ -521,6 +521,7 @@ class Cell():
         from topologicpy.Edge import Edge
         from topologicpy.Wire import Wire
         from topologicpy.Cell import Cell
+        from topologicpy.Vertex import Vertex
 
         # -----------------------------
         # Validation
@@ -619,6 +620,17 @@ class Cell():
                 # We try to continue with min length
             count = min(len(edgesA), len(edgesB))
 
+            # Get external boundary edge geometries to identify outer vs inner
+            ext_boundary = Face.ExternalBoundary(faceA)
+            ext_edges = Topology.Edges(ext_boundary) if ext_boundary else []
+            ext_edge_keys = set()
+            for e in ext_edges:
+                sv = Edge.StartVertex(e)
+                ev = Edge.EndVertex(e)
+                key = tuple(sorted([(round(Vertex.X(sv), 8), round(Vertex.Y(sv), 8), round(Vertex.Z(sv), 8)),
+                                     (round(Vertex.X(ev), 8), round(Vertex.Y(ev), 8), round(Vertex.Z(ev), 8))]))
+                ext_edge_keys.add(key)
+
             for j in range(count):
                 eA = edgesA[j]
                 eB = edgesB[j]
@@ -632,11 +644,26 @@ class Cell():
                 vA1, vA2 = vA
                 vB1, vB2 = vB
 
+                # Check if this edge is from the inner boundary (hole)
+                svA = Edge.StartVertex(eA)
+                evA = Edge.EndVertex(eA)
+                edge_key = tuple(sorted([(round(Vertex.X(svA), 8), round(Vertex.Y(svA), 8), round(Vertex.Z(svA), 8)),
+                                         (round(Vertex.X(evA), 8), round(Vertex.Y(evA), 8), round(Vertex.Z(evA), 8))]))
+                is_inner = edge_key not in ext_edge_keys
+
                 try:
-                    e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
-                    e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
-                    e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
-                    e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
+                    if is_inner:
+                        # Reversed winding for inner hole edges - creates inward-facing normals
+                        e1 = Edge.ByStartVertexEndVertex(vA2, vA1)
+                        e2 = Edge.ByStartVertexEndVertex(vA1, vB1)
+                        e3 = Edge.ByStartVertexEndVertex(vB1, vB2)
+                        e4 = Edge.ByStartVertexEndVertex(vB2, vA2)
+                    else:
+                        # Normal winding for outer boundary edges
+                        e1 = Edge.ByStartVertexEndVertex(vA1, vA2)
+                        e2 = Edge.ByStartVertexEndVertex(vA2, vB2)
+                        e3 = Edge.ByStartVertexEndVertex(vB2, vB1)
+                        e4 = Edge.ByStartVertexEndVertex(vB1, vA1)
 
                     if not (e1 and e2 and e3 and e4):
                         continue
@@ -2170,6 +2197,14 @@ class Cell():
         cluster2 = Topology.Rotate(cluster, origin=Vertex.Origin(), axis=[1, 0, 0], angle=180)
         vertices = Topology.Vertices(cluster)
         zList = [Vertex.Z(v) for v in vertices]
+        # Round away the ~1e-17 float noise topologic kernels leave on the
+        # equator vertices. Without this, zList starts with several distinct
+        # near-zero values (e.g. -1e-17 / +2e-17) and zoffset = zList[1]-
+        # zList[0] collapse to 0.0, mis-translating the mirrored half by the
+        # ring step and leaving the two halves 0.5 apart. topologic_core's
+        # kernel welds across that gap anyway, but the PythonOCC backend's
+        # sewing cannot, producing two half-shells and a corrupt Dodecahedron.
+        zList = [round(Vertex.Z(v), 6) for v in vertices]
         zList = list(set(zList))
         zList.sort()
         zoffset = zList[1] - zList[0]
@@ -2192,22 +2227,20 @@ class Cell():
         elif placement == "lowerleft":
             dodecahedron = Topology.Translate(dodecahedron, radius, radius, radius)
         
-        geo = Topology.Geometry(dodecahedron)
-        vertices = [Vertex.ByCoordinates(coords) for coords in geo['vertices']]
-        vertices = Vertex.Fuse(vertices)
-        coords = [Vertex.Coordinates(v) for v in vertices]
-        rebuilt = Topology.RemoveCoplanarFaces(Topology.SelfMerge(Topology.ByGeometry(vertices=coords, faces=geo['faces'])))
-        # Under the pythonOCC backend the rebuilt geometry comes back as a Shell;
-        # re-solidify it into a Cell so the constructor honours its contract.
-        if not Topology.IsInstance(rebuilt, "cell"):
+        # The direct Cell.ByFaces result is already a correct, transform-safe
+        # dodecahedron. The old geometry-rebuild step (SelfMerge/ByGeometry ->
+        # RemoveCoplanarFaces) was a workaround for a pythonocc backend that
+        # produced a broken half-shell cell; with the backend fixed it now
+        # DEGRADES the solid (pythonocc: 12 -> 10 faces; core: 12 -> 14), so it
+        # is only used as a last-resort fallback if the direct cell is invalid.
+        if not Topology.IsInstance(dodecahedron, "cell"):
             try:
-                rebuilt = Cell.ByFaces(Topology.Faces(rebuilt, silent=True), tolerance=tolerance, silent=True)
+                dodecahedron = Cell.ByFaces(Topology.Faces(dodecahedron, silent=True), tolerance=tolerance, silent=True)
             except Exception:
                 try:
-                    rebuilt = Cell.ByShell(rebuilt, tolerance=tolerance, silent=True)
+                    dodecahedron = Cell.ByShell(dodecahedron, tolerance=tolerance, silent=True)
                 except Exception:
-                    rebuilt = None
-        dodecahedron = rebuilt
+                    dodecahedron = None
         dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
         dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
         return dodecahedron

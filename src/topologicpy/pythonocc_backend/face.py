@@ -8,7 +8,7 @@ from .wire import Wire
 from .vertex import Vertex
 from .edge import Edge
 from .occ_utils import make_occ_face
-from .helpers import unique_by_uuid
+from .helpers import unique_by_uuid, edge_key
 
 
 @dataclass(eq=False)
@@ -30,11 +30,11 @@ class Face(Topology):
 
     @staticmethod
     def ByWires(externalBoundary, internalBoundaries=None):
-        face = Face.ByExternalBoundary(externalBoundary)
-        if face is None:
-            return None
-        face.internals = [w for w in (internalBoundaries or []) if isinstance(w, Wire)]
-        return face
+        internalBoundaries = [w for w in (internalBoundaries or []) if isinstance(w, Wire)]
+        if not internalBoundaries:
+            return Face.ByExternalBoundary(externalBoundary)
+        # Use ByExternalInternalBoundaries to properly add holes to OCCT shape
+        return Face.ByExternalInternalBoundaries(externalBoundary, internalBoundaries)
 
     @staticmethod
     def ByVertices(vertices):
@@ -163,13 +163,40 @@ class Face(Topology):
             return 0
         return result
 
+    def AdjacentFaces(self, hostTopology=None, output=None):
+        """Faces in hostTopology (other than self) that share an edge with self."""
+        result = []
+        if hostTopology is not None:
+            self_keys = {edge_key(e) for e in self.Edges() if isinstance(e, Edge)}
+            candidates = Topology.Faces(hostTopology) or []
+            for other in candidates:
+                if other is self or not isinstance(other, Face):
+                    continue
+                other_keys = {edge_key(e) for e in other.Edges() if isinstance(e, Edge)}
+                if other_keys == self_keys:
+                    # Same face as self (a distinct Python object wrapping
+                    # the same boundary), not a genuinely adjacent one.
+                    continue
+                if self_keys & other_keys:
+                    result.append(other)
+            result = unique_by_uuid(result)
+        if output is not None:
+            output.extend(result)
+            return 0
+        return result
+
 
 class FaceUtility:
     @staticmethod
     def Area(face):
         if not isinstance(face, Face):
             return None
-        vertices = face.Vertices()
+        # Use only external boundary vertices for the outer area calculation
+        external = getattr(face, 'external', None)
+        if external is not None and hasattr(external, 'Vertices'):
+            vertices = external.Vertices()
+        else:
+            vertices = face.Vertices()
         if len(vertices) < 3:
             return 0.0
         nx = ny = nz = 0.0

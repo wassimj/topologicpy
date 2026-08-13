@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: topologicpy
-Version: 0.9.58
+Version: 0.9.59
 Summary: An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction.
 Author-email: Wassim Jabi <wassim.jabi@gmail.com>
 License: AGPL v3 License
@@ -36,6 +36,7 @@ Requires-Dist: shapely
 Requires-Dist: plotly
 Requires-Dist: lark
 Requires-Dist: webcolors
+Requires-Dist: nbformat
 Requires-Dist: topologic_core>=7.0.1
 Provides-Extra: test
 Requires-Dist: pytest-xdist>=2.4.0; extra == "test"

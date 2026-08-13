@@ -27,15 +27,11 @@ class Wire(Topology):
     @staticmethod
     def ByOcctShape(shape, dictionary=None, contents=None, contexts=None, apertures=None):
         """
-        Generic TopExp_Explorer returns a wire's edges in arbitrary
-        creation/storage order, not connectivity (walk) order. Several
-        algorithm-layer callers (Wire.IsClosed/Wire.Close, and anything
-        chaining off them) naively check edges[0].start == edges[-1].end
-        rather than real OCCT connectivity, so an out-of-walk-order .edges
-        list makes a topologically closed wire look open. BRepTools_WireExplorer
-        is OCCT's dedicated connectivity-ordered wire walker -- use it so the
-        rebuilt .edges list is always in true head-to-tail order regardless
-        of the order the underlying edges were originally added in.
+        Use BRepTools_WireExplorer (connectivity/walk order), not TopExp_Explorer (storage
+        order), so the rebuilt .edges are head-to-tail -- the algorithm layer's IsClosed/Close
+        only compare edges[0].start to edges[-1].end. Reuse each occ_edge as-is: a reversed
+        edge stays IsSame to its forward twin, preserving shared-edge identity across
+        non-manifold cells.
         """
         edges = []
         try:
@@ -47,9 +43,6 @@ class Wire(Topology):
                 occ_edge = wire_explorer.Current()
                 e = Edge.ByOcctShape(occ_edge)
                 if e is not None:
-                    if wire_explorer.Orientation() == 1:  # TopAbs_REVERSED
-                        flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
-                        e = flipped if flipped is not None else e
                     edges.append(e)
                 wire_explorer.Next()
         except Exception:
@@ -114,7 +107,20 @@ class Wire(Topology):
                     break
                 if same_vertex(edge.end, last, tolerance):
                     found_index = i
-                    found_edge = Edge.ByStartVertexEndVertex(edge.end, edge.start)
+                    # Reuse the original edge's shape (just orientation-
+                    # flipped via .Reversed(), which OCCT keeps IsSame/hash-
+                    # equal to the original) instead of fabricating a brand
+                    # new edge shape -- Edge.ByStartVertexEndVertex would
+                    # sever this edge's identity from any other reference to
+                    # it elsewhere in the same result, silently duplicating
+                    # its vertices when the two are later merged/deduped.
+                    found_edge = None
+                    try:
+                        found_edge = Edge.ByOcctShape(edge.shape.Reversed())
+                    except Exception:
+                        found_edge = None
+                    if found_edge is None:
+                        found_edge = Edge.ByStartVertexEndVertex(edge.end, edge.start)
                     if found_edge is not None:
                         found_edge.dictionary = edge.dictionary
                     break
@@ -181,16 +187,9 @@ class Wire(Topology):
     @staticmethod
     def ByWires(wires, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Real
-        best-effort implementation for direct Core callers: pools every edge
-        from every input wire and re-stitches them into (one or more, if the
-        result is disconnected) wire(s) via the existing edge-ordering logic,
-        matching real topologic_core's "concatenate wires that share
-        endpoints into a single wire" semantics. Returns a single Wire if all
-        pooled edges are connected, else a list of Wires (one per connected
-        component) -- callers expecting a single always-Wire result should
-        pre-check connectivity, exactly as with real topologic_core.
+        Not in the guide's checklist; unreferenced by the algorithm layer.
+        Best-effort for direct Core callers: pool every edge and re-stitch into
+        one Wire (or one per connected component) via the edge-ordering logic.
         """
         pooled_edges = []
         for w in (wires or []):
@@ -231,14 +230,9 @@ class Wire(Topology):
 
     def Reverse(self, transferDictionaries: bool = False, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (Wire.Reverse there rebuilds via
-        Wire.ByVertices with a reversed vertex list and never reaches Core;
-        verified: zero call sites). Instance method (not @staticmethod) so
-        both calling conventions work. Real best-effort implementation for
-        direct Core callers: reverses the edge order and swaps each edge's
-        own start/end, so the resulting wire traverses in the opposite
-        direction.
+        Not in the guide's checklist; unreferenced by the algorithm layer.
+        Instance method for both calling conventions: reverse edge order and swap
+        each edge's start/end.
         """
         edges = getattr(self, "edges", []) or []
         if not edges:
@@ -354,15 +348,9 @@ class WireUtility:
     @staticmethod
     def Split(wire, tolerance: float = 0.0001):
         """
-        Not part of the guide's minimum checklist and not called by the
-        topologicpy algorithm layer (verified: zero call sites). Real
-        best-effort implementation for direct Core callers: splits a
-        (possibly branching / non-manifold) wire at every vertex whose degree
-        is not 2 (i.e. not a simple interior pass-through point) into its
-        maximal simple runs of edges. A simple open or closed wire -- the
-        only kind this backend's own Wire.ByEdges/.ByVertices ever build --
-        has no degree != 2 vertices (besides its own open endpoints) and so
-        splits into just itself.
+        Not in the guide's checklist; unreferenced by the algorithm layer.
+        Best-effort for direct Core callers: split a (possibly branching) wire at
+        every vertex of degree != 2 into its maximal simple edge runs.
         """
         if not isinstance(wire, Wire):
             return None
@@ -400,7 +388,13 @@ class WireUtility:
                             extended = True
                             break
                         if same_vertex(e.end, run[-1].end, tolerance):
-                            flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
+                            flipped = None
+                            try:
+                                flipped = Edge.ByOcctShape(e.shape.Reversed())
+                            except Exception:
+                                flipped = None
+                            if flipped is None:
+                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
                             if flipped is not None:
                                 run.append(flipped)
                                 remaining.remove(e)
@@ -418,7 +412,13 @@ class WireUtility:
                             extended = True
                             break
                         if same_vertex(e.start, run[0].start, tolerance):
-                            flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
+                            flipped = None
+                            try:
+                                flipped = Edge.ByOcctShape(e.shape.Reversed())
+                            except Exception:
+                                flipped = None
+                            if flipped is None:
+                                flipped = Edge.ByStartVertexEndVertex(e.end, e.start)
                             if flipped is not None:
                                 run.insert(0, flipped)
                                 remaining.remove(e)

@@ -34,6 +34,23 @@ class Shell(Topology):
             if not silent:
                 print("Shell.ByFaces - Error: Could not create an OpenCascade shell. Returning None.")
             return None
+        # Re-derive the Face wrappers from the sewn occ_shell rather than
+        # keeping the original, independently-built valid_faces list.
+        # make_occ_shell welds coincident vertices/edges across face
+        # boundaries via BRepBuilderAPI_Sewing, but that welding is only
+        # useful if the Shell's own Faces()/Edges() (which iterate
+        # self.faces, not self.shape) actually see the welded topology. Two
+        # faces coming from separately-computed boolean fragments (e.g. each
+        # face-pair of Topology.Intersect's per-face decomposition) are
+        # geometrically coincident along their shared boundary but were
+        # never the same OCCT edge/vertex until sewn -- keeping the
+        # pre-sewing faces here silently discarded that welding and doubled
+        # edge counts along every such seam.
+        from .topology import _iter_occ_subshapes, TopAbs_FACE
+        sewn_faces = [Topology.ByOcctShape(f) for f in _iter_occ_subshapes(occ_shell, TopAbs_FACE)]
+        sewn_faces = [f for f in sewn_faces if isinstance(f, Face)]
+        if len(sewn_faces) == len(valid_faces):
+            valid_faces = sewn_faces
         shell = Shell(shape=occ_shell, faces=valid_faces)
         Shell._patch_edge_face_membership(shell, valid_faces, tolerance=tolerance)
         return shell
@@ -41,14 +58,10 @@ class Shell(Topology):
     @staticmethod
     def _edge_face_incidence(faces, tolerance: float = 0.0001):
         """
-        Builds a mapping from a geometric edge key (endpoint coordinates,
-        order-independent, rounded to tolerance) to the list of (face, edge)
-        pairs that own an edge at that location.
-
-        Faces built independently (e.g. via Face.ByVertices) do not share
-        underlying OCCT edge sub-shapes even when they are geometrically
-        coincident, so incidence must be computed by endpoint geometry
-        (edge_key) rather than by OCCT shape identity/hash.
+        Map a geometric edge key (order-independent endpoint coords, tolerance-
+        rounded) to the owning (face, edge) pairs. Independently built faces don't
+        share OCCT edge shapes even when coincident, so incidence is geometric, not
+        shape-identity.
         """
         incidence = {}
         for face in faces:
@@ -64,41 +77,10 @@ class Shell(Topology):
     @staticmethod
     def _patch_edge_face_membership(shell, faces, tolerance: float = 0.0001):
         """
-        Monkeypatches a per-instance Faces(hostTopology, output) method onto
-        every edge belonging to the given faces, so that
-        Topology.SuperTopologies(edge, shell, topologyType="face") (which
-        dispatches to Core.InstanceCall(edge, 'Faces', hostTopology, output),
-        i.e. edge.Faces(hostTopology, output)) can report which face(s) of
-        *this* shell actually own that edge.
-
-        The generic Topology.Faces base-class dispatcher does not use
-        hostTopology as a filter (it only understands "does self carry its
-        own faces list", which a bare Edge never does), so without this an
-        edge's super-face count is always 0 regardless of the shell passed
-        in. This is what breaks the algorithm-layer Shell.ExternalBoundary
-        (src/topologicpy/Shell.py), which relies on exactly that mechanism
-        to tell boundary edges (1 owning face) from internal edges (2).
-
-        The same underlying Face/Edge Python objects can legitimately be
-        reused across more than one Shell.ByFaces call in the same session
-        (e.g. a test building both a closed 6-face box shell and a 1-face
-        open shell out of one shared face) -- each such shell has a
-        different notion of "how many faces of *this* shell own this edge".
-        A naive single "this edge's owning faces" monkeypatch would get
-        silently overwritten by whichever Shell was built most recently
-        sharing that edge, corrupting *other*, still-alive Shells built
-        earlier from the same face. So each edge instead accumulates a
-        {shell._uuid: owning_faces} map across every Shell.ByFaces call
-        that touches it (keyed by the shell's stable _uuid, not id(shell)
-        -- CPython can reuse a garbage-collected object's id(), which would
-        silently attribute a resurrected id to the wrong, unrelated Shell),
-        and the patched Faces() looks up by the hostTopology actually
-        passed in. A recognised hostTopology always returns its own
-        recorded entry; a *given* but unrecognised hostTopology returns an
-        empty list rather than guessing (returning another Shell's data
-        would be worse than returning nothing); only when no hostTopology
-        is given at all does it fall back to the most recently added entry,
-        matching the "None is no filter" convention used elsewhere.
+        Per-edge Faces(host,out) patch keyed by shell _uuid: an edge can be shared by
+        several Shell.ByFaces calls, each with a different owning-face count. A recognised
+        shell answers from its recorded map; an unrecognised host delegates to the general
+        Topology.Faces dispatch; no host falls back to the most recently recorded entry.
         """
         incidence = Shell._edge_face_incidence(faces, tolerance=tolerance)
         seen = set()
@@ -125,11 +107,16 @@ class Shell(Topology):
                         host_map = getattr(self, "_shell_faces_by_host", None) or {}
                         if hostTopology is not None:
                             host_key = getattr(hostTopology, "_uuid", None)
-                            # A specific host was asked for: only answer for a
-                            # recognised one. Returning another Shell's data
-                            # here would be silently wrong, so an unrecognised
-                            # host gets an empty result instead of a guess.
-                            result = list(host_map.get(host_key, [])) if host_key is not None else []
+                            if host_key is not None and host_key in host_map:
+                                result = list(host_map[host_key])
+                            else:
+                                # hostTopology is not one of the individual
+                                # Shells this edge was recorded against (e.g.
+                                # it's the owning CellComplex/Cell instead) --
+                                # fall back to the general-purpose vertex-set
+                                # SuperTopologies query rather than guessing
+                                # or returning an empty list.
+                                result = Topology.SuperTopologies(self, hostTopology, "Face") or []
                         elif host_map:
                             # No host given at all: fall back to the most
                             # recently recorded context for this edge.
@@ -165,39 +152,11 @@ class Shell(Topology):
     @staticmethod
     def _boundary_first_ordering(edges, host=None, tolerance: float = 0.0001):
         """
-        Reorders a flat edge list so that the free/boundary edges (the ones
-        with exactly one owning face, once .Faces() is patched -- see
-        _patch_edge_face_membership) come first, walk-ordered (or grouped
-        into walk-ordered disjoint chains via Wire._order_edges), followed by
-        the remaining (internal/shared) edges in their original order.
-
-        Why this matters: the algorithm-layer Shell.ExternalBoundary
-        (src/topologicpy/Shell.py) computes
-            ebEdges = [e for e in Topology.Edges(shell) if <e has 1 owning face>]
-        i.e. it filters *this* method's output down to just the boundary
-        edges, then does Topology.SelfMerge(Cluster.ByTopologies(ebEdges)).
-        That SelfMerge path (Topology._merge_edges_into_wires, out of this
-        file's scope) rebuilds a Wire's .edges list via TopExp_Explorer
-        traversal of the OCCT wire it constructs from whatever order it was
-        given the edges in -- empirically, in this pythonocc version, that
-        traversal reproduces true walk order only when the edges were fed to
-        BRepBuilderAPI_MakeWire in walk order (and consistently oriented --
-        not just "adjacent", but continuing in the same rotational sense)
-        already. If ebEdges preserves this method's relative order but that
-        order is scrambled, the rebuilt Wire ends up topologically closed
-        but with a .edges list that fails the naive edges[0].start ==
-        edges[-1].end checks in the (also out-of-scope, deliberately
-        untouched) Wire.IsClosed / Wire.Close, which breaks downstream
-        Face.ByWire / Shell.SelfMerge calls.
-
-        A plain single greedy walk over the full edge set is not enough: once
-        the internal edges connecting two faces are filtered back out, each
-        face's remaining boundary edges form their own short chain, and two
-        such chains discovered by an undirected walk are not guaranteed to
-        be co-orientable (one may need reversing relative to the other) --
-        so the boundary subset must be computed and ordered on its own terms
-        (via Wire._order_edges, which does handle per-edge reversal) rather
-        than derived as a byproduct of a whole-shell walk.
+        Orders free/boundary edges first as walk-ordered (or disjoint walk-ordered) chains,
+        then internal edges. The rebuilt Wire's .edges must be in true walk order because
+        the algorithm layer's IsClosed/Close only checks edges[0].start vs edges[-1].end;
+        boundary chains are ordered on their own (via Wire._order_edges) as they may need
+        per-edge reversal.
         """
         from .wire import Wire
 
@@ -301,21 +260,9 @@ class Shell(Topology):
     @staticmethod
     def _merge_boundary_edges(edges, tolerance: float = 0.0001):
         """
-        Stitches a list of boundary Edge objects into a Wire (or a Cluster of
-        Wires if they form disjoint chains).
-
-        Prefers Wire._order_edges/Wire.ByEdges over
-        Topology._merge_edges_into_wires when the edges form a single simple
-        chain: Wire.ByEdges keeps the wrapper's .edges list in true walk
-        order (start of edge i == end of edge i-1), which the (deliberately
-        untouched, out of scope) Wire.IsClosed / Wire.Close implementations
-        rely on -- they only compare edges[0].start to edges[-1].end rather
-        than checking real OCCT connectivity, so an out-of-order .edges list
-        (as produced by TopExp_Explorer traversal order inside
-        Wire.ByOcctShape) makes an otherwise perfectly closed wire look open
-        to that naive check. Falls back to Topology._merge_edges_into_wires
-        (OCCT BRepBuilderAPI_MakeWire-based, order-independent) whenever the
-        edges do not form one simple chain, e.g. disjoint boundary loops.
+        Stitch boundary edges into a Wire (or Cluster of Wires for disjoint chains). Prefer
+        Wire.ByEdges (keeps the walk-ordered .edges the naive IsClosed relies on) over
+        _merge_edges_into_wires; fall back for non-simple chains.
         """
         from .wire import Wire
 
@@ -378,17 +325,9 @@ class Shell(Topology):
 
     def Slice(self, otherTopology, transferDictionary: bool = False):
         """
-        Slices this (open) Shell's faces using otherTopology (typically a
-        Cluster of cutting Faces) as a cutting tool, keeping this shell's own
-        material. Unlike the generic Topology._partition_by (which wraps the
-        raw BOPAlgo_CellsBuilder compound result as a Cluster mixing Shells
-        and stray Faces), this reassembles the resulting sub-faces of self's
-        own shape into a single Shell whenever they are all that remains.
-
-        This is what Cell.Prism (src/topologicpy/Cell.py) needs: it calls
-        Topology.Slice(topologyA=shell, topologyB=sliceCluster) and then
-        requires the result to satisfy Topology.IsInstance(result, "Shell")
-        before handing it to Cell.ByShell.
+        Slice this Shell's faces by a cutting tool, keeping self's material, and reassemble
+        the surviving sub-faces into a single Shell (unlike the generic _partition_by which
+        wraps the raw result as a Cluster). Cell.Prism depends on returning a Shell.
         """
         from .topology import (
             _collect_boolean_operand_shapes,
@@ -460,11 +399,12 @@ class Shell(Topology):
     def Divide(self, otherTopology, transferDictionary: bool = False):
         return self.Slice(otherTopology, transferDictionary=transferDictionary)
 
-    def Impose(self, otherTopology, transferDictionary: bool = False):
-        return self.Slice(otherTopology, transferDictionary=transferDictionary)
-
-    def Imprint(self, otherTopology, transferDictionary: bool = False):
-        return self.Slice(otherTopology, transferDictionary=transferDictionary)
+    # Impose and Imprint intentionally do NOT alias Slice here (unlike
+    # Divide): Impose has its own distinct semantics (keep self's exclusive
+    # material AND otherTopology's whole, unsplit material -- see
+    # Topology.Impose), and Imprint is already handled correctly by the base
+    # Topology._split_by_tool. Aliasing both to Slice used to shadow those
+    # base-class implementations for every Shell operand.
 
 
 class ShellUtility:
@@ -502,16 +442,9 @@ class ShellUtility:
 
 def _shell_by_wires(wires, triangulate: bool = True, tolerance: float = 0.0001, silent: bool = False):
     """
-    Builds a Shell by lofting through a list of profile Wires: consecutive
-    wires are connected pairwise by side faces (one face per pair of
-    corresponding edges, optionally triangulated into two triangles).
-
-    This is the same "loft between consecutive wires" contract used by the
-    algorithm-layer Shell.ByWires (src/topologicpy/Shell.py), which builds
-    its own side faces directly out of Edge/Wire/Face primitives and only
-    calls into the backend via Shell.ByFaces -- so this backend-level
-    ByWires is a smaller, self-contained implementation of the same idea for
-    callers that go through Core.Shell.ByWires directly.
+    Backend CellComplex-style loft: connect consecutive profile Wires pairwise with side
+    faces (optionally triangulated). A smaller self-contained counterpart of
+    algorithm-layer Shell.ByWires for direct Core.Shell.ByWires callers.
     """
     from .wire import Wire
 
