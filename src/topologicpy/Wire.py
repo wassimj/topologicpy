@@ -1668,9 +1668,10 @@ class Wire():
         Parameters
         ----------
         vertices : list
-            the input list of vertices.
+            The input list of vertices.
         close : bool , optional
-            If True the last vertex will be connected to the first vertex to close the wire. Default is True.
+            If True, the last vertex will be connected to the first vertex to close
+            the wire. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -1689,64 +1690,201 @@ class Wire():
 
         if not isinstance(vertices, list):
             return None
-        vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
+
+        vertexList = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+
         if len(vertexList) < 2:
             if not silent:
                 print("Wire.ByVertices - Error: The number of vertices is less than 2. Returning None.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
+
+        # -------------------------------------------------------------------------
+        # First attempt: use the active backend's native implementation.
+        # -------------------------------------------------------------------------
+        try:
+            if Core.HasAttribute("Wire", "ByVertices"):
+                wire = Core.Wire.ByVertices(
+                    vertexList,
+                    close,
+                    tolerance
+                )
+                if Topology.IsInstance(wire, "Wire"):
+                    return wire
+        except Exception:
+            pass
+
+        # -------------------------------------------------------------------------
+        # Fallback: construct edges using the TopologicPy algorithm layer.
+        # -------------------------------------------------------------------------
         edges = []
-        for i in range(len(vertexList)-1):
+
+        for i in range(len(vertexList) - 1):
             v1 = vertexList[i]
-            v2 = vertexList[i+1]
-            e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True)
+            v2 = vertexList[i + 1]
+
+            e = Edge.ByVertices(
+                [v1, v2],
+                tolerance=tolerance,
+                silent=True
+            )
+
             if Topology.IsInstance(e, "Edge"):
                 edges.append(e)
-            else:
-                if not silent:
-                    print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
+            elif not silent:
+                print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print("caller name:", calframe[1][3])
+
         if close:
             v1 = vertexList[-1]
             v2 = vertexList[0]
-            e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True) # We want to force suppress errors and warnings here.
+
+            e = Edge.ByVertices(
+                [v1, v2],
+                tolerance=tolerance,
+                silent=True
+            )
+
             if Topology.IsInstance(e, "Edge"):
                 edges.append(e)
-            else:
-                if not silent:
-                    print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
-                    curframe = inspect.currentframe()
-                    calframe = inspect.getouterframes(curframe, 2)
-                    print('caller name:', calframe[1][3])
-        
+            elif not silent:
+                print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
+                curframe = inspect.currentframe()
+                calframe = inspect.getouterframes(curframe, 2)
+                print("caller name:", calframe[1][3])
+
         if len(edges) < 1:
             if not silent:
                 print("Wire.ByVertices - Error: The number of edges is less than 1. Returning None.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
-        elif len(edges) == 1:
+
+        if len(edges) == 1:
             if not silent:
                 print("Wire.ByVertices - Warning: The wire is made of only one edge.")
-            wire = Wire.ByEdges(edges, orient=False, silent=silent)
+            wire = Wire.ByEdges(
+                edges,
+                orient=False,
+                tolerance=tolerance,
+                silent=silent
+            )
         else:
-            wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+            wire = Topology.SelfMerge(
+                Cluster.ByTopologies(edges),
+                tolerance=tolerance
+            )
+
             if Topology.IsInstance(wire, "Edge"):
-                wire = Wire.ByEdges([wire], orient=False, silent=silent)
-        # Final Check
+                wire = Wire.ByEdges(
+                    [wire],
+                    orient=False,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+        # Final check.
         if not Topology.IsInstance(wire, "Wire"):
             if not silent:
                 print("Wire.ByVertices - Error: Could not create a wire. Returning None.")
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
+
         return wire
+    # @staticmethod
+    # def ByVertices(vertices: list, close: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    #     """
+    #     Creates a wire from the input list of vertices.
+
+    #     Parameters
+    #     ----------
+    #     vertices : list
+    #         the input list of vertices.
+    #     close : bool , optional
+    #         If True the last vertex will be connected to the first vertex to close the wire. Default is True.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Wire
+    #         The created wire.
+
+    #     """
+    #     from topologicpy.Edge import Edge
+    #     from topologicpy.Cluster import Cluster
+    #     from topologicpy.Topology import Topology
+    #     import inspect
+
+    #     if not isinstance(vertices, list):
+    #         return None
+    #     vertexList = [x for x in vertices if Topology.IsInstance(x, "Vertex")]
+    #     if len(vertexList) < 2:
+    #         if not silent:
+    #             print("Wire.ByVertices - Error: The number of vertices is less than 2. Returning None.")
+    #             curframe = inspect.currentframe()
+    #             calframe = inspect.getouterframes(curframe, 2)
+    #             print('caller name:', calframe[1][3])
+    #         return None
+    #     edges = []
+    #     for i in range(len(vertexList)-1):
+    #         v1 = vertexList[i]
+    #         v2 = vertexList[i+1]
+    #         e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True)
+    #         if Topology.IsInstance(e, "Edge"):
+    #             edges.append(e)
+    #         else:
+    #             if not silent:
+    #                 print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
+    #                 curframe = inspect.currentframe()
+    #                 calframe = inspect.getouterframes(curframe, 2)
+    #                 print('caller name:', calframe[1][3])
+    #     if close:
+    #         v1 = vertexList[-1]
+    #         v2 = vertexList[0]
+    #         e = Edge.ByVertices([v1, v2], tolerance=tolerance, silent=True) # We want to force suppress errors and warnings here.
+    #         if Topology.IsInstance(e, "Edge"):
+    #             edges.append(e)
+    #         else:
+    #             if not silent:
+    #                 print("Wire.ByVertices - Warning: Degenerate edge. Skipping.")
+    #                 curframe = inspect.currentframe()
+    #                 calframe = inspect.getouterframes(curframe, 2)
+    #                 print('caller name:', calframe[1][3])
+        
+    #     if len(edges) < 1:
+    #         if not silent:
+    #             print("Wire.ByVertices - Error: The number of edges is less than 1. Returning None.")
+    #             curframe = inspect.currentframe()
+    #             calframe = inspect.getouterframes(curframe, 2)
+    #             print('caller name:', calframe[1][3])
+    #         return None
+    #     elif len(edges) == 1:
+    #         if not silent:
+    #             print("Wire.ByVertices - Warning: The wire is made of only one edge.")
+    #         wire = Wire.ByEdges(edges, orient=False, silent=silent)
+    #     else:
+    #         wire = Topology.SelfMerge(Cluster.ByTopologies(edges), tolerance=tolerance)
+    #         if Topology.IsInstance(wire, "Edge"):
+    #             wire = Wire.ByEdges([wire], orient=False, silent=silent)
+    #     # Final Check
+    #     if not Topology.IsInstance(wire, "Wire"):
+    #         if not silent:
+    #             print("Wire.ByVertices - Error: Could not create a wire. Returning None.")
+    #             curframe = inspect.currentframe()
+    #             calframe = inspect.getouterframes(curframe, 2)
+    #             print('caller name:', calframe[1][3])
+    #         return None
+    #     return wire
 
     @staticmethod
     def ByVerticesCluster(cluster, close: bool = True, tolerance: float = 0.0001, silent: bool = False):

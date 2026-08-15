@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from .topology import Topology
+from .topology import (
+    Topology,
+    _is_null_shape,
+    _downward_wrappers,
+    TopAbs_VERTEX,
+    TopAbs_EDGE,
+    TopAbs_FACE,
+    TopAbs_SHELL,
+    )
 from .shell import Shell
 from .face import Face, FaceUtility
 from .wire import Wire
@@ -63,45 +71,72 @@ class Cell(Topology):
         return Cell.ByShell(shell, tolerance=tolerance, silent=silent)
 
     def Shells(self, hostTopology=None, shells=None):
-        result = list(getattr(self, "shells", []) or [])
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_SHELL
+            )
+        else:
+            result = list(getattr(self, "shells", []) or [])
+
         if shells is not None:
             shells.extend(result)
             return 0
+
         return result
 
     def Faces(self, hostTopology=None, faces=None):
-        result = []
-        for shell in self.shells:
-            result.extend(shell.Faces())
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_FACE
+            )
+        else:
+            result = []
+
+            for shell in getattr(self, "shells", []) or []:
+                result.extend(shell.Faces())
+
         if faces is not None:
             faces.extend(result)
             return 0
+
         return result
 
     def Edges(self, hostTopology=None, edges=None):
-        result = []
-        seen_keys = set()
-        for face in self.Faces():
-            for edge in FaceUtility.Edges(face) or []:
-                if not isinstance(edge, Edge):
-                    continue
-                key = edge_key(edge)
-                if key not in seen_keys:
-                    seen_keys.add(key)
-                    result.append(edge)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_EDGE
+            )
+        else:
+            result = []
+
+            for shell in getattr(self, "shells", []) or []:
+                result.extend(shell.Edges())
+
         if edges is not None:
             edges.extend(result)
             return 0
+
         return result
 
     def Vertices(self, hostTopology=None, vertices=None):
-        result = []
-        for edge in self.Edges():
-            result.extend([edge.start, edge.end])
-        result = _dedupe_vertices([v for v in result if isinstance(v, Vertex)])
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_VERTEX
+            )
+        else:
+            result = []
+
+            for shell in getattr(self, "shells", []) or []:
+                result.extend(shell.Vertices())
+
         if vertices is not None:
             vertices.extend(result)
             return 0
+
         return result
 
     def Cells(self, hostTopology=None, cells=None):

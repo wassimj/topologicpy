@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-# REVISION: 2026-08-15 Wire Union semantic promotion 002
-
 from dataclasses import dataclass, field
 from .topology import Topology
 from .vertex import Vertex
@@ -226,102 +224,6 @@ class Wire(Topology):
         wire.contents = list(contents) if contents else []
         wire.contexts = list(contexts) if contexts else []
         wire.apertures = list(apertures) if apertures else []
-
-        return wire
-
-    def Union(self, otherTopology, transferDictionary: bool = False):
-        """
-        Returns the union of this wire and the input topology.
-
-        For Wire/Wire unions, the generic OCCT Boolean may correctly compute a
-        connected branching one-dimensional network but wrap it as a Cluster.
-        Topologic permits such a non-manifold connected network to remain a
-        Wire. Therefore, after the generic Boolean completes, this method
-        promotes the result to a Wire only when every result edge can be
-        consumed by Wire.ByEdges without loss.
-
-        Parameters
-        ----------
-        otherTopology : Topology
-            The second input topology.
-        transferDictionary : bool , optional
-            If True, dictionaries are transferred by the generic Boolean
-            operation. Default is False.
-
-        Returns
-        -------
-        Topology
-            The Boolean union result.
-        """
-        result = Topology.Union(
-            self,
-            otherTopology,
-            transferDictionary
-        )
-
-        if result is None:
-            return None
-
-        if not isinstance(otherTopology, Wire):
-            return result
-
-        if isinstance(result, Wire):
-            return result
-
-        try:
-            result_edges = result.Edges() or []
-        except Exception:
-            result_edges = []
-
-        if not result_edges:
-            return result
-
-        wire = Wire.ByEdges(
-            result_edges
-        )
-
-        if wire is None:
-            return result
-
-        try:
-            wire_edges = wire.Edges() or []
-        except Exception:
-            return result
-
-        # A connected Wire must preserve every Boolean result Edge. If the
-        # reconstruction is partial, retain the original aggregate result.
-        if len(wire_edges) != len(result_edges):
-            return result
-
-        # Preserve metadata from the generic Boolean result.
-        try:
-            wire = Topology.SetDictionary(
-                wire,
-                Topology.GetDictionary(result)
-            )
-        except Exception:
-            try:
-                wire.dictionary = getattr(
-                    result,
-                    "dictionary",
-                    {}
-                )
-            except Exception:
-                pass
-
-        for attr in (
-            "contents",
-            "contexts",
-            "apertures",
-        ):
-            try:
-                setattr(
-                    wire,
-                    attr,
-                    list(getattr(result, attr, []) or [])
-                )
-            except Exception:
-                pass
 
         return wire
 

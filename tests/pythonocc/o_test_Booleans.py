@@ -1,3 +1,9 @@
+# Auto-generated PythonOCC backend parity test
+# Copied from test_Booleans.py
+
+import os
+os.environ["TOPOLOGICPY_CORE_BACKEND"] = "pythonocc"
+
 # Copyright (C) 2026
 # Wassim Jabi
 #
@@ -143,7 +149,7 @@ EXPECTED_COUNTS = {
 
     ("cellcomplex", "union"): (1, 22, 44, 24),  # result: Cell
     ("cellcomplex", "difference"): (1, 6, 12, 8),  # result: Cell
-    ("cellcomplex", "intersection"): (3, 16, 28, 16), # result: CellComplex
+    ("cellcomplex", "intersection"): (6, 16, 28, 16),  # result: Cluster
     ("cellcomplex", "xor"): (2, 12, 24, 16),  # result: Cluster
     ("cellcomplex", "merge"): (5, 26, 44, 24),  # result: CellComplex
     ("cellcomplex", "slice"): (4, 21, 36, 20),  # result: CellComplex

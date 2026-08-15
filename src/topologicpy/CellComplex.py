@@ -1689,8 +1689,12 @@ class CellComplex():
         return faces
     
     @staticmethod
-    def Octahedron(origin= None, radius: float = 0.5,
-                  direction: list = [0, 0, 1], placement: str ="center", tolerance: float = 0.0001):
+    def Octahedron(origin= None,
+                   radius: float = 0.5,
+                   direction: list = [0, 0, 1],
+                   placement: str ="center",
+                   tolerance: float = 0.0001,
+                   silent: bool = False):
         """
         Creates an octahedron. See https://en.wikipedia.org/wiki/Octahedron.
 
@@ -1706,6 +1710,8 @@ class CellComplex():
             The description of the placement of the origin of the octahedron. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1742,12 +1748,22 @@ class CellComplex():
 
         octahedron = CellComplex._ByFaces([f1,f2,f3,f4,f5,f6,f7,f8,f9], tolerance=tolerance)
         octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement == "bottom":
-            octahedron = Topology.Translate(octahedron, 0, 0, radius)
+            zOffset = radius
         elif placement == "lowerleft":
-            octahedron = Topology.Translate(octahedron, radius, radius, radius)
-        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
+            xOffset = yOffset = zoffset = radius
+
+        octahedron = Topology.OrientAndPlace(octahedron,
+                                             originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                             originB=origin,
+                                             dirA=[0, 0, 1],
+                                             dirB=direction,
+                                             transferDictionaries = False,
+                                             tolerance = tolerance,
+                                             silent = silent)
         return octahedron
     
     @staticmethod
@@ -1761,7 +1777,8 @@ class CellComplex():
               direction: list = [0, 0, 1],
               placement: str = "center",
               mantissa: int = 6,
-              tolerance: float = 0.0001):
+              tolerance: float = 0.0001,
+              silent: bool = False):
         """
         Creates a prismatic cellComplex with internal cells.
 
@@ -1789,6 +1806,8 @@ class CellComplex():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
         
         Returns
         -------
@@ -1843,13 +1862,13 @@ class CellComplex():
             all_faces = uFaces+vFaces+wFaces
             if len(all_faces) > 0:
                 f_clus = Cluster.ByTopologies(uFaces+vFaces+wFaces)
-                return Topology.Slice(topology, f_clus, tolerance=tolerance)
+                return Topology.Slice(topology, f_clus, tolerance=tolerance, silent=silent)
             else:
                 return CellComplex.ByCells([topology])
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
 
-        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, mantissa=mantissa, tolerance=tolerance)
+        c = Cell.Prism(origin=origin, width=width, length=length, height=height, uSides=1, vSides=1, wSides=1, placement=placement, mantissa=mantissa, tolerance=tolerance, silent=silent)
         prism = slice(c, uSides=uSides, vSides=vSides, wSides=wSides)
         if prism:
             prism = Topology.Orient(prism, origin=origin, dirA=[0, 0, 1], dirB=direction)
@@ -2110,22 +2129,39 @@ class CellComplex():
         centroid = Topology.Centroid(tetrahedron)
         c_x, c_y, c_z = Vertex.Coordinates(centroid, mantissa=mantissa)
 
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+
         if placement.lower() == "center":
-            tetrahedron = Topology.Translate(tetrahedron, -c_x, -c_y, -c_z)
+            xOffset = -c_x
+            yOffset = -c_y
+            zOffset = -c_z
         elif placement.lower() == "bottom":
-            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, 0)
+            xOffset = -c_x
+            yOffset = -c_y
         elif placement.lower() == "upperleft":
-            tetrahedron = Topology.Translate(tetrahedron, 0, 0, -bb_height)
+            zOffset = -bb_height
         elif placement.lower() == "upperright":
-            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, -bb_height)
+            xOffset = -bb_width
+            yOffset = -bb_length
+            zOffset = -bb_height
         elif placement.lower() == "bottomright":
-            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, 0)
+            xOffset = -bb_width
+            yOffset = -bb_length
         elif placement.lower() == "top":
-            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, -bb_height)
+            xOffset = -c_x
+            yOffset = -c_y
+            zOffset = -bb_height
         
-        tetrahedron = Topology.Place(tetrahedron, Vertex.Origin(), origin)
-        if not direction == [0,0,1]:
-            tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0,0,1], dirB=direction)
+        tetrahedron = Topology.OrientAndPlace(tetrahedron,
+                                              originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                              originB=origin,
+                                              dirA=[0, 0, 1],
+                                              dirB=direction,
+                                              transferDictionaries = False,
+                                              tolerance = tolerance,
+                                              silent = silent)
 
         depth = max(depth, 1)
         # Recursively subdivide the tetrahedron
@@ -2134,7 +2170,15 @@ class CellComplex():
         return CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra)
     
     @staticmethod
-    def Torus(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Torus(origin= None,
+              majorRadius: float = 0.5,
+              minorRadius: float = 0.125,
+              uSides: int = 16,
+              vSides: int = 8,
+              direction: list = [0, 0, 1],
+              placement: str = "center",
+              tolerance: float = 0.0001,
+              silent: bool = False):
         """
         Creates a torus.
 
@@ -2156,6 +2200,8 @@ class CellComplex():
             The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2182,13 +2228,27 @@ class CellComplex():
         if Topology.Type(torus) == Topology.TypeID("Shell"):
             faces = Topology.Faces(torus)
             torus = CellComplex.ByFaces(faces)
+        
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement.lower() == "bottom":
-            torus = Topology.Translate(torus, 0, 0, minorRadius)
+            zOffset = minorRadius
         elif placement.lower() == "lowerleft":
-            torus = Topology.Translate(torus, majorRadius, majorRadius, minorRadius)
+            xOffset = majorRadius
+            yOffset = majorRadius
+            zOffset = minorRadius
 
         torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
         torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
+        torus = Topology.OrientAndPlace(torus,
+                                        originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                        originB=origin,
+                                        dirA=[0, 0, 1],
+                                        dirB=direction,
+                                        transferDictionaries = False,
+                                        tolerance = tolerance,
+                                        silent = silent)
         return torus
 
     @staticmethod

@@ -2,7 +2,14 @@ from __future__ import annotations
 
 import types
 from dataclasses import dataclass
-from .topology import Topology
+from .topology import (
+    Topology,
+    _is_null_shape,
+    _downward_wrappers,
+    TopAbs_VERTEX,
+    TopAbs_EDGE,
+    TopAbs_FACE,
+    )
 from .face import Face, FaceUtility
 from .edge import Edge
 from .vertex import Vertex
@@ -131,22 +138,65 @@ class Shell(Topology):
                     edge.Faces = types.MethodType(_edge_faces, edge)
 
     def Faces(self, hostTopology=None, faces=None):
-        result = list(getattr(self, "faces", []) or [])
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_FACE
+            )
+        else:
+            result = list(getattr(self, "faces", []) or [])
+
         if faces is not None:
             faces.extend(result)
             return 0
+
         return result
 
+
     def Edges(self, hostTopology=None, edges=None):
-        result = []
-        for face in getattr(self, "faces", []) or []:
-            if isinstance(face, Face):
-                result.extend(face.Edges())
-        result = unique_by_uuid(result)
-        result = Shell._boundary_first_ordering(result, host=self)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_EDGE
+            )
+        else:
+            result = []
+
+            for face in getattr(self, "faces", []) or []:
+                if isinstance(face, Face):
+                    result.extend(face.Edges())
+
+        # Retain the existing backend ordering behaviour.
+        result = Shell._boundary_first_ordering(
+            result,
+            host=self
+        )
+
         if edges is not None:
             edges.extend(result)
             return 0
+
+        return result
+
+
+    def Vertices(self, hostTopology=None, vertices=None):
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_VERTEX
+            )
+        else:
+            result = []
+
+            for edge in self.Edges():
+                result.extend(
+                    [edge.start, edge.end]
+                )
+
+        if vertices is not None:
+            vertices.extend(result)
+            return 0
+
         return result
 
     @staticmethod
@@ -212,16 +262,6 @@ class Shell(Topology):
 
         return ordered_boundary + other_edges
 
-    def Vertices(self, hostTopology=None, vertices=None):
-        result = []
-        for edge in self.Edges():
-            result.extend([edge.start, edge.end])
-        result = unique_by_uuid([v for v in result if isinstance(v, Vertex)])
-        if vertices is not None:
-            vertices.extend(result)
-            return 0
-        return result
-
     def Shells(self, hostTopology=None, shells=None):
         result = [self]
         if shells is not None:
@@ -234,7 +274,7 @@ class Shell(Topology):
         A shell is closed when it has no free (boundary) edges, i.e. every
         edge is shared by exactly two of the shell's faces.
         """
-        faces = getattr(self, "faces", []) or []
+        faces = self.Faces() or []
         if not faces:
             return False
         return len(Shell._boundary_edges(faces, tolerance=tolerance, min_count=1, max_count=1)) == 0
@@ -290,7 +330,7 @@ class Shell(Topology):
             if not silent:
                 print("Shell.ExternalBoundary - Error: The input shell parameter is not a valid Shell. Returning None.")
             return None
-        faces = getattr(shell, "faces", []) or []
+        faces = shell.Faces() or []
         boundary_edges = Shell._boundary_edges(faces, tolerance=tolerance, min_count=1, max_count=1)
         if not boundary_edges:
             if not silent:
@@ -412,7 +452,10 @@ class ShellUtility:
     def Area(shell):
         if not isinstance(shell, Shell):
             return None
-        return sum(FaceUtility.Area(f) or 0.0 for f in shell.faces)
+        return sum(
+        FaceUtility.Area(f) or 0.0
+        for f in shell.Faces()
+        )
 
     @staticmethod
     def ExternalBoundary(shell, tolerance: float = 0.0001):
@@ -428,7 +471,7 @@ class ShellUtility:
         """
         if not isinstance(shell, Shell):
             return []
-        faces = getattr(shell, "faces", []) or []
+        faces = shell.Faces() or []
         internal_edges = Shell._boundary_edges(faces, tolerance=tolerance, min_count=2, max_count=None)
         if not internal_edges:
             return []

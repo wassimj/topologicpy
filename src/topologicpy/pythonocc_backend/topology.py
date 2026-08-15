@@ -28,6 +28,8 @@ real PythonOCC/OCCT operations whenever an OCCT shape is available.
 
 from __future__ import annotations
 
+# REVISION: 2026-08-15 Boolean parity fix 004
+
 import copy
 import json
 import math
@@ -37,6 +39,8 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
 
 from .helpers import new_uuid as _new_uuid, distance3, vertex_key
+
+from .attribute_manager import AttributeManager
 
 
 # -----------------------------------------------------------------------------
@@ -328,6 +332,74 @@ def _iter_occ_subshapes(shape: Any, shape_type: Any) -> list:
         explorer.Next()
     return result
 
+def _iter_occ_subshapes_unique(shape: Any, shape_type: Any) -> list:
+    """
+    Returns the unique OCCT subshapes of the requested type.
+
+    Uniqueness is determined using the Python hash of each TopoDS_Shape.
+    This provides substantially better performance than repeatedly calling
+    TopTools_MapOfShape from Python while preserving OCCT shape identity
+    semantics for the topology traversal used by the backend.
+
+    Parameters
+    ----------
+    shape : OCC.Core.TopoDS.TopoDS_Shape
+        The input OCCT shape.
+    shape_type : OCC.Core.TopAbs.TopAbs_ShapeEnum
+        The requested OCCT subshape type.
+
+    Returns
+    -------
+    list
+        The unique OCCT subshapes.
+    """
+    if _is_null_shape(shape) or TopExp_Explorer is None or shape_type is None:
+        return []
+
+    result = []
+    seen = set()
+
+    try:
+        explorer = TopExp_Explorer(
+            shape,
+            shape_type
+        )
+
+        while explorer.More():
+            current = explorer.Current()
+
+            key = hash(current)
+
+            if key not in seen:
+                seen.add(key)
+                result.append(current)
+
+            explorer.Next()
+
+        return result
+
+    except Exception:
+        return []
+
+def _downward_wrappers(topology: Any, shape_type: Any) -> list:
+    """
+    Returns backend topology wrappers for the unique OCCT subshapes of
+    the requested type.
+    """
+    shape = _shape_from_topology(topology)
+
+    if _is_null_shape(shape):
+        return []
+
+    result = []
+
+    for subshape in _iter_occ_subshapes_unique(shape, shape_type):
+        item = Topology.ByOcctShape(subshape)
+
+        if item is not None:
+            result.append(item)
+
+    return result
 
 def _deduplicate_by_identity(items: list) -> list:
     """
@@ -438,18 +510,56 @@ def _transfer_contents(source: Any, target: Any) -> None:
 
 
 def _postprocess_boolean_result(shape: Any) -> Any:
+    """
+    Validates and, if necessary, repairs the result of an OCCT boolean operation.
+
+    Parameters
+    ----------
+    shape : OCC.Core.TopoDS.TopoDS_Shape
+        The input OCCT shape.
+
+    Returns
+    -------
+    OCC.Core.TopoDS.TopoDS_Shape
+        The original shape if valid, otherwise the repaired shape if repair
+        succeeds.
+    """
     if _is_null_shape(shape):
         return shape
 
+    # ------------------------------------------------------------------
+    # Fast path: if the boolean result is already valid, return it
+    # without running ShapeFix.
+    # ------------------------------------------------------------------
+    if BRepCheck_Analyzer is not None:
+        try:
+            analyzer = BRepCheck_Analyzer(
+                shape,
+                True,   # Geometric controls
+                True,   # Run in parallel
+            )
+
+            if analyzer.IsValid():
+                return shape
+
+        except Exception:
+            pass
+
+    # ------------------------------------------------------------------
+    # Repair only if validation failed or could not be performed.
+    # ------------------------------------------------------------------
     if ShapeFix_Shape is None:
         return shape
 
     try:
         fixer = ShapeFix_Shape(shape)
         fixer.Perform()
-        fixed = fixer.Shape()
-        if not _is_null_shape(fixed):
-            return fixed
+
+        fixed_shape = fixer.Shape()
+
+        if not _is_null_shape(fixed_shape):
+            return fixed_shape
+
     except Exception:
         pass
 
@@ -807,15 +917,20 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
                         sh.apertures = list(apertures)
                     return sh
             if children and len(children) >= 2 and all(Topology.IsInstance(c, "Edge") for c in children):
-                # Multiple Edges that all chain together end-to-end (e.g. two
-                # overlapping collinear Edges fused/merged into 3 flush
-                # segments) form a single Wire, not a Cluster of loose Edges
-                # -- verified against topologic_core. Only wrap as a Wire
-                # when EVERY edge is reachable from every other edge (one
-                # connected chain); a genuinely disjoint set of edges falls
-                # through unchanged to the generic Cluster wrap below.
+                # A connected collection of Edges is a Topologic Wire even when
+                # it is non-manifold (branch vertices may have degree > 2).
+                #
+                # The PythonOCC Wire.ByEdges implementation now supports such
+                # connected branching networks by using OCCT's batch MakeWire
+                # path when a single head-to-tail ordering does not exist.
+                # Therefore the old "degree <= 2" restriction is no longer
+                # correct here.
+                #
+                # Only promote when every input Edge belongs to one connected
+                # component. A genuinely disjoint edge set remains a Cluster.
                 from .wire import Wire
-                from .helpers import same_vertex, vertex_key
+                from .helpers import same_vertex
+
                 n = len(children)
                 parent = list(range(n))
 
@@ -828,46 +943,40 @@ def _wrap_shape_as_topology(shape: Any, dictionary=None, contents=None, contexts
                 for i in range(n):
                     for j in range(i + 1, n):
                         ei, ej = children[i], children[j]
+
                         if (
-                            same_vertex(ei.start, ej.start) or same_vertex(ei.start, ej.end)
-                            or same_vertex(ei.end, ej.start) or same_vertex(ei.end, ej.end)
+                            same_vertex(ei.start, ej.start)
+                            or same_vertex(ei.start, ej.end)
+                            or same_vertex(ei.end, ej.start)
+                            or same_vertex(ei.end, ej.end)
                         ):
-                            ra, rb = _find(i), _find(j)
+                            ra = _find(i)
+                            rb = _find(j)
+
                             if ra != rb:
                                 parent[ra] = rb
 
-                degree = {}
-                for e in children:
-                    for k in (vertex_key(e.start), vertex_key(e.end)):
-                        degree[k] = degree.get(k, 0) + 1
-                # Only a simple (manifold) chain -- every vertex touched by
-                # at most 2 edges -- can be represented as one linear Wire.
-                # A non-manifold branch point (3+ edges sharing a vertex,
-                # e.g. two overlapping Wires' Union boundary) needs the
-                # generic Cluster wrap below instead, which topologic_core's
-                # own Cluster.Wires/FreeEdges machinery already handles
-                # correctly for that case.
-                is_simple_chain = all(d <= 2 for d in degree.values())
-
-                if is_simple_chain and len({_find(i) for i in range(n)}) == 1:
+                if len({_find(i) for i in range(n)}) == 1:
                     w = Wire.ByEdges(children)
-                    # Wire.ByEdges (via _order_edges) only walks a single
-                    # linear chain -- at a non-manifold branch point (3+
-                    # edges sharing one vertex, e.g. two overlapping Wires'
-                    # Union boundary) it silently drops whichever edges don't
-                    # fit that walk. Only accept the Wire if every input
-                    # edge actually made it in; otherwise fall through to the
-                    # generic Cluster wrap below, which topologic_core's own
-                    # Cluster.Wires/FreeEdges machinery already handles
-                    # correctly for that case.
-                    if w is not None and len(getattr(w, "edges", None) or []) == n:
+
+                    # Never accept a partial reconstruction. This guards
+                    # against any OCCT MakeWire result that silently omits
+                    # one or more supplied Edges.
+                    if (
+                        w is not None
+                        and len(getattr(w, "edges", None) or []) == n
+                    ):
                         w.dictionary = dictionary or {}
+
                         if contents:
                             w.contents = list(contents)
+
                         if contexts:
                             w.contexts = list(contexts)
+
                         if apertures:
                             w.apertures = list(apertures)
+
                         return w
             if hasattr(Cluster, "ByTopologies"):
                 cl = Cluster.ByTopologies(children)
@@ -990,93 +1099,350 @@ def _make_occ_merge(topology: Any, other_topology: Any = None, transfer_dictiona
     return result
 
 
-def _make_occ_union(topology: Any, other_topology: Any = None, transfer_dictionary: bool = False) -> Any:
+def _make_occ_union(
+    topology: Any,
+    other_topology: Any = None,
+    transfer_dictionary: bool = False
+) -> Any:
     """
-    PythonOCC Topology.Union: BRepAlgoAPI_Fuse dissolves the operands' interface -
-    overlapping/flush-touching solids collapse to one Cell; genuinely disjoint solids
-    stay a Cluster (no CompSolid promotion; ByOcctShape's COMPOUND dispatch handles it).
+    Returns the union of the input topologies using the PythonOCC backend.
+
+    The OCCT Fuse operation is used as the primary Boolean operation.
+    Backend-specific semantic normalization is then applied only where
+    necessary to preserve Topologic topology semantics.
+
+    In particular:
+
+    - Overlapping or touching solids are fused normally.
+    - Disjoint solids remain separate and are wrapped according to the
+      resulting OCCT topology.
+    - Overlapping coplanar Face/Face unions are unified into a single
+      same-domain Face while preserving boundary edge segmentation.
+    - Connected Wire/Wire unions are promoted to a Topologic Wire when
+      all resulting edges can be retained without loss.
+
+    Parameters
+    ----------
+    topology : Any
+        The first input topology.
+    other_topology : Any , optional
+        The second input topology. Default is None.
+    transfer_dictionary : bool , optional
+        If True, the dictionaries of the input topologies are merged and
+        assigned to the result. Default is False.
+
+    Returns
+    -------
+    Any
+        The resultant topology, or None if the operation fails.
     """
     if topology is None:
         return None
 
-    base_shape = _shape_from_topology(topology)
+    base_shape = _shape_from_topology(
+        topology
+    )
+
     if _is_null_shape(base_shape):
         return None
+
+    # ------------------------------------------------------------------
+    # No second operand
+    # ------------------------------------------------------------------
 
     if other_topology is None:
         return Topology.ByOcctShape(
             base_shape,
-            dictionary=Topology.Dictionary(topology),
-            contents=getattr(topology, "contents", []),
-            contexts=getattr(topology, "contexts", []),
-            apertures=getattr(topology, "apertures", []),
+            dictionary=Topology.Dictionary(
+                topology
+            ),
+            contents=getattr(
+                topology,
+                "contents",
+                []
+            ),
+            contexts=getattr(
+                topology,
+                "contexts",
+                []
+            ),
+            apertures=getattr(
+                topology,
+                "apertures",
+                []
+            ),
         )
 
-    shapes_a = _collect_boolean_operand_shapes(topology)
-    shapes_b = _collect_boolean_operand_shapes(other_topology)
+    # ------------------------------------------------------------------
+    # Collect OCCT operand shapes
+    # ------------------------------------------------------------------
+
+    shapes_a = _collect_boolean_operand_shapes(
+        topology
+    )
+
+    shapes_b = _collect_boolean_operand_shapes(
+        other_topology
+    )
 
     if not shapes_a or not shapes_b:
-        print("Topology.Union - Error: Could not collect valid OCCT operands. Returning None.")
+        print(
+            "Topology.Union - Error: Could not collect valid OCCT "
+            "operands. Returning None."
+        )
         return None
 
     if BRepAlgoAPI_Fuse is None:
-        print("Topology.Union - Error: PythonOCC BRepAlgoAPI_Fuse is not available. Returning None.")
+        print(
+            "Topology.Union - Error: PythonOCC BRepAlgoAPI_Fuse is "
+            "not available. Returning None."
+        )
         return None
 
-    try:
-        shape_a = shapes_a[0] if len(shapes_a) == 1 else _compound_of_shapes(shapes_a)
-        shape_b = shapes_b[0] if len(shapes_b) == 1 else _compound_of_shapes(shapes_b)
+    # ------------------------------------------------------------------
+    # OCCT Fuse
+    # ------------------------------------------------------------------
 
-        fuse = BRepAlgoAPI_Fuse(shape_a, shape_b)
+    try:
+        if len(shapes_a) == 1:
+            shape_a = shapes_a[0]
+        else:
+            shape_a = _compound_of_shapes(
+                shapes_a
+            )
+
+        if len(shapes_b) == 1:
+            shape_b = shapes_b[0]
+        else:
+            shape_b = _compound_of_shapes(
+                shapes_b
+            )
+
+        fuse = BRepAlgoAPI_Fuse(
+            shape_a,
+            shape_b
+        )
+
         fuse.Build()
+
         if not fuse.IsDone():
-            print("Topology.Union - Error: BRepAlgoAPI_Fuse failed. Returning None.")
+            print(
+                "Topology.Union - Error: BRepAlgoAPI_Fuse failed. "
+                "Returning None."
+            )
             return None
+
         result_shape = fuse.Shape()
+
     except Exception:
-        print("Topology.Union - Error: BRepAlgoAPI_Fuse raised. Returning None.")
+        print(
+            "Topology.Union - Error: BRepAlgoAPI_Fuse raised. "
+            "Returning None."
+        )
         return None
 
     if _is_null_shape(result_shape):
-        print("Topology.Union - Error: Boolean result is null. Returning None.")
+        print(
+            "Topology.Union - Error: Boolean result is null. "
+            "Returning None."
+        )
         return None
 
-    # Do NOT call _unify_same_domain here for solid/face results (unlike
-    # Merge): verified against the real topologic_core backend that
-    # BRepAlgoAPI_Fuse's raw result already matches the expected
-    # face/edge/vertex counts exactly for those (e.g. two overlapping cubes
-    # -> 14 faces/28 edges/16 vertices). UnifySameDomain was collapsing that
-    # correct L-shaped result down to a plain 6-face cube.
+    # ------------------------------------------------------------------
+    # Face / Face semantic normalization
     #
-    # Pure Edge/Wire operands are the one exception: fusing two overlapping
-    # *collinear* edges leaves them as separate split segments (e.g. 3 edges/
-    # 4 vertices for two overlapping collinear segments), which
-    # topologic_core reports as a single merged edge (1 edge/2 vertices).
-    # _unify_same_domain itself only fires when a SOLID is present, so run
-    # ShapeUpgrade_UnifySameDomain directly here when the result has no
-    # Solid or Face at all (a pure 1-D edge network).
+    # OCCT Fuse preserves the Boolean partition when two coplanar Faces
+    # overlap. For example, two overlapping rectangles may be returned as
+    # three adjacent Faces contained in a Shell/Compound:
+    #
+    #     A-only | overlap | B-only
+    #
+    # Topologic Union semantics require these same-domain regions to form
+    # one Face.
+    #
+    # Unify Faces only. Do NOT unify boundary Edges: their segmentation is
+    # valid topology and must be preserved. In the Boolean regression case
+    # this converts:
+    #
+    #     Shell: 3 Faces / 10 Edges / 8 Vertices
+    #
+    # into:
+    #
+    #     Face: 1 Face / 8 Edges / 8 Vertices
+    #
+    # This normalization is deliberately restricted to Face/Face operands.
+    # Applying same-domain unification generally to solid results can erase
+    # valid Boolean partitions and alter expected topology counts.
+    # ------------------------------------------------------------------
+
+    try:
+        from .face import Face
+
+        if (
+            isinstance(topology, Face)
+            and isinstance(other_topology, Face)
+            and ShapeUpgrade_UnifySameDomain is not None
+        ):
+            result_faces = _iter_occ_subshapes_unique(
+                result_shape,
+                TopAbs_FACE
+            )
+
+            if len(result_faces) > 1:
+                unifier = ShapeUpgrade_UnifySameDomain(
+                    result_shape,
+                    False,  # UnifyEdges
+                    True,   # UnifyFaces
+                    False   # ConcatBSplines
+                )
+
+                unifier.Build()
+
+                unified_shape = unifier.Shape()
+
+                if not _is_null_shape(
+                    unified_shape
+                ):
+                    result_shape = unified_shape
+
+    except Exception:
+        pass
+
+    # ------------------------------------------------------------------
+    # Pure 1-D same-domain normalization
+    #
+    # Do NOT apply general same-domain unification to solid or face
+    # results. BRepAlgoAPI_Fuse already gives the desired partitioning
+    # there, apart from the explicitly handled Face/Face case above.
+    #
+    # Pure Edge/Wire operands are different. Fusing two overlapping
+    # collinear Edges can leave several split segments instead of the
+    # single logical Edge expected by Topologic. Therefore same-domain
+    # unification is permitted for purely 1-D results.
+    # ------------------------------------------------------------------
+
     if (
         ShapeUpgrade_UnifySameDomain is not None
-        and not _iter_occ_subshapes(result_shape, TopAbs_SOLID)
-        and not _iter_occ_subshapes(result_shape, TopAbs_FACE)
+        and not _iter_occ_subshapes(
+            result_shape,
+            TopAbs_SOLID
+        )
+        and not _iter_occ_subshapes(
+            result_shape,
+            TopAbs_FACE
+        )
     ):
         try:
-            unifier = ShapeUpgrade_UnifySameDomain(result_shape, True, True, True)
+            unifier = ShapeUpgrade_UnifySameDomain(
+                result_shape,
+                True,
+                True,
+                True
+            )
+
             unifier.Build()
-            unified = unifier.Shape()
-            if not _is_null_shape(unified):
-                result_shape = unified
+
+            unified_shape = unifier.Shape()
+
+            if not _is_null_shape(
+                unified_shape
+            ):
+                result_shape = unified_shape
+
         except Exception:
             pass
 
-    result_shape = _postprocess_boolean_result(result_shape)
+    # ------------------------------------------------------------------
+    # General Boolean post-processing
+    # ------------------------------------------------------------------
+
+    result_shape = _postprocess_boolean_result(
+        result_shape
+    )
+
+    # ------------------------------------------------------------------
+    # Result dictionary
+    # ------------------------------------------------------------------
 
     result_dictionary = {}
+
     if transfer_dictionary:
         result_dictionary = _merge_backend_dictionaries(
-            Topology.Dictionary(topology),
-            Topology.Dictionary(other_topology),
+            Topology.Dictionary(
+                topology
+            ),
+            Topology.Dictionary(
+                other_topology
+            ),
         )
+
+    # ------------------------------------------------------------------
+    # Wire / Wire semantic normalization
+    #
+    # A connected branching one-dimensional Fuse result may be stored by
+    # OCCT in a Compound even though it represents one valid Topologic
+    # non-manifold Wire.
+    #
+    # Build the Wire directly from the unique resulting OCCT Edges. Accept
+    # the promotion only if every Edge survives, so genuinely disconnected
+    # results remain aggregates.
+    # ------------------------------------------------------------------
+
+    from .wire import Wire
+
+    if (
+        isinstance(topology, Wire)
+        and isinstance(other_topology, Wire)
+    ):
+        edge_shapes = _iter_occ_subshapes_unique(
+            result_shape,
+            TopAbs_EDGE
+        )
+
+        edges = [
+            Topology.ByOcctShape(
+                edge_shape
+            )
+            for edge_shape in edge_shapes
+        ]
+
+        edges = [
+            edge
+            for edge in edges
+            if edge is not None
+        ]
+
+        if (
+            edges
+            and len(edges) == len(edge_shapes)
+        ):
+            wire_result = Wire.ByEdges(
+                edges
+            )
+
+            if (
+                wire_result is not None
+                and len(
+                    wire_result.Edges() or []
+                ) == len(edges)
+            ):
+                wire_result.dictionary = result_dictionary
+
+                _transfer_contents(
+                    topology,
+                    wire_result
+                )
+
+                _transfer_contents(
+                    other_topology,
+                    wire_result
+                )
+
+                return wire_result
+
+    # ------------------------------------------------------------------
+    # Generic result wrapping
+    # ------------------------------------------------------------------
 
     result = Topology.ByOcctShape(
         result_shape,
@@ -1087,15 +1453,27 @@ def _make_occ_union(topology: Any, other_topology: Any = None, transfer_dictiona
     )
 
     if result is None:
-        print("Topology.Union - Error: Could not convert OCCT result to backend topology. Returning None.")
+        print(
+            "Topology.Union - Error: Could not convert OCCT result to "
+            "backend topology. Returning None."
+        )
         return None
 
-    _transfer_contents(topology, result)
-    _transfer_contents(other_topology, result)
+    # ------------------------------------------------------------------
+    # Contents
+    # ------------------------------------------------------------------
+
+    _transfer_contents(
+        topology,
+        result
+    )
+
+    _transfer_contents(
+        other_topology,
+        result
+    )
 
     return result
-
-
 
 # BREP / string serialization helpers
 # -----------------------------------------------------------------------------
@@ -1302,30 +1680,196 @@ class Topology:
     def GetDictionary(self):
         if self is None:
             return None
+
         if isinstance(self, dict):
             return self.get("dictionary", None) or {}
+
+        shape = _shape_from_topology(self)
+
+        if not _is_null_shape(shape):
+            manager = AttributeManager.GetInstance()
+
+            if manager.HasDictionary(shape):
+                return manager.GetDictionary(shape)
+
+        # Fallback for shapeless wrapper objects.
         return getattr(self, "dictionary", None) or {}
 
+
     Dictionary = GetDictionary
+
 
     def SetDictionary(self, dictionary: Any):
         if self is None:
             return None
-        try:
-            setattr(self, "dictionary", dictionary if dictionary is not None else {})
+
+        dictionary = dictionary if dictionary is not None else {}
+
+        if isinstance(self, dict):
+            self["dictionary"] = dictionary
             return self
+
+        shape = _shape_from_topology(self)
+
+        if not _is_null_shape(shape):
+            AttributeManager.GetInstance().SetDictionary(
+                shape,
+                dictionary
+            )
+
+        # Keep the wrapper attribute as a compatibility mirror.
+        try:
+            self.dictionary = dictionary
+        except Exception:
+            pass
+
+        return self
+
+    @staticmethod
+    def ByOcctShape(
+        shape: Any,
+        dictionary=None,
+        contents=None,
+        contexts=None,
+        apertures=None
+    ):
+        """
+        Wraps an existing OCCT shape as the corresponding PythonOCC backend
+        topology.
+
+        Container topologies such as Shell, Cell and CellComplex are wrapped
+        shallowly. Their subtopologies are discovered from the underlying OCCT
+        shape only when requested.
+        """
+        if _is_null_shape(shape):
+            return None
+
+        try:
+            shape_type = shape.ShapeType()
         except Exception:
             return None
 
-    @staticmethod
-    def ByOcctShape(shape: Any, dictionary=None, contents=None, contexts=None, apertures=None):
-        return _wrap_shape_as_topology(
-            shape,
-            dictionary=dictionary,
-            contents=contents,
-            contexts=contexts,
-            apertures=apertures,
-        )
+        manager = AttributeManager.GetInstance()
+
+        if dictionary is None:
+            if manager.HasDictionary(shape):
+                dictionary = manager.GetDictionary(shape)
+            else:
+                dictionary = {}
+        else:
+            manager.SetDictionary(
+                shape,
+                dictionary
+            )
+        contents = list(contents) if contents else []
+        contexts = list(contexts) if contexts else []
+        apertures = list(apertures) if apertures else []
+
+        # ------------------------------------------------------------------
+        # Vertex / Edge / Wire / Face
+        #
+        # Leave these on their existing specialised paths for now.
+        # ------------------------------------------------------------------
+
+        if shape_type in (
+            TopAbs_VERTEX,
+            TopAbs_EDGE,
+            TopAbs_WIRE,
+            TopAbs_FACE,
+        ):
+            return _wrap_shape_as_topology(
+                shape,
+                dictionary=dictionary,
+                contents=contents,
+                contexts=contexts,
+                apertures=apertures,
+            )
+
+        # ------------------------------------------------------------------
+        # Shell -- shallow wrapper only.
+        # ------------------------------------------------------------------
+
+        if shape_type == TopAbs_SHELL:
+            from .shell import Shell
+
+            return Shell(
+                shape=topods_Shell(shape),
+                faces=[],
+                dictionary=dictionary,
+                contents=contents,
+                contexts=contexts,
+                apertures=apertures,
+            )
+
+        # ------------------------------------------------------------------
+        # Solid -> Cell -- shallow wrapper only.
+        # ------------------------------------------------------------------
+
+        if shape_type == TopAbs_SOLID:
+            from .cell import Cell
+
+            return Cell(
+                shape=topods_Solid(shape),
+                shells=[],
+                dictionary=dictionary,
+                contents=contents,
+                contexts=contexts,
+                apertures=apertures,
+            )
+
+        # ------------------------------------------------------------------
+        # CompSolid -> CellComplex
+        # ------------------------------------------------------------------
+
+        if shape_type == TopAbs_COMPSOLID:
+            from .cell import Cell
+            from .cell_complex import CellComplex
+
+            solids = _iter_occ_subshapes_unique(
+                shape,
+                TopAbs_SOLID
+            )
+
+            # Preserve the existing backend behaviour of unwrapping a
+            # one-solid CompSolid to a Cell.
+            if len(solids) == 1:
+                return Cell(
+                    shape=topods_Solid(solids[0]),
+                    shells=[],
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
+
+            return CellComplex(
+                shape=shape,
+                cells=[],
+                dictionary=dictionary,
+                contents=contents,
+                contexts=contexts,
+                apertures=apertures,
+            )
+
+        # ------------------------------------------------------------------
+        # Compound
+        #
+        # A generic OCCT Compound must be semantically normalised. Boolean
+        # operations commonly return Compounds containing topology that can be
+        # represented more specifically as a Vertex, Edge, Wire, Face, Shell,
+        # Cell, CellComplex, or Cluster.
+        # ------------------------------------------------------------------
+
+        if shape_type == TopAbs_COMPOUND:
+            return _wrap_shape_as_topology(
+                shape,
+                dictionary=dictionary,
+                contents=contents,
+                contexts=contexts,
+                apertures=apertures,
+            )
+        
+        return None
 
     @staticmethod
     def BREPString(topology: Any, version: int = 0) -> Optional[str]:
@@ -1394,23 +1938,83 @@ class Topology:
 
         return Topology.ByOcctShape(shape, dictionary=dictionary)
 
-    def _dispatch_subtopologies(self, own_attr, shape_type, child_attrs, recurse_name,
-                                 self_type_name=None, hostTopology=None, output=None):
+    def _dispatch_subtopologies(
+        self,
+        own_attr,
+        shape_type,
+        child_attrs,
+        recurse_name,
+        self_type_name=None,
+        hostTopology=None,
+        output=None
+    ):
         """
-        Dimension-aware extraction supporting both calling conventions (class call returns a
-        list; InstanceCall populates out). When self is lower-dimensional than the requested
-        type AND a hostTopology is given, semantics flip to a super/adjacency query
-        (e.g. vertex.Edges(wire,out) = edges of wire incident to vertex); otherwise return
-        self's own substructure.
+        Returns subtopologies of the requested type.
+
+        The method first uses explicitly stored subtopology wrappers when they
+        exist and are non-empty. If no stored wrappers are available, it queries
+        the native OCCT shape. If that also produces no result, it recursively
+        searches child topology collections.
+
+        This supports both Pythonic return-list calls and topologic_core-style
+        output-list calls.
+
+        Parameters
+        ----------
+        self : Topology
+            The input topology.
+        own_attr : str
+            The attribute name containing cached subtopologies of the requested
+            type.
+        shape_type : OCC.Core.TopAbs.TopAbs_ShapeEnum
+            The requested native OCCT shape type.
+        child_attrs : tuple
+            Attribute names containing lower-level topology collections through
+            which the query may recurse.
+        recurse_name : str
+            The topology query method name used during recursive traversal.
+        self_type_name : str , optional
+            The Topologic type name corresponding to the requested topology.
+        hostTopology : Topology , optional
+            The host topology used for super-topology queries.
+        output : list , optional
+            An output list following the topologic_core calling convention.
+
+        Returns
+        -------
+        list or int
+            The requested subtopologies, or 0 when an output list is supplied.
         """
+
         if self is None:
             if output is not None:
                 return 0
             return None
 
-        self_type = _topology_type_name(self)
-        self_rank = _TYPE_RANK.get(self_type)
-        target_rank = _TYPE_RANK.get(self_type_name) if self_type_name else None
+        # ------------------------------------------------------------------
+        # Determine source and target dimensional ranks.
+        # ------------------------------------------------------------------
+
+        self_type = _topology_type_name(
+            self
+        )
+
+        self_rank = _TYPE_RANK.get(
+            self_type
+        )
+
+        target_rank = (
+            _TYPE_RANK.get(
+                self_type_name
+            )
+            if self_type_name
+            else None
+        )
+
+        # ------------------------------------------------------------------
+        # Super-topology / adjacency query.
+        # ------------------------------------------------------------------
+
         if (
             hostTopology is not None
             and self_rank is not None
@@ -1418,37 +2022,179 @@ class Topology:
             and self_rank < target_rank
             and not hasattr(self, own_attr)
         ):
-            result = Topology.SuperTopologies(self, hostTopology, self_type_name) or []
-            result = _deduplicate_by_identity(result)
+
+            result = Topology.SuperTopologies(
+                self,
+                hostTopology,
+                self_type_name
+            ) or []
+
+            result = _deduplicate_by_identity(
+                result
+            )
+
             if output is not None:
-                output.extend(result)
+                output.extend(
+                    result
+                )
                 return 0
+
             return result
 
-        if self_type_name is not None and _topology_type_name(self) == self_type_name:
-            result = [self]
-        elif hasattr(self, own_attr):
-            result = _safe_list(getattr(self, own_attr))
-        else:
-            result = []
-            shape = _shape_from_topology(self)
-            for subshape in _iter_occ_subshapes(shape, shape_type):
-                item = Topology.ByOcctShape(subshape)
-                if item is not None:
-                    result.append(item)
+        # ------------------------------------------------------------------
+        # The topology itself is already of the requested type.
+        # ------------------------------------------------------------------
 
-            if not result:
-                for attr in child_attrs:
-                    if hasattr(self, attr):
-                        for child in _safe_list(getattr(self, attr)):
-                            child_result = getattr(Topology, recurse_name)(child) or []
-                            result.extend(child_result)
+        if (
+            self_type_name is not None
+            and self_type == self_type_name
+        ):
 
-        result = _deduplicate_by_identity(result)
+            result = [
+                self
+            ]
+
+            if output is not None:
+                output.extend(
+                    result
+                )
+                return 0
+
+            return result
+
+        result = []
+
+        # ------------------------------------------------------------------
+        # 1. Use explicitly stored wrappers when NON-EMPTY.
+        #
+        # An empty list is not necessarily authoritative. Container wrappers
+        # created from native OCCT shapes are intentionally shallow, e.g.:
+        #
+        #     Cell(shape=solid, shells=[])
+        #     Shell(shape=shell, faces=[])
+        #
+        # Their descendants must therefore be discovered from the OCCT shape.
+        # ------------------------------------------------------------------
+
+        if hasattr(
+            self,
+            own_attr
+        ):
+
+            try:
+                stored = _safe_list(
+                    getattr(
+                        self,
+                        own_attr
+                    )
+                )
+            except Exception:
+                stored = []
+
+            if stored:
+                result.extend(
+                    stored
+                )
+
+        # ------------------------------------------------------------------
+        # 2. If no cached wrappers were available, inspect the native OCCT
+        #    topology.
+        # ------------------------------------------------------------------
+
+        if not result:
+
+            shape = _shape_from_topology(
+                self
+            )
+
+            if (
+                not _is_null_shape(shape)
+                and shape_type is not None
+            ):
+
+                try:
+                    subshapes = _iter_occ_subshapes(
+                        shape,
+                        shape_type
+                    )
+                except Exception:
+                    subshapes = []
+
+                for subshape in subshapes:
+
+                    try:
+                        item = Topology.ByOcctShape(
+                            subshape
+                        )
+                    except Exception:
+                        item = None
+
+                    if item is not None:
+                        result.append(
+                            item
+                        )
+
+        # ------------------------------------------------------------------
+        # 3. Aggregate / wrapper fallback.
+        #
+        # For shapeless aggregate wrappers such as the lightweight Cluster,
+        # recurse through their direct topology members.
+        # ------------------------------------------------------------------
+
+        if not result:
+
+            for attr in child_attrs:
+
+                if not hasattr(
+                    self,
+                    attr
+                ):
+                    continue
+
+                try:
+                    children = _safe_list(
+                        getattr(
+                            self,
+                            attr
+                        )
+                    )
+                except Exception:
+                    children = []
+
+                for child in children:
+
+                    if child is None:
+                        continue
+
+                    try:
+                        child_result = getattr(
+                            Topology,
+                            recurse_name
+                        )(
+                            child
+                        ) or []
+
+                    except Exception:
+                        child_result = []
+
+                    result.extend(
+                        child_result
+                    )
+
+        # ------------------------------------------------------------------
+        # Deduplicate using native identity where possible.
+        # ------------------------------------------------------------------
+
+        result = _deduplicate_by_identity(
+            result
+        )
 
         if output is not None:
-            output.extend(result)
+            output.extend(
+                result
+            )
             return 0
+
         return result
 
     def Vertices(self, hostTopology=None, output=None):
@@ -1566,6 +2312,155 @@ class Topology:
         self.contents = kept
         return self
 
+    def Distance(
+        self,
+        otherTopology: Any,
+        tolerance: float = 0.0001
+    ):
+        """
+        Returns the shortest Euclidean distance between this topology and the
+        input topology.
+
+        For topologies represented by one native OCCT shape, the distance is
+        computed directly using BRepExtrema_DistShapeShape.
+
+        For aggregate wrappers without one native OCCT shape, such as a
+        heterogeneous Cluster, the constituent native shapes are collected and
+        the minimum pairwise distance is returned.
+
+        Parameters
+        ----------
+        otherTopology : Topology
+            The other input topology.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+
+        Returns
+        -------
+        float
+            The shortest distance between the two topologies, or None if the
+            distance cannot be computed.
+        """
+
+        if self is None or otherTopology is None:
+            return None
+
+        if BRepExtrema_DistShapeShape is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Retrieve native operand shapes.
+        #
+        # Ordinary topology:
+        #     one native OCCT shape.
+        #
+        # Aggregate wrapper such as Cluster:
+        #     one or more constituent native OCCT shapes.
+        # ------------------------------------------------------------------
+
+        def _operand_shapes(topology):
+
+            shape = _shape_from_topology(
+                topology
+            )
+
+            if not _is_null_shape(
+                shape
+            ):
+                return [
+                    shape
+                ]
+
+            try:
+                shapes = _collect_boolean_operand_shapes(
+                    topology
+                )
+            except Exception:
+                shapes = []
+
+            if not isinstance(
+                shapes,
+                list
+            ):
+                return []
+
+            return [
+                shape
+                for shape in shapes
+                if not _is_null_shape(
+                    shape
+                )
+            ]
+
+        shapes_a = _operand_shapes(
+            self
+        )
+
+        shapes_b = _operand_shapes(
+            otherTopology
+        )
+
+        if (
+            len(shapes_a) == 0
+            or len(shapes_b) == 0
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Compute exact minimum pairwise distance.
+        # ------------------------------------------------------------------
+
+        best_distance = None
+
+        for shape_a in shapes_a:
+
+            for shape_b in shapes_b:
+
+                try:
+                    dist = BRepExtrema_DistShapeShape(
+                        shape_a,
+                        shape_b
+                    )
+
+                    if not dist.IsDone():
+                        return None
+
+                    value = float(
+                        dist.Value()
+                    )
+
+                except Exception:
+                    return None
+
+                # ----------------------------------------------------------
+                # Validate the native result.
+                # ----------------------------------------------------------
+
+                if not math.isfinite(
+                    value
+                ):
+                    return None
+
+                if value < -abs(
+                    float(tolerance)
+                ):
+                    return None
+
+                # Small numerical negative or positive values represent zero.
+                if abs(value) <= tolerance:
+                    return 0.0
+
+                if (
+                    best_distance is None
+                    or value < best_distance
+                ):
+                    best_distance = value
+
+        if best_distance is None:
+            return None
+
+        return best_distance
+        
     @staticmethod
     def IsSame(topologyA: Any, topologyB: Any) -> bool:
         """
@@ -1603,80 +2498,562 @@ class Topology:
     # Union dissolves the operand interface (-> Cell), unlike Merge which
     # preserves it (-> CellComplex). See _make_occ_union / _make_occ_merge.
     def Union(self, otherTopology: Any, transferDictionary: bool = False):
-        return _make_occ_union(
+        result = _make_occ_union(
             self,
             otherTopology,
             transfer_dictionary=transferDictionary,
         )
 
-    def _binary_boolean(self, otherTopology: Any, occt_op_class, transferDictionary: bool = False):
-        """Shared BRepAlgoAPI_* dispatcher for Difference/Intersect/XOR."""
+        if result is None:
+            return None
+
+        # Topologic permits connected non-manifold Wires. OCCT Fuse can return
+        # such a connected branching 1-D result as a Compound, which the generic
+        # wrapper exposes as a Cluster even though the geometry is one valid
+        # Topologic Wire. Normalize only the Wire/Wire case, and only when every
+        # result Edge can be retained by Wire.ByEdges.
+        try:
+            from .wire import Wire
+
+            if (
+                isinstance(self, Wire)
+                and isinstance(otherTopology, Wire)
+                and not isinstance(result, Wire)
+            ):
+                result_edges = result.Edges() or []
+
+                if result_edges:
+                    wire = Wire.ByEdges(result_edges)
+
+                    if (
+                        wire is not None
+                        and len(wire.Edges() or []) == len(result_edges)
+                    ):
+                        try:
+                            wire.dictionary = Topology.GetDictionary(result)
+                        except Exception:
+                            pass
+
+                        for attr in (
+                            "contents",
+                            "contexts",
+                            "apertures",
+                        ):
+                            try:
+                                setattr(
+                                    wire,
+                                    attr,
+                                    list(getattr(result, attr, []) or [])
+                                )
+                            except Exception:
+                                pass
+
+                        return wire
+
+        except Exception:
+            pass
+
+        return result
+
+    def _binary_boolean(
+        self,
+        otherTopology: Any,
+        occt_op_class,
+        transferDictionary: bool = False
+    ):
+        """
+        Executes a binary OCCT Boolean operation.
+
+        Parameters
+        ----------
+        otherTopology : Topology
+            The second input topology.
+        occt_op_class : type
+            The OCCT Boolean operation class.
+        transferDictionary : bool , optional
+            If True, dictionaries from the input topologies are transferred to
+            the result. Default is False.
+
+        Returns
+        -------
+        Topology
+            The resulting topology, or None if the Boolean result is empty or
+            the operation fails.
+        """
         if occt_op_class is None:
             return None
+
         shape_a = _shape_from_topology(self)
         shape_b = _shape_from_topology(otherTopology)
+
         if _is_null_shape(shape_a) or _is_null_shape(shape_b):
             return None
+
         try:
             op = occt_op_class(shape_a, shape_b)
             op.Build()
+
             if not op.IsDone():
                 return None
+
             result_shape = op.Shape()
+
         except Exception:
             return None
+
         if _is_null_shape(result_shape):
             return None
-        # Coplanar 2D operands (e.g. an inner face CUT from a containing
-        # outer face for a hollow section) can produce a non-null compound
-        # that only carries near-zero-area fragments at shared edges, or just
-        # the boundary EDGES/WIRES of the operands with no FACE/SOLID left.
-        # Treat such results as empty so Difference/Intersect report None/empty
-        # faithfully (otherwise ``Contains``/``Within`` report False for a
-        # face that is genuinely inside another). This only applies when both
-        # operands are Face-or-higher dimensional: for Vertex/Edge/Wire
-        # operands, a result with no FACE/SOLID (just a shared vertex or
-        # edge) is the legitimate, non-empty answer, not an empty one.
+
+        # ------------------------------------------------------------------
+        # OCCT may return a non-null empty Compound. A Boolean result with no
+        # vertices at all is genuinely empty for both Cut and Common.
+        # ------------------------------------------------------------------
+
         if occt_op_class in (BRepAlgoAPI_Cut, BRepAlgoAPI_Common):
-            # A result with literally no Vertex at all is unconditionally
-            # empty, regardless of operand dimension (e.g. two non-touching,
-            # non-overlapping Edges: BRepAlgoAPI_Common still returns a
-            # non-null empty Compound). Without this, callers that iterate
-            # many candidate pairs (e.g. Topology.Intersect's per-edge
-            # decomposition of two Wires) collect a spurious non-None
-            # "empty" result for every non-intersecting pair, corrupting the
-            # final merged answer with extra fragments.
             if not _iter_occ_subshapes(result_shape, TopAbs_VERTEX):
                 return None
+
+        # ------------------------------------------------------------------
+        # Difference cleanup
+        #
+        # For Cut, Face-or-higher-dimensional operands can leave only
+        # lower-dimensional fragments at coincident/shared boundaries.
+        # These are not meaningful remnants of the minuend and should be
+        # treated as an empty Difference result.
+        #
+        # IMPORTANT:
+        # Do NOT apply this rule to Common/Intersect. A lower-dimensional
+        # intersection is legitimate:
+        #
+        #     Cell ∩ Cell -> Face / Edge / Vertex
+        #     Face ∩ Face -> Edge / Vertex
+        #
+        # and is required by spatial predicates such as Touches.
+        # ------------------------------------------------------------------
+
+        if occt_op_class is BRepAlgoAPI_Cut:
+
             operand_dimension = min(
                 Topology._max_shape_dimension(shape_a),
                 Topology._max_shape_dimension(shape_b),
             )
+
             if operand_dimension >= 2:
-                solids = _iter_occ_subshapes(result_shape, TopAbs_SOLID)
+
+                solids = _iter_occ_subshapes(
+                    result_shape,
+                    TopAbs_SOLID
+                )
+
                 if not solids:
-                    faces = _iter_occ_subshapes(result_shape, TopAbs_FACE)
+
+                    faces = _iter_occ_subshapes(
+                        result_shape,
+                        TopAbs_FACE
+                    )
+
                     if not faces:
-                        # No solid and no face left: the subtraction/intersection
-                        # is empty (only leftover edges/wires/vertices). Report None.
                         return None
+
                     if Topology._total_face_area(result_shape) <= 1e-9:
                         return None
-        result_shape = _postprocess_boolean_result(result_shape)
+
+        # ------------------------------------------------------------------
+        # Validate/fix only if required.
+        # ------------------------------------------------------------------
+
+        result_shape = _postprocess_boolean_result(
+            result_shape
+        )
+
+        if _is_null_shape(result_shape):
+            return None
+
+        # ------------------------------------------------------------------
+        # Dictionaries
+        # ------------------------------------------------------------------
 
         result_dictionary = {}
+
         if transferDictionary:
             result_dictionary = _merge_backend_dictionaries(
-                Topology.GetDictionary(self), Topology.GetDictionary(otherTopology)
+                Topology.GetDictionary(self),
+                Topology.GetDictionary(otherTopology)
             )
-        return Topology.ByOcctShape(result_shape, dictionary=result_dictionary)
+
+        return Topology.ByOcctShape(
+            result_shape,
+            dictionary=result_dictionary
+        )
 
     def Difference(self, otherTopology: Any, transferDictionary: bool = False):
         return self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, transferDictionary)
 
-    def Intersect(self, otherTopology: Any, transferDictionary: bool = False):
-        return self._binary_boolean(otherTopology, BRepAlgoAPI_Common, transferDictionary)
+    def Intersect(
+        self,
+        otherTopology,
+        transferDictionary: bool = False
+    ):
+        """
+        Returns the intersection of this topology and the input topology.
 
+        The primary operation uses BRepAlgoAPI_Common. For selected same-type
+        intersections, the result is wrapped in a Cluster to match TopologicCore
+        result semantics.
+
+        For Shell/Shell intersections, the raw OCCT Common result is first
+        normalized to a Shell before being wrapped in a Cluster. This avoids
+        duplicate coincident edge representations.
+
+        If BRepAlgoAPI_Common returns no topology, BRepAlgoAPI_Section is used as
+        a fallback to preserve legitimate lower-dimensional contact such as
+        face-, edge-, and vertex-only intersections between higher-dimensional
+        topologies.
+
+        Parameters
+        ----------
+        otherTopology : Topology
+            The second input topology.
+        transferDictionary : bool , optional
+            If True, dictionaries from the input topologies are transferred to
+            the result. Default is False.
+
+        Returns
+        -------
+        Topology
+            The resulting topology, or None if no intersection exists.
+        """
+
+        if not isinstance(otherTopology, Topology):
+            return None
+
+        from .cluster import Cluster
+        from .face import Face
+        from .shell import Shell
+        from .cell import Cell
+        from .cell_complex import CellComplex
+
+        # ------------------------------------------------------------------
+        # 1. Standard Boolean Common
+        # ------------------------------------------------------------------
+
+        result = self._binary_boolean(
+            otherTopology,
+            BRepAlgoAPI_Common,
+            transferDictionary
+        )
+
+        if result is not None:
+
+            # --------------------------------------------------------------
+            # Face / Face
+            #
+            # The normalized geometry is already correct. TopologicCore
+            # exposes this Boolean intersection as a Cluster.
+            # --------------------------------------------------------------
+
+            if (
+                isinstance(self, Face)
+                and isinstance(otherTopology, Face)
+            ):
+                cluster = Cluster.ByTopologies(
+                    [result]
+                )
+
+                if cluster is not None:
+                    if transferDictionary:
+                        cluster.dictionary = _merge_backend_dictionaries(
+                            Topology.GetDictionary(self),
+                            Topology.GetDictionary(otherTopology)
+                        )
+
+                    return cluster
+
+                return result
+
+            # --------------------------------------------------------------
+            # Shell / Shell
+            #
+            # The normal Boolean path can produce a Cluster whose constituent
+            # Faces contain duplicate coincident Edge wrappers.
+            #
+            # Rebuild the raw Common result and normalize that Compound first.
+            # This gives the correct Shell topology before wrapping it in a
+            # Cluster.
+            # --------------------------------------------------------------
+
+            if (
+                isinstance(self, Shell)
+                and isinstance(otherTopology, Shell)
+            ):
+                try:
+                    shape_a = _shape_from_topology(
+                        self
+                    )
+
+                    shape_b = _shape_from_topology(
+                        otherTopology
+                    )
+
+                    if (
+                        not _is_null_shape(shape_a)
+                        and not _is_null_shape(shape_b)
+                    ):
+                        common = BRepAlgoAPI_Common(
+                            shape_a,
+                            shape_b
+                        )
+
+                        common.Build()
+
+                        if common.IsDone():
+                            common_shape = common.Shape()
+
+                            if not _is_null_shape(common_shape):
+                                # The raw Common result is normally a Compound
+                                # containing one or more genuine OCCT Shell
+                                # subshapes. Wrap those Shells directly.
+                                #
+                                # Do not normalize the whole Compound through
+                                # _wrap_shape_as_topology here: that path can
+                                # rebuild a Shell from independent Face wrappers,
+                                # causing shared boundary Edges to be represented
+                                # multiple times (24 instead of the correct 12
+                                # in the regression case).
+                                shell_shapes = _iter_occ_subshapes_unique(
+                                    common_shape,
+                                    TopAbs_SHELL
+                                )
+
+                                normalized_shells = []
+
+                                for shell_shape in shell_shapes:
+                                    normalized_shell = Topology.ByOcctShape(
+                                        shell_shape
+                                    )
+
+                                    if normalized_shell is not None:
+                                        normalized_shells.append(
+                                            normalized_shell
+                                        )
+
+                                if normalized_shells:
+                                    # Do not use Cluster.ByTopologies here. In
+                                    # this specific Boolean result it can create
+                                    # another Compound container whose traversal
+                                    # re-exposes coincident Shell boundary Edges.
+                                    #
+                                    # Instead, keep the genuine OCCT Shell shape
+                                    # as the Cluster's underlying shape while
+                                    # preserving Cluster as the public semantic
+                                    # result type required by Topologic.
+                                    if len(normalized_shells) == 1:
+                                        normalized_shell = normalized_shells[0]
+
+                                        cluster_dictionary = {}
+
+                                        if transferDictionary:
+                                            cluster_dictionary = _merge_backend_dictionaries(
+                                                Topology.GetDictionary(self),
+                                                Topology.GetDictionary(otherTopology)
+                                            )
+
+                                        cluster = Cluster(
+                                            shape=getattr(normalized_shell, "shape", None),
+                                            topologies=[normalized_shell],
+                                            dictionary=cluster_dictionary,
+                                            contents=[],
+                                            contexts=[],
+                                            apertures=[]
+                                        )
+
+                                        return cluster
+
+                                    cluster = Cluster.ByTopologies(
+                                        normalized_shells
+                                    )
+
+                                    if cluster is not None:
+                                        if transferDictionary:
+                                            cluster.dictionary = _merge_backend_dictionaries(
+                                                Topology.GetDictionary(self),
+                                                Topology.GetDictionary(otherTopology)
+                                            )
+
+                                        return cluster
+
+                except Exception:
+                    pass
+
+                return result
+
+            # --------------------------------------------------------------
+            # Cell / Cell
+            #
+            # Preserve the correctly normalized Cell but expose it as a
+            # Cluster to match TopologicCore Boolean semantics.
+            # --------------------------------------------------------------
+
+            if (
+                isinstance(self, Cell)
+                and isinstance(otherTopology, Cell)
+            ):
+                cluster = Cluster.ByTopologies(
+                    [result]
+                )
+
+                if cluster is not None:
+                    if transferDictionary:
+                        cluster.dictionary = _merge_backend_dictionaries(
+                            Topology.GetDictionary(self),
+                            Topology.GetDictionary(otherTopology)
+                        )
+
+                    return cluster
+
+                return result
+
+            # --------------------------------------------------------------
+            # CellComplex / CellComplex
+            #
+            # IMPORTANT:
+            #
+            # Do not reconstruct this from the raw BRepAlgoAPI_Common shape.
+            # The raw Common result exposes fewer solids than the existing
+            # TopologicPy Boolean normalization.
+            #
+            # Preserve the already-normalized CellComplex result and only
+            # wrap it in a Cluster.
+            # --------------------------------------------------------------
+
+            if (
+                isinstance(self, CellComplex)
+                and isinstance(otherTopology, CellComplex)
+            ):
+                cells = []
+
+                try:
+                    result.Cells(
+                        None,
+                        cells
+                    )
+                except Exception:
+                    cells = []
+
+                if cells:
+                    cluster = Cluster.ByTopologies(
+                        cells
+                    )
+
+                    if cluster is not None:
+                        if transferDictionary:
+                            cluster.dictionary = _merge_backend_dictionaries(
+                                Topology.GetDictionary(self),
+                                Topology.GetDictionary(otherTopology)
+                            )
+
+                        return cluster
+
+                return result
+
+            # --------------------------------------------------------------
+            # All other intersections retain the normal Boolean result.
+            # --------------------------------------------------------------
+
+            return result
+
+        # ------------------------------------------------------------------
+        # 2. Lower-dimensional contact fallback
+        #
+        # BRepAlgoAPI_Common returns an empty Compound for cases such as:
+        #
+        #     Cell / Cell face contact
+        #     Cell / Cell edge contact
+        #     Cell / Cell vertex contact
+        #
+        # BRepAlgoAPI_Section preserves those intersections.
+        # ------------------------------------------------------------------
+
+        if BRepAlgoAPI_Section is None:
+            return None
+
+        shape_a = _shape_from_topology(
+            self
+        )
+
+        shape_b = _shape_from_topology(
+            otherTopology
+        )
+
+        if (
+            _is_null_shape(shape_a)
+            or _is_null_shape(shape_b)
+        ):
+            return None
+
+        try:
+            section = BRepAlgoAPI_Section(
+                shape_a,
+                shape_b,
+                False
+            )
+
+            section.Build()
+
+            if not section.IsDone():
+                return None
+
+            section_shape = section.Shape()
+
+        except Exception:
+            return None
+
+        if _is_null_shape(section_shape):
+            return None
+
+        # ------------------------------------------------------------------
+        # Section can return a non-null but empty Compound.
+        # A genuine intersection must contain at least one Vertex.
+        # ------------------------------------------------------------------
+
+        vertices = _iter_occ_subshapes_unique(
+            section_shape,
+            TopAbs_VERTEX
+        )
+
+        if not vertices:
+            return None
+
+        # ------------------------------------------------------------------
+        # Normalize the Section result.
+        # ------------------------------------------------------------------
+
+        section_result = Topology.ByOcctShape(
+            section_shape
+        )
+
+        if section_result is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Dictionary transfer.
+        # ------------------------------------------------------------------
+
+        if transferDictionary:
+            dictionary = _merge_backend_dictionaries(
+                Topology.GetDictionary(self),
+                Topology.GetDictionary(otherTopology)
+            )
+
+            try:
+                section_result = Topology.SetDictionary(
+                    section_result,
+                    dictionary
+                )
+            except Exception:
+                section_result.dictionary = dictionary
+
+        return section_result
     def XOR(self, otherTopology: Any, transferDictionary: bool = False):
         a_minus_b = self._binary_boolean(otherTopology, BRepAlgoAPI_Cut, False)
         b_minus_a = Topology._binary_boolean(otherTopology, self, BRepAlgoAPI_Cut, False)
@@ -1931,13 +3308,17 @@ class Topology:
         from .cluster import Cluster as _Cluster
 
         if isinstance(topology, _Wire):
-            children = getattr(topology, "edges", None) or []
+            children = topology.Edges() or []
+
         elif isinstance(topology, _Shell):
-            children = getattr(topology, "faces", None) or []
+            children = topology.Faces() or []
+
         elif isinstance(topology, _CellComplex):
-            children = getattr(topology, "cells", None) or []
+            children = topology.Cells() or []
+
         elif isinstance(topology, _Cluster):
             children = getattr(topology, "topologies", None) or []
+
         else:
             children = None
 
@@ -2015,34 +3396,292 @@ class Topology:
     @staticmethod
     def _apply_transform_to_members(topology: Any, apply_one) -> Any:
         """
-        Fallback for shapeless aggregate wrappers (a Cluster/CellComplex
-        built with shape=None): recursively apply the same transform to each
-        member and rebuild the same aggregate type, since there is no single
-        OCCT shape to hand to BRepBuilderAPI_(G)Transform directly.
-        apply_one(member) -> transformed member or None.
+        Applies a transformation recursively to the direct members of an
+        aggregate topology and rebuilds the same aggregate type.
+
+        This is used for heterogeneous Clusters, for which transforming the
+        complete OCCT Compound as one shape can alter the intermediate topology
+        hierarchy, and as a fallback for aggregate wrappers without a usable
+        native OCCT shape.
+
+        Parameters
+        ----------
+        topology : Topology
+            The input aggregate topology.
+        apply_one : callable
+            A callable that accepts one topology and returns its transformed
+            topology.
+
+        Returns
+        -------
+        Topology
+            The transformed aggregate topology, or None if the transformation
+            or reconstruction fails.
         """
-        members = getattr(topology, "topologies", None)
-        if members:
+        type_name = _topology_type_name(
+            topology
+        )
+
+        # ------------------------------------------------------------------
+        # Cluster
+        #
+        # Always preserve the actual DIRECT constituent hierarchy.
+        #
+        # Cluster.ByTopologies intentionally stores a native OCCT Compound, so
+        # topology.topologies may be empty. Retrieve the direct children through
+        # Cluster.Topologies() first.
+        # ------------------------------------------------------------------
+
+        if type_name == "Cluster":
+
             from .cluster import Cluster
-            transformed = [apply_one(m) for m in members]
-            transformed = [t for t in transformed if t is not None]
-            if not transformed:
+
+            members = []
+
+            try:
+                members = topology.Topologies()
+            except Exception:
+                members = []
+
+            if not isinstance(
+                members,
+                list
+            ):
+                members = []
+
+            if len(members) == 0:
+                try:
+                    members = list(
+                        getattr(
+                            topology,
+                            "topologies",
+                            []
+                        )
+                        or []
+                    )
+                except Exception:
+                    members = []
+
+            members = [
+                member
+                for member in members
+                if isinstance(
+                    member,
+                    Topology
+                )
+            ]
+
+            if len(members) == 0:
                 return None
-            result = Cluster.ByTopologies(transformed)
-            if result is not None:
-                result.dictionary = Topology.GetDictionary(topology)
+
+            transformed = []
+
+            for member in members:
+
+                try:
+                    transformed_member = apply_one(
+                        member
+                    )
+                except Exception:
+                    transformed_member = None
+
+                # Do not silently drop a failed constituent.
+                if not isinstance(
+                    transformed_member,
+                    Topology
+                ):
+                    return None
+
+                transformed.append(
+                    transformed_member
+                )
+
+            if len(transformed) != len(members):
+                return None
+
+            try:
+                result = Cluster.ByTopologies(
+                    transformed
+                )
+            except Exception:
+                result = None
+
+            if not isinstance(
+                result,
+                Cluster
+            ):
+                return None
+
+            # --------------------------------------------------------------
+            # Preserve aggregate metadata.
+            # --------------------------------------------------------------
+
+            try:
+                result.dictionary = Topology.GetDictionary(
+                    topology
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contents = list(
+                    getattr(
+                        topology,
+                        "contents",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contexts = list(
+                    getattr(
+                        topology,
+                        "contexts",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.apertures = list(
+                    getattr(
+                        topology,
+                        "apertures",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
             return result
 
-        cells = getattr(topology, "cells", None)
-        if cells:
+        # ------------------------------------------------------------------
+        # CellComplex fallback
+        #
+        # Normally a shaped CellComplex is transformed natively as one OCCT
+        # CompSolid. This branch is primarily for wrappers without a usable
+        # shape.
+        # ------------------------------------------------------------------
+
+        if type_name == "CellComplex":
+
             from .cell_complex import CellComplex
-            transformed = [apply_one(c) for c in cells]
-            transformed = [t for t in transformed if t is not None]
-            if not transformed:
+
+            cells = []
+
+            try:
+                cells = list(
+                    getattr(
+                        topology,
+                        "cells",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                cells = []
+
+            if len(cells) == 0:
+                try:
+                    cells = topology.Cells()
+                except Exception:
+                    cells = []
+
+            cells = [
+                cell
+                for cell in cells
+                if isinstance(
+                    cell,
+                    Topology
+                )
+            ]
+
+            if len(cells) == 0:
                 return None
-            result = CellComplex.ByCells(transformed)
-            if result is not None:
-                result.dictionary = Topology.GetDictionary(topology)
+
+            transformed = []
+
+            for cell in cells:
+
+                try:
+                    transformed_cell = apply_one(
+                        cell
+                    )
+                except Exception:
+                    transformed_cell = None
+
+                if not isinstance(
+                    transformed_cell,
+                    Topology
+                ):
+                    return None
+
+                transformed.append(
+                    transformed_cell
+                )
+
+            if len(transformed) != len(cells):
+                return None
+
+            try:
+                result = CellComplex.ByCells(
+                    transformed
+                )
+            except Exception:
+                result = None
+
+            if result is None:
+                return None
+
+            try:
+                result.dictionary = Topology.GetDictionary(
+                    topology
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contents = list(
+                    getattr(
+                        topology,
+                        "contents",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.contexts = list(
+                    getattr(
+                        topology,
+                        "contexts",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
+            try:
+                result.apertures = list(
+                    getattr(
+                        topology,
+                        "apertures",
+                        []
+                    )
+                    or []
+                )
+            except Exception:
+                pass
+
             return result
 
         return None
@@ -2051,53 +3690,151 @@ class Topology:
     @staticmethod
     def _rewrap_preserving_wrapper(result: Any, original: Any) -> Any:
         """
-        If ``original`` was a CellComplex, ByOcctShape on its (single-solid)
-        shape returns a Cell -- topologic_core keeps it a CellComplex, so
-        transforms (e.g. CellComplex.Torus' final Orient/Place) must not
-        silently degrade the wrapper type.
+        Preserves a CellComplex wrapper across transforms even when the underlying
+        transformed OCCT result contains only one Solid.
         """
-        if result is None or not getattr(original, "cells", None):
-            return result
+        if result is None:
+            return None
+
         try:
-            from .cell_complex import CellComplex as _CC
-            if isinstance(result, _CC):
+            from .cell import Cell
+            from .cell_complex import CellComplex
+
+            if not isinstance(original, CellComplex):
                 return result
-            cells = getattr(result, "Cells", None)
-            cell_list = cells() if callable(cells) else None
-            if not cell_list:
+
+            if isinstance(result, CellComplex):
                 return result
-            new_result = _CC(shape=getattr(result, "shape", None), cells=list(cell_list))
-            if new_result is not None:
-                new_result.dictionary = Topology.GetDictionary(original)
-                return new_result
+
+            if isinstance(result, Cell):
+                return CellComplex(
+                    shape=getattr(result, "shape", None),
+                    cells=[],
+                    dictionary=Topology.GetDictionary(original),
+                    contents=list(getattr(original, "contents", []) or []),
+                    contexts=list(getattr(original, "contexts", []) or []),
+                    apertures=list(getattr(original, "apertures", []) or []),
+                )
+
         except Exception:
             pass
+
         return result
 
-    def _apply_gtrsf(self, gtrsf, dictionary_passthrough: bool = True):
+    def _apply_gtrsf(
+        self,
+        gtrsf,
+        dictionary_passthrough: bool = True
+    ):
         """
-        Applies a gp_GTrsf (general affine transform, supports non-uniform
-        scale) to self's underlying shape and rebuilds a wrapper topology.
-        Falls back to per-member recursion for wrapper objects that have no
-        real OCCT shape yet (e.g. CellComplex/Cluster aggregates built with
-        shape=None).
+        Applies a gp_GTrsf general affine transformation to the topology.
+
+        Heterogeneous Clusters are transformed constituent-by-constituent so
+        that their direct topology hierarchy is preserved. Other topologies are
+        transformed natively as a single OCCT shape whenever possible.
+
+        Parameters
+        ----------
+        gtrsf : OCC.Core.gp.gp_GTrsf
+            The general affine transformation.
+        dictionary_passthrough : bool , optional
+            If set to True, the topology dictionary is preserved.
+            Default is True.
+
+        Returns
+        -------
+        Topology
+            The transformed topology, or None if the transformation fails.
         """
-        shape = _shape_from_topology(self)
-        if not _is_null_shape(shape) and BRepBuilderAPI_GTransform is not None:
+
+        # ------------------------------------------------------------------
+        # Heterogeneous Cluster
+        #
+        # Do not transform the complete mixed-dimensional Compound in one
+        # BRepBuilderAPI_GTransform operation. Doing so can alter intermediate
+        # containers such as the Shell inside a Cell.
+        #
+        # Transform the direct constituent topologies independently and rebuild
+        # the Cluster instead.
+        # ------------------------------------------------------------------
+
+        if _topology_type_name(
+            self
+        ) == "Cluster":
+
+            return Topology._apply_transform_to_members(
+                self,
+                lambda member: Topology._apply_gtrsf(
+                    member,
+                    gtrsf,
+                    dictionary_passthrough
+                )
+            )
+
+        # ------------------------------------------------------------------
+        # Native OCCT affine transformation
+        # ------------------------------------------------------------------
+
+        shape = _shape_from_topology(
+            self
+        )
+
+        if (
+            not _is_null_shape(shape)
+            and BRepBuilderAPI_GTransform is not None
+        ):
+
             try:
-                maker = BRepBuilderAPI_GTransform(shape, gtrsf, True)
+                maker = BRepBuilderAPI_GTransform(
+                    shape,
+                    gtrsf,
+                    True
+                )
+
                 if maker.IsDone():
+
                     new_shape = maker.Shape()
-                    if not _is_null_shape(new_shape):
-                        result = Topology.ByOcctShape(new_shape)
+
+                    if not _is_null_shape(
+                        new_shape
+                    ):
+
+                        result = Topology.ByOcctShape(
+                            new_shape
+                        )
+
                         if result is not None:
+
                             if dictionary_passthrough:
-                                result.dictionary = Topology.GetDictionary(self)
-                            result = Topology._rewrap_preserving_wrapper(result, self)
+                                try:
+                                    result.dictionary = Topology.GetDictionary(
+                                        self
+                                    )
+                                except Exception:
+                                    pass
+
+                            result = Topology._rewrap_preserving_wrapper(
+                                result,
+                                self
+                            )
+
                             return result
+
             except Exception:
                 pass
-        return Topology._apply_transform_to_members(self, lambda member: Topology._apply_gtrsf(member, gtrsf, dictionary_passthrough))
+
+        # ------------------------------------------------------------------
+        # Aggregate fallback
+        # ------------------------------------------------------------------
+
+        return Topology._apply_transform_to_members(
+            self,
+            lambda member: Topology._apply_gtrsf(
+                member,
+                gtrsf,
+                dictionary_passthrough
+            )
+        )
 
     def Translate(self, x: float, y: float, z: float):
         if self is None:
@@ -2170,28 +3907,108 @@ class Topology:
         return Topology._apply_gtrsf(self, gtrsf)
 
     @staticmethod
-    def _apply_rigid(topology: Any, trsf) -> Any:
+    def _apply_rigid(
+        topology: Any,
+        trsf
+    ) -> Any:
         """
-        Applies a gp_Trsf (rigid rotation/translation) and rebuilds a wrapper
-        topology. Falls back to per-member recursion for wrapper objects
-        that have no real OCCT shape yet (e.g. CellComplex/Cluster
-        aggregates built with shape=None).
+        Applies a gp_Trsf rigid transformation and rebuilds the topology.
+
+        Heterogeneous Clusters are transformed constituent-by-constituent so
+        that their direct topology hierarchy is preserved. Other topologies are
+        transformed natively as a single OCCT shape whenever possible.
+
+        Parameters
+        ----------
+        topology : Topology
+            The input topology.
+        trsf : OCC.Core.gp.gp_Trsf
+            The rigid transformation.
+
+        Returns
+        -------
+        Topology
+            The transformed topology, or None if the transformation fails.
         """
-        shape = _shape_from_topology(topology)
-        if not _is_null_shape(shape) and BRepBuilderAPI_Transform is not None:
+
+        # ------------------------------------------------------------------
+        # Heterogeneous Cluster
+        # ------------------------------------------------------------------
+
+        if _topology_type_name(
+            topology
+        ) == "Cluster":
+
+            return Topology._apply_transform_to_members(
+                topology,
+                lambda member: Topology._apply_rigid(
+                    member,
+                    trsf
+                )
+            )
+
+        # ------------------------------------------------------------------
+        # Native OCCT rigid transformation
+        # ------------------------------------------------------------------
+
+        shape = _shape_from_topology(
+            topology
+        )
+
+        if (
+            not _is_null_shape(shape)
+            and BRepBuilderAPI_Transform is not None
+        ):
+
             try:
-                maker = BRepBuilderAPI_Transform(shape, trsf, True)
+                maker = BRepBuilderAPI_Transform(
+                    shape,
+                    trsf,
+                    True
+                )
+
                 if maker.IsDone():
+
                     new_shape = maker.Shape()
-                    if not _is_null_shape(new_shape):
-                        result = Topology.ByOcctShape(new_shape)
+
+                    if not _is_null_shape(
+                        new_shape
+                    ):
+
+                        result = Topology.ByOcctShape(
+                            new_shape
+                        )
+
                         if result is not None:
-                            result.dictionary = Topology.GetDictionary(topology)
-                            result = Topology._rewrap_preserving_wrapper(result, topology)
+
+                            try:
+                                result.dictionary = Topology.GetDictionary(
+                                    topology
+                                )
+                            except Exception:
+                                pass
+
+                            result = Topology._rewrap_preserving_wrapper(
+                                result,
+                                topology
+                            )
+
                             return result
+
             except Exception:
                 pass
-        return Topology._apply_transform_to_members(topology, lambda member: Topology._apply_rigid(member, trsf))
+
+        # ------------------------------------------------------------------
+        # Aggregate fallback
+        # ------------------------------------------------------------------
+
+        return Topology._apply_transform_to_members(
+            topology,
+            lambda member: Topology._apply_rigid(
+                member,
+                trsf
+            )
+        )
 
     # -------------------------------------------------------------------
     # Analysis / copy / mass properties
@@ -2232,28 +4049,677 @@ class Topology:
             return self
 
     def Copy(self):
+        """
+        Creates an independent copy of the topology.
+
+        Native OCCT topologies are copied using BRepBuilderAPI_Copy. Aggregate
+        wrappers without a native OCCT shape, such as a lightweight Cluster,
+        are copied recursively constituent-by-constituent.
+
+        The topology's parent dictionary is deep-copied. A native copy failure
+        is returned as None rather than being concealed by wrapping the original
+        OCCT shape.
+
+        Returns
+        -------
+        Topology
+            An independent copy of the topology, or None if copying fails.
+        """
+
         if self is None:
             return None
-        shape = _shape_from_topology(self)
-        new_shape = shape
-        if not _is_null_shape(shape) and BRepBuilderAPI_Copy is not None:
-            try:
-                copier = BRepBuilderAPI_Copy(shape)
-                copied = copier.Shape()
-                if not _is_null_shape(copied):
-                    new_shape = copied
-            except Exception:
-                pass
-        result = Topology.ByOcctShape(new_shape) if not _is_null_shape(new_shape) else copy.deepcopy(self)
-        if result is None:
-            result = copy.deepcopy(self)
+
+        type_name = _topology_type_name(
+            self
+        )
+
+        shape = _shape_from_topology(
+            self
+        )
+
+        # ------------------------------------------------------------------
+        # Aggregate wrappers without one native OCCT shape.
+        # ------------------------------------------------------------------
+
+        if _is_null_shape(shape):
+
+            # --------------------------------------------------------------
+            # Cluster
+            # --------------------------------------------------------------
+
+            if type_name == "Cluster":
+
+                from .cluster import Cluster
+
+                members = []
+
+                try:
+                    members = self.Topologies()
+                except Exception:
+                    members = []
+
+                if not isinstance(
+                    members,
+                    list
+                ):
+                    members = []
+
+                if len(members) == 0:
+                    try:
+                        members = list(
+                            getattr(
+                                self,
+                                "topologies",
+                                []
+                            )
+                            or []
+                        )
+                    except Exception:
+                        members = []
+
+                if len(members) == 0:
+                    return None
+
+                copied_members = []
+
+                for member in members:
+
+                    if not isinstance(
+                        member,
+                        Topology
+                    ):
+                        return None
+
+                    try:
+                        copied_member = member.Copy()
+                    except Exception:
+                        copied_member = None
+
+                    if not isinstance(
+                        copied_member,
+                        Topology
+                    ):
+                        return None
+
+                    copied_members.append(
+                        copied_member
+                    )
+
+                try:
+                    result = Cluster.ByTopologies(
+                        copied_members
+                    )
+                except Exception:
+                    result = None
+
+                if not isinstance(
+                    result,
+                    Cluster
+                ):
+                    return None
+
+                try:
+                    result.dictionary = copy.deepcopy(
+                        Topology.GetDictionary(
+                            self
+                        )
+                    )
+                except Exception:
+                    pass
+
+                return result
+
+            # --------------------------------------------------------------
+            # Shapeless CellComplex fallback.
+            # --------------------------------------------------------------
+
+            if type_name == "CellComplex":
+
+                from .cell_complex import CellComplex
+
+                try:
+                    cells = list(
+                        getattr(
+                            self,
+                            "cells",
+                            []
+                        )
+                        or []
+                    )
+                except Exception:
+                    cells = []
+
+                if len(cells) == 0:
+                    try:
+                        cells = self.Cells()
+                    except Exception:
+                        cells = []
+
+                if not isinstance(
+                    cells,
+                    list
+                ) or len(cells) == 0:
+                    return None
+
+                copied_cells = []
+
+                for cell in cells:
+
+                    if not isinstance(
+                        cell,
+                        Topology
+                    ):
+                        return None
+
+                    try:
+                        copied_cell = cell.Copy()
+                    except Exception:
+                        copied_cell = None
+
+                    if not isinstance(
+                        copied_cell,
+                        Topology
+                    ):
+                        return None
+
+                    copied_cells.append(
+                        copied_cell
+                    )
+
+                try:
+                    result = CellComplex.ByCells(
+                        copied_cells
+                    )
+                except Exception:
+                    result = None
+
+                if not isinstance(
+                    result,
+                    CellComplex
+                ):
+                    return None
+
+                try:
+                    result.dictionary = copy.deepcopy(
+                        Topology.GetDictionary(
+                            self
+                        )
+                    )
+                except Exception:
+                    pass
+
+                return result
+
+            # A native topology with no native shape should not silently
+            # pretend that it has been copied.
+            return None
+
+        # ------------------------------------------------------------------
+        # Native OCCT copy.
+        # ------------------------------------------------------------------
+
+        if BRepBuilderAPI_Copy is None:
+            return None
+
         try:
-            result.dictionary = copy.deepcopy(Topology.GetDictionary(self))
+            copier = BRepBuilderAPI_Copy(
+                shape
+            )
+
+            copied_shape = copier.Shape()
+
+        except Exception:
+            return None
+
+        if _is_null_shape(
+            copied_shape
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Wrap copied native topology.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Topology.ByOcctShape(
+                copied_shape
+            )
+        except Exception:
+            result = None
+
+        if result is None:
+            return None
+
+        # Preserve explicit wrapper semantics where OCCT normalization may
+        # otherwise unwrap a single-member container.
+        try:
+            result = Topology._rewrap_preserving_wrapper(
+                result,
+                self
+            )
         except Exception:
             pass
+
+        if not isinstance(
+            result,
+            Topology
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Copy must preserve its Topologic type.
+        # ------------------------------------------------------------------
+
+        if _topology_type_name(
+            result
+        ) != type_name:
+            return None
+
+        # ------------------------------------------------------------------
+        # Preserve the parent dictionary independently.
+        # ------------------------------------------------------------------
+
+        try:
+            result.dictionary = copy.deepcopy(
+                Topology.GetDictionary(
+                    self
+                )
+            )
+        except Exception:
+            pass
+
         return result
 
-    DeepCopy = Copy
+    def DeepCopy(self):
+        """
+        Creates an independent deep copy of the topology.
+
+        The native OCCT topology is duplicated using BRepBuilderAPI_Copy.
+        Dictionaries attached to the topology and all of its native
+        subtopologies are transferred to their exact copied counterparts using
+        the OCCT source-to-copy mapping provided by ModifiedShape.
+
+        Aggregate wrappers without a single native OCCT shape, such as the
+        lightweight Cluster, are copied recursively constituent-by-constituent.
+
+        Returns
+        -------
+        Topology
+            An independent deep copy of the topology, or None if copying fails.
+        """
+
+        if self is None:
+            return None
+
+        type_name = _topology_type_name(
+            self
+        )
+
+        shape = _shape_from_topology(
+            self
+        )
+
+        # ------------------------------------------------------------------
+        # Shapeless aggregate wrappers
+        # ------------------------------------------------------------------
+
+        if _is_null_shape(shape):
+
+            # --------------------------------------------------------------
+            # Cluster
+            # --------------------------------------------------------------
+
+            if type_name == "Cluster":
+
+                from .cluster import Cluster
+
+                try:
+                    members = self.Topologies()
+                except Exception:
+                    members = []
+
+                if not isinstance(
+                    members,
+                    list
+                ):
+                    members = []
+
+                if len(members) == 0:
+
+                    try:
+                        members = list(
+                            getattr(
+                                self,
+                                "topologies",
+                                []
+                            )
+                            or []
+                        )
+                    except Exception:
+                        members = []
+
+                if len(members) == 0:
+                    return None
+
+                copied_members = []
+
+                for member in members:
+
+                    if not isinstance(
+                        member,
+                        Topology
+                    ):
+                        return None
+
+                    try:
+                        copied_member = member.DeepCopy()
+                    except Exception:
+                        copied_member = None
+
+                    if not isinstance(
+                        copied_member,
+                        Topology
+                    ):
+                        return None
+
+                    copied_members.append(
+                        copied_member
+                    )
+
+                try:
+                    result = Cluster.ByTopologies(
+                        copied_members
+                    )
+                except Exception:
+                    result = None
+
+                if not isinstance(
+                    result,
+                    Cluster
+                ):
+                    return None
+
+                try:
+                    result.dictionary = copy.deepcopy(
+                        Topology.GetDictionary(
+                            self
+                        )
+                    )
+                except Exception:
+                    pass
+
+                return result
+
+            # --------------------------------------------------------------
+            # Shapeless CellComplex
+            # --------------------------------------------------------------
+
+            if type_name == "CellComplex":
+
+                from .cell_complex import CellComplex
+
+                try:
+                    cells = list(
+                        getattr(
+                            self,
+                            "cells",
+                            []
+                        )
+                        or []
+                    )
+                except Exception:
+                    cells = []
+
+                if len(cells) == 0:
+
+                    try:
+                        cells = self.Cells()
+                    except Exception:
+                        cells = []
+
+                if not isinstance(
+                        cells,
+                        list
+                ) or len(cells) == 0:
+                    return None
+
+                copied_cells = []
+
+                for cell in cells:
+
+                    if not isinstance(
+                        cell,
+                        Topology
+                    ):
+                        return None
+
+                    try:
+                        copied_cell = cell.DeepCopy()
+                    except Exception:
+                        copied_cell = None
+
+                    if not isinstance(
+                        copied_cell,
+                        Topology
+                    ):
+                        return None
+
+                    copied_cells.append(
+                        copied_cell
+                    )
+
+                try:
+                    result = CellComplex.ByCells(
+                        copied_cells
+                    )
+                except Exception:
+                    result = None
+
+                if not isinstance(
+                        result,
+                        CellComplex
+                ):
+                    return None
+
+                try:
+                    result.dictionary = copy.deepcopy(
+                        Topology.GetDictionary(
+                            self
+                        )
+                    )
+                except Exception:
+                    pass
+
+                return result
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Native OCCT deep copy
+        #
+        # copyGeom=True:
+        #     duplicate underlying geometry rather than sharing it.
+        #
+        # copyMesh=True:
+        #     duplicate any existing triangulation as well.
+        # ------------------------------------------------------------------
+
+        if BRepBuilderAPI_Copy is None:
+            return None
+
+        try:
+            copier = BRepBuilderAPI_Copy(
+                shape,
+                True,
+                True
+            )
+
+            copied_shape = copier.Shape()
+
+        except Exception:
+            return None
+
+        if _is_null_shape(
+            copied_shape
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Transfer dictionaries for the root shape and every subshape.
+        #
+        # AttributeManager stores dictionaries against native OCCT shape
+        # identity. ModifiedShape gives the exact copied counterpart of each
+        # original subshape.
+        # ------------------------------------------------------------------
+
+        manager = AttributeManager.GetInstance()
+
+        def _transfer_shape_dictionary(
+            source_shape,
+            target_shape
+        ):
+
+            if (
+                _is_null_shape(source_shape)
+                or _is_null_shape(target_shape)
+            ):
+                return
+
+            try:
+
+                if not manager.HasDictionary(
+                    source_shape
+                ):
+                    return
+
+                source_dictionary = manager.GetDictionary(
+                    source_shape
+                )
+
+                manager.SetDictionary(
+                    target_shape,
+                    copy.deepcopy(
+                        source_dictionary
+                    )
+                )
+
+            except Exception:
+                pass
+
+        # Root dictionary.
+        _transfer_shape_dictionary(
+            shape,
+            copied_shape
+        )
+
+        # ------------------------------------------------------------------
+        # Native subtopology dictionaries.
+        # ------------------------------------------------------------------
+
+        shape_types = (
+            TopAbs_VERTEX,
+            TopAbs_EDGE,
+            TopAbs_WIRE,
+            TopAbs_FACE,
+            TopAbs_SHELL,
+            TopAbs_SOLID,
+            TopAbs_COMPSOLID,
+        )
+
+        for shape_type in shape_types:
+
+            try:
+                source_subshapes = _iter_occ_subshapes_unique(
+                    shape,
+                    shape_type
+                )
+            except Exception:
+                source_subshapes = []
+
+            for source_subshape in source_subshapes:
+
+                # No dictionary means there is nothing to transfer.
+                try:
+                    if not manager.HasDictionary(
+                        source_subshape
+                    ):
+                        continue
+                except Exception:
+                    continue
+
+                # ----------------------------------------------------------
+                # Ask OCCT for the exact corresponding copied subshape.
+                # ----------------------------------------------------------
+
+                try:
+                    copied_subshape = copier.ModifiedShape(
+                        source_subshape
+                    )
+                except Exception:
+                    copied_subshape = None
+
+                if _is_null_shape(
+                    copied_subshape
+                ):
+                    continue
+
+                _transfer_shape_dictionary(
+                    source_subshape,
+                    copied_subshape
+                )
+
+        # ------------------------------------------------------------------
+        # Wrap copied native topology.
+        # ------------------------------------------------------------------
+
+        try:
+            result = Topology.ByOcctShape(
+                copied_shape
+            )
+        except Exception:
+            result = None
+
+        if result is None:
+            return None
+
+        # Preserve wrapper semantics such as CellComplex where required.
+        try:
+            result = Topology._rewrap_preserving_wrapper(
+                result,
+                self
+            )
+        except Exception:
+            pass
+
+        if not isinstance(
+            result,
+            Topology
+        ):
+            return None
+
+        # ------------------------------------------------------------------
+        # Deep copy must preserve the original Topologic type.
+        # ------------------------------------------------------------------
+
+        if _topology_type_name(
+            result
+        ) != type_name:
+            return None
+
+        # ------------------------------------------------------------------
+        # Keep the wrapper-level parent dictionary mirror synchronized.
+        # ------------------------------------------------------------------
+
+        try:
+            result.dictionary = copy.deepcopy(
+                Topology.GetDictionary(
+                    self
+                )
+            )
+        except Exception:
+            pass
+
+        return result
 
     def CenterOfMass(self):
         from .vertex import Vertex

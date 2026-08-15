@@ -16,7 +16,7 @@ Two acceptance rulers are used (both are asserted):
       because a Cluster holding one connected chain of edges IS the same
       topology as the corresponding Wire.
 
-  Ruler B -- STRUCTURAL parity (104 exact + the documented deviations):
+  Ruler B -- STRUCTURAL parity (must hold for all 114 cases):
       top-level type, the six subtopology counts, exact coordinates at 6
       decimals. Any case that is not byte-identical must classify into the
       KNOWN_DEVIATIONS table below; a NEW or re-classified deviation fails
@@ -24,21 +24,13 @@ Two acceptance rulers are used (both are asserted):
 
 The current, verified state:
   * geometric parity ......... 114/114
-  * structural exact match ... 104/114
-  * remaining deviations ..... 10, all classified (see KNOWN_DEVIATIONS):
-        5 container-only        - same geometry, different wrapper
-                                   (topologic_core's own kernel Convention;
-                                    its Intersect is documented "faulty" in
-                                    Topology.py, and its edge/wire boolean
-                                    results are non-manifold Wires).
-        3 numeric-noise         - deltas <= ~1e-4 (kernel faceting roundoff).
-        2 structural-wire-grouping - identical edges/vertices, different
-                                   wire count (core groups/drops free edges
-                                   differently than OCCT's enumeration).
+  * structural exact match ... 114/114
+  * remaining deviations ..... 0
 
-If a future backend fix removes one of these deviations, update
-KNOWN_DEVIATIONS (and the counts in this docstring) in the SAME commit --
-the table is a living document, not a permanent carve-out."""  # noqa: D400
+If a future backend change introduces a verified, intentional structural
+difference, document it in KNOWN_DEVIATIONS (and update the counts in this
+docstring) in the SAME commit. The table is a living regression record, not
+a permanent carve-out."""  # noqa: D400
 
 from __future__ import annotations
 
@@ -515,25 +507,6 @@ def backend_results():
 # as any backend fix that changes a classification.
 # ---------------------------------------------------------------------------
 KNOWN_DEVIATIONS = {
-    # topologic_core wraps the Intersect result in a Cluster (with a
-    # phantom whole-edge-network wire); topologicpy itself documents core's
-    # Intersect as "faulty". pythonocc returns the clean Cell/Face.
-    "bool_intersect_cell": ("(c) container-only", "core: Cluster-wrapped Cell"),
-    "bool_intersect_face": ("(c) container-only", "core: Cluster-wrapped Face"),
-    "bool_intersect_cc": ("(c) container-only", "core: Cluster-wrapped CellComplex"),
-    # Overlapping-wire Merge/Union: core returns a non-manifold Wire (3 edges
-    # meet at a vertex); OCCT's valid container for the identical edge set is
-    # a Cluster. Geometry identical.
-    "bool_union_wire": ("(c) container-only", "core: non-manifold Wire vs Cluster"),
-    "bool_merge_wire": ("(c) container-only", "core: non-manifold Wire vs Cluster"),
-    # Wire Difference/Intersect: identical edges/verts, but core groups the
-    # free-edge chains differently than OCCT's enumeration.
-    "bool_difference_wire": ("(a) structural-wire-grouping", "wires 1 vs 2"),
-    "bool_intersect_wire": ("(a) structural-wire-grouping", "wires 0 vs 2"),
-    # Kernel faceting roundoff (< 2e-6) between the two geometry kernels.
-    "cell_cone": ("(b) numeric-noise", "sub-1e-5 surface/volume roundoff"),
-    "cell_dodeca": ("(b) numeric-noise", "sub-1e-5 surface roundoff"),
-    "cc_torus": ("(b) numeric-noise", "sub-1e-4 edge-length roundoff"),
 }
 
 

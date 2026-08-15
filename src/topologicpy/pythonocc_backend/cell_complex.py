@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from .topology import Topology
+from .topology import Topology, _downward_wrappers
 from .cell import Cell
 from .cluster import Cluster
 from .helpers import unique_by_uuid
@@ -9,7 +9,13 @@ from .helpers import unique_by_uuid
 try:
     from OCC.Core.BOPAlgo import BOPAlgo_CellsBuilder, BOPAlgo_MakerVolume
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
-    from OCC.Core.TopAbs import TopAbs_SHELL, TopAbs_FACE, TopAbs_SOLID
+    from OCC.Core.TopAbs import (
+    TopAbs_VERTEX,
+    TopAbs_EDGE,
+    TopAbs_FACE,
+    TopAbs_SHELL,
+    TopAbs_SOLID,
+    )
     from OCC.Core.TopExp import TopExp_Explorer
     from OCC.Core.TopTools import TopTools_ListOfShape
     from OCC.Core.BRep import BRep_Builder
@@ -18,7 +24,7 @@ except Exception:  # pragma: no cover - allows import without PythonOCC
     BOPAlgo_CellsBuilder = None
     BOPAlgo_MakerVolume = None
     BRepAlgoAPI_Fuse = None
-    TopAbs_SHELL = TopAbs_FACE = TopAbs_SOLID = None
+    TopAbs_VERTEX = TopAbs_EDGE, TopAbs_FACE = TopAbs_SHELL = TopAbs_SOLID = None
     TopExp_Explorer = None
     TopTools_ListOfShape = None
     BRep_Builder = None
@@ -244,50 +250,103 @@ class CellComplex(Topology):
         return CellComplex.ByCells([cell], tolerance)
 
     def Cells(self, hostTopology=None, cells=None):
-        result = list(getattr(self, "cells", []) or [])
+        result = []
+
+        if not _is_null_shape(getattr(self, "shape", None)):
+            try:
+                # A single-cell CellComplex can currently carry a Solid directly.
+                if self.shape.ShapeType() == TopAbs_SOLID:
+                    cell = Topology.ByOcctShape(self.shape)
+                    if isinstance(cell, Cell):
+                        result = [cell]
+                else:
+                    result = _downward_wrappers(
+                        self,
+                        TopAbs_SOLID
+                    )
+            except Exception:
+                result = []
+
+        # Fallback for shapeless/fallback CellComplex instances.
+        if not result:
+            result = list(getattr(self, "cells", []) or [])
+
         if cells is not None:
             cells.extend(result)
             return 0
+
         return result
 
+
     def Shells(self, hostTopology=None, shells=None):
-        result = []
-        for cell in self.Cells():
-            result.extend(cell.Shells())
-        result = unique_by_uuid(result)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_SHELL
+            )
+        else:
+            result = []
+            for cell in getattr(self, "cells", []) or []:
+                result.extend(cell.Shells())
+
         if shells is not None:
             shells.extend(result)
             return 0
+
         return result
 
+
     def Faces(self, hostTopology=None, faces=None):
-        result = []
-        for cell in self.Cells():
-            result.extend(cell.Faces())
-        result = unique_by_uuid(result)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_FACE
+            )
+        else:
+            result = []
+            for cell in getattr(self, "cells", []) or []:
+                result.extend(cell.Faces())
+
         if faces is not None:
             faces.extend(result)
             return 0
+
         return result
 
+
     def Edges(self, hostTopology=None, edges=None):
-        result = []
-        for cell in self.Cells():
-            result.extend(cell.Edges())
-        result = unique_by_uuid(result)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_EDGE
+            )
+        else:
+            result = []
+            for cell in getattr(self, "cells", []) or []:
+                result.extend(cell.Edges())
+
         if edges is not None:
             edges.extend(result)
             return 0
+
         return result
 
+
     def Vertices(self, hostTopology=None, vertices=None):
-        result = []
-        for cell in self.Cells():
-            result.extend(cell.Vertices())
-        result = unique_by_uuid(result)
+        if not _is_null_shape(getattr(self, "shape", None)):
+            result = _downward_wrappers(
+                self,
+                TopAbs_VERTEX
+            )
+        else:
+            result = []
+            for cell in getattr(self, "cells", []) or []:
+                result.extend(cell.Vertices())
+
         if vertices is not None:
             vertices.extend(result)
             return 0
+
         return result
 
     def CellComplexes(self, hostTopology=None, cellComplexes=None):

@@ -189,6 +189,34 @@ class MergingProcess(Process):
                 print(str(e))
 
 class Topology():
+
+    @staticmethod
+    def _IsTopologicCoreBackend() -> bool:
+        """
+        Returns True if the active Core backend is TopologicCore.
+
+        This helper is used to fence legacy workarounds that are required only
+        because TopologicCore may return incorrect, incomplete, or poorly typed
+        topology results.
+
+        All other backends are assumed to return correct native results.
+
+        Returns
+        -------
+        bool
+            True if the active backend is TopologicCore. False otherwise.
+        """
+        try:
+            backend = Core.Backend()
+
+            if backend is None:
+                return False
+
+            return backend.__class__.__name__ == "TopologicCoreBackend"
+
+        except Exception:
+            return False
+
     @staticmethod
     def _OntologyAnnotate(topology,
                           ontology: bool = False,
@@ -1902,9 +1930,16 @@ class Topology():
         return targets
 
     @staticmethod
-    def Intersect(topologyA, topologyB, tranDict=False, tolerance=0.0001, silent: bool = False):
+    def Intersect(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Finds the intersection between the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Finds the intersection between the input operand topologies.
+        See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -1913,87 +1948,223 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True the dictionaries of the operands are merged and
+            transferred to the result. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The resultant topology.
         """
         from topologicpy.Cluster import Cluster
 
-        if not Topology.IsInstance(topologyA, "topology"):
+        if not Topology.IsInstance(
+            topologyA,
+            "topology"
+        ):
             if not silent:
-                print("Topology.Intersect - Error: The topologyA input parameter is not a valid Topology. Returning None.")
+                print(
+                    "Topology.Intersect - Error: The topologyA input parameter "
+                    "is not a valid Topology. Returning None."
+                )
             return None
-        if not Topology.IsInstance(topologyB, "topology"):
+
+        if not Topology.IsInstance(
+            topologyB,
+            "topology"
+        ):
             if not silent:
-                print("Topology.Intersect - Error: The topologyB input parameter is not a valid Topology. Returning None.")
+                print(
+                    "Topology.Intersect - Error: The topologyB input parameter "
+                    "is not a valid Topology. Returning None."
+                )
             return None
-        
-        # Sort the two topologies by their type from lower to higher so comparison can be eased.
+
+        # --------------------------------------------------------------
+        # Normal backend path
+        #
+        # Trust the backend result. Legacy repair logic below is required
+        # only for TopologicCore.
+        # --------------------------------------------------------------
+
+        if not Topology._IsTopologicCoreBackend():
+            return Core.InstanceCall(
+                topologyA,
+                "Intersect",
+                topologyB,
+                tranDict
+            )
+
+        # --------------------------------------------------------------
+        # Legacy TopologicCore workaround
+        # --------------------------------------------------------------
+
+        # Sort the two topologies by their type from lower to higher so
+        # comparison can be eased.
         if Topology.Type(topologyB) < Topology.Type(topologyA):
             temp = topologyA
             topologyA = topologyB
             topologyB = temp
-        
+
         results = []
-        if Topology.IsInstance(topologyA, "CellComplex"):
-           cellsA = Topology.Cells(topologyA)
-        if Topology.IsInstance(topologyA, "Wire"):
-            cellsA = Topology.Edges(topologyA)
-        elif Topology.IsInstance(topologyA, "Cluster"):
-            cellsA = Cluster.FreeTopologies(topologyA)
+
+        if Topology.IsInstance(
+            topologyA,
+            "CellComplex"
+        ):
+            cellsA = Topology.Cells(
+                topologyA
+            )
+
+        if Topology.IsInstance(
+            topologyA,
+            "Wire"
+        ):
+            cellsA = Topology.Edges(
+                topologyA
+            )
+
+        elif Topology.IsInstance(
+            topologyA,
+            "Cluster"
+        ):
+            cellsA = Cluster.FreeTopologies(
+                topologyA
+            )
+
         else:
-            cellsA = [topologyA]
-        if Topology.IsInstance(topologyB, "CellComplex"):
-            cellsB = Topology.Cells(topologyB)
-        elif Topology.IsInstance(topologyB, "Wire"):
-            cellsB = Topology.Edges(topologyB)
-        elif Topology.IsInstance(topologyB, "Cluster"):
-            cellsB = Cluster.FreeTopologies(topologyB)
+            cellsA = [
+                topologyA
+            ]
+
+        if Topology.IsInstance(
+            topologyB,
+            "CellComplex"
+        ):
+            cellsB = Topology.Cells(
+                topologyB
+            )
+
+        elif Topology.IsInstance(
+            topologyB,
+            "Wire"
+        ):
+            cellsB = Topology.Edges(
+                topologyB
+            )
+
+        elif Topology.IsInstance(
+            topologyB,
+            "Cluster"
+        ):
+            cellsB = Cluster.FreeTopologies(
+                topologyB
+            )
+
         else:
-            cellsB = [topologyB]
+            cellsB = [
+                topologyB
+            ]
+
         cellsA_2 = []
         cellsB_2 = []
+
         for cellA in cellsA:
-            if Topology.IsInstance(cellA, "CellComplex"):
-                cellsA_2 += Topology.Cells(cellA)
-            elif Topology.IsInstance(cellA, "Shell"):
-                cellsA_2 += Topology.Faces(cellA)
-            elif Topology.IsInstance(cellA, "Wire"):
-                cellsA_2 += Topology.Edges(cellA)
+            if Topology.IsInstance(
+                cellA,
+                "CellComplex"
+            ):
+                cellsA_2 += Topology.Cells(
+                    cellA
+                )
+
+            elif Topology.IsInstance(
+                cellA,
+                "Shell"
+            ):
+                cellsA_2 += Topology.Faces(
+                    cellA
+                )
+
+            elif Topology.IsInstance(
+                cellA,
+                "Wire"
+            ):
+                cellsA_2 += Topology.Edges(
+                    cellA
+                )
+
             else:
-                cellsA_2.append(cellA)
-            
+                cellsA_2.append(
+                    cellA
+                )
+
         for cellB in cellsB:
-            if Topology.IsInstance(cellB, "CellComplex"):
-                cellsB_2 += Topology.Cells(cellB)
-            elif Topology.IsInstance(cellB, "Shell"):
-                cellsB_2 += Topology.Faces(cellB)
-            elif Topology.IsInstance(cellB, "Wire"):
-                cellsB_2 += Topology.Edges(cellB)
+            if Topology.IsInstance(
+                cellB,
+                "CellComplex"
+            ):
+                cellsB_2 += Topology.Cells(
+                    cellB
+                )
+
+            elif Topology.IsInstance(
+                cellB,
+                "Shell"
+            ):
+                cellsB_2 += Topology.Faces(
+                    cellB
+                )
+
+            elif Topology.IsInstance(
+                cellB,
+                "Wire"
+            ):
+                cellsB_2 += Topology.Edges(
+                    cellB
+                )
+
             else:
-                cellsB_2.append(cellB)
-        
+                cellsB_2.append(
+                    cellB
+                )
+
         for cellA in cellsA_2:
             for cellB in cellsB_2:
-                # cellC = cellA.Intersect(Topology.Copy(cellB)) # H to Core
-                # cellC = Core.InstanceCall(cellA, 'Intersect', Topology.Copy(cellB)) # H to Core
-                cellC = Core.InstanceCall(cellA, 'Intersect', cellB) # H to Core, Trying without the Copy hack
-                results.append(cellC)
-        results = [x for x in results if x is not None]
+                cellC = Core.InstanceCall(
+                    cellA,
+                    "Intersect",
+                    cellB
+                )
+
+                results.append(
+                    cellC
+                )
+
+        results = [
+            result
+            for result in results
+            if result is not None
+        ]
+
         if len(results) == 0:
             return None
-        elif len(results) == 1:
+
+        if len(results) == 1:
             return results[0]
-        else:
-            return Topology.SelfMerge(Topology.SelfMerge(Cluster.ByTopologies(results)))
+
+        return Topology.SelfMerge(
+            Topology.SelfMerge(
+                Cluster.ByTopologies(
+                    results
+                )
+            )
+        )
         
     @staticmethod
     def Slice(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
@@ -2117,9 +2288,20 @@ class Topology():
         return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="imprint", tranDict=tranDict, tolerance=tolerance, silent=silent)
     
     @staticmethod
-    def _Boolean(topologyA, topologyB, operation: str = "union", tranDict: bool = False, ontology: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def _Boolean(
+        topologyA,
+        topologyB,
+        operation: str = "union",
+        tranDict: bool = False,
+        ontology: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Do NOT Use this method directly. Executes the input boolean operation type on the input operand topologies and return the result. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Do NOT use this method directly.
+
+        Executes the input Boolean operation on the input operand topologies
+        and returns the result.
 
         Parameters
         ----------
@@ -2128,21 +2310,25 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         operation : str , optional
-            The boolean operation. This can be one of "union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint". It is case insensitive. Default is "union".
+            The Boolean operation. This can be one of "union", "difference",
+            "intersect", "symdif", "merge", "slice", "impose", or "imprint".
+            It is case insensitive. Default is "union".
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True the dictionaries of the operands are transferred
+            to the result. Default is False.
         ontology : bool , optional
-            If True, the returned topology is annotated with TopologicPy ontology metadata. Default is False.
+            If True, the returned topology is annotated with TopologicPy
+            ontology metadata. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The resultant topology.
         """
         from topologicpy.Dictionary import Dictionary
         from topologicpy.Wire import Wire
@@ -2150,172 +2336,587 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cell import Cell
 
-        def special_case(topologyA, topologyB, operation):
+        def special_case(
+            topologyA,
+            topologyB,
+            operation
+        ):
+            """
+            Legacy TopologicCore Boolean recovery.
+
+            This helper must only be invoked when TopologicCore is the active
+            backend.
+            """
             if operation == "union":
-                merge_result = Topology.Merge(topologyA, topologyB)
-                eb = Topology.ExternalBoundary(merge_result)
-                if Topology.IsInstance(eb, "vertex") or Topology.IsInstance(eb, "edge") or Topology.IsInstance(eb, "face"):
+                merge_result = Topology.Merge(
+                    topologyA,
+                    topologyB
+                )
+
+                if merge_result is None:
+                    return None
+
+                eb = Topology.ExternalBoundary(
+                    merge_result
+                )
+
+                if (
+                    Topology.IsInstance(
+                        eb,
+                        "vertex"
+                    )
+                    or Topology.IsInstance(
+                        eb,
+                        "edge"
+                    )
+                    or Topology.IsInstance(
+                        eb,
+                        "face"
+                    )
+                ):
                     return eb
-                if Topology.IsInstance(eb, "wire"):
-                    if Wire.IsClosed(eb):
-                        return Face.ByWire(eb)
+
+                if Topology.IsInstance(
+                    eb,
+                    "wire"
+                ):
+                    if Wire.IsClosed(
+                        eb
+                    ):
+                        return Face.ByWire(
+                            eb
+                        )
+
                     return eb
-                if Topology.IsInstance(eb, "shell"):
-                    if Shell.IsClosed(eb):
-                        return Cell.ByShell(eb)
+
+                if Topology.IsInstance(
+                    eb,
+                    "shell"
+                ):
+                    if Shell.IsClosed(
+                        eb
+                    ):
+                        return Cell.ByShell(
+                            eb
+                        )
+
                     return eb
+
             return None
 
-        if not Topology.IsInstance(topologyA, "Topology"):
+        if not Topology.IsInstance(
+            topologyA,
+            "Topology"
+        ):
             if not silent:
-                print(f"Topology.{operation.capitalize()} - Error: the input topologyA parameter is not a valid topology. Returning None.")
+                print(
+                    f"Topology.{operation.capitalize()} - Error: "
+                    "the input topologyA parameter is not a valid topology. "
+                    "Returning None."
+                )
             return None
-        if not Topology.IsInstance(topologyB, "Topology"):
+
+        if not Topology.IsInstance(
+            topologyB,
+            "Topology"
+        ):
             if not silent:
-                print(f"Topology.{operation.capitalize()} - Error: the input topologyB parameter is not a valid topology. Returning None.")
+                print(
+                    f"Topology.{operation.capitalize()} - Error: "
+                    "the input topologyB parameter is not a valid topology. "
+                    "Returning None."
+                )
             return None
-        if not isinstance(operation, str):
+
+        if not isinstance(
+            operation,
+            str
+        ):
             if not silent:
-                print(f"Topology.{operation.capitalize()} - Error: the input operation parameter is not a valid string. Returning None.")
+                print(
+                    "Topology._Boolean - Error: The input operation parameter "
+                    "is not a valid string. Returning None."
+                )
             return None
-        if not operation.lower() in ["union", "difference", "intersect", "symdif", "merge", "slice", "impose", "imprint"]:
+
+        operation = operation.lower()
+
+        if operation not in [
+            "union",
+            "difference",
+            "intersect",
+            "symdif",
+            "merge",
+            "slice",
+            "impose",
+            "imprint"
+        ]:
             if not silent:
-                print(f"Topology.{operation.capitalize()} - Error: the input operation parameter is not a recognized operation. Returning None.")
+                print(
+                    f"Topology.{operation.capitalize()} - Error: "
+                    "the input operation parameter is not recognized. "
+                    "Returning None."
+                )
             return None
-        if not isinstance(tranDict, bool):
+
+        if not isinstance(
+            tranDict,
+            bool
+        ):
             if not silent:
-                print(f"Topology.{operation.capitalize()} - Error: the input tranDict parameter is not a valid boolean. Returning None.")
+                print(
+                    f"Topology.{operation.capitalize()} - Error: "
+                    "the input tranDict parameter is not a valid boolean. "
+                    "Returning None."
+                )
             return None
+
         topologyC = None
-        if operation.lower() == "union":
-            # topologyC = topologyA.Union(topologyB, False) # H to Core
-            topologyC = Core.InstanceCall(topologyA, 'Union', topologyB, False)
-            if topologyC == None:
-                return special_case(topologyA, topologyB, "union")
-        elif operation.lower() == "difference":
-            if topologyA == topologyB or topologyB is None:
-                topologyC = None
-            else:
-                # topologyC = topologyA.Difference(Topology.Copy(topologyB), False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Difference', Topology.Copy(topologyB), False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Difference', topologyB, False) # H to Core
 
-        elif operation.lower() == "intersect": #Intersect in Topologic (Core) is faulty. This is a workaround.
-            #topologyC = topologyA.Intersect(topologyB, False)
-            if topologyA == topologyB or topologyB is None:
-                topologyC = topologyA
+        # --------------------------------------------------------------
+        # Union
+        # --------------------------------------------------------------
+
+        if operation == "union":
+            topologyC = Core.InstanceCall(
+                topologyA,
+                "Union",
+                topologyB,
+                False
+            )
+
+            # Only TopologicCore is permitted to substitute a reconstructed
+            # result when its native Union fails.
+            if (
+                topologyC is None
+                and Topology._IsTopologicCoreBackend()
+            ):
+                topologyC = special_case(
+                    topologyA,
+                    topologyB,
+                    "union"
+                )
+
+        # --------------------------------------------------------------
+        # Difference
+        # --------------------------------------------------------------
+
+        elif operation == "difference":
+            if (
+                topologyA == topologyB
+                or topologyB is None
+            ):
+                topologyC = None
+
             else:
-                topologyC = Topology.Intersect(topologyA, topologyB)
-        elif operation.lower() == "symdif":
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Difference",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Intersection
+        # --------------------------------------------------------------
+
+        elif operation == "intersect":
+            if (
+                topologyA == topologyB
+                or topologyB is None
+            ):
+                topologyC = topologyA
+
+            elif Topology._IsTopologicCoreBackend():
+                # Legacy TopologicCore workaround.
+                topologyC = Topology.Intersect(
+                    topologyA,
+                    topologyB,
+                    tranDict=False,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+            else:
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Intersect",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Symmetric difference
+        # --------------------------------------------------------------
+
+        elif operation == "symdif":
             if topologyA == topologyB:
                 topologyC = None
+
             elif topologyB is None:
                 topologyC = topologyA
+
             elif topologyA is None:
                 topologyC = topologyB
+
             else:
-                # topologyC = topologyA.XOR(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'XOR', topologyB, False)
-        elif operation.lower() == "merge":
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "XOR",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Merge
+        # --------------------------------------------------------------
+
+        elif operation == "merge":
             if topologyA == topologyB:
                 topologyC = topologyA
+
             else:
-                # topologyC = topologyA.Merge(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Merge', topologyB, False)
-        elif operation.lower() == "slice":
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Merge",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Slice
+        # --------------------------------------------------------------
+
+        elif operation == "slice":
             if topologyA == topologyB:
                 topologyC = topologyA
+
             else:
-                # topologyC = topologyA.Slice(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Slice', topologyB, False)
-        elif operation.lower() == "impose":
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Slice",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Impose
+        # --------------------------------------------------------------
+
+        elif operation == "impose":
             if topologyA == topologyB:
                 topologyC = topologyA
+
             else:
-                # topologyC = topologyA.Impose(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Impose', topologyB, False)
-        elif operation.lower() == "imprint":
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Impose",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Imprint
+        # --------------------------------------------------------------
+
+        elif operation == "imprint":
             if topologyA == topologyB:
                 topologyC = topologyA
+
             else:
-                # topologyC = topologyA.Imprint(topologyB, False) # H to Core
-                topologyC = Core.InstanceCall(topologyA, 'Imprint', topologyB, False)
-        else:
-            print(f"Topology.{operation.capitalize()} - Error: the boolean operation failed. Returning None.")
-            return None
-        if tranDict == True:
+                topologyC = Core.InstanceCall(
+                    topologyA,
+                    "Imprint",
+                    topologyB,
+                    False
+                )
+
+        # --------------------------------------------------------------
+        # Dictionary transfer
+        # --------------------------------------------------------------
+
+        if tranDict is True and Topology.IsInstance(
+            topologyC,
+            "Topology"
+        ):
             sourceVertices = []
             sourceEdges = []
             sourceFaces = []
             sourceCells = []
+
             sinkVertices = []
             sinkEdges = []
             sinkFaces = []
             sinkCells = []
-            hidimA = Topology.HighestType(topologyA)
-            hidimB = Topology.HighestType(topologyB)
-            hidimC = Topology.HighestType(topologyC)
 
-            if Topology.Type(topologyA) == Topology.TypeID("Vertex"):
-                sourceVertices += [topologyA]
-            elif hidimA >= Topology.TypeID("Vertex"):
-                sourceVertices += Topology.Vertices(topologyA)
-            if Topology.Type(topologyB) == Topology.TypeID("Vertex"):
-                sourceVertices += [topologyB]
-            elif hidimB >= Topology.TypeID("Vertex"):
-                sourceVertices += Topology.Vertices(topologyB)
-            if Topology.Type(topologyC) == Topology.TypeID("Vertex"):
-                sinkVertices = [topologyC]
-            elif hidimC >= Topology.TypeID("Vertex"):
-                sinkVertices = Topology.Vertices(topologyC, silent=True)
-            if len(sourceVertices) > 0 and len(sinkVertices) > 0:
-                _ = Topology.TransferDictionaries(sourceVertices, sinkVertices, tolerance=tolerance)
+            hidimA = Topology.HighestType(
+                topologyA
+            )
 
-            if Topology.Type(topologyA) == Topology.TypeID("Edge"):
-                sourceEdges += [topologyA]
-            elif hidimA >= Topology.TypeID("Edge"):
-                sourceEdges += Topology.Edges(topologyA)
-            if Topology.Type(topologyB) == Topology.TypeID("Edge"):
-                sourceEdges += [topologyB]
-            elif hidimB >= Topology.TypeID("Edge"):
-                sourceEdges += Topology.Edges(topologyB)
-            if Topology.Type(topologyC) == Topology.TypeID("Edge"):
-                sinkEdges = [topologyC]
-            elif hidimC >= Topology.TypeID("Edge"):
-                sinkEdges = Topology.Edges(topologyC)
-            if len(sourceEdges) > 0 and len(sinkEdges) > 0:
-                _ = Topology.TransferDictionaries(sourceEdges, sinkEdges, tolerance=tolerance)
+            hidimB = Topology.HighestType(
+                topologyB
+            )
 
-            if Topology.Type(topologyA) == Topology.TypeID("Face"):
-                sourceFaces += [topologyA]
-            elif hidimA >= Topology.TypeID("Face"):
-                sourceFaces += Topology.Faces(topologyA)
-            if Topology.Type(topologyB) == Topology.TypeID("Face"):
-                sourceFaces += [topologyB]
-            elif hidimB >= Topology.TypeID("Face"):
-                sourceFaces += Topology.Faces(topologyB)
-            if Topology.Type(topologyC) == Topology.TypeID("Face"):
-                sinkFaces += [topologyC]
-            elif hidimC >= Topology.TypeID("Face"):
-                sinkFaces += Topology.Faces(topologyC)
-            if len(sourceFaces) > 0 and len(sinkFaces) > 0:
-                _ = Topology.TransferDictionaries(sourceFaces, sinkFaces, tolerance=tolerance)
+            hidimC = Topology.HighestType(
+                topologyC
+            )
 
-            if Topology.Type(topologyA) == Topology.TypeID("Cell"):
-                sourceCells += [topologyA]
-            elif hidimA >= Topology.TypeID("Cell"):
-                sourceCells += Topology.Cells(topologyA)
-            if Topology.Type(topologyB) == Topology.TypeID("Cell"):
-                sourceCells += [topologyB]
-            elif hidimB >= Topology.TypeID("Cell"):
-                sourceCells += Topology.Cells(topologyB)
-            if Topology.Type(topologyC) == Topology.TypeID("Cell"):
-                sinkCells = [topologyC]
-            elif hidimC >= Topology.TypeID("Cell"):
-                sinkCells = Topology.Cells(topologyC)
-            if len(sourceCells) > 0 and len(sinkCells) > 0:
-                _ = Topology.TransferDictionaries(sourceCells, sinkCells, tolerance=tolerance)
-        return topologyC
+            # ----------------------------------------------------------
+            # Vertices
+            # ----------------------------------------------------------
+
+            if Topology.Type(
+                topologyA
+            ) == Topology.TypeID(
+                "Vertex"
+            ):
+                sourceVertices += [
+                    topologyA
+                ]
+
+            elif hidimA >= Topology.TypeID(
+                "Vertex"
+            ):
+                sourceVertices += Topology.Vertices(
+                    topologyA
+                )
+
+            if Topology.Type(
+                topologyB
+            ) == Topology.TypeID(
+                "Vertex"
+            ):
+                sourceVertices += [
+                    topologyB
+                ]
+
+            elif hidimB >= Topology.TypeID(
+                "Vertex"
+            ):
+                sourceVertices += Topology.Vertices(
+                    topologyB
+                )
+
+            if Topology.Type(
+                topologyC
+            ) == Topology.TypeID(
+                "Vertex"
+            ):
+                sinkVertices = [
+                    topologyC
+                ]
+
+            elif hidimC >= Topology.TypeID(
+                "Vertex"
+            ):
+                sinkVertices = Topology.Vertices(
+                    topologyC,
+                    silent=True
+                )
+
+            if (
+                len(sourceVertices) > 0
+                and len(sinkVertices) > 0
+            ):
+                Topology.TransferDictionaries(
+                    sourceVertices,
+                    sinkVertices,
+                    tolerance=tolerance
+                )
+
+            # ----------------------------------------------------------
+            # Edges
+            # ----------------------------------------------------------
+
+            if Topology.Type(
+                topologyA
+            ) == Topology.TypeID(
+                "Edge"
+            ):
+                sourceEdges += [
+                    topologyA
+                ]
+
+            elif hidimA >= Topology.TypeID(
+                "Edge"
+            ):
+                sourceEdges += Topology.Edges(
+                    topologyA
+                )
+
+            if Topology.Type(
+                topologyB
+            ) == Topology.TypeID(
+                "Edge"
+            ):
+                sourceEdges += [
+                    topologyB
+                ]
+
+            elif hidimB >= Topology.TypeID(
+                "Edge"
+            ):
+                sourceEdges += Topology.Edges(
+                    topologyB
+                )
+
+            if Topology.Type(
+                topologyC
+            ) == Topology.TypeID(
+                "Edge"
+            ):
+                sinkEdges = [
+                    topologyC
+                ]
+
+            elif hidimC >= Topology.TypeID(
+                "Edge"
+            ):
+                sinkEdges = Topology.Edges(
+                    topologyC
+                )
+
+            if (
+                len(sourceEdges) > 0
+                and len(sinkEdges) > 0
+            ):
+                Topology.TransferDictionaries(
+                    sourceEdges,
+                    sinkEdges,
+                    tolerance=tolerance
+                )
+
+            # ----------------------------------------------------------
+            # Faces
+            # ----------------------------------------------------------
+
+            if Topology.Type(
+                topologyA
+            ) == Topology.TypeID(
+                "Face"
+            ):
+                sourceFaces += [
+                    topologyA
+                ]
+
+            elif hidimA >= Topology.TypeID(
+                "Face"
+            ):
+                sourceFaces += Topology.Faces(
+                    topologyA
+                )
+
+            if Topology.Type(
+                topologyB
+            ) == Topology.TypeID(
+                "Face"
+            ):
+                sourceFaces += [
+                    topologyB
+                ]
+
+            elif hidimB >= Topology.TypeID(
+                "Face"
+            ):
+                sourceFaces += Topology.Faces(
+                    topologyB
+                )
+
+            if Topology.Type(
+                topologyC
+            ) == Topology.TypeID(
+                "Face"
+            ):
+                sinkFaces += [
+                    topologyC
+                ]
+
+            elif hidimC >= Topology.TypeID(
+                "Face"
+            ):
+                sinkFaces += Topology.Faces(
+                    topologyC
+                )
+
+            if (
+                len(sourceFaces) > 0
+                and len(sinkFaces) > 0
+            ):
+                Topology.TransferDictionaries(
+                    sourceFaces,
+                    sinkFaces,
+                    tolerance=tolerance
+                )
+
+            # ----------------------------------------------------------
+            # Cells
+            # ----------------------------------------------------------
+
+            if Topology.Type(
+                topologyA
+            ) == Topology.TypeID(
+                "Cell"
+            ):
+                sourceCells += [
+                    topologyA
+                ]
+
+            elif hidimA >= Topology.TypeID(
+                "Cell"
+            ):
+                sourceCells += Topology.Cells(
+                    topologyA
+                )
+
+            if Topology.Type(
+                topologyB
+            ) == Topology.TypeID(
+                "Cell"
+            ):
+                sourceCells += [
+                    topologyB
+                ]
+
+            elif hidimB >= Topology.TypeID(
+                "Cell"
+            ):
+                sourceCells += Topology.Cells(
+                    topologyB
+                )
+
+            if Topology.Type(
+                topologyC
+            ) == Topology.TypeID(
+                "Cell"
+            ):
+                sinkCells = [
+                    topologyC
+                ]
+
+            elif hidimC >= Topology.TypeID(
+                "Cell"
+            ):
+                sinkCells = Topology.Cells(
+                    topologyC
+                )
+
+            if (
+                len(sourceCells) > 0
+                and len(sinkCells) > 0
+            ):
+                Topology.TransferDictionaries(
+                    sourceCells,
+                    sinkCells,
+                    tolerance=tolerance
+                )
+
+        return Topology._OntologyAnnotate(
+            topologyC,
+            ontology=ontology,
+            generatedBy=f"Topology.{operation.capitalize()}",
+            annotateSubtopologies=True,
+            silent=True
+        )
 
     
     @staticmethod
@@ -6302,46 +6903,223 @@ class Topology():
             return convex_hull
     
     @staticmethod
-    def Copy(topology, deep=False, silent: bool = False):
+    def Copy(
+        topology,
+        deep: bool = False,
+        silent: bool = False
+    ):
         """
-        Returns a copy of the input topology
+        Returns a copy of the input topology.
+
+        For non-TopologicCore backends, copying is delegated directly to the
+        active backend. A shallow copy duplicates the native topology and parent
+        dictionary. A deep copy additionally preserves dictionaries associated
+        with native subtopologies.
+
+        The legacy BREP and JSON serialization mechanisms are retained only for
+        the TopologicCore backend.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         deep : bool , optional
-            If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. Default is False
+            If set to True, a deep copy is performed, including dictionaries
+            associated with subtopologies. Otherwise, a shallow native copy is
+            performed. Default is False.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            A copy of the input topology.
-
+            A copy of the input topology, or None if the operation fails.
         """
-        from topologicpy.Dictionary import Dictionary
-        import inspect
+        import copy as pycopy
 
-        if not Topology.IsInstance(topology, "Topology"):
+        from topologicpy.Dictionary import Dictionary
+
+        # ------------------------------------------------------------------
+        # Validate input.
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.Copy - Error: the input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Copy - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
+
+        # ------------------------------------------------------------------
+        # Non-TopologicCore backends
+        #
+        # Trust the backend to provide genuine copy semantics.
+        # ------------------------------------------------------------------
+
+        if not Topology._IsTopologicCoreBackend():
+
+            method_name = (
+                "DeepCopy"
+                if deep
+                else "Copy"
+            )
+
+            try:
+                return_topology = Core.InstanceCall(
+                    topology,
+                    method_name
+                )
+            except Exception:
+                return_topology = None
+
+            if not Topology.IsInstance(
+                return_topology,
+                "Topology"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Copy - Error: The active backend could not "
+                        f"perform a {'deep' if deep else 'shallow'} copy. "
+                        "Returning None."
+                    )
+                return None
+
+            return return_topology
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore deep copy.
+        # ------------------------------------------------------------------
+
         if deep:
-            return Topology.ByJSONString(Topology.JSONString([topology]))[0]
-        d = Topology.Dictionary(topology)
-        return_topology = Topology.ByBREPString(Topology.BREPString(topology), silent=silent)
-        if not Topology.IsInstance(return_topology, "Topology"):
+
+            try:
+                json_string = Topology.JSONString(
+                    [topology],
+                    silent=silent
+                )
+            except Exception:
+                json_string = None
+
+            if not isinstance(
+                json_string,
+                str
+            ):
+                if not silent:
+                    print(
+                        "Topology.Copy - Error: Could not serialize the input "
+                        "topology for deep copying. Returning None."
+                    )
+                return None
+
+            try:
+                copied_topologies = Topology.ByJSONString(
+                    json_string,
+                    silent=silent
+                )
+            except Exception:
+                copied_topologies = None
+
+            if (
+                not isinstance(
+                    copied_topologies,
+                    list
+                )
+                or len(copied_topologies) != 1
+                or not Topology.IsInstance(
+                    copied_topologies[0],
+                    "Topology"
+                )
+            ):
+                if not silent:
+                    print(
+                        "Topology.Copy - Error: Could not reconstruct the "
+                        "deep copy. Returning None."
+                    )
+                return None
+
+            return copied_topologies[0]
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore shallow copy.
+        # ------------------------------------------------------------------
+
+        try:
+            source_dictionary = Topology.Dictionary(
+                topology,
+                silent=True
+            )
+        except Exception:
+            source_dictionary = None
+
+        try:
+            brep_string = Topology.BREPString(
+                topology
+            )
+        except Exception:
+            brep_string = None
+
+        if not isinstance(
+            brep_string,
+            str
+        ):
             if not silent:
-                print("Topology.Copy - Error: Could not copy the topology. Returning None.")
-                curframe = inspect.currentframe()
-                calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print(
+                    "Topology.Copy - Error: Could not serialize the input "
+                    "topology. Returning None."
+                )
             return None
-        keys = Dictionary.Keys(d)
-        if len(keys) > 0:
-            return_topology = Topology.SetDictionary(return_topology, d)
+
+        try:
+            return_topology = Topology.ByBREPString(
+                brep_string,
+                silent=silent
+            )
+        except Exception:
+            return_topology = None
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.Copy - Error: Could not copy the topology. "
+                    "Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Restore an independent parent dictionary.
+        # ------------------------------------------------------------------
+
+        if source_dictionary is not None:
+
+            try:
+                python_dictionary = Dictionary.PythonDictionary(
+                    source_dictionary
+                )
+
+                copied_dictionary = Dictionary.ByPythonDictionary(
+                    pycopy.deepcopy(
+                        python_dictionary
+                    )
+                )
+
+                if copied_dictionary is not None:
+                    return_topology = Topology.SetDictionary(
+                        return_topology,
+                        copied_dictionary,
+                        silent=True
+                    )
+
+            except Exception:
+                pass
+
         return return_topology
 
 
@@ -8743,70 +9521,676 @@ class Topology():
             return Topology.Type(topology)
 
     @staticmethod
-    def _InternalVertex(topology, tolerance: float = 0.0001, silent: bool = False):
+    def _InternalVertex(
+        topology,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
         Returns a vertex guaranteed to be inside the input topology.
+
+        For Faces and closed Wires, candidate points are verified to be strictly
+        internal and not within tolerance of any boundary edge. If the primary
+        Face.InternalVertex method does not return a strict internal point, the
+        Face is triangulated and triangle centroids are tested until a verified
+        internal point is found.
+
+        No generic centroid fallback is used because a centroid is not guaranteed
+        to be internal to concave, holed, disconnected, or otherwise non-convex
+        topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
-        tolerance : float , ptional
+        tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Vertex
-            A vertex guaranteed to be inside the input topology.
-
+            A vertex guaranteed to be inside the input topology, or None if such
+            a vertex cannot be computed.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
         from topologicpy.Face import Face
         from topologicpy.Wire import Wire
         from topologicpy.Cell import Cell
-        from topologicpy.CellComplex import CellComplex
+        from topologicpy.Cluster import Cluster
         from topologicpy.Aperture import Aperture
 
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.InternalVertex - Error: the input topology parameter is not a valid topology. Returning None.")
-            return None
-        vst = None
-        top = Topology.Copy(topology)
-        if Topology.IsInstance(top, "CellComplex"): #CellComplex
-            tempCell = Topology.Cells(top)[0]
-            vst = Cell.InternalVertex(tempCell, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(top, "Cell"): #Cell
-            vst = Cell.InternalVertex(top, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(top, "Shell"): #Shell
-            tempFace = Topology.Faces(top)[0]
-            vst = Face.InternalVertex(tempFace, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(top, "Face"): #Face
-            vst = Face.InternalVertex(top, tolerance=tolerance, silent=silent)
-        elif Topology.IsInstance(top, "Wire"): #Wire
-            if Wire.IsClosed(top):
-                internalBoundaries = []
-                try:
-                    tempFace = Core.Face.ByExternalInternalBoundaries(top, internalBoundaries)
-                    vst = Face.InternalVertex(tempFace, tolerance=tolerance, silent=silent)
-                except:
-                    vst = Topology.Centroid(top)
-            else:
-                tempEdge = Topology.Edges(top)[0]
-                vst = Edge.VertexByParameter(tempEdge, 0.5)
-        elif Topology.IsInstance(top, "Edge"): #Edge
-            vst = Edge.VertexByParameter(top, 0.5)
-        elif Topology.IsInstance(top, "Vertex"): #Vertex
-            vst = top
-        elif Topology.IsInstance(topology, "Aperture"): #Aperture
-            vst = Face.InternalVertex(Aperture.Topology(top), tolerance=tolerance, silent=silent)
-        else:
-            vst = Topology.Centroid(top)
-        return vst
+        # ------------------------------------------------------------------
+        # Helpers
+        # ------------------------------------------------------------------
 
-    
+        def _strictly_internal_to_face(vertex, face):
+            """
+            Returns True only if the vertex is strictly inside the Face and is
+            farther than tolerance from every boundary edge.
+            """
+            if not Topology.IsInstance(vertex, "Vertex"):
+                return False
+
+            if not Topology.IsInstance(face, "Face"):
+                return False
+
+            try:
+                if not Vertex.IsInternal(
+                    vertex,
+                    face,
+                    tolerance=tolerance,
+                    silent=True
+                ):
+                    return False
+            except Exception:
+                return False
+
+            edges = Topology.Edges(
+                face,
+                silent=True
+            ) or []
+
+            if len(edges) == 0:
+                return False
+
+            for edge in edges:
+                distance = Topology.ShortestDistance(
+                    vertex,
+                    edge,
+                    mantissa=12,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+                if distance is None:
+                    return False
+
+                if distance <= tolerance:
+                    return False
+
+            return True
+
+        def _verified_face_internal_vertex(face):
+            """
+            Returns a verified strict internal vertex of the Face.
+
+            First tries Face.InternalVertex. If that candidate lies on or too
+            close to a boundary, triangulates the Face and tests the centroids
+            of the resulting triangles.
+            """
+            if not Topology.IsInstance(face, "Face"):
+                return None
+
+            # --------------------------------------------------------------
+            # Primary Face internal-point method.
+            # --------------------------------------------------------------
+
+            try:
+                candidate = Face.InternalVertex(
+                    face,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                candidate = None
+
+            if _strictly_internal_to_face(
+                candidate,
+                face
+            ):
+                return candidate
+
+            # --------------------------------------------------------------
+            # Verified triangulation fallback.
+            #
+            # A triangle centroid lies strictly inside a non-degenerate
+            # triangle. We still verify it against the original Face so that
+            # holes and concave boundaries are respected.
+            # --------------------------------------------------------------
+
+            try:
+                triangles = Face.Triangulate(
+                    face,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                triangles = None
+
+            if Topology.IsInstance(
+                triangles,
+                "Face"
+            ):
+                triangles = [
+                    triangles
+                ]
+
+            if not isinstance(
+                triangles,
+                list
+            ):
+                return None
+
+            for triangle in triangles:
+
+                if not Topology.IsInstance(
+                    triangle,
+                    "Face"
+                ):
+                    continue
+
+                candidate = Topology.Centroid(
+                    triangle
+                )
+
+                if _strictly_internal_to_face(
+                    candidate,
+                    face
+                ):
+                    return candidate
+
+            return None
+
+        def _cluster_constituents(cluster):
+            """
+            Returns the direct constituent topologies of a Cluster.
+            """
+            try:
+                result = Core.InstanceCall(
+                    cluster,
+                    "Topologies"
+                )
+
+                if isinstance(
+                    result,
+                    list
+                ):
+                    result = [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+                    if len(result) > 0:
+                        return result
+
+            except Exception:
+                pass
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    result
+                )
+
+                result = [
+                    item
+                    for item in result
+                    if Topology.IsInstance(
+                        item,
+                        "Topology"
+                    )
+                ]
+
+                if len(result) > 0:
+                    return result
+
+            except Exception:
+                pass
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    None,
+                    result
+                )
+
+                result = [
+                    item
+                    for item in result
+                    if Topology.IsInstance(
+                        item,
+                        "Topology"
+                    )
+                ]
+
+                if len(result) > 0:
+                    return result
+
+            except Exception:
+                pass
+
+            try:
+                result = Cluster.Topologies(
+                    cluster
+                )
+
+                if isinstance(
+                    result,
+                    list
+                ):
+                    result = [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+                    if len(result) > 0:
+                        return result
+
+            except Exception:
+                pass
+
+            return []
+
+        # ------------------------------------------------------------------
+        # Aperture
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            topology,
+            "Aperture"
+        ):
+            try:
+                aperture_topology = Aperture.Topology(
+                    topology
+                )
+            except Exception:
+                aperture_topology = None
+
+            if not Topology.IsInstance(
+                aperture_topology,
+                "Topology"
+            ):
+                if not silent:
+                    print(
+                        "Topology.InternalVertex - Error: Could not retrieve the "
+                        "topology of the input Aperture. Returning None."
+                    )
+                return None
+
+            return Topology._InternalVertex(
+                aperture_topology,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        # ------------------------------------------------------------------
+        # Validate input
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        # Internal-point operations are queries and do not require a copy.
+        top = topology
+
+        # ------------------------------------------------------------------
+        # CellComplex
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "CellComplex"
+        ):
+            cells = Topology.Cells(
+                top,
+                silent=True
+            ) or []
+
+            for cell in cells:
+                try:
+                    candidate = Cell.InternalVertex(
+                        cell,
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                except Exception:
+                    candidate = None
+
+                if Topology.IsInstance(
+                    candidate,
+                    "Vertex"
+                ):
+                    return candidate
+
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex for any Cell of the input CellComplex. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Cell
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Cell"
+        ):
+            try:
+                candidate = Cell.InternalVertex(
+                    top,
+                    tolerance=tolerance,
+                    silent=True
+                )
+            except Exception:
+                candidate = None
+
+            if Topology.IsInstance(
+                candidate,
+                "Vertex"
+            ):
+                return candidate
+
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex for the input Cell. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Shell
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Shell"
+        ):
+            faces = Topology.Faces(
+                top,
+                silent=True
+            ) or []
+
+            for face in faces:
+                candidate = _verified_face_internal_vertex(
+                    face
+                )
+
+                if Topology.IsInstance(
+                    candidate,
+                    "Vertex"
+                ):
+                    return candidate
+
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute a strict "
+                    "internal vertex for any Face of the input Shell. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Face
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Face"
+        ):
+            candidate = _verified_face_internal_vertex(
+                top
+            )
+
+            if Topology.IsInstance(
+                candidate,
+                "Vertex"
+            ):
+                return candidate
+
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute a strict "
+                    "internal vertex for the input Face. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Wire
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Wire"
+        ):
+            try:
+                is_closed = Wire.IsClosed(
+                    top
+                )
+            except Exception:
+                is_closed = None
+
+            if is_closed is None:
+                if not silent:
+                    print(
+                        "Topology.InternalVertex - Error: Could not determine whether "
+                        "the input Wire is closed. Returning None."
+                    )
+                return None
+
+            # --------------------------------------------------------------
+            # Closed Wire
+            # --------------------------------------------------------------
+
+            if is_closed:
+                try:
+                    temp_face = Core.Face.ByExternalInternalBoundaries(
+                        top,
+                        []
+                    )
+                except Exception as error:
+                    if not silent:
+                        print(
+                            "Topology.InternalVertex - Error: Could not construct a "
+                            "Face from the closed input Wire. Returning None."
+                        )
+                        print(
+                            "Error:",
+                            error
+                        )
+                    return None
+
+                if not Topology.IsInstance(
+                    temp_face,
+                    "Face"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.InternalVertex - Error: Could not construct a "
+                            "valid Face from the closed input Wire. Returning None."
+                        )
+                    return None
+
+                candidate = _verified_face_internal_vertex(
+                    temp_face
+                )
+
+                if Topology.IsInstance(
+                    candidate,
+                    "Vertex"
+                ):
+                    return candidate
+
+                if not silent:
+                    print(
+                        "Topology.InternalVertex - Error: Could not compute a strict "
+                        "internal vertex for the closed input Wire. Returning None."
+                    )
+
+                return None
+
+            # --------------------------------------------------------------
+            # Open Wire
+            # --------------------------------------------------------------
+
+            edges = Topology.Edges(
+                top,
+                silent=True
+            ) or []
+
+            if len(edges) == 0:
+                if not silent:
+                    print(
+                        "Topology.InternalVertex - Error: The input Wire contains "
+                        "no valid Edges. Returning None."
+                    )
+                return None
+
+            try:
+                candidate = Edge.VertexByParameter(
+                    edges[0],
+                    0.5
+                )
+            except Exception:
+                candidate = None
+
+            if Topology.IsInstance(
+                candidate,
+                "Vertex"
+            ):
+                return candidate
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Edge
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Edge"
+        ):
+            try:
+                candidate = Edge.VertexByParameter(
+                    top,
+                    0.5
+                )
+            except Exception:
+                candidate = None
+
+            if Topology.IsInstance(
+                candidate,
+                "Vertex"
+            ):
+                return candidate
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Vertex
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Vertex"
+        ):
+            return top
+
+        # ------------------------------------------------------------------
+        # Cluster
+        # ------------------------------------------------------------------
+
+        if Topology.IsInstance(
+            top,
+            "Cluster"
+        ):
+            constituents = _cluster_constituents(
+                top
+            )
+
+            if len(constituents) == 0:
+                if not silent:
+                    print(
+                        "Topology.InternalVertex - Error: Could not retrieve any "
+                        "constituent topologies from the input Cluster. Returning None."
+                    )
+                return None
+
+            def _rank(item):
+                try:
+                    value = Topology.Type(
+                        item,
+                        silent=True
+                    )
+                except Exception:
+                    value = None
+
+                if isinstance(
+                    value,
+                    int
+                ):
+                    return value
+
+                return -1
+
+            constituents = sorted(
+                constituents,
+                key=_rank,
+                reverse=True
+            )
+
+            for constituent in constituents:
+                candidate = Topology._InternalVertex(
+                    constituent,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+                if Topology.IsInstance(
+                    candidate,
+                    "Vertex"
+                ):
+                    return candidate
+
+            if not silent:
+                print(
+                    "Topology.InternalVertex - Error: Could not compute an internal "
+                    "vertex for any constituent of the input Cluster. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # No generic centroid fallback
+        # ------------------------------------------------------------------
+
+        if not silent:
+            print(
+                "Topology.InternalVertex - Error: The input topology type is not "
+                "supported for guaranteed internal-point computation. Returning None."
+            )
+
+        return None
 
     @staticmethod
     def InternalVertex(topology, timeout: int = 30, tolerance: float = 0.0001, silent: bool = False):
@@ -10587,52 +11971,174 @@ class Topology():
         return [v for v in Topology.SubTopologies(topology, subTopologyType="vertex", silent=silent) if Topology.Degree(v, hostTopology=topology, silent=silent) < 2]
     
     @staticmethod
-    def Orient(topology, origin=None, dirA=[0, 0, 1], dirB=[0, 0, 1], tolerance: float = 0.0001, silent: bool = False):
+    def Orient(
+        topology,
+        origin=None,
+        dirA=[0, 0, 1],
+        dirB=[0, 0, 1],
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.
+        Orients the input topology such that dirA is parallel to dirB.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The input origin. If set to None, The object's centroid will be used to locate the input topology. Default is None.
+            The origin about which the topology is oriented. If set to None, the
+            centroid of the topology is used. Default is None.
         dirA : list , optional
-            The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. Default is [0, 0, 1].
+            The source direction vector. Default is [0, 0, 1].
         dirB : list , optional
-            The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. Default is [0, 0, 1].
+            The target direction vector. Default is [0, 0, 1].
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The flattened topology.
+            The oriented topology.
+        """
+        return Topology.OrientAndPlace(
+            topology,
+            originA=origin,
+            originB=origin,
+            dirA=dirA,
+            dirB=dirB,
+            tolerance=tolerance,
+            silent=silent,
+        )
 
+    @staticmethod
+    def OrientAndPlace(
+        topology,
+        originA=None,
+        originB=None,
+        dirA=[0, 0, 1],
+        dirB=[0, 0, 1],
+        transferDictionaries: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Orients and places the input topology using a single affine transformation.
+
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        originA : topologic_core.Vertex , optional
+            The source origin about which the topology is oriented. If set to None,
+            the centroid of the topology is used. Default is None.
+        originB : topologic_core.Vertex , optional
+            The target location of originA. If set to None, originA is used and no
+            placement translation is applied. Default is None.
+        dirA : list , optional
+            The source direction vector. Default is [0, 0, 1].
+        dirB : list , optional
+            The target direction vector. Default is [0, 0, 1].
+        transferDictionaries : bool , optional
+            If set to True, dictionaries are transferred to the transformed topology.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The oriented and placed topology.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Vector import Vector
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.Orient - Error: the input topology parameter is not a valid topology. Returning None.")
+                print("Topology.OrientAndPlace - Error: The input topology is not a valid topology. Returning None.")
             return None
-        topology_type = Topology.TypeAsString(topology)
-        if not topology_type.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster", "aperture"]:
-            if not silent:
-                print("Topology.Orient - Error: The input topology parameter is not suitable for this function. Returning None.")
-            return None
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Topology.Centroid(topology)
-        return_topology = Topology.Place(topology, originA=origin, originB=Vertex.Origin())
-        tran_mat = Vector.TransformationMatrix(dirA, dirB)
-        return_topology = Topology.Transform(return_topology, tran_mat)
-        return_topology = Topology.Place(return_topology, originA=Vertex.Origin(), originB=origin)
-        return return_topology
 
+        if not Topology.IsInstance(originA, "Vertex"):
+            originA = Topology.Centroid(topology)
+
+        if not Topology.IsInstance(originA, "Vertex"):
+            if not silent:
+                print("Topology.OrientAndPlace - Error: Could not determine originA. Returning None.")
+            return None
+
+        if not Topology.IsInstance(originB, "Vertex"):
+            originB = originA
+
+        # Source and target anchor coordinates.
+        px, py, pz = Vertex.Coordinates(originA)
+        qx, qy, qz = Vertex.Coordinates(originB)
+
+        same_position = (
+            abs(px - qx) <= tolerance
+            and abs(py - qy) <= tolerance
+            and abs(pz - qz) <= tolerance
+        )
+
+        same_direction = Vector.IsParallel(
+            dirA,
+            dirB,
+            tolerance=tolerance
+        )
+
+        # Complete no-op.
+        if same_position and same_direction:
+            return topology
+
+        # Rotation aligning dirA with dirB.
+        rotation = Vector.TransformationMatrix(dirA, dirB)
+
+        if rotation is None:
+            if not silent:
+                print("Topology.OrientAndPlace - Error: Could not compute the transformation matrix. Returning None.")
+            return None
+
+        r00, r01, r02 = rotation[0][0], rotation[0][1], rotation[0][2]
+        r10, r11, r12 = rotation[1][0], rotation[1][1], rotation[1][2]
+        r20, r21, r22 = rotation[2][0], rotation[2][1], rotation[2][2]
+
+        # Translation that maps originA exactly onto originB after rotation:
+        #
+        #     q = R*p + t
+        #
+        # therefore:
+        #
+        #     t = q - R*p
+        tx = qx - (r00 * px + r01 * py + r02 * pz)
+        ty = qy - (r10 * px + r11 * py + r12 * pz)
+        tz = qz - (r20 * px + r21 * py + r22 * pz)
+
+        matrix = [
+            [r00, r01, r02, tx],
+            [r10, r11, r12, ty],
+            [r20, r21, r22, tz],
+            [0.0, 0.0, 0.0, 1.0],
+        ]
+
+        return Topology.Transform(
+            topology,
+            matrix,
+            transferDictionaries=transferDictionaries,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    
     @staticmethod
-    def Place(topology, originA=None, originB=None, mantissa: int = 6, silent: bool = False):
+    def Place(
+        topology,
+        originA=None,
+        originB=None,
+        mantissa: int = 6,
+        silent: bool = False
+    ):
         """
         Places the input topology at the specified location.
 
@@ -10641,11 +12147,13 @@ class Topology():
         topology : topologic_core.Topology
             The input topology.
         originA : topologic_core.Vertex , optional
-            The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. Default is None.
+            The old location to use as the origin of the movement. If set to None,
+            the centroid of the input topology is used. Default is None.
         originB : topologic_core.Vertex , optional
-            The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. Default is None.
+            The new location at which to place the topology. If set to None, the
+            world origin (0, 0, 0) is used. Default is None.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round the coordinates to. Default is 6.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
@@ -10653,33 +12161,39 @@ class Topology():
         -------
         topologic_core.Topology
             The placed topology.
-
         """
         from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print("Topology.Place - Error: The input topology is not a valid topology. Returning None.")
             return None
-        topology_type = Topology.TypeAsString(topology)
-        if not topology_type.lower() in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster", "aperture"]:
-            if not silent:
-                print("Topology.Place - Error: The input topology parameter is not suitable for this function. Returning None.")
-            return None
+
         if not Topology.IsInstance(originA, "Vertex"):
             originA = Topology.Centroid(topology)
+
         if not Topology.IsInstance(originA, "Vertex"):
-            originA = Vertex.ByCoordinates(0, 0, 0)
+            if not silent:
+                print("Topology.Place - Error: Could not determine originA. Returning None.")
+            return None
+
+        if not Topology.IsInstance(originB, "Vertex"):
+            originB = Vertex.Origin()
 
         x = Vertex.X(originB, mantissa=mantissa) - Vertex.X(originA, mantissa=mantissa)
         y = Vertex.Y(originB, mantissa=mantissa) - Vertex.Y(originA, mantissa=mantissa)
         z = Vertex.Z(originB, mantissa=mantissa) - Vertex.Z(originA, mantissa=mantissa)
-        newTopology = None
-        try:
-            newTopology = Topology.Translate(topology, x, y, z)
-        except:
-            print("Topology.Place - Error: (Topologic>TopologyUtility.Place) operation failed. Returning None.")
-            newTopology = None
-        return newTopology
+
+        if x == 0 and y == 0 and z == 0:
+            return topology
+
+        return Topology.Translate(
+            topology,
+            x=x,
+            y=y,
+            z=z,
+            silent=silent
+        )
 
     @staticmethod
     def PrincipalAxes(topology, n: int = 10, mantissa: int = 6, silent: bool = False):
@@ -11232,177 +12746,1252 @@ class Topology():
         return topology
 
     @staticmethod
-    def ReplaceVertices(topology, verticesA: list = [], verticesB: list = [], mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def ReplaceVertices(
+        topology,
+        verticesA: list = [],
+        verticesB: list = [],
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.
+        Replaces vertices in the first input list with the corresponding vertices
+        in the second input list and rebuilds the input topology. The two lists
+        must have the same length.
+
+        The original topology structure and topology type are preserved whenever
+        possible. Structured topologies such as Faces with internal boundaries
+        and heterogeneous Clusters are rebuilt hierarchically rather than through
+        a flattened geometry representation.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         verticesA : list
-            The first input list of vertices.
+            The vertices in the input topology to replace.
         verticesB : list
-            The second input list of vertices.
+            The replacement vertices. Each vertex corresponds by index to a vertex
+            in verticesA.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to which coordinates are rounded.
+            Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired tolerance used to match vertices. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The new topology.
-
+            The rebuilt topology with the requested vertices replaced, or None if
+            the operation fails.
         """
-
-        if not Topology.IsInstance(topology, "Topology"):
-            if not silent:
-                print("Topology.ReplaceVertices - Error: The input topology parameter is not a valid topology. Returning None.")
-            return None
-        if not len(verticesA) == len(verticesB):
-            if not silent:
-                print("Topology.ReplaceVertices - Error: The input parameters verticesA and verticesB must be the same length. Returning None.")
-            return None
-        if not len(verticesA) == 0:
-            if not silent:
-                print("Topology.ReplaceVertices - Warning: The input parameters verticesA and verticesB have not valid vertices. Returning the inoput topology.")
-            return topology
         from topologicpy.Vertex import Vertex
-        geom = Topology.Geometry(topology, mantissa=mantissa)
-        g_verts = geom['vertices']
-        g_edges = geom['edges']
-        g_faces = geom['faces']
-        verts = [Topology.Vertices(Topology.ByGeometry(vertices=[g_v]))[0] for g_v in g_verts]
-        new_verts = [v for v in verts]
-        for i, v in enumerate(verticesA):
-            n = Vertex.Index(v, verts, tolerance=tolerance)
-            if not n == None:
-                new_verts[n] = verticesB[i]
-        new_g_verts = [[Vertex.X(v, mantissa=mantissa),Vertex.Y(v, mantissa=mantissa),Vertex.Z(v, mantissa=mantissa)] for v in new_verts]
-        new_topology = Topology.ByGeometry(vertices=new_g_verts, edges=g_edges, faces=g_faces)
-        return new_topology
+        from topologicpy.Face import Face
+        from topologicpy.Cluster import Cluster
+
+        # ------------------------------------------------------------------
+        # Helpers
+        # ------------------------------------------------------------------
+
+        def preserve_dictionary(source, target):
+            """Preserves the dictionary of the source topology."""
+            if not Topology.IsInstance(
+                target,
+                "Topology"
+            ):
+                return target
+
+            try:
+                dictionary = Topology.Dictionary(
+                    source,
+                    silent=True
+                )
+
+                if dictionary is not None:
+                    target = Topology.SetDictionary(
+                        target,
+                        dictionary,
+                        silent=True
+                    )
+
+            except Exception:
+                pass
+
+            return target
+
+        def cluster_constituents(cluster):
+            """
+            Returns the actual constituent topologies stored by the Cluster.
+
+            The native backend accessor is preferred because the public
+            Cluster.Topologies method derives free topologies and may therefore
+            alter or lose the original Cluster hierarchy.
+            """
+
+            # --------------------------------------------------------------
+            # Backend-native return-value form.
+            #
+            # PythonOCC uses:
+            #
+            #     cluster.Topologies() -> list
+            # --------------------------------------------------------------
+
+            try:
+                result = Core.InstanceCall(
+                    cluster,
+                    "Topologies"
+                )
+
+                if isinstance(
+                    result,
+                    list
+                ):
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            # --------------------------------------------------------------
+            # Backend-native output-list form.
+            # --------------------------------------------------------------
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    result
+                )
+
+                if len(result) > 0:
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            # --------------------------------------------------------------
+            # Legacy hostTopology + output-list form.
+            # --------------------------------------------------------------
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    None,
+                    result
+                )
+
+                if len(result) > 0:
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            # --------------------------------------------------------------
+            # Final public fallback.
+            # --------------------------------------------------------------
+
+            try:
+                result = Cluster.Topologies(
+                    cluster,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+                if isinstance(
+                    result,
+                    list
+                ):
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            return []
+
+        # ------------------------------------------------------------------
+        # Validate inputs
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
+            return None
+
+        if not isinstance(
+            verticesA,
+            (list, tuple)
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The input verticesA parameter "
+                    "is not a valid list. Returning None."
+                )
+            return None
+
+        if not isinstance(
+            verticesB,
+            (list, tuple)
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The input verticesB parameter "
+                    "is not a valid list. Returning None."
+                )
+            return None
+
+        verticesA = list(
+            verticesA
+        )
+
+        verticesB = list(
+            verticesB
+        )
+
+        if len(verticesA) != len(verticesB):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The verticesA and verticesB "
+                    "parameters must have the same length. Returning None."
+                )
+            return None
+
+        if len(verticesA) == 0:
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Warning: No replacement vertices were "
+                    "specified. Returning the input topology."
+                )
+            return topology
+
+        if not all(
+            Topology.IsInstance(
+                vertex,
+                "Vertex"
+            )
+            for vertex in verticesA
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The verticesA parameter contains "
+                    "one or more invalid vertices. Returning None."
+                )
+            return None
+
+        if not all(
+            Topology.IsInstance(
+                vertex,
+                "Vertex"
+            )
+            for vertex in verticesB
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The verticesB parameter contains "
+                    "one or more invalid vertices. Returning None."
+                )
+            return None
+
+        topology_type = Topology.TypeAsString(
+            topology,
+            silent=True
+        )
+
+        if isinstance(
+            topology_type,
+            str
+        ):
+            topology_type = topology_type.lower()
+
+        else:
+            topology_type = None
+
+        # ------------------------------------------------------------------
+        # Cluster
+        #
+        # A heterogeneous Cluster must not be flattened through Geometry.
+        # Doing so loses which Faces form Cells and which Edges form Wires.
+        #
+        # Retrieve the actual backend-native constituents and rebuild each one
+        # recursively.
+        # ------------------------------------------------------------------
+
+        if topology_type == "cluster":
+
+            topologies = cluster_constituents(
+                topology
+            )
+
+            if len(topologies) == 0:
+                if not silent:
+                    print(
+                        "Topology.ReplaceVertices - Error: Could not retrieve the "
+                        "constituent topologies of the input Cluster. Returning None."
+                    )
+                return None
+
+            rebuilt_topologies = []
+
+            for child in topologies:
+
+                rebuilt_child = Topology.ReplaceVertices(
+                    child,
+                    verticesA=verticesA,
+                    verticesB=verticesB,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+                if not Topology.IsInstance(
+                    rebuilt_child,
+                    "Topology"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.ReplaceVertices - Error: Could not rebuild "
+                            "one of the constituent topologies of the input Cluster. "
+                            "Returning None."
+                        )
+                    return None
+
+                rebuilt_topologies.append(
+                    rebuilt_child
+                )
+
+            try:
+                new_topology = Cluster.ByTopologies(
+                    rebuilt_topologies,
+                    silent=True
+                )
+
+            except TypeError:
+                new_topology = Cluster.ByTopologies(
+                    rebuilt_topologies
+                )
+
+            except Exception:
+                new_topology = None
+
+            if not Topology.IsInstance(
+                new_topology,
+                "Cluster"
+            ):
+                if not silent:
+                    print(
+                        "Topology.ReplaceVertices - Error: Could not rebuild the "
+                        "input Cluster. Returning None."
+                    )
+                return None
+
+            return preserve_dictionary(
+                topology,
+                new_topology
+            )
+
+        # ------------------------------------------------------------------
+        # Face with internal boundaries
+        #
+        # Geometry() intentionally triangulates Faces containing holes, making
+        # it unsuitable for lossless reconstruction of such a Face.
+        #
+        # Replace vertices in the external and internal boundary Wires and call
+        # the backend Face constructor directly.
+        #
+        # Do NOT call Face.ByWires here. Face.ByWires performs additional
+        # SpatialRelationship validation which is unrelated to this operation
+        # and currently depends on Copy/BREP behaviour.
+        # ------------------------------------------------------------------
+
+        if topology_type == "face":
+
+            try:
+                internal_boundaries = Face.InternalBoundaries(
+                    topology
+                )
+
+            except Exception:
+                internal_boundaries = []
+
+            if (
+                isinstance(
+                    internal_boundaries,
+                    list
+                )
+                and len(internal_boundaries) > 0
+            ):
+
+                try:
+                    external_boundary = Face.ExternalBoundary(
+                        topology,
+                        silent=True
+                    )
+
+                except TypeError:
+                    external_boundary = Face.ExternalBoundary(
+                        topology
+                    )
+
+                except Exception:
+                    external_boundary = None
+
+                if not Topology.IsInstance(
+                    external_boundary,
+                    "Wire"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.ReplaceVertices - Error: Could not retrieve "
+                            "the external boundary of the input Face. Returning None."
+                        )
+                    return None
+
+                new_external_boundary = Topology.ReplaceVertices(
+                    external_boundary,
+                    verticesA=verticesA,
+                    verticesB=verticesB,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+                if not Topology.IsInstance(
+                    new_external_boundary,
+                    "Wire"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.ReplaceVertices - Error: Could not rebuild "
+                            "the external boundary of the input Face. Returning None."
+                        )
+                    return None
+
+                new_internal_boundaries = []
+
+                for internal_boundary in internal_boundaries:
+
+                    new_internal_boundary = Topology.ReplaceVertices(
+                        internal_boundary,
+                        verticesA=verticesA,
+                        verticesB=verticesB,
+                        mantissa=mantissa,
+                        tolerance=tolerance,
+                        silent=silent
+                    )
+
+                    if not Topology.IsInstance(
+                        new_internal_boundary,
+                        "Wire"
+                    ):
+                        if not silent:
+                            print(
+                                "Topology.ReplaceVertices - Error: Could not rebuild "
+                                "an internal boundary of the input Face. Returning None."
+                            )
+                        return None
+
+                    new_internal_boundaries.append(
+                        new_internal_boundary
+                    )
+
+                # ----------------------------------------------------------
+                # Direct backend construction.
+                #
+                # This is the actual construction operation ultimately used by
+                # Face.ByWires, without its additional SpatialRelationship
+                # validation layer.
+                # ----------------------------------------------------------
+
+                try:
+                    new_face = Core.Face.ByExternalInternalBoundaries(
+                        new_external_boundary,
+                        new_internal_boundaries,
+                        tolerance
+                    )
+
+                except TypeError:
+                    try:
+                        new_face = Core.Face.ByExternalInternalBoundaries(
+                            new_external_boundary,
+                            new_internal_boundaries
+                        )
+
+                    except Exception:
+                        new_face = None
+
+                except Exception:
+                    new_face = None
+
+                if Topology.IsInstance(
+                    new_face,
+                    "Face"
+                ):
+                    return preserve_dictionary(
+                        topology,
+                        new_face
+                    )
+
+                if not silent:
+                    print(
+                        "Topology.ReplaceVertices - Error: Could not rebuild the "
+                        "Face from its transformed external and internal boundaries. "
+                        "Returning None."
+                    )
+
+                return None
+
+        # ------------------------------------------------------------------
+        # Determine desired generic reconstruction type
+        # ------------------------------------------------------------------
+
+        supported_rebuild_types = [
+            "vertex",
+            "edge",
+            "wire",
+            "face",
+            "shell",
+            "cell",
+            "cellcomplex"
+        ]
+
+        if topology_type in supported_rebuild_types:
+            rebuild_type = topology_type
+
+        else:
+            rebuild_type = None
+
+        # ------------------------------------------------------------------
+        # Extract generic geometry
+        # ------------------------------------------------------------------
+
+        try:
+            geometry = Topology.Geometry(
+                topology,
+                triangulate=False,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        except TypeError:
+            geometry = Topology.Geometry(
+                topology,
+                mantissa=mantissa,
+                tolerance=tolerance,
+            )
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: Could not extract the geometry "
+                    f"of the input topology. {error}. Returning None."
+                )
+            return None
+
+        if not isinstance(
+            geometry,
+            dict
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: Could not extract valid geometry "
+                    "from the input topology. Returning None."
+                )
+            return None
+
+        geometry_vertices = geometry.get(
+            "vertices",
+            []
+        )
+
+        geometry_edges = geometry.get(
+            "edges",
+            []
+        )
+
+        geometry_faces = geometry.get(
+            "faces",
+            []
+        )
+
+        if (
+            not isinstance(
+                geometry_vertices,
+                list
+            )
+            or len(geometry_vertices) == 0
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: The input topology contains no "
+                    "valid geometry vertices. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Recreate geometry vertices for matching
+        # ------------------------------------------------------------------
+
+        vertices = []
+
+        for coordinates in geometry_vertices:
+
+            try:
+                vertex = Vertex.ByCoordinates(
+                    coordinates
+                )
+
+            except Exception:
+                vertex = None
+
+            if not Topology.IsInstance(
+                vertex,
+                "Vertex"
+            ):
+                if not silent:
+                    print(
+                        "Topology.ReplaceVertices - Error: Could not reconstruct a "
+                        "geometry vertex. Returning None."
+                    )
+                return None
+
+            vertices.append(
+                vertex
+            )
+
+        # ------------------------------------------------------------------
+        # Map source vertices to geometry indices
+        # ------------------------------------------------------------------
+
+        replacement_indices = {}
+        missing_count = 0
+
+        for source_vertex, replacement_vertex in zip(
+            verticesA,
+            verticesB
+        ):
+
+            index = Vertex.Index(
+                source_vertex,
+                vertices,
+                tolerance=tolerance,
+            )
+
+            if index is None:
+                missing_count += 1
+                continue
+
+            replacement_indices[index] = replacement_vertex
+
+        if len(replacement_indices) == 0:
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Warning: None of the vertices in "
+                    "verticesA were found in the input topology. Returning the input "
+                    "topology."
+                )
+            return topology
+
+        # ------------------------------------------------------------------
+        # Construct replacement coordinate list
+        # ------------------------------------------------------------------
+
+        new_geometry_vertices = []
+
+        for index, vertex in enumerate(
+            vertices
+        ):
+
+            replacement = replacement_indices.get(
+                index,
+                vertex
+            )
+
+            coordinates = Vertex.Coordinates(
+                replacement,
+                outputType="xyz",
+                mantissa=mantissa,
+            )
+
+            if (
+                not isinstance(
+                    coordinates,
+                    list
+                )
+                or len(coordinates) != 3
+            ):
+                if not silent:
+                    print(
+                        "Topology.ReplaceVertices - Error: Could not retrieve the "
+                        "coordinates of a replacement vertex. Returning None."
+                    )
+                return None
+
+            new_geometry_vertices.append(
+                coordinates
+            )
+
+        # ------------------------------------------------------------------
+        # Generic reconstruction
+        # ------------------------------------------------------------------
+
+        try:
+            new_topology = Topology.ByGeometry(
+                vertices=new_geometry_vertices,
+                edges=geometry_edges,
+                faces=geometry_faces,
+                topologyType=rebuild_type,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+        except TypeError:
+            new_topology = Topology.ByGeometry(
+                vertices=new_geometry_vertices,
+                edges=geometry_edges,
+                faces=geometry_faces,
+                topologyType=rebuild_type,
+            )
+
+        except Exception as error:
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: Could not rebuild the topology. "
+                    f"{error}. Returning None."
+                )
+            return None
+
+        if not Topology.IsInstance(
+            new_topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.ReplaceVertices - Error: Could not rebuild a valid "
+                    "topology. Returning None."
+                )
+            return None
+
+        if missing_count > 0 and not silent:
+            print(
+                "Topology.ReplaceVertices - Warning: "
+                f"{missing_count} source vertices were not found in the input topology."
+            )
+
+        return preserve_dictionary(
+            topology,
+            new_topology
+        )
 
     @staticmethod
-    def Rotate(topology, origin=None, axis: list = [0, 0, 1], angle: float = 0, angTolerance: float = 0.001, transferDictionaries: bool = True, tolerance: float = 0.0001, silent: bool = False):
+    def Rotate(
+        topology,
+        origin=None,
+        axis: list = [0, 0, 1],
+        angle: float = 0,
+        angTolerance: float = 0.001,
+        transferDictionaries: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Rotates the input topology
+        Rotates the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.
+            The origin (center) of the rotation. If set to None, the world
+            origin (0, 0, 0) is used. Default is None.
         axis : list , optional
-            The vector representing the axis of rotation. Default is [0, 0, 1] which equates to the Z axis.
+            The vector representing the axis of rotation. Default is
+            [0, 0, 1], which equates to the Z axis.
         angle : float , optional
             The angle of rotation in degrees. Default is 0.
         angTolerance : float , optional
-            The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.
+            The angle tolerance in degrees under which no rotation is carried
+            out. Default is 0.001 degrees.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.
+            If set to True, dictionaries are transferred from the original
+            topology to the rotated topology. Default is True.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The rotated topology.
-
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
 
-        def rotate_vertex_3d(vertex, axis, angle_degrees, origin):
-            vertex = np.array(vertex)  # Vertex to be rotated
-            axis = np.array(axis)    # Rotation axis (z-axis in this case)
-            origin = np.array(origin)
-            # Convert the angle from degrees to radians
-            angle_radians = np.radians(angle_degrees)
-            
-            # Calculate the rotation matrix using the Rodrigues' formula
-            axis = np.array(axis) / np.linalg.norm(axis)
-            a = np.cos(angle_radians / 2)
-            b, c, d = -axis * np.sin(angle_radians / 2)
-            rotation_matrix = np.array([
-                [a * a + b * b - c * c - d * d, 2 * (b * c - a * d), 2 * (b * d + a * c)],
-                [2 * (b * c + a * d), a * a - b * b + c * c - d * d, 2 * (c * d - a * b)],
-                [2 * (b * d - a * c), 2 * (c * d + a * b), a * a - b * b - c * c + d * d]
-            ])
-            
-            # Translate the vertex to the origin, apply the rotation, and then translate it back
-            translated_vertex = vertex - origin
-            rotated_vertex = np.dot(rotation_matrix, translated_vertex) + origin
-            
-            rotated_vertex = [v for v in rotated_vertex] 
-            return rotated_vertex
+        def rotate_vertex_3d(
+            vertex,
+            axis,
+            angle_degrees,
+            origin
+        ):
+            """
+            Rotates a coordinate around an arbitrary axis.
 
-        if not Topology.IsInstance(topology, "Topology"):
-            print("Topology.Rotate - Error: The input topology parameter is not a valid topologic topology. Returning None.")
+            This helper is retained solely for the legacy TopologicCore
+            workaround.
+            """
+            vertex = np.array(
+                vertex
+            )
+
+            axis = np.array(
+                axis
+            )
+
+            origin = np.array(
+                origin
+            )
+
+            angle_radians = np.radians(
+                angle_degrees
+            )
+
+            axis = (
+                np.array(axis)
+                / np.linalg.norm(axis)
+            )
+
+            a = np.cos(
+                angle_radians / 2
+            )
+
+            b, c, d = (
+                -axis
+                * np.sin(
+                    angle_radians / 2
+                )
+            )
+
+            rotation_matrix = np.array(
+                [
+                    [
+                        a * a + b * b - c * c - d * d,
+                        2 * (b * c - a * d),
+                        2 * (b * d + a * c)
+                    ],
+                    [
+                        2 * (b * c + a * d),
+                        a * a - b * b + c * c - d * d,
+                        2 * (c * d - a * b)
+                    ],
+                    [
+                        2 * (b * d - a * c),
+                        2 * (c * d + a * b),
+                        a * a - b * b - c * c + d * d
+                    ]
+                ]
+            )
+
+            translated_vertex = (
+                vertex
+                - origin
+            )
+
+            rotated_vertex = (
+                np.dot(
+                    rotation_matrix,
+                    translated_vertex
+                )
+                + origin
+            )
+
+            return [
+                value
+                for value in rotated_vertex
+            ]
+
+        # ------------------------------------------------------------------
+        # Validate inputs
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.Rotate - Error: The input topology parameter "
+                    "is not a valid topologic topology. Returning None."
+                )
             return None
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Topology.Rotate - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            origin = Vertex.ByCoordinates(
+                0,
+                0,
+                0
+            )
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            if not silent:
+                print(
+                    "Topology.Rotate - Error: The input origin parameter "
+                    "is not a valid topologic vertex. Returning None."
+                )
             return None
+
+        try:
+            x, y, z = axis
+
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.Rotate - Error: The input axis parameter must "
+                    "contain exactly three numeric values. Returning None."
+                )
+            return None
+
         return_topology = topology
-        
-        if abs(angle) >= angTolerance:
-            try:
-                x, y, z = axis
-                return_topology = Core.TopologyUtility.Rotate(topology, origin, x, y, z, angle)
-            except:
-                if not silent:
-                    print("Topology.Rotate - Warning: Core rotation operation failed. Trying a workaround.")
-                vertices = [Vertex.Coordinates(v) for v in Topology.Vertices(topology)]
-                origin = Vertex.Coordinates(origin)
-                rot_vertices = []
-                for v in vertices:
-                    rot_vertices.append(rotate_vertex_3d(v, axis, angle, origin))
-                rot_vertices = [Vertex.ByCoordinates(rot_v) for rot_v in rot_vertices]
-                return_topology = Topology.ReplaceVertices(topology, verticesA=Topology.Vertices(topology), verticesB=rot_vertices)
-                return_topology = Topology.SelfMerge(return_topology, tolerance=tolerance)
-        if transferDictionaries == True:
-            d = Topology.Dictionary(topology)
-            if len(Dictionary.Keys(d)) > 0:
-                return_topology = Topology.SetDictionary(return_topology, d)
-            vertices = Topology.Vertices(topology, silent=True)
-            edges = Topology.Edges(topology, silent=True)
-            wires = Topology.Wires(topology, silent=True)
-            faces = Topology.Faces(topology, silent=True)
-            shells = Topology.Shells(topology, silent=True)
-            cells = Topology.Cells(topology, silent=True)
-            cellComplexes = Topology.CellComplexes(topology, silent=True)
-            
-            r_vertices = Topology.Vertices(return_topology, silent=True)
-            r_edges = Topology.Edges(return_topology, silent=True)
-            r_wires = Topology.Wires(return_topology, silent=True)
-            r_faces = Topology.Faces(return_topology, silent=True)
-            r_shells = Topology.Shells(return_topology, silent=True)
-            r_cells = Topology.Cells(return_topology, silent=True)
-            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
 
-            for i, t in enumerate(r_vertices):
-                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-            for i, t in enumerate(r_edges):
-                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-            for i, t in enumerate(r_wires):
-                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-            for i, t in enumerate(r_faces):
-                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-            for i, t in enumerate(r_shells):
-                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-            for i, t in enumerate(r_cells):
-                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-            for i, t in enumerate(r_cellComplexes):
-                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
-        
+        # ------------------------------------------------------------------
+        # Rotation
+        # ------------------------------------------------------------------
+
+        if abs(angle) >= angTolerance:
+
+            # --------------------------------------------------------------
+            # Legacy TopologicCore
+            #
+            # TopologicCore rotation can fail for valid topology. Preserve
+            # the historical manual vertex-rotation workaround only for this
+            # backend.
+            # --------------------------------------------------------------
+
+            if Topology._IsTopologicCoreBackend():
+
+                try:
+                    return_topology = Core.TopologyUtility.Rotate(
+                        topology,
+                        origin,
+                        x,
+                        y,
+                        z,
+                        angle
+                    )
+
+                except Exception:
+                    return_topology = None
+
+                if not Topology.IsInstance(
+                    return_topology,
+                    "Topology"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.Rotate - Warning: TopologicCore rotation "
+                            "operation failed. Trying the legacy workaround."
+                        )
+
+                    vertices = [
+                        Vertex.Coordinates(
+                            vertex
+                        )
+                        for vertex in Topology.Vertices(
+                            topology
+                        )
+                    ]
+
+                    origin_coordinates = Vertex.Coordinates(
+                        origin
+                    )
+
+                    rotated_vertices = []
+
+                    for vertex in vertices:
+                        rotated_vertices.append(
+                            rotate_vertex_3d(
+                                vertex,
+                                axis,
+                                angle,
+                                origin_coordinates
+                            )
+                        )
+
+                    rotated_vertices = [
+                        Vertex.ByCoordinates(
+                            rotated_vertex
+                        )
+                        for rotated_vertex in rotated_vertices
+                    ]
+
+                    return_topology = Topology.ReplaceVertices(
+                        topology,
+                        verticesA=Topology.Vertices(
+                            topology
+                        ),
+                        verticesB=rotated_vertices
+                    )
+
+                    return_topology = Topology.SelfMerge(
+                        return_topology,
+                        tolerance=tolerance
+                    )
+
+            # --------------------------------------------------------------
+            # Normal backend path
+            #
+            # Trust the backend. Do not reconstruct or SelfMerge a failed
+            # result, because doing so would hide a backend defect.
+            # --------------------------------------------------------------
+
+            else:
+
+                try:
+                    return_topology = Core.TopologyUtility.Rotate(
+                        topology,
+                        origin,
+                        x,
+                        y,
+                        z,
+                        angle
+                    )
+
+                except Exception as error:
+                    if not silent:
+                        print(
+                            "Topology.Rotate - Error: The active backend "
+                            "rotation operation failed. Returning None."
+                        )
+                        print(
+                            "Error:",
+                            error
+                        )
+                    return None
+
+                if not Topology.IsInstance(
+                    return_topology,
+                    "Topology"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.Rotate - Error: The active backend "
+                            "did not return a valid topology. Returning None."
+                        )
+                    return None
+
+        # ------------------------------------------------------------------
+        # Dictionary transfer
+        # ------------------------------------------------------------------
+
+        if transferDictionaries is True:
+            d = Topology.Dictionary(
+                topology
+            )
+
+            if len(
+                Dictionary.Keys(
+                    d
+                )
+            ) > 0:
+                return_topology = Topology.SetDictionary(
+                    return_topology,
+                    d
+                )
+
+            vertices = Topology.Vertices(
+                topology,
+                silent=True
+            )
+
+            edges = Topology.Edges(
+                topology,
+                silent=True
+            )
+
+            wires = Topology.Wires(
+                topology,
+                silent=True
+            )
+
+            faces = Topology.Faces(
+                topology,
+                silent=True
+            )
+
+            shells = Topology.Shells(
+                topology,
+                silent=True
+            )
+
+            cells = Topology.Cells(
+                topology,
+                silent=True
+            )
+
+            cellComplexes = Topology.CellComplexes(
+                topology,
+                silent=True
+            )
+
+            r_vertices = Topology.Vertices(
+                return_topology,
+                silent=True
+            )
+
+            r_edges = Topology.Edges(
+                return_topology,
+                silent=True
+            )
+
+            r_wires = Topology.Wires(
+                return_topology,
+                silent=True
+            )
+
+            r_faces = Topology.Faces(
+                return_topology,
+                silent=True
+            )
+
+            r_shells = Topology.Shells(
+                return_topology,
+                silent=True
+            )
+
+            r_cells = Topology.Cells(
+                return_topology,
+                silent=True
+            )
+
+            r_cellComplexes = Topology.CellComplexes(
+                return_topology,
+                silent=True
+            )
+
+            for i, t in enumerate(
+                r_vertices
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        vertices[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_edges
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        edges[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_wires
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        wires[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_faces
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        faces[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_shells
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        shells[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_cells
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        cells[i]
+                    ),
+                    silent=True
+                )
+
+            for i, t in enumerate(
+                r_cellComplexes
+            ):
+                t = Topology.SetDictionary(
+                    t,
+                    Topology.Dictionary(
+                        cellComplexes[i]
+                    ),
+                    silent=True
+                )
+
         return return_topology
     
     @staticmethod
@@ -12745,18 +15334,24 @@ class Topology():
         return Edge.ByStartVertexEndVertex(vA, vB)
 
     @staticmethod
-    def ShortestDistance(topologyA,
-                         topologyB,
-                         mantissa: int = 6,
-                         tolerance: float = 0.0001,
-                         silent: bool = False
-                         ):
+    def ShortestDistance(
+        topologyA,
+        topologyB,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
         Returns the shortest Euclidean distance between two topologies.
 
-        This is a thin wrapper around Topology.ShortestEdge. It computes the
-        shortest connecting Edge between the two input topologies and returns
-        its length.
+        If the active backend provides a native distance operation, that
+        operation is trusted. A failure of a non-TopologicCore native distance
+        operation is returned as None rather than being concealed by another
+        geometric algorithm.
+
+        The legacy Intersect -> ShortestEdge -> Edge.Length method is retained
+        when the active backend does not provide a native distance capability,
+        and as a compatibility fallback for TopologicCore.
 
         Parameters
         ----------
@@ -12768,53 +15363,226 @@ class Topology():
             Number of decimal places to which the distance is rounded.
             Default is 6.
         tolerance : float , optional
-            Numerical tolerance used when computing the shortest edge.
-            Default is 1e-6.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If True, the method will not print warnings. Default is False.
-
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
-        float or None
-            The shortest distance between topologyA and topologyB, rounded to
-            the specified mantissa. Returns None if the distance cannot be
-            computed.
+        float
+            The shortest distance between topologyA and topologyB.
+            Returns None if the distance cannot be computed.
         """
+        import math
+
         from topologicpy.Edge import Edge
 
-        if not Topology.IsInstance(topologyA, "Topology"):
+        # ------------------------------------------------------------------
+        # Validate inputs.
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topologyA,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.ShortestDistance - Error: The input a parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.ShortestDistance - Error: "
+                    "The input topologyA parameter is not a valid topology. "
+                    "Returning None."
+                )
             return None
 
-        if not Topology.IsInstance(topologyB, "Topology"):
+        if not Topology.IsInstance(
+            topologyB,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.ShortestDistance - Error: The input b parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.ShortestDistance - Error: "
+                    "The input topologyB parameter is not a valid topology. "
+                    "Returning None."
+                )
             return None
 
-        # If the two topologies intersect, then the shortest distance is 0
-        if Topology.IsInstance(Topology.Intersect(topologyA, topologyB, tolerance=tolerance, silent=silent), "topology"):
-            return 0
-        
-        edge = Topology.ShortestEdge(topologyA,
-                                        topologyB,
-                                        tolerance=tolerance,
-                                        silent=silent
-                                        )
-        if edge is None:
+        # ------------------------------------------------------------------
+        # Native backend distance.
+        # ------------------------------------------------------------------
+
+        has_native_distance = Core.HasAttribute(
+            "TopologyUtility",
+            "Distance"
+        )
+
+        if has_native_distance:
+
+            native_failed = False
+
+            try:
+                d = Core.TopologyUtility.Distance(
+                    topologyA,
+                    topologyB,
+                    tolerance
+                )
+
+            except Exception as error:
+
+                native_failed = True
+                d = None
+
+                if (
+                    not Topology._IsTopologicCoreBackend()
+                    and not silent
+                ):
+                    print(
+                        "Topology.ShortestDistance - Error: The active backend "
+                        "distance operation failed. Returning None."
+                    )
+                    print(
+                        "Error:",
+                        error
+                    )
+
+            # --------------------------------------------------------------
+            # Validate native result.
+            # --------------------------------------------------------------
+
+            if not native_failed:
+
+                if d is None:
+                    native_failed = True
+
+                else:
+                    try:
+                        d = float(
+                            d
+                        )
+                    except Exception:
+                        native_failed = True
+
+                if not native_failed:
+
+                    if not math.isfinite(
+                        d
+                    ):
+                        native_failed = True
+
+                    elif d < -abs(
+                        float(tolerance)
+                    ):
+                        native_failed = True
+
+            # --------------------------------------------------------------
+            # Valid native result.
+            # --------------------------------------------------------------
+
+            if not native_failed:
+
+                if abs(d) <= tolerance:
+                    d = 0.0
+
+                return round(
+                    d,
+                    mantissa
+                )
+
+            # --------------------------------------------------------------
+            # Non-TopologicCore backends must expose native failure.
+            #
+            # Do not silently replace BRepExtrema or another backend-native
+            # distance operation with a different public algorithm.
+            # --------------------------------------------------------------
+
+            if not Topology._IsTopologicCoreBackend():
+
+                if not silent and d is None:
+                    print(
+                        "Topology.ShortestDistance - Error: The active backend "
+                        "could not compute the distance. Returning None."
+                    )
+
+                return None
+
+            # TopologicCore falls through to its historical compatibility
+            # algorithm below.
+
+        # ------------------------------------------------------------------
+        # Generic / legacy fallback.
+        #
+        # This is appropriate only when:
+        #
+        # 1. the backend does not provide Distance at all, or
+        # 2. TopologicCore's native distance operation failed.
+        # ------------------------------------------------------------------
+
+        inter = Topology.Intersect(
+            topologyA,
+            topologyB,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if Topology.IsInstance(
+            inter,
+            "Topology"
+        ):
+            return 0.0
+
+        edge = Topology.ShortestEdge(
+            topologyA,
+            topologyB,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if not Topology.IsInstance(
+            edge,
+            "Edge"
+        ):
             if not silent:
-                print("Topology.ShortestDistance - Error: Could not compute the shortest distance. Returning None.")
+                print(
+                    "Topology.ShortestDistance - Error: "
+                    "Could not compute the shortest distance. Returning None."
+                )
             return None
 
-        d = Edge.Length(edge)
+        d = Edge.Length(
+            edge
+        )
+
         if d is None:
             if not silent:
-                print("Topology.ShortestDistance - Error: Could not compute the shortest distance. Returning None.")
+                print(
+                    "Topology.ShortestDistance - Error: "
+                    "Could not compute the shortest distance. Returning None."
+                )
             return None
 
-        d = 0.0 if abs(d) <= tolerance else d
-        return round(d, mantissa)
+        try:
+            d = float(
+                d
+            )
+        except Exception:
+            return None
+
+        if not math.isfinite(
+            d
+        ):
+            return None
+
+        if d < -abs(
+            float(tolerance)
+        ):
+            return None
+
+        if abs(d) <= tolerance:
+            d = 0.0
+
+        return round(
+            d,
+            mantissa
+        )
 
     @staticmethod
     def ShortestEdges(topology, removeCoplanarFaces: bool = False, epsilon: float = 0.001, tolerance: float = 0.0001, silent: bool = False):
@@ -14165,21 +16933,95 @@ class Topology():
                 return t
         return Topology.ExternalBoundary(t, silent=True)
 
-    def _interior_intersection_exists(a, b, tolerance: float = 0.0001, silent: bool = False):
+    def _interior_intersection_exists(
+        a,
+        b,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
+        """
+        Returns True if the interiors of the two input topologies intersect.
+
+        For equal-dimensional topologies, a same-dimensional intersection
+        necessarily represents interior-interior intersection. This avoids
+        subtracting external boundaries from the intersection, which is not
+        reliable for mixed-dimensional Boolean operations.
+
+        For mixed-dimensional topologies, the previous boundary-subtraction
+        strategy is retained as a fallback.
+        """
         from topologicpy.Cluster import Cluster
-        inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
-        if inter is None: return False
+
+        inter = Topology.Intersect(
+            a,
+            b,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if inter is None:
+            return False
+
+        da = Topology.Dimensionality(a)
+        db = Topology.Dimensionality(b)
+        di = Topology.Dimensionality(inter)
+
+        # ------------------------------------------------------------------
+        # Equal-dimensional operands
+        #
+        # If their intersection has the same dimension, their interiors
+        # intersect.
+        #
+        # Examples:
+        #
+        # Cell ∩ Cell -> Cell      => interiors intersect
+        # Face ∩ Face -> Face      => interiors intersect
+        #
+        # A lower-dimensional result represents boundary-only contact.
+        # ------------------------------------------------------------------
+
+        if da == db:
+            return di == da
+
+        # ------------------------------------------------------------------
+        # Mixed-dimensional fallback.
+        # ------------------------------------------------------------------
+
         eb_parts = []
-        eb_a = Topology._ext_boundary_or_none(a, tolerance=tolerance, silent=silent)
-        eb_b = Topology._ext_boundary_or_none(b, tolerance=tolerance, silent=silent)
-        if eb_a is not None: eb_parts.append(eb_a)
-        if eb_b is not None: eb_parts.append(eb_b)
-        if eb_parts:
-            eb_union = Cluster.ByTopologies(eb_parts)
-            interior_part = Topology.Difference(inter, eb_union, tolerance=tolerance, silent=silent)
-            return interior_part is not None
-        # no boundaries to subtract ⇒ any non-null intersection implies interior–interior
-        return True
+
+        eb_a = Topology._ext_boundary_or_none(
+            a,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        eb_b = Topology._ext_boundary_or_none(
+            b,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if eb_a is not None:
+            eb_parts.append(eb_a)
+
+        if eb_b is not None:
+            eb_parts.append(eb_b)
+
+        if not eb_parts:
+            return True
+
+        eb_union = Cluster.ByTopologies(
+            eb_parts
+        )
+
+        interior_part = Topology.Difference(
+            inter,
+            eb_union,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        return interior_part is not None
 
     def _edge_endpoints(e, tolerance: float = 0.0001, silent: bool = False):
         """Return the two endpoint vertices of an Edge e."""
@@ -14679,13 +17521,22 @@ class Topology():
         return Topology.SymmetricDifference(a, b, tolerance=tolerance, silent=silent) is not None
 
     @staticmethod
-    def Touches(topologyA, topologyB, tolerance: float=0.0001, silent: bool = False):
+    def Touches(
+        topologyA,
+        topologyB,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Returns True if the input topologyA touches the input topologyB. Returns False otherwise.
+        Returns True if the input topologyA touches the input topologyB.
+        Returns False otherwise.
 
-        Touching means that the two topologies share at least one boundary point while their
-        interiors do not intersect. Special cases are handled for zero-dimensional and
-        one-dimensional topologies.
+        Two topologies are considered to touch when their boundaries are in
+        contact while their interiors do not intersect. For equal-dimensional
+        two- and three-dimensional topologies, boundary contact is determined
+        using shortest distance rather than relying solely on Boolean
+        intersection, since some backends may not return lower-dimensional
+        intersections for edge- or vertex-only contact.
 
         Parameters
         ----------
@@ -14696,86 +17547,274 @@ class Topology():
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         bool
-            True if topologyA touches topologyB. False otherwise. Returns None if either input is invalid.
-
+            True if topologyA touches topologyB. False otherwise.
+            Returns None if either input is invalid.
         """
-        # Touches: The geometries share at least one point on their boundaries but their interiors do not intersect.
-        # This rule is exempted for 0D-0D, 0D-1D, and 1D-1D cases.
+
+        if not Topology.IsInstance(topologyA, "Topology"):
+            if not silent:
+                print(
+                    "Topology.Touches - Error: "
+                    "The input topologyA parameter is not a valid topology. "
+                    "Returning None."
+                )
+            return None
+
+        if not Topology.IsInstance(topologyB, "Topology"):
+            if not silent:
+                print(
+                    "Topology.Touches - Error: "
+                    "The input topologyB parameter is not a valid topology. "
+                    "Returning None."
+                )
+            return None
+
         a = topologyA
         b = topologyB
-        if not Topology.IsInstance(a, "Topology"):
-            if not silent:
-                print("Topology.Touches - Error: The input a parameter is not a valid topology. Returning None.")
-            return None
 
-        if not Topology.IsInstance(b, "Topology"):
-            if not silent:
-                print("Topology.Touches - Error: The input b parameter is not a valid topology. Returning None.")
-            return None
+        da = Topology.Dimensionality(a)
+        db = Topology.Dimensionality(b)
 
-        da, db = Topology.Dimensionality(a), Topology.Dimensionality(b)
-        inter = Topology.Intersect(a, b, tolerance=tolerance, silent=silent)
+        # ==================================================================
+        # Equal-dimensional 2D / 3D topologies
+        # ==================================================================
+        #
+        # A same-dimensional intersection means that the interiors overlap,
+        # so the relationship cannot be Touches.
+        #
+        # If no same-dimensional intersection exists, determine boundary
+        # contact from the shortest boundary distance. This handles face-,
+        # edge-, and vertex-contact consistently across backends.
+        # ==================================================================
+
+        if da == db and da >= 2:
+
+            inter = Topology.Intersect(
+                a,
+                b,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if inter is not None:
+
+                di = Topology.Dimensionality(inter)
+
+                if di == da:
+                    return False
+
+            if Topology.IsInstance(a, "Shell"):
+                eb_a = a
+            else:
+                eb_a = Topology._ext_boundary_or_none(
+                    a,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+            if Topology.IsInstance(b, "Shell"):
+                eb_b = b
+            else:
+                eb_b = Topology._ext_boundary_or_none(
+                    b,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+            if eb_a is None or eb_b is None:
+                return False
+
+            distance = Topology.ShortestDistance(
+                eb_a,
+                eb_b,
+                mantissa=12,
+                tolerance=tolerance,
+                silent=True
+            )
+
+            if distance is None:
+                return False
+
+            return distance <= tolerance
+
+        # ==================================================================
+        # Remaining dimension combinations require a direct intersection.
+        # ==================================================================
+
+        inter = Topology.Intersect(
+            a,
+            b,
+            tolerance=tolerance,
+            silent=True
+        )
+
         if inter is None:
             return False
 
-        # Special case for 0D-0D and 0D-1D (Vertices <-> Vertices, Vertices <-> Edges/Wires)
-        if da == 0:
-            if db == 0 or db == 1:
-                return True
-        if db == 0:
-            if da == 0 or da == 1:
-                return True
+        # ------------------------------------------------------------------
+        # 0D - 0D
+        # ------------------------------------------------------------------
 
-        # Special case for 1D-1D (Edges/Wires <-> Edges/Wires)
-        # boundary contact only if the intersection is a point
-        # that is an endpoint of at least one edge.
+        if da == 0 and db == 0:
+            return True
+
+        # ------------------------------------------------------------------
+        # 0D - 1D
+        # ------------------------------------------------------------------
+
+        if da == 0 and db == 1:
+            return Topology._is_endpoint(
+                a,
+                b,
+                tolerance=tolerance,
+                silent=True
+            )
+
+        if db == 0 and da == 1:
+            return Topology._is_endpoint(
+                b,
+                a,
+                tolerance=tolerance,
+                silent=True
+            )
+
+        # ------------------------------------------------------------------
+        # 1D - 1D
+        # ------------------------------------------------------------------
+
         if da == 1 and db == 1:
-            inter_edges = Topology.Edges(inter, silent=True) or []
+
+            inter_edges = Topology.Edges(
+                inter,
+                silent=True
+            ) or []
+
+            # Shared length means overlap, not touch.
             if inter_edges:
-                # Collinear overlap → NOT touches (let overlaps handle it)
                 return False
-            inter_verts = Topology.Vertices(inter, silent=True) or []
-            if not inter_verts:
+
+            inter_vertices = Topology.Vertices(
+                inter,
+                silent=True
+            ) or []
+
+            if not inter_vertices:
                 return False
-            v = inter_verts[0]
-            # touches iff the point is an endpoint of A or B
-            return Topology._is_endpoint(v, a) or Topology._is_endpoint(v, b)
-        
-        # Special case for 1D-1D (Edges/Wires <-> Edges/Wires)
-        # boundary contact only if the intersection is a point
-        # that is an endpoint of at least one edge.
-        if (da == 1 and db == 2) or (da == 2 and db == 1):
-            inter_edges = Topology.Edges(inter, silent=True) or []
-            if inter_edges:
-                # Collinear overlap → NOT touches (let overlaps handle it)
-                return False
-            inter_verts = Topology.Vertices(inter, silent=True) or []
-            if not inter_verts:
-                return False
-            v = inter_verts[0]
-            # touches iff the point is an endpoint of A or B
-            return Topology._is_endpoint(v, a) or Topology._is_endpoint(v, b)
-        
-        # Generic rule for other dimension pairs:
-        # boundary–boundary contact AND NO interior–interior contact
-        if Topology._interior_intersection_exists(a, b):
+
+            for vertex in inter_vertices:
+
+                if (
+                    Topology._is_endpoint(
+                        vertex,
+                        a,
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                    or
+                    Topology._is_endpoint(
+                        vertex,
+                        b,
+                        tolerance=tolerance,
+                        silent=True
+                    )
+                ):
+                    return True
+
             return False
-        if Topology.IsInstance(a, "shell"):
+
+        # ------------------------------------------------------------------
+        # 1D - 2D
+        # ------------------------------------------------------------------
+
+        if (
+            (da == 1 and db == 2)
+            or
+            (da == 2 and db == 1)
+        ):
+
+            edge_like = a if da == 1 else b
+
+            inter_edges = Topology.Edges(
+                inter,
+                silent=True
+            ) or []
+
+            # Shared edge length means the 1D topology lies on/in the
+            # 2D topology rather than merely touching it.
+            if inter_edges:
+                return False
+
+            inter_vertices = Topology.Vertices(
+                inter,
+                silent=True
+            ) or []
+
+            if not inter_vertices:
+                return False
+
+            for vertex in inter_vertices:
+
+                if Topology._is_endpoint(
+                    vertex,
+                    edge_like,
+                    tolerance=tolerance,
+                    silent=True
+                ):
+                    return True
+
+            return False
+
+        # ------------------------------------------------------------------
+        # Remaining mixed-dimensional cases
+        # ------------------------------------------------------------------
+
+        if Topology._interior_intersection_exists(
+            a,
+            b,
+            tolerance=tolerance,
+            silent=True
+        ):
+            return False
+
+        if Topology.IsInstance(a, "Shell"):
             eb_a = a
         else:
-            eb_a = Topology._ext_boundary_or_none(a)
-        if Topology.IsInstance(b, "shell"):
+            eb_a = Topology._ext_boundary_or_none(
+                a,
+                tolerance=tolerance,
+                silent=True
+            )
+
+        if Topology.IsInstance(b, "Shell"):
             eb_b = b
         else:
-            eb_b = Topology._ext_boundary_or_none(b)
+            eb_b = Topology._ext_boundary_or_none(
+                b,
+                tolerance=tolerance,
+                silent=True
+            )
+
         if eb_a is None or eb_b is None:
             return False
-        return Topology.Intersect(eb_a, eb_b, tolerance=tolerance, silent=silent) is not None
+
+        distance = Topology.ShortestDistance(
+            eb_a,
+            eb_b,
+            mantissa=12,
+            tolerance=tolerance,
+            silent=True
+        )
+
+        if distance is None:
+            return False
+
+        return distance <= tolerance
 
     @staticmethod
     def Within(topologyA, topologyB, tolerance: float = 0.0001, silent: bool = False):
@@ -15238,147 +18277,714 @@ class Topology():
         return Topology._Boolean(topologyA=topologyA, topologyB=topologyB, operation="symdif", tranDict=tranDict, tolerance=tolerance, silent=silent)
 
     @staticmethod
-    def Taper(topology,
-              origin=None,
-              ratioRange: list = [0, 1],
-              triangulate: bool = False,
-              mantissa: int = 6,
-              tolerance: float = 0.0001,
-              silent: bool = False):
+    def Taper(
+        topology,
+        origin=None,
+        ratioRange: list = [0, 1],
+        triangulate: bool = False,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.
+        Tapers the input topology along its Z-axis based on the input ratio range.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.
+            The desired origin for tapering. If not specified, the centroid of
+            the input topology is used. The tapering uses the X and Y coordinates
+            of the specified origin, but uses the Z coordinate of each vertex
+            being tapered. Default is None.
         ratioRange : list , optional
-            The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.
+            The desired ratio range. This specifies a linear range from bottom
+            to top for tapering the vertices. A value of 0 means no tapering and
+            1 means maximum inward tapering. Negative numbers result in outward
+            tapering. Values greater than 1 are clamped to 1.
+            Default is [0, 1].
         triangulate : bool , optional
-            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.
+            If set to True, the input topology is triangulated before tapering.
+            Otherwise, it is not triangulated. Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round coordinates to. Default is 6.
         tolerance : float , optional
-            The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.
+            The desired tolerance. Vertices are not moved if the calculated
+            movement distance is at or below this tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The tapered topology.
-
         """
         from topologicpy.Vertex import Vertex
 
-        if not Topology.IsInstance(topology, "topology"):
+        # ------------------------------------------------------------------
+        # Validate topology
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.Taper - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Taper - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
 
-        ratioRange = [min(1,ratioRange[0]), min(1,ratioRange[1])]
-        if ratioRange == [0, 0]:
-            return topology
-        if ratioRange == [1, 1]:
+        # ------------------------------------------------------------------
+        # Validate ratio range
+        # ------------------------------------------------------------------
+
+        if (
+            not isinstance(ratioRange, (list, tuple))
+            or len(ratioRange) != 2
+        ):
             if not silent:
-                print("Topology.Taper - Error: Degenerate result. Returning the input topology.")
+                print(
+                    "Topology.Taper - Error: The input ratioRange parameter "
+                    "must contain exactly two numeric values. Returning None."
+                )
+            return None
+
+        try:
+            ratioRange = [
+                min(1.0, float(ratioRange[0])),
+                min(1.0, float(ratioRange[1]))
+            ]
+
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.Taper - Error: The input ratioRange parameter "
+                    "must contain exactly two numeric values. Returning None."
+                )
+            return None
+
+        # No taper.
+        if ratioRange == [0.0, 0.0]:
             return topology
-        if triangulate == True:
-            topology = Topology.Triangulate(topology)
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Topology.Centroid(topology)
-        vertices = Topology.Vertices(topology, silent=True)
-        zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
-        z_min = min(zList)
-        maxZ = max(zList)
+
+        # Every vertex would collapse onto the taper axis.
+        if ratioRange == [1.0, 1.0]:
+            if not silent:
+                print(
+                    "Topology.Taper - Error: Degenerate result. "
+                    "Returning the input topology."
+                )
+            return topology
+
+        # ------------------------------------------------------------------
+        # Optional triangulation
+        # ------------------------------------------------------------------
+
+        if triangulate is True:
+            topology = Topology.Triangulate(
+                topology,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if not Topology.IsInstance(
+                topology,
+                "Topology"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Taper - Error: Could not triangulate the "
+                        "input topology. Returning None."
+                    )
+                return None
+
+        topology_type = Topology.TypeAsString(
+            topology
+        )
+
+        # ------------------------------------------------------------------
+        # Resolve taper origin
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            origin = Topology.Centroid(
+                topology
+            )
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            if not silent:
+                print(
+                    "Topology.Taper - Error: Could not determine a valid "
+                    "taper origin. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Retrieve vertices
+        # ------------------------------------------------------------------
+
+        vertices = Topology.Vertices(
+            topology,
+            silent=True
+        )
+
+        if not isinstance(vertices, list) or len(vertices) == 0:
+            if not silent:
+                print(
+                    "Topology.Taper - Error: The input topology contains no "
+                    "vertices. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Determine Z range
+        # ------------------------------------------------------------------
+
+        z_values = [
+            Vertex.Z(
+                vertex,
+                mantissa=mantissa
+            )
+            for vertex in vertices
+        ]
+
+        z_min = min(
+            z_values
+        )
+
+        z_max = max(
+            z_values
+        )
+
+        height = (
+            z_max
+            - z_min
+        )
+
+        # Tapering requires a Z interval over which the ratio can vary.
+        if abs(height) <= tolerance:
+            if not silent:
+                print(
+                    "Topology.Taper - Warning: The input topology has no "
+                    "significant extent along the Z-axis. Returning the "
+                    "input topology."
+                )
+            return topology
+
+        origin_x = Vertex.X(
+            origin,
+            mantissa=mantissa
+        )
+
+        origin_y = Vertex.Y(
+            origin,
+            mantissa=mantissa
+        )
+
+        # ------------------------------------------------------------------
+        # Calculate replacement vertices
+        # ------------------------------------------------------------------
+
         new_vertices = []
-        for v in vertices:
-            ht = (Vertex.Z(v)-z_min)/(maxZ - z_min)
-            rt = ratioRange[0] + ht*(ratioRange[1] - ratioRange[0])
-            new_origin = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
-            new_dist = Vertex.Distance(new_origin, v, mantissa=mantissa)*rt
-            c_a = Vertex.Coordinates(new_origin, mantissa=mantissa)
-            c_b = Vertex.Coordinates(v, mantissa=mantissa)
-            new_dir = [(c_a[0]-c_b[0]), (c_a[1]-c_b[1]), 0]
-            if abs(new_dist) > tolerance:
-                new_v = Topology.TranslateByDirectionDistance(v, direction=new_dir, distance=new_dist, silent=silent)
+
+        for vertex in vertices:
+
+            vertex_x = Vertex.X(
+                vertex,
+                mantissa=mantissa
+            )
+
+            vertex_y = Vertex.Y(
+                vertex,
+                mantissa=mantissa
+            )
+
+            vertex_z = Vertex.Z(
+                vertex,
+                mantissa=mantissa
+            )
+
+            height_ratio = (
+                (vertex_z - z_min)
+                / height
+            )
+
+            taper_ratio = (
+                ratioRange[0]
+                + height_ratio
+                * (
+                    ratioRange[1]
+                    - ratioRange[0]
+                )
+            )
+
+            new_origin = Vertex.ByCoordinates(
+                origin_x,
+                origin_y,
+                vertex_z
+            )
+
+            if not Topology.IsInstance(
+                new_origin,
+                "Vertex"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Taper - Error: Could not create a valid "
+                        "local taper origin. Returning None."
+                    )
+                return None
+
+            distance = Vertex.Distance(
+                new_origin,
+                vertex,
+                mantissa=mantissa
+            )
+
+            new_distance = (
+                distance
+                * taper_ratio
+            )
+
+            if abs(new_distance) > tolerance:
+
+                direction = [
+                    origin_x - vertex_x,
+                    origin_y - vertex_y,
+                    0
+                ]
+
+                new_vertex = Topology.TranslateByDirectionDistance(
+                    vertex,
+                    direction=direction,
+                    distance=new_distance,
+                    silent=silent
+                )
+
+                if not Topology.IsInstance(
+                    new_vertex,
+                    "Vertex"
+                ):
+                    if not silent:
+                        print(
+                            "Topology.Taper - Error: Could not calculate a "
+                            "replacement vertex. Returning None."
+                        )
+                    return None
+
             else:
-                new_v = v
-            new_vertices.append(new_v)
-        return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices, tolerance=tolerance, silent=silent)
-        return_topology = Topology.Fix(return_topology, topologyType=Topology.TypeAsString(topology), tolerance=tolerance, silent=silent)
-        if not Topology.Type(return_topology) == Topology.Type(topology):
-            return_topology = Topology.SelfMerge(return_topology, toilerance=tolerance, silent=silent)
+                new_vertex = vertex
+
+            new_vertices.append(
+                new_vertex
+            )
+
+        # ------------------------------------------------------------------
+        # Rebuild topology with tapered vertices
+        # ------------------------------------------------------------------
+
+        return_topology = Topology.ReplaceVertices(
+            topology,
+            verticesA=vertices,
+            verticesB=new_vertices,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.Taper - Error: Could not rebuild the tapered "
+                    "topology. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore repair
+        #
+        # TopologicCore may return an unintended topology type after vertex
+        # replacement. Preserve the historical Fix/SelfMerge coercion only
+        # for that backend.
+        #
+        # All other backends are trusted and their result is returned without
+        # topology-type coercion.
+        # ------------------------------------------------------------------
+
+        if Topology._IsTopologicCoreBackend():
+
+            return_topology = Topology.Fix(
+                return_topology,
+                topologyType=topology_type,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if (
+                Topology.IsInstance(
+                    return_topology,
+                    "Topology"
+                )
+                and Topology.TypeAsString(
+                    return_topology
+                ) != topology_type
+            ):
+                return_topology = Topology.SelfMerge(
+                    return_topology,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
         return return_topology
     
     @staticmethod
-    def Twist(topology,
-              origin=None,
-              angleRange: list = [45, 90],
-              triangulate: bool = False,
-              mantissa: int = 6,
-              angTolerance: float = 0.01,
-              tolerance: float = 0.0001,
-              silent: bool = False):
+    def Twist(
+        topology,
+        origin=None,
+        angleRange: list = [45, 90],
+        triangulate: bool = False,
+        mantissa: int = 6,
+        angTolerance: float = 0.01,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Twists the input topology. This method twists the input geometry along its Z-axis based on the degree range input.
+        Twists the input topology along its Z-axis based on the input angle range.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         origin : topologic_core.Vertex , optional
-            The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.
+            The desired origin for twisting. If not specified, the centroid of
+            the input topology is used. The twisting uses the X and Y coordinates
+            of the specified origin, but uses the Z coordinate of each vertex
+            being twisted. Default is None.
         angleRange : list , optional
-            The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.
+            The desired angle range in degrees. This specifies a linear angular
+            range from the lowest Z coordinate to the highest Z coordinate of the
+            topology. Positive and negative angles follow the rotation convention
+            used by Topology.Rotate about the positive Z-axis.
+            Default is [45, 90].
         triangulate : bool , optional
-            If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.
+            If set to True, the input topology is triangulated before twisting.
+            This is useful for higher-dimensional topologies because a varying
+            twist can make originally planar polygonal faces non-planar.
+            Default is False.
         mantissa : int , optional
-            The number of decimal places to round the result to. Default is 6.
+            The number of decimal places to round coordinates to. Default is 6.
         angTolerance : float , optional
-            The desired angular tolerance in degrees. Default is 0.01.
+            The angular tolerance in degrees below which no rotation is carried
+            out. Default is 0.01.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired geometric tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
-        
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
         Returns
         -------
         topologic_core.Topology
             The twisted topology.
-
         """
         from topologicpy.Vertex import Vertex
 
-        if not Topology.IsInstance(topology, "topology"):
+        # ------------------------------------------------------------------
+        # Validate topology
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.Twist - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Twist - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
 
-        if angleRange == [0, 0]:
+        # ------------------------------------------------------------------
+        # Validate angle range
+        # ------------------------------------------------------------------
+
+        if (
+            not isinstance(
+                angleRange,
+                (list, tuple)
+            )
+            or len(angleRange) != 2
+        ):
             if not silent:
-                print("Topology.Twist - Warning: The input angleRange parameter is not valid. Returning the input topology.")
+                print(
+                    "Topology.Twist - Error: The input angleRange parameter "
+                    "must contain exactly two numeric values. Returning None."
+                )
+            return None
+
+        try:
+            angle_range = [
+                float(angleRange[0]),
+                float(angleRange[1])
+            ]
+
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.Twist - Error: The input angleRange parameter "
+                    "must contain exactly two numeric values. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Identity fast path
+        # ------------------------------------------------------------------
+
+        if angle_range == [0.0, 0.0]:
             return topology
-        if triangulate == True:
-            topology = Topology.Triangulate(topology)
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Topology.Centroid(topology)
-            
-        vertices = Topology.Vertices(topology, silent=True)
-        zList = [Vertex.Z(v, mantissa=mantissa) for v in vertices]
-        z_min = min(zList)
-        maxZ = max(zList)
-        h = maxZ - z_min
+
+        # ------------------------------------------------------------------
+        # Optional triangulation
+        #
+        # Record the topology type AFTER triangulation. A Face, for example,
+        # may legitimately become a Shell of triangular Faces.
+        # ------------------------------------------------------------------
+
+        if triangulate is True:
+
+            topology = Topology.Triangulate(
+                topology,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if not Topology.IsInstance(
+                topology,
+                "Topology"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Twist - Error: Could not triangulate the "
+                        "input topology. Returning None."
+                    )
+                return None
+
+        topology_type = Topology.TypeAsString(
+            topology
+        )
+
+        # ------------------------------------------------------------------
+        # Resolve origin
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            origin = Topology.Centroid(
+                topology
+            )
+
+        if not Topology.IsInstance(
+            origin,
+            "Vertex"
+        ):
+            if not silent:
+                print(
+                    "Topology.Twist - Error: Could not determine a valid "
+                    "twist origin. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Retrieve vertices and Z range
+        # ------------------------------------------------------------------
+
+        vertices = Topology.Vertices(
+            topology,
+            silent=True
+        )
+
+        if (
+            not isinstance(
+                vertices,
+                list
+            )
+            or len(vertices) == 0
+        ):
+            if not silent:
+                print(
+                    "Topology.Twist - Error: The input topology contains no "
+                    "vertices. Returning None."
+                )
+            return None
+
+        z_values = [
+            Vertex.Z(
+                vertex,
+                mantissa=mantissa
+            )
+            for vertex in vertices
+        ]
+
+        z_min = min(
+            z_values
+        )
+
+        z_max = max(
+            z_values
+        )
+
+        height = z_max - z_min
+
+        # ------------------------------------------------------------------
+        # A twist range cannot be interpolated if there is no Z extent.
+        # ------------------------------------------------------------------
+
+        if abs(height) <= tolerance:
+
+            if not silent:
+                print(
+                    "Topology.Twist - Warning: The input topology has no "
+                    "significant extent along the Z-axis. Returning the "
+                    "input topology."
+                )
+
+            return topology
+
+        origin_x = Vertex.X(
+            origin,
+            mantissa=mantissa
+        )
+
+        origin_y = Vertex.Y(
+            origin,
+            mantissa=mantissa
+        )
+
+        # ------------------------------------------------------------------
+        # Calculate transformed vertices
+        # ------------------------------------------------------------------
+
         new_vertices = []
-        for v in vertices:
-            ht = (Vertex.Z(v)-z_min)/(maxZ - z_min)
-            new_rot = angleRange[0] + ht*(angleRange[1] - angleRange[0])
-            orig = Vertex.ByCoordinates(Vertex.X(origin, mantissa=mantissa), Vertex.Y(origin, mantissa=mantissa), Vertex.Z(v, mantissa=mantissa))
-            new_vertices.append(Topology.Rotate(v, origin=orig, axis=[0, 0, 1], angle=new_rot, angTolerance=angTolerance, tolerance=tolerance))
-        return_topology = Topology.ReplaceVertices(topology, vertices, new_vertices)
-        return_topology = Topology.Fix(return_topology, topologyType=Topology.TypeAsString(topology))
+
+        for vertex in vertices:
+
+            vertex_z = Vertex.Z(
+                vertex,
+                mantissa=mantissa
+            )
+
+            height_ratio = (
+                vertex_z - z_min
+            ) / height
+
+            angle = (
+                angle_range[0]
+                + height_ratio
+                * (
+                    angle_range[1]
+                    - angle_range[0]
+                )
+            )
+
+            local_origin = Vertex.ByCoordinates(
+                origin_x,
+                origin_y,
+                vertex_z
+            )
+
+            if not Topology.IsInstance(
+                local_origin,
+                "Vertex"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Twist - Error: Could not create a valid "
+                        "local twist origin. Returning None."
+                    )
+                return None
+
+            new_vertex = Topology.Rotate(
+                vertex,
+                origin=local_origin,
+                axis=[0, 0, 1],
+                angle=angle,
+                transferDictionaries=False,
+                angTolerance=angTolerance,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            if not Topology.IsInstance(
+                new_vertex,
+                "Vertex"
+            ):
+                if not silent:
+                    print(
+                        "Topology.Twist - Error: Could not calculate a "
+                        "replacement vertex. Returning None."
+                    )
+                return None
+
+            new_vertices.append(
+                new_vertex
+            )
+
+        # ------------------------------------------------------------------
+        # Rebuild topology
+        # ------------------------------------------------------------------
+
+        return_topology = Topology.ReplaceVertices(
+            topology,
+            verticesA=vertices,
+            verticesB=new_vertices,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent
+        )
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+            if not silent:
+                print(
+                    "Topology.Twist - Error: Could not rebuild the twisted "
+                    "topology. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore reconstruction workaround.
+        #
+        # PythonOCC and future backends are trusted to reconstruct the topology
+        # natively through ReplaceVertices. Do not conceal reconstruction or
+        # planarity failures with Fix.
+        # ------------------------------------------------------------------
+
+        if Topology._IsTopologicCoreBackend():
+
+            return_topology = Topology.Fix(
+                return_topology,
+                topologyType=topology_type,
+                tolerance=tolerance,
+                silent=silent
+            )
+
         return return_topology
     
     @staticmethod
@@ -16033,13 +19639,20 @@ class Topology():
         return topology
 
     @staticmethod
-    def Translate(topology, x=0, y=0, z=0, transferDictionaries: bool = True, silent: bool = False):
+    def Translate(
+        topology,
+        x=0,
+        y=0,
+        z=0,
+        transferDictionaries: bool = True,
+        silent: bool = False
+    ):
         """
         Translates (moves) the input topology.
 
         Parameters
         ----------
-        topology : topologic_core.topology
+        topology : topologic_core.Topology
             The input topology.
         x : float , optional
             The x translation value. Default is 0.
@@ -16048,306 +19661,846 @@ class Topology():
         z : float , optional
             The z translation value. Default is 0.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.
+            If set to True, dictionaries are transferred from the original topology
+            and its subtopologies to the translated topology. Default is True.
         silent : bool , optional
             If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            The translated topology.
-
+            The translated topology, or None if the operation fails.
         """
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Dictionary import Dictionary
 
-        if not Topology.IsInstance(topology, "Topology"):
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.Translate - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Translate - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
-        
-        if Topology.IsInstance(topology, "vertex"):
-            old_x, old_y, old_z = Vertex.Coordinates(topology)
-            return_topology = Vertex.ByCoordinates(old_x+x, old_y+y, old_z+z)
-            if transferDictionaries == True:
-                return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
-            return return_topology
-        if transferDictionaries == True:
-            vertices = Topology.Vertices(topology, silent=True)
-            edges = Topology.Edges(topology, silent=True)
-            wires = Topology.Wires(topology, silent=True)
-            faces = Topology.Faces(topology, silent=True)
-            shells = Topology.Shells(topology, silent=True)
-            cells = Topology.Cells(topology, silent=True)
-            cellComplexes = Topology.CellComplexes(topology, silent=True)
+
+        # ------------------------------------------------------------------
+        # Store source dictionaries before translation.
+        # ------------------------------------------------------------------
+
+        source_dictionary = None
+
+        if transferDictionaries:
+
+            source_dictionary = Topology.Dictionary(
+                topology
+            )
+
+            vertices = Topology.Vertices(
+                topology,
+                silent=True
+            ) or []
+
+            edges = Topology.Edges(
+                topology,
+                silent=True
+            ) or []
+
+            wires = Topology.Wires(
+                topology,
+                silent=True
+            ) or []
+
+            faces = Topology.Faces(
+                topology,
+                silent=True
+            ) or []
+
+            shells = Topology.Shells(
+                topology,
+                silent=True
+            ) or []
+
+            cells = Topology.Cells(
+                topology,
+                silent=True
+            ) or []
+
+            cellComplexes = Topology.CellComplexes(
+                topology,
+                silent=True
+            ) or []
+
+        # ------------------------------------------------------------------
+        # Native translation.
+        #
+        # Trust the active backend. A failed backend operation must not be
+        # concealed by returning the untranslated input topology.
+        # ------------------------------------------------------------------
 
         try:
-            return_topology = Core.TopologyUtility.Translate(topology, x, y, z)
-        except:
+            return_topology = Core.TopologyUtility.Translate(
+                topology,
+                x,
+                y,
+                z
+            )
+
+        except Exception as error:
+
             if not silent:
-                print("Topology.Translate - Error: The core translate operation failed. Returning the original input.")
-            return topology
-        
-        if transferDictionaries == True:
-            r_vertices = Topology.Vertices(return_topology, silent=True)
-            r_edges = Topology.Edges(return_topology, silent=True)
-            r_wires = Topology.Wires(return_topology, silent=True)
-            r_faces = Topology.Faces(return_topology, silent=True)
-            r_shells = Topology.Shells(return_topology, silent=True)
-            r_cells = Topology.Cells(return_topology, silent=True)
-            r_cellComplexes = Topology.CellComplexes(return_topology, silent=True)
-            for i, t in enumerate(r_vertices):
-                t = Topology.SetDictionary(t, Topology.Dictionary(vertices[i]), silent=True)
-            for i, t in enumerate(r_edges):
-                t = Topology.SetDictionary(t, Topology.Dictionary(edges[i]), silent=True)
-            for i, t in enumerate(r_wires):
-                t = Topology.SetDictionary(t, Topology.Dictionary(wires[i]), silent=True)
-            for i, t in enumerate(r_faces):
-                t = Topology.SetDictionary(t, Topology.Dictionary(faces[i]), silent=True)
-            for i, t in enumerate(r_shells):
-                t = Topology.SetDictionary(t, Topology.Dictionary(shells[i]), silent=True)
-            for i, t in enumerate(r_cells):
-                t = Topology.SetDictionary(t, Topology.Dictionary(cells[i]), silent=True)
-            for i, t in enumerate(r_cellComplexes):
-                t = Topology.SetDictionary(t, Topology.Dictionary(cellComplexes[i]), silent=True)
-            
-            return_topology = Topology.SetDictionary(return_topology, Topology.Dictionary(topology), silent=True)
+                print(
+                    "Topology.Translate - Error: The active backend translate "
+                    "operation failed. Returning None."
+                )
+                print(
+                    "Error:",
+                    error
+                )
+
+            return None
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+
+            if not silent:
+                print(
+                    "Topology.Translate - Error: The active backend translate "
+                    "operation did not return a valid topology. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # No dictionary transfer requested.
+        # ------------------------------------------------------------------
+
+        if not transferDictionaries:
+            return return_topology
+
+        # ------------------------------------------------------------------
+        # Collect translated subtopologies.
+        # ------------------------------------------------------------------
+
+        r_vertices = Topology.Vertices(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_edges = Topology.Edges(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_wires = Topology.Wires(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_faces = Topology.Faces(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_shells = Topology.Shells(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_cells = Topology.Cells(
+            return_topology,
+            silent=True
+        ) or []
+
+        r_cellComplexes = Topology.CellComplexes(
+            return_topology,
+            silent=True
+        ) or []
+
+        # ------------------------------------------------------------------
+        # Transfer subtopology dictionaries conservatively.
+        #
+        # zip() is deliberately used instead of positional indexing because
+        # different backends may enumerate or reconstruct subtopologies
+        # differently.
+        # ------------------------------------------------------------------
+
+        for source, target in zip(
+            vertices,
+            r_vertices
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            edges,
+            r_edges
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            wires,
+            r_wires
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            faces,
+            r_faces
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            shells,
+            r_shells
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            cells,
+            r_cells
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        for source, target in zip(
+            cellComplexes,
+            r_cellComplexes
+        ):
+            Topology.SetDictionary(
+                target,
+                Topology.Dictionary(
+                    source
+                ),
+                silent=True
+            )
+
+        # ------------------------------------------------------------------
+        # Transfer the dictionary attached to the topology itself.
+        # ------------------------------------------------------------------
+
+        if source_dictionary is not None:
+
+            return_topology = Topology.SetDictionary(
+                return_topology,
+                source_dictionary,
+                silent=True
+            )
+
         return return_topology
-    
+
+
     @staticmethod
-    def Transform(topology,
-                matrix: list,
-                angTolerance: float = 0.001,
-                transferDictionaries: bool = True,
-                tolerance: float = 0.0001,
-                silent: bool = False):
+    def Transform(
+        topology,
+        matrix: list,
+        angTolerance: float = 0.001,
+        transferDictionaries: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
         Transforms the input topology by the input 4x4 affine transformation matrix.
 
-        Notes
-        -----
-        - This method prioritizes correctness and speed:
-            1) If `topologic_core.TopologyUtility.Transform` is available, it is used
-            (fastest + most general, supports shear).
-            2) Otherwise, it decomposes the matrix into (scale, rotation, translation)
-            and applies Topology.Scale -> Topology.Rotate -> Topology.Translate.
-            This path assumes the 3x3 linear block is (rotation * axis-aligned scale)
-            with negligible shear.
+        The complete affine transformation is delegated to the active Core backend.
+        The legacy Scale -> Rotate -> Translate reconstruction fallback is used only
+        when the active backend is TopologicCore.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         matrix : list
-            The input 4x4 transformation matrix (row-major). Translation is assumed to be
-            in the last column: [ [*,*,*,tx],
-                                [*,*,*,ty],
-                                [*,*,*,tz],
-                                [0,0,0, 1] ].
+            The input 4x4 affine transformation matrix in row-major form:
+
+            [
+                [a00, a01, a02, tx],
+                [a10, a11, a12, ty],
+                [a20, a21, a22, tz],
+                [0,   0,   0,   1]
+            ]
+
         angTolerance : float , optional
-            Angle tolerance in degrees under which no rotation is carried out. Default is 0.001.
+            The angular tolerance in degrees below which a rotation is ignored
+            by the legacy TopologicCore fallback. Default is 0.001.
         transferDictionaries : bool , optional
-            If True, dictionaries are transferred from the original object to the transformed
-            object (best-effort; relies on consistent sub-topology ordering). Default is True.
+            If set to True, the dictionary of the input topology is transferred
+            to the transformed topology. Default is True.
         tolerance : float , optional
-            Desired tolerance. Default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The transformed topology.
-
         """
-
-        # ---------- basic validation ----------
-        if not Topology.IsInstance(topology, "topology"):
-            if not silent:
-                print("Topology.Transform - Error: The input topology is not a valid topology. Returning None.")
-            return None
-
-        if (not isinstance(matrix, (list, tuple))) or len(matrix) != 4 or any((not isinstance(r, (list, tuple))) or len(r) != 4 for r in matrix):
-            if not silent:
-                print("Topology.Transform - Error: The input matrix is not a valid 4x4 list. Returning None.")
-            return None
-
-        # ---------- fastest + most general path (if available) ----------
-        # This supports full affine transforms (including shear) directly in core (when present).
-        try:
-            from topologicpy.Core import Core  # guaranteed to exist in TopologicPy runtime
-            tu = getattr(topologic, "TopologyUtility", None)
-            if tu is not None and hasattr(tu, "Transform"):
-                # Most core builds accept a flat 16-list or a 4x4; we try both safely.
-                try:
-                    # transformed = tu.Transform(topology, matrix) # H to Core
-                    transformed = Core.TopologyUtility.Transform(topology, matrix)
-                except Exception:
-                    flat = [matrix[i][j] for i in range(4) for j in range(4)]
-                    # transformed = tu.Transform(topology, flat) # H to Core
-                    transformed = Core.TopologyUtility.Transform(topology, flat)
-
-                if transformed is None:
-                    if not silent:
-                        print("Topology.Transform - Warning: Core Transform returned None. Falling back to decomposition.")
-                else:
-                    # Best-effort dictionary transfer (core may already preserve dictionaries; we still honor the flag)
-                    if transferDictionaries:
-                        try:
-                            Topology.SetDictionary(transformed, Topology.Dictionary(topology), silent=True)
-                        except Exception:
-                            pass
-                    return transformed
-        except Exception:
-            # Fall back to decomposition path below
-            pass
-
-        # ---------- decomposition path (rotation + axis-aligned scale + translation) ----------
+        import math
         from topologicpy.Vertex import Vertex
 
-        # translation in last column (row-major)
-        tx, ty, tz = matrix[0][3], matrix[1][3], matrix[2][3]
+        # ------------------------------------------------------------------
+        # Validate topology
+        # ------------------------------------------------------------------
 
-        # 3x3 linear block
-        a00, a01, a02 = matrix[0][0], matrix[0][1], matrix[0][2]
-        a10, a11, a12 = matrix[1][0], matrix[1][1], matrix[1][2]
-        a20, a21, a22 = matrix[2][0], matrix[2][1], matrix[2][2]
-
-        # Extract axis-aligned scales as column norms (assumes column-vector convention).
-        # If you treat vectors as row-vectors, the “row norms” would be used instead. TopologicPy
-        # conventions typically align with the column-vector affine form above.
-        import math
-        sx = math.sqrt(a00*a00 + a10*a10 + a20*a20)
-        sy = math.sqrt(a01*a01 + a11*a11 + a21*a21)
-        sz = math.sqrt(a02*a02 + a12*a12 + a22*a22)
-
-        eps = max(1e-12, 10.0 * float(tolerance))
-        if sx < eps or sy < eps or sz < eps:
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.Transform - Error: Degenerate scale detected in matrix. Returning None.")
+                print(
+                    "Topology.Transform - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
 
-        # Build rotation matrix by normalizing columns.
-        r00, r10, r20 = a00/sx, a10/sx, a20/sx
-        r01, r11, r21 = a01/sy, a11/sy, a21/sy
-        r02, r12, r22 = a02/sz, a12/sz, a22/sz
+        # ------------------------------------------------------------------
+        # Validate matrix structure
+        # ------------------------------------------------------------------
 
-        # Reflection handling: ensure proper rotation (det +1). If det<0, flip the largest scale axis.
-        det = (r00*(r11*r22 - r12*r21) -
-            r01*(r10*r22 - r12*r20) +
-            r02*(r10*r21 - r11*r20))
-        if det < 0.0:
-            # flip the axis with the largest scale magnitude (minimizes relative error)
-            if sx >= sy and sx >= sz:
-                sx = -sx
-                r00, r10, r20 = -r00, -r10, -r20
-            elif sy >= sx and sy >= sz:
-                sy = -sy
-                r01, r11, r21 = -r01, -r11, -r21
-            else:
-                sz = -sz
-                r02, r12, r22 = -r02, -r12, -r22
-
-        # Detect shear (rotation columns should be orthonormal). If not, we still proceed, but warn.
-        # This decomposition path cannot reproduce general shear exactly using Scale+Rotate+Translate.
-        dot01 = r00*r01 + r10*r11 + r20*r21
-        dot02 = r00*r02 + r10*r12 + r20*r22
-        dot12 = r01*r02 + r11*r12 + r21*r22
-        if (abs(dot01) > 1e-4) or (abs(dot02) > 1e-4) or (abs(dot12) > 1e-4):
+        if (
+            not isinstance(matrix, (list, tuple))
+            or len(matrix) != 4
+            or any(
+                not isinstance(row, (list, tuple))
+                or len(row) != 4
+                for row in matrix
+            )
+        ):
             if not silent:
-                print("Topology.Transform - Warning: Matrix contains shear/non-orthogonal rotation. "
-                    "Falling back to approximate decomposition (no exact shear support in this path).")
+                print(
+                    "Topology.Transform - Error: The input matrix parameter "
+                    "is not a valid 4x4 matrix. Returning None."
+                )
+            return None
 
-        # Axis-angle from rotation matrix (robust + clamped)
-        trace = r00 + r11 + r22
-        c = max(-1.0, min(1.0, (trace - 1.0) * 0.5))
-        angle_rad = math.acos(c)
-        angle_deg = angle_rad * (180.0 / math.pi)
+        try:
+            m = [
+                [
+                    float(matrix[i][j])
+                    for j in range(4)
+                ]
+                for i in range(4)
+            ]
+        except (TypeError, ValueError):
+            if not silent:
+                print(
+                    "Topology.Transform - Error: The input matrix contains "
+                    "non-numeric values. Returning None."
+                )
+            return None
 
-        # If rotation is tiny, skip it.
-        do_rotate = angle_deg > float(angTolerance)
+        # ------------------------------------------------------------------
+        # Validate affine last row
+        # ------------------------------------------------------------------
 
-        # Compute axis
-        if do_rotate:
-            s = math.sin(angle_rad)
-            if abs(s) > 1e-12:
-                ax = (r21 - r12) / (2.0 * s)
-                ay = (r02 - r20) / (2.0 * s)
-                az = (r10 - r01) / (2.0 * s)
-            else:
-                # Near 0 or pi: use diagonal-based fallback (works for pi; harmless for ~0 where we skip anyway)
-                ax = math.sqrt(max(0.0, (r00 + 1.0) * 0.5))
-                ay = math.sqrt(max(0.0, (r11 + 1.0) * 0.5))
-                az = math.sqrt(max(0.0, (r22 + 1.0) * 0.5))
-                # preserve signs using off-diagonals if possible
-                if (r21 - r12) < 0: ax = -ax
-                if (r02 - r20) < 0: ay = -ay
-                if (r10 - r01) < 0: az = -az
+        if (
+            abs(m[3][0]) > tolerance
+            or abs(m[3][1]) > tolerance
+            or abs(m[3][2]) > tolerance
+            or abs(m[3][3] - 1.0) > tolerance
+        ):
+            if not silent:
+                print(
+                    "Topology.Transform - Error: The input matrix is not a valid "
+                    "affine transformation matrix. Returning None."
+                )
+            return None
 
-            # Normalize axis
-            n = math.sqrt(ax*ax + ay*ay + az*az)
-            if n < 1e-12:
-                do_rotate = False
-            else:
-                ax, ay, az = ax/n, ay/n, az/n
+        # ------------------------------------------------------------------
+        # Identity fast path
+        # ------------------------------------------------------------------
 
-        origin = Vertex.ByCoordinates(0, 0, 0)
-
-        # Apply scale -> rotate -> translate (transfer dictionaries at the end, for speed)
-
-        result = Topology.Scale(
-            topology,
-            origin=origin,
-            x=sx, y=sy, z=sz,
-            transferDictionaries=False,
-            silent=False
+        identity = (
+            (1.0, 0.0, 0.0, 0.0),
+            (0.0, 1.0, 0.0, 0.0),
+            (0.0, 0.0, 1.0, 0.0),
+            (0.0, 0.0, 0.0, 1.0),
         )
 
+        if all(
+            abs(m[i][j] - identity[i][j]) <= tolerance
+            for i in range(4)
+            for j in range(4)
+        ):
+            return topology
+
+        tx = m[0][3]
+        ty = m[1][3]
+        tz = m[2][3]
+
+        a00, a01, a02 = m[0][0], m[0][1], m[0][2]
+        a10, a11, a12 = m[1][0], m[1][1], m[1][2]
+        a20, a21, a22 = m[2][0], m[2][1], m[2][2]
+
+        # ------------------------------------------------------------------
+        # Native backend path
+        #
+        # Try the supported calling conventions for compatibility between
+        # backends. These are API-signature alternatives, not geometric
+        # reconstruction fallbacks.
+        # ------------------------------------------------------------------
+
+        transformed = None
+
+        if Core.HasAttribute("TopologyUtility", "Transform"):
+
+            # 12-scalar form.
+            try:
+                transformed = Core.TopologyUtility.Transform(
+                    topology,
+                    tx,
+                    ty,
+                    tz,
+                    a00,
+                    a01,
+                    a02,
+                    a10,
+                    a11,
+                    a12,
+                    a20,
+                    a21,
+                    a22,
+                )
+            except Exception:
+                transformed = None
+
+            # Nested 4x4 form.
+            if not Topology.IsInstance(transformed, "Topology"):
+                try:
+                    transformed = Core.TopologyUtility.Transform(
+                        topology,
+                        m,
+                    )
+                except Exception:
+                    transformed = None
+
+            # Flat 16-value form.
+            if not Topology.IsInstance(transformed, "Topology"):
+                try:
+                    transformed = Core.TopologyUtility.Transform(
+                        topology,
+                        [
+                            m[i][j]
+                            for i in range(4)
+                            for j in range(4)
+                        ],
+                    )
+                except Exception:
+                    transformed = None
+
+        if Topology.IsInstance(transformed, "Topology"):
+
+            if transferDictionaries:
+                try:
+                    dictionary = Topology.Dictionary(
+                        topology,
+                        silent=True
+                    )
+
+                    if dictionary is not None:
+                        transformed = Topology.SetDictionary(
+                            transformed,
+                            dictionary,
+                            silent=True,
+                        )
+                except Exception:
+                    pass
+
+            return transformed
+
+        # ------------------------------------------------------------------
+        # Non-TopologicCore backends
+        #
+        # Do not hide a native affine-transform failure by decomposing the
+        # operation into unrelated public transformations.
+        # ------------------------------------------------------------------
+
+        if not Topology._IsTopologicCoreBackend():
+            if not silent:
+                print(
+                    "Topology.Transform - Error: The active backend could not "
+                    "perform the affine transformation. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore fallback
+        #
+        # Decompose:
+        #
+        #     affine = Translate * Rotate * Scale
+        #
+        # This path is retained strictly for the deprecated TopologicCore
+        # backend. It cannot represent general shear.
+        # ------------------------------------------------------------------
+
+        sx = math.sqrt(
+            a00 * a00
+            + a10 * a10
+            + a20 * a20
+        )
+
+        sy = math.sqrt(
+            a01 * a01
+            + a11 * a11
+            + a21 * a21
+        )
+
+        sz = math.sqrt(
+            a02 * a02
+            + a12 * a12
+            + a22 * a22
+        )
+
+        eps = max(
+            1e-12,
+            float(tolerance)
+        )
+
+        if (
+            sx < eps
+            or sy < eps
+            or sz < eps
+        ):
+            if not silent:
+                print(
+                    "Topology.Transform - Error: Degenerate scale detected "
+                    "in the transformation matrix. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Remove scale to obtain rotation matrix
+        # ------------------------------------------------------------------
+
+        r00, r10, r20 = (
+            a00 / sx,
+            a10 / sx,
+            a20 / sx
+        )
+
+        r01, r11, r21 = (
+            a01 / sy,
+            a11 / sy,
+            a21 / sy
+        )
+
+        r02, r12, r22 = (
+            a02 / sz,
+            a12 / sz,
+            a22 / sz
+        )
+
+        # ------------------------------------------------------------------
+        # Reflection handling
+        # ------------------------------------------------------------------
+
+        det = (
+            r00 * (r11 * r22 - r12 * r21)
+            - r01 * (r10 * r22 - r12 * r20)
+            + r02 * (r10 * r21 - r11 * r20)
+        )
+
+        if det < 0.0:
+
+            if (
+                abs(sx) >= abs(sy)
+                and abs(sx) >= abs(sz)
+            ):
+                sx = -sx
+                r00 = -r00
+                r10 = -r10
+                r20 = -r20
+
+            elif (
+                abs(sy) >= abs(sx)
+                and abs(sy) >= abs(sz)
+            ):
+                sy = -sy
+                r01 = -r01
+                r11 = -r11
+                r21 = -r21
+
+            else:
+                sz = -sz
+                r02 = -r02
+                r12 = -r12
+                r22 = -r22
+
+        # ------------------------------------------------------------------
+        # Reject shear in the legacy decomposition path
+        # ------------------------------------------------------------------
+
+        dot01 = (
+            r00 * r01
+            + r10 * r11
+            + r20 * r21
+        )
+
+        dot02 = (
+            r00 * r02
+            + r10 * r12
+            + r20 * r22
+        )
+
+        dot12 = (
+            r01 * r02
+            + r11 * r12
+            + r21 * r22
+        )
+
+        if (
+            abs(dot01) > tolerance
+            or abs(dot02) > tolerance
+            or abs(dot12) > tolerance
+        ):
+            if not silent:
+                print(
+                    "Topology.Transform - Error: The transformation matrix "
+                    "contains shear, but TopologicCore could not perform the "
+                    "native affine transformation. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Convert rotation matrix to axis-angle
+        # ------------------------------------------------------------------
+
+        trace = (
+            r00
+            + r11
+            + r22
+        )
+
+        cosine = max(
+            -1.0,
+            min(
+                1.0,
+                (trace - 1.0) * 0.5
+            )
+        )
+
+        angle_rad = math.acos(
+            cosine
+        )
+
+        angle_deg = math.degrees(
+            angle_rad
+        )
+
+        do_rotate = (
+            angle_deg
+            > float(angTolerance)
+        )
+
+        ax = 0.0
+        ay = 0.0
+        az = 1.0
+
         if do_rotate:
+
+            sin_angle = math.sin(
+                angle_rad
+            )
+
+            if abs(sin_angle) > 1e-10:
+
+                ax = (
+                    r21 - r12
+                ) / (
+                    2.0 * sin_angle
+                )
+
+                ay = (
+                    r02 - r20
+                ) / (
+                    2.0 * sin_angle
+                )
+
+                az = (
+                    r10 - r01
+                ) / (
+                    2.0 * sin_angle
+                )
+
+            else:
+
+                # Near 180 degrees.
+                ax = math.sqrt(
+                    max(
+                        0.0,
+                        (r00 + 1.0) * 0.5
+                    )
+                )
+
+                ay = math.sqrt(
+                    max(
+                        0.0,
+                        (r11 + 1.0) * 0.5
+                    )
+                )
+
+                az = math.sqrt(
+                    max(
+                        0.0,
+                        (r22 + 1.0) * 0.5
+                    )
+                )
+
+                if r01 < 0.0:
+                    ay = -ay
+
+                if r02 < 0.0:
+                    az = -az
+
+            axis_length = math.sqrt(
+                ax * ax
+                + ay * ay
+                + az * az
+            )
+
+            if axis_length <= eps:
+                do_rotate = False
+
+            else:
+                ax /= axis_length
+                ay /= axis_length
+                az /= axis_length
+
+        origin = Vertex.Origin()
+
+        result = topology
+
+        # ------------------------------------------------------------------
+        # Scale
+        # ------------------------------------------------------------------
+
+        if (
+            abs(sx - 1.0) > tolerance
+            or abs(sy - 1.0) > tolerance
+            or abs(sz - 1.0) > tolerance
+        ):
+
+            result = Topology.Scale(
+                result,
+                origin=origin,
+                x=sx,
+                y=sy,
+                z=sz,
+                transferDictionaries=False,
+                silent=silent,
+            )
+
+            if not Topology.IsInstance(
+                result,
+                "Topology"
+            ):
+                return None
+
+        # ------------------------------------------------------------------
+        # Rotate
+        # ------------------------------------------------------------------
+
+        if do_rotate:
+
             result = Topology.Rotate(
                 result,
                 origin=origin,
-                axis=[ax, ay, az],
+                axis=[
+                    ax,
+                    ay,
+                    az
+                ],
                 angle=angle_deg,
                 angTolerance=angTolerance,
                 transferDictionaries=False,
                 tolerance=tolerance,
-                silent=silent
+                silent=silent,
             )
 
-        result = Topology.Translate(
-            result,
-            x=tx, y=ty, z=tz,
-            transferDictionaries=False,
-            silent=silent
-        )
+            if not Topology.IsInstance(
+                result,
+                "Topology"
+            ):
+                return None
 
-        # ---------- dictionary transfer (best-effort, fixed bug: apply to actual subtopologies) ----------
+        # ------------------------------------------------------------------
+        # Translate
+        # ------------------------------------------------------------------
+
+        if (
+            abs(tx) > tolerance
+            or abs(ty) > tolerance
+            or abs(tz) > tolerance
+        ):
+
+            result = Topology.Translate(
+                result,
+                x=tx,
+                y=ty,
+                z=tz,
+                transferDictionaries=False,
+                silent=silent,
+            )
+
+            if not Topology.IsInstance(
+                result,
+                "Topology"
+            ):
+                return None
+
+        # ------------------------------------------------------------------
+        # Transfer parent dictionary
+        # ------------------------------------------------------------------
+
         if transferDictionaries:
             try:
-                # Parent dictionary
-                Topology.SetDictionary(result, Topology.Dictionary(topology), silent=True)
+                dictionary = Topology.Dictionary(
+                    topology,
+                    silent=True
+                )
 
-                # Subtopologies (order is presumed stable; if not, this remains best-effort)
-                def _transfer(src_list, dst_list):
-                    if (not src_list) or (not dst_list):
-                        return
-                    n = min(len(src_list), len(dst_list))
-                    for i in range(n):
-                        try:
-                            Topology.SetDictionary(dst_list[i], Topology.Dictionary(src_list[i]), silent=True)
-                        except Exception:
-                            pass
-
-                _transfer(Topology.Vertices(topology, silent=True),       Topology.Vertices(result, silent=True))
-                _transfer(Topology.Edges(topology, silent=True),          Topology.Edges(result, silent=True))
-                _transfer(Topology.Wires(topology, silent=True),          Topology.Wires(result, silent=True))
-                _transfer(Topology.Faces(topology, silent=True),          Topology.Faces(result, silent=True))
-                _transfer(Topology.Shells(topology, silent=True),         Topology.Shells(result, silent=True))
-                _transfer(Topology.Cells(topology, silent=True),          Topology.Cells(result, silent=True))
-                _transfer(Topology.CellComplexes(topology, silent=True),  Topology.CellComplexes(result, silent=True))
+                if dictionary is not None:
+                    result = Topology.SetDictionary(
+                        result,
+                        dictionary,
+                        silent=True,
+                    )
             except Exception:
-                # Never fail the transform because of metadata
                 pass
 
         return result
@@ -16385,18 +20538,25 @@ class Topology():
         v = Vector.SetMagnitude(direction, distance)
         return Topology.Translate(topology, x=v[0], y=v[1], z=v[2], transferDictionaries=transferDictionaries, silent=silent)
 
-    
     @staticmethod
-    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
+    def Triangulate(
+        topology,
+        transferDictionaries: bool = False,
+        mode: int = 0,
+        meshSize: float = None,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
         Triangulates the input topology.
 
         Parameters
         ----------
         topology : topologic_core.Topology
-            The input topologgy.
+            The input topology.
         transferDictionaries : bool , optional
-            If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. Default is False.
+            If set to True, the dictionaries of the faces in the input topology
+            will be transferred to the created triangular faces. Default is False.
         mode : int , optional
             The desired mode of meshing algorithm. Several options are available:
             0: Classic
@@ -16405,23 +20565,22 @@ class Topology():
             5: Delaunay
             6: Frontal-Delaunay
             7: BAMG
-            8: Fontal-Delaunay for Quads
+            8: Frontal-Delaunay for Quads
             9: Packing of Parallelograms
-            All options other than 0 (Classic) use the gmsh library. See https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options
-            WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.
+            All options other than 0 use the gmsh library.
         meshSize : float , optional
-            The desired size of the mesh when using the "mesh" option. If set to None, it will be
-            calculated automatically and set to 10% of the overall size of the face.
+            The desired mesh size when using a meshing mode. If set to None,
+            it is calculated automatically. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
             The triangulated topology.
-
         """
         from topologicpy.Face import Face
         from topologicpy.Shell import Shell
@@ -16429,71 +20588,587 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
 
-        if not Topology.IsInstance(topology, "Topology"):
+        def cluster_constituents(cluster):
+
+            try:
+                result = Core.InstanceCall(
+                    cluster,
+                    "Topologies"
+                )
+
+                if isinstance(result, list):
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    result
+                )
+
+                if len(result) > 0:
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            try:
+                result = []
+
+                Core.InstanceCall(
+                    cluster,
+                    "Topologies",
+                    None,
+                    result
+                )
+
+                if len(result) > 0:
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            try:
+                result = Cluster.Topologies(
+                    cluster,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+                if isinstance(result, list):
+                    return [
+                        item
+                        for item in result
+                        if Topology.IsInstance(
+                            item,
+                            "Topology"
+                        )
+                    ]
+
+            except Exception:
+                pass
+
+            return []
+
+        # ------------------------------------------------------------------
+        # Validate input
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            topology,
+            "Topology"
+        ):
             if not silent:
-                print("Topology.Triangulate - Error: The input parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.Triangulate - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
-        t = Topology.Type(topology)
-        if (t == Topology.TypeID("Vertex")) or (t == Topology.TypeID("Edge")) or (t == Topology.TypeID("Wire")):
+
+        topology_type = Topology.Type(
+            topology
+        )
+
+        # ------------------------------------------------------------------
+        # Vertex / Edge / Wire
+        # ------------------------------------------------------------------
+
+        if topology_type in [
+            Topology.TypeID("Vertex"),
+            Topology.TypeID("Edge"),
+            Topology.TypeID("Wire")
+        ]:
+
             if not silent:
-                print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
+                print(
+                    "Topology.Triangulate - Warning: The input topology parameter "
+                    "contains no faces. Returning the original topology."
+                )
+
             return topology
-        elif t == Topology.TypeID("Cluster"):
-            temp_topologies = []
-            cellComplexes = Topology.SubTopologies(topology, subTopologyType="cellcomplex", silent=silent) or []
-            for cc in cellComplexes:
-                temp_topologies.append(Topology.Triangulate(cc, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
-            cells = Cluster.FreeCells(topology, tolerance=tolerance) or []
-            for c in cells:
-                temp_topologies.append(Topology.Triangulate(c, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
-            shells = Cluster.FreeShells(topology, tolerance=tolerance) or []
-            for s in shells:
-                temp_topologies.append(Topology.Triangulate(s, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
-            faces = Cluster.FreeFaces(topology, tolerance=tolerance) or []
-            for f in faces:
-                temp_topologies.append(Topology.Triangulate(f, transferDictionaries=transferDictionaries, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent))
-            if len(temp_topologies) > 0:
-                return Cluster.ByTopologies(temp_topologies)
-            else:
+
+        # ------------------------------------------------------------------
+        # Cluster
+        # ------------------------------------------------------------------
+
+        if topology_type == Topology.TypeID(
+            "Cluster"
+        ):
+
+            constituents = cluster_constituents(
+                topology
+            )
+
+            if len(constituents) == 0:
+
                 if not silent:
-                    print("Topology.Triangulate - Warning: The input topology parameter contains no faces. Returning the original topology.")
-                return topology
-        topologyFaces = []
-        # _ = topology.Faces(None, topologyFaces) # H to Core
-        _ = Core.InstanceCall(topology, 'Faces', None, topologyFaces)
-        faceTriangles = []
+                    print(
+                        "Topology.Triangulate - Error: Could not retrieve any "
+                        "constituent topologies from the input Cluster. Returning None."
+                    )
+
+                return None
+
+            triangulated_constituents = []
+
+            for constituent in constituents:
+
+                triangulated = Topology.Triangulate(
+                    constituent,
+                    transferDictionaries=transferDictionaries,
+                    mode=mode,
+                    meshSize=meshSize,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+                if not Topology.IsInstance(
+                    triangulated,
+                    "Topology"
+                ):
+
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: Could not triangulate "
+                            "one of the constituent topologies of the input Cluster. "
+                            "Returning None."
+                        )
+
+                    return None
+
+                triangulated_constituents.append(
+                    triangulated
+                )
+
+            try:
+                return_topology = Cluster.ByTopologies(
+                    triangulated_constituents,
+                    silent=True
+                )
+
+            except TypeError:
+                return_topology = Cluster.ByTopologies(
+                    triangulated_constituents
+                )
+
+            except Exception:
+                return_topology = None
+
+            if not Topology.IsInstance(
+                return_topology,
+                "Cluster"
+            ):
+
+                if not silent:
+                    print(
+                        "Topology.Triangulate - Error: Could not rebuild the "
+                        "triangulated Cluster. Returning None."
+                    )
+
+                return None
+
+            return return_topology
+
+        # ------------------------------------------------------------------
+        # Remember CellComplex cell count before reconstruction.
+        # ------------------------------------------------------------------
+
+        expected_cell_count = None
+
+        if topology_type == Topology.TypeID(
+            "CellComplex"
+        ):
+
+            original_cells = Topology.Cells(
+                topology,
+                silent=True
+            ) or []
+
+            expected_cell_count = len(
+                original_cells
+            )
+
+        # ------------------------------------------------------------------
+        # Retrieve Faces
+        # ------------------------------------------------------------------
+
+        topology_faces = Topology.Faces(
+            topology,
+            silent=True
+        )
+
+        if (
+            not isinstance(
+                topology_faces,
+                list
+            )
+            or len(topology_faces) == 0
+        ):
+
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: Could not retrieve any Faces "
+                    "from the input Face, Shell, Cell, or CellComplex. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Triangulate Faces
+        # ------------------------------------------------------------------
+
+        face_triangles = []
         selectors = []
-        for aFace in topologyFaces:
-            if len(Topology.Vertices(aFace)) > 3:
-                triFaces = Face.Triangulate(aFace, mode=mode, meshSize=meshSize, tolerance=tolerance, silent=silent)
+
+        for face in topology_faces:
+
+            vertices = Topology.Vertices(
+                face,
+                silent=True
+            ) or []
+
+            if len(vertices) > 3:
+
+                triangles = Face.Triangulate(
+                    face,
+                    mode=mode,
+                    meshSize=meshSize,
+                    tolerance=tolerance,
+                    silent=silent
+                )
+
+                if Topology.IsInstance(
+                    triangles,
+                    "Face"
+                ):
+                    triangles = [
+                        triangles
+                    ]
+
+                if not isinstance(
+                    triangles,
+                    list
+                ):
+
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: Could not triangulate "
+                            "one of the Faces of the input topology. Returning None."
+                        )
+
+                    return None
+
+                triangles = [
+                    triangle
+                    for triangle in triangles
+                    if Topology.IsInstance(
+                        triangle,
+                        "Face"
+                    )
+                ]
+
+                if len(triangles) == 0:
+
+                    if not silent:
+                        print(
+                            "Topology.Triangulate - Error: Face triangulation "
+                            "returned no valid triangular Faces. Returning None."
+                        )
+
+                    return None
+
             else:
-                triFaces = [aFace]
-            for triFace in triFaces:
+                triangles = [
+                    face
+                ]
+
+            for triangle in triangles:
+
                 if transferDictionaries:
-                    selectors.append(Topology.SetDictionary(Topology.Centroid(triFace), Topology.Dictionary(aFace), silent=True))
-                faceTriangles.append(triFace)
+
+                    selector = Topology.Centroid(
+                        triangle
+                    )
+
+                    if Topology.IsInstance(
+                        selector,
+                        "Vertex"
+                    ):
+
+                        selector = Topology.SetDictionary(
+                            selector,
+                            Topology.Dictionary(
+                                face
+                            ),
+                            silent=True
+                        )
+
+                        selectors.append(
+                            selector
+                        )
+
+                face_triangles.append(
+                    triangle
+                )
+
+        if len(face_triangles) == 0:
+
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: No valid triangular Faces "
+                    "were produced. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Typed reconstruction
+        # ------------------------------------------------------------------
+
         return_topology = None
-        if t == Topology.TypeID("Face") or t == Topology.TypeID("Shell"): # Face or Shell
-            return_topology = Shell.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries and not return_topology == None:
-                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
-        elif t == Topology.TypeID("Cell"): # Cell
-            return_topology = Cell.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries and not return_topology == None:
-                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
-        elif t == Topology.TypeID("CellComplex"): #CellComplex
-            return_topology = CellComplex.ByFaces(faceTriangles, tolerance=tolerance)
-            if transferDictionaries and not return_topology == None:
-                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
-        
-        if return_topology == None:
-            return_topology = Topology.SelfMerge(Cluster.ByTopologies(faceTriangles), tolerance=tolerance)
-            if transferDictionaries == True:
-                return_topology = Topology.TransferDictionariesBySelectors(return_topology, selectors, tranFaces=True, tolerance=tolerance)
-        
+
+        if topology_type in [
+            Topology.TypeID("Face"),
+            Topology.TypeID("Shell")
+        ]:
+
+            try:
+                return_topology = Shell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+            except TypeError:
+                return_topology = Shell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance
+                )
+
+            except Exception:
+                return_topology = None
+
+        elif topology_type == Topology.TypeID(
+            "Cell"
+        ):
+
+            try:
+                return_topology = Cell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance,
+                    silent=True
+                )
+
+            except TypeError:
+                return_topology = Cell.ByFaces(
+                    face_triangles,
+                    tolerance=tolerance
+                )
+
+            except Exception:
+                return_topology = None
+
+        elif topology_type == Topology.TypeID(
+            "CellComplex"
+        ):
+
+            # --------------------------------------------------------------
+            # PythonOCC / future backend path.
+            #
+            # Do NOT call public CellComplex.ByFaces here. Its Shapely
+            # preprocessing intentionally removes coplanar overlaps, while the
+            # coplanar subdivisions in a triangulated CellComplex are meaningful
+            # topology and must be retained.
+            # --------------------------------------------------------------
+
+            if not Topology._IsTopologicCoreBackend():
+
+                try:
+                    return_topology = Core.CellComplex.ByFaces(
+                        face_triangles,
+                        tolerance,
+                        False
+                    )
+
+                except TypeError:
+
+                    try:
+                        return_topology = Core.CellComplex.ByFaces(
+                            face_triangles,
+                            tolerance
+                        )
+
+                    except TypeError:
+
+                        try:
+                            return_topology = Core.CellComplex.ByFaces(
+                                face_triangles
+                            )
+
+                        except Exception:
+                            return_topology = None
+
+                    except Exception:
+                        return_topology = None
+
+                except Exception:
+                    return_topology = None
+
+                # ----------------------------------------------------------
+                # A CellComplex reconstruction that silently drops internal
+                # partitions is not a successful triangulation.
+                # ----------------------------------------------------------
+
+                if Topology.IsInstance(
+                    return_topology,
+                    "CellComplex"
+                ):
+
+                    resulting_cells = Topology.Cells(
+                        return_topology,
+                        silent=True
+                    ) or []
+
+                    if (
+                        expected_cell_count is not None
+                        and len(resulting_cells) != expected_cell_count
+                    ):
+
+                        if not silent:
+                            print(
+                                "Topology.Triangulate - Error: The active backend "
+                                "changed the CellComplex cell count from "
+                                f"{expected_cell_count} to {len(resulting_cells)}. "
+                                "Returning None."
+                            )
+
+                        return None
+
+            # --------------------------------------------------------------
+            # Legacy TopologicCore path.
+            # --------------------------------------------------------------
+
+            else:
+
+                try:
+                    return_topology = CellComplex.ByFaces(
+                        face_triangles,
+                        tolerance=tolerance,
+                        silent=True
+                    )
+
+                except TypeError:
+                    return_topology = CellComplex.ByFaces(
+                        face_triangles,
+                        tolerance=tolerance
+                    )
+
+                except Exception:
+                    return_topology = None
+
+        # ------------------------------------------------------------------
+        # Legacy TopologicCore reconstruction workaround
+        # ------------------------------------------------------------------
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+
+            if Topology._IsTopologicCoreBackend():
+
+                try:
+                    return_topology = Cluster.ByTopologies(
+                        face_triangles,
+                        silent=True
+                    )
+
+                except TypeError:
+                    return_topology = Cluster.ByTopologies(
+                        face_triangles
+                    )
+
+                except Exception:
+                    return_topology = None
+
+                if Topology.IsInstance(
+                    return_topology,
+                    "Topology"
+                ):
+
+                    return_topology = Topology.SelfMerge(
+                        return_topology,
+                        tolerance=tolerance,
+                        silent=silent
+                    )
+
+            else:
+
+                if not silent:
+                    print(
+                        "Topology.Triangulate - Error: The active backend could "
+                        "not reconstruct the triangulated topology. Returning None."
+                    )
+
+                return None
+
+        if not Topology.IsInstance(
+            return_topology,
+            "Topology"
+        ):
+
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: Could not reconstruct the "
+                    "triangulated topology. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Transfer Face dictionaries
+        # ------------------------------------------------------------------
+
+        if (
+            transferDictionaries
+            and len(selectors) > 0
+        ):
+
+            return_topology = Topology.TransferDictionariesBySelectors(
+                return_topology,
+                selectors,
+                tranFaces=True,
+                tolerance=tolerance
+            )
+
         return return_topology
 
-    
     @staticmethod
     def Type(topology, silent: bool = False):
         """
@@ -16643,9 +21318,16 @@ class Topology():
         return None
     
     @staticmethod
-    def Union(topologyA, topologyB, tranDict: bool = False, tolerance: float = 0.0001, silent: bool = False):
+    def Union(
+        topologyA,
+        topologyB,
+        tranDict: bool = False,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Unions the input operand topologies. See https://en.wikipedia.org/wiki/Boolean_operation.
+        Unions the input operand topologies.
+        See https://en.wikipedia.org/wiki/Boolean_operation.
 
         Parameters
         ----------
@@ -16654,17 +21336,18 @@ class Topology():
         topologyB : topologic_core.Topology
             The second input topology.
         tranDict : bool , optional
-            If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.
+            If set to True the dictionaries of the operands are merged and
+            transferred to the result. Default is False.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         topologic_core.Topology
-            the resultant topology.
-
+            The resultant topology.
         """
         from topologicpy.Vertex import Vertex
         from topologicpy.Wire import Wire
@@ -16672,58 +21355,225 @@ class Topology():
         from topologicpy.Shell import Shell
         from topologicpy.Cluster import Cluster
 
-        if not Topology.IsInstance(topologyA, "topology") and not Topology.IsInstance(topologyB, "topology"):
+        if (
+            not Topology.IsInstance(
+                topologyA,
+                "topology"
+            )
+            and not Topology.IsInstance(
+                topologyB,
+                "topology"
+            )
+        ):
             if not silent:
-                print("Topology.Union - Error: The inputs topologyA and topologyB are not valid topologies. Returning None.")
+                print(
+                    "Topology.Union - Error: The inputs topologyA and topologyB "
+                    "are not valid topologies. Returning None."
+                )
             return None
 
-        if not Topology.IsInstance(topologyA, "topology"):
+        if not Topology.IsInstance(
+            topologyA,
+            "topology"
+        ):
             if not silent:
-                print("Topology.Union - Warning: The topologyA input parameter is not a valid topology. Returning topologyB.")
+                print(
+                    "Topology.Union - Warning: The topologyA input parameter is "
+                    "not a valid topology. Returning topologyB."
+                )
             return topologyB
-        
-        if not Topology.IsInstance(topologyB, "topology"):
+
+        if not Topology.IsInstance(
+            topologyB,
+            "topology"
+        ):
             if not silent:
-                print("Topology.Union - Warning: The topologyB input parameter is not a valid topology. Returning topologyA.")
+                print(
+                    "Topology.Union - Warning: The topologyB input parameter is "
+                    "not a valid topology. Returning topologyA."
+                )
             return topologyA
 
-        if Topology.IsInstance(topologyA, "Face") and Topology.IsInstance(topologyB, "Face"):
-            if Face.IsCoplanar(topologyA, topologyB):
-                topologyC = Topology._Boolean(topologyA, topologyB, operation="merge", tranDict=tranDict, tolerance=tolerance)
-                if Topology.IsInstance(topologyC, "Cluster"):
+        # --------------------------------------------------------------
+        # Normal backend path
+        #
+        # Trust the backend result. The special cases below exist solely
+        # to compensate for known TopologicCore Boolean behaviour.
+        # --------------------------------------------------------------
+
+        if not Topology._IsTopologicCoreBackend():
+            return Topology._Boolean(
+                topologyA,
+                topologyB,
+                operation="union",
+                tranDict=tranDict,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        # --------------------------------------------------------------
+        # Legacy TopologicCore Face / Face workaround
+        # --------------------------------------------------------------
+
+        if (
+            Topology.IsInstance(
+                topologyA,
+                "Face"
+            )
+            and Topology.IsInstance(
+                topologyB,
+                "Face"
+            )
+        ):
+            if Face.IsCoplanar(
+                topologyA,
+                topologyB
+            ):
+                topologyC = Topology._Boolean(
+                    topologyA,
+                    topologyB,
+                    operation="merge",
+                    tranDict=tranDict,
+                    tolerance=tolerance
+                )
+
+                if Topology.IsInstance(
+                    topologyC,
+                    "Cluster"
+                ):
                     return topologyC
-                elif Topology.IsInstance(topologyC, "Shell"):
-                    eb_list = Shell.ExternalBoundary(topologyC)
-                    if Topology.IsInstance(eb_list, "Cluster"):
-                        eb_list = Topology.Wires(eb_list)
+
+                elif Topology.IsInstance(
+                    topologyC,
+                    "Shell"
+                ):
+                    eb_list = Shell.ExternalBoundary(
+                        topologyC
+                    )
+
+                    if Topology.IsInstance(
+                        eb_list,
+                        "Cluster"
+                    ):
+                        eb_list = Topology.Wires(
+                            eb_list
+                        )
+
                     else:
-                        eb_list = [eb_list]
-                    topologyA_wire = Face.ExternalBoundary(topologyA)
-                    topologyB_wire = Face.ExternalBoundary(topologyB)
+                        eb_list = [
+                            eb_list
+                        ]
+
+                    topologyA_wire = Face.ExternalBoundary(
+                        topologyA
+                    )
+
+                    topologyB_wire = Face.ExternalBoundary(
+                        topologyB
+                    )
+
                     internal_boundaries = []
                     found = False
-                    for i, eb in enumerate(eb_list):
-                        v = Topology.Vertices(eb)[0]
-                        if found == False:
-                            if Vertex.IsInternal(v, topologyA_wire, tolerance=tolerance) or Vertex.IsInternal(v, topologyB_wire, tolerance=tolerance):
+
+                    for eb in eb_list:
+                        v = Topology.Vertices(
+                            eb
+                        )[0]
+
+                        if found is False:
+                            if (
+                                Vertex.IsInternal(
+                                    v,
+                                    topologyA_wire,
+                                    tolerance=tolerance
+                                )
+                                or Vertex.IsInternal(
+                                    v,
+                                    topologyB_wire,
+                                    tolerance=tolerance
+                                )
+                            ):
                                 external_boundary = eb
                                 found = True
+
                         else:
-                            internal_boundaries.append(eb)
-                    return Face.ByWires(external_boundary, internal_boundaries)
-        
-        elif (Topology.TypeAsString(topologyA).lower() in ["edge", "wire"]) and (Topology.TypeAsString(topologyB).lower() in ["edge", "wire"]):
-            union = Topology.Merge(topologyA, topologyB)
-            if Topology.IsInstance(union, "wire"):
-                union = Wire.RemoveCollinearEdges(union)
+                            internal_boundaries.append(
+                                eb
+                            )
+
+                    return Face.ByWires(
+                        external_boundary,
+                        internal_boundaries
+                    )
+
+        # --------------------------------------------------------------
+        # Legacy TopologicCore Edge / Wire workaround
+        # --------------------------------------------------------------
+
+        elif (
+            Topology.TypeAsString(
+                topologyA
+            ).lower() in [
+                "edge",
+                "wire"
+            ]
+            and Topology.TypeAsString(
+                topologyB
+            ).lower() in [
+                "edge",
+                "wire"
+            ]
+        ):
+            union = Topology.Merge(
+                topologyA,
+                topologyB
+            )
+
+            if Topology.IsInstance(
+                union,
+                "wire"
+            ):
+                union = Wire.RemoveCollinearEdges(
+                    union
+                )
+
                 return union
-            elif Topology.IsInstance(union, "cluster"):
-                wires = Cluster.Wires(union)
-                final_topologies = Cluster.FreeEdges(union)
+
+            elif Topology.IsInstance(
+                union,
+                "cluster"
+            ):
+                wires = Cluster.Wires(
+                    union
+                )
+
+                final_topologies = Cluster.FreeEdges(
+                    union
+                )
+
                 for wire in wires:
-                    final_topologies.append(Wire.RemoveCollinearEdges(wire))
-            return Cluster.ByTopologies(final_topologies)
-        return Topology._Boolean(topologyA, topologyB, operation="union", tranDict=tranDict, tolerance=tolerance, silent=silent)
+                    final_topologies.append(
+                        Wire.RemoveCollinearEdges(
+                            wire
+                        )
+                    )
+
+                return Cluster.ByTopologies(
+                    final_topologies
+                )
+
+        # --------------------------------------------------------------
+        # General TopologicCore Boolean Union
+        # --------------------------------------------------------------
+
+        return Topology._Boolean(
+            topologyA,
+            topologyB,
+            operation="union",
+            tranDict=tranDict,
+            tolerance=tolerance,
+            silent=silent
+        )
 
     @staticmethod
     def UUID(topology, namespace: str = "topologicpy", uuidKey: str = "uuid", deterministic: bool = False, silent: bool = False):

@@ -70,6 +70,34 @@ class Cluster(Topology):
             faces.extend(result)
             return 0
         return result
+    
+    def Cells(self, hostTopology=None, cells=None):
+        result = []
+
+        from .cell import Cell
+
+        for topology in self.topologies:
+            # A Cell contained directly in a Cluster counts as itself.
+            if isinstance(topology, Cell):
+                result.append(topology)
+                continue
+
+            temp = []
+
+            try:
+                topology.Cells(None, temp)
+            except Exception:
+                temp = []
+
+            result.extend(temp)
+
+        result = unique_by_uuid(result)
+
+        if cells is not None:
+            cells.extend(result)
+            return 0
+
+        return result
 
 # ---------------------------------------------------------------------------
 # Explicit unsupported Cluster API

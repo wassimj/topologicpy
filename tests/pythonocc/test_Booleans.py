@@ -49,9 +49,25 @@ Ground-truth workflow
 
 The collector intentionally fails while any expected entry is None. Once the
 table is complete, it becomes a normal passing completeness check.
+
+In addition to count parity, this suite verifies:
+
+* legacy result-type parity for the full boolean matrix;
+* exact 1D/2D/3D measures for representative Edge, Face, and Cell booleans;
+* commutativity of Union, Intersection, and Symmetric Difference;
+* identity and disjointness properties for Cells;
+* preservation of lower-dimensional Cell intersections for face-, edge-, and
+  vertex-only contact; and
+* regression semantics for Topology.Touches and Topology.Overlaps.
+
+These additional tests are intentionally strict. In particular, a pure boundary
+contact between two Cells must produce a non-empty lower-dimensional
+Topology.Intersect result. This exposes backend parity defects instead of hiding
+them behind higher-level relationship predicates.
 """
 
 from functools import lru_cache
+import math
 
 import pytest
 
@@ -149,13 +165,83 @@ EXPECTED_COUNTS = {
 
     ("cellcomplex", "union"): (1, 22, 44, 24),  # result: Cell
     ("cellcomplex", "difference"): (1, 6, 12, 8),  # result: Cell
-    ("cellcomplex", "intersection"): (6, 16, 28, 16),  # result: Cluster
+    # TopologicCore returns 6 Cells here (wrong result), but they are three duplicate pairs.
+    # The geometrically correct intersection contains 3 unique Cells with
+    # volumes 1.0, 3.0, and 1.0 (total volume = 5.0).
+    ("cellcomplex", "intersection"): (3, 16, 28, 16), # result: CellComplex
     ("cellcomplex", "xor"): (2, 12, 24, 16),  # result: Cluster
     ("cellcomplex", "merge"): (5, 26, 44, 24),  # result: CellComplex
     ("cellcomplex", "slice"): (4, 21, 36, 20),  # result: CellComplex
     ("cellcomplex", "impose"): (3, 24, 44, 24),  # result: CellComplex
     ("cellcomplex", "imprint"): (4, 21, 36, 20),  # result: CellComplex
 
+}
+
+
+# Trusted legacy-backend result types for the same matrix.
+EXPECTED_RESULT_TYPES = {
+    ("vertex", "union"): "Vertex",
+    ("vertex", "difference"): "None",
+    ("vertex", "intersection"): "Vertex",
+    ("vertex", "xor"): "None",
+    ("vertex", "merge"): "Vertex",
+    ("vertex", "slice"): "Vertex",
+    ("vertex", "impose"): "Vertex",
+    ("vertex", "imprint"): "Vertex",
+
+    ("edge", "union"): "Edge",
+    ("edge", "difference"): "Edge",
+    ("edge", "intersection"): "Edge",
+    ("edge", "xor"): "Cluster",
+    ("edge", "merge"): "Wire",
+    ("edge", "slice"): "Wire",
+    ("edge", "impose"): "Cluster",
+    ("edge", "imprint"): "Wire",
+
+    ("wire", "union"): "Wire",
+    ("wire", "difference"): "Cluster",
+    ("wire", "intersection"): "Cluster",
+    ("wire", "xor"): "Cluster",
+    ("wire", "merge"): "Wire",
+    ("wire", "slice"): "Wire",
+    ("wire", "impose"): "Cluster",
+    ("wire", "imprint"): "Wire",
+
+    ("face", "union"): "Face",
+    ("face", "difference"): "Face",
+    ("face", "intersection"): "Cluster",
+    ("face", "xor"): "Cluster",
+    ("face", "merge"): "Shell",
+    ("face", "slice"): "Shell",
+    ("face", "impose"): "Shell",
+    ("face", "imprint"): "Shell",
+
+    ("shell", "union"): "Cluster",
+    ("shell", "difference"): "Cluster",
+    ("shell", "intersection"): "Cluster",
+    ("shell", "xor"): "Cluster",
+    ("shell", "merge"): "Shell",
+    ("shell", "slice"): "Shell",
+    ("shell", "impose"): "Cluster",
+    ("shell", "imprint"): "Shell",
+
+    ("cell", "union"): "Cell",
+    ("cell", "difference"): "Cell",
+    ("cell", "intersection"): "Cluster",
+    ("cell", "xor"): "Cluster",
+    ("cell", "merge"): "CellComplex",
+    ("cell", "slice"): "CellComplex",
+    ("cell", "impose"): "CellComplex",
+    ("cell", "imprint"): "CellComplex",
+
+    ("cellcomplex", "union"): "Cell",
+    ("cellcomplex", "difference"): "Cell",
+    ("cellcomplex", "intersection"): "Cluster",
+    ("cellcomplex", "xor"): "Cluster",
+    ("cellcomplex", "merge"): "CellComplex",
+    ("cellcomplex", "slice"): "CellComplex",
+    ("cellcomplex", "impose"): "CellComplex",
+    ("cellcomplex", "imprint"): "CellComplex",
 }
 
 
@@ -342,6 +428,65 @@ def _count_signature(topology):
     )
 
 
+def _result_type(topology):
+    """Return the TopologicPy result type string, or 'None'."""
+    if not Topology.IsInstance(topology, "Topology"):
+        return "None"
+    return Topology.TypeAsString(topology)
+
+
+def _total_edge_length(topology):
+    """Return the total length of all unique edges in a result topology."""
+    if not Topology.IsInstance(topology, "Topology"):
+        return 0.0
+    edges = Topology.Edges(topology, silent=True) or []
+    return sum(float(Edge.Length(edge) or 0.0) for edge in edges)
+
+
+def _total_face_area(topology):
+    """Return the total area of all unique faces in a result topology."""
+    if not Topology.IsInstance(topology, "Topology"):
+        return 0.0
+    faces = Topology.Faces(topology, silent=True) or []
+    return sum(float(Face.Area(face) or 0.0) for face in faces)
+
+
+def _total_cell_volume(topology):
+    """Return the total volume of all unique cells in a result topology."""
+    if not Topology.IsInstance(topology, "Topology"):
+        return 0.0
+    cells = Topology.Cells(topology, silent=True) or []
+    return sum(float(Cell.Volume(cell) or 0.0) for cell in cells)
+
+
+def _cell_at(x=0.0, y=0.0, z=0.0):
+    """Create a deterministic 2 x 2 x 2 Cell centred at the given point."""
+    cell = Cell.Prism(
+        origin=_vertex(x, y, z),
+        width=2.0,
+        length=2.0,
+        height=2.0,
+        uSides=1,
+        vSides=1,
+        wSides=1,
+        placement="center",
+        tolerance=TOLERANCE,
+        silent=True,
+    )
+    assert Topology.IsInstance(cell, "Cell")
+    return cell
+
+
+def _assert_measure_close(actual, expected, label):
+    """Assert an exact reference measure within the suite tolerance."""
+    assert math.isclose(
+        float(actual),
+        float(expected),
+        rel_tol=0.0,
+        abs_tol=TOLERANCE,
+    ), f"{label}: expected {expected}, actual {actual}."
+
+
 @lru_cache(maxsize=None)
 def _evaluate_case(topology_type, operation_name):
     """
@@ -469,3 +614,290 @@ def test_boolean_subtopology_counts(topology_type, operation_name):
         f"Expected (cells, faces, edges, vertices) = {expected}; "
         f"actual = {actual}."
     )
+
+# =============================================================================
+# Expanded correctness tests
+# =============================================================================
+
+
+def test_expected_result_type_table_is_complete():
+    """Assert that every count-matrix entry also has a trusted result type."""
+    expected_keys = {
+        (topology_type, operation_name)
+        for topology_type in TOPOLOGY_TYPES
+        for operation_name in OPERATION_NAMES
+    }
+    assert set(EXPECTED_RESULT_TYPES) == expected_keys
+
+
+@pytest.mark.parametrize("topology_type", TOPOLOGY_TYPES)
+@pytest.mark.parametrize("operation_name", OPERATION_NAMES)
+def test_boolean_result_types(topology_type, operation_name):
+    """Assert legacy-backend result-type parity for every boolean matrix row."""
+    expected_type = EXPECTED_RESULT_TYPES[(topology_type, operation_name)]
+    _, actual_type, error = _evaluate_case(topology_type, operation_name)
+
+    assert error is None, (
+        f"{topology_type}/{operation_name} raised an exception: {error}"
+    )
+    assert actual_type == expected_type, (
+        f"Boolean result-type mismatch for {topology_type}/{operation_name}. "
+        f"Expected {expected_type}; actual {actual_type}."
+    )
+
+
+# -----------------------------------------------------------------------------
+# Exact geometric measures for representative overlapping operands
+# -----------------------------------------------------------------------------
+
+EDGE_BOOLEAN_MEASURES = {
+    "union": 2.75,
+    "difference": 0.75,
+    "intersection": 1.25,
+    "xor": 1.50,
+    "merge": 2.75,
+    "slice": 2.00,
+    "imprint": 2.00,
+}
+
+FACE_BOOLEAN_MEASURES = {
+    "union": 5.50,
+    "difference": 1.50,
+    "intersection": 2.50,
+    "xor": 3.00,
+    "merge": 5.50,
+    "slice": 4.00,
+    "imprint": 4.00,
+}
+
+CELL_BOOLEAN_MEASURES = {
+    "union": 11.00,
+    "difference": 3.00,
+    "intersection": 5.00,
+    "xor": 6.00,
+    "merge": 11.00,
+    "slice": 8.00,
+    "imprint": 8.00,
+}
+
+
+@pytest.mark.parametrize("operation_name, expected_length", EDGE_BOOLEAN_MEASURES.items())
+def test_edge_boolean_total_length(operation_name, expected_length):
+    """Assert exact 1D measure conservation for overlapping Edge operands."""
+    a, b = _operands("edge")
+    result = _apply_operation(operation_name, a, b)
+    actual = _total_edge_length(result)
+    _assert_measure_close(actual, expected_length, f"edge/{operation_name}")
+
+
+@pytest.mark.parametrize("operation_name, expected_area", FACE_BOOLEAN_MEASURES.items())
+def test_face_boolean_total_area(operation_name, expected_area):
+    """Assert exact 2D measure conservation for overlapping Face operands."""
+    a, b = _operands("face")
+    result = _apply_operation(operation_name, a, b)
+    actual = _total_face_area(result)
+    _assert_measure_close(actual, expected_area, f"face/{operation_name}")
+
+
+@pytest.mark.parametrize("operation_name, expected_volume", CELL_BOOLEAN_MEASURES.items())
+def test_cell_boolean_total_volume(operation_name, expected_volume):
+    """Assert exact 3D measure conservation for overlapping Cell operands."""
+    a, b = _operands("cell")
+    result = _apply_operation(operation_name, a, b)
+    actual = _total_cell_volume(result)
+    _assert_measure_close(actual, expected_volume, f"cell/{operation_name}")
+
+
+# -----------------------------------------------------------------------------
+# Standard set-boolean algebra
+# -----------------------------------------------------------------------------
+
+COMMUTATIVE_OPERATIONS = (
+    "union",
+    "intersection",
+    "xor",
+)
+
+
+@pytest.mark.parametrize("topology_type", TOPOLOGY_TYPES)
+@pytest.mark.parametrize("operation_name", COMMUTATIVE_OPERATIONS)
+def test_standard_booleans_are_commutative(topology_type, operation_name):
+    """Assert A op B and B op A have identical type and subtopology counts."""
+    a, b = _operands(topology_type)
+
+    ab = _apply_operation(operation_name, a, b)
+    ba = _apply_operation(operation_name, b, a)
+
+    assert _result_type(ab) == _result_type(ba), (
+        f"{topology_type}/{operation_name} result type is not commutative: "
+        f"A op B -> {_result_type(ab)}, B op A -> {_result_type(ba)}."
+    )
+    assert _count_signature(ab) == _count_signature(ba), (
+        f"{topology_type}/{operation_name} count signature is not commutative: "
+        f"A op B -> {_count_signature(ab)}, "
+        f"B op A -> {_count_signature(ba)}."
+    )
+
+
+# -----------------------------------------------------------------------------
+# Cell identity and disjointness properties
+# -----------------------------------------------------------------------------
+
+
+def test_cell_boolean_identity_cases():
+    """Assert standard Boolean identities for two geometrically equal Cells."""
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(0.0, 0.0, 0.0)
+
+    union = Topology.Union(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    intersection = Topology.Intersect(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    difference = Topology.Difference(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    xor = Topology.SymmetricDifference(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+
+    assert Topology.IsInstance(union, "Topology")
+    assert Topology.IsInstance(intersection, "Topology")
+    assert not Topology.IsInstance(difference, "Topology")
+    assert not Topology.IsInstance(xor, "Topology")
+
+    _assert_measure_close(_total_cell_volume(union), 8.0, "equal-cell union")
+    _assert_measure_close(_total_cell_volume(intersection), 8.0, "equal-cell intersection")
+    assert _count_signature(difference) == (0, 0, 0, 0)
+    assert _count_signature(xor) == (0, 0, 0, 0)
+
+
+def test_cell_boolean_disjoint_cases():
+    """Assert standard Boolean behaviour for two separated Cells."""
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(3.0, 0.0, 0.0)
+
+    intersection = Topology.Intersect(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    difference = Topology.Difference(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    union = Topology.Union(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+    xor = Topology.SymmetricDifference(a, b, tranDict=False, tolerance=TOLERANCE, silent=True)
+
+    assert not Topology.IsInstance(intersection, "Topology")
+    assert Topology.IsInstance(difference, "Topology")
+    assert Topology.IsInstance(union, "Topology")
+    assert Topology.IsInstance(xor, "Topology")
+
+    _assert_measure_close(_total_cell_volume(difference), 8.0, "disjoint-cell difference")
+    _assert_measure_close(_total_cell_volume(union), 16.0, "disjoint-cell union")
+    _assert_measure_close(_total_cell_volume(xor), 16.0, "disjoint-cell xor")
+
+
+# -----------------------------------------------------------------------------
+# Lower-dimensional Cell intersections
+# -----------------------------------------------------------------------------
+
+CELL_CONTACT_CASES = (
+    ("face-touch", (2.0, 0.0, 0.0), 2),
+    ("edge-touch", (2.0, 2.0, 0.0), 1),
+    ("vertex-touch", (2.0, 2.0, 2.0), 0),
+)
+
+
+@pytest.mark.parametrize("label, offset, max_dimension", CELL_CONTACT_CASES)
+def test_cell_contact_intersection_is_preserved(label, offset, max_dimension):
+    """
+    Assert that a pure Cell boundary contact has a non-empty intersection.
+
+    A backend must not collapse a face-, edge-, or vertex-only Cell
+    intersection to None. The exact wrapper/result type may differ between
+    kernels, but the common topology must exist, contain no Cell, and have
+    dimension no greater than the geometric contact dimension.
+    """
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(*offset)
+
+    result = Topology.Intersect(
+        a,
+        b,
+        tranDict=False,
+        tolerance=TOLERANCE,
+        silent=True,
+    )
+
+    assert Topology.IsInstance(result, "Topology"), (
+        f"{label}: Cell/Cell intersection was discarded. Expected a non-empty "
+        "lower-dimensional topology; actual result was None."
+    )
+    assert _subtopology_count(result, Topology.Cells) == 0, (
+        f"{label}: pure boundary contact unexpectedly produced a Cell."
+    )
+
+    actual_dimension = Topology.Dimensionality(result)
+    assert actual_dimension <= max_dimension, (
+        f"{label}: expected intersection dimensionality <= {max_dimension}; "
+        f"actual = {actual_dimension}; result type = {_result_type(result)}; "
+        f"signature = {_count_signature(result)}."
+    )
+
+
+def test_cell_overlap_intersection_has_expected_volume():
+    """Assert that a genuine Cell overlap produces a volumetric intersection."""
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(1.0, 0.0, 0.0)
+
+    result = Topology.Intersect(
+        a, b, tranDict=False, tolerance=TOLERANCE, silent=True
+    )
+
+    assert Topology.IsInstance(result, "Topology")
+    assert Topology.Dimensionality(result) == 3
+    _assert_measure_close(_total_cell_volume(result), 4.0, "overlapping-cell intersection")
+
+
+def test_cell_disjoint_intersection_is_none():
+    """Assert that separated Cells have an empty intersection."""
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(3.0, 0.0, 0.0)
+
+    result = Topology.Intersect(
+        a, b, tranDict=False, tolerance=TOLERANCE, silent=True
+    )
+
+    assert not Topology.IsInstance(result, "Topology")
+
+
+# -----------------------------------------------------------------------------
+# Relationship regressions exposed by boolean behaviour
+# -----------------------------------------------------------------------------
+
+CELL_RELATION_CASES = (
+    ("face-touch", (2.0, 0.0, 0.0), True, False),
+    ("edge-touch", (2.0, 2.0, 0.0), True, False),
+    ("vertex-touch", (2.0, 2.0, 2.0), True, False),
+    ("overlap", (1.0, 0.0, 0.0), False, True),
+    ("disjoint", (3.0, 0.0, 0.0), False, False),
+    ("equal", (0.0, 0.0, 0.0), False, False),
+)
+
+
+@pytest.mark.parametrize(
+    "label, offset, expected_touches, expected_overlaps",
+    CELL_RELATION_CASES,
+)
+def test_cell_boolean_relationship_regressions(
+    label,
+    offset,
+    expected_touches,
+    expected_overlaps,
+):
+    """Lock in Touches/Overlaps semantics for representative Cell relations."""
+    a = _cell_at(0.0, 0.0, 0.0)
+    b = _cell_at(*offset)
+
+    touches = Topology.Touches(
+        a, b, tolerance=TOLERANCE, silent=True
+    )
+    overlaps = Topology.Overlaps(
+        a, b, tolerance=TOLERANCE, silent=True
+    )
+
+    assert touches == expected_touches, (
+        f"{label}: expected Touches={expected_touches}; actual={touches}."
+    )
+    assert overlaps == expected_overlaps, (
+        f"{label}: expected Overlaps={expected_overlaps}; actual={overlaps}."
+    )
+

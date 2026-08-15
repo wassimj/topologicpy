@@ -1198,14 +1198,24 @@ class Cell():
         return Cell.ByWires(wires, close=close, triangulate=triangulate, planarize=planarize, tolerance=tolerance)
 
     @staticmethod
-    def Capsule(origin = None, radius: float = 0.25, height: float = 1, uSides: int = 16, vSidesEnds:int = 8, vSidesMiddle: int = 1, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Capsule(origin = None,
+                radius: float = 0.25,
+                height: float = 1,
+                uSides: int = 16,
+                vSidesEnds: int = 8,
+                vSidesMiddle: int = 1,
+                direction: list = [0, 0, 1],
+                placement: str = "center",
+                tolerance: float = 0.0001,
+                silent: bool = False):
         """
         Creates a capsule shape. A capsule is a cylinder with hemispherical ends.
 
         Parameters
         ----------
         origin : topologic_core.Vertex , optional
-            The location of the origin of the cylinder. Default is None which results in the cylinder being placed at (0, 0, 0).
+            The location of the origin of the capsule. Default is None which results
+            in the capsule being placed at (0, 0, 0).
         radius : float , optional
             The radius of the capsule. Default is 0.25.
         height : float , optional
@@ -1219,46 +1229,106 @@ class Cell():
         direction : list , optional
             The vector representing the up direction of the capsule. Default is [0, 0, 1].
         placement : str , optional
-            The description of the placement of the origin of the capsule. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "bottom".
+            The description of the placement of the origin of the capsule. This can
+            be "bottom", "center", or "lowerleft". It is case insensitive. Default
+            is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         topologic_core.Cell
             The created cell.
-
-            """
+        """
         from topologicpy.Topology import Topology
-        from topologicpy.Cell import Cell
         from topologicpy.Vertex import Vertex
+
         if not Topology.IsInstance(origin, "Vertex"):
             origin = Vertex.ByCoordinates(0, 0, 0)
+
         if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
+            if not silent:
+                print("Cell.Capsule - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
             return None
+
         cyl_height = height - radius*2
+
         if cyl_height <= 0:
-            capsule = Cell.Sphere(origin=Vertex.Origin(), radius=radius, uSides= uSides, vSides=vSidesEnds*2)
+            capsule = Cell.Sphere(
+                origin=Vertex.Origin(),
+                radius=radius,
+                uSides=uSides,
+                vSides=vSidesEnds*2,
+                tolerance=tolerance,
+                silent=silent
+            )
         else:
-            cyl = Cell.Cylinder(origin=Vertex.Origin(),
-                                radius=radius,
-                                height=cyl_height,
-                                uSides=uSides, vSides=vSidesMiddle, direction=[0, 0, 1], placement="center", tolerance=tolerance)
+            cyl = Cell.Cylinder(
+                origin=Vertex.Origin(),
+                radius=radius,
+                height=cyl_height,
+                uSides=uSides,
+                vSides=vSidesMiddle,
+                direction=[0, 0, 1],
+                placement="center",
+                tolerance=tolerance
+            )
+
             o1 = Vertex.ByCoordinates(0, 0, cyl_height*0.5)
             o2 = Vertex.ByCoordinates(0, 0, -cyl_height*0.5)
-            s1 = Cell.Sphere(origin=o1, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
-            s2 = Cell.Sphere(origin=o2, radius=radius, uSides=uSides, vSides=vSidesEnds*2, tolerance=tolerance)
+
+            s1 = Cell.Sphere(
+                origin=o1,
+                radius=radius,
+                uSides=uSides,
+                vSides=vSidesEnds*2,
+                tolerance=tolerance,
+                silent=silent
+            )
+
+            s2 = Cell.Sphere(
+                origin=o2,
+                radius=radius,
+                uSides=uSides,
+                vSides=vSidesEnds*2,
+                tolerance=tolerance,
+                silent=silent
+            )
+
             capsule = Topology.Union(cyl, s1, tolerance=tolerance)
             capsule = Topology.Union(capsule, s2, tolerance=tolerance)
+
+        if not Topology.IsInstance(capsule, "Cell"):
+            if not silent:
+                print("Cell.Capsule - Error: Could not create the capsule. Returning None.")
+            return None
+
+        placement = placement.lower()
+
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+
         if placement == "bottom":
-            capsule = Topology.Translate(capsule, 0, 0, height/2)
-        if placement == "lowerleft":
-            capsule = Topology.Translate(capsule, 0, 0, height/2)
-            capsule = Topology.Translate(capsule, radius, radius)
-        
-        capsule = Topology.Orient(capsule, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        capsule = Topology.Place(capsule, originA=Vertex.Origin(), originB=origin)
+            zOffset = -height*0.5
+        elif placement == "lowerleft":
+            xOffset = -radius
+            yOffset = -radius
+            zOffset = -height*0.5
+
+        capsule = Topology.OrientAndPlace(
+            capsule,
+            originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+            originB=origin,
+            dirA=[0, 0, 1],
+            dirB=direction,
+            transferDictionaries=False,
+            tolerance=tolerance,
+            silent=silent
+        )
+
         return capsule
 
     @staticmethod
@@ -1336,10 +1406,14 @@ class Cell():
             xOffset = -radius
             yOffset = -radius
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
 
     @staticmethod
@@ -1746,10 +1820,14 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
     
     @staticmethod
@@ -1901,10 +1979,12 @@ class Cell():
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if placement.lower() == "bottom":
-            zOffset = height*0.5
-        elif placement.lower() == "top":
+        if placement.lower() == "center":
             zOffset = -height*0.5
+        elif placement.lower() == "bottom":
+            zOffset = 0
+        elif placement.lower() == "top":
+            zOffset = -height
         elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
@@ -1921,10 +2001,14 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
     
     @staticmethod
@@ -2241,8 +2325,14 @@ class Cell():
                     dodecahedron = Cell.ByShell(dodecahedron, tolerance=tolerance, silent=True)
                 except Exception:
                     dodecahedron = None
-        dodecahedron = Topology.Orient(dodecahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
-        dodecahedron = Topology.Place(dodecahedron, originA=Vertex.Origin(), originB=origin)
+        dodecahedron = Topology.OrientAndPlace(dodecahedron,
+                                           originA=Vertex.Origin(),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return dodecahedron
 
     @staticmethod
@@ -2270,8 +2360,14 @@ class Cell():
         return edges
 
     @staticmethod
-    def Egg(origin= None, height: float = 1.0, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1],
-                   placement: str = "center", tolerance: float = 0.0001):
+    def Egg(origin= None,
+            height: float = 1.0,
+            uSides: int = 16,
+            vSides: int = 8,
+            direction: list = [0, 0, 1],
+            placement: str = "center",
+            tolerance: float = 0.0001,
+            silent: bool = False):
         """
         Creates an egg-shaped cell.
 
@@ -2291,6 +2387,8 @@ class Cell():
             The description of the placement of the origin of the egg-shaped cell. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
@@ -2343,16 +2441,28 @@ class Cell():
         if Topology.IsInstance(egg, "Shell"):
             egg = Cell.ByShell(egg)
         egg = Topology.Scale(egg, origin=Vertex.Origin(), x=height, y=height, z=height)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement.lower() == "bottom":
-            egg = Topology.Translate(egg, 0, 0, height/2)
+            zOffset = 0
         elif placement.lower() == "lowerleft":
             bb = Topology.BoundingBox(egg)
             d = Topology.Dictionary(bb)
             width = Dictionary.ValueAtKey(d, 'width')
             length = Dictionary.ValueAtKey(d, 'length')
-            egg = Topology.Translate(egg, width*0.5, length*0.5, height*0.5)
-        egg = Topology.Orient(egg, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        egg = Topology.Place(egg, originA=Vertex.Origin(), originB=origin)
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        egg = Topology.OrientAndPlace(egg,
+                                      originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                      originB=origin,
+                                      dirA=[0, 0, 1],
+                                      dirB=direction,
+                                      transferDictionaries = False,
+                                      tolerance = tolerance,
+                                      silent = silent)
+        
         return egg
     
     @staticmethod
@@ -2540,8 +2650,14 @@ class Cell():
                 print("Cell.Hyperboloid - Error: Could not create the cell. Returning None.")
             return None
         
-        hyperboloid = Topology.Orient(hyperboloid, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
-        hyperboloid = Topology.Place(hyperboloid, originA=Vertex.Origin(), originB=origin)
+        hyperboloid = Topology.OrientAndPlace(hyperboloid,
+                                              originA=Vertex.Origin(),
+                                              originB=origin,
+                                              dirA=[0, 0, 1],
+                                              dirB=direction,
+                                              transferDictionaries = False,
+                                              tolerance = tolerance,
+                                              silent = silent)
         return hyperboloid
     
     @staticmethod
@@ -2629,14 +2745,1272 @@ class Cell():
         icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
         sf = radius/0.5
         icosahedron = Topology.Scale(icosahedron, origin=Vertex.Origin(), x=sf, y=sf, z=sf)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement == "bottom":
-            icosahedron = Topology.Translate(icosahedron, 0, 0, radius)
+            zOffset = radius
         elif placement == "lowerleft":
-            icosahedron = Topology.Translate(icosahedron, radius, radius, radius)
+            xOffset = yOffset = zOffset = radius
         
-        icosahedron = Topology.Orient(icosahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction, tolerance=tolerance)
-        icosahedron = Topology.Place(icosahedron, originA=Vertex.Origin(), originB=origin)
+        icosahedron = Topology.OrientAndPlace(icosahedron,
+                                              originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                              originB=origin,
+                                              dirA=[0, 0, 1],
+                                              dirB=direction,
+                                              transferDictionaries = False,
+                                              tolerance = tolerance,
+                                              silent = silent)
         return icosahedron
+
+    @staticmethod
+    def Inflate(
+        cell,
+        faces: list,
+        maxDistance: float = None,
+        angTolerance: float = 1.0,
+        mantissa: int = 6,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
+        """
+        Inflates the input cell until its faces collide with the input limiting faces.
+
+        Each face of the cell moves outwards along its own normal direction while
+        remaining parallel to its original plane. A moving face stops at the first
+        distance at which any part of that face, one of its edges, or one of its
+        vertices collides with any input limiting face. The limiting face does not
+        need to be parallel to the moving cell face. If the moving face is
+        already in contact with an analytical face and its inflation direction
+        is tangent to that analytical face, the contact is treated as sliding
+        contact and does not stop the inflation.
+
+        The method translates the supporting planes of the cell faces and recomputes
+        the cell vertices from the intersections of their incident translated planes.
+        It does not project vertices independently. After every accepted face movement,
+        every face is rebuilt explicitly from external and internal boundary loops
+        ordered by traversing their connected edges. The rebuilt topology may be a Cell or a Cluster of faces; either is
+        retained for subsequent processing. A single self-merge attempt is made after
+        all face movements have been completed.
+
+        This method is intended for planar, polyhedral cells whose incidence graph
+        remains valid during inflation. It works best with simple cells in which each
+        vertex is defined by three independent incident face planes.
+
+        Parameters
+        ----------
+        cell : topologic_core.Cell
+            The input cell.
+        faces : list
+            The list of limiting analytical faces.
+        maxDistance : float , optional
+            The maximum permitted outward movement of each cell face. If set to None,
+            the required sweep distance is derived from the limiting-face vertices.
+            Default is None.
+        angTolerance : float , optional
+            The angular tolerance in degrees used to identify sliding contact. If
+            the inflation direction is parallel to an analytical-face plane within
+            this tolerance, that analytical face does not block the movement.
+            Default is 1.0.
+        mantissa : int , optional
+            The number of decimal places used to create replacement vertices.
+            Default is 6.
+        tolerance : float , optional
+            The desired geometric tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error, warning, and information messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The inflated topology. This is normally a Cell, but it may be a Cluster
+            when the rebuilt faces cannot be self-merged into a Cell.
+
+        Notes
+        -----
+        Collision is detected using the swept volume of each moving cell face. The
+        intersection of that swept volume with a limiting face captures face, edge,
+        and vertex contact. Tangential contact is ignored so that the moving face can
+        slide along an analytical face. The earliest positive blocking travel
+        distance among all remaining limiting faces is used.
+
+        The method preserves the original cell incidence graph. It does not support
+        an inflation event that requires splitting a face, creating a new vertex,
+        removing a face, or otherwise changing that incidence graph. Intermediate
+        rebuilt results are allowed to remain Clusters because subsequent movement
+        calculations use the supporting planes and faces rather than Cell-only API
+        operations. Boundary order is derived by traversing edge connectivity rather
+        than relying on generic subtopology enumeration, which is not ordered.
+        """
+        from topologicpy.Cluster import Cluster
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Edge import Edge
+        from topologicpy.Face import Face
+        from topologicpy.Topology import Topology
+        from topologicpy.Vertex import Vertex
+        from topologicpy.Wire import Wire
+
+        import math
+        import numpy as np
+
+        def _message(kind, text):
+            if not silent:
+                print(f"Cell.Inflate - {kind}: {text}")
+
+        def _coordinates(vertex):
+            coordinates = Vertex.Coordinates(
+                vertex,
+                outputType="xyz",
+                mantissa=None,
+            )
+            if not isinstance(coordinates, list) or len(coordinates) != 3:
+                return None
+            try:
+                return np.asarray(coordinates, dtype=float)
+            except Exception:
+                return None
+
+        def _unit(vector):
+            try:
+                vector = np.asarray(vector, dtype=float)
+                magnitude = float(np.linalg.norm(vector))
+            except Exception:
+                return None
+            if magnitude <= tolerance:
+                return None
+            return vector / magnitude
+
+        def _self_merge(topology, topology_type=None):
+            if topology is None:
+                return None
+            if topology_type and Topology.IsInstance(topology, topology_type):
+                return topology
+            try:
+                merged = Topology.SelfMerge(
+                    topology,
+                    transferDictionaries=False,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    merged = Topology.SelfMerge(
+                        topology,
+                        tolerance=tolerance,
+                    )
+                except Exception:
+                    merged = None
+            except Exception:
+                merged = None
+
+            if topology_type and not Topology.IsInstance(merged, topology_type):
+                return None
+            return merged
+
+        def _intersect(topology_a, topology_b):
+            try:
+                return Topology.Intersect(
+                    topology_a,
+                    topology_b,
+                    tranDict=False,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    return Topology.Intersect(
+                        topology_a,
+                        topology_b,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                except Exception:
+                    return None
+            except Exception:
+                return None
+
+        def _collision(topology_a, topology_b):
+            intersection = _intersect(topology_a, topology_b)
+            if Topology.IsInstance(intersection, "Topology"):
+                return intersection
+            return None
+
+        def _projection_distance(point, origin, direction):
+            return float(np.dot(direction, point - origin))
+
+        def _sweep_distance(origin, direction):
+            if maxDistance is not None:
+                return maxDistance
+
+            maximum = None
+            for limiting_item in limiting_data:
+                for point in limiting_item["positions"]:
+                    distance = _projection_distance(point, origin, direction)
+                    if distance > tolerance:
+                        if maximum is None or distance > maximum:
+                            maximum = distance
+
+            if maximum is None:
+                return None
+            return maximum + tolerance * 10.0
+
+        def _collision_distance(source_face, direction):
+            source_centroid = Topology.Centroid(source_face, silent=True)
+            source_origin = _coordinates(source_centroid)
+            if source_origin is None:
+                return None, None
+
+            try:
+                source_vertices = Topology.Vertices(
+                    source_face,
+                    silent=True,
+                ) or []
+            except Exception:
+                source_vertices = []
+
+            source_positions = []
+            for source_vertex in source_vertices:
+                position = _coordinates(source_vertex)
+                if position is not None:
+                    source_positions.append(position)
+
+            if len(source_positions) == 0:
+                source_positions = [source_origin]
+
+            sweep_distance = _sweep_distance(source_origin, direction)
+            if sweep_distance is None or sweep_distance <= tolerance:
+                return None, None
+
+            try:
+                source_normal = Face.Normal(
+                    source_face,
+                    outputType="xyz",
+                    mantissa=max(mantissa, 8),
+                )
+            except Exception:
+                source_normal = None
+            source_normal = _unit(source_normal)
+            if source_normal is None:
+                return None, None
+
+            reverse = float(np.dot(source_normal, direction)) < 0.0
+
+            try:
+                swept_cell = Cell.ByThickenedFace(
+                    source_face,
+                    thickness=sweep_distance,
+                    bothSides=False,
+                    reverse=reverse,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                swept_cell = None
+
+            if not Topology.IsInstance(swept_cell, "Cell"):
+                swept_cell = _self_merge(swept_cell, "Cell")
+            if not Topology.IsInstance(swept_cell, "Cell"):
+                return None, None
+
+            tangent_threshold = math.sin(math.radians(angTolerance))
+            best_distance = None
+            best_limiter = None
+
+            for limiting_item in limiting_data:
+                limiting_normal = limiting_item["normal"]
+                limiting_constant = limiting_item["constant"]
+                normal_speed = float(np.dot(limiting_normal, direction))
+
+                # The inflation direction lies in the analytical-face plane.
+                # Existing or future coplanar contact is sliding contact and must
+                # not stop this face.
+                if abs(normal_speed) <= tangent_threshold:
+                    continue
+
+                signed_distances = [
+                    float(np.dot(limiting_normal, point) - limiting_constant)
+                    for point in source_positions
+                ]
+
+                initial_intersection = _collision(
+                    source_face,
+                    limiting_item["face"],
+                )
+
+                if initial_intersection is not None:
+                    interior_signed_distance = float(
+                        np.dot(limiting_normal, internal_coordinates)
+                        - limiting_constant
+                    )
+
+                    # If the outward motion crosses the analytical-face plane away
+                    # from the cell interior, the existing contact is blocking. If
+                    # it moves back towards the interior side, the face is separating
+                    # from the limiter and may continue.
+                    if interior_signed_distance * normal_speed < -tolerance:
+                        return 0.0, limiting_item
+                    continue
+
+                # Skip a limiter when every point of the moving face is already on
+                # one side of its plane and the motion increases that separation.
+                if all(value > tolerance for value in signed_distances):
+                    if normal_speed > 0.0:
+                        continue
+                elif all(value < -tolerance for value in signed_distances):
+                    if normal_speed < 0.0:
+                        continue
+
+                swept_intersection = _collision(
+                    swept_cell,
+                    limiting_item["face"],
+                )
+                if swept_intersection is None:
+                    continue
+
+                try:
+                    intersection_vertices = Topology.Vertices(
+                        swept_intersection,
+                        silent=True,
+                    ) or []
+                except Exception:
+                    intersection_vertices = []
+
+                candidate_distances = []
+                for intersection_vertex in intersection_vertices:
+                    point = _coordinates(intersection_vertex)
+                    if point is None:
+                        continue
+                    distance = _projection_distance(
+                        point,
+                        source_origin,
+                        direction,
+                    )
+                    if tolerance < distance <= sweep_distance + tolerance:
+                        candidate_distances.append(distance)
+
+                if len(candidate_distances) == 0:
+                    continue
+
+                distance = min(candidate_distances)
+                if maxDistance is not None and distance > maxDistance + tolerance:
+                    continue
+
+                if best_distance is None or distance < best_distance - tolerance:
+                    best_distance = distance
+                    best_limiter = limiting_item
+
+            return best_distance, best_limiter
+
+        def _replace(topology, source_vertices, target_vertices):
+            try:
+                return Topology.ReplaceVertices(
+                    topology,
+                    verticesA=source_vertices,
+                    verticesB=target_vertices,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                return Topology.ReplaceVertices(
+                    topology,
+                    verticesA=source_vertices,
+                    verticesB=target_vertices,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                )
+            except Exception:
+                return None
+
+        def _copy_dictionary(source, target):
+            if not Topology.IsInstance(target, "Topology"):
+                return target
+            try:
+                dictionary = Topology.Dictionary(source, silent=True)
+            except TypeError:
+                try:
+                    dictionary = Topology.Dictionary(source)
+                except Exception:
+                    dictionary = None
+            except Exception:
+                dictionary = None
+
+            if dictionary is None:
+                return target
+
+            try:
+                keys = Dictionary.Keys(dictionary)
+            except Exception:
+                keys = []
+
+            if not keys:
+                return target
+
+            try:
+                return Topology.SetDictionary(target, dictionary, silent=True)
+            except TypeError:
+                try:
+                    return Topology.SetDictionary(target, dictionary)
+                except Exception:
+                    return target
+            except Exception:
+                return target
+
+        def _solve_vertices(plane_constants):
+            """
+            Recomputes vertices while preserving unconstrained coordinates.
+
+            Coplanar incident face segments are first reduced to one plane
+            constraint. This is essential for IFC cells in which a straight wall
+            is split into multiple coplanar faces. Tiny numerical differences in
+            their normals must not be interpreted as independent planes.
+            """
+            positions = []
+            residual_tolerance = max(
+                tolerance * 10.0,
+                10.0 ** (-mantissa),
+            )
+
+            # Angular comparison expressed as the magnitude of the cross product
+            # of two unit normals. Keep this deliberately much tighter than the
+            # user-facing angular tolerance used for sliding collision tests.
+            plane_parallel_tolerance = max(
+                1.0e-10,
+                min(abs(float(tolerance)), 1.0e-6),
+            )
+            plane_offset_tolerance = residual_tolerance
+
+            def _unique_constraints(incident_indices):
+                constraints = []
+
+                for face_index in incident_indices:
+                    normal = np.asarray(
+                        cell_planes[face_index]["normal"],
+                        dtype=float,
+                    )
+                    constant = float(plane_constants[face_index])
+
+                    duplicate = False
+                    for existing in constraints:
+                        existing_normal = existing["normal"]
+                        existing_constant = existing["constant"]
+
+                        alignment = float(np.dot(normal, existing_normal))
+                        aligned_normal = normal
+                        aligned_constant = constant
+
+                        if alignment < 0.0:
+                            alignment = -alignment
+                            aligned_normal = -normal
+                            aligned_constant = -constant
+
+                        cross_magnitude = float(
+                            np.linalg.norm(
+                                np.cross(aligned_normal, existing_normal)
+                            )
+                        )
+
+                        if (
+                            cross_magnitude <= plane_parallel_tolerance
+                            and abs(
+                                aligned_constant - existing_constant
+                            ) <= plane_offset_tolerance
+                        ):
+                            duplicate = True
+                            break
+
+                    if not duplicate:
+                        constraints.append(
+                            {
+                                "normal": normal,
+                                "constant": constant,
+                            }
+                        )
+
+                return constraints
+
+            for vertex_index, incident_indices in enumerate(vertex_faces):
+                if len(incident_indices) == 0:
+                    _message(
+                        "Error",
+                        f"Vertex {vertex_index} is not incident to any cell faces. "
+                        "Returning None.",
+                    )
+                    return None
+
+                constraints = _unique_constraints(incident_indices)
+                if len(constraints) == 0:
+                    _message(
+                        "Error",
+                        f"Vertex {vertex_index} has no valid independent plane "
+                        "constraints. Returning None.",
+                    )
+                    return None
+
+                matrix = np.asarray(
+                    [item["normal"] for item in constraints],
+                    dtype=float,
+                )
+                values = np.asarray(
+                    [item["constant"] for item in constraints],
+                    dtype=float,
+                )
+                original_position = np.asarray(
+                    original_positions[vertex_index],
+                    dtype=float,
+                )
+
+                try:
+                    singular_values = np.linalg.svd(
+                        matrix,
+                        compute_uv=False,
+                    )
+                    maximum_singular_value = (
+                        float(np.max(singular_values))
+                        if len(singular_values) > 0
+                        else 0.0
+                    )
+                    singular_tolerance = max(
+                        np.finfo(float).eps
+                        * max(matrix.shape)
+                        * maximum_singular_value,
+                        plane_parallel_tolerance
+                        * maximum_singular_value,
+                    )
+                    rank = int(
+                        np.sum(singular_values > singular_tolerance)
+                    )
+                except Exception:
+                    rank = 0
+
+                if rank < 1:
+                    _message(
+                        "Error",
+                        f"The incident planes at vertex {vertex_index} do not define "
+                        "a valid geometric constraint. Returning None.",
+                    )
+                    return None
+
+                try:
+                    difference = values - matrix @ original_position
+                    correction = np.linalg.pinv(
+                        matrix,
+                        rcond=plane_parallel_tolerance,
+                    ) @ difference
+                    position = original_position + correction
+                except Exception:
+                    _message(
+                        "Error",
+                        f"Could not solve the incident planes at vertex "
+                        f"{vertex_index}. Returning None.",
+                    )
+                    return None
+
+                if not np.all(np.isfinite(position)):
+                    _message(
+                        "Error",
+                        f"Could not compute finite coordinates for vertex "
+                        f"{vertex_index}. Returning None.",
+                    )
+                    return None
+
+                residual = float(
+                    np.max(np.abs(matrix @ position - values))
+                )
+                if (
+                    not np.isfinite(residual)
+                    or residual > residual_tolerance
+                ):
+                    _message(
+                        "Error",
+                        f"The translated incident planes at vertex {vertex_index} "
+                        "are mutually inconsistent. The requested inflation changes "
+                        "the incidence geometry. Returning None.",
+                    )
+                    return None
+
+                positions.append(position)
+
+            return positions
+
+        def _vertices_by_positions(positions):
+            result = []
+            for position in positions:
+                try:
+                    vertex = Vertex.ByCoordinates(
+                        round(float(position[0]), mantissa),
+                        round(float(position[1]), mantissa),
+                        round(float(position[2]), mantissa),
+                    )
+                except Exception:
+                    vertex = None
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+                result.append(vertex)
+            return result
+
+        def _wire_by_indices(indices, positions):
+            if not isinstance(indices, list) or len(indices) < 3:
+                return None
+
+            vertices = []
+            for vertex_index in indices:
+                position = positions[vertex_index]
+                try:
+                    vertex = Vertex.ByCoordinates(
+                        round(float(position[0]), mantissa),
+                        round(float(position[1]), mantissa),
+                        round(float(position[2]), mantissa),
+                    )
+                except Exception:
+                    vertex = None
+
+                if not Topology.IsInstance(vertex, "Vertex"):
+                    return None
+                vertices.append(vertex)
+
+            try:
+                wire = Wire.ByVertices(
+                    vertices,
+                    close=True,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except Exception:
+                wire = None
+
+            return wire if Topology.IsInstance(wire, "Wire") else None
+
+        def _current_face(face_index, positions):
+            boundary = face_boundaries[face_index]
+            external_wire = _wire_by_indices(
+                boundary["external"],
+                positions,
+            )
+            if not Topology.IsInstance(external_wire, "Wire"):
+                return None
+
+            internal_wires = []
+            for indices in boundary["internal"]:
+                wire = _wire_by_indices(indices, positions)
+                if not Topology.IsInstance(wire, "Wire"):
+                    return None
+                internal_wires.append(wire)
+
+            try:
+                rebuilt_face = Face.ByWires(
+                    external_wire,
+                    internal_wires,
+                    tolerance=tolerance,
+                    silent=True,
+                )
+            except TypeError:
+                try:
+                    rebuilt_face = Face.ByWires(
+                        external_wire,
+                        internal_wires,
+                        tolerance=tolerance,
+                    )
+                except Exception:
+                    rebuilt_face = None
+            except Exception:
+                rebuilt_face = None
+
+            if not Topology.IsInstance(rebuilt_face, "Face"):
+                return None
+
+            return _copy_dictionary(
+                cell_faces[face_index],
+                rebuilt_face,
+            )
+
+        def _topology_by_positions(positions):
+            rebuilt_faces = []
+            for face_index in range(len(cell_faces)):
+                rebuilt_face = _current_face(face_index, positions)
+                if not Topology.IsInstance(rebuilt_face, "Face"):
+                    _message(
+                        "Warning",
+                        f"Could not rebuild cell face {face_index} from its ordered "
+                        "boundary loops.",
+                    )
+                    return None
+                rebuilt_faces.append(rebuilt_face)
+
+            try:
+                topology = Cluster.ByTopologies(rebuilt_faces, silent=True)
+            except TypeError:
+                try:
+                    topology = Cluster.ByTopologies(rebuilt_faces)
+                except Exception:
+                    topology = None
+            except Exception:
+                topology = None
+
+            if not Topology.IsInstance(topology, "Topology"):
+                return None
+
+            try:
+                check_faces = Topology.Faces(topology, silent=True) or []
+            except Exception:
+                check_faces = []
+
+            if len(check_faces) != len(cell_faces):
+                _message(
+                    "Warning",
+                    f"The rebuilt topology contains {len(check_faces)} faces instead "
+                    f"of the expected {len(cell_faces)} faces.",
+                )
+                return None
+
+            return topology
+
+        # ------------------------------------------------------------------
+        # Validate inputs.
+        # ------------------------------------------------------------------
+        if not Topology.IsInstance(cell, "Cell"):
+            _message(
+                "Error",
+                "The input cell parameter is not a valid cell. Returning None.",
+            )
+            return None
+
+        if not isinstance(faces, (list, tuple)):
+            _message(
+                "Error",
+                "The input faces parameter is not a valid list. Returning None.",
+            )
+            return None
+
+        limiting_faces = [
+            face for face in faces
+            if Topology.IsInstance(face, "Face")
+        ]
+        if len(limiting_faces) == 0:
+            _message(
+                "Error",
+                "The input faces parameter contains no valid faces. Returning None.",
+            )
+            return None
+
+        try:
+            tolerance = abs(float(tolerance))
+        except Exception:
+            tolerance = 0.0001
+        if tolerance <= 0:
+            tolerance = 0.0001
+
+        try:
+            angTolerance = abs(float(angTolerance))
+        except Exception:
+            angTolerance = 1.0
+        if angTolerance > 90.0:
+            angTolerance = 90.0
+
+        if maxDistance is not None:
+            try:
+                maxDistance = abs(float(maxDistance))
+            except Exception:
+                _message(
+                    "Error",
+                    "The input maxDistance parameter is not a valid number. "
+                    "Returning None.",
+                )
+                return None
+            if maxDistance <= tolerance:
+                _message(
+                    "Error",
+                    "The input maxDistance parameter must be greater than the "
+                    "input tolerance. Returning None.",
+                )
+                return None
+
+
+        # ------------------------------------------------------------------
+        # Extract the original cell topology and determine outward face planes.
+        # ------------------------------------------------------------------
+        cell_faces = Cell.Faces(cell) or []
+        cell_vertices = Topology.Vertices(cell, silent=True) or []
+
+        if len(cell_faces) < 4 or len(cell_vertices) < 4:
+            _message(
+                "Error",
+                "The input cell does not contain enough faces or vertices. "
+                "Returning None.",
+            )
+            return None
+
+        try:
+            internal_vertex = Cell.InternalVertex(
+                cell,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except Exception:
+            internal_vertex = None
+
+        if not Topology.IsInstance(internal_vertex, "Vertex"):
+            _message(
+                "Error",
+                "Could not compute an internal vertex for the input cell. "
+                "Returning None.",
+            )
+            return None
+
+        internal_coordinates = _coordinates(internal_vertex)
+        if internal_coordinates is None:
+            _message(
+                "Error",
+                "Could not retrieve the coordinates of the cell's internal "
+                "vertex. Returning None.",
+            )
+            return None
+
+        original_positions = []
+        for vertex in cell_vertices:
+            position = _coordinates(vertex)
+            if position is None:
+                _message(
+                    "Error",
+                    "Could not retrieve the coordinates of a cell vertex. "
+                    "Returning None.",
+                )
+                return None
+            original_positions.append(position)
+
+        cell_planes = []
+        face_boundaries = []
+        vertex_faces = [[] for _ in cell_vertices]
+
+        for face_index, cell_face in enumerate(cell_faces):
+            try:
+                normal = Face.Normal(
+                    cell_face,
+                    outputType="xyz",
+                    mantissa=max(mantissa, 8),
+                )
+            except Exception:
+                normal = None
+
+            normal = _unit(normal)
+            if normal is None:
+                _message(
+                    "Error",
+                    f"Could not compute a valid normal for cell face "
+                    f"{face_index}. Returning None.",
+                )
+                return None
+
+            face_centroid = Topology.Centroid(cell_face, silent=True)
+            face_point = _coordinates(face_centroid)
+            if face_point is None:
+                _message(
+                    "Error",
+                    f"Could not compute the centroid of cell face "
+                    f"{face_index}. Returning None.",
+                )
+                return None
+
+            # Orient the normal away from the cell interior.
+            if float(np.dot(normal, internal_coordinates - face_point)) > 0.0:
+                normal = -normal
+
+            constant = float(np.dot(normal, face_point))
+
+            external_boundary = Face.ExternalBoundary(
+                cell_face,
+                tolerance=tolerance,
+                silent=True,
+            )
+            internal_boundaries = Face.InternalBoundaries(cell_face) or []
+
+            if not Topology.IsInstance(external_boundary, "Wire"):
+                _message(
+                    "Error",
+                    f"Could not extract the external boundary of cell face "
+                    f"{face_index}. Returning None.",
+                )
+                return None
+
+            boundary_wires = [external_boundary] + internal_boundaries
+            boundary_indices = []
+            current_indices = []
+
+            def ordered_wire_indices(boundary_wire):
+                """Returns a closed wire's vertices in edge-connected order."""
+                try:
+                    wire_edges = Topology.Edges(
+                        boundary_wire,
+                        silent=True,
+                    ) or []
+                except Exception:
+                    wire_edges = []
+
+                if len(wire_edges) < 3:
+                    return None
+
+                edge_pairs = []
+                adjacency = {}
+
+                for edge_index, wire_edge in enumerate(wire_edges):
+                    try:
+                        start_vertex = Edge.StartVertex(
+                            wire_edge,
+                            silent=True,
+                        )
+                    except TypeError:
+                        start_vertex = Edge.StartVertex(wire_edge)
+                    except Exception:
+                        start_vertex = None
+
+                    try:
+                        end_vertex = Edge.EndVertex(
+                            wire_edge,
+                            silent=True,
+                        )
+                    except TypeError:
+                        end_vertex = Edge.EndVertex(wire_edge)
+                    except Exception:
+                        end_vertex = None
+
+                    if (
+                        not Topology.IsInstance(start_vertex, "Vertex")
+                        or not Topology.IsInstance(end_vertex, "Vertex")
+                    ):
+                        return None
+
+                    try:
+                        start_index = Vertex.Index(
+                            start_vertex,
+                            cell_vertices,
+                            tolerance=tolerance,
+                        )
+                        end_index = Vertex.Index(
+                            end_vertex,
+                            cell_vertices,
+                            tolerance=tolerance,
+                        )
+                    except Exception:
+                        return None
+
+                    if (
+                        start_index is None
+                        or end_index is None
+                        or start_index == end_index
+                    ):
+                        return None
+
+                    edge_pairs.append((start_index, end_index))
+                    adjacency.setdefault(start_index, []).append(
+                        (edge_index, end_index)
+                    )
+                    adjacency.setdefault(end_index, []).append(
+                        (edge_index, start_index)
+                    )
+
+                # A simple closed boundary wire must have degree two at every
+                # vertex. This permits collinear subdivision vertices while
+                # rejecting branched or disconnected edge sets.
+                if any(len(records) != 2 for records in adjacency.values()):
+                    return None
+
+                start_index, current_index = edge_pairs[0]
+                ordered = [start_index, current_index]
+                used_edges = {0}
+
+                while len(used_edges) < len(edge_pairs):
+                    candidates = [
+                        (edge_index, next_index)
+                        for edge_index, next_index in adjacency[current_index]
+                        if edge_index not in used_edges
+                    ]
+
+                    if len(candidates) != 1:
+                        return None
+
+                    edge_index, next_index = candidates[0]
+                    used_edges.add(edge_index)
+
+                    if next_index == start_index:
+                        if len(used_edges) != len(edge_pairs):
+                            return None
+                        break
+
+                    if next_index in ordered:
+                        return None
+
+                    ordered.append(next_index)
+                    current_index = next_index
+
+                if len(used_edges) != len(edge_pairs) or len(ordered) < 3:
+                    return None
+
+                return ordered
+
+            for boundary_wire in boundary_wires:
+                loop_indices = ordered_wire_indices(boundary_wire)
+                if not isinstance(loop_indices, list) or len(loop_indices) < 3:
+                    _message(
+                        "Error",
+                        f"Could not traverse a boundary loop of cell face "
+                        f"{face_index} in edge-connected order. Returning None.",
+                    )
+                    return None
+
+                boundary_indices.append(loop_indices)
+
+                for vertex_index in loop_indices:
+                    if vertex_index not in current_indices:
+                        current_indices.append(vertex_index)
+                        vertex_faces[vertex_index].append(face_index)
+
+            if len(current_indices) < 3:
+                _message(
+                    "Error",
+                    f"Cell face {face_index} has fewer than three distinct "
+                    "vertices. Returning None.",
+                )
+                return None
+
+            cell_planes.append({
+                "normal": normal,
+                "constant": constant,
+            })
+            face_boundaries.append({
+                "external": boundary_indices[0],
+                "internal": boundary_indices[1:],
+            })
+
+        # Verify that the cached incidence data can reproduce every original
+        # face before attempting any inflation. This separates input-boundary
+        # traversal failures from failures caused by translated geometry.
+        for face_index in range(len(cell_faces)):
+            test_face = _current_face(face_index, original_positions)
+            if not Topology.IsInstance(test_face, "Face"):
+                _message(
+                    "Error",
+                    f"Could not reconstruct original cell face {face_index} "
+                    "from its edge-connected boundary loop. Returning None.",
+                )
+                return None
+
+        # ------------------------------------------------------------------
+        # Cache limiting-face geometry. No parallelism is required.
+        # ------------------------------------------------------------------
+        limiting_data = []
+        for limiting_index, limiting_face in enumerate(limiting_faces):
+            try:
+                limiting_vertices = Topology.Vertices(
+                    limiting_face,
+                    silent=True,
+                ) or []
+            except Exception:
+                limiting_vertices = []
+
+            positions = []
+            for limiting_vertex in limiting_vertices:
+                position = _coordinates(limiting_vertex)
+                if position is not None:
+                    positions.append(position)
+
+            if len(positions) == 0:
+                centroid = Topology.Centroid(
+                    limiting_face,
+                    silent=True,
+                )
+                position = _coordinates(centroid)
+                if position is not None:
+                    positions.append(position)
+
+            if len(positions) == 0:
+                continue
+
+            try:
+                limiting_normal = Face.Normal(
+                    limiting_face,
+                    outputType="xyz",
+                    mantissa=max(mantissa, 8),
+                )
+            except Exception:
+                limiting_normal = None
+            limiting_normal = _unit(limiting_normal)
+            if limiting_normal is None:
+                continue
+
+            limiting_centroid = Topology.Centroid(
+                limiting_face,
+                silent=True,
+            )
+            limiting_point = _coordinates(limiting_centroid)
+            if limiting_point is None:
+                continue
+
+            limiting_data.append({
+                "index": limiting_index,
+                "face": limiting_face,
+                "positions": positions,
+                "normal": limiting_normal,
+                "constant": float(np.dot(limiting_normal, limiting_point)),
+            })
+
+        if len(limiting_data) == 0:
+            _message(
+                "Error",
+                "Could not extract valid geometry from the limiting faces. "
+                "Returning None.",
+            )
+            return None
+
+        plane_constants = [
+            plane["constant"] for plane in cell_planes
+        ]
+        current_positions = list(original_positions)
+        working_topology = cell
+        matched_faces = 0
+
+        # ------------------------------------------------------------------
+        # Move one supporting plane at a time. After each successful movement,
+        # recompute all vertices and rebuild every face from its ordered boundary
+        # loops before processing the next face.
+        # ------------------------------------------------------------------
+        for face_index, plane in enumerate(cell_planes):
+            normal = plane["normal"]
+            current_constant = plane_constants[face_index]
+
+            source_face = _current_face(
+                face_index,
+                current_positions,
+            )
+            if not Topology.IsInstance(source_face, "Face"):
+                _message(
+                    "Warning",
+                    f"Could not rebuild the current polygon of cell face "
+                    f"{face_index}. Skipping this face.",
+                )
+                continue
+
+            best_distance, best_limiter = _collision_distance(
+                source_face,
+                normal,
+            )
+
+            if best_distance is None:
+                continue
+            if best_distance <= tolerance:
+                if not silent:
+                    _message(
+                        "Information",
+                        f"Cell face {face_index} already collides with limiting "
+                        f"face {best_limiter['index']} and was not moved.",
+                    )
+                continue
+
+            previous_constant = plane_constants[face_index]
+            plane_constants[face_index] = (
+                previous_constant + best_distance
+            )
+
+            solved_positions = _solve_vertices(plane_constants)
+            if solved_positions is None:
+                plane_constants[face_index] = previous_constant
+                _message(
+                    "Warning",
+                    f"Could not move cell face {face_index} without changing "
+                    "the cell topology. This face was left in place.",
+                )
+                continue
+
+            candidate_topology = _topology_by_positions(
+                solved_positions,
+            )
+
+            if not Topology.IsInstance(candidate_topology, "Topology"):
+                plane_constants[face_index] = previous_constant
+                _message(
+                    "Warning",
+                    f"Could not rebuild all cell faces after moving cell face "
+                    f"{face_index}. This face was left in place.",
+                )
+                continue
+
+            current_positions = solved_positions
+            working_topology = candidate_topology
+            matched_faces += 1
+
+            if not silent:
+                _message(
+                    "Information",
+                    f"Moved cell face {face_index} by "
+                    f"{round(best_distance, mantissa)} to limiting face "
+                    f"{best_limiter['index']}.",
+                )
+
+        if matched_faces == 0:
+            _message(
+                "Warning",
+                "No cell faces reached a valid limiting face. Returning the "
+                "input cell.",
+            )
+            return cell
+
+        # Attempt to self-merge only once, after all supporting planes have moved.
+        # Keep the unmerged topology when the result is not a Cell.
+        result_topology = working_topology
+        try:
+            merged_topology = Topology.SelfMerge(
+                working_topology,
+                transferDictionaries=False,
+                tolerance=tolerance,
+                silent=True,
+            )
+        except TypeError:
+            try:
+                merged_topology = Topology.SelfMerge(
+                    working_topology,
+                    tolerance=tolerance,
+                )
+            except Exception:
+                merged_topology = None
+        except Exception:
+            merged_topology = None
+
+        if Topology.IsInstance(merged_topology, "Cell"):
+            result_topology = merged_topology
+            _message(
+                "Information",
+                "The final inflated topology was self-merged into a Cell.",
+            )
+        elif not silent:
+            _message(
+                "Information",
+                "The final inflated topology could not be self-merged into a "
+                "Cell. Returning the rebuilt topology as-is.",
+            )
+
+        # Preserve the input cell dictionary.
+        result_topology = _copy_dictionary(cell, result_topology)
+
+        # Preserve face dictionaries when the rebuilt topology retains the same
+        # face count and order, as expected from Topology.ReplaceVertices.
+        try:
+            result_faces = Topology.Faces(
+                result_topology,
+                silent=True,
+            ) or []
+        except Exception:
+            result_faces = []
+
+        if len(result_faces) == len(cell_faces):
+            for source_face, result_face in zip(cell_faces, result_faces):
+                _copy_dictionary(source_face, result_face)
+
+        _message(
+            "Information",
+            f"Inflated {matched_faces} of {len(cell_faces)} cell faces.",
+        )
+        return result_topology
 
     @staticmethod
     def InternalBoundaries(cell) -> list:
@@ -2834,6 +4208,7 @@ class Cell():
         xOffset = 0
         yOffset = 0
         zOffset = 0
+        
         if placement.lower() == "bottom":
             zOffset = height*0.5
         elif placement.lower() == "top":
@@ -2854,10 +4229,14 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                              originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                              originB=origin,
+                                              dirA=[0, 0, 1],
+                                              dirB=direction,
+                                              transferDictionaries = False,
+                                              tolerance = tolerance,
+                                              silent = silent)
         return return_cell
         
     @staticmethod
@@ -3035,10 +4414,12 @@ class Cell():
         xOffset = 0
         yOffset = 0
         zOffset = 0
-        if placement.lower() == "bottom":
-            zOffset = height*0.5
-        elif placement.lower() == "top":
+        if placement.lower() == "center":
             zOffset = -height*0.5
+        elif placement.lower() == "bottom":
+            zOffset = 0
+        elif placement.lower() == "top":
+            zOffset = -height
         elif placement.lower() == "lowerleft":
             xOffset = width*0.5
             yOffset = length*0.5
@@ -3055,10 +4436,14 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
     
     @staticmethod
@@ -3189,14 +4574,23 @@ class Cell():
             width = Dictionary.ValueAtKey(d, "width")
             length = Dictionary.ValueAtKey(d, "length")
             height = Dictionary.ValueAtKey(d, "height")
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement.lower() == "bottom":
-            hull = Topology.Translate(hull, 0, 0, height*0.5)
+            zOffset = height*0.5
         elif placement.lower() == "lowerleft":
-            hull = Topology.Translate(hull, width*0.5, length*0.5, height*0.5)
-        if direction != [0,0,1]:
-            hull = Topology.Orient(hull, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        if Vertex.Coordinates(origin) != [0,0,0]:
-            hull = Topology.Place(hull, originA=Vertex.Origin(), originB=origin)
+            xOffset = width*0.5
+            yOffset = length*0.5
+            zOffset = height*0.5
+        hull = Topology.OrientAndPlace(hull,
+                                       originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                       originB=origin,
+                                       dirA=[0, 0, 1],
+                                       dirB=direction,
+                                       transferDictionaries = True,
+                                       tolerance = tolerance,
+                                       silent = silent)
         return hull
 
     @staticmethod
@@ -3263,12 +4657,20 @@ class Cell():
                 print("Cell.Octahedron - Error: Could not create the cell. Returning None.")
             return None
         octahedron = Topology.Scale(octahedron, origin=Vertex.Origin(), x=radius/0.5, y=radius/0.5, z=radius/0.5)
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement == "bottom":
-            octahedron = Topology.Translate(octahedron, 0, 0, radius)
+            zOffset = radius
         elif placement == "lowerleft":
-            octahedron = Topology.Translate(octahedron, radius, radius, radius)
-        octahedron = Topology.Orient(octahedron, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        octahedron = Topology.Place(octahedron, originA=Vertex.Origin(), originB=origin)
+            xOffset = yOffset = zOffset = radius
+        octahedron = Topology.OrientAndPlace(octahedron,
+                                             originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                             dirA=[0, 0, 1],
+                                             dirB=direction,
+                                             transferDictionaries = False,
+                                             tolerance = tolerance,
+                                             silent = silent)
         return octahedron
     
     @staticmethod
@@ -3379,22 +4781,29 @@ class Cell():
         min_z = min(z_list)
         max_z = max(z_list)
         mid_z = min_z + (max_z - min_z)/2
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
         if placement.lower() == "center":
-            x_tran = -mid_x
-            y_tran = -mid_y
-            z_tran = -mid_z
+            xOffset = -mid_x
+            yOffset = -mid_y
+            zOffset = -mid_z
         elif placement.lower() == "bottom":
-            x_tran = -mid_x
-            y_tran = -mid_y
-            z_tran = -min_z
+            xOffset = -mid_x
+            yOffset = -mid_y
+            zOffset = -min_z
         elif placement.lower() == "lowerleft":
-            x_tran = -min_x
-            y_tran = -min_y
-            z_tran = -min_z
-        cell = Topology.Translate(cell, x_tran, y_tran, z_tran)
-        cell = Topology.Place(cell, originA=Vertex.Origin(), originB=origin)
-        if not direction == [0,0,1]:
-            cell = Topology.Orient(cell, origin=origin, dirA=[0,0,1], dirB=direction)
+            xOffset = -min_x
+            yOffset = -min_y
+            zOffset = -min_z
+
+        cell = Topology.OrientAndPlace(cell,
+                                       originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                       dirA=[0, 0, 1],
+                                       dirB=direction,
+                                       transferDictionaries = False,
+                                       tolerance = tolerance,
+                                       silent = silent)
         return cell
 
     @staticmethod
@@ -3772,10 +5181,15 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
 
     @staticmethod
@@ -4120,7 +5534,14 @@ class Cell():
         return Cell.Area(cell=cell, mantissa=mantissa)
     
     @staticmethod
-    def Tetrahedron(origin = None, length: float = 1, depth: int = 1, direction=[0,0,1], placement="center", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def Tetrahedron(origin = None,
+                    length: float = 1,
+                    depth: int = 1,
+                    direction=[0,0,1],
+                    placement="center",
+                    mantissa: int = 6,
+                    tolerance: float = 0.0001,
+                    silent: bool = False):
         """
         Creates a recursive tetrahedron cell.
 
@@ -4140,6 +5561,8 @@ class Cell():
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, suppresses warning and error messages. Default is False.
         
         Returns
         -------
@@ -4243,22 +5666,37 @@ class Cell():
         centroid = Topology.Centroid(tetrahedron)
         c_x, c_y, c_z = Vertex.Coordinates(centroid, mantissa=mantissa)
 
+        xOffset = 0
+        yOffset = 0
+        zOffset = 0
+
         if placement.lower() == "center":
-            tetrahedron = Topology.Translate(tetrahedron, -c_x, -c_y, -c_z)
+            xOffset = -c_x
+            yOffset = -c_y
+            zOffset = -c_z
         elif placement.lower() == "bottom":
-            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, 0)
+            xOffset = -c_x
+            yOffset = -c_y
         elif placement.lower() == "upperleft":
-            tetrahedron = Topology.Translate(tetrahedron, 0, 0, -bb_height)
+            zOffset = -bb_height
         elif placement.lower() == "upperright":
-            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, -bb_height)
+            xOffset = -bb_width
+            yOffset = -bb_length
+            zOffset = -bb_height
         elif placement.lower() == "bottomright":
-            tetrahedron = Topology.Translate(tetrahedron, -bb_width, -bb_length, 0)
+            xOffset = -bb_width
+            yOffset = -bb_length
         elif placement.lower() == "top":
-            tetrahedron = Topology.Translate(tetrahedron,-c_x, -c_y, -bb_height)
+            xOffset = -c_x
+            yOffset = -c_y
+            zOffset = -bb_height
         
-        tetrahedron = Topology.Place(tetrahedron, Vertex.Origin(), origin)
-        if not direction == [0,0,1]:
-            tetrahedron = Topology.Orient(tetrahedron, origin=origin, dirA=[0,0,1], dirB=direction)
+        tetrahedron = Topology.OrientAndPlace(tetrahedron,
+                                              originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                              dirB=direction,
+                                              transferDictionaries = False,
+                                              tolerance = tolerance,
+                                              silent = silent)
 
         depth = max(depth, 0)
         if depth == 0:
@@ -4270,7 +5708,15 @@ class Cell():
             return CellComplex.ExternalBoundary(CellComplex.ByCells([tetrahedron]+subdivided_tetrahedra))
 
     @staticmethod
-    def Torus(origin=None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
+    def Torus(origin=None,
+              majorRadius: float = 0.5,
+              minorRadius: float = 0.125,
+              uSides: int = 16,
+              vSides: int = 8,
+              direction: list = [0, 0, 1],
+              placement: str = "center",
+              tolerance: float = 0.0001,
+              silent: bool = False):
         """
         Creates a torus.
 
@@ -4296,6 +5742,8 @@ class Cell():
             Comparison is case-insensitive.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
+        silent : bool, optional
+            If set to True, suppresses warning and error messages. Default is False.
 
         Returns
         -------
@@ -4518,7 +5966,7 @@ class Cell():
         # 4) Rare builds: stitch directly from faces
         if cell is None:
             try:
-                cell = Cell.ByFaces(faces, tolerance)
+                cell = Cell.ByFaces(faces, tolerance, silent=silent)
             except Exception:
                 cell = None
 
@@ -4529,65 +5977,11 @@ class Cell():
 
         # Clean up small topological defects if available
         try:
-            cell = Topology.Clean(cell, tolerance)  # optional: no-op if not available
+            cell = Topology.Clean(cell, tolerance, silent=silent)  # optional: no-op if not available
         except Exception:
             pass
 
         return cell
-
-    @staticmethod
-    def Torus_old(origin= None, majorRadius: float = 0.5, minorRadius: float = 0.125, uSides: int = 16, vSides: int = 8, direction: list = [0, 0, 1], placement: str = "center", tolerance: float = 0.0001):
-        """
-        Creates a torus.
-
-        Parameters
-        ----------
-        origin : topologic_core.Vertex , optional
-            The origin location of the torus. Default is None which results in the torus being placed at (0, 0, 0).
-        majorRadius : float , optional
-            The major radius of the torus. Default is 0.5.
-        minorRadius : float , optional
-            The minor radius of the torus. Default is 0.1.
-        uSides : int , optional
-            The number of sides along the longitude of the torus. Default is 16.
-        vSides : int , optional
-            The number of sides along the latitude of the torus. Default is 8.
-        direction : list , optional
-            The vector representing the up direction of the torus. Default is [0, 0, 1].
-        placement : str , optional
-            The description of the placement of the origin of the torus. This can be "bottom", "center", or "lowerleft". It is case insensitive. Default is "center".
-        tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
-
-        Returns
-        -------
-        topologic_core.Cell
-            The created torus.
-
-        """
-        
-        from topologicpy.Vertex import Vertex
-        from topologicpy.Wire import Wire
-        from topologicpy.Topology import Topology
-        
-        if not Topology.IsInstance(origin, "Vertex"):
-            origin = Vertex.ByCoordinates(0, 0, 0)
-        if not Topology.IsInstance(origin, "Vertex"):
-            print("Cell.Torus - Error: The input origin parameter is not a valid topologic vertex. Returning None.")
-            return None
-        c = Wire.Circle(origin=Vertex.Origin(), radius=minorRadius, sides=vSides, fromAngle=0, toAngle=360, close=False, direction=[0, 1, 0], placement="center")
-        c = Topology.Translate(c, abs(majorRadius-minorRadius), 0, 0)
-        torus = Topology.Spin(c, origin=Vertex.Origin(), triangulate=False, direction=[0, 0, 1], angle=360, sides=uSides, tolerance=tolerance)
-        if Topology.Type(torus) == Topology.TypeID("Shell"):
-            torus = Cell.ByShell(torus)
-        if placement.lower() == "bottom":
-            torus = Topology.Translate(torus, 0, 0, minorRadius)
-        elif placement.lower() == "lowerleft":
-            torus = Topology.Translate(torus, majorRadius, majorRadius, minorRadius)
-
-        torus = Topology.Orient(torus, origin=Vertex.Origin(), dirA=[0, 0, 1], dirB=direction)
-        torus = Topology.Place(torus, originA=Vertex.Origin(), originB=origin)
-        return torus
     
     @staticmethod
     def TShape(origin=None,
@@ -4745,10 +6139,15 @@ class Cell():
             xOffset = -width*0.5
             yOffset = -length*0.5
             zOffset = -height*0.5
-        return_cell = Topology.Translate(return_cell, x=xOffset, y=yOffset, z=zOffset)
-        return_cell = Topology.Place(return_cell, originA=Vertex.Origin(), originB=origin)
-        if direction != [0, 0, 1]:
-            return_cell = Topology.Orient(return_cell, origin=origin, dirA=[0, 0, 1], dirB=direction)
+        
+        return_cell = Topology.OrientAndPlace(return_cell,
+                                           originA=Vertex.ByCoordinates(xOffset, yOffset, zOffset),
+                                           originB=origin,
+                                           dirA=[0, 0, 1],
+                                           dirB=direction,
+                                           transferDictionaries = False,
+                                           tolerance = tolerance,
+                                           silent = silent)
         return return_cell
     
     @staticmethod

@@ -20,7 +20,7 @@ from __future__ import annotations
 TopologicPy Core Facade
 =======================
 
-This module provides a thin, centralised facade over ``topologic_core``.
+This module provides a thin, centralised facade over the active topology kernel backend.
 
 Purpose
 -------
@@ -39,8 +39,17 @@ classes and utility namespaces rather than redefining TopologicPy semantics.
 
 Backend replacement
 -------------------
-The default backend is ``TopologicCoreBackend``. A future backend can be supplied
-with:
+The preferred backend is ``PythonOCCBackend``. If PythonOCC is unavailable,
+Core automatically falls back to ``TopologicCoreBackend``.
+
+The backend can be explicitly selected before the first ``Core.Backend()``
+access using the ``TOPOLOGICPY_CORE_BACKEND`` environment variable:
+
+    TOPOLOGICPY_CORE_BACKEND=pythonocc
+    TOPOLOGICPY_CORE_BACKEND=topologic_core
+    TOPOLOGICPY_CORE_BACKEND=auto
+
+A backend can also be supplied programmatically with:
 
     Core.SetBackend(my_backend)
 
@@ -60,12 +69,48 @@ larger architectural migration.
 import os
 from typing import Any, List, Optional
 
-# Opt-in backend selection. Set the TOPOLOGICPY_CORE_BACKEND environment
-# variable to "pythonocc" before the first Core.Backend() access to use the
-# PythonOCC replacement backend instead of the default topologic_core
-# backend. topologic_core remains the default for existing users; nothing
-# changes unless this variable is explicitly set.
+# Backend selection.
+#
+# By default, Core first attempts to use PythonOCCBackend and falls back to
+# TopologicCoreBackend if PythonOCC is unavailable.
+#
+# The TOPOLOGICPY_CORE_BACKEND environment variable can explicitly select:
+#
+#     "pythonocc"      -> force PythonOCCBackend
+#     "topologic_core" -> force TopologicCoreBackend
+#     "auto"           -> PythonOCCBackend first, then TopologicCoreBackend
+#
+# If the variable is unset or empty, "auto" behaviour is used.
 _BACKEND_ENV_VAR = "TOPOLOGICPY_CORE_BACKEND"
+
+
+def _CreateDefaultBackend() -> Any:
+    """
+    Creates the default Core backend according to the configured backend policy.
+
+    PythonOCCBackend is preferred. TopologicCoreBackend is used as the fallback
+    when automatic backend selection is active and PythonOCC is unavailable.
+    """
+    requested = os.environ.get(_BACKEND_ENV_VAR, "auto").strip().lower()
+
+    if requested in ("", "auto"):
+        try:
+            from topologicpy.pythonocc_backend import PythonOCCBackend
+            return PythonOCCBackend()
+        except ImportError:
+            return TopologicCoreBackend()
+
+    if requested in ("pythonocc", "occ", "python_occ"):
+        from topologicpy.pythonocc_backend import PythonOCCBackend
+        return PythonOCCBackend()
+
+    if requested in ("topologic_core", "topologiccore", "core"):
+        return TopologicCoreBackend()
+
+    raise ValueError(
+        f"Unsupported {_BACKEND_ENV_VAR} value '{requested}'. "
+        "Expected 'auto', 'pythonocc', or 'topologic_core'."
+    )
 
 
 class _MissingNamespace:
@@ -127,7 +172,7 @@ class _NamespaceProxy:
 
 class TopologicCoreBackend:
     """
-    Default backend that exposes the ``topologic_core`` namespaces directly.
+    Fallback backend that exposes the ``topologic_core`` namespaces directly.
 
     This class deliberately mirrors ``topologic_core`` as closely as possible.
     Any missing namespaces are set to ``None`` so that Core can fail gracefully
@@ -202,8 +247,9 @@ class Core:
     """
     Thin facade over the active topology kernel backend.
 
-    The default backend is ``TopologicCoreBackend``. Use ``Core.SetBackend`` to
-    replace it with another backend object that exposes the same namespace shape.
+    The preferred backend is ``PythonOCCBackend``. If PythonOCC is unavailable,
+    Core falls back to ``TopologicCoreBackend``. Use ``Core.SetBackend`` to replace
+    it with another backend object that exposes the same namespace shape.
     """
 
     _backend: Optional[Any] = None
@@ -246,15 +292,15 @@ class Core:
     @staticmethod
     def Backend() -> Any:
         """
-        Returns the active backend. If none has been set, creates the default
-        ``TopologicCoreBackend``.
+        Returns the active backend.
+
+        If no backend has been explicitly set, PythonOCCBackend is attempted
+        first. If PythonOCC is unavailable, TopologicCoreBackend is used as the
+        fallback. The TOPOLOGICPY_CORE_BACKEND environment variable can be used
+        to explicitly select a backend.
         """
         if Core._backend is None:
-            if os.environ.get(_BACKEND_ENV_VAR, "").strip().lower() == "pythonocc":
-                from topologicpy.pythonocc_backend import PythonOCCBackend
-                Core._backend = PythonOCCBackend()
-            else:
-                Core._backend = TopologicCoreBackend()
+            Core._backend = _CreateDefaultBackend()
         return Core._backend
     
     @staticmethod
@@ -307,10 +353,13 @@ class Core:
     @staticmethod
     def ResetBackend() -> Any:
         """
-        Resets the active backend to a new ``TopologicCoreBackend`` instance.
+        Resets the active backend according to the default backend policy.
+
+        PythonOCCBackend is preferred, with TopologicCoreBackend used as the
+        automatic fallback when PythonOCC is unavailable.
         """
-        Core._backend = TopologicCoreBackend()
-        return Core._backend
+        Core._backend = None
+        return Core.Backend()
 
     @staticmethod
     def RawModule() -> Any:
