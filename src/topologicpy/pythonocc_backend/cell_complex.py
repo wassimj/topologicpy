@@ -10,21 +10,28 @@ try:
     from OCC.Core.BOPAlgo import BOPAlgo_CellsBuilder, BOPAlgo_MakerVolume
     from OCC.Core.BRepAlgoAPI import BRepAlgoAPI_Fuse
     from OCC.Core.TopAbs import (
-    TopAbs_VERTEX,
-    TopAbs_EDGE,
-    TopAbs_FACE,
-    TopAbs_SHELL,
-    TopAbs_SOLID,
+        TopAbs_VERTEX,
+        TopAbs_EDGE,
+        TopAbs_FACE,
+        TopAbs_SHELL,
+        TopAbs_SOLID,
     )
     from OCC.Core.TopExp import TopExp_Explorer
     from OCC.Core.TopTools import TopTools_ListOfShape
     from OCC.Core.BRep import BRep_Builder
     from OCC.Core.TopoDS import TopoDS_CompSolid, topods
+
 except Exception:  # pragma: no cover - allows import without PythonOCC
     BOPAlgo_CellsBuilder = None
     BOPAlgo_MakerVolume = None
     BRepAlgoAPI_Fuse = None
-    TopAbs_VERTEX = TopAbs_EDGE, TopAbs_FACE = TopAbs_SHELL = TopAbs_SOLID = None
+
+    TopAbs_VERTEX = None
+    TopAbs_EDGE = None
+    TopAbs_FACE = None
+    TopAbs_SHELL = None
+    TopAbs_SOLID = None
+
     TopExp_Explorer = None
     TopTools_ListOfShape = None
     BRep_Builder = None

@@ -93,16 +93,25 @@ def _CreateDefaultBackend() -> Any:
     """
     requested = os.environ.get(_BACKEND_ENV_VAR, "auto").strip().lower()
 
+    def _pythonocc_backend():
+        try:
+            import OCC  # noqa: F401
+        except ImportError as e:
+            raise ImportError(
+                "PythonOCCBackend was requested, but pythonocc-core is not available."
+            ) from e
+
+        from topologicpy.pythonocc_backend import PythonOCCBackend
+        return PythonOCCBackend()
+
     if requested in ("", "auto"):
         try:
-            from topologicpy.pythonocc_backend import PythonOCCBackend
-            return PythonOCCBackend()
+            return _pythonocc_backend()
         except ImportError:
             return TopologicCoreBackend()
 
     if requested in ("pythonocc", "occ", "python_occ"):
-        from topologicpy.pythonocc_backend import PythonOCCBackend
-        return PythonOCCBackend()
+        return _pythonocc_backend()
 
     if requested in ("topologic_core", "topologiccore", "core"):
         return TopologicCoreBackend()
