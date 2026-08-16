@@ -19,13 +19,6 @@ Dictionary = pytest.importorskip("topologicpy.Dictionary").Dictionary
 
 TOLERANCE = 1e-6
 
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capfd):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    capfd.readouterr()
-    yield
-    capfd.readouterr()
-
 
 def _assert_vertex(vertex):
     assert Topology.IsInstance(vertex, "Vertex")
@@ -197,9 +190,9 @@ def test_are_collinear_handles_true_false_and_duplicate_cases():
     ]
     not_line = line[:2] + [Vertex.ByCoordinates(2, 2, 3)]
 
-    assert bool(Vertex.AreCollinear(line)) is True
-    assert bool(Vertex.AreCollinear(not_line)) is False
-    assert bool(Vertex.AreCollinear(line[:2])) is True
+    assert Vertex.AreCollinear(line) is True
+    assert Vertex.AreCollinear(not_line) is False
+    assert Vertex.AreCollinear(line[:2]) is True
     assert Vertex.AreCollinear("not-a-list") is None
 
 
@@ -237,14 +230,14 @@ def test_ipsilateral_and_same_side_methods(xy_face):
         Vertex.ByCoordinates(2, 2, -1),
     ]
 
-    assert bool(Vertex.AreIpsilateral(positive_side, xy_face)) is True
-    assert bool(Vertex.AreOnSameSide(positive_side, xy_face)) is True
-    assert bool(Vertex.AreIpsilateral(mixed_sides, xy_face)) is False
-    assert bool(Vertex.AreOnSameSide(mixed_sides, xy_face)) is False
+    assert Vertex.AreIpsilateral(positive_side, xy_face) is True
+    assert Vertex.AreOnSameSide(positive_side, xy_face) is True
+    assert Vertex.AreIpsilateral(mixed_sides, xy_face) is False
+    assert Vertex.AreOnSameSide(mixed_sides, xy_face) is False
 
     cluster = Cluster.ByTopologies(positive_side)
-    assert bool(Vertex.AreIpsilateralCluster(cluster, xy_face)) is True
-    assert bool(Vertex.AreOnSameSideCluster(cluster, xy_face)) is True
+    assert Vertex.AreIpsilateralCluster(cluster, xy_face) is True
+    assert Vertex.AreOnSameSideCluster(cluster, xy_face) is True
 
 
 def test_distance_and_quadrance_to_vertex_and_edge():
@@ -332,8 +325,8 @@ def test_is_internal_2d_accepts_single_vertex_and_vertex_lists():
     inside = Vertex.ByCoordinates(1, 1, 0)
     outside = Vertex.ByCoordinates(20, 20, 0)
 
-    assert bool(Vertex.IsInternal2D(inside, face, includeBoundary=True, silent=True)) is True
-    assert bool(Vertex.IsInternal2D(outside, face, includeBoundary=True, silent=True)) is False
+    assert Vertex.IsInternal2D(inside, face, includeBoundary=True, silent=True) is True
+    assert Vertex.IsInternal2D(outside, face, includeBoundary=True, silent=True) is False
     assert Vertex.IsInternal2D([inside, outside], face, includeBoundary=True, silent=True) == [True, False]
     # TODO: Add includeBoundary=False assertions after confirming the precise
     # rectangle boundary coordinates for the canonical fixture face.

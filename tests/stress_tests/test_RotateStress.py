@@ -4,7 +4,6 @@ import random
 
 import pytest
 
-from topologicpy.Core import Core
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -274,7 +273,7 @@ def _random_case(rng):
     axis = _random_axis(rng)
 
     # Stay outside the public angTolerance no-op region so every case actually
-    # exercises the PythonOCC rotation backend.
+    # exercises the active backend rotation implementation.
     while True:
         angle = rng.uniform(-1440.0, 1440.0)
         if abs(angle) >= 0.01:
@@ -339,15 +338,6 @@ def _exercise_rotation(topology, origin_xyz, axis, angle, label):
     assert _counts(restored) == original_counts
     _assert_point_sets_close(original_points, _points(restored), tolerance=2.0e-6)
 
-
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_RotateStress.py must be run with the PythonOCC backend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
 
 
 @pytest.mark.parametrize("factory_name", list(FACTORIES))
@@ -416,7 +406,7 @@ def test_rotate_random_stress(factory_name):
 
 
 def test_rotate_repeated_full_revolution_cellcomplex():
-    """Exercise 360 consecutive native PythonOCC rotations on a shared-topology model."""
+    """Exercise 360 consecutive rotations on a shared-topology model."""
     topology = _cellcomplex()
     original_type = Topology.TypeAsString(topology)
     original_counts = _counts(topology)

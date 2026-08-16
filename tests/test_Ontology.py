@@ -329,7 +329,6 @@ def test_plain_dictionary_annotation_setters_and_validation_signature():
 
     Ontology.SetLabel(topology, "Room 101", silent=True)
     Ontology.SetURI(topology, "room-101", silent=True)
-    Ontology._set_value(topology, "source", "ifc", silent=True)
     assert Ontology.Class(topology) == "top:Room"
     assert Ontology.Category(topology) == "space"
     assert Ontology.Label(topology) == "Room 101"
@@ -427,11 +426,6 @@ def test_property_literals_resource_objects_and_turtle_serialization():
     assert Ontology.PropertyQName("generated_by") == "top:generatedByMethod"
     assert Ontology.PropertyQName("hasStartVertex") == "top:startsAt"
     assert Ontology.PropertyQName("ifc:globalId") == "ifc:globalId"
-    assert Ontology._rdf_literal(True) == '"true"^^xsd:boolean'
-    assert Ontology._rdf_literal(7) == '"7"^^xsd:integer'
-    assert Ontology._rdf_literal(3.5) == '"3.5"^^xsd:double'
-    assert Ontology._triple_object("top:startsAt", "inst:v1") == "inst:v1"
-    assert Ontology._triple_object("top:label", "inst:v1") == '"inst:v1"'
 
     ttl = Ontology.TurtleFromTriples(
         [
@@ -513,22 +507,6 @@ def test_validate_graph_reports_unresolved_tgraph_edge_endpoints():
     assert any("Could not resolve edge" in error for error in report["errors"])
 
 
-def test_record_helpers_coordinates_and_tgraph_dictionary_mutation():
-    Ontology = _ontology()
-    TGraph = _fake_tgraph_class()
-    record = {"index": 5, "dictionary": {"x": "1", "y": "2", "z": "3", "label": "R"}}
-    assert Ontology._record_dictionary(record) == {"x": "1", "y": "2", "z": "3", "label": "R"}
-    assert Ontology._record_coordinates(record) == [1.0, 2.0, 3.0]
-    assert Ontology._as_list((1, 2)) == [1, 2]
-    assert Ontology._safe_string('a"b\n') == 'a\\"b\\n'
-    assert Ontology._safe_local_name("12 bad/name") == "id_12_bad_name"
-    assert Ontology._is_number(1.2) is True
-    assert Ontology._is_number(True) is False
-
-    graph = TGraph(dictionary=None)
-    result = Ontology.SetLabel(graph, "Graph", silent=True)
-    assert result is graph
-    assert graph.dictionary["label"] == "Graph"
 
 
 def test_annotate_subtopologies_uses_fake_topology_extractors():

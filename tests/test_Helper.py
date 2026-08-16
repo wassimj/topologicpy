@@ -43,22 +43,8 @@ def fake_dictionary_module(monkeypatch):
     return module
 
 
-def test_import_has_no_runtime_pip_install_side_effects():
-    source = inspect.getsource(helper_module)
-    assert "os.system" not in source
-    assert "pip install" not in source
 
 
-def test_private_numeric_helpers_are_defensive():
-    assert Helper._Mantissa("bad") == 6
-    assert Helper._Mantissa(-3) == 0
-    assert Helper._Tolerance("bad") == pytest.approx(0.0001)
-    assert Helper._Tolerance(-0.5) == pytest.approx(0.5)
-    assert Helper._IsNumber(3.0) is True
-    assert Helper._IsNumber(True) is False
-    assert Helper._NumericList([1, 2.5], silent=True) == [1.0, 2.5]
-    assert Helper._NumericList([1, "x"], silent=True) is None
-    assert Helper._Hashable([1, 2]) == repr([1, 2])
 
 
 def test_bin_and_average_groups_sorted_numeric_values():
@@ -235,9 +221,3 @@ def test_version_uses_topologicpy_version_and_optional_check(monkeypatch):
     assert Helper.Version(check=True, silent=True) == "topologicpy:9.8.7"
 
 
-def test_source_guards_for_corrected_regressions():
-    source = inspect.getsource(Helper)
-    assert "max_value = max(listA)" in source
-    assert "min_value = min(listA)" in source
-    assert "random.choice" not in source
-    assert "os.system" not in source

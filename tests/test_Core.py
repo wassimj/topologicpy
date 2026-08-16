@@ -1,8 +1,7 @@
 """Unit tests for topologicpy.Core.
 
 These tests deliberately use lightweight fake backends.  They verify the facade
-logic without depending on the real topologic_core runtime or on geometric side
-effects.
+logic against lightweight fake backends where appropriate, without depending on geometric side effects.
 """
 
 from __future__ import annotations
@@ -13,17 +12,14 @@ import pytest
 
 core_module = pytest.importorskip("topologicpy.Core")
 Core = core_module.Core
-_NamespaceProxy = core_module._NamespaceProxy
-_MissingNamespace = core_module._MissingNamespace
-
 
 @pytest.fixture(autouse=True)
 def _restore_backend_and_suppress_output(capfd):
     """Restore the active backend after each test and suppress expected diagnostics."""
-    previous_backend = Core._backend
+    previous_backend = Core.Backend()
     capfd.readouterr()
     yield
-    Core._backend = previous_backend
+    Core.SetBackend(previous_backend)
     capfd.readouterr()
 
 
@@ -107,24 +103,8 @@ def test_namespace_proxy_can_call_callable_namespace():
     }
 
 
-def test_missing_namespace_proxy_reports_clear_errors():
-    Core.SetBackend(FakeBackend())
-
-    assert isinstance(Core.Edge._namespace(), _MissingNamespace)
-    assert "Missing Core namespace" in repr(Core.Edge._namespace())
-
-    with pytest.raises(AttributeError, match="does not expose namespace 'Edge'"):
-        Core.Edge.ByStartVertexEndVertex
-
-    with pytest.raises(TypeError, match="Core.Edge is not callable"):
-        Core.Edge()
 
 
-def test_namespace_proxy_metadata_and_repr():
-    proxy = _NamespaceProxy("Vertex")
-
-    assert proxy.NamespaceName == "Vertex"
-    assert "Vertex" in repr(proxy)
 
 
 def test_set_backend_rejects_none():

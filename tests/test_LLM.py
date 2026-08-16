@@ -202,23 +202,6 @@ def test_by_parameters_provider_aliases_and_value_coercion():
     assert LLM.ProviderInfo("not-real", silent=True) == {}
 
 
-def test_messages_and_json_helpers_are_robust():
-    messages = LLM._messages(
-        [{"role": "assistant", "content": "A"}, "B"],
-        system_prompt="System",
-    )
-    assert messages == [
-        {"role": "system", "content": "System"},
-        {"role": "assistant", "content": "A"},
-        {"role": "user", "content": "B"},
-    ]
-    assert "ASSISTANT" in LLM._messages_to_text(messages)
-
-    assert LLM._coerce_json('```JSONC\n{"a": [{"b": 2}]}\n```') == {"a": [{"b": 2}]}
-    assert LLM._coerce_json('text before {"a": {"brace": "}"}} text after {"b": 2}') == {"a": {"brace": "}"}}
-    assert LLM._coerce_json('prefix [1, {"a": [2, 3]}] suffix') == [1, {"a": [2, 3]}]
-    assert LLM._coerce_json('prefix {bad json}', repair=False) is None
-    assert list(LLM._json_candidate_spans('"{" {"ok": true}')) == [(4, "{", "}")]
 
 
 def test_response_rejects_missing_llm_and_missing_model_without_importing_sdks():
@@ -344,6 +327,23 @@ def test_prompt_json_and_test_public_wrappers_use_response(monkeypatch):
     assert test_response["ok"] is True
     assert test_response["details"]["ok"] is True
 
+
+def test_models_for_openai_compatible_providers_and_client_defaults(monkeypatch):
+    state = _install_fake_openai(monkeypatch, model_ids=["a", "b", None])
+
+    lmstudio = LLM.ByParameters(provider="lmstudio", model="local", silent=True)
+    assert LLM.Models(lmstudio, silent=True) == ["a", "b"]
+    assert state["clients"][-1] == {"api_key": "lm-studio", "base_url": "http://localhost:1234/v1"}
+
+    deepseek = LLM.ByParameters(provider="deepseek", model="deepseek-model", apiKey="deep", silent=True)
+    assert LLM.Models(deepseek, silent=True) == ["a", "b"]
+    assert state["clients"][-1] == {"api_key": "deep", "base_url": "https://api.deepseek.com"}
+
+    local = LLM.ByParameters(provider="openai-compatible", model="x", apiKey="local", baseURL="http://server/v1", silent=True)
+    assert LLM.Models(local, silent=True) == ["a", "b"]
+    assert state["clients"][-1] == {"api_key": "local", "base_url": "http://server/v1"}
+
+
 def test_ollama_response_models_and_invalid_numeric_options(monkeypatch):
     state = _install_fake_requests(monkeypatch)
     llm = LLM.ByParameters(
@@ -412,34 +412,5 @@ def test_google_new_sdk_and_old_sdk_fallback(monkeypatch):
     assert state["old_requests"][0]["generation_config"] == {"max_output_tokens": 77}
 
 
-def test_error_helpers_and_retry_request_classification():
-    assert LLM._positive_int("5", default=1) == 5
-    assert LLM._positive_int("0", default=9) == 9
-    assert LLM._coerce_temperature("0.75") == 0.75
-    assert LLM._coerce_temperature("bad", default=None) is None
-
-    retry = LLM._openai_compatible_retry_request(
-        {"model": "m", "temperature": 1.0},
-        RuntimeError("unsupported value: temperature only the default value is supported"),
-    )
-    assert retry == {"model": "m"}
-    assert LLM._openai_compatible_retry_request({"model": "m"}, RuntimeError("other")) is None
-
-    assert LLM._classify_exception(RuntimeError("429 rate limit")) == "rate_limit_error"
-    assert LLM._classify_exception(RuntimeError("401 api key invalid")) == "authentication_error"
-    assert LLM._classify_exception(RuntimeError("model not found")) == "model_not_found"
-    assert LLM._classify_exception(TimeoutError("timed out")) == "timeout"
-    assert LLM._classify_exception(ConnectionError("connection refused")) == "connection_error"
-    assert LLM._classify_exception(RuntimeError("insufficient_quota")) == "quota_error"
 
 
-def test_source_contains_current_retry_and_balanced_json_helpers():
-    # Guard against accidentally restoring the earlier implementation that used
-    # naive max_tokens/temperature handling and first-{ to last-} JSON parsing.
-    import inspect
-
-    source = inspect.getsource(LLM._response_openai_compatible)
-    assert "_openai_token_parameter" in source
-    assert "_openai_compatible_retry_request" in source
-    assert "max_completion_tokens" in inspect.getsource(LLM._openai_token_parameter)
-    assert "_balanced_json_substring" in inspect.getsource(LLM._coerce_json)

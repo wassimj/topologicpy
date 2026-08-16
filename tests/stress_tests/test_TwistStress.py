@@ -4,7 +4,6 @@ import random
 
 import pytest
 
-from topologicpy.Core import Core
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -339,15 +338,6 @@ TRIANGULATED_FACTORIES = {
 }
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_TwistStress.py must be run with the PythonOCC backend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
-
 
 @pytest.mark.parametrize("factory_name", list(DIRECT_FACTORIES))
 @pytest.mark.parametrize(
@@ -637,11 +627,11 @@ def test_twist_default_origin_matches_centroid_oracle():
         _cell,
     ],
 )
-def test_nontriangulated_warped_topology_is_not_coerced_by_pythonocc(factory):
+def test_nontriangulated_warped_topology_is_not_coerced(factory):
     """
     A Z-varying twist can turn originally planar quadrilateral boundaries into
-    warped polygons. PythonOCC must not be rescued by Topology.Fix into a
-    fabricated topology. A native failure or a naturally valid result is
+    warped polygons. The operation must not fabricate an invalid topology.
+    A backend failure or a naturally valid result is
     acceptable; if a result is returned, it must contain the exact transformed
     vertices predicted by the twist mapping.
     """

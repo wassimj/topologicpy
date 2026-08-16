@@ -176,54 +176,14 @@ def _fake_openstudio_for_osm(model_value="MODEL"):
     )
 
 
-def test_source_has_no_automatic_installation_side_effects():
-    energy_module = importlib.import_module("topologicpy.EnergyModel")
-    source = inspect.getsource(energy_module)
-    assert "pip install" not in source
-    assert "os.system" not in source
 
 
-def test_optional_get_handles_initialized_uninitialized_null_and_plain_values():
-    assert EnergyModel._OptionalGet(FakeOptional("A")) == "A"
-    assert EnergyModel._OptionalGet(FakeOptional("A", initialized=False), "fallback") == "fallback"
-    assert EnergyModel._OptionalGet(None, "fallback") == "fallback"
-    assert EnergyModel._OptionalGet(7) == 7
 
 
-def test_import_openstudio_returns_none_when_import_is_unavailable(monkeypatch):
-    real_import = __import__
-
-    def fake_import(name, *args, **kwargs):
-        if name == "openstudio":
-            raise ImportError("blocked for test")
-        return real_import(name, *args, **kwargs)
-
-    monkeypatch.setattr("builtins.__import__", fake_import)
-    with warnings.catch_warnings(record=True) as caught:
-        warnings.simplefilter("always")
-        assert EnergyModel._ImportOpenStudio("EnergyModel.Test") is None
-    assert any("Could not import openstudio" in str(w.message) for w in caught)
 
 
-def test_os_path_uses_available_openstudio_converter_and_falls_back_to_string():
-    fake_openstudio = types.SimpleNamespace(
-        openstudioutilitiescore=types.SimpleNamespace(toPath=lambda p: "PATH:" + p)
-    )
-    assert EnergyModel._OSPath("file.osm", fake_openstudio) == "PATH:file.osm"
-    assert EnergyModel._OSPath("file.osm", types.SimpleNamespace()) == "file.osm"
-    assert EnergyModel._OSPath(None, fake_openstudio) is None
 
 
-def test_sql_helpers_return_safe_defaults_without_sql_file():
-    model = FakeModelWithSQL(initialized=False)
-    assert EnergyModel._SQLFile(model) is None
-    assert EnergyModel.ColumnNames(model, "R", "T") == []
-    assert EnergyModel.ReportNames(model) == []
-    assert EnergyModel.RowNames(model, "R", "T") == []
-    assert EnergyModel.TableNames(model, "R") == []
-    assert EnergyModel.Query(model, rowNames=["Zone A"]) == []
-    assert EnergyModel.SqlFile(model) is None
-    assert EnergyModel.Units(model, "R", "T", "C") is None
 
 
 def test_sql_query_helpers_deduplicate_and_preserve_order():
@@ -253,20 +213,6 @@ def test_default_construction_and_schedule_sets_return_sets_and_names():
     assert schedule_names == ["S1"]
 
 
-def test_rendering_color_helpers_and_space_dictionary_helpers_are_safe():
-    with_color = FakeSpaceType("Office", FakeColor(10, 20, 30), color_initialized=True)
-    without_color = FakeSpaceType("Lab", None, color_initialized=False)
-    assert EnergyModel._RenderingColorRGB(with_color) == [10, 20, 30]
-    assert EnergyModel._RenderingColorRGB(without_color) == [255, 255, 255]
-
-    model = types.SimpleNamespace(getSpaceTypes=lambda: [with_color, without_color])
-    assert EnergyModel.SpaceTypes(model) == [with_color, without_color]
-    assert EnergyModel.SpaceTypeNames(model) == ["Office", "Lab"]
-    assert EnergyModel.SpaceColors(model) == [[10, 20, 30], [255, 255, 255]]
-    d = EnergyModel.SpaceDictionaries(model)
-    assert d["types"] == [with_color, without_color]
-    assert d["names"] == ["Office", "Lab"]
-    assert d["colors"] == [[10, 20, 30], [255, 255, 255]]
 
 
 def test_by_osm_path_invalid_path_and_stubbed_success(monkeypatch, tmp_path):

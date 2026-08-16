@@ -76,14 +76,6 @@ def _coords(vertex):
     return [round(float(c), 6) for c in Vertex.Coordinates(vertex)]
 
 
-def test_graph_module_contains_no_active_os_system_calls():
-    source = inspect.getsource(Graph)
-    tree = ast.parse(source)
-
-    for node in ast.walk(tree):
-        if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute):
-            if isinstance(node.func.value, ast.Name):
-                assert not (node.func.value.id == "os" and node.func.attr == "system")
 
 
 def test_invalid_inputs_return_none_or_original_without_exceptions():
@@ -133,9 +125,65 @@ def test_adjacency_matrix_can_be_directional():
 def test_adjacency_matrix_edge_index_and_length_modes():
     graph, _, _ = _chain_graph()
 
-    by_length = Graph.AdjacencyMatrix(graph, useEdgeLength=True, mantissa=6)
-    assert by_length[0][1] == pytest.approx(1.0)
-    assert by_length[1][2] == pytest.approx(1.0)
+    edges = Graph.Edges(
+        graph
+    )
+
+    assert isinstance(
+        edges,
+        list
+    )
+
+    assert len(edges) == 2
+
+    expected_indices = {}
+
+    for i, edge in enumerate(
+        edges,
+        start=1
+    ):
+        d = _python_dict(
+            edge
+        )
+
+        src = d.get(
+            "src"
+        )
+
+        dst = d.get(
+            "dst"
+        )
+
+        expected_indices[
+            (src, dst)
+        ] = i
+
+    by_index = Graph.AdjacencyMatrix(
+        graph,
+        useEdgeIndex=True
+    )
+
+    assert by_index[0][1] == expected_indices[
+        (0, 1)
+    ]
+
+    assert by_index[1][2] == expected_indices[
+        (1, 2)
+    ]
+
+    by_length = Graph.AdjacencyMatrix(
+        graph,
+        useEdgeLength=True,
+        mantissa=6
+    )
+
+    assert by_length[0][1] == pytest.approx(
+        1.0
+    )
+
+    assert by_length[1][2] == pytest.approx(
+        1.0
+    )
 
 
 def test_adjacency_list_and_dictionary_for_chain():

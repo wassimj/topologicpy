@@ -260,13 +260,6 @@ def test_operation_titles_and_lookup_are_case_insensitive(sg):
     assert sg.OperationByTitle("") is None
 
 
-def test_matrix_validation_accepts_numeric_tuples_and_rejects_bad_values(sg):
-    tuple_matrix = ((1, "0", 0, 0), (0, 1, 0, 0), (0, 0, 1, 0), (0, 0, 0, 1))
-    assert sg._is_4x4_matrix(tuple_matrix)
-    copied = sg._copy_matrix(tuple_matrix)
-    assert copied == [[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]]
-    assert not sg._is_4x4_matrix([[1, 0], [0, 1]])
-    assert not sg._is_4x4_matrix([[1, 0, 0, 0], [0, "bad", 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]])
 
 
 def test_add_rule_default_replace_and_validation_paths(sg, fake_topologicpy):

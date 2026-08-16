@@ -1071,13 +1071,33 @@ class Topology():
                     except:
                         error = True
             elif topologyType.lower() == "wire":
-                try:
-                    _ = Core.WireUtility.AdjacentWires(topology, hostTopology, adjacentTopologies)
-                except:
-                    try:
-                        _ = Core.InstanceCall(topology, "Wires", hostTopology, adjacentTopologies)
-                    except:
-                        error = True
+                edges = Topology.Edges(topology, silent=True)
+                if not isinstance(edges, list):
+                    error = True
+                else:
+                    for edge in edges:
+                        candidates = Topology.SuperTopologies(
+                            edge,
+                            hostTopology=hostTopology,
+                            topologyType="wire",
+                            silent=True,
+                        )
+                        if not isinstance(candidates, list):
+                            continue
+
+                        for candidate in candidates:
+                            # Exclude the input wire itself.
+                            if Topology.IsSame(candidate, topology, silent=True):
+                                continue
+
+                            # Avoid duplicates.
+                            if any(
+                                Topology.IsSame(candidate, existing, silent=True)
+                                for existing in adjacentTopologies
+                            ):
+                                continue
+
+                            adjacentTopologies.append(candidate)
             elif topologyType.lower() == "face":
                 try:
                     _ = Core.WireUtility.AdjacentFaces(topology, hostTopology, adjacentTopologies)
@@ -15344,14 +15364,13 @@ class Topology():
         """
         Returns the shortest Euclidean distance between two topologies.
 
-        If the active backend provides a native distance operation, that
-        operation is trusted. A failure of a non-TopologicCore native distance
-        operation is returned as None rather than being concealed by another
-        geometric algorithm.
+        For backends other than TopologicCore, a native backend distance
+        implementation is used when available.
 
-        The legacy Intersect -> ShortestEdge -> Edge.Length method is retained
-        when the active backend does not provide a native distance capability,
-        and as a compatibility fallback for TopologicCore.
+        For TopologicCore, and for backends without a native distance operation,
+        the distance is calculated using backend-independent geometric primitives.
+        The compatibility calculation supports vertices, edges, faces with holes,
+        shells, cells, cell complexes, and clusters.
 
         Parameters
         ----------
@@ -15363,7 +15382,8 @@ class Topology():
             Number of decimal places to which the distance is rounded.
             Default is 6.
         tolerance : float , optional
-            The desired tolerance. Default is 0.0001.
+            The desired tolerance. Distances less than or equal to this value
+            are returned as zero. Default is 0.0001.
         silent : bool , optional
             If set to True, error and warning messages are suppressed.
             Default is False.
@@ -15376,211 +15396,1032 @@ class Topology():
         """
         import math
 
+        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
+        from topologicpy.Wire import Wire
+        from topologicpy.Face import Face
 
         # ------------------------------------------------------------------
-        # Validate inputs.
+        # Validation
         # ------------------------------------------------------------------
 
-        if not Topology.IsInstance(
-            topologyA,
-            "Topology"
-        ):
+        if not Topology.IsInstance(topologyA, "Topology"):
             if not silent:
                 print(
-                    "Topology.ShortestDistance - Error: "
-                    "The input topologyA parameter is not a valid topology. "
-                    "Returning None."
+                    "Topology.ShortestDistance - Error: The input topologyA "
+                    "parameter is not a valid topology. Returning None."
                 )
             return None
 
-        if not Topology.IsInstance(
-            topologyB,
-            "Topology"
-        ):
+        if not Topology.IsInstance(topologyB, "Topology"):
             if not silent:
                 print(
-                    "Topology.ShortestDistance - Error: "
-                    "The input topologyB parameter is not a valid topology. "
-                    "Returning None."
-                )
-            return None
-
-        # ------------------------------------------------------------------
-        # Native backend distance.
-        # ------------------------------------------------------------------
-
-        has_native_distance = Core.HasAttribute(
-            "TopologyUtility",
-            "Distance"
-        )
-
-        if has_native_distance:
-
-            native_failed = False
-
-            try:
-                d = Core.TopologyUtility.Distance(
-                    topologyA,
-                    topologyB,
-                    tolerance
-                )
-
-            except Exception as error:
-
-                native_failed = True
-                d = None
-
-                if (
-                    not Topology._IsTopologicCoreBackend()
-                    and not silent
-                ):
-                    print(
-                        "Topology.ShortestDistance - Error: The active backend "
-                        "distance operation failed. Returning None."
-                    )
-                    print(
-                        "Error:",
-                        error
-                    )
-
-            # --------------------------------------------------------------
-            # Validate native result.
-            # --------------------------------------------------------------
-
-            if not native_failed:
-
-                if d is None:
-                    native_failed = True
-
-                else:
-                    try:
-                        d = float(
-                            d
-                        )
-                    except Exception:
-                        native_failed = True
-
-                if not native_failed:
-
-                    if not math.isfinite(
-                        d
-                    ):
-                        native_failed = True
-
-                    elif d < -abs(
-                        float(tolerance)
-                    ):
-                        native_failed = True
-
-            # --------------------------------------------------------------
-            # Valid native result.
-            # --------------------------------------------------------------
-
-            if not native_failed:
-
-                if abs(d) <= tolerance:
-                    d = 0.0
-
-                return round(
-                    d,
-                    mantissa
-                )
-
-            # --------------------------------------------------------------
-            # Non-TopologicCore backends must expose native failure.
-            #
-            # Do not silently replace BRepExtrema or another backend-native
-            # distance operation with a different public algorithm.
-            # --------------------------------------------------------------
-
-            if not Topology._IsTopologicCoreBackend():
-
-                if not silent and d is None:
-                    print(
-                        "Topology.ShortestDistance - Error: The active backend "
-                        "could not compute the distance. Returning None."
-                    )
-
-                return None
-
-            # TopologicCore falls through to its historical compatibility
-            # algorithm below.
-
-        # ------------------------------------------------------------------
-        # Generic / legacy fallback.
-        #
-        # This is appropriate only when:
-        #
-        # 1. the backend does not provide Distance at all, or
-        # 2. TopologicCore's native distance operation failed.
-        # ------------------------------------------------------------------
-
-        inter = Topology.Intersect(
-            topologyA,
-            topologyB,
-            tolerance=tolerance,
-            silent=True
-        )
-
-        if Topology.IsInstance(
-            inter,
-            "Topology"
-        ):
-            return 0.0
-
-        edge = Topology.ShortestEdge(
-            topologyA,
-            topologyB,
-            tolerance=tolerance,
-            silent=True
-        )
-
-        if not Topology.IsInstance(
-            edge,
-            "Edge"
-        ):
-            if not silent:
-                print(
-                    "Topology.ShortestDistance - Error: "
-                    "Could not compute the shortest distance. Returning None."
-                )
-            return None
-
-        d = Edge.Length(
-            edge
-        )
-
-        if d is None:
-            if not silent:
-                print(
-                    "Topology.ShortestDistance - Error: "
-                    "Could not compute the shortest distance. Returning None."
+                    "Topology.ShortestDistance - Error: The input topologyB "
+                    "parameter is not a valid topology. Returning None."
                 )
             return None
 
         try:
-            d = float(
-                d
+            mantissa = int(mantissa)
+            tolerance = abs(float(tolerance))
+        except Exception:
+            if not silent:
+                print(
+                    "Topology.ShortestDistance - Error: Invalid mantissa or "
+                    "tolerance parameter. Returning None."
+                )
+            return None
+
+        # ------------------------------------------------------------------
+        # Native backend path
+        #
+        # PythonOCC and other replacement backends are allowed to use their
+        # native distance implementation. TopologicCore deliberately bypasses
+        # its native Distance function because it can return finite but
+        # geometrically incorrect values for several topology combinations.
+        # ------------------------------------------------------------------
+
+        is_topologic_core = Topology._IsTopologicCoreBackend()
+
+        try:
+            has_native_distance = Core.HasAttribute(
+                "TopologyUtility",
+                "Distance"
             )
         except Exception:
-            return None
+            has_native_distance = False
 
-        if not math.isfinite(
-            d
+        if has_native_distance and not is_topologic_core:
+            try:
+                distance = Core.TopologyUtility.Distance(
+                    topologyA,
+                    topologyB,
+                    tolerance
+                )
+            except Exception as error:
+                if not silent:
+                    print(
+                        "Topology.ShortestDistance - Error: The active backend "
+                        "distance operation failed. Returning None."
+                    )
+                    print("Error:", error)
+                return None
+
+            if distance is None:
+                if not silent:
+                    print(
+                        "Topology.ShortestDistance - Error: The active backend "
+                        "could not compute the distance. Returning None."
+                    )
+                return None
+
+            try:
+                distance = float(distance)
+            except Exception:
+                if not silent:
+                    print(
+                        "Topology.ShortestDistance - Error: The active backend "
+                        "returned an invalid distance. Returning None."
+                    )
+                return None
+
+            if not math.isfinite(distance):
+                return None
+
+            if distance < -tolerance:
+                return None
+
+            if abs(distance) <= tolerance:
+                distance = 0.0
+
+            return round(distance, mantissa)
+
+        # ------------------------------------------------------------------
+        # Backend-independent geometry helpers
+        # ------------------------------------------------------------------
+
+        tolerance2 = tolerance * tolerance
+
+        def coordinates(vertex):
+            return [
+                float(Vertex.X(vertex)),
+                float(Vertex.Y(vertex)),
+                float(Vertex.Z(vertex)),
+            ]
+
+        def add(a, b):
+            return [
+                a[0] + b[0],
+                a[1] + b[1],
+                a[2] + b[2],
+            ]
+
+        def subtract(a, b):
+            return [
+                a[0] - b[0],
+                a[1] - b[1],
+                a[2] - b[2],
+            ]
+
+        def scale(a, factor):
+            return [
+                a[0] * factor,
+                a[1] * factor,
+                a[2] * factor,
+            ]
+
+        def dot(a, b):
+            return (
+                a[0] * b[0]
+                + a[1] * b[1]
+                + a[2] * b[2]
+            )
+
+        def cross(a, b):
+            return [
+                a[1] * b[2] - a[2] * b[1],
+                a[2] * b[0] - a[0] * b[2],
+                a[0] * b[1] - a[1] * b[0],
+            ]
+
+        def length_squared(a):
+            return dot(a, a)
+
+        def normalize(a):
+            magnitude2 = length_squared(a)
+
+            if magnitude2 <= tolerance2:
+                return None
+
+            inverse = 1.0 / math.sqrt(magnitude2)
+
+            return scale(a, inverse)
+
+        # ------------------------------------------------------------------
+        # Point-segment distance
+        # ------------------------------------------------------------------
+
+        def point_segment_distance_squared(point, start, end):
+            direction = subtract(end, start)
+            denominator = length_squared(direction)
+
+            if denominator <= tolerance2:
+                difference = subtract(point, start)
+                return length_squared(difference)
+
+            parameter = dot(
+                subtract(point, start),
+                direction
+            ) / denominator
+
+            parameter = max(
+                0.0,
+                min(1.0, parameter)
+            )
+
+            closest = add(
+                start,
+                scale(direction, parameter)
+            )
+
+            difference = subtract(
+                point,
+                closest
+            )
+
+            return length_squared(difference)
+
+        # ------------------------------------------------------------------
+        # Segment-segment distance
+        #
+        # Robust finite-segment algorithm. Both parameters are clamped after
+        # considering the interaction between the two segments.
+        # ------------------------------------------------------------------
+
+        def segment_segment_distance_squared(a0, a1, b0, b1):
+            u = subtract(a1, a0)
+            v = subtract(b1, b0)
+            w = subtract(a0, b0)
+
+            a = dot(u, u)
+            b = dot(u, v)
+            c = dot(v, v)
+            d = dot(u, w)
+            e = dot(v, w)
+
+            if a <= tolerance2 and c <= tolerance2:
+                return length_squared(
+                    subtract(a0, b0)
+                )
+
+            if a <= tolerance2:
+                return point_segment_distance_squared(
+                    a0,
+                    b0,
+                    b1
+                )
+
+            if c <= tolerance2:
+                return point_segment_distance_squared(
+                    b0,
+                    a0,
+                    a1
+                )
+
+            denominator = a * c - b * b
+
+            s_numerator = 0.0
+            s_denominator = denominator
+
+            t_numerator = 0.0
+            t_denominator = denominator
+
+            if denominator <= tolerance2:
+                s_numerator = 0.0
+                s_denominator = 1.0
+
+                t_numerator = e
+                t_denominator = c
+
+            else:
+                s_numerator = b * e - c * d
+                t_numerator = a * e - b * d
+
+                if s_numerator < 0.0:
+                    s_numerator = 0.0
+                    t_numerator = e
+                    t_denominator = c
+
+                elif s_numerator > s_denominator:
+                    s_numerator = s_denominator
+                    t_numerator = e + b
+                    t_denominator = c
+
+            if t_numerator < 0.0:
+                t_numerator = 0.0
+
+                if -d < 0.0:
+                    s_numerator = 0.0
+                    s_denominator = 1.0
+
+                elif -d > a:
+                    s_numerator = 1.0
+                    s_denominator = 1.0
+
+                else:
+                    s_numerator = -d
+                    s_denominator = a
+
+            elif t_numerator > t_denominator:
+                t_numerator = t_denominator
+
+                if (-d + b) < 0.0:
+                    s_numerator = 0.0
+                    s_denominator = 1.0
+
+                elif (-d + b) > a:
+                    s_numerator = 1.0
+                    s_denominator = 1.0
+
+                else:
+                    s_numerator = -d + b
+                    s_denominator = a
+
+            if abs(s_numerator) <= tolerance2:
+                s = 0.0
+            else:
+                s = s_numerator / s_denominator
+
+            if abs(t_numerator) <= tolerance2:
+                t = 0.0
+            else:
+                t = t_numerator / t_denominator
+
+            closest_a = add(
+                a0,
+                scale(u, s)
+            )
+
+            closest_b = add(
+                b0,
+                scale(v, t)
+            )
+
+            return length_squared(
+                subtract(
+                    closest_a,
+                    closest_b
+                )
+            )
+
+        # ------------------------------------------------------------------
+        # Wire helpers
+        # ------------------------------------------------------------------
+
+        def wire_points(wire):
+            if not Topology.IsInstance(wire, "Wire"):
+                return []
+
+            try:
+                vertices = Wire.Vertices(wire)
+            except Exception:
+                vertices = Topology.Vertices(
+                    wire,
+                    silent=True
+                ) or []
+
+            points = []
+
+            for vertex in vertices:
+                if Topology.IsInstance(vertex, "Vertex"):
+                    points.append(
+                        coordinates(vertex)
+                    )
+
+            return points
+
+        # ------------------------------------------------------------------
+        # Face frame
+        # ------------------------------------------------------------------
+
+        def face_data(face):
+            try:
+                external = Face.ExternalBoundary(
+                    face,
+                    silent=True
+                )
+            except TypeError:
+                external = Face.ExternalBoundary(face)
+            except Exception:
+                external = None
+
+            if not Topology.IsInstance(external, "Wire"):
+                return None
+
+            external_points = wire_points(external)
+
+            if len(external_points) < 3:
+                return None
+
+            origin = external_points[0]
+
+            first_direction = None
+            normal = None
+
+            for i in range(1, len(external_points)):
+                candidate = subtract(
+                    external_points[i],
+                    origin
+                )
+
+                if length_squared(candidate) > tolerance2:
+                    first_direction = candidate
+                    break
+
+            if first_direction is None:
+                return None
+
+            for i in range(1, len(external_points)):
+                candidate = subtract(
+                    external_points[i],
+                    origin
+                )
+
+                candidate_normal = cross(
+                    first_direction,
+                    candidate
+                )
+
+                if length_squared(candidate_normal) > tolerance2:
+                    normal = normalize(candidate_normal)
+                    break
+
+            if normal is None:
+                return None
+
+            axis_u = normalize(first_direction)
+
+            if axis_u is None:
+                return None
+
+            axis_v = normalize(
+                cross(normal, axis_u)
+            )
+
+            if axis_v is None:
+                return None
+
+            internal_wires = []
+
+            try:
+                result = Face.InternalBoundaries(face)
+
+                if isinstance(result, list):
+                    internal_wires = [
+                        wire
+                        for wire in result
+                        if Topology.IsInstance(wire, "Wire")
+                    ]
+            except Exception:
+                internal_wires = []
+
+            loops = [
+                external_points
+            ]
+
+            for wire in internal_wires:
+                points = wire_points(wire)
+
+                if len(points) >= 3:
+                    loops.append(points)
+
+            return {
+                "origin": origin,
+                "u": axis_u,
+                "v": axis_v,
+                "normal": normal,
+                "loops": loops,
+            }
+
+        # ------------------------------------------------------------------
+        # 2D trimmed-face tests
+        # ------------------------------------------------------------------
+
+        def project_2d(point, data):
+            relative = subtract(
+                point,
+                data["origin"]
+            )
+
+            return [
+                dot(relative, data["u"]),
+                dot(relative, data["v"]),
+            ]
+
+        def point_on_segment_2d(point, start, end):
+            px, py = point
+            ax, ay = start
+            bx, by = end
+
+            dx = bx - ax
+            dy = by - ay
+
+            segment_length2 = dx * dx + dy * dy
+
+            if segment_length2 <= tolerance2:
+                return (
+                    (px - ax) * (px - ax)
+                    + (py - ay) * (py - ay)
+                    <= tolerance2
+                )
+
+            parameter = (
+                (px - ax) * dx
+                + (py - ay) * dy
+            ) / segment_length2
+
+            if parameter < -tolerance or parameter > 1.0 + tolerance:
+                return False
+
+            parameter = max(
+                0.0,
+                min(1.0, parameter)
+            )
+
+            qx = ax + parameter * dx
+            qy = ay + parameter * dy
+
+            return (
+                (px - qx) * (px - qx)
+                + (py - qy) * (py - qy)
+                <= tolerance2
+            )
+
+        def point_in_polygon_2d(point, polygon):
+            if len(polygon) < 3:
+                return False, False
+
+            for i in range(len(polygon)):
+                if point_on_segment_2d(
+                    point,
+                    polygon[i],
+                    polygon[(i + 1) % len(polygon)]
+                ):
+                    return True, True
+
+            x, y = point
+            inside = False
+
+            j = len(polygon) - 1
+
+            for i in range(len(polygon)):
+                xi, yi = polygon[i]
+                xj, yj = polygon[j]
+
+                if (yi > y) != (yj > y):
+                    denominator = yj - yi
+
+                    if abs(denominator) <= 1.0e-16:
+                        denominator = (
+                            1.0e-16
+                            if denominator >= 0
+                            else -1.0e-16
+                        )
+
+                    x_intersection = (
+                        (xj - xi)
+                        * (y - yi)
+                        / denominator
+                        + xi
+                    )
+
+                    if x < x_intersection:
+                        inside = not inside
+
+                j = i
+
+            return inside, False
+
+        def point_in_trimmed_face_2d(point, data):
+            loops_2d = []
+
+            for loop in data["loops"]:
+                loops_2d.append(
+                    [
+                        project_2d(
+                            loop_point,
+                            data
+                        )
+                        for loop_point in loop
+                    ]
+                )
+
+            external_inside, external_boundary = point_in_polygon_2d(
+                point,
+                loops_2d[0]
+            )
+
+            if not external_inside:
+                return False
+
+            if external_boundary:
+                return True
+
+            for hole in loops_2d[1:]:
+                hole_inside, hole_boundary = point_in_polygon_2d(
+                    point,
+                    hole
+                )
+
+                if hole_boundary:
+                    return True
+
+                if hole_inside:
+                    return False
+
+            return True
+
+        # ------------------------------------------------------------------
+        # Point-face distance
+        # ------------------------------------------------------------------
+
+        def point_face_distance_squared(point, face):
+            data = face_data(face)
+
+            if data is None:
+                return math.inf
+
+            relative = subtract(
+                point,
+                data["origin"]
+            )
+
+            signed_distance = dot(
+                relative,
+                data["normal"]
+            )
+
+            projected = subtract(
+                point,
+                scale(
+                    data["normal"],
+                    signed_distance
+                )
+            )
+
+            projected_2d = project_2d(
+                projected,
+                data
+            )
+
+            if point_in_trimmed_face_2d(
+                projected_2d,
+                data
+            ):
+                return signed_distance * signed_distance
+
+            minimum = math.inf
+
+            for loop in data["loops"]:
+                for i in range(len(loop)):
+                    distance2 = point_segment_distance_squared(
+                        point,
+                        loop[i],
+                        loop[(i + 1) % len(loop)]
+                    )
+
+                    if distance2 < minimum:
+                        minimum = distance2
+
+            return minimum
+
+        # ------------------------------------------------------------------
+        # Segment-face distance
+        # ------------------------------------------------------------------
+
+        def segment_face_distance_squared(start, end, face):
+            data = face_data(face)
+
+            if data is None:
+                return math.inf
+
+            relative_start = subtract(
+                start,
+                data["origin"]
+            )
+
+            relative_end = subtract(
+                end,
+                data["origin"]
+            )
+
+            distance_start = dot(
+                relative_start,
+                data["normal"]
+            )
+
+            distance_end = dot(
+                relative_end,
+                data["normal"]
+            )
+
+            denominator = distance_start - distance_end
+
+            # Segment intersects the plane.
+            if abs(denominator) > 1.0e-16:
+                parameter = distance_start / denominator
+
+                if (
+                    parameter >= -tolerance
+                    and parameter <= 1.0 + tolerance
+                ):
+                    parameter = max(
+                        0.0,
+                        min(1.0, parameter)
+                    )
+
+                    intersection = add(
+                        start,
+                        scale(
+                            subtract(end, start),
+                            parameter
+                        )
+                    )
+
+                    intersection_2d = project_2d(
+                        intersection,
+                        data
+                    )
+
+                    if point_in_trimmed_face_2d(
+                        intersection_2d,
+                        data
+                    ):
+                        return 0.0
+
+            minimum = min(
+                point_face_distance_squared(
+                    start,
+                    face
+                ),
+                point_face_distance_squared(
+                    end,
+                    face
+                ),
+            )
+
+            for loop in data["loops"]:
+                for i in range(len(loop)):
+                    distance2 = segment_segment_distance_squared(
+                        start,
+                        end,
+                        loop[i],
+                        loop[(i + 1) % len(loop)]
+                    )
+
+                    if distance2 < minimum:
+                        minimum = distance2
+
+            return minimum
+
+        # ------------------------------------------------------------------
+        # Collect geometric primitives
+        # ------------------------------------------------------------------
+
+        def collect(topology):
+            try:
+                vertices = Topology.Vertices(
+                    topology,
+                    silent=True
+                ) or []
+            except Exception:
+                vertices = []
+
+            try:
+                edges = Topology.Edges(
+                    topology,
+                    silent=True
+                ) or []
+            except Exception:
+                edges = []
+
+            try:
+                faces = Topology.Faces(
+                    topology,
+                    silent=True
+                ) or []
+            except Exception:
+                faces = []
+
+            try:
+                cells = Topology.Cells(
+                    topology,
+                    silent=True
+                ) or []
+            except Exception:
+                cells = []
+
+            return vertices, edges, faces, cells
+
+        vertices_a, edges_a, faces_a, cells_a = collect(
+            topologyA
+        )
+
+        vertices_b, edges_b, faces_b, cells_b = collect(
+            topologyB
+        )
+
+        if (
+            len(vertices_a) == 0
+            and len(edges_a) == 0
+            and len(faces_a) == 0
         ):
             return None
 
-        if d < -abs(
-            float(tolerance)
+        if (
+            len(vertices_b) == 0
+            and len(edges_b) == 0
+            and len(faces_b) == 0
         ):
             return None
 
-        if abs(d) <= tolerance:
-            d = 0.0
+        # ------------------------------------------------------------------
+        # Solid containment
+        #
+        # Boundary-feature distance alone cannot detect one solid completely
+        # contained in another, so explicitly test vertices against Cells.
+        # ------------------------------------------------------------------
+
+        if len(cells_b) > 0:
+            for vertex in vertices_a:
+                for cell in cells_b:
+                    try:
+                        if Vertex.IsInternal(
+                            vertex,
+                            cell,
+                            tolerance=tolerance
+                        ):
+                            return 0.0
+                    except Exception:
+                        pass
+
+        if len(cells_a) > 0:
+            for vertex in vertices_b:
+                for cell in cells_a:
+                    try:
+                        if Vertex.IsInternal(
+                            vertex,
+                            cell,
+                            tolerance=tolerance
+                        ):
+                            return 0.0
+                    except Exception:
+                        pass
+
+        # ------------------------------------------------------------------
+        # Exhaustive closest-feature search
+        # ------------------------------------------------------------------
+
+        minimum2 = math.inf
+
+        # Vertex - Vertex
+        for vertex_a in vertices_a:
+            point_a = coordinates(vertex_a)
+
+            for vertex_b in vertices_b:
+                point_b = coordinates(vertex_b)
+
+                distance2 = length_squared(
+                    subtract(
+                        point_a,
+                        point_b
+                    )
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        # Vertex - Edge
+        for vertex in vertices_a:
+            point = coordinates(vertex)
+
+            for edge in edges_b:
+                start = coordinates(
+                    Edge.StartVertex(edge)
+                )
+
+                end = coordinates(
+                    Edge.EndVertex(edge)
+                )
+
+                distance2 = point_segment_distance_squared(
+                    point,
+                    start,
+                    end
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        for vertex in vertices_b:
+            point = coordinates(vertex)
+
+            for edge in edges_a:
+                start = coordinates(
+                    Edge.StartVertex(edge)
+                )
+
+                end = coordinates(
+                    Edge.EndVertex(edge)
+                )
+
+                distance2 = point_segment_distance_squared(
+                    point,
+                    start,
+                    end
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        # Edge - Edge
+        for edge_a in edges_a:
+            a0 = coordinates(
+                Edge.StartVertex(edge_a)
+            )
+
+            a1 = coordinates(
+                Edge.EndVertex(edge_a)
+            )
+
+            for edge_b in edges_b:
+                b0 = coordinates(
+                    Edge.StartVertex(edge_b)
+                )
+
+                b1 = coordinates(
+                    Edge.EndVertex(edge_b)
+                )
+
+                distance2 = segment_segment_distance_squared(
+                    a0,
+                    a1,
+                    b0,
+                    b1
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        # Vertex - Face
+        for vertex in vertices_a:
+            point = coordinates(vertex)
+
+            for face in faces_b:
+                distance2 = point_face_distance_squared(
+                    point,
+                    face
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        for vertex in vertices_b:
+            point = coordinates(vertex)
+
+            for face in faces_a:
+                distance2 = point_face_distance_squared(
+                    point,
+                    face
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        # Edge - Face
+        for edge in edges_a:
+            start = coordinates(
+                Edge.StartVertex(edge)
+            )
+
+            end = coordinates(
+                Edge.EndVertex(edge)
+            )
+
+            for face in faces_b:
+                distance2 = segment_face_distance_squared(
+                    start,
+                    end,
+                    face
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        for edge in edges_b:
+            start = coordinates(
+                Edge.StartVertex(edge)
+            )
+
+            end = coordinates(
+                Edge.EndVertex(edge)
+            )
+
+            for face in faces_a:
+                distance2 = segment_face_distance_squared(
+                    start,
+                    end,
+                    face
+                )
+
+                if distance2 < minimum2:
+                    minimum2 = distance2
+
+                if minimum2 <= tolerance2:
+                    return 0.0
+
+        # ------------------------------------------------------------------
+        # Finalize
+        # ------------------------------------------------------------------
+
+        if not math.isfinite(minimum2):
+            if not silent:
+                print(
+                    "Topology.ShortestDistance - Error: Could not compute the "
+                    "shortest distance. Returning None."
+                )
+            return None
+
+        distance = math.sqrt(
+            max(0.0, minimum2)
+        )
+
+        if distance <= tolerance:
+            distance = 0.0
 
         return round(
-            d,
+            distance,
             mantissa
         )
 
@@ -18650,6 +19491,343 @@ class Topology():
 
         return return_topology
     
+    # @staticmethod
+    # def Twist(
+    #     topology,
+    #     origin=None,
+    #     angleRange: list = [45, 90],
+    #     triangulate: bool = False,
+    #     mantissa: int = 6,
+    #     angTolerance: float = 0.01,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    # ):
+    #     """
+    #     Twists the input topology along its Z-axis based on the input angle range.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     origin : topologic_core.Vertex , optional
+    #         The desired origin for twisting. If not specified, the centroid of
+    #         the input topology is used. The twisting uses the X and Y coordinates
+    #         of the specified origin, but uses the Z coordinate of each vertex
+    #         being twisted. Default is None.
+    #     angleRange : list , optional
+    #         The desired angle range in degrees. This specifies a linear angular
+    #         range from the lowest Z coordinate to the highest Z coordinate of the
+    #         topology. Positive and negative angles follow the rotation convention
+    #         used by Topology.Rotate about the positive Z-axis.
+    #         Default is [45, 90].
+    #     triangulate : bool , optional
+    #         If set to True, the input topology is triangulated before twisting.
+    #         This is useful for higher-dimensional topologies because a varying
+    #         twist can make originally planar polygonal faces non-planar.
+    #         Default is False.
+    #     mantissa : int , optional
+    #         The number of decimal places to round coordinates to. Default is 6.
+    #     angTolerance : float , optional
+    #         The angular tolerance in degrees below which no rotation is carried
+    #         out. Default is 0.01.
+    #     tolerance : float , optional
+    #         The desired geometric tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed.
+    #         Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The twisted topology.
+    #     """
+    #     from topologicpy.Vertex import Vertex
+
+    #     # ------------------------------------------------------------------
+    #     # Validate topology
+    #     # ------------------------------------------------------------------
+
+    #     if not Topology.IsInstance(
+    #         topology,
+    #         "Topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: The input topology parameter "
+    #                 "is not a valid topology. Returning None."
+    #             )
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Validate angle range
+    #     # ------------------------------------------------------------------
+
+    #     if (
+    #         not isinstance(
+    #             angleRange,
+    #             (list, tuple)
+    #         )
+    #         or len(angleRange) != 2
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: The input angleRange parameter "
+    #                 "must contain exactly two numeric values. Returning None."
+    #             )
+    #         return None
+
+    #     try:
+    #         angle_range = [
+    #             float(angleRange[0]),
+    #             float(angleRange[1])
+    #         ]
+
+    #     except Exception:
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: The input angleRange parameter "
+    #                 "must contain exactly two numeric values. Returning None."
+    #             )
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Identity fast path
+    #     # ------------------------------------------------------------------
+
+    #     if angle_range == [0.0, 0.0]:
+    #         return topology
+
+    #     # ------------------------------------------------------------------
+    #     # Optional triangulation
+    #     #
+    #     # Record the topology type AFTER triangulation. A Face, for example,
+    #     # may legitimately become a Shell of triangular Faces.
+    #     # ------------------------------------------------------------------
+
+    #     if triangulate is True:
+
+    #         topology = Topology.Triangulate(
+    #             topology,
+    #             tolerance=tolerance,
+    #             silent=silent
+    #         )
+
+    #         if not Topology.IsInstance(
+    #             topology,
+    #             "Topology"
+    #         ):
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Twist - Error: Could not triangulate the "
+    #                     "input topology. Returning None."
+    #                 )
+    #             return None
+
+    #     topology_type = Topology.TypeAsString(
+    #         topology
+    #     )
+
+    #     # ------------------------------------------------------------------
+    #     # Resolve origin
+    #     # ------------------------------------------------------------------
+
+    #     if not Topology.IsInstance(
+    #         origin,
+    #         "Vertex"
+    #     ):
+    #         origin = Topology.Centroid(
+    #             topology
+    #         )
+
+    #     if not Topology.IsInstance(
+    #         origin,
+    #         "Vertex"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: Could not determine a valid "
+    #                 "twist origin. Returning None."
+    #             )
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Retrieve vertices and Z range
+    #     # ------------------------------------------------------------------
+
+    #     vertices = Topology.Vertices(
+    #         topology,
+    #         silent=True
+    #     )
+
+    #     if (
+    #         not isinstance(
+    #             vertices,
+    #             list
+    #         )
+    #         or len(vertices) == 0
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: The input topology contains no "
+    #                 "vertices. Returning None."
+    #             )
+    #         return None
+
+    #     z_values = [
+    #         Vertex.Z(
+    #             vertex,
+    #             mantissa=mantissa
+    #         )
+    #         for vertex in vertices
+    #     ]
+
+    #     z_min = min(
+    #         z_values
+    #     )
+
+    #     z_max = max(
+    #         z_values
+    #     )
+
+    #     height = z_max - z_min
+
+    #     # ------------------------------------------------------------------
+    #     # A twist range cannot be interpolated if there is no Z extent.
+    #     # ------------------------------------------------------------------
+
+    #     if abs(height) <= tolerance:
+
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Warning: The input topology has no "
+    #                 "significant extent along the Z-axis. Returning the "
+    #                 "input topology."
+    #             )
+
+    #         return topology
+
+    #     origin_x = Vertex.X(
+    #         origin,
+    #         mantissa=mantissa
+    #     )
+
+    #     origin_y = Vertex.Y(
+    #         origin,
+    #         mantissa=mantissa
+    #     )
+
+    #     # ------------------------------------------------------------------
+    #     # Calculate transformed vertices
+    #     # ------------------------------------------------------------------
+
+    #     new_vertices = []
+
+    #     for vertex in vertices:
+
+    #         vertex_z = Vertex.Z(
+    #             vertex,
+    #             mantissa=mantissa
+    #         )
+
+    #         height_ratio = (
+    #             vertex_z - z_min
+    #         ) / height
+
+    #         angle = (
+    #             angle_range[0]
+    #             + height_ratio
+    #             * (
+    #                 angle_range[1]
+    #                 - angle_range[0]
+    #             )
+    #         )
+
+    #         local_origin = Vertex.ByCoordinates(
+    #             origin_x,
+    #             origin_y,
+    #             vertex_z
+    #         )
+
+    #         if not Topology.IsInstance(
+    #             local_origin,
+    #             "Vertex"
+    #         ):
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Twist - Error: Could not create a valid "
+    #                     "local twist origin. Returning None."
+    #                 )
+    #             return None
+
+    #         new_vertex = Topology.Rotate(
+    #             vertex,
+    #             origin=local_origin,
+    #             axis=[0, 0, 1],
+    #             angle=angle,
+    #             transferDictionaries=False,
+    #             angTolerance=angTolerance,
+    #             tolerance=tolerance,
+    #             silent=silent
+    #         )
+
+    #         if not Topology.IsInstance(
+    #             new_vertex,
+    #             "Vertex"
+    #         ):
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Twist - Error: Could not calculate a "
+    #                     "replacement vertex. Returning None."
+    #                 )
+    #             return None
+
+    #         new_vertices.append(
+    #             new_vertex
+    #         )
+
+    #     # ------------------------------------------------------------------
+    #     # Rebuild topology
+    #     # ------------------------------------------------------------------
+
+    #     return_topology = Topology.ReplaceVertices(
+    #         topology,
+    #         verticesA=vertices,
+    #         verticesB=new_vertices,
+    #         mantissa=mantissa,
+    #         tolerance=tolerance,
+    #         silent=silent
+    #     )
+
+    #     if not Topology.IsInstance(
+    #         return_topology,
+    #         "Topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Twist - Error: Could not rebuild the twisted "
+    #                 "topology. Returning None."
+    #             )
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Legacy TopologicCore reconstruction workaround.
+    #     #
+    #     # PythonOCC and future backends are trusted to reconstruct the topology
+    #     # natively through ReplaceVertices. Do not conceal reconstruction or
+    #     # planarity failures with Fix.
+    #     # ------------------------------------------------------------------
+
+    #     if Topology._IsTopologicCoreBackend():
+
+    #         return_topology = Topology.Fix(
+    #             return_topology,
+    #             topologyType=topology_type,
+    #             tolerance=tolerance,
+    #             silent=silent
+    #         )
+
+    #     return return_topology
+
     @staticmethod
     def Twist(
         topology,
@@ -18703,7 +19881,7 @@ class Topology():
         from topologicpy.Vertex import Vertex
 
         # ------------------------------------------------------------------
-        # Validate topology
+        # Validate topology.
         # ------------------------------------------------------------------
 
         if not Topology.IsInstance(
@@ -18718,7 +19896,7 @@ class Topology():
             return None
 
         # ------------------------------------------------------------------
-        # Validate angle range
+        # Validate angle range.
         # ------------------------------------------------------------------
 
         if (
@@ -18750,17 +19928,17 @@ class Topology():
             return None
 
         # ------------------------------------------------------------------
-        # Identity fast path
+        # Identity fast path.
         # ------------------------------------------------------------------
 
-        if angle_range == [0.0, 0.0]:
+        if angle_range == [
+            0.0,
+            0.0
+        ]:
             return topology
 
         # ------------------------------------------------------------------
-        # Optional triangulation
-        #
-        # Record the topology type AFTER triangulation. A Face, for example,
-        # may legitimately become a Shell of triangular Faces.
+        # Optional triangulation.
         # ------------------------------------------------------------------
 
         if triangulate is True:
@@ -18787,7 +19965,7 @@ class Topology():
         )
 
         # ------------------------------------------------------------------
-        # Resolve origin
+        # Resolve origin.
         # ------------------------------------------------------------------
 
         if not Topology.IsInstance(
@@ -18810,7 +19988,7 @@ class Topology():
             return None
 
         # ------------------------------------------------------------------
-        # Retrieve vertices and Z range
+        # Retrieve vertices and Z range.
         # ------------------------------------------------------------------
 
         vertices = Topology.Vertices(
@@ -18819,10 +19997,7 @@ class Topology():
         )
 
         if (
-            not isinstance(
-                vertices,
-                list
-            )
+            not isinstance(vertices, list)
             or len(vertices) == 0
         ):
             if not silent:
@@ -18848,11 +20023,10 @@ class Topology():
             z_values
         )
 
-        height = z_max - z_min
-
-        # ------------------------------------------------------------------
-        # A twist range cannot be interpolated if there is no Z extent.
-        # ------------------------------------------------------------------
+        height = (
+            z_max
+            - z_min
+        )
 
         if abs(height) <= tolerance:
 
@@ -18876,7 +20050,7 @@ class Topology():
         )
 
         # ------------------------------------------------------------------
-        # Calculate transformed vertices
+        # Calculate transformed vertices.
         # ------------------------------------------------------------------
 
         new_vertices = []
@@ -18889,7 +20063,8 @@ class Topology():
             )
 
             height_ratio = (
-                vertex_z - z_min
+                vertex_z
+                - z_min
             ) / height
 
             angle = (
@@ -18945,7 +20120,7 @@ class Topology():
             )
 
         # ------------------------------------------------------------------
-        # Rebuild topology
+        # Rebuild topology.
         # ------------------------------------------------------------------
 
         return_topology = Topology.ReplaceVertices(
@@ -18970,10 +20145,6 @@ class Topology():
 
         # ------------------------------------------------------------------
         # Legacy TopologicCore reconstruction workaround.
-        #
-        # PythonOCC and future backends are trusted to reconstruct the topology
-        # natively through ReplaceVertices. Do not conceal reconstruction or
-        # planarity failures with Fix.
         # ------------------------------------------------------------------
 
         if Topology._IsTopologicCoreBackend():
@@ -18985,8 +20156,39 @@ class Topology():
                 silent=silent
             )
 
+            if not Topology.IsInstance(
+                return_topology,
+                "Topology"
+            ):
+                return None
+
+            # --------------------------------------------------------------
+            # Fix must not silently discard transformed vertices.
+            #
+            # A varying twist can make a formerly planar polygon impossible
+            # for TopologicCore to represent as the original topology type.
+            # In that case returning None is preferable to fabricating a
+            # lower-vertex topology.
+            # --------------------------------------------------------------
+
+            repaired_vertices = Topology.Vertices(
+                return_topology,
+                silent=True
+            ) or []
+
+            if len(repaired_vertices) != len(
+                new_vertices
+            ):
+                if not silent:
+                    print(
+                        "Topology.Twist - Error: TopologicCore reconstruction "
+                        "changed the vertex count. Returning None."
+                    )
+
+                return None
+
         return return_topology
-    
+
     @staticmethod
     def Unflatten(topology, origin=None, direction=[0, 0, 1], transferDictionaries: bool = True, silent: bool = False):
         """
@@ -19166,18 +20368,30 @@ class Topology():
 
         subTopologyType = subTopologyType.lower()
 
-        if subTopologyType not in [
-            "vertex", "edge", "wire", "face", "shell",
-            "cell", "cellcomplex", "cluster", "aperture"
-        ]:
+        valid_types = [
+            "vertex",
+            "edge",
+            "wire",
+            "face",
+            "shell",
+            "cell",
+            "cellcomplex",
+            "cluster",
+            "aperture",
+        ]
+
+        if subTopologyType not in valid_types:
             if not silent:
-                print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not recognized. Returning None.")
+                print(
+                    f"Topology.SubTopologies - Error: the input subTopologyType parameter "
+                    f"{subTopologyType} is not recognized. Returning None."
+                )
                 curframe = inspect.currentframe()
                 calframe = inspect.getouterframes(curframe, 2)
-                print('caller name:', calframe[1][3])
+                print("caller name:", calframe[1][3])
             return None
 
-        # Special case for TGraph
+        # Special case for TGraph.
         if is_tgraph:
             if subTopologyType == "vertex":
                 return TGraph.Vertices(topology)
@@ -19185,54 +20399,125 @@ class Topology():
                 return TGraph.Edges(topology)
             else:
                 if not silent:
-                    print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not a valid subTopology of TGraphs. Returning None.")
+                    print(
+                        f"Topology.SubTopologies - Error: the input subTopologyType parameter "
+                        f"{subTopologyType} is not a valid subTopology of TGraphs. Returning None."
+                    )
                 return None
 
-        if not Topology.IsInstance(topology, "Topology") and not Topology.IsInstance(topology, "Graph"):
+        if (
+            not Topology.IsInstance(topology, "Topology")
+            and not Topology.IsInstance(topology, "Graph")
+        ):
             if not silent:
-                print("Topology.SubTopologies - Error: the input topology parameter is not a valid topology or graph. Returning None.")
+                print(
+                    "Topology.SubTopologies - Error: the input topology parameter is not "
+                    "a valid topology or graph. Returning None."
+                )
             return None
 
-        # Special case for Graphs
-        if Topology.IsInstance(topology, "graph"):
+        # Special case for Graphs.
+        if Topology.IsInstance(topology, "Graph"):
             if subTopologyType == "vertex":
                 return Graph.Vertices(topology)
             elif subTopologyType == "edge":
                 return Graph.Edges(topology)
             else:
                 if not silent:
-                    print(f"Topology.SubTopologies - Error: the input subTopologyType parameter {subTopologyType} is not a valid subTopology of Graphs. Returning None.")
+                    print(
+                        f"Topology.SubTopologies - Error: the input subTopologyType parameter "
+                        f"{subTopologyType} is not a valid subTopology of Graphs. Returning None."
+                    )
                 return None
 
-        if Topology.TypeAsString(topology).lower() == subTopologyType:
+        topology_type = Topology.TypeAsString(topology)
+        if not isinstance(topology_type, str):
+            if not silent:
+                print(
+                    "Topology.SubTopologies - Error: Could not determine the type of the "
+                    "input topology. Returning None."
+                )
+            return None
+
+        topology_type = topology_type.lower()
+
+        # A topology is considered a subtopology of itself.
+        if topology_type == subTopologyType:
             return [topology]
+
+        # Topologic's standard topology hierarchy is:
+        #
+        # Vertex < Edge < Wire < Face < Shell < Cell < CellComplex < Cluster
+        #
+        # A lower-order topology cannot contain a higher-order topology. Some
+        # backends, particularly topologic_core, interpret calls such as
+        # Edge.Wires(None, output) as ancestor searches and consequently require
+        # a non-null host topology. Avoid such calls and return an empty list.
+        #
+        # Aperture is deliberately excluded from this hierarchy because it is
+        # contextual rather than a dimensional topology level.
+        hierarchy = {
+            "vertex": 0,
+            "edge": 1,
+            "wire": 2,
+            "face": 3,
+            "shell": 4,
+            "cell": 5,
+            "cellcomplex": 6,
+            "cluster": 7,
+        }
+
+        if topology_type in hierarchy and subTopologyType in hierarchy:
+            if hierarchy[topology_type] < hierarchy[subTopologyType]:
+                return []
 
         subTopologies = []
 
         # Special case for faces to return vertices/edges in CW/CCW order.
-        if Topology.IsInstance(topology, "face") and subTopologyType in ["vertex", "edge"]:
+        if (
+            Topology.IsInstance(topology, "Face")
+            and subTopologyType in ["vertex", "edge"]
+        ):
             wires = Face.Wires(topology)
+            if not isinstance(wires, list):
+                return []
+
             for wire in wires:
-                subTopologies += Topology.SubTopologies(wire, subTopologyType=subTopologyType, silent=silent)
+                result = Topology.SubTopologies(
+                    wire,
+                    subTopologyType=subTopologyType,
+                    silent=silent,
+                )
+                if isinstance(result, list):
+                    subTopologies += result
+
         else:
             if subTopologyType == "vertex":
-                _ = Core.InstanceCall(topology, "Vertices", None, subTopologies)
+                Core.InstanceCall(topology, "Vertices", None, subTopologies)
+
             elif subTopologyType == "edge":
-                _ = Core.InstanceCall(topology, "Edges", None, subTopologies)
+                Core.InstanceCall(topology, "Edges", None, subTopologies)
+
             elif subTopologyType == "wire":
-                _ = Core.InstanceCall(topology, "Wires", None, subTopologies)
+                Core.InstanceCall(topology, "Wires", None, subTopologies)
+
             elif subTopologyType == "face":
-                _ = Core.InstanceCall(topology, "Faces", None, subTopologies)
+                Core.InstanceCall(topology, "Faces", None, subTopologies)
+
             elif subTopologyType == "shell":
-                _ = Core.InstanceCall(topology, "Shells", None, subTopologies)
+                Core.InstanceCall(topology, "Shells", None, subTopologies)
+
             elif subTopologyType == "cell":
-                _ = Core.InstanceCall(topology, "Cells", None, subTopologies)
+                Core.InstanceCall(topology, "Cells", None, subTopologies)
+
             elif subTopologyType == "cellcomplex":
-                _ = Core.InstanceCall(topology, "CellComplexes", None, subTopologies)
+                Core.InstanceCall(topology, "CellComplexes", None, subTopologies)
+
             elif subTopologyType == "cluster":
-                _ = Core.InstanceCall(topology, "Clusters", None, subTopologies)
+                Core.InstanceCall(topology, "Clusters", None, subTopologies)
+
             elif subTopologyType == "aperture":
-                _ = Core.InstanceCall(topology, "Apertures", None, subTopologies)
+                Core.InstanceCall(topology, "Apertures", None, subTopologies)
 
         if not subTopologies:
             return []
@@ -19638,6 +20923,162 @@ class Topology():
         # print("bvh query done", f"{time.time() - timeStart:.4f}s")
         return topology
 
+    # @staticmethod
+    # def Translate(
+    #     topology,
+    #     x=0,
+    #     y=0,
+    #     z=0,
+    #     transferDictionaries: bool = True,
+    #     silent: bool = False
+    # ):
+    #     """
+    #     Translates (moves) the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     x : float , optional
+    #         The x translation value. Default is 0.
+    #     y : float , optional
+    #         The y translation value. Default is 0.
+    #     z : float , optional
+    #         The z translation value. Default is 0.
+    #     transferDictionaries : bool , optional
+    #         If set to True, dictionaries are transferred from the original topology
+    #         and its subtopologies to the translated topology. Default is True.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The translated topology.
+
+    #     """
+    #     if not Topology.IsInstance(topology, "Topology"):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Translate - Error: The input topology parameter "
+    #                 "is not a valid topology. Returning None."
+    #             )
+    #         return None
+
+    #     # Store source topology dictionary.
+    #     source_dictionary = None
+    #     if transferDictionaries:
+    #         source_dictionary = Topology.Dictionary(topology)
+
+    #         # Collect source subtopologies before the transform.
+    #         vertices = Topology.Vertices(topology, silent=True) or []
+    #         edges = Topology.Edges(topology, silent=True) or []
+    #         wires = Topology.Wires(topology, silent=True) or []
+    #         faces = Topology.Faces(topology, silent=True) or []
+    #         shells = Topology.Shells(topology, silent=True) or []
+    #         cells = Topology.Cells(topology, silent=True) or []
+    #         cellComplexes = Topology.CellComplexes(topology, silent=True) or []
+
+    #     # Delegate the geometric operation to the active backend.
+    #     try:
+    #         return_topology = Core.TopologyUtility.Translate(
+    #             topology,
+    #             x,
+    #             y,
+    #             z
+    #         )
+    #     except Exception as e:
+    #         if not silent:
+    #             print(
+    #                 "Topology.Translate - Error: The core translate operation "
+    #                 "failed. Returning None."
+    #             )
+    #             print("Error:", e)
+    #         return None
+
+    #     if not Topology.IsInstance(return_topology, "Topology"):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Translate - Error: The core translate operation "
+    #                 "did not return a valid topology. Returning None."
+    #             )
+    #         return None
+
+    #     if not transferDictionaries:
+    #         return return_topology
+
+    #     # Collect translated subtopologies.
+    #     r_vertices = Topology.Vertices(return_topology, silent=True) or []
+    #     r_edges = Topology.Edges(return_topology, silent=True) or []
+    #     r_wires = Topology.Wires(return_topology, silent=True) or []
+    #     r_faces = Topology.Faces(return_topology, silent=True) or []
+    #     r_shells = Topology.Shells(return_topology, silent=True) or []
+    #     r_cells = Topology.Cells(return_topology, silent=True) or []
+    #     r_cellComplexes = Topology.CellComplexes(
+    #         return_topology,
+    #         silent=True
+    #     ) or []
+
+    #     # Transfer subtopology dictionaries conservatively.
+    #     for source, target in zip(vertices, r_vertices):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(edges, r_edges):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(wires, r_wires):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(faces, r_faces):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(shells, r_shells):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(cells, r_cells):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     for source, target in zip(cellComplexes, r_cellComplexes):
+    #         Topology.SetDictionary(
+    #             target,
+    #             Topology.Dictionary(source),
+    #             silent=True
+    #         )
+
+    #     # Transfer the dictionary attached to the topology itself.
+    #     if source_dictionary is not None:
+    #         return_topology = Topology.SetDictionary(
+    #             return_topology,
+    #             source_dictionary,
+    #             silent=True
+    #         )
+
+    #     return return_topology
+
     @staticmethod
     def Translate(
         topology,
@@ -19669,13 +21110,9 @@ class Topology():
         Returns
         -------
         topologic_core.Topology
-            The translated topology, or None if the operation fails.
+            The translated topology.
         """
-
-        if not Topology.IsInstance(
-            topology,
-            "Topology"
-        ):
+        if not Topology.IsInstance(topology, "Topology"):
             if not silent:
                 print(
                     "Topology.Translate - Error: The input topology parameter "
@@ -19683,59 +21120,28 @@ class Topology():
                 )
             return None
 
-        # ------------------------------------------------------------------
-        # Store source dictionaries before translation.
-        # ------------------------------------------------------------------
-
         source_dictionary = None
 
         if transferDictionaries:
+            source_dictionary = Topology.Dictionary(topology)
 
-            source_dictionary = Topology.Dictionary(
-                topology
-            )
-
-            vertices = Topology.Vertices(
-                topology,
-                silent=True
-            ) or []
-
-            edges = Topology.Edges(
-                topology,
-                silent=True
-            ) or []
-
-            wires = Topology.Wires(
-                topology,
-                silent=True
-            ) or []
-
-            faces = Topology.Faces(
-                topology,
-                silent=True
-            ) or []
-
-            shells = Topology.Shells(
-                topology,
-                silent=True
-            ) or []
-
-            cells = Topology.Cells(
-                topology,
-                silent=True
-            ) or []
-
+            vertices = Topology.Vertices(topology, silent=True) or []
+            edges = Topology.Edges(topology, silent=True) or []
+            wires = Topology.Wires(topology, silent=True) or []
+            faces = Topology.Faces(topology, silent=True) or []
+            shells = Topology.Shells(topology, silent=True) or []
+            cells = Topology.Cells(topology, silent=True) or []
             cellComplexes = Topology.CellComplexes(
                 topology,
                 silent=True
             ) or []
 
         # ------------------------------------------------------------------
-        # Native translation.
-        #
-        # Trust the active backend. A failed backend operation must not be
-        # concealed by returning the untranslated input topology.
+        # First attempt: translate the input topology directly.
         # ------------------------------------------------------------------
+
+        return_topology = None
+        translation_error = None
 
         try:
             return_topology = Core.TopologyUtility.Translate(
@@ -19744,43 +21150,74 @@ class Topology():
                 y,
                 z
             )
-
         except Exception as error:
+            translation_error = error
+            return_topology = None
 
-            if not silent:
-                print(
-                    "Topology.Translate - Error: The active backend translate "
-                    "operation failed. Returning None."
-                )
-                print(
-                    "Error:",
-                    error
+        # ------------------------------------------------------------------
+        # TopologicCore compatibility fallback.
+        #
+        # Legacy TopologicCore can fail to translate a topology after
+        # dictionaries have been attached to its subtopologies. If that happens,
+        # create a geometry-only BREP copy and retry the same native operation.
+        #
+        # PythonOCC never enters this branch.
+        # ------------------------------------------------------------------
+
+        if (
+            not Topology.IsInstance(return_topology, "Topology")
+            and transferDictionaries
+            and Topology._IsTopologicCoreBackend()
+        ):
+            try:
+                brep = Topology.BREPString(
+                    topology,
+                    silent=True
                 )
 
-            return None
+                clean_topology = Topology.ByBREPString(
+                    brep,
+                    silent=True
+                )
+
+                if Topology.IsInstance(
+                    clean_topology,
+                    "Topology"
+                ):
+                    return_topology = Core.TopologyUtility.Translate(
+                        clean_topology,
+                        x,
+                        y,
+                        z
+                    )
+
+            except Exception as error:
+                translation_error = error
+                return_topology = None
 
         if not Topology.IsInstance(
             return_topology,
             "Topology"
         ):
-
             if not silent:
                 print(
-                    "Topology.Translate - Error: The active backend translate "
-                    "operation did not return a valid topology. Returning None."
+                    "Topology.Translate - Error: The core translate operation "
+                    "failed or returned an invalid topology. Returning None."
                 )
 
-            return None
+                if translation_error is not None:
+                    print(
+                        "Error:",
+                        translation_error
+                    )
 
-        # ------------------------------------------------------------------
-        # No dictionary transfer requested.
-        # ------------------------------------------------------------------
+            return None
 
         if not transferDictionaries:
             return return_topology
 
         # ------------------------------------------------------------------
-        # Collect translated subtopologies.
+        # Retrieve translated subtopologies.
         # ------------------------------------------------------------------
 
         r_vertices = Topology.Vertices(
@@ -19819,11 +21256,7 @@ class Topology():
         ) or []
 
         # ------------------------------------------------------------------
-        # Transfer subtopology dictionaries conservatively.
-        #
-        # zip() is deliberately used instead of positional indexing because
-        # different backends may enumerate or reconstruct subtopologies
-        # differently.
+        # Transfer subtopology dictionaries.
         # ------------------------------------------------------------------
 
         for source, target in zip(
@@ -19832,9 +21265,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19844,9 +21275,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19856,9 +21285,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19868,9 +21295,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19880,9 +21305,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19892,9 +21315,7 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
@@ -19904,18 +21325,15 @@ class Topology():
         ):
             Topology.SetDictionary(
                 target,
-                Topology.Dictionary(
-                    source
-                ),
+                Topology.Dictionary(source),
                 silent=True
             )
 
         # ------------------------------------------------------------------
-        # Transfer the dictionary attached to the topology itself.
+        # Transfer parent dictionary.
         # ------------------------------------------------------------------
 
         if source_dictionary is not None:
-
             return_topology = Topology.SetDictionary(
                 return_topology,
                 source_dictionary,
@@ -19923,8 +21341,6 @@ class Topology():
             )
 
         return return_topology
-
-
     @staticmethod
     def Transform(
         topology,
@@ -20538,6 +21954,647 @@ class Topology():
         v = Vector.SetMagnitude(direction, distance)
         return Topology.Translate(topology, x=v[0], y=v[1], z=v[2], transferDictionaries=transferDictionaries, silent=silent)
 
+    # @staticmethod
+    # def Triangulate(
+    #     topology,
+    #     transferDictionaries: bool = False,
+    #     mode: int = 0,
+    #     meshSize: float = None,
+    #     tolerance: float = 0.0001,
+    #     silent: bool = False
+    # ):
+    #     """
+    #     Triangulates the input topology.
+
+    #     Parameters
+    #     ----------
+    #     topology : topologic_core.Topology
+    #         The input topology.
+    #     transferDictionaries : bool , optional
+    #         If set to True, the dictionaries of the faces in the input topology
+    #         will be transferred to the created triangular faces. Default is False.
+    #     mode : int , optional
+    #         The desired mode of meshing algorithm. Several options are available:
+    #         0: Classic
+    #         1: MeshAdapt
+    #         3: Initial Mesh Only
+    #         5: Delaunay
+    #         6: Frontal-Delaunay
+    #         7: BAMG
+    #         8: Frontal-Delaunay for Quads
+    #         9: Packing of Parallelograms
+    #         All options other than 0 use the gmsh library.
+    #     meshSize : float , optional
+    #         The desired mesh size when using a meshing mode. If set to None,
+    #         it is calculated automatically. Default is None.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed.
+    #         Default is False.
+
+    #     Returns
+    #     -------
+    #     topologic_core.Topology
+    #         The triangulated topology.
+    #     """
+    #     from topologicpy.Face import Face
+    #     from topologicpy.Shell import Shell
+    #     from topologicpy.Cell import Cell
+    #     from topologicpy.CellComplex import CellComplex
+    #     from topologicpy.Cluster import Cluster
+
+    #     def cluster_constituents(cluster):
+
+    #         try:
+    #             result = Core.InstanceCall(
+    #                 cluster,
+    #                 "Topologies"
+    #             )
+
+    #             if isinstance(result, list):
+    #                 return [
+    #                     item
+    #                     for item in result
+    #                     if Topology.IsInstance(
+    #                         item,
+    #                         "Topology"
+    #                     )
+    #                 ]
+
+    #         except Exception:
+    #             pass
+
+    #         try:
+    #             result = []
+
+    #             Core.InstanceCall(
+    #                 cluster,
+    #                 "Topologies",
+    #                 result
+    #             )
+
+    #             if len(result) > 0:
+    #                 return [
+    #                     item
+    #                     for item in result
+    #                     if Topology.IsInstance(
+    #                         item,
+    #                         "Topology"
+    #                     )
+    #                 ]
+
+    #         except Exception:
+    #             pass
+
+    #         try:
+    #             result = []
+
+    #             Core.InstanceCall(
+    #                 cluster,
+    #                 "Topologies",
+    #                 None,
+    #                 result
+    #             )
+
+    #             if len(result) > 0:
+    #                 return [
+    #                     item
+    #                     for item in result
+    #                     if Topology.IsInstance(
+    #                         item,
+    #                         "Topology"
+    #                     )
+    #                 ]
+
+    #         except Exception:
+    #             pass
+
+    #         try:
+    #             result = Cluster.Topologies(
+    #                 cluster,
+    #                 tolerance=tolerance,
+    #                 silent=True
+    #             )
+
+    #             if isinstance(result, list):
+    #                 return [
+    #                     item
+    #                     for item in result
+    #                     if Topology.IsInstance(
+    #                         item,
+    #                         "Topology"
+    #                     )
+    #                 ]
+
+    #         except Exception:
+    #             pass
+
+    #         return []
+
+    #     # ------------------------------------------------------------------
+    #     # Validate input
+    #     # ------------------------------------------------------------------
+
+    #     if not Topology.IsInstance(
+    #         topology,
+    #         "Topology"
+    #     ):
+    #         if not silent:
+    #             print(
+    #                 "Topology.Triangulate - Error: The input topology parameter "
+    #                 "is not a valid topology. Returning None."
+    #             )
+    #         return None
+
+    #     topology_type = Topology.Type(
+    #         topology
+    #     )
+
+    #     # ------------------------------------------------------------------
+    #     # Vertex / Edge / Wire
+    #     #
+    #     # These genuinely contain no Faces, so triangulation is a legitimate
+    #     # no-op and the original topology is returned.
+    #     # ------------------------------------------------------------------
+
+    #     if topology_type in [
+    #         Topology.TypeID("Vertex"),
+    #         Topology.TypeID("Edge"),
+    #         Topology.TypeID("Wire")
+    #     ]:
+
+    #         if not silent:
+    #             print(
+    #                 "Topology.Triangulate - Warning: The input topology parameter "
+    #                 "contains no faces. Returning the original topology."
+    #             )
+
+    #         return topology
+
+    #     # ------------------------------------------------------------------
+    #     # Cluster
+    #     # ------------------------------------------------------------------
+
+    #     if topology_type == Topology.TypeID(
+    #         "Cluster"
+    #     ):
+
+    #         constituents = cluster_constituents(
+    #             topology
+    #         )
+
+    #         # A Cluster constituent-query failure must remain visible.
+    #         # Returning the input Cluster would conceal the failure.
+    #         if len(constituents) == 0:
+
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Triangulate - Error: Could not retrieve any "
+    #                     "constituent topologies from the input Cluster. "
+    #                     "Returning None."
+    #                 )
+
+    #             return None
+
+    #         triangulated_constituents = []
+
+    #         for constituent in constituents:
+
+    #             triangulated = Topology.Triangulate(
+    #                 constituent,
+    #                 transferDictionaries=transferDictionaries,
+    #                 mode=mode,
+    #                 meshSize=meshSize,
+    #                 tolerance=tolerance,
+    #                 silent=True
+    #             )
+
+    #             if not Topology.IsInstance(
+    #                 triangulated,
+    #                 "Topology"
+    #             ):
+
+    #                 if not silent:
+    #                     print(
+    #                         "Topology.Triangulate - Error: Could not triangulate "
+    #                         "one of the constituent topologies of the input Cluster. "
+    #                         "Returning None."
+    #                     )
+
+    #                 return None
+
+    #             triangulated_constituents.append(
+    #                 triangulated
+    #             )
+
+    #         try:
+    #             return_topology = Cluster.ByTopologies(
+    #                 triangulated_constituents,
+    #                 silent=True
+    #             )
+
+    #         except TypeError:
+    #             return_topology = Cluster.ByTopologies(
+    #                 triangulated_constituents
+    #             )
+
+    #         except Exception:
+    #             return_topology = None
+
+    #         if not Topology.IsInstance(
+    #             return_topology,
+    #             "Cluster"
+    #         ):
+
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Triangulate - Error: Could not rebuild the "
+    #                     "triangulated Cluster. Returning None."
+    #                 )
+
+    #             return None
+
+    #         return return_topology
+
+    #     # ------------------------------------------------------------------
+    #     # Remember CellComplex cell count before reconstruction.
+    #     # ------------------------------------------------------------------
+
+    #     expected_cell_count = None
+
+    #     if topology_type == Topology.TypeID(
+    #         "CellComplex"
+    #     ):
+
+    #         original_cells = Topology.Cells(
+    #             topology,
+    #             silent=True
+    #         ) or []
+
+    #         expected_cell_count = len(
+    #             original_cells
+    #         )
+
+    #     # ------------------------------------------------------------------
+    #     # Retrieve Faces
+    #     #
+    #     # At this point the input is Face, Shell, Cell, or CellComplex.
+    #     # All of these must contain Faces. An empty/invalid face query therefore
+    #     # represents a failure rather than a legitimate no-op.
+    #     # ------------------------------------------------------------------
+
+    #     topology_faces = Topology.Faces(
+    #         topology,
+    #         silent=True
+    #     )
+
+    #     if (
+    #         not isinstance(
+    #             topology_faces,
+    #             list
+    #         )
+    #         or len(topology_faces) == 0
+    #     ):
+
+    #         if not silent:
+    #             print(
+    #                 "Topology.Triangulate - Error: Could not retrieve Faces "
+    #                 "from the input topology. Returning None."
+    #             )
+
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Triangulate Faces
+    #     # ------------------------------------------------------------------
+
+    #     face_triangles = []
+    #     selectors = []
+
+    #     for face in topology_faces:
+
+    #         vertices = Topology.Vertices(
+    #             face,
+    #             silent=True
+    #         ) or []
+
+    #         if len(vertices) > 3:
+
+    #             triangles = Face.Triangulate(
+    #                 face,
+    #                 mode=mode,
+    #                 meshSize=meshSize,
+    #                 tolerance=tolerance,
+    #                 silent=silent
+    #             )
+
+    #             if Topology.IsInstance(
+    #                 triangles,
+    #                 "Face"
+    #             ):
+    #                 triangles = [
+    #                     triangles
+    #                 ]
+
+    #             if not isinstance(
+    #                 triangles,
+    #                 list
+    #             ):
+
+    #                 if not silent:
+    #                     print(
+    #                         "Topology.Triangulate - Error: Could not triangulate "
+    #                         "one of the Faces of the input topology. Returning None."
+    #                     )
+
+    #                 return None
+
+    #             triangles = [
+    #                 triangle
+    #                 for triangle in triangles
+    #                 if Topology.IsInstance(
+    #                     triangle,
+    #                     "Face"
+    #                 )
+    #             ]
+
+    #             if len(triangles) == 0:
+
+    #                 if not silent:
+    #                     print(
+    #                         "Topology.Triangulate - Error: Face triangulation "
+    #                         "returned no valid triangular Faces. Returning None."
+    #                     )
+
+    #                 return None
+
+    #         else:
+    #             triangles = [
+    #                 face
+    #             ]
+
+    #         for triangle in triangles:
+
+    #             if transferDictionaries:
+
+    #                 selector = Topology.Centroid(
+    #                     triangle
+    #                 )
+
+    #                 if Topology.IsInstance(
+    #                     selector,
+    #                     "Vertex"
+    #                 ):
+
+    #                     selector = Topology.SetDictionary(
+    #                         selector,
+    #                         Topology.Dictionary(
+    #                             face
+    #                         ),
+    #                         silent=True
+    #                     )
+
+    #                     selectors.append(
+    #                         selector
+    #                     )
+
+    #             face_triangles.append(
+    #                 triangle
+    #             )
+
+    #     if len(face_triangles) == 0:
+
+    #         if not silent:
+    #             print(
+    #                 "Topology.Triangulate - Error: No valid triangular Faces "
+    #                 "were produced. Returning None."
+    #             )
+
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Typed reconstruction
+    #     # ------------------------------------------------------------------
+
+    #     return_topology = None
+
+    #     if topology_type in [
+    #         Topology.TypeID("Face"),
+    #         Topology.TypeID("Shell")
+    #     ]:
+
+    #         try:
+    #             return_topology = Shell.ByFaces(
+    #                 face_triangles,
+    #                 tolerance=tolerance,
+    #                 silent=True
+    #             )
+
+    #         except TypeError:
+    #             return_topology = Shell.ByFaces(
+    #                 face_triangles,
+    #                 tolerance=tolerance
+    #             )
+
+    #         except Exception:
+    #             return_topology = None
+
+    #     elif topology_type == Topology.TypeID(
+    #         "Cell"
+    #     ):
+
+    #         try:
+    #             return_topology = Cell.ByFaces(
+    #                 face_triangles,
+    #                 tolerance=tolerance,
+    #                 silent=True
+    #             )
+
+    #         except TypeError:
+    #             return_topology = Cell.ByFaces(
+    #                 face_triangles,
+    #                 tolerance=tolerance
+    #             )
+
+    #         except Exception:
+    #             return_topology = None
+
+    #     elif topology_type == Topology.TypeID(
+    #         "CellComplex"
+    #     ):
+
+    #         # --------------------------------------------------------------
+    #         # PythonOCC / future backend path.
+    #         #
+    #         # Do NOT call public CellComplex.ByFaces here. Its Shapely
+    #         # preprocessing intentionally removes coplanar overlaps, while the
+    #         # coplanar subdivisions in a triangulated CellComplex are meaningful
+    #         # topology and must be retained.
+    #         # --------------------------------------------------------------
+
+    #         if not Topology._IsTopologicCoreBackend():
+
+    #             try:
+    #                 return_topology = Core.CellComplex.ByFaces(
+    #                     face_triangles,
+    #                     tolerance,
+    #                     False
+    #                 )
+
+    #             except TypeError:
+
+    #                 try:
+    #                     return_topology = Core.CellComplex.ByFaces(
+    #                         face_triangles,
+    #                         tolerance
+    #                     )
+
+    #                 except TypeError:
+
+    #                     try:
+    #                         return_topology = Core.CellComplex.ByFaces(
+    #                             face_triangles
+    #                         )
+
+    #                     except Exception:
+    #                         return_topology = None
+
+    #                 except Exception:
+    #                     return_topology = None
+
+    #             except Exception:
+    #                 return_topology = None
+
+    #             # ----------------------------------------------------------
+    #             # A CellComplex reconstruction that silently drops internal
+    #             # partitions is not a successful triangulation.
+    #             # ----------------------------------------------------------
+
+    #             if Topology.IsInstance(
+    #                 return_topology,
+    #                 "CellComplex"
+    #             ):
+
+    #                 resulting_cells = Topology.Cells(
+    #                     return_topology,
+    #                     silent=True
+    #                 ) or []
+
+    #                 if (
+    #                     expected_cell_count is not None
+    #                     and len(resulting_cells) != expected_cell_count
+    #                 ):
+
+    #                     if not silent:
+    #                         print(
+    #                             "Topology.Triangulate - Error: The active backend "
+    #                             "changed the CellComplex cell count from "
+    #                             f"{expected_cell_count} to {len(resulting_cells)}. "
+    #                             "Returning None."
+    #                         )
+
+    #                     return None
+
+    #         # --------------------------------------------------------------
+    #         # Legacy TopologicCore path.
+    #         # --------------------------------------------------------------
+
+    #         else:
+
+    #             try:
+    #                 return_topology = CellComplex.ByFaces(
+    #                     face_triangles,
+    #                     tolerance=tolerance,
+    #                     silent=True
+    #                 )
+
+    #             except TypeError:
+    #                 return_topology = CellComplex.ByFaces(
+    #                     face_triangles,
+    #                     tolerance=tolerance
+    #                 )
+
+    #             except Exception:
+    #                 return_topology = None
+
+    #     # ------------------------------------------------------------------
+    #     # Legacy TopologicCore reconstruction workaround
+    #     # ------------------------------------------------------------------
+
+    #     if not Topology.IsInstance(
+    #         return_topology,
+    #         "Topology"
+    #     ):
+
+    #         if Topology._IsTopologicCoreBackend():
+
+    #             try:
+    #                 return_topology = Cluster.ByTopologies(
+    #                     face_triangles,
+    #                     silent=True
+    #                 )
+
+    #             except TypeError:
+    #                 return_topology = Cluster.ByTopologies(
+    #                     face_triangles
+    #                 )
+
+    #             except Exception:
+    #                 return_topology = None
+
+    #             if Topology.IsInstance(
+    #                 return_topology,
+    #                 "Topology"
+    #             ):
+
+    #                 return_topology = Topology.SelfMerge(
+    #                     return_topology,
+    #                     tolerance=tolerance,
+    #                     silent=silent
+    #                 )
+
+    #         else:
+
+    #             if not silent:
+    #                 print(
+    #                     "Topology.Triangulate - Error: The active backend could "
+    #                     "not reconstruct the triangulated topology. Returning None."
+    #                 )
+
+    #             return None
+
+    #     if not Topology.IsInstance(
+    #         return_topology,
+    #         "Topology"
+    #     ):
+
+    #         if not silent:
+    #             print(
+    #                 "Topology.Triangulate - Error: Could not reconstruct the "
+    #                 "triangulated topology. Returning None."
+    #             )
+
+    #         return None
+
+    #     # ------------------------------------------------------------------
+    #     # Transfer Face dictionaries
+    #     # ------------------------------------------------------------------
+
+    #     if (
+    #         transferDictionaries
+    #         and len(selectors) > 0
+    #     ):
+
+    #         return_topology = Topology.TransferDictionariesBySelectors(
+    #             return_topology,
+    #             selectors,
+    #             tranFaces=True,
+    #             tolerance=tolerance
+    #         )
+
+    #     return return_topology
+
     @staticmethod
     def Triangulate(
         topology,
@@ -20588,96 +22645,178 @@ class Topology():
         from topologicpy.CellComplex import CellComplex
         from topologicpy.Cluster import Cluster
 
+        # def cluster_constituents(cluster):
+        #     # --------------------------------------------------------------
+        #     # Try all backend-native calling conventions. An empty list from
+        #     # one convention is not authoritative; another convention may be
+        #     # the one implemented by the active backend.
+        #     # --------------------------------------------------------------
+
+        #     try:
+        #         result = Core.InstanceCall(
+        #             cluster,
+        #             "Topologies"
+        #         )
+
+        #         if isinstance(result, list):
+        #             result = [
+        #                 item
+        #                 for item in result
+        #                 if Topology.IsInstance(
+        #                     item,
+        #                     "Topology"
+        #                 )
+        #             ]
+
+        #             if result:
+        #                 return result
+
+        #     except Exception:
+        #         pass
+
+        #     try:
+        #         result = []
+
+        #         Core.InstanceCall(
+        #             cluster,
+        #             "Topologies",
+        #             result
+        #         )
+
+        #         result = [
+        #             item
+        #             for item in result
+        #             if Topology.IsInstance(
+        #                 item,
+        #                 "Topology"
+        #             )
+        #         ]
+
+        #         if result:
+        #             return result
+
+        #     except Exception:
+        #         pass
+
+        #     try:
+        #         result = []
+
+        #         Core.InstanceCall(
+        #             cluster,
+        #             "Topologies",
+        #             None,
+        #             result
+        #         )
+
+        #         result = [
+        #             item
+        #             for item in result
+        #             if Topology.IsInstance(
+        #                 item,
+        #                 "Topology"
+        #             )
+        #         ]
+
+        #         if result:
+        #             return result
+
+        #     except Exception:
+        #         pass
+
+        #     try:
+        #         result = Cluster.Topologies(
+        #             cluster,
+        #             tolerance=tolerance,
+        #             silent=True
+        #         )
+
+        #         if isinstance(result, list):
+        #             result = [
+        #                 item
+        #                 for item in result
+        #                 if Topology.IsInstance(
+        #                     item,
+        #                     "Topology"
+        #                 )
+        #             ]
+
+        #             if result:
+        #                 return result
+
+        #     except Exception:
+        #         pass
+
+        #     return []
         def cluster_constituents(cluster):
-
-            try:
-                result = Core.InstanceCall(
-                    cluster,
-                    "Topologies"
-                )
-
-                if isinstance(result, list):
-                    return [
-                        item
-                        for item in result
-                        if Topology.IsInstance(
-                            item,
-                            "Topology"
-                        )
-                    ]
-
-            except Exception:
-                pass
-
-            try:
-                result = []
-
-                Core.InstanceCall(
-                    cluster,
-                    "Topologies",
-                    result
-                )
-
-                if len(result) > 0:
-                    return [
-                        item
-                        for item in result
-                        if Topology.IsInstance(
-                            item,
-                            "Topology"
-                        )
-                    ]
-
-            except Exception:
-                pass
-
-            try:
-                result = []
-
-                Core.InstanceCall(
-                    cluster,
-                    "Topologies",
-                    None,
-                    result
-                )
-
-                if len(result) > 0:
-                    return [
-                        item
-                        for item in result
-                        if Topology.IsInstance(
-                            item,
-                            "Topology"
-                        )
-                    ]
-
-            except Exception:
-                pass
-
+            """
+            Returns the top-level constituent topologies of the input cluster.
+            """
             try:
                 result = Cluster.Topologies(
                     cluster,
                     tolerance=tolerance,
                     silent=True
                 )
-
-                if isinstance(result, list):
-                    return [
-                        item
-                        for item in result
-                        if Topology.IsInstance(
-                            item,
-                            "Topology"
-                        )
-                    ]
-
             except Exception:
-                pass
+                return []
 
-            return []
+            if not isinstance(
+                result,
+                list
+            ):
+                return []
+
+            return [
+                topology
+                for topology in result
+                if Topology.IsInstance(
+                    topology,
+                    "Topology"
+                )
+            ]
+
+        def valid_triangulated_cellcomplex(
+            candidate,
+            expected_cell_count=None
+        ):
+            if not Topology.IsInstance(
+                candidate,
+                "CellComplex"
+            ):
+                return False
+
+            cells = Topology.Cells(
+                candidate,
+                silent=True
+            ) or []
+
+            if (
+                expected_cell_count is not None
+                and len(cells) != expected_cell_count
+            ):
+                return False
+
+            faces = Topology.Faces(
+                candidate,
+                silent=True
+            ) or []
+
+            if not faces:
+                return False
+
+            for face in faces:
+                vertices = Topology.Vertices(
+                    face,
+                    silent=True
+                ) or []
+
+                if len(vertices) != 3:
+                    return False
+
+            return True
 
         # ------------------------------------------------------------------
-        # Validate input
+        # Validate input.
         # ------------------------------------------------------------------
 
         if not Topology.IsInstance(
@@ -20696,7 +22835,7 @@ class Topology():
         )
 
         # ------------------------------------------------------------------
-        # Vertex / Edge / Wire
+        # Vertex / Edge / Wire.
         # ------------------------------------------------------------------
 
         if topology_type in [
@@ -20714,7 +22853,7 @@ class Topology():
             return topology
 
         # ------------------------------------------------------------------
-        # Cluster
+        # Cluster.
         # ------------------------------------------------------------------
 
         if topology_type == Topology.TypeID(
@@ -20725,12 +22864,13 @@ class Topology():
                 topology
             )
 
-            if len(constituents) == 0:
+            if not constituents:
 
                 if not silent:
                     print(
                         "Topology.Triangulate - Error: Could not retrieve any "
-                        "constituent topologies from the input Cluster. Returning None."
+                        "constituent topologies from the input Cluster. "
+                        "Returning None."
                     )
 
                 return None
@@ -20815,7 +22955,7 @@ class Topology():
             )
 
         # ------------------------------------------------------------------
-        # Retrieve Faces
+        # Retrieve Faces.
         # ------------------------------------------------------------------
 
         topology_faces = Topology.Faces(
@@ -20824,23 +22964,21 @@ class Topology():
         )
 
         if (
-            not isinstance(
-                topology_faces,
-                list
-            )
+            not isinstance(topology_faces, list)
             or len(topology_faces) == 0
         ):
 
             if not silent:
                 print(
                     "Topology.Triangulate - Error: Could not retrieve any Faces "
-                    "from the input Face, Shell, Cell, or CellComplex. Returning None."
+                    "from the input Face, Shell, Cell, or CellComplex. "
+                    "Returning None."
                 )
 
             return None
 
         # ------------------------------------------------------------------
-        # Triangulate Faces
+        # Triangulate Faces.
         # ------------------------------------------------------------------
 
         face_triangles = []
@@ -20893,7 +23031,7 @@ class Topology():
                     )
                 ]
 
-                if len(triangles) == 0:
+                if not triangles:
 
                     if not silent:
                         print(
@@ -20937,7 +23075,7 @@ class Topology():
                     triangle
                 )
 
-        if len(face_triangles) == 0:
+        if not face_triangles:
 
             if not silent:
                 print(
@@ -20948,7 +23086,7 @@ class Topology():
             return None
 
         # ------------------------------------------------------------------
-        # Typed reconstruction
+        # Typed reconstruction.
         # ------------------------------------------------------------------
 
         return_topology = None
@@ -20999,12 +23137,9 @@ class Topology():
         ):
 
             # --------------------------------------------------------------
-            # PythonOCC / future backend path.
+            # PythonOCC / future-backend path.
             #
-            # Do NOT call public CellComplex.ByFaces here. Its Shapely
-            # preprocessing intentionally removes coplanar overlaps, while the
-            # coplanar subdivisions in a triangulated CellComplex are meaningful
-            # topology and must be retained.
+            # This is the already-green path and is intentionally unchanged.
             # --------------------------------------------------------------
 
             if not Topology._IsTopologicCoreBackend():
@@ -21040,11 +23175,6 @@ class Topology():
                 except Exception:
                     return_topology = None
 
-                # ----------------------------------------------------------
-                # A CellComplex reconstruction that silently drops internal
-                # partitions is not a successful triangulation.
-                # ----------------------------------------------------------
-
                 if Topology.IsInstance(
                     return_topology,
                     "CellComplex"
@@ -21057,43 +23187,72 @@ class Topology():
 
                     if (
                         expected_cell_count is not None
-                        and len(resulting_cells) != expected_cell_count
+                        and len(resulting_cells)
+                        != expected_cell_count
                     ):
 
                         if not silent:
                             print(
                                 "Topology.Triangulate - Error: The active backend "
                                 "changed the CellComplex cell count from "
-                                f"{expected_cell_count} to {len(resulting_cells)}. "
-                                "Returning None."
+                                f"{expected_cell_count} to "
+                                f"{len(resulting_cells)}. Returning None."
                             )
 
                         return None
 
             # --------------------------------------------------------------
-            # Legacy TopologicCore path.
+            # TopologicCore compatibility path.
+            #
+            # Do not use public CellComplex.ByFaces here. Its coplanar-face
+            # preprocessing can dissolve the triangular subdivisions we have
+            # just created.
             # --------------------------------------------------------------
 
             else:
 
                 try:
-                    return_topology = CellComplex.ByFaces(
+                    candidate = CellComplex._ByFaces(
                         face_triangles,
                         tolerance=tolerance,
                         silent=True
                     )
 
-                except TypeError:
-                    return_topology = CellComplex.ByFaces(
-                        face_triangles,
-                        tolerance=tolerance
-                    )
-
                 except Exception:
-                    return_topology = None
+                    candidate = None
+
+                if valid_triangulated_cellcomplex(
+                    candidate,
+                    expected_cell_count
+                ):
+                    return_topology = candidate
+
+                else:
+                    # ------------------------------------------------------
+                    # Secondary pure-Topologic reconstruction path.
+                    # ------------------------------------------------------
+
+                    try:
+                        candidate = CellComplex.ByFacesTopologic(
+                            face_triangles,
+                            tolerance=tolerance,
+                            silent=True
+                        )
+
+                    except Exception:
+                        candidate = None
+
+                    if valid_triangulated_cellcomplex(
+                        candidate,
+                        expected_cell_count
+                    ):
+                        return_topology = candidate
+
+                    else:
+                        return_topology = None
 
         # ------------------------------------------------------------------
-        # Legacy TopologicCore reconstruction workaround
+        # Legacy TopologicCore reconstruction fallback.
         # ------------------------------------------------------------------
 
         if not Topology.IsInstance(
@@ -21152,12 +23311,36 @@ class Topology():
             return None
 
         # ------------------------------------------------------------------
-        # Transfer Face dictionaries
+        # A TopologicCore CellComplex fallback must still satisfy the actual
+        # triangulation contract.
+        # ------------------------------------------------------------------
+
+        if (
+            topology_type
+            == Topology.TypeID("CellComplex")
+            and Topology._IsTopologicCoreBackend()
+            and not valid_triangulated_cellcomplex(
+                return_topology,
+                expected_cell_count
+            )
+        ):
+
+            if not silent:
+                print(
+                    "Topology.Triangulate - Error: TopologicCore could not "
+                    "reconstruct the CellComplex while preserving triangular "
+                    "faces and cell count. Returning None."
+                )
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Transfer Face dictionaries.
         # ------------------------------------------------------------------
 
         if (
             transferDictionaries
-            and len(selectors) > 0
+            and selectors
         ):
 
             return_topology = Topology.TransferDictionariesBySelectors(

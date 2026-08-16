@@ -1229,28 +1229,31 @@ def test_transformation_geometry(topology_type, operation_name):
         )
     )
 
-
 def test_legacy_backend_report():
     """
-    Print all analytic and active-backend measurements when explicitly enabled.
-    """
-    if os.getenv(REPORT_ENVIRONMENT_VARIABLE) != "1":
-        pytest.skip(
-            f"Set {REPORT_ENVIRONMENT_VARIABLE}=1 to print the report."
-        )
+    Verify all analytic and active-backend transformation measurements.
 
+    The detailed comparison report is printed only when
+    TOPOLOGICPY_TRANSFORMATION_REPORT=1, but the validation itself is always
+    executed so this test is never skipped.
+    """
     report = _formatted_backend_report()
-    print("\nTRANSFORMATION BACKEND COMPARISON\n")
-    print(report)
+
+    if os.getenv(REPORT_ENVIRONMENT_VARIABLE) == "1":
+        print("\nTRANSFORMATION BACKEND COMPARISON\n")
+        print(report)
 
     failures = []
+
     for topology_type in TOPOLOGY_TYPES:
         for operation_name in OPERATION_NAMES:
             evaluation = _evaluate_case(topology_type, operation_name)
+
             if evaluation.error is not None:
                 failures.append(
                     f"{topology_type}/{operation_name}: {evaluation.error}"
                 )
+
             for mismatch in evaluation.mismatches:
                 failures.append(
                     f"{topology_type}/{operation_name}: {mismatch}"

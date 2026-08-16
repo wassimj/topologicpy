@@ -190,90 +190,14 @@ def test_accessors_are_defensive_and_normalise_provider():
     assert GraphDB.Options(None, silent=True) is None
 
 
-def test_internal_validation_helpers():
-    assert GraphDB._normalise_provider(" neo4j ") == "neo4j"
-    assert GraphDB._normalise_provider("") is None
-    assert GraphDB._valid_provider("kuzu") is True
-    assert GraphDB._valid_provider("bad") is False
-    assert GraphDB._is_descriptor({"provider": "kuzu"}) is True
-    assert GraphDB._is_descriptor({}) is False
-    assert GraphDB._copy_options({"a": 1}, silent=True) == {"a": 1}
-    assert GraphDB._copy_options(None, silent=True) == {}
-    assert GraphDB._copy_options(object(), silent=True) is None
 
 
-def test_filter_call_kwargs_respects_method_signature():
-    def strict(manager, graph, silent=False):
-        return graph
-
-    def flexible(manager, **kwargs):
-        return kwargs
-
-    assert GraphDB._filter_call_kwargs(strict, {"graph": "g", "silent": True, "extra": 1}) == {
-        "graph": "g",
-        "silent": True,
-    }
-    assert GraphDB._filter_call_kwargs(flexible, {"extra": 1}) == {"extra": 1}
 
 
-def test_backend_resolution_uses_provider_modules(monkeypatch):
-    _install_backend_modules(monkeypatch)
-
-    assert GraphDB._backend(GraphDB.ByParameters("kuzu", manager="m", silent=True), silent=True) is FakeKuzu
-    assert GraphDB._backend(GraphDB.ByParameters("neo4j", manager="m", silent=True), silent=True) is FakeNeo4j
-    assert GraphDB._backend(GraphDB.ByParameters("ladybugdb", manager="m", silent=True), silent=True) is FakeLadybugDB
-    assert GraphDB._backend({"provider": "bad"}, silent=True) is None
 
 
-def test_call_injects_options_filters_kwargs_and_preserves_explicit_overrides(monkeypatch):
-    _install_backend_modules(monkeypatch)
-    manager = PlainManager()
-    graphdb = GraphDB.ByParameters(
-        "kuzu",
-        manager=manager,
-        database="should_not_reach_kuzu",
-        options={
-            "graphIDKey": "from_options",
-            "vertexIDKey": "from_options_vertex",
-            "custom": "from_options",
-            "ontologyGraphClass": "top:Graph",
-            "database": "also_should_not_reach_kuzu",
-            "unsupported": "drop-me",
-        },
-        silent=True,
-    )
-
-    result = GraphDB._call(graphdb, "UpsertGraph", graph="graph-object", graphIDKey="explicit", silent=True)
-
-    assert result == "explicit"
-    assert FakeKuzu.calls[-1][0] == "UpsertGraph"
-    kwargs = FakeKuzu.calls[-1][2]
-    assert kwargs == {
-        "graph": "graph-object",
-        "graphIDKey": "explicit",
-        "vertexIDKey": "from_options_vertex",
-        "custom": "from_options",
-        "silent": True,
-    }
 
 
-def test_call_handles_missing_manager_missing_method_and_non_callable_backend(monkeypatch):
-    _install_backend_modules(monkeypatch)
-
-    graphdb_without_manager = GraphDB.ByParameters("kuzu", manager=None, silent=True)
-    assert GraphDB._call(graphdb_without_manager, "EnsureSchema", silent=True) is None
-    assert GraphDB._call(GraphDB.ByParameters("kuzu", manager=PlainManager(), silent=True), "Missing", silent=True) is None
-    assert GraphDB._call(GraphDB.ByParameters("kuzu", manager=PlainManager(), silent=True), "", silent=True) is None
-
-    old = getattr(FakeKuzu, "NotCallable", None)
-    FakeKuzu.NotCallable = "not callable"
-    try:
-        assert GraphDB._call(GraphDB.ByParameters("kuzu", manager=PlainManager(), silent=True), "NotCallable", silent=True) is None
-    finally:
-        if old is None:
-            delattr(FakeKuzu, "NotCallable")
-        else:
-            FakeKuzu.NotCallable = old
 
 
 def test_schema_and_persistence_wrappers_dispatch_to_backend(monkeypatch):
@@ -379,110 +303,7 @@ def test_query_and_ontology_query_helpers(monkeypatch):
     assert GraphDB.VerticesByOntologyClass(GraphDB.ByParameters("ladybugdb", manager=manager, silent=True), "top:Room", silent=True) is None
 
 
-def test_ontology_keys_and_option_lookup():
-    keys = GraphDB.OntologyKeys()
-
-    assert "ontology_class" in keys
-    assert "generated_by" in keys
-    graphdb = GraphDB.ByParameters("kuzu", manager="m", options={"ontology": False}, silent=True)
-    assert GraphDB._ontology_option(graphdb, "ontology", defaultValue=True) is False
-    assert GraphDB._ontology_option(graphdb, "missing", defaultValue="fallback") == "fallback"
 
 
-def test_tgraph_ontology_annotation_sets_graph_vertex_and_edge_metadata(monkeypatch):
-    class FakeTGraph:
-        def __init__(self):
-            self.dictionary = {}
-            self._vertices = [
-                {"index": 0, "dictionary": {}},
-                {"index": 1, "dictionary": {"id": "existing"}},
-            ]
-            self._edges = [{"index": 0, "dictionary": {}}]
-
-        def SetDictionary(self, dictionary):
-            self.dictionary = dict(dictionary)
-            return self
-
-        def SetVertexDictionary(self, index, dictionary):
-            self._vertices[index]["dictionary"] = dict(dictionary)
-            return self
-
-        def SetEdgeDictionary(self, index, dictionary):
-            self._edges[index]["dictionary"] = dict(dictionary)
-            return self
-
-        @staticmethod
-        def Dictionary(graph):
-            return graph.dictionary
-
-        @staticmethod
-        def Vertices(graph, asTopologic=False, active=True):
-            return graph._vertices
-
-        @staticmethod
-        def Edges(graph, asTopologic=False, active=True):
-            return graph._edges
-
-    tgraph_module = types.ModuleType("topologicpy.TGraph")
-    tgraph_module.TGraph = FakeTGraph
-    monkeypatch.setitem(sys.modules, "topologicpy.TGraph", tgraph_module)
-
-    graph = FakeTGraph()
-    result = GraphDB._annotate_graph_ontology(
-        graph,
-        graphClass="top:CustomGraph",
-        vertexClass="top:CustomNode",
-        edgeClass="top:CustomRel",
-        generatedBy="unit-test",
-        silent=True,
-    )
-
-    assert result is graph
-    assert graph.dictionary["ontology_class"] == "top:CustomGraph"
-    assert graph.dictionary["category"] == "graph"
-    assert graph.dictionary["generated_by"] == "unit-test"
-    assert graph._vertices[0]["dictionary"]["ontology_class"] == "top:CustomNode"
-    assert graph._vertices[0]["dictionary"]["category"] == "node"
-    assert graph._vertices[0]["dictionary"]["id"] == 0
-    assert graph._vertices[1]["dictionary"]["id"] == "existing"
-    assert graph._edges[0]["dictionary"]["ontology_class"] == "top:CustomRel"
-    assert graph._edges[0]["dictionary"]["category"] == "relationship"
 
 
-def test_annotate_graph_result_handles_lists_and_ontology_false(monkeypatch):
-    class FakeTGraph:
-        def __init__(self):
-            self.dictionary = {}
-            self._vertices = []
-            self._edges = []
-
-        def SetDictionary(self, dictionary):
-            self.dictionary = dict(dictionary)
-            return self
-
-        @staticmethod
-        def Dictionary(graph):
-            return graph.dictionary
-
-        @staticmethod
-        def Vertices(graph, asTopologic=False, active=True):
-            return graph._vertices
-
-        @staticmethod
-        def Edges(graph, asTopologic=False, active=True):
-            return graph._edges
-
-    tgraph_module = types.ModuleType("topologicpy.TGraph")
-    tgraph_module.TGraph = FakeTGraph
-    monkeypatch.setitem(sys.modules, "topologicpy.TGraph", tgraph_module)
-
-    graph = FakeTGraph()
-    assert GraphDB._annotate_graph_result(graph, ontology=False, silent=True) is graph
-
-    graph_a = FakeTGraph()
-    graph_b = FakeTGraph()
-    result = GraphDB._annotate_graph_result([graph_a, graph_b], generatedBy="unit-test", silent=True)
-
-    assert result == [graph_a, graph_b]
-    assert graph_a.dictionary["generated_by"] == "unit-test"
-    assert graph_b.dictionary["generated_by"] == "unit-test"

@@ -92,15 +92,6 @@ def _cellcomplex():
     return cc
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_TriangulateFailureVisibility.py must run using PythonOCCBackend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
-
 
 @pytest.mark.parametrize(
     "factory",

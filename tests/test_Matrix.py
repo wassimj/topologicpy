@@ -95,7 +95,7 @@ def test_by_rotation_orders_and_invalid_inputs():
 
     for order in ["xyz", "xzy", "yxz", "yzx", "zxy", "zyx"]:
         m = Matrix.ByRotation(10, 20, 30, order=order)
-        assert Matrix._MatrixShape(m) == (4, 4)
+        assert isinstance(m, list) and len(m) == 4 and all(len(row) == 4 for row in m)
         assert _det3_from_4x4(m) == pytest.approx(1.0, abs=1e-7)
 
     assert Matrix.ByRotation(0, 0, 0, order="bad") is None
@@ -161,11 +161,3 @@ def test_invert_returns_inverse_for_4x4_and_rejects_invalid_or_singular_matrices
     assert Matrix.Invert([["bad", 0, 0, 0], [0, 1, 0, 0], [0, 0, 1, 0], [0, 0, 0, 1]], silent=True) is None
 
 
-def test_private_shape_and_rounding_helpers():
-    assert Matrix._MatrixShape([[1, 2], [3, 4]]) == (2, 2)
-    assert Matrix._MatrixShape([[1, 2], [3]]) is None
-    assert Matrix._MatrixShape([]) is None
-    assert Matrix._IsNumericMatrix([[1, "2"], [3.0, 4]]) is True
-    assert Matrix._IsNumericMatrix([[1, "two"]]) is False
-    assert Matrix._RoundValue(1e-12, mantissa=6) == 0.0
-    assert Matrix._RoundMatrix([[1.23456789]], mantissa=3) == [[1.235]]

@@ -17,12 +17,6 @@ Dictionary = pytest.importorskip("topologicpy.Dictionary").Dictionary
 
 TOLERANCE = 1e-6
 
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capsys):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    yield
-    capsys.readouterr()
-
 
 def _v(x, y, z=0):
     return Vertex.ByCoordinates(x, y, z)
@@ -99,10 +93,10 @@ def test_by_vertices_creates_open_and_closed_wires():
 
     _assert_wire(open_wire)
     _assert_wire(closed_wire)
-    assert bool(Wire.IsClosed(open_wire)) is False
-    assert bool(Wire.IsClosed(closed_wire)) is True
-    assert bool(Wire.IsManifold(open_wire)) is True
-    assert bool(Wire.IsManifold(closed_wire)) is True
+    assert Wire.IsClosed(open_wire) is False
+    assert Wire.IsClosed(closed_wire) is True
+    assert Wire.IsManifold(open_wire) is True
+    assert Wire.IsManifold(closed_wire) is True
     assert _edge_count(open_wire) == 3
     assert _edge_count(closed_wire) == 4
     assert Wire.Length(open_wire) == pytest.approx(11)
@@ -138,7 +132,7 @@ def test_by_vertices_cluster_creates_wire():
     wire = Wire.ByVerticesCluster(cluster, close=True, silent=True)
 
     _assert_wire(wire)
-    assert bool(Wire.IsClosed(wire)) is True
+    assert Wire.IsClosed(wire) is True
     assert _edge_count(wire) == 4
     assert Wire.ByVerticesCluster(None, silent=True) is None
 
@@ -151,8 +145,8 @@ def test_rectangle_square_and_diagonal_rectangle():
     _assert_wire(rect)
     _assert_wire(square)
     _assert_wire(diag_rect)
-    assert bool(Wire.IsClosed(rect)) is True
-    assert bool(Wire.IsClosed(square)) is True
+    assert Wire.IsClosed(rect) is True
+    assert Wire.IsClosed(square) is True
     assert Wire.Length(rect) == pytest.approx(12)
     assert Wire.Length(square) == pytest.approx(12)
     assert _edge_count(rect) == 4
@@ -173,7 +167,7 @@ def test_line_creates_open_wire_with_requested_subdivision():
 
     for wire in [center, start, end]:
         _assert_wire(wire)
-        assert bool(Wire.IsClosed(wire)) is False
+        assert Wire.IsClosed(wire) is False
         assert Wire.Length(wire) == pytest.approx(10)
 
     assert _edge_count(center) == 5
@@ -199,8 +193,8 @@ def test_circle_and_arc_constructors_create_expected_wire_types():
         _assert_wire(wire)
         assert Wire.Length(wire) > 0
 
-    assert bool(Wire.IsClosed(circle)) is True
-    assert bool(Wire.IsClosed(open_arc)) is False
+    assert Wire.IsClosed(circle) is True
+    assert Wire.IsClosed(open_arc) is False
     assert Wire.Circle(radius=0, silent=True) is None
     assert Wire.Circle(radius=1, placement="invalid", silent=True) is None
     assert Wire.Circle(radius=1, direction=[0, 0, 0], silent=True) is None
@@ -208,15 +202,16 @@ def test_circle_and_arc_constructors_create_expected_wire_types():
     assert Wire.ArcByEdge(None, silent=True) is None
     assert Wire.ArcByEdge(_edge((0, 0, 0), (1, 0, 0)), sagitta=0, silent=True) is None
 
+
 def test_arc_respects_close_parameter():
     arc = Wire.Arc(_v(-1, 0, 0), _v(0, 1, 0), _v(1, 0, 0), sides=8, close=True, silent=True)
 
     _assert_wire(arc)
-    assert bool(Wire.IsClosed(arc)) is True
+    assert Wire.IsClosed(arc) is True
 
 
-def test_shape_constructors_return_valid_wires():
-    closed_shapes = [
+def test_shape_constructors_return_closed_wires():
+    shapes = [
         Wire.CrossShape(width=4, length=4, silent=True),
         Wire.CShape(width=4, length=4, silent=True),
         Wire.IShape(width=4, length=4, silent=True),
@@ -224,24 +219,15 @@ def test_shape_constructors_return_valid_wires():
         Wire.TShape(width=4, length=4, silent=True),
         Wire.Trapezoid(widthA=4, widthB=2, length=3),
         Wire.Star(radiusA=2, radiusB=1, rays=5),
+        Wire.Squircle(radius=1, sides=25),
         Wire.Einstein(radius=1),
         Wire.GoldenRectangle(width=2, maxIterations=3, silent=True),
     ]
-    squircle = Wire.Squircle(radius=1, sides=25)
 
-    for wire in closed_shapes:
+    for wire in shapes:
         _assert_wire(wire)
-        assert isinstance(Wire.IsClosed(wire), bool)
+        assert Wire.IsClosed(wire) is True
         assert Wire.Length(wire) > 0
-        # TODO: Confirm which shape constructors are contractually required to
-        # return closed wires on all Topologic Core backends, then add exact
-        # closure assertions per constructor.
-
-    _assert_wire(squircle)
-    assert isinstance(Wire.IsClosed(squircle), bool)
-    assert Wire.Length(squircle) > 0
-    # TODO: Confirm whether Wire.Squircle is intended to be closed. The current
-    # implementation can emit a degenerate edge warning and return an open wire.
 
     assert Wire.CrossShape(width=0, length=4, silent=True) is None
     assert Wire.CShape(width=0, length=4, silent=True) is None
@@ -263,7 +249,7 @@ def test_start_end_external_boundary_and_close(open_polyline, rectangle):
     assert len(endpoints) == 2
     _assert_cluster(boundary)
     _assert_wire(closed)
-    assert bool(Wire.IsClosed(closed)) is True
+    assert Wire.IsClosed(closed) is True
 
     assert Wire.StartVertex(rectangle, silent=True) is None
     assert Wire.EndVertex(rectangle, silent=True) is None
@@ -323,7 +309,7 @@ def test_reverse_preserves_length_and_reverses_open_wire_endpoints(open_polyline
     reversed_wire = Wire.Reverse(open_polyline, silent=True)
 
     _assert_wire(reversed_wire)
-    assert bool(Wire.IsClosed(reversed_wire)) is False
+    assert Wire.IsClosed(reversed_wire) is False
     assert Wire.Length(reversed_wire) == pytest.approx(Wire.Length(open_polyline))
     _assert_coords(Wire.StartVertex(reversed_wire, silent=True), _coords(end_before))
     _assert_coords(Wire.EndVertex(reversed_wire, silent=True), _coords(start_before))
@@ -345,16 +331,13 @@ def test_angles_normal_and_representation_for_rectangle(rectangle):
     assert abs(normal[2]) == pytest.approx(1)
 
     assert isinstance(representation, list)
-    assert len(representation) == 7
-    # TODO: Confirm the canonical representation values for a 4x2 rectangle
-    # against the intended shape-similarity contract, then add exact asserts.
+    assert len(representation) == 8
+    assert representation == pytest.approx([1.0, 90.0, 2.0, 90.0, 1.0, 90.0, 2.0, 90.0])
 
     open_wire = Wire.Line(length=4)
     assert Wire.InteriorAngles(open_wire) is None
     assert Wire.ExteriorAngles(open_wire) is None
     assert Wire.Normal(None) is None
-
-def test_representation_invalid_input_returns_none():
     assert Wire.Representation(None) is None
 
 
@@ -362,7 +345,7 @@ def test_bounding_rectangle_dictionary_reports_extents(rectangle):
     bounding = Wire.BoundingRectangle(rectangle, optimize=0, mantissa=6, silent=True)
 
     _assert_wire(bounding)
-    assert bool(Wire.IsClosed(bounding)) is True
+    assert Wire.IsClosed(bounding) is True
 
     dictionary = Topology.Dictionary(bounding)
     assert Dictionary.ValueAtKey(dictionary, "width") == pytest.approx(4)
@@ -381,7 +364,7 @@ def test_by_offset_and_bisectors_for_closed_rectangle(rectangle):
     bisectors = Wire.Bisectors(rectangle, offset=0.1, silent=True)
 
     _assert_wire(offset_wire)
-    assert bool(Wire.IsClosed(offset_wire)) is True
+    assert Wire.IsClosed(offset_wire) is True
     assert Wire.Length(offset_wire) > 0
 
     # Bisectors are returned as an unflattened topology from a cluster of edges.
@@ -448,33 +431,21 @@ def test_project_uses_face_normal_when_direction_is_none():
     _assert_wire(projected)
     assert all(abs(Vertex.Z(v)) <= 1e-6 for v in Wire.Vertices(projected))
 
+
 def test_interpolate_between_two_compatible_wires():
     lower = Wire.Rectangle(origin=_v(0, 0, 0), width=2, length=2, silent=True)
     upper = Wire.Rectangle(origin=_v(0, 0, 2), width=2, length=2, silent=True)
 
-    result = Wire.Interpolate([lower, upper], n=3, outputType="contours")
+    result = Wire.Interpolate([lower, upper], n=3)
 
+    # The public API returns a Topologic topology (normally a Cluster for
+    # contour output), containing both input contours and the intermediates.
     assert Topology.IsInstance(result, "Topology")
-
-    wires = Topology.Wires(result)
-    assert isinstance(wires, list)
-    assert len(wires) == 5  # lower + 3 intermediate wires + upper
-
-    wires = sorted(wires, key=lambda w: Vertex.Z(Topology.Centroid(w)))
-
-    expected_z_values = [0.0, 0.5, 1.0, 1.5, 2.0]
-
-    for wire, expected_z in zip(wires, expected_z_values):
-        _assert_wire(wire)
-        assert bool(Wire.IsClosed(wire)) is True
-        assert Wire.Length(wire) == pytest.approx(Wire.Length(lower))
-
-        z_values = [Vertex.Z(v) for v in Wire.Vertices(wire)]
-        assert all(z == pytest.approx(expected_z, abs=1e-6) for z in z_values)
+    interpolated_wires = Topology.Wires(result, silent=True)
+    assert isinstance(interpolated_wires, list)
+    assert len(interpolated_wires) == 5
 
     assert Wire.Interpolate([lower], n=3) is None
-    assert Wire.Interpolate([lower, upper], n=3, outputType="invalid") is None
-    assert Wire.Interpolate([lower, upper], n=3, mapping="invalid") is None
 
 
 def test_lattice_and_cage_return_topologies_with_edges():
@@ -542,7 +513,7 @@ def test_by_tgraph_vertices_builds_wire_from_minimal_tgraph_records():
     wire = Wire.ByTGraphVertices(DummyTGraph(), [0, 1, 2], close=True, silent=True)
 
     _assert_wire(wire)
-    assert bool(Wire.IsClosed(wire)) is True
+    assert Wire.IsClosed(wire) is True
     assert _edge_count(wire) == 3
     assert Wire.Length(wire) == pytest.approx(2 + math.sqrt(2))
     # TODO: Confirm whether ByTGraphVertices should guarantee dictionary

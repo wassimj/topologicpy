@@ -18,13 +18,6 @@ Dictionary = pytest.importorskip("topologicpy.Dictionary").Dictionary
 
 TOLERANCE = 1e-6
 
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capfd):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    capfd.readouterr()
-    yield
-    capfd.readouterr()
-
 
 def _v(x, y, z=0):
     return Vertex.ByCoordinates(x, y, z)
@@ -254,7 +247,8 @@ def test_facing_toward_and_compass_angle_use_face_normal(rectangle_face):
     assert bool(Face.FacingToward(rectangle_face, direction=normal)) is True
     assert bool(Face.FacingToward(rectangle_face, direction=_reverse(normal))) is False
 
-    # A horizontal face has a vertical normal, so its horizontal compass angle is undefined.
+    # CompassAngle uses only the XY projection of the face normal. A horizontal
+    # face therefore has no defined compass bearing; a vertical face does.
     assert Face.CompassAngle(rectangle_face) is None
     assert isinstance(Face.CompassAngle(vertical_face), (float, int))
     assert Face.CompassAngle(None) is None
@@ -302,6 +296,8 @@ def test_bounding_rectangle_preserves_area_metadata(rectangle_face):
 
 def test_offset_and_thickened_wire_create_faces(rectangle_face):
     offset = Face.ByOffset(rectangle_face, offset=0.1, silent=True)
+    # ByThickenedWire needs a planar wire with enough non-collinear vertices to
+    # establish its working plane. A straight line is intentionally insufficient.
     polyline = Wire.ByVertices(
         [_v(0, 0, 0), _v(2, 0, 0), _v(2, 1, 0)],
         close=False,
@@ -445,10 +441,7 @@ def test_isconvex_false_for_concave_l_shape():
 
 
 def test_invalid_inputs_for_selected_shape_factories():
+    assert Face.Ellipse(width=0, length=1) is None
     assert Face.Star(radiusA=0, radiusB=1) is None
     assert Face.Trapezoid(widthA=0, widthB=1, length=1) is None
     assert Face.Square(size=0) is None
-
-
-def test_ellipse_invalid_dimensions_return_none():
-    assert Face.Ellipse(width=0, length=1) is None

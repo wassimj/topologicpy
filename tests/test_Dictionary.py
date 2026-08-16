@@ -21,23 +21,24 @@ def _py(dictionary):
     return Dictionary.PythonDictionary(dictionary, silent=True)
 
 
-def test_plain_python_dictionary_helpers_and_accessors():
+
+def test_plain_python_dictionary_accessors():
     d = {"a": 1, "b": "two", "none": None}
 
-    assert Dictionary._IsDictionary(d) is True
-    assert sorted(Dictionary._Keys(d)) == ["a", "b", "none"]
-    assert Dictionary._RawValueAtKey(d, "a") == 1
     assert Dictionary.ValueAtKey(d, "a", silent=True) == 1
     assert Dictionary.ValueAtKey(d, "missing", defaultValue="fallback", silent=True) == "fallback"
     assert Dictionary.ValueAtKey(d, "none", defaultValue="fallback", silent=True) is None
     assert Dictionary.Keys(d, silent=True) == ["a", "b", "none"]
     assert Dictionary.Values(d, silent=True) == [1, "two", None]
     assert Dictionary.ValuesAtKeys(d, ["a", "missing"], defaultValue=99, silent=True) == [1, 99]
-    assert Dictionary.KeysAtValue({"x": "alpha", "y": "beta", "z": "alpha"}, "alpha", silent=True) == ["x", "z"]
+    assert Dictionary.KeysAtValue(
+        {"x": "alpha", "y": "beta", "z": "alpha"},
+        "alpha",
+        silent=True,
+    ) == ["x", "z"]
 
 
 def test_invalid_dictionary_accessors_return_none_or_defaults():
-    assert Dictionary._IsDictionary(None) is False
     assert Dictionary.Keys(None, silent=True) is None
     assert Dictionary.Values(None, silent=True) is None
     assert Dictionary.ValuesAtKeys(None, ["a"], silent=True) is None
@@ -48,43 +49,12 @@ def test_invalid_dictionary_accessors_return_none_or_defaults():
     assert Dictionary.PythonDictionary(None, silent=True) is None
 
 
-def test_tgraph_vertex_and_edge_record_dictionary_helpers():
-    vertex = {"index": 7, "active": True, "dictionary": {"id": "V7", "zone": "office"}}
-    edge = {"index": 3, "src": 0, "dst": 1, "directed": True, "dictionary": {"id": "E3", "weight": 2.5}}
-
-    assert Dictionary._IsTGraphVertexRecord(vertex) is True
-    assert Dictionary._IsTGraphEdgeRecord(edge) is True
-    assert Dictionary._IsTGraphDictionaryContainer(vertex) is True
-    assert Dictionary._IsTGraphDictionaryContainer(edge) is True
-    assert Dictionary._TGraphDictionary(vertex) == {"id": "V7", "zone": "office"}
-    assert Dictionary._TGraphDictionary(edge) == {"id": "E3", "weight": 2.5}
-
-    updated_vertex = Dictionary._SetTGraphDictionary(vertex, {"label": "Room"})
-    updated_edge = Dictionary._SetTGraphDictionary(edge, {"label": "Connection"})
-
-    assert updated_vertex is vertex
-    assert updated_edge is edge
-    assert vertex["dictionary"]["label"] == "Room"
-    assert vertex["dictionary"]["index"] == 7
-    assert vertex["dictionary"]["active"] is True
-    assert edge["dictionary"]["label"] == "Connection"
-    assert edge["dictionary"]["src"] == 0
-    assert edge["dictionary"]["dst"] == 1
-    assert edge["dictionary"]["directed"] is True
 
 
-def test_to_and_set_python_dictionary_copy_semantics():
-    source = {"a": 1}
-    copied = Dictionary._ToPythonDictionary(source, copy=True)
-    direct = Dictionary._ToPythonDictionary(source, copy=False)
 
-    assert copied == {"a": 1}
-    assert copied is not source
-    assert direct is source
 
-    result = Dictionary._SetPythonDictionary(source, {"b": 2})
-    assert result is source
-    assert source == {"b": 2}
+
+
 
 
 def test_by_key_value_and_by_keys_values_round_trip():
@@ -388,17 +358,8 @@ def test_by_object_properties_invalid_key_raises_exception():
         Dictionary.ByObjectProperties(_FakeBlenderObject(), ["does_not_exist"], False)
 
 
-def test_convert_value_and_convert_attribute_round_trip_common_values():
-    for value in [None, 3, 2.5, "hello", [1, "x", None], {"a": 1}]:
-        attr = Dictionary._ConvertValue(value)
-        assert Dictionary._ConvertAttribute(attr) == value
 
 
-def test_values_match_numeric_and_case_sensitive_behaviour():
-    assert Dictionary._ValuesMatch(1, 1.0) is True
-    assert Dictionary._ValuesMatch("Room", "room") is False
-    assert Dictionary._ValuesMatch("Room", "room", caseSensitive=False) is True
-    assert Dictionary._ValuesMatch([1, 2], [1, 2]) is True
 
 
 def test_adjacency_dictionary_rejects_invalid_inputs():

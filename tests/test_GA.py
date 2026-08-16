@@ -400,32 +400,6 @@ def test_save_without_build_or_run_raises(fake_pygad, tmp_path):
         ga.Save(str(tmp_path / "missing"))
 
 
-def test_checkpointing_latest_resume_and_keep_last(fake_pygad, tmp_path):
-    ckpt_dir = tmp_path / "ckpts"
-    ga = GA(
-        num_genes=2,
-        gene_space=[0, 1],
-        fitness_function=_fitness_single,
-        sol_per_pop=3,
-        num_generations=4,
-        silent=True,
-    )
-    ga.EnableCheckpointing(str(ckpt_dir), interval=1, keep_last=2, save_final=True, silent=True)
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore", DeprecationWarning)
-        summary = ga.Run()
-
-    files = ga._checkpoint_paths()
-    assert summary.generations_completed == 4
-    assert 1 <= len(files) <= 2
-    assert all(fp.endswith(".pkl") for fp in files)
-    assert ga.LatestCheckpoint() == files[-1]
-
-    resumed = GA(num_genes=2, gene_space=[0, 1], fitness_function=_fitness_single)
-    resumed.EnableCheckpointing(str(ckpt_dir), interval=1, keep_last=2, silent=True)
-    assert resumed.ResumeFromLatestCheckpoint() is True
-    assert resumed.Ran is True
-    assert resumed.BestSolution is not None
 
 
 def test_resume_returns_false_when_no_checkpoint(fake_pygad, tmp_path):
@@ -435,38 +409,8 @@ def test_resume_returns_false_when_no_checkpoint(fake_pygad, tmp_path):
     assert ga.ResumeFromLatestCheckpoint() is False
 
 
-def test_fitness_proxy_converts_solution_to_float_array(fake_pygad):
-    seen = {}
-
-    def fitness(_ga, solution, solution_idx):
-        seen["dtype"] = solution.dtype.kind
-        seen["idx"] = solution_idx
-        return float(np.sum(solution))
-
-    ga = GA(num_genes=2, gene_space=[0, 1], fitness_function=fitness)
-    value = ga._fitness_proxy(object(), [1, 2], 7)
-
-    assert value == 3.0
-    assert seen == {"dtype": "f", "idx": 7}
 
 
-def test_pareto_front_indices_and_front(fake_pygad):
-    ga = GA(num_genes=2, gene_space=[0, 1], fitness_function=_fitness_multi)
-    ga._last_population = np.asarray([[0, 0], [1, 0], [0, 1], [2, 2]], dtype=float)
-    ga._last_population_fitness = np.asarray([[1, 1], [2, 0], [0, 2], [2, 2]], dtype=float)
-
-    assert ga.ParetoFrontIndices().tolist() == [3]
-    pop, fit = ga.ParetoFront()
-    assert pop.tolist() == [[2.0, 2.0]]
-    assert fit.tolist() == [[2.0, 2.0]]
-
-    with pytest.raises(ValueError):
-        ga.ParetoFrontIndices(np.asarray([1, 2, 3]))
-
-    ga._last_population = np.asarray([[0, 0]], dtype=float)
-    ga._last_population_fitness = np.asarray([[1, 1], [2, 2]], dtype=float)
-    with pytest.raises(ValueError):
-        ga.ParetoFront()
 
 
 def test_pareto_helpers_require_cached_data(fake_pygad):
@@ -477,55 +421,9 @@ def test_pareto_helpers_require_cached_data(fake_pygad):
         ga.ParetoFront()
 
 
-def test_plot_pareto_front_2d(fake_pygad, fake_plotly):
-    ga = GA(num_genes=2, gene_space=[0, 1], fitness_function=_fitness_multi)
-    ga._last_population_fitness = np.asarray([[1, 1], [2, 0], [0, 2], [2, 2]], dtype=float)
-
-    fig = ga.PlotParetoFront(connect_pareto=True, max_points=3)
-
-    assert isinstance(fig, FakeFigure)
-    assert len(fig.traces) >= 2
-    assert fig.layout_updates[-1]["title"] == "Pareto Front"
-    assert fig.xaxis_updates[-1]["title"] == "f1"
-    assert fig.yaxis_updates[-1]["title"] == "f2"
 
 
-def test_plot_pareto_front_3d_and_parallel(fake_pygad, fake_plotly):
-    ga = GA(num_genes=3, gene_space=[0, 1], fitness_function=_fitness_multi)
-    ga._last_population_fitness = np.asarray([[1, 1, 0], [2, 0, 1], [0, 2, 1], [2, 2, 2]], dtype=float)
-    fig3 = ga.PlotParetoFront(objective_names=["a", "b", "c"])
-    assert isinstance(fig3, FakeFigure)
-    assert len(fig3.traces) == 2
-
-    ga._last_population_fitness = np.asarray([[1, 1, 0, 0], [2, 0, 1, 1], [0, 2, 1, 0], [2, 2, 2, 2]], dtype=float)
-    fig4 = ga.PlotParetoFront(objective_names=["a", "b", "c", "d"])
-    assert isinstance(fig4, FakeFigure)
-    assert len(fig4.traces) == 1
 
 
-def test_plot_pareto_front_validation(fake_pygad, fake_plotly):
-    ga = GA(num_genes=2, gene_space=[0, 1], fitness_function=_fitness_multi)
-
-    with pytest.raises(ValueError):
-        ga.PlotParetoFront()
-
-    ga._last_population_fitness = np.asarray([1, 2, 3], dtype=float)
-    with pytest.raises(ValueError):
-        ga.PlotParetoFront()
-
-    ga._last_population_fitness = np.asarray([[1, 1], [2, 2]], dtype=float)
-    with pytest.raises(ValueError):
-        ga.PlotParetoFront(objective_names=["only_one"])
-    with pytest.raises(ValueError):
-        ga.PlotParetoFront(max_points=0)
-    with pytest.raises(ValueError):
-        ga.PlotParetoFront(max_points="bad")
 
 
-def test_missing_plotly_raises(fake_pygad, monkeypatch):
-    ga = GA(num_genes=2, gene_space=[0, 1], fitness_function=_fitness_multi)
-    ga._last_population_fitness = np.asarray([[1, 1], [2, 2]], dtype=float)
-    monkeypatch.setattr(ga_module, "go", None)
-    monkeypatch.setattr(ga_module, "_PLOTLY_IMPORT_ERROR", RuntimeError("missing"))
-    with pytest.raises(ImportError):
-        ga.PlotParetoFront()

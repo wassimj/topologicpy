@@ -267,15 +267,6 @@ TRANSLATIONS = {
 }
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_TranslateStress.py must run using PythonOCCBackend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
-
 
 @pytest.mark.parametrize("factory_name", list(FACTORIES))
 @pytest.mark.parametrize("translation_name", list(TRANSLATIONS))

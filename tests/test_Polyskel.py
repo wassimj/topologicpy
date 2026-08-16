@@ -68,7 +68,6 @@ def test_line_ray_and_segment_intersections():
 def test_distance_normalize_and_bisector_with_coordinate_pairs():
     assert ps.distance((0, 0), (3, 4)) == pytest.approx(5.0)
     n = ps.normalize((3, 4))
-    print("**** n is *****", n)
     assert isinstance(n, ps.Point2)
     assert _xy(n) == (0.6, 0.8)
 
@@ -78,66 +77,12 @@ def test_distance_normalize_and_bisector_with_coordinate_pairs():
     assert b.y == pytest.approx(math.sqrt(0.5))
 
 
-def test_normalize_contour_removes_closure_duplicates_and_collinear_vertices():
-    contour = [
-        (0, 0),
-        (1, 0),
-        (2, 0),  # collinear duplicate direction on bottom edge
-        (2, 1),
-        (0, 1),
-        (0, 0),  # closing point
-    ]
-    cleaned = ps._normalize_contour(contour)
-    assert [_xy(p) for p in cleaned] == [(0.0, 0.0), (2.0, 0.0), (2.0, 1.0), (0.0, 1.0)]
-    assert ps._signed_area(cleaned) == pytest.approx(2.0)
-    assert list(ps._window([])) == []
 
 
-def test_event_queue_orders_events_and_ignores_none():
-    queue = ps._EventQueue()
-    queue.put(None)
-    assert queue.empty()
-    queue.put(ps._EdgeEvent(3.0, ps.Point2(0, 0), None, None))
-    queue.put(ps._EdgeEvent(1.0, ps.Point2(0, 0), None, None))
-    queue.put_all([None, ps._SplitEvent(2.0, ps.Point2(0, 0), None, None)])
-
-    assert queue.peek().distance == pytest.approx(1.0)
-    assert queue.get().distance == pytest.approx(1.0)
-    assert queue.get().distance == pytest.approx(2.0)
-    assert queue.get().distance == pytest.approx(3.0)
-    assert queue.empty()
 
 
-def test_point_in_polygon_valid_skeleton_and_merge_sources():
-    square = ps._normalize_contour([(0, 0), (2, 0), (2, 2), (0, 2)])
-    assert ps._point_in_polygon(ps.Point2(1, 1), square)
-    assert ps._point_in_polygon(ps.Point2(0, 1), square)
-    assert not ps._point_in_polygon(ps.Point2(3, 1), square)
-
-    skeleton = [
-        ps.Subtree(ps.Point2(1, 1), 1.0, [ps.Point2(1, 0)]),
-        ps.Subtree(ps.Point2(1 + ps.EPSILON / 2, 1), 0.5, [ps.Point2(2, 1)]),
-    ]
-    merged = ps._merge_sources(skeleton)
-    assert len(merged) == 1
-    assert merged[0].height == pytest.approx(0.5)
-    assert len(merged[0].sinks) == 2
-    assert ps._valid_skeleton(merged, square, [])
-    assert not ps._valid_skeleton([ps.Subtree(ps.Point2(3, 3), 1, [])], square, [])
 
 
-def test_fallback_convex_skeleton_square_is_deterministic():
-    square = ps._normalize_contour([(0, 0), (2, 0), (2, 2), (0, 2)])
-    skeleton = ps._fallback_convex_skeleton(square)
-    assert len(skeleton) == 4
-    assert {_xy(st.source) for st in skeleton} == {(1.0, 1.0)}
-    assert sorted(_xy(st.sinks[0]) for st in skeleton) == [
-        (0.0, 1.0),
-        (1.0, 0.0),
-        (1.0, 2.0),
-        (2.0, 1.0),
-    ]
-    assert all(st.height == pytest.approx(1.0) for st in skeleton)
 
 
 def test_skeletonize_square_and_alias_return_subtrees_with_point_output():
@@ -173,13 +118,6 @@ def test_skeletonize_invalid_inputs_and_fallback_disabled():
     assert isinstance(result, list)
 
 
-def test_skeletonize_concave_polygon_stays_finite_and_inside_fallback_domain():
-    polygon = [(0, 0), (4, 0), (4, 1), (2, 1), (2, 3), (0, 3)]
-    outer = ps._normalize_contour(polygon)
-    skeleton = ps.skeletonize(polygon, asTopologic=False, silent=True)
-    assert skeleton
-    assert all(math.isfinite(st.source.x) and math.isfinite(st.source.y) for st in skeleton)
-    assert all(ps._point_in_polygon(st.source, outer, include_boundary=True) for st in skeleton)
 
 
 def test_optional_topologic_vertex_bridge(monkeypatch):

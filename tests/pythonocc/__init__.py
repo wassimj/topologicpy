@@ -1,1 +1,0 @@
-# PythonOCC backend parity tests

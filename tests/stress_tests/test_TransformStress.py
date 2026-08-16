@@ -3,7 +3,6 @@ import os
 import random
 import pytest
 
-from topologicpy.Core import Core
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -162,12 +161,6 @@ MATRICES = {
 }
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend"
-
 
 @pytest.mark.parametrize("factory_name", list(FACTORIES))
 @pytest.mark.parametrize("matrix_name", list(MATRICES))
@@ -255,7 +248,7 @@ def test_transform_rejects_invalid_matrix(matrix):
     assert Topology.Transform(_edge(), matrix, silent=True) is None
 
 
-def test_transform_shear_requires_native_affine_backend():
+def test_transform_general_shear_coordinate_oracle():
     t = _cell()
     m = MATRICES["general_shear"]
     expected = [_apply(p, m) for p in _points(t)]

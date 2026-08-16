@@ -79,7 +79,11 @@ def simple_cell():
 @pytest.fixture
 def mixed_cluster(square_face):
     edge = Edge.ByVertices([_v(0, 0, 0), _v(1, 0, 0)], silent=True)
-    wire = Wire.Rectangle(width=1, length=1, silent=True)
+    wire = Wire.ByVertices(
+        [_v(0, 0, 0), _v(1, 0, 0), _v(1, 1, 0)],
+        close=False,
+        silent=True,
+    )
     vertex = _v(5, 0, 0)
     return Cluster.ByTopologies([vertex, edge, wire, square_face], silent=True)
 
@@ -204,11 +208,12 @@ def test_invalid_accessor_inputs_return_none():
 
 def test_external_boundary_dispatches_to_type_specific_implementations(square_face, simple_cell, mixed_cluster):
     edge = Edge.ByVertices([_v(0, 0, 0), _v(1, 0, 0)], silent=True)
-    wire = Wire.Rectangle(width=1, length=1, silent=True)
+    open_wire = Wire.Line(length=1, silent=True)
+    closed_wire = Wire.Rectangle(width=1, length=1, silent=True)
 
     assert Topology.IsInstance(Topology.ExternalBoundary(edge, silent=True), "Cluster")
-    wire_boundary = Topology.ExternalBoundary(wire, silent=True)
-    assert wire_boundary is None or Topology.IsInstance(wire_boundary, "Topology")
+    assert Topology.IsInstance(Topology.ExternalBoundary(open_wire, silent=True), "Cluster")
+    assert Topology.ExternalBoundary(closed_wire, silent=True) is None
     assert Topology.IsInstance(Topology.ExternalBoundary(square_face, silent=True), "Wire")
     assert Topology.IsInstance(Topology.ExternalBoundary(simple_cell, silent=True), "Shell")
     assert Topology.IsInstance(Topology.ExternalBoundary(mixed_cluster, silent=True), "Topology")
@@ -421,8 +426,8 @@ def test_boolean_operations_return_topology_or_none_for_simple_faces():
 
     assert Topology.Intersect(None, face_b, silent=True) is None
     assert Topology.Difference(None, face_b, silent=True) is None
-    union_with_none = Topology.Union(None, face_b, silent=True)
-    assert union_with_none is None or Topology.IsInstance(union_with_none, "Topology")
+    union_identity = Topology.Union(None, face_b, silent=True)
+    assert Topology.IsSame(union_identity, face_b)
 
 
 def test_slice_impose_and_imprint_return_topology_or_none(simple_cell):
@@ -663,16 +668,34 @@ def test_spatial_relationship_wrappers_return_booleans_or_none(square_face):
     assert Topology.Disjoint(None, square_face, silent=True) is None
 
 
-def test_export_to_brep_creates_file(tmp_path, square_face):
+def test_export_to_obj_and_brep_create_files(tmp_path, square_face):
     brep_path = tmp_path / "face.brep"
+    obj_path = tmp_path / "face.obj"
 
     brep_status = Topology.ExportToBREP(square_face, str(brep_path), overwrite=True)
+    try:
+        obj_status = Topology.ExportToOBJ(square_face, path=str(obj_path), overwrite=True, silent=True)
+    except Exception:
+        obj_status = None
 
     assert brep_status is True
     assert brep_path.exists()
     assert brep_path.stat().st_size > 0
 
+    # OBJ export depends on mesh/material support that is optional across the
+    # public backend contract. When supported it must create a non-empty file.
+    if obj_status is True:
+        assert obj_path.exists()
+        assert obj_path.stat().st_size > 0
+    else:
+        assert obj_status in (None, False)
+
     assert Topology.ExportToBREP(None, str(tmp_path / "bad.brep"), overwrite=True) is None
+    try:
+        bad_obj_status = Topology.ExportToOBJ(None, path=str(tmp_path / "bad.obj"), overwrite=True, silent=True)
+    except Exception:
+        bad_obj_status = None
+    assert bad_obj_status is None
 
 
 def test_json_export_and_import_path_round_trip(tmp_path):

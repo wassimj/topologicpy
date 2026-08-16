@@ -15,13 +15,6 @@ Topology = pytest.importorskip("topologicpy.Topology").Topology
 
 TOLERANCE = 1e-6
 
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capfd):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    capfd.readouterr()
-    yield
-    capfd.readouterr()
-
 
 def _v(x, y, z=0):
     return Vertex.ByCoordinates(x, y, z)
@@ -261,11 +254,16 @@ def test_reverse_and_index_behaviour(x_edge):
 
 def test_normalize_normal_edge_and_normal_vector(x_edge):
     normalized = Edge.Normalize(x_edge, silent=True)
+    normalized_to_end = Edge.Normalize(x_edge, useEndVertex=True, silent=True)
     normal_edge = Edge.NormalEdge(x_edge, length=3, u=0.5, silent=True)
 
     _assert_edge(normalized)
     assert Edge.Length(normalized) == pytest.approx(1)
     assert Edge.Direction(normalized) == [1, 0, 0]
+
+    _assert_edge(normalized_to_end)
+    assert Edge.Length(normalized_to_end) == pytest.approx(1)
+    _assert_coords(_end(normalized_to_end), [10, 0, 0])
 
     _assert_edge(normal_edge)
     assert Edge.Length(normal_edge) == pytest.approx(3)
@@ -276,14 +274,6 @@ def test_normalize_normal_edge_and_normal_vector(x_edge):
     assert Edge.Normal(None) is None
     assert Edge.NormalEdge(None, silent=True) is None
     assert Edge.NormalEdge(x_edge, length=0, silent=True) is None
-
-
-def test_normalize_use_end_vertex_returns_unit_edge(x_edge):
-    normalized_to_end = Edge.Normalize(x_edge, useEndVertex=True, silent=True)
-
-    _assert_edge(normalized_to_end)
-    assert Edge.Length(normalized_to_end) == pytest.approx(1)
-    _assert_coords(_end(normalized_to_end), [10, 0, 0])
 
 
 def test_extend_trim_and_set_length_change_lengths_and_endpoint_positions(x_edge):

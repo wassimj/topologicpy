@@ -6864,7 +6864,13 @@ class Wire():
             return Topology.SelfMerge(Cluster.ByTopologies(processed_wires, silent=silent))
 
     @staticmethod
-    def Representation(wire, normalize: bool = True, rotate: bool = True, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = True):
+    def Representation(
+        wire,
+        normalize: bool = True,
+        rotate: bool = True,
+        mantissa: int = 6,
+        tolerance: float = 0.0001
+    ):
         """
         Returns a normalized representation of a closed wire with alternating edge lengths and interior angles.
 
@@ -6873,88 +6879,78 @@ class Wire():
         wire : topologic_core.Wire
             The input wire.
         normalize : bool , optional
-            If set to True, the lengths in the list are normalized so that the shortest edge has a length of 1. Default is True.
+            If set to True, the edge lengths are normalized such that the shortest
+            edge has a length of 1. Default is True.
         rotate : bool , optional
-            If set to True, the list is rotated such that the shortest edge appears first.
+            If set to True, the representation is rotated such that the shortest
+            edge appears first. Default is True.
         mantissa : int , optional
             The number of decimal places to round the result to. Default is 6.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
-        silent : bool, optional
-            If set to True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
         list
-            The representation list.
+            The representation list consisting of alternating edge lengths and
+            interior angles.
 
         """
-        from topologicpy.Vertex import Vertex
         from topologicpy.Edge import Edge
-        import math
+        from topologicpy.Topology import Topology
 
-        def angleBetweenEdges(e1, e2, tolerance=0.0001):
-            a = Vertex.X(Edge.EndVertex(e1)) - Vertex.X(Edge.StartVertex(e1))
-            b = Vertex.Y(Edge.EndVertex(e1)) - Vertex.Y(Edge.StartVertex(e1))
-            c = Vertex.Z(Edge.EndVertex(e1)) - Vertex.Z(Edge.StartVertex(e1))
-            d = Vertex.Distance(Edge.EndVertex(e1), Edge.StartVertex(e2))
-            if d <= tolerance:
-                d = Vertex.X(Edge.StartVertex(e2)) - Vertex.X(Edge.EndVertex(e2))
-                e = Vertex.Y(Edge.StartVertex(e2)) - Vertex.Y(Edge.EndVertex(e2))
-                f = Vertex.Z(Edge.StartVertex(e2)) - Vertex.Z(Edge.EndVertex(e2))
-            else:
-                d = Vertex.X(Edge.EndVertex(e2)) -  Vertex.X(Edge.StartVertex(e2))
-                e = Vertex.Y(Edge.EndVertex(e2)) - Vertex.Y(Edge.StartVertex(e2))
-                f = Vertex.Z(Edge.EndVertex(e2)) - Vertex.Z(Edge.StartVertex(e2))
-            dotProduct = a*d + b*e + c*f
-            modOfVector1 = math.sqrt( a*a + b*b + c*c)*math.sqrt(d*d + e*e + f*f) 
-            angle = dotProduct/modOfVector1
-            angleInDegrees = math.degrees(math.acos(angle))
-            return angleInDegrees
-
-        def getInteriorAngles(edges, tolerance=0.0001):
-            angles = []
-            for i in range(len(edges)-1):
-                e1 = edges[i]
-                e2 = edges[i+1]
-                angles.append(angleBetweenEdges(e1, e2, tolerance=tolerance))
-            return angles
-
-        def rotate_list_to_minimum(nums):
-            if not nums:
-                return nums  # Return the empty list as-is
-
-            min_index = nums.index(min(nums))
-            return nums[min_index:] + nums[:min_index]
-        
-        def getRep(edges, normalize=True, rotate=True, tolerance=0.0001):
-            angles = getInteriorAngles(edges, tolerance=tolerance)
-            lengths = []
-            normalizedLengths = []
-            for anEdge in edges:
-                lengths.append(Edge.Length(anEdge))
-            if normalize == True:
-                minLength = min(lengths)
-            else:
-                minLength = 1
-            for aLength in lengths:
-                normalizedLengths.append(aLength/minLength)
-            if rotate == True:
-                return rotate_list_to_minimum([x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None])
-            return [x for x in itertools.chain(*itertools.zip_longest(normalizedLengths, angles)) if x is not None]
-
-        if not Topology.IsInstance(wire, "wire"):
-            if not silent:
-                print("Wire.Representation - Error: The input wire parameter is not a valid wire. Returning None.")
+        if not Topology.IsInstance(wire, "Wire"):
+            print("Wire.Representation - Error: The input wire parameter is not a valid wire. Returning None.")
             return None
+
         if not Wire.IsClosed(wire):
-            if not silent:
-                print("Wire.Representation - Error: The input wire parameter is not a closed wire. Returning None.")
+            print("Wire.Representation - Error: The input wire parameter is not closed. Returning None.")
             return None
+
+        if not Wire.IsManifold(wire):
+            print("Wire.Representation - Error: The input wire parameter is non-manifold. Returning None.")
+            return None
+
         edges = Topology.Edges(wire)
-        return_list = [round(x, mantissa) for x in getRep(edges, normalize=normalize, rotate=rotate, tolerance=tolerance)]
-        return return_list
-    
+        if not isinstance(edges, list) or len(edges) < 3:
+            print("Wire.Representation - Error: Could not retrieve a valid list of edges from the input wire. Returning None.")
+            return None
+
+        angles = Wire.InteriorAngles(
+            wire,
+            tolerance=tolerance,
+            mantissa=mantissa
+        )
+        if not isinstance(angles, list) or len(angles) != len(edges):
+            print("Wire.Representation - Error: Could not compute the interior angles of the input wire. Returning None.")
+            return None
+
+        lengths = [Edge.Length(edge) for edge in edges]
+
+        if normalize:
+            min_length = min(lengths)
+            if min_length <= tolerance:
+                print("Wire.Representation - Error: The input wire contains a zero-length edge. Returning None.")
+                return None
+            lengths = [length / min_length for length in lengths]
+
+        # Keep each edge length paired with the interior angle at the end
+        # of that edge. This guarantees a representation of length 2*N.
+        pairs = list(zip(lengths, angles))
+
+        if rotate and pairs:
+            # Rotate using edge length only. Do not search the flattened
+            # representation because angle values must not affect the rotation.
+            min_index = min(range(len(lengths)), key=lambda i: lengths[i])
+            pairs = pairs[min_index:] + pairs[:min_index]
+
+        representation = []
+        for length, angle in pairs:
+            representation.append(round(length, mantissa))
+            representation.append(round(angle, mantissa))
+
+        return representation
+
     @staticmethod
     def Reverse(wire, transferDictionaries = False, tolerance: float = 0.0001, silent: bool = False):
         """

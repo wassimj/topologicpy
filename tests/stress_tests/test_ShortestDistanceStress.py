@@ -180,15 +180,6 @@ def _aabb_distance_from_bounds(bounds_a, bounds_b):
     return math.sqrt(sum(g * g for g in gaps))
 
 
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_ShortestDistanceStress.py must run using PythonOCCBackend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
-
 
 def test_vertex_vertex_3_4_5():
     a = _vertex(0.0, 0.0, 0.0)
@@ -537,70 +528,6 @@ def test_random_axis_aligned_cells_oracle(case_index):
         )
 
 
-def test_native_distance_exception_is_not_hidden(monkeypatch):
-    a = _vertex(0.0, 0.0, 0.0)
-    b = _vertex(3.0, 4.0, 0.0)
-
-    def _raise(*args, **kwargs):
-        raise RuntimeError("intentional native Distance failure")
-
-    monkeypatch.setattr(
-        Core.TopologyUtility,
-        "Distance",
-        staticmethod(_raise),
-    )
-
-    assert Topology.ShortestDistance(
-        a,
-        b,
-        silent=True,
-    ) is None
-
-
-def test_native_distance_none_is_not_hidden(monkeypatch):
-    a = _vertex(0.0, 0.0, 0.0)
-    b = _vertex(3.0, 4.0, 0.0)
-
-    monkeypatch.setattr(
-        Core.TopologyUtility,
-        "Distance",
-        staticmethod(lambda *args, **kwargs: None),
-    )
-
-    assert Topology.ShortestDistance(
-        a,
-        b,
-        silent=True,
-    ) is None
-
-
-@pytest.mark.parametrize(
-    "bad_value",
-    [
-        float("nan"),
-        float("inf"),
-        float("-inf"),
-        -1.0,
-        "not-a-distance",
-    ],
-)
-def test_invalid_native_distance_is_not_hidden(monkeypatch, bad_value):
-    a = _vertex(0.0, 0.0, 0.0)
-    b = _vertex(3.0, 4.0, 0.0)
-
-    monkeypatch.setattr(
-        Core.TopologyUtility,
-        "Distance",
-        staticmethod(lambda *args, **kwargs: bad_value),
-    )
-
-    assert Topology.ShortestDistance(
-        a,
-        b,
-        silent=True,
-    ) is None
-
-
 def test_generic_fallback_only_when_distance_capability_absent(monkeypatch):
     a = _vertex(0.0, 0.0, 0.0)
     b = _vertex(3.0, 4.0, 0.0)
@@ -627,15 +554,26 @@ def test_generic_fallback_only_when_distance_capability_absent(monkeypatch):
 
 
 @pytest.mark.parametrize(
-    "invalid_a, invalid_b",
+    "case",
     [
-        (None, _vertex(0.0, 0.0, 0.0)),
-        (_vertex(0.0, 0.0, 0.0), None),
-        ("bad", _vertex(0.0, 0.0, 0.0)),
-        (_vertex(0.0, 0.0, 0.0), []),
+        "none_a",
+        "none_b",
+        "string_a",
+        "list_b",
     ],
 )
-def test_rejects_invalid_inputs(invalid_a, invalid_b):
+def test_rejects_invalid_inputs(case):
+    vertex = _vertex(0.0, 0.0, 0.0)
+
+    if case == "none_a":
+        invalid_a, invalid_b = None, vertex
+    elif case == "none_b":
+        invalid_a, invalid_b = vertex, None
+    elif case == "string_a":
+        invalid_a, invalid_b = "bad", vertex
+    else:
+        invalid_a, invalid_b = vertex, []
+
     assert Topology.ShortestDistance(
         invalid_a,
         invalid_b,

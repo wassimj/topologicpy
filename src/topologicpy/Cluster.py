@@ -362,10 +362,50 @@ class Cluster():
                 cluster = Topology.SetDictionary(cluster, d)
         return cluster
 
+    # @staticmethod
+    # def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+    #     """
+    #     Returns the topologies of the input cluster.
+
+    #     Parameters
+    #     ----------
+    #     cluster : topologic_core.Cluster
+    #         The input cluster.
+    #     tolerance : float , optional
+    #         The desired tolerance. Default is 0.0001.
+    #     silent : bool , optional
+    #         If set to True, error and warning messages are suppressed. Default is False.
+
+    #     Returns
+    #     -------
+    #     list
+    #         The list of cellComplexes.
+
+    #     """
+    #     from topologicpy.Topology import Topology
+
+    #     if not Topology.IsInstance(cluster, "Cluster"):
+    #         if not silent:
+    #             print("Cluster.Topologies - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+    #         return None
+    #     topologies = []
+    #     topologies.extend(Cluster.CellComplexes(cluster, silent=silent))
+    #     topologies.extend(Cluster.FreeCells(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeShells(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeFaces(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeWires(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeEdges(cluster, tolerance=tolerance, silent=silent))
+    #     topologies.extend(Cluster.FreeVertices(cluster, tolerance=tolerance, silent=silent))
+    #     return topologies
+
     @staticmethod
-    def Topologies(cluster, tolerance: float = 0.0001, silent: bool = False) -> list:
+    def Topologies(
+        cluster,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ) -> list:
         """
-        Returns the topologies of the input cluster.
+        Returns the top-level constituent topologies of the input cluster.
 
         Parameters
         ----------
@@ -374,29 +414,256 @@ class Cluster():
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If set to True, error and warning messages are suppressed.
+            Default is False.
 
         Returns
         -------
         list
-            The list of cellComplexes.
-
+            The list of top-level constituent topologies.
         """
         from topologicpy.Topology import Topology
 
         if not Topology.IsInstance(cluster, "Cluster"):
             if not silent:
-                print("Cluster.Topologies - Error: The input cluster parameter is not a valid topologic cluster. Returning None.")
+                print(
+                    "Cluster.Topologies - Error: The input cluster parameter "
+                    "is not a valid cluster. Returning None."
+                )
             return None
+
+        # ------------------------------------------------------------------
+        # Native direct-constituent query.
+        #
+        # The backends expose slightly different calling conventions:
+        #
+        #     Topologies()
+        #     Topologies(output)
+        #     Topologies(None, output)
+        #
+        # Try all of them. Some bindings can accept a call but return only a
+        # partial result, so do not stop at the first non-empty result. Keep
+        # the most complete successful result instead.
+        # ------------------------------------------------------------------
+
+        candidates = []
+
+        def add_candidate(values):
+            if not isinstance(values, list):
+                return
+
+            values = [
+                topology
+                for topology in values
+                if Topology.IsInstance(
+                    topology,
+                    "Topology"
+                )
+            ]
+
+            if values:
+                candidates.append(
+                    values
+                )
+
+        # Python-style return-list convention.
+        try:
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies"
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        # Topologic-style host + output convention.
+        try:
+            output = []
+
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies",
+                None,
+                output
+            )
+
+            add_candidate(
+                output
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        # Alternative output-list convention.
+        try:
+            output = []
+
+            result = Core.InstanceCall(
+                cluster,
+                "Topologies",
+                output
+            )
+
+            add_candidate(
+                output
+            )
+
+            add_candidate(
+                result
+            )
+
+        except Exception:
+            pass
+
+        if candidates:
+            # Prefer the most complete direct query.
+            candidate = max(
+                candidates,
+                key=len
+            )
+
+            # Remove duplicate wrappers without changing order.
+            topologies = []
+
+            for topology in candidate:
+                duplicate = False
+
+                for existing in topologies:
+                    try:
+                        if Topology.IsSame(
+                            topology,
+                            existing
+                        ):
+                            duplicate = True
+                            break
+                    except Exception:
+                        if topology is existing:
+                            duplicate = True
+                            break
+
+                if not duplicate:
+                    topologies.append(
+                        topology
+                    )
+
+            if topologies:
+                return topologies
+
+        # ------------------------------------------------------------------
+        # Compatibility fallback.
+        #
+        # If the active backend does not provide a usable direct-constituent
+        # query, reconstruct the top-level set from free topologies.
+        # ------------------------------------------------------------------
+
         topologies = []
-        topologies.extend(Cluster.CellComplexes(cluster, silent=silent))
-        topologies.extend(Cluster.FreeCells(cluster, tolerance=tolerance, silent=silent))
-        topologies.extend(Cluster.FreeShells(cluster, tolerance=tolerance, silent=silent))
-        topologies.extend(Cluster.FreeFaces(cluster, tolerance=tolerance, silent=silent))
-        topologies.extend(Cluster.FreeWires(cluster, tolerance=tolerance, silent=silent))
-        topologies.extend(Cluster.FreeEdges(cluster, tolerance=tolerance, silent=silent))
-        topologies.extend(Cluster.FreeVertices(cluster, tolerance=tolerance, silent=silent))
-        return topologies
+
+        try:
+            result = Cluster.CellComplexes(
+                cluster,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeCells(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeShells(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeFaces(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeWires(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeEdges(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        try:
+            result = Cluster.FreeVertices(
+                cluster,
+                tolerance=tolerance,
+                silent=True
+            ) or []
+
+            topologies.extend(
+                result
+            )
+        except Exception:
+            pass
+
+        return [
+            topology
+            for topology in topologies
+            if Topology.IsInstance(
+                topology,
+                "Topology"
+            )
+        ]
         
     @staticmethod
     def CellComplexes(cluster, silent: bool = False) -> list:

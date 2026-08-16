@@ -15,13 +15,6 @@ Topology = pytest.importorskip("topologicpy.Topology").Topology
 
 TOLERANCE = 1e-6
 
-@pytest.fixture(autouse=True)
-def _suppress_expected_topologicpy_output(capfd):
-    """Keep expected TopologicPy diagnostic prints out of normal pytest output."""
-    capfd.readouterr()
-    yield
-    capfd.readouterr()
-
 
 def _v(x, y, z=0):
     return Vertex.ByCoordinates(x, y, z)
@@ -294,11 +287,36 @@ def test_roof_and_skeleton_reject_invalid_face_input():
 
 
 def test_roof_and_skeleton_create_topologies_for_rectangle_face():
-    face = Face.Rectangle(width=4, length=2, silent=True)
-    roof = Shell.Roof(face, angle=30)
-    skeleton = Shell.Skeleton(face)
+    face = Face.Rectangle(
+        width=4,
+        length=2,
+        silent=True,
+    )
 
-    _assert_topology(roof)
-    _assert_topology(skeleton)
-    assert len(Topology.Faces(roof, silent=True)) > 0
-    assert len(Topology.Faces(skeleton, silent=True)) > 0
+    roof = Shell.Roof(
+        face,
+        angle=30,
+    )
+
+    skeleton = Shell.Skeleton(
+        face,
+    )
+
+    _assert_shell(roof)
+    _assert_shell(skeleton)
+
+    roof_faces = Topology.Faces(
+        roof,
+        silent=True,
+    )
+
+    skeleton_faces = Topology.Faces(
+        skeleton,
+        silent=True,
+    )
+
+    assert isinstance(roof_faces, list)
+    assert isinstance(skeleton_faces, list)
+
+    assert len(roof_faces) > 0
+    assert len(skeleton_faces) > 0

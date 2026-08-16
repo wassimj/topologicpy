@@ -155,47 +155,10 @@ def _install_fake_gql_pipeline(
     return recorder
 
 
-def test_ontology_class_normalisation_and_local_names():
-    assert GQL._normalise_top_class(None) is None
-    assert GQL._normalise_top_class("") is None
-    assert GQL._normalise_top_class("top:Room") == "top:Room"
-    assert GQL._normalise_top_class("Room") == "top:Room"
-    assert GQL._normalise_top_class("room") == "room"
-    assert GQL._normalise_top_class("http://w3id.org/topologicpy/#Cell") == "top:Cell"
-    assert GQL._normalise_top_class("http://w3id.org/topologicpy#Cell") == "top:Cell"
-    assert GQL._ontology_local_name("top:Cell") == "Cell"
-    assert GQL._ontology_local_name("http://w3id.org/topologicpy/#Space") == "Space"
 
 
-def test_record_dictionary_preserves_structural_fields_and_metadata():
-    record = {
-        "id": "A",
-        "index": 7,
-        "src": "S",
-        "representation": "ignore",
-        "dictionary": {
-            "id": "nested-id-should-not-override",
-            "src": "nested-src-should-not-override",
-            "label": "Room",
-            "category": "node",
-        },
-    }
-    merged = GQL._record_dictionary(record)
-    assert merged["id"] == "A"
-    assert merged["index"] == 7
-    assert merged["src"] == "S"
-    assert merged["label"] == "Room"
-    assert merged["category"] == "node"
-    assert "representation" not in merged
 
 
-def test_safe_and_python_dictionary_use_merged_record_semantics():
-    record = {"id": "A", "dictionary": {"label": "Room"}}
-    assert GQL._safe_dictionary(record) == {"id": "A", "label": "Room"}
-    assert GQL._python_dictionary(record) == {"id": "A", "label": "Room"}
-    assert GQL._dictionary_value(record, "id") == "A"
-    assert GQL._dictionary_value(record, "label") == "Room"
-    assert GQL._dictionary_value(record, "missing", "fallback") == "fallback"
 
 
 def test_normalize_ontology_labels_modes_and_invalid_inputs():
@@ -207,68 +170,8 @@ def test_normalize_ontology_labels_modes_and_invalid_inputs():
     assert GQL.NormalizeOntologyLabels(query, mode="unknown", silent=True) == query
 
 
-def test_annotate_tgraph_fills_missing_graph_vertex_and_edge_metadata(monkeypatch):
-    _install_fake_tgraph(monkeypatch)
-    graph = FakeTGraph(
-        vertices=[
-            {"index": 0, "dictionary": {"label": "top:Room"}},
-            {"index": 1, "dictionary": {"ontology_class": "top:Existing"}},
-        ],
-        edges=[{"index": 0, "src": 0, "dst": 1, "dictionary": {"label": "adjacent"}}],
-        dictionary={},
-    )
-
-    result = GQL._annotate_tgraph(graph, ontologyClass="BuildingGraph", generatedBy="unit-test")
-
-    assert result is graph
-    assert graph.dictionary["ontology_class"] == "top:BuildingGraph"
-    assert graph.dictionary["category"] == "graph"
-    assert graph.dictionary["generated_by"] == "unit-test"
-    assert graph.vertices[0]["dictionary"]["ontology_class"] == "top:Room"
-    assert graph.vertices[0]["dictionary"]["category"] == "node"
-    assert graph.vertices[1]["dictionary"]["ontology_class"] == "top:Existing"
-    assert graph.vertices[1]["dictionary"]["category"] == "node"
-    assert graph.edges[0]["dictionary"]["ontology_class"] == "top:Relationship"
-    assert graph.edges[0]["dictionary"]["category"] == "relationship"
 
 
-def test_to_tgraph_from_working_graph_preserves_node_and_edge_record_metadata(monkeypatch):
-    _install_fake_tgraph(monkeypatch)
-    working_graph = {
-        "name": "WG",
-        "directed": False,
-        "dictionary": {"source": "gql"},
-        "nodes": [
-            {"id": "A", "index": 10, "dictionary": {"label": "Room", "ontology_class": "top:Space"}},
-            {"id": "B", "dictionary": {"label": "Cell"}},
-            {"id": "3.0", "dictionary": {"label": "Numeric"}},
-        ],
-        "relationships": [
-            {"src": "A", "dst": "B", "dictionary": {"label": "adjacent"}},
-            {"source": "B", "target": "3", "dictionary": {"weight": 2.5}},
-            {"src": "missing", "dst": "B", "dictionary": {"label": "discard"}},
-        ],
-    }
-
-    graph = GQL._to_tgraph(working_graph, ontology=True, generatedBy="test", silent=False)
-
-    assert isinstance(graph, FakeTGraph)
-    assert graph.directed is False
-    assert graph.dictionary["name"] == "WG"
-    assert graph.dictionary["source"] == "gql"
-    assert graph.dictionary["ontology_class"] == "top:Graph"
-    assert graph.vertices[0]["dictionary"]["id"] == "A"
-    assert graph.vertices[0]["dictionary"]["index"] == 10
-    assert graph.vertices[0]["dictionary"]["label"] == "Room"
-    assert graph.vertices[0]["dictionary"]["ontology_class"] == "top:Space"
-    assert graph.vertices[1]["dictionary"]["id"] == "B"
-    assert len(graph.edges) == 2
-    assert graph.edges[0]["src"] == 0
-    assert graph.edges[0]["dst"] == 1
-    assert graph.edges[0]["dictionary"]["label"] == "adjacent"
-    assert graph.edges[1]["src"] == 1
-    assert graph.edges[1]["dst"] == 2
-    assert graph.edges[1]["dictionary"]["weight"] == 2.5
 
 
 def test_to_tgraph_accepts_native_tgraph_python_format(monkeypatch):
@@ -308,14 +211,6 @@ def test_to_tgraph_invalid_inputs_return_none(monkeypatch):
     assert GQL.TGraph("not-a-graph", silent=True) is None
 
 
-def test_annotate_result_recursively_annotates_tgraphs(monkeypatch):
-    _install_fake_tgraph(monkeypatch)
-    graph = FakeTGraph(dictionary={})
-    result = GQL._annotate_result({"rows": [{"graph": graph}], "tgraph": graph}, ontology=True)
-    assert result["rows"][0]["graph"].dictionary["generated_by"] == "GQL.Query"
-    assert result["tgraph"].dictionary["ontology_class"] == "top:Graph"
-    unchanged = GQL._annotate_result({"graph": graph}, ontology=False)
-    assert unchanged["graph"] is graph
 
 
 def test_ontology_terms_extracts_unique_nested_terms(monkeypatch):

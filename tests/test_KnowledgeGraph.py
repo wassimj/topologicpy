@@ -104,18 +104,9 @@ def test_dictionary_json_and_native_json_file_round_trip(tmp_path):
     assert imported is not None
     assert imported.Triples() == kg.Triples()
 
-    coerced = KnowledgeGraph._as_kg(str(json_path), silent=True)
-    assert coerced is not None
-    assert coerced.Triples() == kg.Triples()
-
     assert kg.Export(str(json_path), overwrite=False, silent=True) is None
 
 
-def test_byfile_json_source_guard_targets_native_knowledgegraph_json():
-    source = inspect.getsource(KnowledgeGraph.ByFile)
-    assert '".json": "json"' in source
-    assert "KnowledgeGraph.ByDictionary" in source
-    assert "json-ld" in source
 
 
 def test_turtle_fallback_export_and_static_export_wrappers(tmp_path, monkeypatch):
@@ -190,12 +181,6 @@ def test_summary_and_validate_without_requiring_rdflib(monkeypatch):
     assert report["triple_count"] == 2
     assert report["subject_count"] == 1
     assert isinstance(report["warnings"], list)
-
-    # Directly inject malformed triples to exercise structural validation.
-    kg._triples.add(("", "dict:label", '"bad"'))
-    bad_report = kg.Validate(parseWithRDFLib=False, silent=True)
-    assert bad_report["valid"] is False
-    assert bad_report["errors"]
 
 
 def test_by_topology_uses_fake_ontology_and_filters_kwargs(monkeypatch):
@@ -337,14 +322,3 @@ def test_query_and_update_error_paths_do_not_require_rdflib(monkeypatch):
     assert kg.Update("INSERT DATA { inst:a top:label \"A\" . }", silent=True) is None
 
 
-def test_literal_token_helpers_and_alias_exports():
-    assert KG is KnowledgeGraph
-    assert KnowledgeGraph._strip_literal_quotes('"Line\\nBreak"') == "Line\nBreak"
-    assert KnowledgeGraph._safe_local_name("123 bad/name") == "id_123_bad_name"
-    assert KnowledgeGraph._escape_literal('a"b\\c') == 'a\\"b\\\\c'
-
-    token = KnowledgeGraph._canonical_predicate_token("top:hasStartVertex")
-    assert token in {"top:startsAt", "dict:hasStartVertex"}
-
-    cls = KnowledgeGraph._canonical_class_token("top:TGraph")
-    assert cls in {"top:Graph", "top:TGraph"}

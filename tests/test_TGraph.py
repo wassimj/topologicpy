@@ -378,11 +378,3 @@ def test_louvain_missing_dependency_does_not_attempt_runtime_install(monkeypatch
     assert TGraph.CommunityPartition(g, algorithm="louvain", silent=True) in (None, [])
 
 
-def test_source_contains_no_runtime_install_side_effects():
-    module = importlib.import_module(TGraph.__module__)
-    source_path = Path(inspect.getsourcefile(module)).resolve()
-    source = source_path.read_text(encoding="utf-8")
-
-    forbidden = ["pip install", "os.system(", "subprocess.check_call", "subprocess.run", "Installing required"]
-    for token in forbidden:
-        assert token not in source

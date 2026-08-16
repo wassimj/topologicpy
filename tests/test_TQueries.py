@@ -473,7 +473,7 @@ ADJACENCY_CASES = (
     # Same-dimensional adjacency follows the expected boundary relation.
     ("vertex", "vertex", 4),
     ("edge", "edge", 6),
-    ("wire", "wire", 1),
+    ("wire", "wire", 8),
     ("face", "face", 8),
     ("shell", "shell", 1),
     ("cell", "cell", 1),

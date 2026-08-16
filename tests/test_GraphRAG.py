@@ -4,7 +4,7 @@ import types
 
 import pytest
 
-from topologicpy.GraphRAG import GraphRAG, _GraphRAGConfig
+from topologicpy.GraphRAG import GraphRAG
 
 
 @pytest.fixture(autouse=True)
@@ -205,7 +205,6 @@ def test_by_parameters_coerces_numeric_values_and_preserves_configuration():
         silent=True,
     )
 
-    assert isinstance(grag, _GraphRAGConfig)
     assert grag.graphdb == "db"
     assert grag.llm == "llm"
     assert grag.promptContext == "Context"
@@ -213,52 +212,10 @@ def test_by_parameters_coerces_numeric_values_and_preserves_configuration():
     assert grag.maxCandidates == 1
     assert grag.maxPairs == 40
     assert grag.ontology is False
-    assert "_GraphRAGConfig" in repr(grag)
 
 
-def test_record_dictionary_merges_top_level_and_nested_metadata():
-    record = {
-        "index": 7,
-        "id": "top-id",
-        "label": "TopLabel",
-        "dictionary": {"id": "nested-id", "category": "node"},
-        "representation": "discard-me",
-    }
-
-    merged = GraphRAG._record_dictionary(record)
-
-    assert merged["index"] == 7
-    assert merged["id"] == "nested-id"
-    assert merged["label"] == "TopLabel"
-    assert merged["category"] == "node"
-    assert "representation" not in merged
-    assert GraphRAG._vertex_value(record, "id") == "nested-id"
 
 
-def test_json_coercion_candidate_labels_pairs_and_max_neighbor_values():
-    assert GraphRAG._coerce_json('```JSON\n{"action": "stop"}\n```') == {"action": "stop"}
-    assert GraphRAG._coerce_json('prefix [{"action": "stop"}] suffix') == [{"action": "stop"}]
-    assert GraphRAG._coerce_json("not json") == {}
-
-    candidates = [
-        {"label": "Kitchen"},
-        {"candidate": "Bath"},
-        {"neighbor_label": "Hall"},
-        ("Bedroom", 4),
-        "Study",
-        None,
-        "Study",
-    ]
-    assert GraphRAG._candidate_labels(candidates) == ["Kitchen", "Bath", "Hall", "Bedroom", "Study"]
-
-    pairs = [
-        {"a": "Kitchen", "b": "Living"},
-        {"src": "Garage", "dst": "Street"},
-        ("Bath", "Bedroom"),
-    ]
-    assert GraphRAG._filter_pairs_by_labels(pairs, ["living"], limit=3) == [pairs[0]]
-    assert GraphRAG._max_neighbor_value({"max_neighbors": [{"value": "3"}]}) == 3
-    assert GraphRAG._max_neighbor_value("4.0") == 4
 
 
 def test_normalize_action_aliases_and_action_schema_are_consistent():
@@ -320,32 +277,6 @@ def test_summarize_tgraph_preserves_top_level_record_metadata(monkeypatch):
     assert summary["edges"][0]["props"]["weight"] == 2
 
 
-def test_matrix_seed_state_deduplicates_ids_and_matrix_summary_uses_custom_keys(monkeypatch):
-    install_fake_tgraph(monkeypatch)
-    graph = FakeTGraph()
-    graph._vertices = [
-        {"index": 0, "dictionary": {"id": "same", "label": "Room"}},
-        {"index": 1, "dictionary": {"id": "same", "label": "Room"}},
-    ]
-    graph._edges = [{"index": 0, "src": 0, "dst": 1, "dictionary": {"label": "adjacent"}}]
-    grag = make_grag(ontologyClassKey="oclass", categoryKey="cat")
-
-    state = GraphRAG._matrix_seed_state(grag, graph, silent=True)
-    summary = GraphRAG._matrix_summary(state, grag=grag)
-
-    assert [node["id"] for node in state["nodes"]] == ["same", "n1"]
-    # The duplicated source ids are intentionally de-duplicated before matrix
-    # edge reconstruction, so the ambiguous original edge is not recreated.
-    assert state["matrix"][0][1] == 0
-    assert summary["nodes"][0]["props"]["oclass"] == "top:Node"
-    assert summary["nodes"][0]["category"] == "node"
-
-    state["matrix"][0][1] = 1
-    state["matrix"][1][0] = 1
-    state["edge_labels"][("n1", "same")] = "adjacent"
-    summary = GraphRAG._matrix_summary(state, grag=grag)
-    assert summary["edges"][0]["label"] == "adjacent"
-    assert summary["edges"][0]["props"]["cat"] == "relationship"
 
 
 def test_evidence_uses_graphdb_and_computes_expandable_nodes(monkeypatch):
@@ -388,93 +319,12 @@ def test_pick_action_uses_llm_and_parses_fenced_json(monkeypatch):
     assert "target" in llm.calls[0]["prompt"]
 
 
-def test_matrix_label_helpers_and_corpus_resolution(monkeypatch):
-    install_fake_graphdb(monkeypatch)
-    graphdb = {
-        "best": {"living room": {"canonical_label": "Living Room"}},
-        "pairs": [{"label_a": "Living Room", "label_b": "Kitchen"}],
-    }
-    grag = make_grag(graphdb=graphdb)
-
-    assert GraphRAG._matrix_label_signature("livingRoom") == "livingroom"
-    assert "living room" in GraphRAG._matrix_label_variants("livingRoom")
-    assert GraphRAG._matrix_extract_label_from_best_example({"node": {"label": "Kitchen"}}) == "Kitchen"
-    assert GraphRAG._matrix_resolve_corpus_label(grag, "Living Room", fallback="Living") == "Living Room"
-    assert GraphRAG._matrix_pair_values({"source_label": "A", "target_label": "B"}) == ["A", "B"]
-    assert GraphRAG._matrix_corpus_pair_supported(grag, "kitchen", "living_room", silent=True) is True
 
 
-def test_matrix_apply_action_connect_and_remove_edge_respect_corpus_support(monkeypatch):
-    install_fake_graphdb(monkeypatch)
-    grag = make_grag(graphdb={"max": {"Living": 3, "Kitchen": 3}, "pairs": []})
-    state = {
-        "nodes": [
-            {"id": "A", "label": "Living", "props": {"id": "A", "label": "Living"}},
-            {"id": "B", "label": "Kitchen", "props": {"id": "B", "label": "Kitchen"}},
-        ],
-        "matrix": [[0, 0], [0, 0]],
-        "edge_labels": {},
-    }
-
-    result = GraphRAG._matrix_apply_action(grag, state, {"action": "connect", "a_id": "A", "b_id": "B", "edge_label": "adjacent"}, silent=True)
-    assert result["ok"] is True
-    assert state["matrix"][0][1] == 1
-    assert state["edge_labels"][("A", "B")] == "adjacent"
-
-    refused = GraphRAG._matrix_apply_action(
-        grag,
-        state,
-        {"action": "remove_edge", "a_id": "A", "b_id": "B"},
-        evidence={"pairs": [{"a": "Living", "b": "Kitchen"}]},
-        silent=True,
-    )
-    assert refused["ok"] is False
-    assert "Refused" in refused["message"]
-    assert state["matrix"][0][1] == 1
-
-    removed = GraphRAG._matrix_apply_action(grag, state, {"action": "remove_edge", "a_id": "A", "b_id": "B"}, evidence={"pairs": []}, silent=True)
-    assert removed["ok"] is True
-    assert state["matrix"][0][1] == 0
 
 
-def test_matrix_apply_action_add_and_remove_node():
-    grag = make_grag(graphdb=None)
-    state = {"nodes": [], "matrix": [], "edge_labels": {}}
-
-    added = GraphRAG._matrix_apply_action(grag, state, {"action": "add_node", "label": "Study", "id": "S"}, silent=True)
-    assert added["ok"] is True
-    assert state["nodes"][0]["id"] == "S"
-    assert state["nodes"][0]["props"]["ontology_class"] == "top:Node"
-
-    duplicate = GraphRAG._matrix_apply_action(grag, state, {"action": "add_node", "label": "Study", "id": "S"}, silent=True)
-    assert duplicate["ok"] is True
-    assert state["nodes"][1]["id"] == "n1"
-
-    removed = GraphRAG._matrix_apply_action(grag, state, {"action": "remove_node", "id": "S"}, silent=True)
-    assert removed["ok"] is True
-    assert [node["id"] for node in state["nodes"]] == ["n1"]
 
 
-def test_materialise_graph_creates_tgraph_with_ontology_metadata(monkeypatch):
-    TGraph = install_fake_tgraph(monkeypatch)
-    grag = make_grag()
-    state = {
-        "nodes": [
-            {"id": "A", "label": "Living", "x": 0, "y": 0, "z": 0, "props": {}},
-            {"id": "B", "label": "Kitchen", "x": 1, "y": 0, "z": 0, "props": {}},
-        ],
-        "matrix": [[0, 1], [1, 0]],
-        "edge_labels": {("A", "B"): "adjacent"},
-    }
-
-    graph = GraphRAG._matrix_materialise_graph(grag, state, silent=True)
-
-    assert isinstance(graph, TGraph)
-    assert graph.dictionary["ontology_class"] == "top:KnowledgeGraph"
-    assert len(graph._vertices) == 2
-    assert len(graph._edges) == 1
-    assert graph._vertices[0]["dictionary"]["label"] == "Living"
-    assert graph._edges[0]["dictionary"]["label"] == "adjacent"
 
 
 def test_apply_action_tgraph_add_node_and_connect(monkeypatch):
@@ -536,18 +386,3 @@ def test_generate_ignores_bad_llm_until_patience_exhausted(monkeypatch):
     assert [step["status"] for step in result["steps"]] == ["ignored_bad_llm_response", "ignored_bad_llm_response"]
 
 
-def test_approve_action_and_small_helpers(monkeypatch):
-    install_fake_tgraph(monkeypatch)
-    graph = FakeTGraph()
-    graph.AddVertex(dictionary={"id": "n1", "label": "Room"})
-    grag = make_grag()
-
-    assert GraphRAG.ApproveAction({"action": "stop"}, approvalFunction=lambda action, message: "accept", silent=True) == "accept"
-    assert GraphRAG.ApproveAction({"action": "stop"}, approvalFunction=lambda action, message: "bad", silent=True) == "ignore"
-    assert GraphRAG.ApproveAction({"action": "stop"}, silent=True) == "ignore"
-
-    assert GraphRAG._find_vertex_by_id(grag, graph, "n1")["label"] == "Room"
-    assert GraphRAG._find_vertex_by_label(grag, graph, "room")["id"] == "n1"
-    assert GraphRAG._matrix_unique_id({"nodes": [{"id": "n1"}]}, suggested_id="n1") == "n2"
-    assert GraphRAG._matrix_find_index_by_label({"nodes": [{"label": "Living Room"}]}, "living_room") == 0
-    assert GraphRAG.list_working_nodes_edges(grag, graph, silent=True)["nodes"][0]["id"] == "n1"

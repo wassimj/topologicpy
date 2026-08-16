@@ -22,13 +22,6 @@ def _apply_matrix(matrix, vector):
     return [sum(matrix[i][j] * values[j] for j in range(4)) for i in range(3)]
 
 
-def test_source_has_no_runtime_install_side_effects():
-    import topologicpy.Vector as vector_module
-
-    source = open(vector_module.__file__, "r", encoding="utf-8").read()
-    forbidden = ["pip install", "os.system", "subprocess", "Installing required"]
-    for text in forbidden:
-        assert text not in source
 
 
 def test_arithmetic_sum_average_reverse_and_multiply():

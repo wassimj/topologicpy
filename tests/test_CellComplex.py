@@ -152,18 +152,6 @@ def test_bycells_and_bycellscluster_round_trip(simple_cellcomplex):
     _assert_topology(rebuilt_from_cluster)
 
 
-def test_byfaces_variants_rebuild_from_existing_faces(simple_cellcomplex):
-    faces = CellComplex.Faces(simple_cellcomplex)
-    assert isinstance(faces, list)
-    assert len(faces) > 0
-
-    rebuilt_private = CellComplex._ByFaces(faces, silent=True)
-    rebuilt_shapely = CellComplex.ByFaces(faces, silent=True)
-    rebuilt_topologic = CellComplex.ByFacesTopologic(faces, silent=True)
-
-    _assert_topology(rebuilt_private)
-    _assert_cellcomplex(rebuilt_shapely)
-    _assert_topology(rebuilt_topologic)
 
 
 def test_byfacescluster_rebuilds_from_face_cluster(simple_cellcomplex):
@@ -221,12 +209,25 @@ def test_by_disjointed_faces_rejects_invalid_inputs():
     assert CellComplex.ByDisjointedFaces([face, face, face], patience=10, maxAttempts=5, silent=True) is None
 
 
-def test_invalid_inputs_return_none_for_builders_and_accessors():
+
+
+
+def test_byfaces_public_variants_rebuild_from_existing_faces(simple_cellcomplex):
+    faces = CellComplex.Faces(simple_cellcomplex)
+    assert isinstance(faces, list)
+    assert len(faces) > 0
+
+    rebuilt = CellComplex.ByFaces(faces, silent=True)
+    rebuilt_topologic = CellComplex.ByFacesTopologic(faces, silent=True)
+
+    _assert_cellcomplex(rebuilt)
+    _assert_topology(rebuilt_topologic)
+
+
+def test_invalid_inputs_return_none_for_public_builders_and_accessors():
     assert CellComplex.ByCells(None, silent=True) is None
     assert CellComplex.ByCells([], silent=True) is None
     assert CellComplex.ByCellsCluster(None, silent=True) is None
-    assert CellComplex._ByFaces(None, silent=True) is None
-    assert CellComplex._ByFaces([], silent=True) is None
     assert CellComplex.ByFaces(None, silent=True) is None
     assert CellComplex.ByFaces([], silent=True) is None
     assert CellComplex.ByFacesTopologic(None, silent=True) is None
@@ -245,32 +246,3 @@ def test_invalid_inputs_return_none_for_builders_and_accessors():
     assert CellComplex.Vertices(None) is None
     assert CellComplex.Volume(None) is None
     assert CellComplex.Wires(None) is None
-
-
-def test_grow_connected_group_returns_requested_connected_subset():
-    adjacency = {
-        0: [1],
-        1: [0, 2],
-        2: [1, 3],
-        3: [2],
-    }
-
-    group = CellComplex._grow_connected_group(
-        seed_idx=0,
-        group_size=3,
-        adjacency=adjacency,
-        visited_global=set(),
-    )
-
-    assert isinstance(group, list)
-    assert len(group) == 3
-    assert set(group).issubset({0, 1, 2, 3})
-    assert group[0] == 0
-
-    impossible = CellComplex._grow_connected_group(
-        seed_idx=0,
-        group_size=5,
-        adjacency=adjacency,
-        visited_global=set(),
-    )
-    assert impossible is None

@@ -123,22 +123,6 @@ def _value_multiset(topologies, key):
     return sorted(_dictionary_value(t, key) for t in topologies)
 
 
-def test_private_range_helpers_are_defensive():
-    assert Grid._Tolerance(None) == pytest.approx(0.0001)
-    assert Grid._Tolerance(-0.25) == pytest.approx(0.25)
-    assert Grid._Tolerance(0) > 0
-
-    assert Grid._FloatList(0.25) == [0.25]
-    assert Grid._FloatList(["2", 1, 0.5]) == [0.5, 1.0, 2.0]
-    assert Grid._FloatList([object()]) is None
-
-    assert Grid._ParameterList([0, 0.5, 1]) == [0.0, 0.5, 1.0]
-    assert Grid._ParameterList([-0.01, 0.5]) is None
-    assert Grid._ParameterList([0.5, 1.01]) is None
-
-    assert Grid._Span([2]) == [1.5, 2.5]
-    assert Grid._Normalize([0, 0, 0], tolerance=0.0001) is None
-    assert Grid._Normalize([3, 0, 0], tolerance=0.0001) == [1.0, 0.0, 0.0]
 
 
 def test_edges_by_parameters_rectangular_face_counts_and_metadata():

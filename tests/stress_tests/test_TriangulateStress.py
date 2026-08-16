@@ -4,7 +4,6 @@ import random
 
 import pytest
 
-from topologicpy.Core import Core
 from topologicpy.Vertex import Vertex
 from topologicpy.Edge import Edge
 from topologicpy.Wire import Wire
@@ -131,29 +130,112 @@ def _cellcomplex():
     assert Topology.IsInstance(cc, "CellComplex")
     return cc
 
+# def _cluster_constituents(cluster):
+#     """
+#     Returns the top-level constituent topologies of the input cluster.
 
+#     The exact native signature of Cluster.Topologies differs between
+#     backends, so the supported calling conventions are attempted through
+#     the backend-neutral Core.InstanceCall facade. Cluster.Topologies is used
+#     only as a final public-API fallback.
+
+#     Parameters
+#     ----------
+#     cluster : topologic_core.Cluster
+#         The input cluster.
+
+#     Returns
+#     -------
+#     list
+#         The top-level constituent topologies of the cluster.
+#     """
+#     from topologicpy.Core import Core
+
+#     if not Topology.IsInstance(cluster, "Cluster"):
+#         return []
+
+#     # PythonOCC-style: cluster.Topologies() -> list
+#     try:
+#         result = Core.InstanceCall(cluster, "Topologies")
+#         if isinstance(result, list):
+#             return [
+#                 topology
+#                 for topology in result
+#                 if Topology.IsInstance(topology, "Topology")
+#             ]
+#     except Exception:
+#         pass
+
+#     # Backend style: cluster.Topologies(output)
+#     try:
+#         result = []
+#         Core.InstanceCall(cluster, "Topologies", result)
+
+#         if result:
+#             return [
+#                 topology
+#                 for topology in result
+#                 if Topology.IsInstance(topology, "Topology")
+#             ]
+#     except Exception:
+#         pass
+
+#     # Legacy Topologic style: cluster.Topologies(hostTopology, output)
+#     try:
+#         result = []
+#         Core.InstanceCall(cluster, "Topologies", None, result)
+
+#         if result:
+#             return [
+#                 topology
+#                 for topology in result
+#                 if Topology.IsInstance(topology, "Topology")
+#             ]
+#     except Exception:
+#         pass
+
+#     # Final public-API fallback.
+#     try:
+#         result = Cluster.Topologies(
+#             cluster,
+#             tolerance=TOLERANCE,
+#             silent=True,
+#         )
+
+#         if isinstance(result, list):
+#             return [
+#                 topology
+#                 for topology in result
+#                 if Topology.IsInstance(topology, "Topology")
+#             ]
+#     except Exception:
+#         pass
+
+#     return []
 def _cluster_constituents(cluster):
-    for args in ((), ([],), (None, [])):
-        try:
-            if args == ():
-                result = Core.InstanceCall(cluster, "Topologies")
-                if isinstance(result, list):
-                    return result
-            elif len(args) == 1:
-                output = args[0]
-                Core.InstanceCall(cluster, "Topologies", output)
-                if output:
-                    return output
-            else:
-                output = args[1]
-                Core.InstanceCall(cluster, "Topologies", args[0], output)
-                if output:
-                    return output
-        except Exception:
-            pass
+    """
+    Returns the top-level constituent topologies of the input cluster.
+    """
+    result = Cluster.Topologies(
+        cluster,
+        tolerance=TOLERANCE,
+        silent=True
+    )
 
-    return Cluster.Topologies(cluster, tolerance=TOLERANCE, silent=True) or []
+    if not isinstance(
+        result,
+        list
+    ):
+        return []
 
+    return [
+        topology
+        for topology in result
+        if Topology.IsInstance(
+            topology,
+            "Topology"
+        )
+    ]
 
 def _mixed_cluster():
     c = _cell()
@@ -234,15 +316,6 @@ def _random_axis(rng):
         if math.sqrt(sum(v * v for v in axis)) > 1.0e-6:
             return axis
 
-
-@pytest.fixture(scope="session", autouse=True)
-def _pythonocc_backend_only():
-    backend = Core.Backend()
-    assert backend is not None
-    assert backend.__class__.__name__ == "PythonOCCBackend", (
-        "test_TriangulateStress.py must be run with the PythonOCC backend. "
-        f"Active backend: {backend.__class__.__name__}"
-    )
 
 
 @pytest.mark.parametrize(

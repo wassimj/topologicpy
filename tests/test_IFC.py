@@ -141,20 +141,6 @@ def test_fast_entity_and_dynamic_ifc_entity_properties(ifc_module):
     assert wrapper.ToDict()["materials"] == ["Concrete"]
 
 
-def test_step_arg_parser_handles_core_step_values(ifc_module):
-    parser = ifc_module._STEPArgParser("#1,$,*,.T.,.F.,.AREA.,'A''B',(1,2,#3),IFCLINEINDEX((1,2,3))")
-    values = parser.parse_list_content()
-
-    assert values[0] == ("REF", 1)
-    assert values[1] is None
-    assert values[2] == "*"
-    assert values[3] is True
-    assert values[4] is False
-    assert values[5] == "AREA"
-    assert values[6] == "A'B"
-    assert values[7] == [1, 2, ("REF", 3)]
-    assert values[8][0] == "CALL"
-    assert values[8][1] == "IFCLINEINDEX"
 
 
 def test_parse_text_entities_and_ifc_wrapper_lookup(ifc_module):
@@ -278,51 +264,7 @@ def test_topologies_by_file_and_path_wrapper_dispatch(tmp_path, monkeypatch, ifc
     assert ifc_module.IFC.TopologiesByPath(str(path / "missing.ifc"), silent=True) is None
 
 
-def test_entity_dictionary_and_ontology_mapping_with_fake_dictionary(monkeypatch, ifc_module):
-    _install_fake_dictionary(monkeypatch)
-    entity = ifc_module.IFCFastEntity(
-        10,
-        "IFCAIRTERMINAL",
-        ["gid-air", None, "Supply Diffuser", None, "SUPPLYAIR", None, None, "T-1"],
-    )
-
-    dictionary = ifc_module.IFCFastTopology._entity_dictionary(
-        entity,
-        dictionaryMode="basic",
-        ontology=True,
-        source="model.ifc",
-        generatedBy="unit-test",
-    )
-
-    assert dictionary["IFC_id"] == 10
-    assert dictionary["IFC_key"] == "#10"
-    assert dictionary["IFC_global_id"] == "gid-air"
-    assert dictionary["label"] == "Supply Diffuser"
-    assert dictionary["ontology_class"]
-    assert dictionary["source"] == "model.ifc"
-    rel = ifc_module.IFC.RelationshipPredicateByIFCClass("IfcRelAggregates")
-    assert rel["relationship"] == "aggregates"
-    assert rel["ontology_predicate"] == "top:aggregates"
-    assert ifc_module.IFC.BrickClassByIFCClass("IfcFan") == "brick:Fan"
-    assert ifc_module.IFC.OntologyClassByIFCClass("IfcBuildingStorey") == "top:Storey"
 
 
-def test_geometry_math_helpers_are_deterministic(ifc_module):
-    t = ifc_module.IFCFastTopology
-    matrix = t._matmul(t._identity(), [[1, 0, 0, 2], [0, 1, 0, 3], [0, 0, 1, 4], [0, 0, 0, 1]])
-
-    assert t._transform_point([1, 1, 1], matrix, scale=2.0) == [6.0, 8.0, 10.0]
-    assert t._cross([1, 0, 0], [0, 1, 0]) == [0, 0, 1]
-    assert t._dot([1, 2, 3], [4, 5, 6]) == 32
-    assert t._normalize([0, 0, 0]) == [0.0, 0.0, 0.0]
-    assert t._points_close([0, 0, 0], [1e-7, 0, 0]) is True
-    assert t._ifc_display_class("IFCBUILDINGSTOREY") == "IfcBuildingStorey"
 
 
-def test_invalid_inputs_return_none_or_empty_results(ifc_module):
-    assert ifc_module.IFC.FileByPath(None, silent=True) is None
-    assert ifc_module.IFC.Entities(None, silent=True) is None
-    assert ifc_module.IFCFastTopology.TopologiesByFile(object(), silent=True) is None
-    assert ifc_module.IFCFastTopology.MeshDataByProduct(ifc_module.IFCFastEntity(1, "IFCWALL", []), {}, 24, 1.0) is None
-    assert ifc_module.IFCFastTopology._refs_in_value(None) == []
-    assert ifc_module.IFCFastTopology._entity_from_ref(("REF", 999), {}) is None

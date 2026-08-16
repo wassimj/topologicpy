@@ -352,19 +352,6 @@ def schema_ok_handler(cypher, parameters):
 # -----------------------------------------------------------------------------
 
 
-def test_private_helpers_and_property_extractors_are_defensive():
-    assert json.loads(neo4j_module._json_dumps({"x": {1, 2}}))["x"] in ([1, 2], [2, 1])
-    assert neo4j_module._json_loads('{"a": 1}') == {"a": 1}
-    assert neo4j_module._json_loads("bad", {"fallback": True}) == {"fallback": True}
-    assert neo4j_module._unique_preserve_order([[1], [1], {"a": 2}, {"a": 2}]) == [[1], {"a": 2}]
-    assert Neo4j._sanitize_identifier("9 bad-name!", default="X") == "_9_bad_name_"
-
-    node = FakeNode("n1", labels=["Room"], name="A")
-    rel = FakeRelationship("r1", rel_type="ADJ", weight=2)
-    assert Neo4j._node_properties(node)["labels"] == ["Room"]
-    assert Neo4j._node_properties(node)["id"] == "n1"
-    assert Neo4j._relationship_properties(rel)["type"] == "ADJ"
-    assert Neo4j._relationship_properties(rel)["id"] == "r1"
 
 
 def test_connect_manager_close_and_invalid_driver(monkeypatch):
