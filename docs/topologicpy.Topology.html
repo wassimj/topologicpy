@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.58 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.62 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.58
+                0.9.62
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -468,7 +468,7 @@
 <td><p>Computes the convex hull of the input topology.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Copy" title="topologicpy.Topology.Topology.Copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Copy</span></code></a>(topology[, deep, silent])</p></td>
-<td><p>Returns a copy of the input topology</p></td>
+<td><p>Returns a copy of the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.CoveredBy" title="topologicpy.Topology.Topology.CoveredBy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CoveredBy</span></code></a>(topologyA, topologyB[, tolerance, ...])</p></td>
 <td><p>Returns True if the input topologyA is covered by the input topologyB.</p></td>
@@ -630,142 +630,148 @@
 <td><p>Returns the vertices that border only one edge.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Orient" title="topologicpy.Topology.Topology.Orient"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Orient</span></code></a>(topology[, origin, dirA, dirB, ...])</p></td>
-<td><p>Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.</p></td>
+<td><p>Orients the input topology such that dirA is parallel to dirB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Overlaps" title="topologicpy.Topology.Topology.Overlaps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Overlaps</span></code></a>(topologyA, topologyB[, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.OrientAndPlace" title="topologicpy.Topology.Topology.OrientAndPlace"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OrientAndPlace</span></code></a>(topology[, originA, originB, ...])</p></td>
+<td><p>Orients and places the input topology using a single affine transformation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Overlaps" title="topologicpy.Topology.Topology.Overlaps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Overlaps</span></code></a>(topologyA, topologyB[, tolerance, ...])</p></td>
 <td><p>Returns True if the input topologyA overlaps the input topologyB.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Place" title="topologicpy.Topology.Topology.Place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code></a>(topology[, originA, originB, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Place" title="topologicpy.Topology.Topology.Place"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Place</span></code></a>(topology[, originA, originB, ...])</p></td>
 <td><p>Places the input topology at the specified location.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.PrincipalAxes" title="topologicpy.Topology.Topology.PrincipalAxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrincipalAxes</span></code></a>(topology[, n, mantissa, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.PrincipalAxes" title="topologicpy.Topology.Topology.PrincipalAxes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PrincipalAxes</span></code></a>(topology[, n, mantissa, silent])</p></td>
 <td><p>Returns the prinicipal axes (vectors) of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Proximity" title="topologicpy.Topology.Topology.Proximity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Proximity</span></code></a>(topologyA, topologyB, ...[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Proximity" title="topologicpy.Topology.Topology.Proximity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Proximity</span></code></a>(topologyA, topologyB, ...[, ...])</p></td>
 <td><p>Returns the proximity label between two input topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(topology[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCollinearEdges" title="topologicpy.Topology.Topology.RemoveCollinearEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCollinearEdges</span></code></a>(topology[, ...])</p></td>
 <td><p>Removes the collinear edges of the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveContent" title="topologicpy.Topology.Topology.RemoveContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code></a>(topology, contents[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveContent" title="topologicpy.Topology.Topology.RemoveContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveContent</span></code></a>(topology, contents[, silent])</p></td>
 <td><p>Removes the input content list from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code></a>(topology[, epsilon, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveCoplanarFaces" title="topologicpy.Topology.Topology.RemoveCoplanarFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveCoplanarFaces</span></code></a>(topology[, epsilon, ...])</p></td>
 <td><p>Removes coplanar faces in the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveEdges" title="topologicpy.Topology.Topology.RemoveEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveEdges</span></code></a>(topology[, edges, tolerance, silent])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFaces" title="topologicpy.Topology.Topology.RemoveFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code></a>(topology[, faces, tolerance, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFaces" title="topologicpy.Topology.Topology.RemoveFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFaces</span></code></a>(topology[, faces, tolerance, silent])</p></td>
 <td><p>Removes the input list of faces from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFacesBySelectors" title="topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code></a>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveFacesBySelectors" title="topologicpy.Topology.Topology.RemoveFacesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveFacesBySelectors</span></code></a>(topology[, ...])</p></td>
 <td><p>Removes faces that contain the input list of selectors (vertices) from the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveVertices" title="topologicpy.Topology.Topology.RemoveVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code></a>(topology[, vertices, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RemoveVertices" title="topologicpy.Topology.Topology.RemoveVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RemoveVertices</span></code></a>(topology[, vertices, ...])</p></td>
 <td><p>Removes the input list of vertices from the input topology</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ReplaceVertices" title="topologicpy.Topology.Topology.ReplaceVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code></a>(topology[, verticesA, ...])</p></td>
-<td><p>Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ReplaceVertices" title="topologicpy.Topology.Topology.ReplaceVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ReplaceVertices</span></code></a>(topology[, verticesA, ...])</p></td>
+<td><p>Replaces vertices in the first input list with the corresponding vertices in the second input list and rebuilds the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Rotate" title="topologicpy.Topology.Topology.Rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code></a>(topology[, origin, axis, angle, ...])</p></td>
-<td><p>Rotates the input topology</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Rotate" title="topologicpy.Topology.Topology.Rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Rotate</span></code></a>(topology[, origin, axis, angle, ...])</p></td>
+<td><p>Rotates the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByEulerAngles" title="topologicpy.Topology.Topology.RotateByEulerAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByEulerAngles</span></code></a>(topology[, origin, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByEulerAngles" title="topologicpy.Topology.Topology.RotateByEulerAngles"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByEulerAngles</span></code></a>(topology[, origin, ...])</p></td>
 <td><p>Rotates the input topology using Euler angles (roll, pitch, yaw).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByQuaternion" title="topologicpy.Topology.Topology.RotateByQuaternion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByQuaternion</span></code></a>(topology[, origin, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.RotateByQuaternion" title="topologicpy.Topology.Topology.RotateByQuaternion"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RotateByQuaternion</span></code></a>(topology[, origin, ...])</p></td>
 <td><p>Rotates the input topology using Quaternion rotations.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Scale" title="topologicpy.Topology.Topology.Scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code></a>(topology[, origin, x, y, z, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Scale" title="topologicpy.Topology.Topology.Scale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Scale</span></code></a>(topology[, origin, x, y, z, ...])</p></td>
 <td><p>Scales the input topology</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelectSubTopology" title="topologicpy.Topology.Topology.SelectSubTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code></a>(topology, selector[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelectSubTopology" title="topologicpy.Topology.Topology.SelectSubTopology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelectSubTopology</span></code></a>(topology, selector[, ...])</p></td>
 <td><p>Returns the subtopology within the input topology based on the input selector and the subTopologyType.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelfMerge" title="topologicpy.Topology.Topology.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(topology[, transferDictionaries, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SelfMerge" title="topologicpy.Topology.Topology.SelfMerge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SelfMerge</span></code></a>(topology[, transferDictionaries, ...])</p></td>
 <td><p>Self merges the input topology to return the most logical topology type given the input data.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetDictionary" title="topologicpy.Topology.Topology.SetDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetDictionary</span></code></a>(topology, dictionary[, silent])</p></td>
 <td><p>Sets the input topology's dictionary to the input dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetOntology" title="topologicpy.Topology.Topology.SetOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntology</span></code></a>(topology[, ontologyClass, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetOntology" title="topologicpy.Topology.Topology.SetOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetOntology</span></code></a>(topology[, ontologyClass, ...])</p></td>
 <td><p>Annotates the input topology with TopologicPy ontology metadata.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetSnapshot" title="topologicpy.Topology.Topology.SetSnapshot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetSnapshot</span></code></a>(topology[, snapshot, timestamp, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SetSnapshot" title="topologicpy.Topology.Topology.SetSnapshot"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetSnapshot</span></code></a>(topology[, snapshot, timestamp, ...])</p></td>
 <td><p>Sets a date/time stamped snapshot and stores it in the input topology's content system.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedEdges" title="topologicpy.Topology.Topology.SharedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code></a>(topologyA, topologyB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedEdges" title="topologicpy.Topology.Topology.SharedEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedEdges</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns the shared edges between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedFaces" title="topologicpy.Topology.Topology.SharedFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code></a>(topologyA, topologyB[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedFaces" title="topologicpy.Topology.Topology.SharedFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedFaces</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns the shared faces between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedTopologies" title="topologicpy.Topology.Topology.SharedTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code></a>(topologyA, topologyB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedTopologies" title="topologicpy.Topology.Topology.SharedTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedTopologies</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns the shared topologies between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedVertices" title="topologicpy.Topology.Topology.SharedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code></a>(topologyA, topologyB[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedVertices" title="topologicpy.Topology.Topology.SharedVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedVertices</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns the shared vertices between the two input topologies</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedWires" title="topologicpy.Topology.Topology.SharedWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code></a>(topologyA, topologyB[, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SharedWires" title="topologicpy.Topology.Topology.SharedWires"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SharedWires</span></code></a>(topologyA, topologyB[, silent])</p></td>
 <td><p>Returns the shared wires between the two input topologies</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Shells" title="topologicpy.Topology.Topology.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(topology[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Shells" title="topologicpy.Topology.Topology.Shells"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Shells</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the shells of the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestDistance" title="topologicpy.Topology.Topology.ShortestDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestDistance</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestDistance" title="topologicpy.Topology.Topology.ShortestDistance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestDistance</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Returns the shortest Euclidean distance between two topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdge" title="topologicpy.Topology.Topology.ShortestEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdge</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdge" title="topologicpy.Topology.Topology.ShortestEdge"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdge</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Returns the shortest connecting Edge between two topologies.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdges" title="topologicpy.Topology.Topology.ShortestEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdges</span></code></a>(topology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.ShortestEdges" title="topologicpy.Topology.Topology.ShortestEdges"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestEdges</span></code></a>(topology[, ...])</p></td>
 <td><p>Returns the list of the shortest edges found in the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Show" title="topologicpy.Topology.Topology.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*topologies[, nameKey, opacityKey, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Show" title="topologicpy.Topology.Topology.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*topologies[, nameKey, opacityKey, ...])</p></td>
 <td><p>Shows the input topology on screen.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Slice" title="topologicpy.Topology.Topology.Slice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Slice" title="topologicpy.Topology.Topology.Slice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Slice</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>Slices topologyA using topologyB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SmallestFaces" title="topologicpy.Topology.Topology.SmallestFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SmallestFaces</span></code></a>(topology[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SmallestFaces" title="topologicpy.Topology.Topology.SmallestFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SmallestFaces</span></code></a>(topology[, ...])</p></td>
 <td><p>Returns the list of the smallest faces found in the input topology.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Snapshots" title="topologicpy.Topology.Topology.Snapshots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Snapshots</span></code></a>(topology[, start, end, key, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Snapshots" title="topologicpy.Topology.Topology.Snapshots"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Snapshots</span></code></a>(topology[, start, end, key, silent])</p></td>
 <td><p>Returns the list of the stored snapshots within the start and end timestamps.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SortBySelectors" title="topologicpy.Topology.Topology.SortBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code></a>(topologies, selectors[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SortBySelectors" title="topologicpy.Topology.Topology.SortBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SortBySelectors</span></code></a>(topologies, selectors[, ...])</p></td>
 <td><p>Sorts the input list of topologies according to the input list of selectors.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SpatialRelationship" title="topologicpy.Topology.Topology.SpatialRelationship"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialRelationship</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SpatialRelationship" title="topologicpy.Topology.Topology.SpatialRelationship"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SpatialRelationship</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Returns the spatial relationship string between the two input topologies according to OGC / ISO 19107 / DE-9IM / RCC-8</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Spin" title="topologicpy.Topology.Topology.Spin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code></a>(topology[, origin, triangulate, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Spin" title="topologicpy.Topology.Topology.Spin"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Spin</span></code></a>(topology[, origin, triangulate, ...])</p></td>
 <td><p>Spins the input topology around an axis to create a new topology.See <a class="reference external" href="https://en.wikipedia.org/wiki/Solid_of_revolution">https://en.wikipedia.org/wiki/Solid_of_revolution</a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubCombinations" title="topologicpy.Topology.Topology.SubCombinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubCombinations</span></code></a>(topology[, subTopologyType, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubCombinations" title="topologicpy.Topology.Topology.SubCombinations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubCombinations</span></code></a>(topology[, subTopologyType, ...])</p></td>
 <td><p>Creates connected sub-combination topologies of the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubTopologies" title="topologicpy.Topology.Topology.SubTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code></a>(topology[, subTopologyType, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SubTopologies" title="topologicpy.Topology.Topology.SubTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SubTopologies</span></code></a>(topology[, subTopologyType, ...])</p></td>
 <td><p>Returns the subtopologies of the input topology or graph as specified by the subTopologyType input string.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SuperTopologies" title="topologicpy.Topology.Topology.SuperTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SuperTopologies" title="topologicpy.Topology.Topology.SuperTopologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SuperTopologies</span></code></a>(topology, hostTopology[, ...])</p></td>
 <td><p>Returns the supertopologies connected to the input topology.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymDif" title="topologicpy.Topology.Topology.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymDif" title="topologicpy.Topology.Topology.SymDif"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymDif</span></code></a>(topologyA, topologyB[, tranDict, ...])</p></td>
 <td><p>Returns the symmetric difference (XOR) of the input operand topologies.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymmetricDifference" title="topologicpy.Topology.Topology.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(topologyA, topologyB[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.SymmetricDifference" title="topologicpy.Topology.Topology.SymmetricDifference"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SymmetricDifference</span></code></a>(topologyA, topologyB[, ...])</p></td>
 <td><p>Returns the symmetric difference (XOR) of the input operand topologies.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Taper" title="topologicpy.Topology.Topology.Taper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code></a>(topology[, origin, ratioRange, ...])</p></td>
-<td><p>Tapers the input topology.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Taper" title="topologicpy.Topology.Topology.Taper"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Taper</span></code></a>(topology[, origin, ratioRange, ...])</p></td>
+<td><p>Tapers the input topology along its Z-axis based on the input ratio range.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Touches" title="topologicpy.Topology.Topology.Touches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Touches</span></code></a>(topologyA, topologyB[, tolerance, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Touches" title="topologicpy.Topology.Topology.Touches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Touches</span></code></a>(topologyA, topologyB[, tolerance, ...])</p></td>
 <td><p>Returns True if the input topologyA touches the input topologyB.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionaries" title="topologicpy.Topology.Topology.TransferDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code></a>(sources, sinks[, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionaries" title="topologicpy.Topology.Topology.TransferDictionaries"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionaries</span></code></a>(sources, sinks[, ...])</p></td>
 <td><p>Transfers the dictionaries from the list of sources to the list of sinks.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionariesByKey" title="topologicpy.Topology.Topology.TransferDictionariesByKey"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesByKey</span></code></a>(topologies, ...[, ...])</p></td>
+<td><p>Transfers dictionaries to input topologies by matching a shared dictionary key.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.TransferDictionariesBySelectors" title="topologicpy.Topology.Topology.TransferDictionariesBySelectors"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TransferDictionariesBySelectors</span></code></a>(topology, ...)</p></td>
 <td><p>Transfers the dictionaries of the list of selectors to the subtopologies of the input topology based on the input parameters.</p></td>
@@ -783,7 +789,7 @@
 <td><p>Triangulates the input topology.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Twist" title="topologicpy.Topology.Topology.Twist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Twist</span></code></a>(topology[, origin, angleRange, ...])</p></td>
-<td><p>Twists the input topology.</p></td>
+<td><p>Twists the input topology along its Z-axis based on the input angle range.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.Type" title="topologicpy.Topology.Topology.Type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Type</span></code></a>(topology[, silent])</p></td>
 <td><p>Returns the type of the input topology.</p></td>
@@ -2288,22 +2294,31 @@ Returns a Face in 2D (even embedded in 3D), or a Cell/Shell in 3D.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Copy">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Copy" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a copy of the input topology</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Copy</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deep</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Copy" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a copy of the input topology.</p>
+<p>For non-TopologicCore backends, copying is delegated directly to the
+active backend. A shallow copy duplicates the native topology and parent
+dictionary. A deep copy additionally preserves dictionaries associated
+with native subtopologies.</p>
+<p>The legacy BREP and JSON serialization mechanisms are retained only for
+the TopologicCore backend.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>deep</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a deep copy will be performed (this is slow). Othwerwise, it will not. Default is False</p>
+<dt><strong>deep</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, a deep copy is performed, including dictionaries
+associated with subtopologies. Otherwise, a shallow native copy is
+performed. Default is False.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>A copy of the input topology.</p>
+<dt>topologic_core.Topology</dt><dd><p>A copy of the input topology, or None if the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -3218,8 +3233,9 @@ calculated automatically and set to 10% of the overall size of the face. Default
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Intersect">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tranDict</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Intersect" title="Permalink to this definition"></a></dt>
-<dd><p>Finds the intersection between the input operand topologies. See <a class="reference external" href="https://en.wikipedia.org/wiki/Boolean_operation">https://en.wikipedia.org/wiki/Boolean_operation</a>.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tranDict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Intersect" title="Permalink to this definition"></a></dt>
+<dd><p>Finds the intersection between the input operand topologies.
+See <a class="reference external" href="https://en.wikipedia.org/wiki/Boolean_operation">https://en.wikipedia.org/wiki/Boolean_operation</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -3227,17 +3243,19 @@ calculated automatically and set to 10% of the overall size of the face. Default
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
 </dd>
-<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.</p>
+<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and
+transferred to the result. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>the resultant topology.</p>
+<dt>topologic_core.Topology</dt><dd><p>The resultant topology.</p>
 </dd>
 </dl>
 </dd>
@@ -3906,19 +3924,20 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Orient">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Orient</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirA</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Orient" title="Permalink to this definition"></a></dt>
-<dd><p>Orients the input topology such that the input such that the input dirA vector is parallel to the input dirB vector.</p>
+<dd><p>Orients the input topology such that dirA is parallel to dirB.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The input origin. If set to None, The object’s centroid will be used to locate the input topology. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin about which the topology is oriented. If set to None, the
+centroid of the topology is used. Default is None.</p>
 </dd>
-<dt><strong>dirA</strong><span class="classifier">list , optional</span></dt><dd><p>The first input direction vector. The input topology will be rotated such that this vector is parallel to the input dirB vector. Default is [0, 0, 1].</p>
+<dt><strong>dirA</strong><span class="classifier">list , optional</span></dt><dd><p>The source direction vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>dirB</strong><span class="classifier">list , optional</span></dt><dd><p>The target direction vector. The input topology will be rotated such that the input dirA vector is parallel to this vector. Default is [0, 0, 1].</p>
+<dt><strong>dirB</strong><span class="classifier">list , optional</span></dt><dd><p>The target direction vector. Default is [0, 0, 1].</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -3926,7 +3945,44 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The flattened topology.</p>
+<dt>topologic_core.Topology</dt><dd><p>The oriented topology.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.OrientAndPlace">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OrientAndPlace</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originA</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">originB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirA</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirB</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.OrientAndPlace" title="Permalink to this definition"></a></dt>
+<dd><p>Orients and places the input topology using a single affine transformation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
+</dd>
+<dt><strong>originA</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The source origin about which the topology is oriented. If set to None,
+the centroid of the topology is used. Default is None.</p>
+</dd>
+<dt><strong>originB</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The target location of originA. If set to None, originA is used and no
+placement translation is applied. Default is None.</p>
+</dd>
+<dt><strong>dirA</strong><span class="classifier">list , optional</span></dt><dd><p>The source direction vector. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>dirB</strong><span class="classifier">list , optional</span></dt><dd><p>The target direction vector. Default is [0, 0, 1].</p>
+</dd>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, dictionaries are transferred to the transformed topology.
+Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologic_core.Topology</dt><dd><p>The oriented and placed topology.</p>
 </dd>
 </dl>
 </dd>
@@ -3971,11 +4027,13 @@ one topology covers the other are not considered overlaps.</p>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>originA</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The old location to use as the origin of the movement. If set to None, the centroid of the input topology is used. Default is None.</p>
+<dt><strong>originA</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The old location to use as the origin of the movement. If set to None,
+the centroid of the input topology is used. Default is None.</p>
 </dd>
-<dt><strong>originB</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The new location at which to place the topology. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
+<dt><strong>originB</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The new location at which to place the topology. If set to None, the
+world origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the coordinates to. Default is 6.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -4235,27 +4293,37 @@ to the computed distance, or None if no threshold is matched.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ReplaceVertices">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ReplaceVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">verticesB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ReplaceVertices" title="Permalink to this definition"></a></dt>
-<dd><p>Replaces the vertices in the first input list with the vertices in the second input list and rebuilds the input topology. The two lists must be of the same length.</p>
+<dd><p>Replaces vertices in the first input list with the corresponding vertices
+in the second input list and rebuilds the input topology. The two lists
+must have the same length.</p>
+<p>The original topology structure and topology type are preserved whenever
+possible. Structured topologies such as Faces with internal boundaries
+and heterogeneous Clusters are rebuilt hierarchically rather than through
+a flattened geometry representation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>verticesA</strong><span class="classifier">list</span></dt><dd><p>The first input list of vertices.</p>
+<dt><strong>verticesA</strong><span class="classifier">list</span></dt><dd><p>The vertices in the input topology to replace.</p>
 </dd>
-<dt><strong>verticesB</strong><span class="classifier">list</span></dt><dd><p>The second input list of vertices.</p>
+<dt><strong>verticesB</strong><span class="classifier">list</span></dt><dd><p>The replacement vertices. Each vertex corresponds by index to a vertex
+in verticesA.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to which coordinates are rounded.
+Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance used to match vertices. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>The new topology.</p>
+<dt>topologic_core.Topology</dt><dd><p>The rebuilt topology with the requested vertices replaced, or None if
+the operation fails.</p>
 </dd>
 </dl>
 </dd>
@@ -4265,25 +4333,30 @@ to the computed distance, or None if no threshold is matched.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Rotate">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Rotate</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">axis</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Rotate" title="Permalink to this definition"></a></dt>
-<dd><p>Rotates the input topology</p>
+<dd><p>Rotates the input topology.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world origin (0, 0, 0) is used. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The origin (center) of the rotation. If set to None, the world
+origin (0, 0, 0) is used. Default is None.</p>
 </dd>
-<dt><strong>axis</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the axis of rotation. Default is [0, 0, 1] which equates to the Z axis.</p>
+<dt><strong>axis</strong><span class="classifier">list , optional</span></dt><dd><p>The vector representing the axis of rotation. Default is
+[0, 0, 1], which equates to the Z axis.</p>
 </dd>
 <dt><strong>angle</strong><span class="classifier">float , optional</span></dt><dd><p>The angle of rotation in degrees. Default is 0.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried out. Default is 0.001 degrees.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angle tolerance in degrees under which no rotation is carried
+out. Default is 0.001 degrees.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries are transfered from the original object to the rotated object. Default is True.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, dictionaries are transferred from the original
+topology to the rotated topology. Default is True.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -4682,9 +4755,12 @@ contained by the topology are also annotated. Default is False.</p>
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.ShortestDistance">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestDistance</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.ShortestDistance" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the shortest Euclidean distance between two topologies.</p>
-<p>This is a thin wrapper around Topology.ShortestEdge. It computes the
-shortest connecting Edge between the two input topologies and returns
-its length.</p>
+<p>For backends other than TopologicCore, a native backend distance
+implementation is used when available.</p>
+<p>For TopologicCore, and for backends without a native distance operation,
+the distance is calculated using backend-independent geometric primitives.
+The compatibility calculation supports vertices, edges, faces with holes,
+shells, cells, cell complexes, and clusters.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -4695,18 +4771,18 @@ its length.</p>
 <dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Number of decimal places to which the distance is rounded.
 Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Numerical tolerance used when computing the shortest edge.
-Default is 1e-6.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Distances less than or equal to this value
+are returned as zero. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the method will not print warnings. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>float or None</dt><dd><p>The shortest distance between topologyA and topologyB, rounded to
-the specified mantissa. Returns None if the distance cannot be
-computed.</p>
+<dt>float</dt><dd><p>The shortest distance between topologyA and topologyB.
+Returns None if the distance cannot be computed.</p>
 </dd>
 </dl>
 </dd>
@@ -5402,23 +5478,33 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Taper">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Taper</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ratioRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[0,</span> <span class="pre">1]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Taper" title="Permalink to this definition"></a></dt>
-<dd><p>Tapers the input topology. This method tapers the input geometry along its Z-axis based on the ratio range input.</p>
+<dd><p>Tapers the input topology along its Z-axis based on the input ratio range.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of
+the input topology is used. The tapering uses the X and Y coordinates
+of the specified origin, but uses the Z coordinate of each vertex
+being tapered. Default is None.</p>
 </dd>
-<dt><strong>ratioRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired ratio range. This will specify a linear range from bottom to top for tapering the vertices. 0 means no tapering, and 1 means maximum (inward) tapering. Negative numbers mean that tapering will be outwards.</p>
+<dt><strong>ratioRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired ratio range. This specifies a linear range from bottom
+to top for tapering the vertices. A value of 0 means no tapering and
+1 means maximum inward tapering. Negative numbers result in outward
+tapering. Values greater than 1 are clamped to 1.
+Default is [0, 1].</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the input topology is triangulated before tapering.
+Otherwise, it is not triangulated. Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Vertices will not be moved if the calculated distance is at or less than this tolerance.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Vertices are not moved if the calculated
+movement distance is at or below this tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5434,10 +5520,14 @@ Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Touches">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Touches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Touches" title="Permalink to this definition"></a></dt>
-<dd><p>Returns True if the input topologyA touches the input topologyB. Returns False otherwise.</p>
-<p>Touching means that the two topologies share at least one boundary point while their
-interiors do not intersect. Special cases are handled for zero-dimensional and
-one-dimensional topologies.</p>
+<dd><p>Returns True if the input topologyA touches the input topologyB.
+Returns False otherwise.</p>
+<p>Two topologies are considered to touch when their boundaries are in
+contact while their interiors do not intersect. For equal-dimensional
+two- and three-dimensional topologies, boundary contact is determined
+using shortest distance rather than relying solely on Boolean
+intersection, since some backends may not return lower-dimensional
+intersections for edge- or vertex-only contact.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -5447,13 +5537,15 @@ one-dimensional topologies.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>bool</dt><dd><p>True if topologyA touches topologyB. False otherwise. Returns None if either input is invalid.</p>
+<dt>bool</dt><dd><p>True if topologyA touches topologyB. False otherwise.
+Returns None if either input is invalid.</p>
 </dd>
 </dl>
 </dd>
@@ -5486,6 +5578,42 @@ one-dimensional topologies.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.Topology.Topology.TransferDictionariesByKey">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TransferDictionariesByKey</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologies</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaries</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">key</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.TransferDictionariesByKey" title="Permalink to this definition"></a></dt>
+<dd><p>Transfers dictionaries to input topologies by matching a shared dictionary key.</p>
+<p>This method reads the dictionary of each input topology and indexes the topology
+by the value stored at the input key. It then reads each input dictionary and,
+when the same key value is found, transfers that dictionary to the matching
+topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>topologies</strong><span class="classifier">list</span></dt><dd><p>The target topologies that will receive dictionaries.</p>
+</dd>
+<dt><strong>dictionaries</strong><span class="classifier">list</span></dt><dd><p>The source dictionaries. Each item can be either a Topologic dictionary or
+a Python dictionary. Nested dictionaries are not extracted or handled.</p>
+</dd>
+<dt><strong>key</strong><span class="classifier">str</span></dt><dd><p>The dictionary key whose value is used to match source dictionaries to
+target topologies.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>list</dt><dd><p>The updated list of topologies. Topologies without a matching dictionary
+are returned unchanged.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>updated_faces = Topology.TransferByKey(faces, face_dictionaries, “id”)</p>
+<p>updated_spaces = Topology.TransferByKey(spaces, room_dictionaries, “GlobalId”)</p>
 </dd></dl>
 
 <dl class="py method">
@@ -5525,27 +5653,34 @@ The default is None which causes the algorithm to use twice the number of cpu co
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Transform">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">matrix</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transferDictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Transform" title="Permalink to this definition"></a></dt>
 <dd><p>Transforms the input topology by the input 4x4 affine transformation matrix.</p>
+<p>The complete affine transformation is delegated to the active Core backend.
+The legacy Scale -&gt; Rotate -&gt; Translate reconstruction fallback is used only
+when the active backend is TopologicCore.</p>
 <dl class="field-list">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl>
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The input 4x4 transformation matrix (row-major). Translation is assumed to be
-in the last column: [ [<em>,</em>,*,tx],</p>
-<blockquote>
-<div><p>[<em>,</em>,*,ty],
-[<em>,</em>,*,tz],
-[0,0,0, 1] ].</p>
-</div></blockquote>
+<dt><strong>matrix</strong><span class="classifier">list</span></dt><dd><p>The input 4x4 affine transformation matrix in row-major form:</p>
+<dl class="simple">
+<dt>[</dt><dd><p>[a00, a01, a02, tx],
+[a10, a11, a12, ty],
+[a20, a21, a22, tz],
+[0,   0,   0,   1]</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Angle tolerance in degrees under which no rotation is carried out. Default is 0.001.</p>
+</dl>
+<p>]</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, dictionaries are transferred from the original object to the transformed
-object (best-effort; relies on consistent sub-topology ordering). Default is True.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees below which a rotation is ignored
+by the legacy TopologicCore fallback. Default is 0.001.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Desired tolerance. Default is 0.0001.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionary of the input topology is transferred
+to the transformed topology. Default is True.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5556,19 +5691,6 @@ object (best-effort; relies on consistent sub-topology ordering). Default is Tru
 </dl>
 </dd>
 </dl>
-<p class="rubric">Notes</p>
-<ul class="simple">
-<li><dl class="simple">
-<dt>This method prioritizes correctness and speed:</dt><dd><p>1) If <cite>topologic_core.TopologyUtility.Transform</cite> is available, it is used
-(fastest + most general, supports shear).
-2) Otherwise, it decomposes the matrix into (scale, rotation, translation)
-and applies Topology.Scale -&gt; Topology.Rotate -&gt; Topology.Translate.
-This path assumes the 3x3 linear block is (rotation * axis-aligned scale)
-with negligible shear.</p>
-</dd>
-</dl>
-</li>
-</ul>
 </dd></dl>
 
 <dl class="py method">
@@ -5578,7 +5700,7 @@ with negligible shear.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.topology</span></dt><dd><p>The input topology.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
 <dt><strong>x</strong><span class="classifier">float , optional</span></dt><dd><p>The x translation value. Default is 0.</p>
 </dd>
@@ -5586,7 +5708,8 @@ with negligible shear.</p>
 </dd>
 <dt><strong>z</strong><span class="classifier">float , optional</span></dt><dd><p>The z translation value. Default is 0.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries are transfered from the original object to the translated object. Default is True.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, dictionaries are transferred from the original topology
+and its subtopologies to the translated topology. Default is True.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5636,9 +5759,10 @@ with negligible shear.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topologgy.</p>
+<dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the faces in the input topology will be transferred to the created triangular faces. Default is False.</p>
+<dt><strong>transferDictionaries</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the dictionaries of the faces in the input topology
+will be transferred to the created triangular faces. Default is False.</p>
 </dd>
 <dt><strong>mode</strong><span class="classifier">int , optional</span></dt><dd><p>The desired mode of meshing algorithm. Several options are available:
 0: Classic
@@ -5647,17 +5771,17 @@ with negligible shear.</p>
 5: Delaunay
 6: Frontal-Delaunay
 7: BAMG
-8: Fontal-Delaunay for Quads
+8: Frontal-Delaunay for Quads
 9: Packing of Parallelograms
-All options other than 0 (Classic) use the gmsh library. See <a class="reference external" href="https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options">https://gmsh.info/doc/texinfo/gmsh.html#Mesh-options</a>
-WARNING: The options that use gmsh can be very time consuming and can create very heavy geometry.</p>
+All options other than 0 use the gmsh library.</p>
 </dd>
-<dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired size of the mesh when using the “mesh” option. If set to None, it will be
-calculated automatically and set to 10% of the overall size of the face.</p>
+<dt><strong>meshSize</strong><span class="classifier">float , optional</span></dt><dd><p>The desired mesh size when using a meshing mode. If set to None,
+it is calculated automatically. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5673,25 +5797,37 @@ calculated automatically and set to 10% of the overall size of the face.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Twist">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Twist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">origin</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angleRange</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[45,</span> <span class="pre">90]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">triangulate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Twist" title="Permalink to this definition"></a></dt>
-<dd><p>Twists the input topology. This method twists the input geometry along its Z-axis based on the degree range input.</p>
+<dd><p>Twists the input topology along its Z-axis based on the input angle range.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for tapering. If not specified, the centroid of the input topology is used. The tapering will use the X, Y coordinates of the specified origin, but will use the Z of the point being tapered. Default is None.</p>
+<dt><strong>origin</strong><span class="classifier">topologic_core.Vertex , optional</span></dt><dd><p>The desired origin for twisting. If not specified, the centroid of
+the input topology is used. The twisting uses the X and Y coordinates
+of the specified origin, but uses the Z coordinate of each vertex
+being twisted. Default is None.</p>
 </dd>
-<dt><strong>angleRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired angle range in degrees. This will specify a linear range from bottom to top for twisting the vertices. positive numbers mean a clockwise rotation.</p>
+<dt><strong>angleRange</strong><span class="classifier">list , optional</span></dt><dd><p>The desired angle range in degrees. This specifies a linear angular
+range from the lowest Z coordinate to the highest Z coordinate of the
+topology. Positive and negative angles follow the rotation convention
+used by Topology.Rotate about the positive Z-axis.
+Default is [45, 90].</p>
 </dd>
-<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to true, the input topology is triangulated before tapering. Otherwise, it will not be traingulated. Default is False.</p>
+<dt><strong>triangulate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the input topology is triangulated before twisting.
+This is useful for higher-dimensional topologies because a varying
+twist can make originally planar polygonal faces non-planar.
+Default is False.</p>
 </dd>
-<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round the result to. Default is 6.</p>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to round coordinates to. Default is 6.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired angular tolerance in degrees. Default is 0.01.</p>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance in degrees below which no rotation is carried
+out. Default is 0.01.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -5853,7 +5989,8 @@ False, return or create a persistent stored UUID. Default is False.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.Union">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topologyA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tranDict</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.Union" title="Permalink to this definition"></a></dt>
-<dd><p>Unions the input operand topologies. See <a class="reference external" href="https://en.wikipedia.org/wiki/Boolean_operation">https://en.wikipedia.org/wiki/Boolean_operation</a>.</p>
+<dd><p>Unions the input operand topologies.
+See <a class="reference external" href="https://en.wikipedia.org/wiki/Boolean_operation">https://en.wikipedia.org/wiki/Boolean_operation</a>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -5861,17 +5998,19 @@ False, return or create a persistent stored UUID. Default is False.</p>
 </dd>
 <dt><strong>topologyB</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The second input topology.</p>
 </dd>
-<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and transferred to the result. Default is False.</p>
+<dt><strong>tranDict</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True the dictionaries of the operands are merged and
+transferred to the result. Default is False.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Topology</dt><dd><p>the resultant topology.</p>
+<dt>topologic_core.Topology</dt><dd><p>The resultant topology.</p>
 </dd>
 </dl>
 </dd>

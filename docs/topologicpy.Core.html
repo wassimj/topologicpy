@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Core module &mdash; topologicpy 0.9.58 documentation</title>
+  <title>topologicpy.Core module &mdash; topologicpy 0.9.62 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.58
+                0.9.62
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -155,8 +155,9 @@
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">Core</span></span><a class="headerlink" href="#topologicpy.Core.Core" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
 <p>Thin facade over the active topology kernel backend.</p>
-<p>The default backend is <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>. Use <code class="docutils literal notranslate"><span class="pre">Core.SetBackend</span></code> to
-replace it with another backend object that exposes the same namespace shape.</p>
+<p>The preferred backend is <code class="docutils literal notranslate"><span class="pre">PythonOCCBackend</span></code>. If PythonOCC is unavailable,
+Core falls back to <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>. Use <code class="docutils literal notranslate"><span class="pre">Core.SetBackend</span></code> to replace
+it with another backend object that exposes the same namespace shape.</p>
 <p class="rubric">Methods</p>
 <table class="autosummary longtable docutils align-default">
 <colgroup>
@@ -192,7 +193,7 @@ replace it with another backend object that exposes the same namespace shape.</p
 <td><p>Returns the raw module of the active backend if available.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Core.Core.ResetBackend" title="topologicpy.Core.Core.ResetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ResetBackend</span></code></a>()</p></td>
-<td><p>Resets the active backend to a new <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code> instance.</p></td>
+<td><p>Resets the active backend according to the default backend policy.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Core.Core.SetBackend" title="topologicpy.Core.Core.SetBackend"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SetBackend</span></code></a>(backend)</p></td>
 <td><p>Sets the active Core backend.</p></td>
@@ -296,8 +297,11 @@ replace it with another backend object that exposes the same namespace shape.</p
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Core.Core.Backend">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Backend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.Backend" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the active backend. If none has been set, creates the default
-<code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code>.</p>
+<dd><p>Returns the active backend.</p>
+<p>If no backend has been explicitly set, PythonOCCBackend is attempted
+first. If PythonOCC is unavailable, TopologicCoreBackend is used as the
+fallback. The TOPOLOGICPY_CORE_BACKEND environment variable can be used
+to explicitly select a backend.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -437,7 +441,9 @@ attribute.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Core.Core.ResetBackend">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ResetBackend</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Any</span></span></span><a class="headerlink" href="#topologicpy.Core.Core.ResetBackend" title="Permalink to this definition"></a></dt>
-<dd><p>Resets the active backend to a new <code class="docutils literal notranslate"><span class="pre">TopologicCoreBackend</span></code> instance.</p>
+<dd><p>Resets the active backend according to the default backend policy.</p>
+<p>PythonOCCBackend is preferred, with TopologicCoreBackend used as the
+automatic fallback when PythonOCC is unavailable.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -512,7 +518,7 @@ attribute.</p>
 <dt class="sig sig-object py" id="topologicpy.Core.TopologicCoreBackend">
 <em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.Core.</span></span><span class="sig-name descname"><span class="pre">TopologicCoreBackend</span></span><a class="headerlink" href="#topologicpy.Core.TopologicCoreBackend" title="Permalink to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
-<p>Default backend that exposes the <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> namespaces directly.</p>
+<p>Fallback backend that exposes the <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> namespaces directly.</p>
 <p>This class deliberately mirrors <code class="docutils literal notranslate"><span class="pre">topologic_core</span></code> as closely as possible.
 Any missing namespaces are set to <code class="docutils literal notranslate"><span class="pre">None</span></code> so that Core can fail gracefully
 with a clear message when accessed.</p>

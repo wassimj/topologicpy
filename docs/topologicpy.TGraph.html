@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.58 documentation</title>
+  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.62 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.58
+                0.9.62
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -908,7 +908,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.TurtleFromTriples" title="topologicpy.TGraph.TGraph.TurtleFromTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TurtleFromTriples</span></code></a>(triples[, namespaces, ...])</p></td>
 <td><p>Returns a Turtle string generated from triples.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Union" title="topologicpy.TGraph.TGraph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Union" title="topologicpy.TGraph.TGraph.Union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Union</span></code></a>(graphA, graphB[, vertexKeys, ...])</p></td>
 <td><p>Returns the union of two input TGraphs.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ValidateOntology" title="topologicpy.TGraph.TGraph.ValidateOntology"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateOntology</span></code></a>(graph[, requireClass, ...])</p></td>
@@ -942,7 +942,7 @@
 <td><p>Returns a lightweight CSV string of TGraph vertex records.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="topologicpy.TGraph.TGraph.VisibilityGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VisibilityGraph</span></code></a>(face[, vertices, obstacles, ...])</p></td>
-<td><p>Returns a visibility graph derived from the input topology.</p></td>
+<td><p>Returns a fast visibility graph derived from the input planar face.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.WLFeatures" title="topologicpy.TGraph.TGraph.WLFeatures"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WLFeatures</span></code></a>(graph[, key, iterations, ...])</p></td>
 <td><p>Returns Weisfeiler-Lehman feature counts for the input TGraph.</p></td>
@@ -4041,12 +4041,16 @@ Default is ‘all’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.Difference">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Difference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Difference" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the graph difference between the first and second input TGraphs.</p>
+<p>This implementation avoids unsafe index-based edge comparison. An edge in
+graphA is removed only if both of its endpoint vertices can be confidently
+matched to equivalent vertices in graphB and the corresponding edge exists
+in graphB.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graphA</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The first input TGraph.</p>
+<dt><strong>graphA</strong><span class="classifier">TGraph</span></dt><dd><p>The first input TGraph.</p>
 </dd>
-<dt><strong>graphB</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The second input TGraph.</p>
+<dt><strong>graphB</strong><span class="classifier">TGraph</span></dt><dd><p>The second input TGraph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -5346,12 +5350,16 @@ inferred rdf:type values are written back to graph dictionaries.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.Intersect">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Intersect" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the graph intersection of two input TGraphs.</p>
+<p>This implementation avoids unsafe index-based vertex and edge comparison.
+Vertices are considered common only when they can be confidently matched by
+a stable identity key. Edges are considered common only when both endpoint
+vertices match and the corresponding edge exists in graphB.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graphA</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The first input TGraph.</p>
+<dt><strong>graphA</strong><span class="classifier">TGraph</span></dt><dd><p>The first input TGraph.</p>
 </dd>
-<dt><strong>graphB</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The second input TGraph.</p>
+<dt><strong>graphB</strong><span class="classifier">TGraph</span></dt><dd><p>The second input TGraph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -7585,12 +7593,16 @@ Default is ‘out’.</p>
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.SymmetricDifference">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SymmetricDifference</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.SymmetricDifference" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the symmetric difference of two input TGraphs.</p>
+<p>This implementation avoids unsafe index-based graph comparison. Vertices are
+matched only by a conservative stable identity key. Edges are included in the
+result only when their endpoint identities and edge direction do not appear
+in both graphs.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graphA</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The first input TGraph.</p>
+<dt><strong>graphA</strong><span class="classifier">TGraph</span></dt><dd><p>The first input TGraph.</p>
 </dd>
-<dt><strong>graphB</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The second input TGraph.</p>
+<dt><strong>graphB</strong><span class="classifier">TGraph</span></dt><dd><p>The second input TGraph.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -7886,16 +7898,44 @@ Default is ‘all’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.Union">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Union" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graphA</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">graphB</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKeys</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Union" title="Permalink to this definition"></a></dt>
 <dd><p>Returns the union of two input TGraphs.</p>
+<p>Vertices from graphB are remapped into the output graph before graphB
+edges are added. Vertex identity is determined as follows:</p>
+<ol class="arabic simple">
+<li><p>If vertexKeys is not None, vertices are considered identical only
+when their dictionaries contain the same values at all supplied keys.</p></li>
+<li><p>If vertexKeys is None, vertices are considered identical only when
+their representation coordinates match after rounding to mantissa.</p></li>
+</ol>
+<p>Edge identity is determined as follows:</p>
+<ol class="arabic simple">
+<li><p>If edgeKeys is not None and an edge contains all supplied keys, the
+edge dictionary values at those keys define the edge identity.</p></li>
+<li><p>Otherwise, edge identity falls back to the remapped source and
+destination vertex indices and edge direction.</p></li>
+</ol>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graphA</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The first input TGraph.</p>
+<dt><strong>graphA</strong><span class="classifier">TGraph</span></dt><dd><p>The first input TGraph.</p>
 </dd>
-<dt><strong>graphB</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The second input TGraph.</p>
+<dt><strong>graphB</strong><span class="classifier">TGraph</span></dt><dd><p>The second input TGraph.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>vertexKeys</strong><span class="classifier">list , optional</span></dt><dd><p>A list of dictionary keys used to determine semantic vertex identity.
+If set to None, vertex identity falls back to matching x, y, z
+coordinates of the vertex representations. Default is None.</p>
+</dd>
+<dt><strong>edgeKeys</strong><span class="classifier">list , optional</span></dt><dd><p>A list of dictionary keys used to determine semantic edge identity.
+If set to None, edge identity falls back to source/destination vertex
+indices and direction after graphB vertices have been remapped.
+Default is None.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>The number of decimal places to use when matching coordinates.
+Default is 6.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
@@ -8161,20 +8201,59 @@ PyTorch/PyG-ready datasets, use ByCSVPath and ExportToCSV.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.VisibilityGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VisibilityGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a visibility graph derived from the input topology.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">VisibilityGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">face</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">obstacles</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">float</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">maxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeBoundaryVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">leafSize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">allowBoundaryPaths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trim</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">approximateMaxNeighbors</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neighborCandidateFactor</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">8</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.VisibilityGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a fast visibility graph derived from the input planar face.</p>
+<p>This implementation is designed for navigation visibility graphs and avoids
+Topologic boolean operations inside the main visibility loop. It uses a
+divide-and-conquer angular visibility algorithm inspired by rotational
+sweep visibility graph construction.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>face</strong><span class="classifier">Any</span></dt><dd><p>The input face value.</p>
+<dt><strong>face</strong><span class="classifier">Any</span></dt><dd><p>The input planar face defining the navigable region.</p>
 </dd>
-<dt><strong>vertices</strong><span class="classifier">Optional[List[Any]] , optional</span></dt><dd><p>The input vertices or vertex indices. Default is None.</p>
+<dt><strong>vertices</strong><span class="classifier">Optional[List[Any]] , optional</span></dt><dd><p>The input vertices or vertex indices. If set to None, face boundary
+vertices are used. Default is None.</p>
 </dd>
-<dt><strong>obstacles</strong><span class="classifier">Optional[List[Any]] , optional</span></dt><dd><p>The input obstacles value. Default is None.</p>
+<dt><strong>obstacles</strong><span class="classifier">Optional[List[Any]] , optional</span></dt><dd><p>The input obstacle topologies. Their edges are treated as visibility
+blockers. Default is None.</p>
 </dd>
-<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>The input bidirectional value. Default is True.</p>
+<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, an undirected graph is returned. If set to False, a
+directed graph is returned with both directions explicitly inserted
+for every accepted visibility pair. Default is True.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt><strong>maxDistance</strong><span class="classifier">Optional[float] , optional</span></dt><dd><p>Optional maximum visibility edge length. Candidate pairs longer than
+this value are skipped. Default is None.</p>
+</dd>
+<dt><strong>maxNeighbors</strong><span class="classifier">Optional[int] , optional</span></dt><dd><p>Optional maximum number of visible neighbours retained per source
+vertex. If None, the full visibility graph is built. Default is None.</p>
+</dd>
+<dt><strong>includeBoundaryVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, face and obstacle boundary vertices are added to the
+candidate visibility vertices. This is usually desirable for navigation
+because shortest paths around obstacles need obstacle corner vertices.
+Default is True.</p>
+</dd>
+<dt><strong>leafSize</strong><span class="classifier">int , optional</span></dt><dd><p>The angular divide-and-conquer leaf size. Smaller values reduce exact
+checks per leaf but increase recursion overhead. Default is 24.</p>
+</dd>
+<dt><strong>allowBoundaryPaths</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, collinear travel along face/obstacle boundary segments
+is allowed. This is useful for shortest-path visibility graphs where
+paths may graze obstacle boundaries. Default is True.</p>
+</dd>
+<dt><strong>trim</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, visibility edges whose interiors leave the host face
+are rejected. This is useful for concave faces or faces with holes,
+where two vertices may see each other geometrically but the connecting
+segment lies partly outside the navigable face. Default is False.</p>
+</dd>
+<dt><strong>approximateMaxNeighbors</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True and maxNeighbors is not None, only the nearest
+maxNeighbors*neighborCandidateFactor candidate vertices are tested
+per source. This is faster but no longer builds the exact sparse
+nearest-visible-neighbour graph. Default is False.</p>
+</dd>
+<dt><strong>neighborCandidateFactor</strong><span class="classifier">int , optional</span></dt><dd><p>Candidate multiplier used when approximateMaxNeighbors is True.
+Default is 8.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>

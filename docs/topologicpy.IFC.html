@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.IFC module &mdash; topologicpy 0.9.58 documentation</title>
+  <title>topologicpy.IFC module &mdash; topologicpy 0.9.62 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.58
+                0.9.62
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -161,8 +161,20 @@
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AccessGraph" title="topologicpy.IFC.IFC.AccessGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AccessGraph</span></code></a>(file[, importMode, ...])</p></td>
-<td><p>Creates a TopologicPy Graph or TGraph representing space adjacency from an IFC file.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AccessGraph" title="topologicpy.IFC.IFC.AccessGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AccessGraph</span></code></a>(model[, viaConnectingElements, ...])</p></td>
+<td><p>Creates an access TGraph from an already parsed IFCModel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AccessGraphByPath" title="topologicpy.IFC.IFC.AccessGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AccessGraphByPath</span></code></a>(path[, ...])</p></td>
+<td><p>Parses an IFC path once and delegates to IFC.AccessGraph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AdjacencyGraph" title="topologicpy.IFC.IFC.AdjacencyGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyGraph</span></code></a>(model[, nodeTypes, ...])</p></td>
+<td><p>Creates a general-purpose IFC adjacency TGraph from semantic and spatial relationships.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AdjacencyGraphByPath" title="topologicpy.IFC.IFC.AdjacencyGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdjacencyGraphByPath</span></code></a>(path[, nodeTypes, ...])</p></td>
+<td><p>Parses an IFC path once and delegates to IFC.AdjacencyGraph.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.AnalyticalFaces" title="topologicpy.IFC.IFC.AnalyticalFaces"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnalyticalFaces</span></code></a>(model[, circleSides, scale, ...])</p></td>
+<td><p>Returns analytical faces for IFC walls, slabs, and roofs.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.BrickClassByIFCClass" title="topologicpy.IFC.IFC.BrickClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">BrickClassByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
 <td><p>Returns the closest Brick class for an IFC MEP class.</p></td>
@@ -177,144 +189,302 @@
 <td><p>Returns the IFC element/entity types found in the input IFC file, sorted alphabetically.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Entities" title="topologicpy.IFC.IFC.Entities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Entities</span></code></a>(file[, silent])</p></td>
-<td><p>Returns the parsed IFC STEP entity dictionary from the input IFC file.</p></td>
+<td><p>Returns the parsed IFC STEP entity dictionary from the input IFC source.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.EntitiesByPath" title="topologicpy.IFC.IFC.EntitiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">EntitiesByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Returns the parsed IFC STEP entity dictionary from the IFC file at the input path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ExportReferenceView" title="topologicpy.IFC.IFC.ExportReferenceView"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportReferenceView</span></code></a>(model, path[, schema, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Export" title="topologicpy.IFC.IFC.Export"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Export</span></code></a>(model, path[, overwrite, ...])</p></td>
+<td><p>Exports an in-memory IFCModel to an IFC STEP Physical File.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ExportReferenceView" title="topologicpy.IFC.IFC.ExportReferenceView"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ExportReferenceView</span></code></a>(model, path[, schema, ...])</p></td>
 <td><p>Export a TopologicPy-authored model to an IFC4 Reference View-compatible IFC.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.FileByPath" title="topologicpy.IFC.IFC.FileByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FileByPath</span></code></a>(path[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.FileByPath" title="topologicpy.IFC.IFC.FileByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FileByPath</span></code></a>(path[, silent])</p></td>
 <td><p>Returns the parsed IFC STEP entity dictionary found at the input path.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.KnowledgeGraphByFile" title="topologicpy.IFC.IFC.KnowledgeGraphByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KnowledgeGraphByFile</span></code></a>(file[, includeRels, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.KnowledgeGraphByFile" title="topologicpy.IFC.IFC.KnowledgeGraphByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">KnowledgeGraphByFile</span></code></a>(file[, includeRels, ...])</p></td>
 <td><p>Returns a KnowledgeGraph built from IFC relationship RDF triples.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.MeshDataByPath" title="topologicpy.IFC.IFC.MeshDataByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshDataByPath</span></code></a>(path[, includeTypes, ...])</p></td>
-<td><p>Returns extracted mesh data using the pure-Python parser.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.MeshData" title="topologicpy.IFC.IFC.MeshData"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshData</span></code></a>(model[, includeTypes, ...])</p></td>
+<td><p>Returns aggregated mesh data using IFCModel geometry caches.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.MeshDataByPath" title="topologicpy.IFC.IFC.MeshDataByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MeshDataByPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<td><p>Parses an IFC path once and delegates to IFC.MeshData.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Model" title="topologicpy.IFC.IFC.Model"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Model</span></code></a>(file[, sourcePath, silent])</p></td>
+<td><p>Returns an in-memory IFCModel from the input IFC source.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ModelByEntities" title="topologicpy.IFC.IFC.ModelByEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelByEntities</span></code></a>(entities[, sourcePath, ...])</p></td>
+<td><p>Wraps a parsed IFC entity dictionary in an IFCModel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ModelByPath" title="topologicpy.IFC.IFC.ModelByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ModelByPath</span></code></a>(path[, silent])</p></td>
+<td><p>Parses an IFC STEP file once and returns an in-memory IFCModel.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Object" title="topologicpy.IFC.IFC.Object"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Object</span></code></a>(file[, globalId, ifcId, ifcKey, silent])</p></td>
 <td><p>Returns a dynamic IFCEntity wrapper for one IFC entity.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Objects" title="topologicpy.IFC.IFC.Objects"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Objects</span></code></a>(file[, includeTypes, excludeTypes, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for IFC entities in a file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ObjectsByType" title="topologicpy.IFC.IFC.ObjectsByType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ObjectsByType</span></code></a>(file, ifcType[, includeEmpty, ...])</p></td>
 <td><p>Returns dynamic IFCEntity wrappers for entities of one IFC type.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="topologicpy.IFC.IFC.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.OntologyClassByIFCClass" title="topologicpy.IFC.IFC.OntologyClassByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OntologyClassByIFCClass</span></code></a>(ifcClass[, defaultValue])</p></td>
 <td><p>Returns the TopologicPy ontology class for an IFC class.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Properties" title="topologicpy.IFC.IFC.Properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Properties</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Properties" title="topologicpy.IFC.IFC.Properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Properties</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Extracts semantic properties, quantities, classifications, and materials from an IFC file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RDFTriples" title="topologicpy.IFC.IFC.RDFTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFTriples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RDFTriples" title="topologicpy.IFC.IFC.RDFTriples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RDFTriples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
 <td><p>Returns RDF-style triples from IFC relationships.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipPredicateByIFCClass" title="topologicpy.IFC.IFC.RelationshipPredicateByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipPredicateByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipPredicateByIFCClass" title="topologicpy.IFC.IFC.RelationshipPredicateByIFCClass"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipPredicateByIFCClass</span></code></a>(ifcClass[, ...])</p></td>
 <td><p>Returns semantic predicate metadata for an IFC relationship class.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypes" title="topologicpy.IFC.IFC.RelationshipTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypes</span></code></a>(file[, includeCounts, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypes" title="topologicpy.IFC.IFC.RelationshipTypes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypes</span></code></a>(file[, includeCounts, silent])</p></td>
 <td><p>Returns the IFC relationship entity types found in the input IFC file, sorted alphabetically.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypesByGlobalId" title="topologicpy.IFC.IFC.RelationshipTypesByGlobalId"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypesByGlobalId</span></code></a>(file, globalId)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.RelationshipTypesByGlobalId" title="topologicpy.IFC.IFC.RelationshipTypesByGlobalId"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RelationshipTypesByGlobalId</span></code></a>(file, globalId)</p></td>
 <td><p>Returns the IFC relationship entity types associated with the IFC element identified by the input GlobalId.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SummaryByPath" title="topologicpy.IFC.IFC.SummaryByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummaryByPath</span></code></a>(path[, silent])</p></td>
-<td><p>Returns a compact summary of the IFC file using the pure-Python parser.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SemanticRelationshipsByGraph" title="topologicpy.IFC.IFC.SemanticRelationshipsByGraph"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SemanticRelationshipsByGraph</span></code></a>(model, graph[, ...])</p></td>
+<td><p>Creates missing in-memory IFC semantic relationship entities from an IFC adjacency TGraph.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TGraphByPath" title="topologicpy.IFC.IFC.TGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TGraphByPath</span></code></a>(path[, importMode, clean, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Summary" title="topologicpy.IFC.IFC.Summary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Summary</span></code></a>(model[, silent])</p></td>
+<td><p>Returns a cached compact summary of an IFCModel.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.SummaryByPath" title="topologicpy.IFC.IFC.SummaryByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SummaryByPath</span></code></a>(path[, silent])</p></td>
+<td><p>Parses an IFC path once and delegates to IFC.Summary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TGraphByPath" title="topologicpy.IFC.IFC.TGraphByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TGraphByPath</span></code></a>(path[, importMode, clean, ...])</p></td>
 <td><p>Creates a TGraph from an IFC path.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="topologicpy.IFC.IFC.TopologiesByEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByEntities</span></code></a>(entities[, ...])</p></td>
-<td><p>Imports IFC product geometry from an already parsed IFC entity dictionary.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ThermalCellComplex" title="topologicpy.IFC.IFC.ThermalCellComplex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ThermalCellComplex</span></code></a>(model[, separatorTypes, ...])</p></td>
+<td><p>Creates a proof-of-concept thermal CellComplex from an IFCModel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByFile" title="topologicpy.IFC.IFC.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
-<td><p>Imports IFC product geometry from an IFC file object into TopologicPy topologies.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Topologies" title="topologicpy.IFC.IFC.Topologies"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Topologies</span></code></a>(model[, includeTypes, ...])</p></td>
+<td><p>Imports product geometry from an already parsed IFCModel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByPath" title="topologicpy.IFC.IFC.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
-<td><p>Imports IFC product geometry from an IFC file path into TopologicPy topologies.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="topologicpy.IFC.IFC.TopologiesByEntities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByEntities</span></code></a>(entities[, ...])</p></td>
+<td><p>Compatibility wrapper for IFC.Topologies using an entity dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Triples" title="topologicpy.IFC.IFC.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByFile" title="topologicpy.IFC.IFC.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<td><p>Compatibility entry point accepting an IFCModel or other IFC source.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.TopologiesByPath" title="topologicpy.IFC.IFC.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<td><p>Parses an IFC path once and delegates to IFC.Topologies.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.Triples" title="topologicpy.IFC.IFC.Triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Triples</span></code></a>(file[, includeRels, excludeRels, ...])</p></td>
 <td><p>Returns IFC relationship triples from the input IFC file.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="topologicpy.IFC.IFC.ValidateBrickMappings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateBrickMappings</span></code></a>([brickTTLPath, ...])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFC.ValidateBrickMappings" title="topologicpy.IFC.IFC.ValidateBrickMappings"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ValidateBrickMappings</span></code></a>([brickTTLPath, ...])</p></td>
 <td><p>Validates the mapped Brick classes against a Brick TTL/RDF file when supplied.</p></td>
 </tr>
 </tbody>
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.AccessGraph">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AccessGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">importMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'topology'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useInternalVertex</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectingElementTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useFillingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeIsolatedSpaces</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaConnectingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bidirectional</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">asTGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AccessGraph" title="Permalink to this definition"></a></dt>
-<dd><p>Creates a TopologicPy Graph or TGraph representing space adjacency from an IFC file.</p>
-<p>The returned graph contains one vertex per IfcSpace. Edges are created
-between spaces that share a boundary-related connector element.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AccessGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaConnectingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semanticConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AccessGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Creates an access TGraph from an already parsed IFCModel.</p>
+<p>Only IfcSpace entities become principal graph vertices.</p>
+<p>The connecting elements are:</p>
+<ul class="simple">
+<li><p>unfilled IfcOpeningElement entities;</p></li>
+<li><p>IfcOpeningElement entities filled by IfcDoor or IfcDoorStandardCase;</p></li>
+<li><p>IfcStairFlight entities;</p></li>
+<li><p>IfcStair entities that are not decomposed into IfcStairFlight entities;</p></li>
+<li><p>IfcRampFlight entities;</p></li>
+<li><p>IfcRamp entities that are not decomposed into IfcRampFlight entities; and</p></li>
+<li><p>IfcTransportElement entities identified as elevators or lifts.</p></li>
+</ul>
+<p>Door geometry is never imported. Door access uses the geometry of its
+IfcOpeningElement. Vertical-circulation elements use their own geometry.</p>
+<p>When semanticConnections is True, IfcRelSpaceBoundary relationships are
+used first. For decomposed stairs and ramps, boundaries associated with the
+parent assembly are also considered.</p>
+<p>When spatialConnections is True, connecting elements with fewer than two
+semantic space connections are tested geometrically against the IfcSpace
+cells using only the “overlaps” and “touches” spatial relationships.
+Completely isolated spaces are then tested directly against the other
+spaces using the same relationships.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>file</strong><span class="classifier">dict, str, or ifcopenshell.file-like object</span></dt><dd><p>The input IFC source.</p>
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The parsed in-memory IFC model.</p>
 </dd>
-<dt><strong>importMode</strong><span class="classifier">str , optional</span></dt><dd><p>Controls graph vertex placement. If set to “topology”, vertices are
-placed using a deterministic circular graph layout. If set to
-“geometry”, vertices are placed at the centre of their parent IFC
-product representation when such representation data can be evaluated.
-Objects without usable geometry fall back to deterministic placement.
-Options are “topology” and “geometry”. Default is “topology”.</p>
+<dt><strong>viaConnectingElements</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, connecting elements become intermediate graph vertices.
+Otherwise, they become direct graph edges between adjacent spaces.
+Default is False.</p>
 </dd>
-<dt><strong>useInternalVertex</strong><span class="classifier">bool , optional</span></dt><dd><p>In geometry mode, if set to True, uses an internal vertex to represent
-the subtopology. Otherwise, uses its centroid. Default is False.</p>
+<dt><strong>semanticConnections</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, connections are first derived from IFC semantic
+relationships. Default is True.</p>
 </dd>
-<dt><strong>connectingElementTypes</strong><span class="classifier">list , optional</span></dt><dd><p>IFC element types that are allowed to act as adjacency connectors.
-If set to None, the default is [“IFCDOOR”, “IFCDOORSTANDARDCASE”,
-“IFCOPENINGELEMENT”]. Wall types are supported, but they are handled
-through IfcRelSpaceBoundary2ndLevel.CorrespondingBoundary rather than
-simple shared-wall grouping. Default is None.</p>
+<dt><strong>spatialConnections</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, unresolved connecting elements and isolated spaces are
+tested using spatial relationships. Default is False.</p>
 </dd>
-<dt><strong>useFillingElements</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, IfcOpeningElement references are resolved through
-IfcRelFillsElement to their filling elements, usually doors/windows.
-The opening is still retained and preferred as the via-vertex entity
-when viaConnectingElements is True. Default is True.</p>
+<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary import mode. This can be “None”, “Basic”, or “Full”.
+It is case-insensitive. Default is “Full”.</p>
 </dd>
-<dt><strong>includeIsolatedSpaces</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, all IfcSpace entities are included as vertices even
-when they have no detected adjacency. If False, only spaces involved
-in at least one adjacency edge are included. Default is True.</p>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>The scale factor applied to imported coordinates. Default is 1.0.</p>
 </dd>
-<dt><strong>viaConnectingElements</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to False, adjacency edges are created directly between spaces.
-If set to True, each adjacency is routed through a vertex representing
-the connecting element, preferably the IfcOpeningElement when present,
-otherwise the resolved connector element. For walls, a separate
-connecting vertex is created per confirmed corresponding-boundary
-pair to avoid turning long walls into artificial graph hubs. Default
-is False.</p>
+<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides used to approximate circular geometry. Default is
+24.</p>
 </dd>
-<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary mode to use for entity dictionaries. Currently supports
-the same basic entity dictionary behaviour as the IFC parser.
-Default is “basic”.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>bidirectional</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, edge dictionaries record the edge as bidirectional.
-Default is True.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
+False.</p>
 </dd>
-<dt><strong>asTGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the method returns a topologicpy.TGraph. If set to
-False, the method returns a legacy topologic_core.Graph. Default is False.</p>
+</dl>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologicpy.TGraph</dt><dd><p>The resulting access graph.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed.
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AccessGraphByPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AccessGraphByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaConnectingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semanticConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AccessGraphByPath" title="Permalink to this definition"></a></dt>
+<dd><p>Parses an IFC path once and delegates to IFC.AccessGraph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AdjacencyGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectingElementTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaConnectingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semanticConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialRelationshipTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proximityValues</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proximityLabels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useShortestDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AdjacencyGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a general-purpose IFC adjacency TGraph from semantic and spatial
+relationships.</p>
+<p>The entities specified by nodeTypes form the principal graph vertices.
+The entities specified by connectingElementTypes mediate semantic
+adjacency and are also included in the spatial relationship graph when
+spatialConnections is True.</p>
+<p>Semantic adjacency is derived from IFC relationship entities, including
+space boundaries, element connections, and distribution-port
+connections. Spatial adjacency is delegated entirely to
+TGraph.BySpatialRelationships and merged with the semantic graph by the
+persistent IFC_id stored on each topology.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The parsed in-memory IFC model.</p>
+</dd>
+<dt><strong>nodeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>IFC types that constitute graph nodes. Type names are
+case-insensitive and common singular/plural aliases are accepted.
+Default is [“IfcSpace”].</p>
+</dd>
+<dt><strong>connectingElementTypes</strong><span class="classifier">list , optional</span></dt><dd><p>IFC types that constitute connecting elements. Default is
+[“IfcWall”, “IfcSlab”].</p>
+</dd>
+<dt><strong>viaConnectingElements</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, semantic connections pass through connecting-element
+vertices. If False, each semantic connecting element creates direct
+edges among its semantically associated nodes. When
+spatialConnections is True, selected connecting elements are still
+retained as graph vertices because they participate directly in the
+spatial relationship graph. Default is False.</p>
+</dd>
+<dt><strong>semanticConnections</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, IFC relationship entities are used to derive semantic
+adjacency. Default is True.</p>
+</dd>
+<dt><strong>spatialConnections</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, all geometric node and connecting-element topologies are
+passed together to TGraph.BySpatialRelationships and the resulting
+spatial graph is merged with the semantic graph. Default is False.</p>
+</dd>
+<dt><strong>spatialRelationshipTypes</strong><span class="classifier">list , optional</span></dt><dd><p>Spatial relationships requested from
+TGraph.BySpatialRelationships. Supported values are “contains”,
+“coveredBy”, “covers”, “crosses”, “disjoint”, “equals”,
+“intersects”, “overlaps”, “touches”, “within”, and
+“proximity”. This input is required when spatialConnections is
+True.</p>
+</dd>
+<dt><strong>proximityValues</strong><span class="classifier">list , optional</span></dt><dd><p>Three numeric proximity thresholds passed to
+TGraph.BySpatialRelationships. Required when “proximity” is
+included in spatialRelationshipTypes.</p>
+</dd>
+<dt><strong>proximityLabels</strong><span class="classifier">list , optional</span></dt><dd><p>Three labels corresponding to proximityValues. Required when
+“proximity” is included in spatialRelationshipTypes.</p>
+</dd>
+<dt><strong>useShortestDistance</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, TGraph.BySpatialRelationships uses
+Topology.ShortestDistance for proximity. If False, it uses its
+faster default distance calculation. Default is False.</p>
+</dd>
+<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The IFC dictionary mode: “None”, “Basic”, or “Full”. Default is
+“Full”.</p>
+</dd>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>The scale factor applied to imported IFC coordinates. Default is
+1.0.</p>
+</dd>
+<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides used to approximate circular geometry. Default
+is 24.</p>
+</dd>
+<dt><strong>mantissa</strong><span class="classifier">int , optional</span></dt><dd><p>Coordinate and spatial-result rounding precision. Default is 6.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is
+False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>topologicpy.TGraph</dt><dd><p>The combined semantic and spatial adjacency graph.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AdjacencyGraphByPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AdjacencyGraphByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectingElementTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaConnectingElements</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">semanticConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialConnections</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">spatialRelationshipTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proximityValues</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">proximityLabels</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useShortestDistance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Full'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mantissa</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">6</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.AdjacencyGraphByPath" title="Permalink to this definition"></a></dt>
+<dd><p>Parses an IFC path once and delegates to IFC.AdjacencyGraph.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.AnalyticalFaces">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnalyticalFaces</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.AnalyticalFaces" title="Permalink to this definition"></a></dt>
+<dd><p>Returns analytical faces for IFC walls, slabs, and roofs.</p>
+<p>Exterior constructions are represented by their outer major face.
+Interior constructions are represented by a medial face halfway between
+their two major parallel faces.</p>
+<p>Classification first uses physical IfcRelSpaceBoundary relationships.
+If these are absent, common <code class="docutils literal notranslate"><span class="pre">IsExternal</span></code> property values and limited
+IFC type/name fallbacks are used. Ambiguous elements are skipped.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The input in-memory IFC model.</p>
+</dd>
+<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>Number of sides used to approximate circular IFC geometry. Default
+is 24.</p>
+</dd>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>Scale factor applied to imported IFC geometry. Default is 1.0.</p>
+</dd>
+<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>Maximum angular deviation, in degrees, when pairing the two major
+parallel faces. Default is 5.0.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, errors, warnings, and summary information are suppressed.
 Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>topologic_core.Graph or topologicpy.TGraph</dt><dd><p>A TopologicPy graph whose vertices are IfcSpace entities and whose
-edges represent inferred space adjacency through shared or
-corresponding boundary elements. If asTGraph is True, a TGraph is
-returned. Returns None if the IFC file cannot be parsed.</p>
+<dt>list</dt><dd><p>A list of topologic_core.Face objects, or None if no analytical
+faces can be generated.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This proof of concept assumes each construction is predominantly a thin
+extrusion with two dominant approximately parallel faces.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -385,8 +555,9 @@ the IfcSpace entities associated with it.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.Entities">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Entities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.Entities" title="Permalink to this definition"></a></dt>
-<dd><p>Returns the parsed IFC STEP entity dictionary from the input IFC file.</p>
+<dd><p>Returns the parsed IFC STEP entity dictionary from the input IFC source.</p>
 <p>This method accepts:
+- an IFCModel,
 - a previously parsed IFC entity dictionary,
 - a path to an IFC file,
 - a STEP text string,
@@ -394,7 +565,7 @@ the IfcSpace entities associated with it.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>file</strong><span class="classifier">dict, str, or ifcopenshell.file-like object</span></dt><dd><p>The input IFC source.</p>
+<dt><strong>file</strong><span class="classifier">IFCModel, dict, str, or ifcopenshell.file-like object</span></dt><dd><p>The input IFC source.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -402,8 +573,9 @@ the IfcSpace entities associated with it.</p>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>dict</dt><dd><p>A dictionary of parsed IFC entities keyed by STEP id. Each value is an
-IFCFastEntity object. Returns None if parsing fails.</p>
+<dt>dict</dt><dd><p>A dictionary of parsed IFC entities keyed by STEP id. For IFCModel
+inputs, the model’s underlying entity dictionary is returned directly.
+Returns None if parsing fails.</p>
 </dd>
 </dl>
 </dd>
@@ -434,6 +606,66 @@ IFCFastEntity object. Returns None if parsing fails.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.Export">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Export</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">overwrite</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">preserveSourceFormatting</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">updateModel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.Export" title="Permalink to this definition"></a></dt>
+<dd><p>Exports an in-memory IFCModel to an IFC STEP Physical File.</p>
+<p>The method is intended for round-trip export of models created with
+<code class="docutils literal notranslate"><span class="pre">IFC.ModelByPath</span></code> and subsequently modified in memory. Unchanged STEP
+entity statements are preserved verbatim from the source file whenever
+possible. New or modified <code class="docutils literal notranslate"><span class="pre">IFCFastEntity</span></code> objects are serialized from
+their in-memory values.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The input in-memory IFC model.</p>
+</dd>
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The output IFC file path. The <code class="docutils literal notranslate"><span class="pre">.ifc</span></code> extension is added when the
+input path has no extension.</p>
+</dd>
+<dt><strong>overwrite</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, an existing output file may be replaced atomically.
+Default is False.</p>
+</dd>
+<dt><strong>preserveSourceFormatting</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True and the model has a readable <code class="docutils literal notranslate"><span class="pre">sourcePath</span></code>, unchanged
+source entity statements are copied verbatim. This is the preferred
+round-trip mode because the current lightweight parser represents
+both quoted STEP strings and enumeration values as Python strings.
+Default is True.</p>
+</dd>
+<dt><strong>validate</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, validates entity ids and references before writing,
+reparses the temporary exported file, and verifies that its parsed
+entities match the in-memory model before replacing the destination.
+Default is True.</p>
+</dd>
+<dt><strong>updateModel</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True after a successful export, updates <code class="docutils literal notranslate"><span class="pre">model.sourcePath</span></code>
+and its preserved header and marks the model as clean. The model
+revision is not changed because export does not alter its entities.
+Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, suppresses errors, warnings, and information messages.
+Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>str</dt><dd><p>The absolute exported IFC path, or None if the operation fails.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p>The exporter writes the existing parsed IFC model; it does not rebuild
+product geometry. It therefore preserves semantic relationships added by
+<code class="docutils literal notranslate"><span class="pre">IFC.SemanticRelationshipsByGraph</span></code> together with the original IFC
+entities and references.</p>
+<p>For source-backed models, unchanged entity statements are preserved
+exactly. For a model created only from a raw entity dictionary, generic
+serialization is used. The four relationship classes currently created
+by <code class="docutils literal notranslate"><span class="pre">IFC.SemanticRelationshipsByGraph</span></code> are serialized explicitly and do
+not depend on string/enumeration heuristics.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.ExportReferenceView">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ExportReferenceView</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'IFC4'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mvd</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RV1.2'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">project_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'TopologicPy</span> <span class="pre">Project'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">site_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default</span> <span class="pre">Site'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">building_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Default</span> <span class="pre">Building'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">storey_name</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Level</span> <span class="pre">0'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">length_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'METRE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'RADIAN'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">area_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'SQUARE_METRE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">volume_unit</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'CUBIC_METRE'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_sweeps</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_tessellation_fallback</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transfer_dictionaries</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">validate</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">str</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.ExportReferenceView" title="Permalink to this definition"></a></dt>
 <dd><p>Export a TopologicPy-authored model to an IFC4 Reference View-compatible IFC.</p>
@@ -452,9 +684,94 @@ IFCFastEntity object. Returns None if parsing fails.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.MeshData">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshData</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.MeshData" title="Permalink to this definition"></a></dt>
+<dd><p>Returns aggregated mesh data using IFCModel geometry caches.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.MeshDataByPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshDataByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.MeshDataByPath" title="Permalink to this definition"></a></dt>
-<dd><p>Returns extracted mesh data using the pure-Python parser.</p>
+<dd><p>Parses an IFC path once and delegates to IFC.MeshData.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.Model">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Model</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourcePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.Model" title="Permalink to this definition"></a></dt>
+<dd><p>Returns an in-memory IFCModel from the input IFC source.</p>
+<p>This convenience method accepts an existing IFCModel, a parsed entity
+dictionary, a path, STEP text, or a serialisable IFC file-like object.
+Existing IFCModel inputs are returned unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>file</strong><span class="classifier">IFCModel, dict, str, or file-like object</span></dt><dd><p>The input IFC source.</p>
+</dd>
+<dt><strong>sourcePath</strong><span class="classifier">str , optional</span></dt><dd><p>Source path associated with a raw entity dictionary or STEP text.
+Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses errors and warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>IFCModel</dt><dd><p>The resulting in-memory model, or None if the input cannot be read.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.ModelByEntities">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelByEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">sourcePath</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">schema</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">header</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.ModelByEntities" title="Permalink to this definition"></a></dt>
+<dd><p>Wraps a parsed IFC entity dictionary in an IFCModel.</p>
+<p>The entity dictionary is retained by reference and is not copied.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>entities</strong><span class="classifier">dict</span></dt><dd><p>Parsed IFC entities keyed by STEP id.</p>
+</dd>
+<dt><strong>sourcePath</strong><span class="classifier">str , optional</span></dt><dd><p>Original IFC source path. Default is None.</p>
+</dd>
+<dt><strong>schema</strong><span class="classifier">str , optional</span></dt><dd><p>IFC schema identifier. Default is None.</p>
+</dd>
+<dt><strong>header</strong><span class="classifier">str , optional</span></dt><dd><p>Preserved STEP HEADER section. Default is None.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses errors and warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>IFCModel</dt><dd><p>The wrapped in-memory IFC model, or None if entities is invalid.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.ModelByPath">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ModelByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.ModelByPath" title="Permalink to this definition"></a></dt>
+<dd><p>Parses an IFC STEP file once and returns an in-memory IFCModel.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>Path to the IFC STEP file.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses errors and warnings. Default is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>IFCModel</dt><dd><p>The parsed in-memory IFC model, or None if parsing fails.</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="py method">
@@ -621,9 +938,74 @@ and Reasoner.RDFGraphByTriples.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.SemanticRelationshipsByGraph">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SemanticRelationshipsByGraph</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">graph</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">annotateGraph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.SemanticRelationshipsByGraph" title="Permalink to this definition"></a></dt>
+<dd><p>Creates missing in-memory IFC semantic relationship entities from an
+IFC adjacency TGraph.</p>
+<p>The input graph and IFCModel must refer to the same in-memory model.
+Each participating graph vertex must contain an <code class="docutils literal notranslate"><span class="pre">IFC_id</span></code> referring to
+an entity in that model. Existing IFC relationships are detected and are
+not duplicated.</p>
+<p>The method uses the following conservative mapping:</p>
+<ul class="simple">
+<li><p>IfcSpace to non-space element -&gt; IfcRelSpaceBoundary</p></li>
+<li><p>IfcDistributionPort to IfcDistributionPort -&gt; IfcRelConnectsPorts</p></li>
+<li><p>IfcDistributionPort to element -&gt; IfcRelConnectsPortToElement</p></li>
+<li><p>element to element -&gt; IfcRelConnectsElements</p></li>
+</ul>
+<p>Direct space-to-space relationships are not guessed. When a collapsed
+graph edge contains <code class="docutils literal notranslate"><span class="pre">connecting_element_id</span></code>, <code class="docutils literal notranslate"><span class="pre">connector_id</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">opening_id</span></code>, the method instead creates a space-to-connecting-element
+relationship for each endpoint.</p>
+<p>This method modifies only the returned in-memory entity dictionary. It
+does not write an IFC STEP file. IFC export support can subsequently
+serialise the returned <code class="docutils literal notranslate"><span class="pre">entities</span></code> dictionary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The mutable in-memory IFC model that owns the graph entities.</p>
+</dd>
+<dt><strong>graph</strong><span class="classifier">topologicpy.TGraph</span></dt><dd><p>The input IFC adjacency TGraph. Its vertex dictionaries must contain
+valid <code class="docutils literal notranslate"><span class="pre">IFC_id</span></code> values.</p>
+</dd>
+<dt><strong>annotateGraph</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, graph-edge dictionaries are annotated with the IFC
+relationship ids, GlobalIds, and classes that were created or
+matched. The graph dictionary is also updated with a summary.
+Default is True.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default
+is False.</p>
+</dd>
+</dl>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><dl class="simple">
+<dt>dict</dt><dd><p>A dictionary containing:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">graph</span></code>: the optionally annotated input graph;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">entities</span></code>: the parsed IFC entities plus inferred relationships;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">relationshipEntities</span></code>: newly created IFCFastEntity objects;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">addedRelationships</span></code>: readable records for created relationships;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">existingRelationships</span></code>: graph candidates already represented in IFC;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">skippedEdges</span></code>: graph edges that could not safely map to IFC;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">summary</span></code>: counts by result and IFC relationship class.</p></li>
+</ul>
+</dd>
+</dl>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.Summary">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Summary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.Summary" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a cached compact summary of an IFCModel.</p>
+</dd></dl>
+
+<dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.SummaryByPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SummaryByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.SummaryByPath" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a compact summary of the IFC file using the pure-Python parser.</p>
+<dd><p>Parses an IFC path once and delegates to IFC.Summary.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -636,138 +1018,74 @@ TGraph.py to remain focused on graph operations.</p>
 </dd></dl>
 
 <dl class="py method">
-<dt class="sig sig-object py" id="topologicpy.IFC.IFC.TopologiesByEntities">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologiesByEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="Permalink to this definition"></a></dt>
-<dd><p>Imports IFC product geometry from an already parsed IFC entity dictionary.</p>
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.ThermalCellComplex">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ThermalCellComplex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">separatorTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.ThermalCellComplex" title="Permalink to this definition"></a></dt>
+<dd><p>Creates a proof-of-concept thermal CellComplex from an IFCModel.</p>
+<p>Construction elements are reduced to oversized zero-thickness analytical
+planes. The planes sequentially slice one enclosing cell. IfcSpace
+geometry is used only to provide interior seed vertices that select and
+label the resulting construction-derived cells.</p>
+<p>This proof of concept is intended for predominantly planar walls, slabs,
+roofs, curtain walls, and virtual elements. Each construction element is
+represented by a plane through its centroid, parallel to its largest face.
+The plane is enlarged sufficiently to cross the complete model enclosure.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>entities</strong><span class="classifier">dict</span></dt><dd><p>The parsed IFC entity dictionary.</p>
+<dt><strong>model</strong><span class="classifier">IFCModel</span></dt><dd><p>The input in-memory IFC model.</p>
 </dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to include. If empty, all supported types are
-included. Default is [].</p>
+<dt><strong>separatorTypes</strong><span class="classifier">list , optional</span></dt><dd><p>IFC types used as construction separators. Default is [“IfcWall”,
+“IfcSlab”, “IfcRoof”, “IfcCurtainWall”, “IfcVirtualElement”].</p>
 </dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to exclude. Default is [].</p>
+<dt><strong>margin</strong><span class="classifier">float , optional</span></dt><dd><p>Padding added to the enclosing cell in model units. Default is 0.5.</p>
 </dd>
-<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary import mode. Options are “none”, “basic”, and “full”.
-Default is “basic”.</p>
+<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>Number of sides used for circular IFC geometry. Default is 24.</p>
 </dd>
-<dt><strong>clean</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the imported topologies are cleaned. Default is False.</p>
+<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>Scale factor applied to imported IFC geometry. Default is 1.0.</p>
 </dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The geometric epsilon used during import. Default is 0.01.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired geometric tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance used during import. Default is 0.1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides used to approximate circular geometry. Default is 24.</p>
-</dd>
-<dt><strong>topologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The desired output topology type. If set to None, the method returns the
-most appropriate topology type for each imported product. Default is None.</p>
-</dd>
-<dt><strong>scale</strong><span class="classifier">float , optional</span></dt><dd><p>The scale factor applied to imported coordinates. Default is 1.0.</p>
-</dd>
-<dt><strong>source</strong><span class="classifier">str , optional</span></dt><dd><p>The source file, database, or process identifier assigned to imported
-topology metadata. Default is None.</p>
-</dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, ontology metadata and semantic class annotations are added
-to the imported topologies. Default is True.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, suppresses errors, warnings, and progress information.
+Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of imported TopologicPy topologies.</p>
+<dt>topologic_core.CellComplex</dt><dd><p>The construction-derived thermal CellComplex, or None on failure.</p>
 </dd>
 </dl>
 </dd>
 </dl>
+<p class="rubric">Notes</p>
+<p>This method deliberately extends each separator across the entire model.
+It can therefore over-partition non-convex or highly articulated buildings.
+Unwanted regions are discarded by selecting only cells containing an
+IfcSpace interior seed vertex.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.Topologies">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Topologies</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.Topologies" title="Permalink to this definition"></a></dt>
+<dd><p>Imports product geometry from an already parsed IFCModel.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFC.TopologiesByEntities">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologiesByEntities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">topologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFC.TopologiesByEntities" title="Permalink to this definition"></a></dt>
+<dd><p>Compatibility wrapper for IFC.Topologies using an entity dictionary.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.TopologiesByFile">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologiesByFile</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">file</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.TopologiesByFile" title="Permalink to this definition"></a></dt>
-<dd><p>Imports IFC product geometry from an IFC file object into TopologicPy topologies.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>file</strong><span class="classifier">ifcopenshell.file or any</span></dt><dd><p>The input IFC file object.</p>
-</dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to include. If empty, all supported types are
-included. Default is [].</p>
-</dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to exclude. Default is [].</p>
-</dd>
-<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary import mode. Options are “none”, “basic”, and “full”.
-Default is “basic”.</p>
-</dd>
-<dt><strong>clean</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the imported topologies are cleaned. Default is False.</p>
-</dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, ontology metadata and semantic class annotations are added
-to the imported topologies. Default is True.</p>
-</dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The geometric epsilon used during import. Default is 0.01.</p>
-</dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance used during import. Default is 0.1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of imported TopologicPy topologies.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Compatibility entry point accepting an IFCModel or other IFC source.</p>
 </dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFC.TopologiesByPath">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TopologiesByPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">path</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">excludeTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">[]</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">clean</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epsilon</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angTolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.IFC.IFC.TopologiesByPath" title="Permalink to this definition"></a></dt>
-<dd><p>Imports IFC product geometry from an IFC file path into TopologicPy topologies.</p>
-<dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>path</strong><span class="classifier">str</span></dt><dd><p>The path to the input IFC file.</p>
-</dd>
-<dt><strong>includeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to include. If empty, all supported types are
-included. Default is [].</p>
-</dd>
-<dt><strong>excludeTypes</strong><span class="classifier">list , optional</span></dt><dd><p>The list of IFC entity types to exclude. Default is [].</p>
-</dd>
-<dt><strong>dictionaryMode</strong><span class="classifier">str , optional</span></dt><dd><p>The dictionary import mode. Options are “none”, “basic”, and “full”.
-Default is “basic”.</p>
-</dd>
-<dt><strong>circleSides</strong><span class="classifier">int , optional</span></dt><dd><p>The number of sides used to approximate circular geometry. Default is 24.</p>
-</dd>
-<dt><strong>clean</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, the imported topologies are cleaned. Default is False.</p>
-</dd>
-<dt><strong>ontology</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, ontology metadata and semantic class annotations are added
-to the imported topologies. Default is True.</p>
-</dd>
-<dt><strong>epsilon</strong><span class="classifier">float , optional</span></dt><dd><p>The geometric epsilon used during import. Default is 0.0001.</p>
-</dd>
-<dt><strong>angTolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The angular tolerance used during import. Default is 0.1.</p>
-</dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
-</dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
-</dd>
-</dl>
-</dd>
-<dt class="field-even">Returns</dt>
-<dd class="field-even"><dl class="simple">
-<dt>list</dt><dd><p>The list of imported TopologicPy topologies.</p>
-</dd>
-</dl>
-</dd>
-</dl>
+<dd><p>Parses an IFC path once and delegates to IFC.Topologies.</p>
 </dd></dl>
 
 <dl class="py method">
@@ -1009,10 +1327,13 @@ skipped or approximated rather than evaluated through a full CSG/BREP kernel.</p
 <col style="width: 90%" />
 </colgroup>
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCFastTopology.TopologiesByFile" title="topologicpy.IFC.IFCFastTopology.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCFastTopology.OpeningElementsByFillingType" title="topologicpy.IFC.IFCFastTopology.OpeningElementsByFillingType"><code class="xref py py-obj docutils literal notranslate"><span class="pre">OpeningElementsByFillingType</span></code></a>(entities[, ...])</p></td>
+<td><p>Returns IfcOpeningElement entities that are filled by the requested IFC element types.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCFastTopology.TopologiesByFile" title="topologicpy.IFC.IFCFastTopology.TopologiesByFile"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByFile</span></code></a>(file[, includeTypes, ...])</p></td>
 <td><p>Imports IFC product geometry from a file path into TopologicPy topologies.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCFastTopology.TopologiesByPath" title="topologicpy.IFC.IFCFastTopology.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCFastTopology.TopologiesByPath" title="topologicpy.IFC.IFCFastTopology.TopologiesByPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TopologiesByPath</span></code></a>(path[, includeTypes, ...])</p></td>
 <td><p>Imports IFC product geometry from a file path into TopologicPy topologies.</p></td>
 </tr>
 </tbody>
@@ -1059,13 +1380,24 @@ skipped or approximated rather than evaluated through a full CSG/BREP kernel.</p
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFCFastTopology.MeshDataByProduct">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshDataByProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.IFC.IFCFastTopology.MeshDataByProduct" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshDataByProduct</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">product</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">placementCache</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">dict</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">dict</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.IFC.IFCFastTopology.MeshDataByProduct" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFCFastTopology.MeshDataByProducts">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MeshDataByProducts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">products</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dictionaryMode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'basic'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">circleSides</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">24</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">scale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ontology</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">dict</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFCFastTopology.MeshDataByProducts" title="Permalink to this definition"></a></dt>
 <dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCFastTopology.OpeningElementsByFillingType">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">OpeningElementsByFillingType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entities</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fillingTypes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">list</span></span></span><a class="headerlink" href="#topologicpy.IFC.IFCFastTopology.OpeningElementsByFillingType" title="Permalink to this definition"></a></dt>
+<dd><p>Returns IfcOpeningElement entities that are filled by the requested IFC element types.</p>
+<dl class="simple">
+<dt>Typical use:</dt><dd><p>OpeningElementsByFillingType(entities, [“IfcDoor”])
+OpeningElementsByFillingType(entities, [“IfcWindow”])</p>
+</dd>
+</dl>
+</dd></dl>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.IFC.IFCFastTopology.Parse">
@@ -1192,6 +1524,195 @@ to the imported topologies. Default is True.</p>
 </dl>
 </dd>
 </dl>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py class">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">topologicpy.IFC.</span></span><span class="sig-name descname"><span class="pre">IFCModel</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="pre">entities:</span> <span class="pre">~typing.Dict[int,</span> <span class="pre">~topologicpy.IFC.IFCFastEntity],</span> <span class="pre">sourcePath:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">schema:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">header:</span> <span class="pre">~typing.Optional[str]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">modelId:</span> <span class="pre">str</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">revision:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">0,</span> <span class="pre">dirty:</span> <span class="pre">bool</span> <span class="pre">=</span> <span class="pre">False,</span> <span class="pre">metadataCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">placementCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">meshCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">topologyCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">propertyCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">tripleCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">summaryCache:</span> <span class="pre">~typing.Dict[~typing.Any,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;,</span> <span class="pre">indexes:</span> <span class="pre">~typing.Dict[str,</span> <span class="pre">~typing.Any]</span> <span class="pre">=</span> <span class="pre">&lt;factory&gt;</span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel" title="Permalink to this definition"></a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></p>
+<p>Stores one parsed IFC document in memory.</p>
+<p>The model owns the parsed <code class="docutils literal notranslate"><span class="pre">IFCFastEntity</span></code> dictionary together with source
+metadata and caches that can be reused by subsequent IFC operations. The
+input entity dictionary is retained by reference rather than copied so that
+future semantic and exporter operations can modify one shared in-memory
+model.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>entities</strong><span class="classifier">dict</span></dt><dd><p>Parsed IFC entities keyed by STEP id.</p>
+</dd>
+<dt><strong>sourcePath</strong><span class="classifier">str , optional</span></dt><dd><p>Original IFC path, when known. Default is None.</p>
+</dd>
+<dt><strong>schema</strong><span class="classifier">str , optional</span></dt><dd><p>IFC schema identifier, such as <code class="docutils literal notranslate"><span class="pre">IFC2X3</span></code> or <code class="docutils literal notranslate"><span class="pre">IFC4</span></code>. Default is None.</p>
+</dd>
+<dt><strong>header</strong><span class="classifier">str , optional</span></dt><dd><p>Preserved STEP HEADER section. Default is None.</p>
+</dd>
+<dt><strong>modelId</strong><span class="classifier">str , optional</span></dt><dd><p>Unique identifier for this in-memory model. A UUID is generated by
+default.</p>
+</dd>
+<dt><strong>revision</strong><span class="classifier">int , optional</span></dt><dd><p>In-memory model revision. Default is 0.</p>
+</dd>
+<dt><strong>dirty</strong><span class="classifier">bool , optional</span></dt><dd><p>Indicates whether the model differs from its source. Default is False.</p>
+</dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Notes</p>
+<p><code class="docutils literal notranslate"><span class="pre">nextEntityId</span></code> is initialized to one greater than the largest existing
+STEP id. The cache dictionaries are intentionally empty at creation and will
+be populated lazily by later stages of the IFC API refactor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Attributes</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>header</strong></dt><dd></dd>
+<dt><strong>schema</strong></dt><dd></dd>
+<dt><strong>sourcePath</strong></dt><dd></dd>
+</dl>
+</dd>
+</dl>
+<p class="rubric">Methods</p>
+<table class="autosummary longtable docutils align-default">
+<colgroup>
+<col style="width: 10%" />
+<col style="width: 90%" />
+</colgroup>
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.get" title="topologicpy.IFC.IFCModel.get"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code></a>(entityId[, default])</p></td>
+<td><p>Returns the entity at the input STEP id.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.invalidateCaches" title="topologicpy.IFC.IFCModel.invalidateCaches"><code class="xref py py-obj docutils literal notranslate"><span class="pre">invalidateCaches</span></code></a>([geometry])</p></td>
+<td><p>Invalidates cached data after an in-memory model modification.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.items" title="topologicpy.IFC.IFCModel.items"><code class="xref py py-obj docutils literal notranslate"><span class="pre">items</span></code></a>()</p></td>
+<td><p>Returns the model entity items view.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.keys" title="topologicpy.IFC.IFCModel.keys"><code class="xref py py-obj docutils literal notranslate"><span class="pre">keys</span></code></a>()</p></td>
+<td><p>Returns the model entity keys view.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.touch" title="topologicpy.IFC.IFCModel.touch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">touch</span></code></a>([geometry])</p></td>
+<td><p>Marks the model as modified and invalidates affected caches.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.IFC.IFCModel.values" title="topologicpy.IFC.IFCModel.values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></a>()</p></td>
+<td><p>Returns the model entity values view.</p></td>
+</tr>
+</tbody>
+</table>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.dirty">
+<span class="sig-name descname"><span class="pre">dirty</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">bool</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">False</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.dirty" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.entities">
+<span class="sig-name descname"><span class="pre">entities</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><a class="reference internal" href="#topologicpy.IFC.IFCFastEntity" title="topologicpy.IFC.IFCFastEntity"><span class="pre">IFCFastEntity</span></a><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.entities" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">entityId</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">default</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.get" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the entity at the input STEP id.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.header">
+<span class="sig-name descname"><span class="pre">header</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.header" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.indexes">
+<span class="sig-name descname"><span class="pre">indexes</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.indexes" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.invalidateCaches">
+<span class="sig-name descname"><span class="pre">invalidateCaches</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.invalidateCaches" title="Permalink to this definition"></a></dt>
+<dd><p>Invalidates cached data after an in-memory model modification.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.items">
+<span class="sig-name descname"><span class="pre">items</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.items" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the model entity items view.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.keys">
+<span class="sig-name descname"><span class="pre">keys</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.keys" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the model entity keys view.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.meshCache">
+<span class="sig-name descname"><span class="pre">meshCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.meshCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.metadataCache">
+<span class="sig-name descname"><span class="pre">metadataCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.metadataCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.modelId">
+<span class="sig-name descname"><span class="pre">modelId</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">str</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.modelId" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.nextEntityId">
+<span class="sig-name descname"><span class="pre">nextEntityId</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.nextEntityId" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.placementCache">
+<span class="sig-name descname"><span class="pre">placementCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.placementCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.propertyCache">
+<span class="sig-name descname"><span class="pre">propertyCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.propertyCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.revision">
+<span class="sig-name descname"><span class="pre">revision</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">int</span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.revision" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.schema">
+<span class="sig-name descname"><span class="pre">schema</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.schema" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.sourcePath">
+<span class="sig-name descname"><span class="pre">sourcePath</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">]</span></span></em><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">None</span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.sourcePath" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.summaryCache">
+<span class="sig-name descname"><span class="pre">summaryCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.summaryCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.topologyCache">
+<span class="sig-name descname"><span class="pre">topologyCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.topologyCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.touch">
+<span class="sig-name descname"><span class="pre">touch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">geometry</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.touch" title="Permalink to this definition"></a></dt>
+<dd><p>Marks the model as modified and invalidates affected caches.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.tripleCache">
+<span class="sig-name descname"><span class="pre">tripleCache</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span></em><a class="headerlink" href="#topologicpy.IFC.IFCModel.tripleCache" title="Permalink to this definition"></a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="topologicpy.IFC.IFCModel.values">
+<span class="sig-name descname"><span class="pre">values</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.IFC.IFCModel.values" title="Permalink to this definition"></a></dt>
+<dd><p>Returns the model entity values view.</p>
 </dd></dl>
 
 </dd></dl>

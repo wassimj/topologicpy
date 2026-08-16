@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Color module &mdash; topologicpy 0.9.58 documentation</title>
+  <title>topologicpy.Color module &mdash; topologicpy 0.9.62 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.58
+                0.9.62
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -164,7 +164,7 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.AddHex" title="topologicpy.Color.Color.AddHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddHex</span></code></a>(*colors[, silent])</p></td>
 <td><p>Adds the input hexadecimal color codes channel-wise, clipping each channel to a max of 255.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.AnyToHex" title="topologicpy.Color.Color.AnyToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnyToHex</span></code></a>(color[, silent])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Color.Color.AnyToHex" title="topologicpy.Color.Color.AnyToHex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AnyToHex</span></code></a>(color[, silent, colorModel])</p></td>
 <td><p>Converts a color to a hexadecimal color string.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Color.Color.Average" title="topologicpy.Color.Color.Average"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Average</span></code></a>(*colors[, silent])</p></td>
@@ -220,20 +220,42 @@
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Color.Color.AnyToHex">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnyToHex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.AnyToHex" title="Permalink to this definition"></a></dt>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AnyToHex</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">color</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">colorModel</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Color.Color.AnyToHex" title="Permalink to this definition"></a></dt>
 <dd><p>Converts a color to a hexadecimal color string.</p>
-<dl class="field-list simple">
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>color</strong><span class="classifier">list or str</span></dt><dd><p>The input color parameter which can be any of RGB, CMYK, CSS named color, or HEX.</p>
+<dd class="field-odd"><dl>
+<dt><strong>color</strong><span class="classifier">list, tuple, or str</span></dt><dd><p>The input color. Supported formats include:</p>
+<ul class="simple">
+<li><p>RGB lists/tuples: [255, 0, 0], [1.0, 0.0, 0.0]</p></li>
+<li><p>RGBA lists/tuples: [255, 0, 0, 0.5], [1.0, 0.0, 0.0, 0.5]</p></li>
+<li><p>CMYK lists/tuples: [0.0, 1.0, 1.0, 0.0]</p></li>
+<li><p>HEX strings: “#RGB”, “#RGBA”, “#RRGGBB”, “#RRGGBBAA”</p></li>
+<li><p>CSS rgb()/rgba(): “rgb(255,0,0)”, “rgba(0,0,0,0.5)”</p></li>
+<li><p>CSS hsl()/hsla(): “hsl(0,100%,50%)”, “hsla(0,100%,50%,0.5)”</p></li>
+<li><p>CSS named colors: “red”, “transparent”</p></li>
+<li><p>A list of color strings, in which case their average color is returned.</p></li>
+</ul>
+<p>Alpha values are validated but ignored because the return format is
+‘#RRGGBB’.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is
+False.</p>
+</dd>
+<dt><strong>colorModel</strong><span class="classifier">str , optional</span></dt><dd><p>The color model used for numeric list or tuple inputs. Valid values are
+“auto”, “rgb”, “rgba”, and “cmyk”. Default is “auto”.</p>
+<p>In “auto” mode, three-channel numeric inputs are interpreted as RGB.
+Four-channel numeric inputs are interpreted as RGBA only when at least
+one RGB channel is greater than 1 and the fourth channel is between 0
+and 1. A four-channel input whose values are all between 0 and 1 is
+ambiguous and requires an explicit “rgba” or “cmyk” colorModel.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>str</dt><dd><p>A hexadecimal color string in the format ‘#RRGGBB’.</p>
+<dt>str</dt><dd><p>A hexadecimal color string in the format ‘#RRGGBB’, or None if the
+input cannot be interpreted unambiguously.</p>
 </dd>
 </dl>
 </dd>
