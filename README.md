@@ -15,7 +15,7 @@ Topologic's graph-based representation makes it a natural fit for integrating wi
 
 Experience Topologic's comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. Topologic uses cutting-edge C++-based non-manifold topology (NMT) core technology ([Open CASCADE](https://www.opencascade.com/)), and python bindings. Interacting with Topologic is easily accomplished through a command-Line interface and scripts, visual data flow programming (VDFP) plugins for popular BIM software, and cloud-based interfaces through [Streamlit](https://streamlit.io/). You can easily interact with Topologic in various ways to perform design and analysis tasks or even seamlessly customize and embed it in your own in-house software and workflows. Plus, Topologic includes several industry-standard methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, as well serializing through cloud-based services such as [Speckle](https://speckle.systems/).
 
-Topologic’s open-source philosophy and licensing ([AGPLv3](https://www.gnu.org/licenses/agpl-3.0.en.html)) enables you to achieve your design vision with minimal incremental costs, ensuring a high return on investment. You control and own your information outright, and nothing is ever trapped in an expensive subscription model. Topologic empowers you to build and share data apps with ease, giving you the flexibility to choose between local or cloud-based options and the peace of mind to focus on what matters most. 
+Topologic’s open-source philosophy and licensing ([LGPL](https://opensource.org/license/lgpl-3-0)) enables you to achieve your design vision with minimal incremental costs, ensuring a high return on investment. You control and own your information outright, and nothing is ever trapped in an expensive subscription model. Topologic empowers you to build and share data apps with ease, giving you the flexibility to choose between local or cloud-based options and the peace of mind to focus on what matters most. 
 
 Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.
 
@@ -153,6 +153,5 @@ Or you can import the following .bib formatted references into your favourite re
 }
 ```
 
-topologicpy: © 2025 Wassim Jabi
+topologicpy: © 2026 Wassim Jabi
 
-Topologic: © 2025 Cardiff University and UCL
