@@ -25,10 +25,8 @@ dependencies = [
     "lark",
     "webcolors",
     "nbformat",
+    "topologic_core>=7.0.1",
 ]
-
-# No longer requires "topologic_core>=7.0.1",
-
 
 [project.optional-dependencies]
 test = [
