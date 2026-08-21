@@ -6,8 +6,6 @@ logic against lightweight fake backends where appropriate, without depending on 
 
 from __future__ import annotations
 
-import py_compile
-
 import pytest
 
 core_module = pytest.importorskip("topologicpy.Core")
@@ -241,9 +239,10 @@ def test_instance_attribute_validates_inputs():
         Core.InstanceAttribute(obj, "missing_attribute")
 
 
-def test_module_exports_public_backend_symbols():
+def test_module_exports_public_core_facade():
+    """The public test contract requires Core, not any specific backend class."""
     assert "Core" in core_module.__all__
-    assert "TopologicCoreBackend" in core_module.__all__
+    assert core_module.Core is Core
 
 
 def test_uploaded_core_file_syntax_is_valid_when_available():

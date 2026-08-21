@@ -587,21 +587,6 @@ def test_boolean_subtopology_counts(topology_type, operation_name):
     """
     Assert cell, face, edge, and vertex counts for one boolean matrix entry.
     """
-    from topologicpy.Core import Core
-
-    # Known topologic_core defect:
-    # CellComplex/CellComplex intersection returns each resulting Cell twice.
-    # The correct count is 3 Cells, but topologic_core reports 6.
-    if (
-        Core.Backend().__class__.__name__ == "TopologicCoreBackend"
-        and topology_type == "cellcomplex"
-        and operation_name == "intersection"
-    ):
-        pytest.skip(
-            "Known topologic_core defect: CellComplex intersection "
-            "returns duplicate Cells (6 instead of the correct 3)."
-        )
-
     expected = EXPECTED_COUNTS[(topology_type, operation_name)]
 
     if expected is None:

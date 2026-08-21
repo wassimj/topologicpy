@@ -24,10 +24,10 @@ dependencies = [
     "plotly",
     "lark",
     "webcolors",
-    "nbformat",
-    "topologic_core>=7.0.1",
+    "nbformat"
 ]
 
+# Removed "topologic_core>=7.0.1"
 [project.optional-dependencies]
 test = [
   "pytest-xdist>=2.4.0",
