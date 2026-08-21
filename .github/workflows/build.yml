@@ -71,6 +71,10 @@ jobs:
         run: python -m pip install -r ./docs/requirements.txt
       - name: Build and install optional dependencies (required for use with autodoc of Sphinx)
         run: pip install --verbose ephem torch dgl dglgo scikit-learn
+      - name: Install TopologicCore backend for documentation
+        # TopologicCore is a CI-only backend here; it does not need to be a
+        # mandatory runtime dependency of TopologicPy.
+        run: python -m pip install "topologic-core==8.0.4"
       - name: Build and install the project
         run: pip install --verbose .
       - name: Build docs
@@ -99,7 +103,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install setuptools wheel build
-      - name: Build distibutive
+      - name: Build distribution
         run: |
           python -m build
       - name: List files
@@ -144,9 +148,17 @@ jobs:
         run: python -m pip install --upgrade pip
       - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
-      - name: Install dependencies
+      - name: Install TopologicCore backend
+        # This job intentionally tests the legacy backend. Keeping the backend
+        # installation here allows topologic_core to remain optional in
+        # pyproject.toml.
+        run: python -m pip install "topologic-core==8.0.4"
+      - name: Install TopologicPy and test dependencies
+        run: python -m pip install -e '.[test]'
+      - name: Verify TopologicCore backend
         run: |
-          pip install -e '.[test]'
+          python -c "import topologic_core; print('topologic_core import: OK')"
+          python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'TopologicCoreBackend'"
       - name: Run tests
         run: pytest
 
@@ -236,7 +248,7 @@ jobs:
         run: |
           find ./docs/build/html/ -type f
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         #if: github.ref == 'refs/heads/main'
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
