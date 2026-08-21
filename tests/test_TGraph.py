@@ -1,17 +1,14 @@
 """Unit tests for topologicpy.TGraph.
 
-These tests intentionally exercise pure-Python behaviour only. They avoid
-TopologicCore, IFC, igraph, NetworkX, Plotly, and other optional dependencies.
+These tests focus on the pure-Python TGraph data model and algorithms. They avoid
+TopologicCore, IFC geometry, igraph, NetworkX, Plotly rendering, and other optional
+runtime dependencies unless a test explicitly verifies graceful dependency handling.
 """
 
 from __future__ import annotations
 
 import builtins
-import importlib
-import inspect
 import os
-import sys
-from pathlib import Path
 
 import pytest
 
@@ -33,6 +30,74 @@ def _path_graph():
     g.AddVertex({"label": "C", "x": 6.0, "y": 4.0, "z": 0.0})
     g.AddEdge(0, 1, dictionary={"weight": 2.0, "label": "ab"})
     g.AddEdge(1, 2, dictionary={"weight": 3.0, "label": "bc"})
+    return g
+
+
+def _routing_graph():
+    """
+    Returns a graph with deliberately different geometric and weighted routes.
+
+    Geometric / hop route 0-1-2:
+        length = 2
+        weight = 20
+
+    Dictionary-weighted route 0-3-4-2:
+        length = 6
+        weight = 3
+    """
+    g = TGraph(directed=False)
+
+    for label, (x, y, z) in [
+        ("A", (0.0, 0.0, 0.0)),
+        ("B", (1.0, 0.0, 0.0)),
+        ("C", (2.0, 0.0, 0.0)),
+        ("D", (0.0, 2.0, 0.0)),
+        ("E", (2.0, 2.0, 0.0)),
+    ]:
+        g.AddVertex({
+            "label": label,
+            "x": x,
+            "y": y,
+            "z": z,
+            "penalty": 0.0,
+        })
+
+    g.AddEdge(0, 1, dictionary={"weight": 10.0, "blocked": False})
+    g.AddEdge(1, 2, dictionary={"weight": 10.0, "blocked": False})
+    g.AddEdge(0, 3, dictionary={"weight": 1.0, "blocked": False})
+    g.AddEdge(3, 4, dictionary={"weight": 1.0, "blocked": False})
+    g.AddEdge(4, 2, dictionary={"weight": 1.0, "blocked": False})
+
+    return g
+
+
+def _topological_vs_geometric_graph():
+    """
+    Returns a graph where hop-shortest and geometric-shortest paths differ.
+
+    Hop-shortest:
+        0-1-2 (2 edges, very long geometrically)
+
+    Geometric-shortest:
+        0-3-4-2 (3 edges, length 10)
+    """
+    g = TGraph(directed=False)
+
+    for label, (x, y, z) in [
+        ("A", (0.0, 0.0, 0.0)),
+        ("Far", (0.0, 100.0, 0.0)),
+        ("C", (10.0, 0.0, 0.0)),
+        ("B1", (3.0, 0.0, 0.0)),
+        ("B2", (6.0, 0.0, 0.0)),
+    ]:
+        g.AddVertex({"label": label, "x": x, "y": y, "z": z})
+
+    g.AddEdge(0, 1)
+    g.AddEdge(1, 2)
+    g.AddEdge(0, 3)
+    g.AddEdge(3, 4)
+    g.AddEdge(4, 2)
+
     return g
 
 
@@ -101,7 +166,9 @@ def test_set_dictionaries_and_coordinates_are_reflected_in_distance_helpers():
 
     assert TGraph.Coordinates(g, 0) == [0.0, 0.0, 0.0]
     assert TGraph.MetricDistance(g, 0, 1) == pytest.approx(13.0)
+    assert TGraph.Distance(g, 0, 1, distanceType="metric") == pytest.approx(13.0)
     assert TGraph.PathLength(g, [0, 1]) == pytest.approx(13.0)
+    assert TGraph.TopologicalDistance(g, 0, 1) == 1
     assert TGraph.Distance(g, 0, 1, distanceType="topological") == 1
 
     assert TGraph.SetVertexCoordinates(g, 1, coordinates=[0, 0, 5]) is True
@@ -113,6 +180,35 @@ def test_set_dictionaries_and_coordinates_are_reflected_in_distance_helpers():
     assert TGraph.Dictionary(g)["label"] == "coords"
     assert TGraph.VertexDictionary(g, 0)["label"] == "origin"
     assert TGraph.EdgeDictionary(g, 0)["relationship"] == "connects"
+
+
+def test_topological_distance_is_independent_of_geometric_shortest_path():
+    g = _topological_vs_geometric_graph()
+
+    geometric_path, geometric_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="Length",
+        returnCost=True,
+    )
+    hop_path, hop_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="hop",
+        returnCost=True,
+    )
+
+    assert geometric_path == [0, 3, 4, 2]
+    assert geometric_cost == pytest.approx(10.0)
+    assert hop_path == [0, 1, 2]
+    assert hop_cost == pytest.approx(2.0)
+
+    assert TGraph.TopologicalDistance(g, 0, 2, mode="all") == 2
+    assert TGraph.Distance(g, 0, 2, distanceType="topological", mode="all") == 2
 
 
 def test_constructors_from_edge_pairs_adjacency_matrix_and_dictionary():
@@ -180,9 +276,16 @@ def test_csv_export_and_import_round_trip(tmp_path):
         silent=True,
     )
     assert ok is True
-    assert {"graphs.csv", "nodes.csv", "edges.csv", "meta.yaml"}.issubset({p.name for p in tmp_path.iterdir()})
+    assert {"graphs.csv", "nodes.csv", "edges.csv", "meta.yaml"}.issubset(
+        {p.name for p in tmp_path.iterdir()}
+    )
 
-    graphs = TGraph.ByCSVPath(str(tmp_path), directed=True, allowParallelEdges=True, silent=True)
+    graphs = TGraph.ByCSVPath(
+        str(tmp_path),
+        directed=True,
+        allowParallelEdges=True,
+        silent=True,
+    )
     assert isinstance(graphs, list)
     assert len(graphs) == 1
     imported = graphs[0]
@@ -201,7 +304,11 @@ def test_csv_string_round_trip_preserves_active_records():
 
     vertices_csv = TGraph.VerticesCSVString(g, includeInactive=True)
     edges_csv = TGraph.EdgesCSVString(g, includeInactive=True)
-    restored = TGraph.ByCSVStrings(vertices_csv, edges_csv, metadata={"directed": False})
+    restored = TGraph.ByCSVStrings(
+        vertices_csv,
+        edges_csv,
+        metadata={"directed": False},
+    )
 
     assert isinstance(restored, TGraph)
     assert TGraph.Order(restored) == 2
@@ -226,10 +333,217 @@ def test_remove_vertex_remove_edge_and_active_indices():
     assert TGraph.Size(g) == 0
 
 
-def test_traversal_shortest_path_all_paths_and_connectedness():
-    g = TGraph.ByEdgeIndexPairs(4, [(0, 1), (1, 3), (0, 2), (2, 3)], directed=False)
+def test_breadth_first_and_depth_first_traversals_are_explicit_and_deterministic():
+    g = TGraph.ByEdgeIndexPairs(
+        4,
+        [(0, 1), (1, 3), (0, 2), (2, 3)],
+        directed=False,
+    )
 
-    assert TGraph.ShortestPath(g, 0, 3) in ([0, 1, 3], [0, 2, 3])
+    assert TGraph.BreadthFirstSearch(g, 0, mode="all") == [0, 1, 2, 3]
+    assert TGraph.DepthFirstSearch(g, 0, mode="all") == [0, 1, 3, 2]
+
+
+def test_shortest_path_defaults_to_geometric_length_and_supports_hop_and_weight_costs():
+    g = _routing_graph()
+
+    geometric_path, geometric_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        returnCost=True,
+    )
+    hop_path, hop_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="hop",
+        returnCost=True,
+    )
+    weighted_path, weighted_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="weight",
+        returnCost=True,
+    )
+
+    assert geometric_path == [0, 1, 2]
+    assert geometric_cost == pytest.approx(2.0)
+
+    assert hop_path == [0, 1, 2]
+    assert hop_cost == pytest.approx(2.0)
+
+    assert weighted_path == [0, 3, 4, 2]
+    assert weighted_cost == pytest.approx(3.0)
+
+
+def test_shortest_path_rich_returns_filters_vertex_costs_and_astar():
+    g = _routing_graph()
+
+    path, vertices, edges, cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="weight",
+        returnVertices=True,
+        returnEdges=True,
+        returnCost=True,
+    )
+
+    assert path == [0, 3, 4, 2]
+    assert [v["index"] for v in vertices] == path
+    assert [e["index"] for e in edges] == [2, 3, 4]
+    assert cost == pytest.approx(3.0)
+
+    filtered_path, filtered_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        edgeKey="weight",
+        edgeFilter=lambda edge: edge["index"] < 2,
+        returnCost=True,
+    )
+    assert filtered_path == [0, 1, 2]
+    assert filtered_cost == pytest.approx(20.0)
+
+    g._vertices[1]["dictionary"]["penalty"] = 100.0
+    penalized_path, penalized_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        vertexKey="penalty",
+        returnCost=True,
+    )
+    assert penalized_path == [0, 3, 4, 2]
+    assert penalized_cost == pytest.approx(6.0)
+
+    astar_path, astar_cost = TGraph.ShortestPath(
+        g,
+        0,
+        2,
+        mode="all",
+        useAStar=True,
+        returnCost=True,
+    )
+    assert astar_path == [0, 1, 2]
+    assert astar_cost == pytest.approx(2.0)
+
+
+def test_shortest_path_respects_directed_out_in_and_all_modes():
+    g = TGraph(directed=True)
+    for i in range(3):
+        g.AddVertex({"label": str(i), "x": float(i), "y": 0.0, "z": 0.0})
+    g.AddEdge(0, 1, directed=True)
+    g.AddEdge(1, 2, directed=True)
+
+    assert TGraph.ShortestPath(g, 0, 2, mode="out", edgeKey="hop") == [0, 1, 2]
+    assert TGraph.ShortestPath(g, 2, 0, mode="out", edgeKey="hop") is None
+    assert TGraph.ShortestPath(g, 2, 0, mode="in", edgeKey="hop") == [2, 1, 0]
+    assert TGraph.ShortestPath(g, 2, 0, mode="all", edgeKey="hop") == [2, 1, 0]
+
+
+def test_shortest_path_tree_reports_costs_hops_paths_and_edges():
+    g = _routing_graph()
+
+    tree = TGraph.ShortestPathTree(
+        g,
+        0,
+        mode="all",
+        edgeKey="weight",
+        includePaths=True,
+        includeEdges=True,
+    )
+
+    assert tree["source"] == 0
+    assert tree["mode"] == "all"
+    assert tree["distance"][2] == pytest.approx(3.0)
+    assert tree["hops"][2] == 3
+    assert tree["parent"][2] == 4
+    assert tree["parentEdge"][2] == 4
+    assert tree["paths"][2] == [0, 3, 4, 2]
+    assert tree["edgePaths"][2] == [2, 3, 4]
+    assert tree["reachable"] == [0, 1, 2, 3, 4]
+
+
+def test_shortest_paths_from_source_and_batch_shortest_paths_match_single_queries():
+    g = _routing_graph()
+
+    from_source = TGraph.ShortestPathsFromSource(
+        g,
+        0,
+        targets=[2, 4],
+        mode="all",
+        edgeKey="weight",
+        returnCost=True,
+        returnTree=True,
+    )
+
+    assert from_source[2] == ([0, 3, 4, 2], pytest.approx(3.0))
+    assert from_source[4] == ([0, 3, 4], pytest.approx(2.0))
+    assert isinstance(from_source["_tree"], dict)
+
+    batch = TGraph.ShortestPaths(
+        g,
+        [(0, 2), (0, 4), (3, 2)],
+        mode="all",
+        grouped=True,
+        edgeKey="weight",
+        returnCost=True,
+    )
+
+    assert batch[0] == ([0, 3, 4, 2], pytest.approx(3.0))
+    assert batch[1] == ([0, 3, 4], pytest.approx(2.0))
+    assert batch[2] == ([3, 4, 2], pytest.approx(2.0))
+
+
+def test_shortest_path_via_vertices_supports_explicit_and_dictionary_waypoints():
+    g = _routing_graph()
+
+    path, edges, cost = TGraph.ShortestPathViaVertices(
+        g,
+        0,
+        2,
+        vertices=[3],
+        mode="all",
+        returnEdges=True,
+        returnCost=True,
+    )
+
+    assert path == [0, 3, 4, 2]
+    assert [e["index"] for e in edges] == [2, 3, 4]
+    assert cost == pytest.approx(6.0)
+
+    via_dictionary, via_cost = TGraph.ShortestPathViaVertices(
+        g,
+        0,
+        2,
+        viaKey="label",
+        viaValues=["D"],
+        mode="all",
+        returnCost=True,
+    )
+
+    assert via_dictionary == [0, 3, 4, 2]
+    assert via_cost == pytest.approx(6.0)
+
+
+def test_path_all_paths_longest_path_tree_and_connectedness():
+    g = TGraph.ByEdgeIndexPairs(
+        4,
+        [(0, 1), (1, 3), (0, 2), (2, 3)],
+        directed=False,
+    )
+    for index, (x, y) in enumerate([(0, 0), (1, 0), (0, 1), (1, 1)]):
+        TGraph.SetVertexCoordinates(g, index, coordinates=[x, y, 0])
+
+    assert TGraph.Path(g, 0, 3) in ([0, 1, 3], [0, 2, 3])
     assert sorted(TGraph.AllPaths(g, 0, 3)) == [[0, 1, 3], [0, 2, 3]]
     assert TGraph.ConnectedComponents(g) == [[0, 1, 2, 3]]
     assert TGraph.IsConnected(g) is True
@@ -237,16 +551,38 @@ def test_traversal_shortest_path_all_paths_and_connectedness():
 
     g.RemoveEdge(1)
     g.RemoveEdge(3)
-    comps = sorted([tuple(c) for c in TGraph.ConnectedComponents(g)])
+    comps = sorted(tuple(c) for c in TGraph.ConnectedComponents(g))
     assert comps == [(0, 1, 2), (3,)]
     assert TGraph.IsConnected(g) is False
+
+    path_graph = TGraph.ByEdgeIndexPairs(
+        4,
+        [(0, 1), (1, 2), (2, 3)],
+        directed=False,
+    )
+    for i in range(4):
+        TGraph.SetVertexCoordinates(path_graph, i, coordinates=[float(i), 0.0, 0.0])
+
+    assert TGraph.LongestPath(path_graph) == [0, 1, 2, 3]
+
+    tree = TGraph.Tree(path_graph, vertex=0)
+    assert isinstance(tree, TGraph)
+    assert TGraph.Order(tree) == 4
+    assert TGraph.Size(tree) == 3
+    assert TGraph.IsDirected(tree) is True
+    assert TGraph.Dictionary(tree)["root"] == 0
 
 
 def test_degree_clustering_complete_complement_mst_and_line_graph():
     path = TGraph.ByEdgeIndexPairs(3, [(0, 1), (1, 2)], directed=False)
     assert TGraph.DegreeSequence(path) == [1, 2, 1]
     assert TGraph.Degree(path, 1) == 2
-    assert TGraph.DegreeCentrality(path, key="dc", colorKey=None, nxCompatible=True) == [0.5, 1.0, 0.5]
+    assert TGraph.DegreeCentrality(
+        path,
+        key="dc",
+        colorKey=None,
+        nxCompatible=True,
+    ) == [0.5, 1.0, 0.5]
     assert TGraph.LocalClusteringCoefficient(path, key="lcc") == [0.0, 0.0, 0.0]
     assert TGraph.AverageClusteringCoefficient(path) == 0.0
 
@@ -256,7 +592,10 @@ def test_degree_clustering_complete_complement_mst_and_line_graph():
 
     complement = TGraph.Complement(path)
     assert TGraph.Size(complement) == 1
-    assert {TGraph.Edge(complement, 0)["src"], TGraph.Edge(complement, 0)["dst"]} == {0, 2}
+    assert {
+        TGraph.Edge(complement, 0)["src"],
+        TGraph.Edge(complement, 0)["dst"],
+    } == {0, 2}
 
     mst = TGraph.MinimumSpanningTree(complete)
     assert TGraph.Order(mst) == 3
@@ -268,12 +607,20 @@ def test_degree_clustering_complete_complement_mst_and_line_graph():
 
 
 def test_subgraph_induced_subgraph_and_neighborhood_alias():
-    g = TGraph.ByEdgeIndexPairs(5, [(0, 1), (1, 2), (2, 3), (3, 4)], directed=False)
+    g = TGraph.ByEdgeIndexPairs(
+        5,
+        [(0, 1), (1, 2), (2, 3), (3, 4)],
+        directed=False,
+    )
 
     sub = TGraph.Subgraph(g, [1, 2, 3], induced=True)
     assert TGraph.Order(sub) == 3
     assert TGraph.Size(sub) == 2
-    assert TGraph.AdjacencyMatrix(sub) == [[0, 1, 0], [1, 0, 1], [0, 1, 0]]
+    assert TGraph.AdjacencyMatrix(sub) == [
+        [0, 1, 0],
+        [1, 0, 1],
+        [0, 1, 0],
+    ]
 
     induced = TGraph.InducedSubgraph(g, [0, 1, 2])
     assert TGraph.Order(induced) == 3
@@ -284,11 +631,17 @@ def test_subgraph_induced_subgraph_and_neighborhood_alias():
     assert TGraph.Order(neighborhood) == 3
 
 
-def test_compile_cache_adjacency_helpers_and_compile_info():
+def test_compile_cache_adjacency_helpers_compile_info_and_warmup():
     g = _path_graph()
     assert TGraph.IsCompiled(g) is False
 
-    compiled = TGraph.Compile(g, weightKey="weight", useNumpy=False, useSciPy=False, useNumba=False)
+    compiled = TGraph.Compile(
+        g,
+        weightKey="weight",
+        useNumpy=False,
+        useSciPy=False,
+        useNumba=False,
+    )
     assert isinstance(compiled, dict)
     assert TGraph.IsCompiled(g, weightKey="weight") is True
     assert TGraph.CompiledAdjacency(g, mode="all") == [[1], [0, 2], [1]]
@@ -302,12 +655,34 @@ def test_compile_cache_adjacency_helpers_and_compile_info():
     TGraph.ClearCompiled(g)
     assert TGraph.IsCompiled(g) is False
 
+    report = TGraph.WarmUpAcceleration(g, mode="all", useNumba=False)
+    assert report["compiled"] is True
+    assert {"numpy", "scipy", "numba"}.issubset(report)
+
 
 def test_annotation_ontology_helpers_and_semantic_summary_without_rdflib():
     g = _path_graph()
-    TGraph.AnnotateOntology(g, ontologyClass="top:Graph", category="spatial", label="My Graph")
-    TGraph.AnnotateOntology(g, ontologyClass="top:Vertex", element="vertex", index=0, label="Start")
-    TGraph.AnnotateIFC(g, ifcClass="IfcWall", ifcGUID="abc", ifcName="Wall A", element="vertex", index=1)
+    TGraph.AnnotateOntology(
+        g,
+        ontologyClass="top:Graph",
+        category="spatial",
+        label="My Graph",
+    )
+    TGraph.AnnotateOntology(
+        g,
+        ontologyClass="top:Vertex",
+        element="vertex",
+        index=0,
+        label="Start",
+    )
+    TGraph.AnnotateIFC(
+        g,
+        ifcClass="IfcWall",
+        ifcGUID="abc",
+        ifcName="Wall A",
+        element="vertex",
+        index=1,
+    )
 
     gd = TGraph.Dictionary(g)
     assert gd["ontology_class"] == "top:Graph"
@@ -337,7 +712,12 @@ def test_cardinality_report_and_guid_are_stable_for_simple_semantic_graph():
     assert isinstance(guid1, str)
     assert guid1 == guid2
 
-    report = TGraph.CardinalityReport(g, vertexKey="id", edgeKey="predicate", predicates=["top:connectsTo"])
+    report = TGraph.CardinalityReport(
+        g,
+        vertexKey="id",
+        edgeKey="predicate",
+        predicates=["top:connectsTo"],
+    )
     assert isinstance(report, list)
     row_a = next(row for row in report if row["vertex"] == "A")
     assert row_a["top:connectsTo"] == 2
@@ -376,5 +756,3 @@ def test_louvain_missing_dependency_does_not_attempt_runtime_install(monkeypatch
     monkeypatch.setattr(os, "system", forbidden_system)
 
     assert TGraph.CommunityPartition(g, algorithm="louvain", silent=True) in (None, [])
-
-

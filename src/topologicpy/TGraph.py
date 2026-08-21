@@ -19525,30 +19525,48 @@ class TGraph:
         }
 
     @staticmethod
-    def Path(graph: "TGraph", vertexA, vertexB, tolerance: float = 0.0001, silent: bool = False) -> List[int]:
+    def Path(
+        graph: "TGraph",
+        vertexA,
+        vertexB,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ) -> List[int]:
         """
-        Returns a path between two vertices of the input TGraph.
+        Returns a least-cost path between two vertices of the input TGraph.
+
+        This is a convenience wrapper around TGraph.ShortestPath using its default
+        geometric-length cost.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
         vertexA : Any
-            The first input vertex or vertex index.
+            The first input vertex. This may be a stable vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input.
         vertexB : Any
-            The second input vertex or vertex index.
+            The second input vertex. This may be a stable vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
-            If set to True, error and warning messages are suppressed. Default is False.
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        List[int]
-            The resulting path list.
+        list or None
+            The ordered list of stable TGraph vertex indices forming the path.
         """
-        return TGraph.ShortestPath(graph, TGraph._as_index(vertexA), TGraph._as_index(vertexB), mode="out" if TGraph.IsDirected(graph) else "all")
-
+        return TGraph.ShortestPath(
+            graph,
+            vertexA,
+            vertexB,
+            mode="out",
+            tolerance=tolerance,
+            silent=silent,
+        )
+    
     @staticmethod
     def PlotlyData(
         graph: "TGraph",
@@ -20862,408 +20880,2273 @@ class TGraph:
         graph._vertices[index].setdefault("dictionary", {})[key] = value
 
     @staticmethod
-    def ShortestPath(graph: "TGraph", source: int, target: int, mode: str = "out", useNumba: bool = False) -> Optional[List[int]]:
+    def ShortestPath(
+        graph: "TGraph",
+        source: Any,
+        target: Any,
+        mode: str = "out",
+        useNumba: bool = False,
+        vertexKey: str = "",
+        edgeKey: str = "Length",
+        turnWeight: float = 0.0,
+        turnPower: float = 1.0,
+        turnKey: str = "",
+        directed: Optional[bool] = None,
+        edgeFilter: callable = None,
+        vertexFilter: callable = None,
+        edgeCostFunc: callable = None,
+        vertexCostFunc: callable = None,
+        turnCostFunc: callable = None,
+        useAStar: bool = False,
+        heuristicScale: float = 1.0,
+        returnVertices: bool = False,
+        returnEdges: bool = False,
+        returnCost: bool = False,
+        snapEndpoints: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns a shortest path between two vertices of the input TGraph.
+        Returns a least-cost path between two vertices of the input TGraph.
+
+        The default cost is geometric edge length. The method also supports vertex
+        costs, edge dictionary costs, turn penalties, custom filters and cost
+        functions, directed traversal, A* search, and unweighted hop-count routing.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        source : int
-            The input source vertex, vertex index, or source identifier.
-        target : int
-            The input target vertex, vertex index, graph, or comparison value, depending on
-            context.
+        source : Any
+            The source vertex. This may be a stable vertex index, a TGraph vertex
+            record, a Topologic vertex, or a coordinate sequence.
+        target : Any
+            The target vertex. This may be a stable vertex index, a TGraph vertex
+            record, a Topologic vertex, or a coordinate sequence.
         mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+            Traversal mode: "out", "in", or "all". "out" respects stored directed
+            edges, "in" traverses directed edges in reverse, and "all" treats all
+            edges as bidirectional. Undirected edges are bidirectional in every mode.
+            Default is "out".
         useNumba : bool , optional
-            If set to True, Numba acceleration is used when available. Default is False.
+            If True, Numba acceleration is used when available for pure hop-count
+            routing (edgeKey="hop") when no advanced routing options require the
+            Python engine. Default is False.
+        vertexKey : str , optional
+            Numeric vertex dictionary key added to the cost when a vertex is entered.
+            The source cost is always zero. Default is "".
+        edgeKey : str , optional
+            Numeric edge dictionary key used as traversal cost. "Length", "Distance",
+            or "Metric" uses Euclidean endpoint distance. "hop", "hops",
+            "unweighted", or "unit" assigns cost 1 to every edge. Empty or None uses
+            geometric length. Default is "Length".
+        turnWeight : float , optional
+            Multiplier for the built-in turn penalty. Zero disables it. Default is 0.
+        turnPower : float , optional
+            Exponent applied to normalized turn severity. Default is 1.
+        turnKey : str , optional
+            Numeric vertex dictionary key that locally scales built-in turn cost.
+            Missing values default to 1. Default is "".
+        directed : bool , optional
+            Compatibility override for Graph.ShortestPath. True is equivalent to
+            mode="out"; False is equivalent to mode="all"; None uses mode.
+            Default is None.
+        edgeFilter : callable(edgeRecord) -> bool , optional
+            Returns False for edges that may not be traversed. Default is None.
+        vertexFilter : callable(vertexRecord) -> bool , optional
+            Returns False for vertices that may not be visited. Source and target
+            are always allowed. Default is None.
+        edgeCostFunc : callable(edgeRecord) -> float , optional
+            Custom edge cost. Overrides edgeKey. Default is None.
+        vertexCostFunc : callable(vertexRecord) -> float , optional
+            Custom vertex cost. Overrides vertexKey. Default is None.
+        turnCostFunc : callable(prevVertex, currentVertex, nextVertex,
+                                inEdge, outEdge, spread) -> float , optional
+            Custom turn cost. Vertex and edge arguments are TGraph records. spread
+            is normalized to [0, 1], where 0 is straight and 1 is a reversal.
+            Overrides turnWeight, turnPower, and turnKey. Default is None.
+        useAStar : bool , optional
+            If True, A* is used when geometric edge length is the base edge cost.
+            Otherwise Dijkstra search is used. Default is False.
+        heuristicScale : float , optional
+            Euclidean A* heuristic multiplier clamped to [0, 1]. Default is 1.
+        returnVertices : bool , optional
+            If True, also returns the ordered live TGraph vertex records.
+            Default is False.
+        returnEdges : bool , optional
+            If True, also returns the ordered live TGraph edge records.
+            Default is False.
+        returnCost : bool , optional
+            If True, also returns the total routing cost. Default is False.
+        snapEndpoints : bool , optional
+            If True, unresolved source/target inputs are snapped to the nearest
+            active TGraph vertices. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Retained for API compatibility. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        Optional[List[int]]
-            The resulting shortest path list.
+        list or tuple or None
+            By default, the ordered list of stable vertex indices. Optional return
+            data are appended in this order: vertex records, edge records, total cost.
+            Returns None if no path exists.
         """
-        use_np = bool(useNumba)
-        c = TGraph.Compile(graph, useNumpy=use_np, useSciPy=False, useNumba=useNumba)
-        if not isinstance(c, dict):
-            return None
-        pos = c["position"]
+        import heapq
+        import math
 
-        def _resolve_vertex_index(graph, v):
-            """
-            Resolves a TGraph vertex input to an active vertex index.
-
-            Accepts:
-            - integer vertex index
-            - internal vertex dictionary/object returned by TGraph.NearestVertex
-            """
-
-            if isinstance(v, int):
-                return v
-
-            # Case 1: vertex is exactly one of graph._vertices entries.
-            try:
-                for i, gv in enumerate(graph._vertices):
-                    if gv is v:
-                        return i
-            except Exception:
-                pass
-
-            # Case 2: vertex is equal to one of graph._vertices entries.
-            try:
-                for i, gv in enumerate(graph._vertices):
-                    if gv == v:
-                        return i
-            except Exception:
-                pass
-
-            # Case 3: vertex dictionary contains an explicit index/id.
-            if isinstance(v, dict):
-                for key in ("index", "id", "vertex_index", "vertexIndex"):
-                    value = v.get(key, None)
-                    if isinstance(value, int):
-                        return value
-
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.ShortestPath - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
+        def _number(value, default=0.0):
+            if isinstance(value, bool):
+                return float(int(value))
+            if isinstance(value, (list, tuple)) and len(value) == 1:
+                value = value[0]
+            try:
+                return float(value)
+            except Exception:
+                return float(default)
 
-        source_index = _resolve_vertex_index(graph, source)
-        target_index = _resolve_vertex_index(graph, target)
+        def _dict(record):
+            d = record.get("dictionary", {}) if isinstance(record, dict) else {}
+            return d if isinstance(d, dict) else {}
+
+        def _resolve(value):
+            idx = TGraph._as_index(value)
+            if graph._validate_vertex_index(idx):
+                return idx
+            if not snapEndpoints:
+                return None
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True
+                )
+                idx = TGraph._as_index(record)
+                return idx if graph._validate_vertex_index(idx) else None
+            except Exception:
+                return None
+
+        def _result(vertex_indices, edge_indices, cost):
+            out = [list(vertex_indices)]
+            if returnVertices:
+                out.append([graph._vertices[i] for i in vertex_indices])
+            if returnEdges:
+                out.append([graph._edges[i] for i in edge_indices])
+            if returnCost:
+                out.append(float(cost))
+            return out[0] if len(out) == 1 else tuple(out)
+
+        # ------------------------------------------------------------------
+        # Traversal mode
+        # ------------------------------------------------------------------
+
+        mode_aliases = {
+            "forward": "out",
+            "outgoing": "out",
+            "reverse": "in",
+            "incoming": "in",
+            "undirected": "all",
+            "bidirectional": "all",
+            "both": "all",
+        }
+
+        mode = str(mode or "out").strip().lower()
+        mode = mode_aliases.get(mode, mode)
+
+        if directed is not None:
+            mode = "out" if bool(directed) else "all"
+
+        if mode not in ("out", "in", "all"):
+            if not silent:
+                print("TGraph.ShortestPath - Error: mode must be 'out', 'in', or 'all'. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Resolve source and target
+        # ------------------------------------------------------------------
+
+        source_index = _resolve(source)
+        target_index = _resolve(target)
 
         if source_index is None or target_index is None:
+            if not silent:
+                print("TGraph.ShortestPath - Error: Could not resolve the source or target vertex. Returning None.")
             return None
 
-        if source_index not in pos or target_index not in pos:
+        if source_index == target_index:
+            return _result([source_index], [], 0.0)
+
+        active_vertices = {
+            v.get("index")
+            for v in graph._vertices
+            if isinstance(v, dict) and v.get("active", True)
+        }
+
+        if source_index not in active_vertices or target_index not in active_vertices:
             return None
 
-        s = pos[source_index]
-        t = pos[target_index]
-        if s == t:
-            return [source]
+        # ------------------------------------------------------------------
+        # Coordinate cache
+        # ------------------------------------------------------------------
 
-        adj_key, indptr_key, indices_key = TGraph._CompiledAdjacencyKeys(mode)
+        coords = {}
 
-        if useNumba and c.get("numpy_available", False):
-            bfs = TGraph._NumbaShortestPathKernel()
-            if bfs is not None and indptr_key in c and indices_key in c:
-                try:
-                    parent, found = bfs(c[indptr_key], c[indices_key], s, t)
-                    if not found:
-                        return None
-                    path = [t]
-                    cur = t
-                    while cur != s:
-                        cur = int(parent[cur])
-                        if cur < 0:
-                            return None
-                        path.append(cur)
-                    path.reverse()
-                    verts = c["vertices"]
-                    return [verts[i] for i in path]
-                except Exception:
-                    pass
+        for i in active_vertices:
+            c = TGraph.Coordinates(graph, i, default=None)
+            try:
+                coords[i] = (
+                    float(c[0]),
+                    float(c[1]),
+                    float(c[2]) if len(c) > 2 else 0.0
+                )
+            except Exception:
+                coords[i] = None
 
-        adj = c[adj_key]
-        n = c["n"]
-        visited = bytearray(n)
-        parent = [-1] * n
-        queue = [0] * n
-        head = 0
-        tail = 0
-        visited[s] = 1
-        queue[tail] = s
-        tail += 1
-        found = False
-        while head < tail:
-            u = queue[head]
-            head += 1
-            for v in adj[u]:
-                if not visited[v]:
-                    visited[v] = 1
-                    parent[v] = u
-                    if v == t:
-                        found = True
-                        head = tail
-                        break
-                    queue[tail] = v
-                    tail += 1
-            if found:
-                break
-        if not found:
-            return None
-        path = [t]
-        cur = t
-        while cur != s:
-            cur = parent[cur]
-            if cur < 0:
+        def _distance(a, b):
+            ca = coords.get(a)
+            cb = coords.get(b)
+
+            if ca is None or cb is None:
                 return None
-            path.append(cur)
-        path.reverse()
-        verts = c["vertices"]
-        return [verts[i] for i in path]
+
+            dx = cb[0] - ca[0]
+            dy = cb[1] - ca[1]
+            dz = cb[2] - ca[2]
+
+            return math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        def _spread(a, b, c):
+            ca = coords.get(a)
+            cb = coords.get(b)
+            cc = coords.get(c)
+
+            if ca is None or cb is None or cc is None:
+                return 0.0
+
+            p = (
+                cb[0] - ca[0],
+                cb[1] - ca[1],
+                cb[2] - ca[2]
+            )
+
+            q = (
+                cc[0] - cb[0],
+                cc[1] - cb[1],
+                cc[2] - cb[2]
+            )
+
+            np = math.sqrt(
+                p[0] * p[0] +
+                p[1] * p[1] +
+                p[2] * p[2]
+            )
+
+            nq = math.sqrt(
+                q[0] * q[0] +
+                q[1] * q[1] +
+                q[2] * q[2]
+            )
+
+            if np <= 0.0 or nq <= 0.0:
+                return 0.0
+
+            dot = (
+                p[0] * q[0] +
+                p[1] * q[1] +
+                p[2] * q[2]
+            ) / (np * nq)
+
+            return math.acos(max(-1.0, min(1.0, dot))) / math.pi
+
+        # ------------------------------------------------------------------
+        # Numerical options
+        # ------------------------------------------------------------------
+
+        try:
+            heuristicScale = max(
+                0.0,
+                min(1.0, float(heuristicScale))
+            )
+        except Exception:
+            heuristicScale = 1.0
+
+        turnWeight = _number(turnWeight, 0.0)
+        turnPower = _number(turnPower, 1.0)
+
+        if turnWeight < 0.0 or turnPower < 0.0:
+            if not silent:
+                print("TGraph.ShortestPath - Error: turnWeight and turnPower must be non-negative. Returning None.")
+            return None
+
+        edge_key = (
+            str(edgeKey).strip().lower()
+            if edgeKey is not None
+            else ""
+        )
+
+        geometric = (
+            edgeKey is None or
+            edge_key in ("", "length", "distance", "metric")
+        )
+
+        hop_count = edge_key in (
+            "hop",
+            "hops",
+            "unweighted",
+            "unit"
+        )
+
+        use_turn = (
+            callable(turnCostFunc) or
+            bool(turnKey) or
+            turnWeight != 0.0
+        )
+
+        # ------------------------------------------------------------------
+        # Numba fast path
+        # ------------------------------------------------------------------
+        # BFS is exactly correct when every edge has unit cost and there are no
+        # additional routing constraints/costs.
+        # ------------------------------------------------------------------
+
+        if (
+            useNumba and
+            hop_count and
+            not vertexKey and
+            not callable(vertexCostFunc) and
+            not callable(edgeCostFunc) and
+            not callable(edgeFilter) and
+            not callable(vertexFilter) and
+            not use_turn and
+            not returnEdges
+        ):
+            try:
+                c = TGraph.Compile(
+                    graph,
+                    useNumpy=True,
+                    useSciPy=False,
+                    useNumba=True
+                )
+
+                pos = c["position"]
+
+                s = pos[source_index]
+                t = pos[target_index]
+
+                _, indptr_key, indices_key = TGraph._CompiledAdjacencyKeys(mode)
+
+                bfs = TGraph._NumbaShortestPathKernel()
+
+                if bfs is not None:
+                    parent, found = bfs(
+                        c[indptr_key],
+                        c[indices_key],
+                        s,
+                        t
+                    )
+
+                    if found:
+                        path = [t]
+
+                        while path[-1] != s:
+                            p = int(parent[path[-1]])
+
+                            if p < 0:
+                                path = []
+                                break
+
+                            path.append(p)
+
+                        if path:
+                            path.reverse()
+
+                            stable = c["vertices"]
+                            path = [stable[i] for i in path]
+
+                            return _result(
+                                path,
+                                [],
+                                float(len(path) - 1)
+                            )
+            except Exception:
+                pass
+
+        # ------------------------------------------------------------------
+        # Vertex filters
+        # ------------------------------------------------------------------
+
+        allowed_vertex = {
+            i: True
+            for i in active_vertices
+        }
+
+        if callable(vertexFilter):
+            for i in active_vertices:
+                if i in (source_index, target_index):
+                    continue
+
+                try:
+                    allowed_vertex[i] = bool(
+                        vertexFilter(graph._vertices[i])
+                    )
+                except Exception:
+                    allowed_vertex[i] = True
+
+        # ------------------------------------------------------------------
+        # Edge filters
+        # ------------------------------------------------------------------
+
+        active_edges = []
+        allowed_edge = {}
+
+        for edge in graph._edges:
+            if not isinstance(edge, dict):
+                continue
+
+            if not edge.get("active", True):
+                continue
+
+            ei = edge.get("index")
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if not isinstance(ei, int):
+                continue
+
+            if src not in active_vertices or dst not in active_vertices:
+                continue
+
+            active_edges.append(edge)
+            allowed_edge[ei] = True
+
+            if callable(edgeFilter):
+                try:
+                    allowed_edge[ei] = bool(edgeFilter(edge))
+                except Exception:
+                    allowed_edge[ei] = True
+
+        # ------------------------------------------------------------------
+        # Vertex costs
+        # ------------------------------------------------------------------
+
+        vertex_cost = {
+            i: 0.0
+            for i in active_vertices
+        }
+
+        if callable(vertexCostFunc):
+            for i in active_vertices:
+                try:
+                    vertex_cost[i] = _number(
+                        vertexCostFunc(graph._vertices[i]),
+                        0.0
+                    )
+                except Exception:
+                    vertex_cost[i] = 0.0
+
+        elif vertexKey:
+            for i in active_vertices:
+                vertex_cost[i] = _number(
+                    _dict(graph._vertices[i]).get(vertexKey),
+                    0.0
+                )
+
+        # Do not charge for occupying the source vertex.
+        vertex_cost[source_index] = 0.0
+
+        if any(cost < 0.0 for cost in vertex_cost.values()):
+            if not silent:
+                print("TGraph.ShortestPath - Error: Negative vertex costs are not supported. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Edge costs
+        # ------------------------------------------------------------------
+
+        edge_cost = {}
+
+        for edge in active_edges:
+            ei = edge["index"]
+
+            if callable(edgeCostFunc):
+                try:
+                    cost = _number(
+                        edgeCostFunc(edge),
+                        0.0
+                    )
+                except Exception:
+                    cost = 0.0
+
+            elif geometric:
+                cost = _distance(
+                    edge["src"],
+                    edge["dst"]
+                )
+
+                if cost is None:
+                    cost = 1.0
+
+            elif hop_count:
+                cost = 1.0
+
+            else:
+                cost = _number(
+                    _dict(edge).get(edgeKey),
+                    0.0
+                )
+
+            if cost < 0.0:
+                if not silent:
+                    print("TGraph.ShortestPath - Error: Negative edge costs are not supported. Returning None.")
+                return None
+
+            edge_cost[ei] = cost
+
+        # ------------------------------------------------------------------
+        # Local turn multipliers
+        # ------------------------------------------------------------------
+
+        turn_multiplier = {
+            i: 1.0
+            for i in active_vertices
+        }
+
+        if turnKey:
+            for i in active_vertices:
+                turn_multiplier[i] = _number(
+                    _dict(graph._vertices[i]).get(turnKey),
+                    1.0
+                )
+
+            if any(value < 0.0 for value in turn_multiplier.values()):
+                if not silent:
+                    print("TGraph.ShortestPath - Error: Negative turn multipliers are not supported. Returning None.")
+                return None
+
+        # ------------------------------------------------------------------
+        # Build edge-aware adjacency
+        # ------------------------------------------------------------------
+        # This deliberately stores edge indices as well as neighbour indices.
+        # TGraph may contain parallel edges with different dictionaries/costs,
+        # and each edge can carry its own directed flag.
+        # ------------------------------------------------------------------
+
+        adjacency = {
+            i: []
+            for i in active_vertices
+        }
+
+        for edge in active_edges:
+            ei = edge["index"]
+            src = edge["src"]
+            dst = edge["dst"]
+
+            if not allowed_edge[ei]:
+                continue
+
+            edge_directed = bool(
+                edge.get("directed", graph._directed)
+            )
+
+            if mode == "all" or not edge_directed:
+                adjacency[src].append((dst, ei))
+
+                if src != dst:
+                    adjacency[dst].append((src, ei))
+
+            elif mode == "out":
+                adjacency[src].append((dst, ei))
+
+            else:  # mode == "in"
+                adjacency[dst].append((src, ei))
+
+        # Deterministic tie-breaking.
+        for i in adjacency:
+            adjacency[i].sort(
+                key=lambda item: (item[0], item[1])
+            )
+
+        # ------------------------------------------------------------------
+        # A* heuristic
+        # ------------------------------------------------------------------
+        # Euclidean distance is admissible when the edge base cost is geometric.
+        # Additional non-negative vertex and turn penalties can only increase the
+        # true remaining cost.
+        # ------------------------------------------------------------------
+
+        astar = bool(
+            useAStar and
+            geometric and
+            not callable(edgeCostFunc)
+        )
+
+        def _heuristic(i):
+            if not astar:
+                return 0.0
+
+            d = _distance(i, target_index)
+
+            if d is None:
+                return 0.0
+
+            return heuristicScale * d
+
+        # ------------------------------------------------------------------
+        # Search state
+        # ------------------------------------------------------------------
+        # Without turn costs, one state per vertex is sufficient.
+        #
+        # With turn costs, arriving at the same vertex through different incoming
+        # edges can lead to different future costs. The incoming edge therefore
+        # becomes part of the search state:
+        #
+        #     (previous_vertex, current_vertex, incoming_edge)
+        # ------------------------------------------------------------------
+
+        start_state = (
+            (-1, source_index, -1)
+            if use_turn
+            else source_index
+        )
+
+        def _current(state):
+            return state[1] if use_turn else state
+
+        distances = {
+            start_state: 0.0
+        }
+
+        parent = {}
+
+        queue = [
+            (
+                _heuristic(source_index),
+                0.0,
+                start_state
+            )
+        ]
+
+        goal_state = None
+
+        # ------------------------------------------------------------------
+        # Dijkstra / A*
+        # ------------------------------------------------------------------
+
+        while queue:
+            _, current_cost, state = heapq.heappop(queue)
+
+            if current_cost != distances.get(state):
+                continue
+
+            current_index = _current(state)
+
+            if current_index == target_index:
+                goal_state = state
+                break
+
+            prev_index = (
+                state[0]
+                if use_turn
+                else -1
+            )
+
+            incoming_edge = (
+                state[2]
+                if use_turn
+                else -1
+            )
+
+            for next_index, outgoing_edge in adjacency.get(current_index, []):
+
+                if not allowed_vertex.get(next_index, False):
+                    continue
+
+                new_cost = (
+                    current_cost +
+                    edge_cost[outgoing_edge] +
+                    vertex_cost[next_index]
+                )
+
+                # ----------------------------------------------------------
+                # Turn cost
+                # ----------------------------------------------------------
+
+                if use_turn and incoming_edge >= 0:
+
+                    spread = _spread(
+                        prev_index,
+                        current_index,
+                        next_index
+                    )
+
+                    if callable(turnCostFunc):
+                        try:
+                            turn_cost = _number(
+                                turnCostFunc(
+                                    graph._vertices[prev_index],
+                                    graph._vertices[current_index],
+                                    graph._vertices[next_index],
+                                    graph._edges[incoming_edge],
+                                    graph._edges[outgoing_edge],
+                                    spread,
+                                ),
+                                0.0
+                            )
+                        except Exception:
+                            turn_cost = 0.0
+
+                    else:
+                        turn_cost = (
+                            turnWeight *
+                            turn_multiplier[current_index] *
+                            (spread ** turnPower)
+                        )
+
+                    if turn_cost < 0.0:
+                        if not silent:
+                            print("TGraph.ShortestPath - Error: Negative turn costs are not supported. Returning None.")
+                        return None
+
+                    new_cost += turn_cost
+
+                # ----------------------------------------------------------
+                # New state
+                # ----------------------------------------------------------
+
+                next_state = (
+                    (
+                        current_index,
+                        next_index,
+                        outgoing_edge
+                    )
+                    if use_turn
+                    else next_index
+                )
+
+                if new_cost < distances.get(
+                    next_state,
+                    float("inf")
+                ):
+                    distances[next_state] = new_cost
+
+                    parent[next_state] = (
+                        state,
+                        outgoing_edge
+                    )
+
+                    heapq.heappush(
+                        queue,
+                        (
+                            new_cost + _heuristic(next_index),
+                            new_cost,
+                            next_state
+                        )
+                    )
+
+        if goal_state is None:
+            return None
+
+        # ------------------------------------------------------------------
+        # Reconstruct path
+        # ------------------------------------------------------------------
+
+        path_indices = [target_index]
+        edge_indices = []
+
+        state = goal_state
+
+        while state != start_state:
+
+            previous = parent.get(state)
+
+            if previous is None:
+                return None
+
+            state, edge_index = previous
+
+            edge_indices.append(edge_index)
+            path_indices.append(_current(state))
+
+        path_indices.reverse()
+        edge_indices.reverse()
+
+        return _result(
+            path_indices,
+            edge_indices,
+            distances[goal_state]
+        )
+    # @staticmethod
+    # def ShortestPath(graph: "TGraph", source: int, target: int, mode: str = "out", useNumba: bool = False) -> Optional[List[int]]:
+    #     """
+    #     Returns a shortest path between two vertices of the input TGraph.
+
+    #     Parameters
+    #     ----------
+    #     graph : 'TGraph'
+    #         The input TGraph.
+    #     source : int
+    #         The input source vertex, vertex index, or source identifier.
+    #     target : int
+    #         The input target vertex, vertex index, graph, or comparison value, depending on
+    #         context.
+    #     mode : str , optional
+    #         The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
+    #         Default is 'out'.
+    #     useNumba : bool , optional
+    #         If set to True, Numba acceleration is used when available. Default is False.
+
+    #     Returns
+    #     -------
+    #     Optional[List[int]]
+    #         The resulting shortest path list.
+    #     """
+    #     use_np = bool(useNumba)
+    #     c = TGraph.Compile(graph, useNumpy=use_np, useSciPy=False, useNumba=useNumba)
+    #     if not isinstance(c, dict):
+    #         return None
+    #     pos = c["position"]
+
+    #     def _resolve_vertex_index(graph, v):
+    #         """
+    #         Resolves a TGraph vertex input to an active vertex index.
+
+    #         Accepts:
+    #         - integer vertex index
+    #         - internal vertex dictionary/object returned by TGraph.NearestVertex
+    #         """
+
+    #         if isinstance(v, int):
+    #             return v
+
+    #         # Case 1: vertex is exactly one of graph._vertices entries.
+    #         try:
+    #             for i, gv in enumerate(graph._vertices):
+    #                 if gv is v:
+    #                     return i
+    #         except Exception:
+    #             pass
+
+    #         # Case 2: vertex is equal to one of graph._vertices entries.
+    #         try:
+    #             for i, gv in enumerate(graph._vertices):
+    #                 if gv == v:
+    #                     return i
+    #         except Exception:
+    #             pass
+
+    #         # Case 3: vertex dictionary contains an explicit index/id.
+    #         if isinstance(v, dict):
+    #             for key in ("index", "id", "vertex_index", "vertexIndex"):
+    #                 value = v.get(key, None)
+    #                 if isinstance(value, int):
+    #                     return value
+
+    #         return None
+
+
+    #     source_index = _resolve_vertex_index(graph, source)
+    #     target_index = _resolve_vertex_index(graph, target)
+
+    #     if source_index is None or target_index is None:
+    #         return None
+
+    #     if source_index not in pos or target_index not in pos:
+    #         return None
+
+    #     s = pos[source_index]
+    #     t = pos[target_index]
+    #     if s == t:
+    #         return [source]
+
+    #     adj_key, indptr_key, indices_key = TGraph._CompiledAdjacencyKeys(mode)
+
+    #     if useNumba and c.get("numpy_available", False):
+    #         bfs = TGraph._NumbaShortestPathKernel()
+    #         if bfs is not None and indptr_key in c and indices_key in c:
+    #             try:
+    #                 parent, found = bfs(c[indptr_key], c[indices_key], s, t)
+    #                 if not found:
+    #                     return None
+    #                 path = [t]
+    #                 cur = t
+    #                 while cur != s:
+    #                     cur = int(parent[cur])
+    #                     if cur < 0:
+    #                         return None
+    #                     path.append(cur)
+    #                 path.reverse()
+    #                 verts = c["vertices"]
+    #                 return [verts[i] for i in path]
+    #             except Exception:
+    #                 pass
+
+    #     adj = c[adj_key]
+    #     n = c["n"]
+    #     visited = bytearray(n)
+    #     parent = [-1] * n
+    #     queue = [0] * n
+    #     head = 0
+    #     tail = 0
+    #     visited[s] = 1
+    #     queue[tail] = s
+    #     tail += 1
+    #     found = False
+    #     while head < tail:
+    #         u = queue[head]
+    #         head += 1
+    #         for v in adj[u]:
+    #             if not visited[v]:
+    #                 visited[v] = 1
+    #                 parent[v] = u
+    #                 if v == t:
+    #                     found = True
+    #                     head = tail
+    #                     break
+    #                 queue[tail] = v
+    #                 tail += 1
+    #         if found:
+    #             break
+    #     if not found:
+    #         return None
+    #     path = [t]
+    #     cur = t
+    #     while cur != s:
+    #         cur = parent[cur]
+    #         if cur < 0:
+    #             return None
+    #         path.append(cur)
+    #     path.reverse()
+    #     verts = c["vertices"]
+    #     return [verts[i] for i in path]
 
     @staticmethod
-    def ShortestPaths(graph: "TGraph", pairs: Iterable[Tuple[int, int]], mode: str = "out", useNumba: bool = False,
-                      grouped: Any = "auto", groupThreshold: float = 1.5) -> List[Optional[List[int]]]:
+    def ShortestPaths(
+        graph: "TGraph",
+        pairs,
+        mode: str = "out",
+        useNumba: bool = False,
+        grouped="auto",
+        groupThreshold: float = 1.5,
+        vertexKey: str = "",
+        edgeKey: str = "Length",
+        turnWeight: float = 0.0,
+        turnPower: float = 1.0,
+        turnKey: str = "",
+        directed=None,
+        edgeFilter: callable = None,
+        vertexFilter: callable = None,
+        edgeCostFunc: callable = None,
+        vertexCostFunc: callable = None,
+        turnCostFunc: callable = None,
+        useAStar: bool = False,
+        heuristicScale: float = 1.0,
+        returnVertices: bool = False,
+        returnEdges: bool = False,
+        returnCost: bool = False,
+        snapEndpoints: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns shortest paths between all requested vertex pairs of the input TGraph.
+        Returns least-cost paths for all requested source-target pairs.
+
+        The current TGraph meaning of ShortestPaths is preserved: this is a batch
+        operation over source-target pairs, not a k-shortest-alternative-paths
+        operation.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        pairs : Iterable[Tuple[int, int]]
-            The input pairs value.
+        pairs : iterable
+            An iterable of (source, target) pairs.
         mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+            Traversal mode: "out", "in", or "all". Default is "out".
         useNumba : bool , optional
-            If set to True, Numba acceleration is used when available. Default is False.
-        grouped : Any , optional
-            The input grouped value. Default is 'auto'.
+            If True, Numba acceleration is used where applicable. Default is False.
+        grouped : bool or str , optional
+            If True, requests sharing a source are grouped and solved together.
+            If "auto", grouping is selected using groupThreshold. Default is "auto".
         groupThreshold : float , optional
-            The input group threshold value. Default is 1.5.
+            Minimum average targets per source required for automatic grouping.
+            Default is 1.5.
+        vertexKey : str , optional
+            Numeric vertex dictionary cost key. Default is "".
+        edgeKey : str , optional
+            Edge cost key. "Length" uses geometric length. Default is "Length".
+        turnWeight : float , optional
+            Built-in turn-cost multiplier. Default is 0.
+        turnPower : float , optional
+            Turn severity exponent. Default is 1.
+        turnKey : str , optional
+            Vertex dictionary key used to scale turn cost. Default is "".
+        directed : bool , optional
+            Compatibility direction override. Default is None.
+        edgeFilter : callable , optional
+            Edge traversal filter. Default is None.
+        vertexFilter : callable , optional
+            Vertex traversal filter. Default is None.
+        edgeCostFunc : callable , optional
+            Custom edge cost function. Default is None.
+        vertexCostFunc : callable , optional
+            Custom vertex cost function. Default is None.
+        turnCostFunc : callable , optional
+            Custom turn cost function. Default is None.
+        useAStar : bool , optional
+            If True, A* is used for individual searches when applicable.
+            Default is False.
+        heuristicScale : float , optional
+            A* heuristic multiplier. Default is 1.
+        returnVertices : bool , optional
+            If True, vertex records are also returned for each path.
+            Default is False.
+        returnEdges : bool , optional
+            If True, edge records are also returned for each path.
+            Default is False.
+        returnCost : bool , optional
+            If True, total routing cost is also returned for each path.
+            Default is False.
+        snapEndpoints : bool , optional
+            If True, unresolved endpoints are snapped to active graph vertices.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        List[Optional[List[int]]]
-            The resulting shortest paths list.
+        list
+            Path results corresponding one-to-one with the input pairs.
         """
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.ShortestPaths - Error: The input graph is not a valid TGraph. Returning [].")
+            return []
+
         pair_list = list(pairs or [])
+
         if not pair_list:
             return []
 
-        stats = TGraph._PairGroupingStats(pair_list)
+        def _resolve(value):
+
+            idx = TGraph._as_index(value)
+
+            if graph._validate_vertex_index(idx):
+                return idx
+
+            if not snapEndpoints:
+                return None
+
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True,
+                )
+
+                idx = TGraph._as_index(record)
+
+                return (
+                    idx
+                    if graph._validate_vertex_index(idx)
+                    else None
+                )
+
+            except Exception:
+                return None
+
+        # ------------------------------------------------------------------
+        # Resolve pairs once
+        # ------------------------------------------------------------------
+
+        resolved_pairs = []
+
+        for pair in pair_list:
+
+            if (
+                not isinstance(pair, (list, tuple))
+                or len(pair) < 2
+            ):
+
+                resolved_pairs.append(None)
+                continue
+
+            source_index = _resolve(pair[0])
+            target_index = _resolve(pair[1])
+
+            if (
+                source_index is None
+                or target_index is None
+            ):
+
+                resolved_pairs.append(None)
+
+            else:
+
+                resolved_pairs.append(
+                    (
+                        source_index,
+                        target_index,
+                    )
+                )
+
+        valid_pairs = [
+            pair
+            for pair in resolved_pairs
+            if pair is not None
+        ]
+
+        if not valid_pairs:
+            return [None] * len(pair_list)
+
+        # ------------------------------------------------------------------
+        # Decide whether grouping is worthwhile
+        # ------------------------------------------------------------------
+
+        stats = TGraph._PairGroupingStats(
+            valid_pairs
+        )
+
         if str(grouped).lower() == "auto":
-            use_grouped = stats["average_targets_per_source"] >= float(groupThreshold)
+
+            try:
+                use_grouped = (
+                    stats["average_targets_per_source"]
+                    >= float(groupThreshold)
+                )
+            except Exception:
+                use_grouped = False
+
         else:
+
             use_grouped = bool(grouped)
 
+        try:
+            turn_active = (
+                callable(turnCostFunc)
+                or bool(turnKey)
+                or float(turnWeight) != 0.0
+            )
+        except Exception:
+            turn_active = (
+                callable(turnCostFunc)
+                or bool(turnKey)
+                or bool(turnWeight)
+            )
+
+        # A conventional grouped tree cannot exactly model either incoming-edge
+        # turn state or target-specific vertexFilter exemptions.
+        if (
+            turn_active
+            or callable(vertexFilter)
+        ):
+            use_grouped = False
+
+        # ------------------------------------------------------------------
+        # Independent searches
+        # ------------------------------------------------------------------
+
         if not use_grouped:
+
             result = []
-            for pair in pair_list:
-                if not isinstance(pair, (list, tuple)) or len(pair) < 2:
+
+            for pair in resolved_pairs:
+
+                if pair is None:
+
                     result.append(None)
-                else:
-                    result.append(TGraph.ShortestPath(graph, pair[0], pair[1], mode=mode, useNumba=useNumba))
+                    continue
+
+                source_index, target_index = pair
+
+                result.append(
+                    TGraph.ShortestPath(
+                        graph,
+                        source_index,
+                        target_index,
+                        mode=mode,
+                        useNumba=useNumba,
+                        vertexKey=vertexKey,
+                        edgeKey=edgeKey,
+                        turnWeight=turnWeight,
+                        turnPower=turnPower,
+                        turnKey=turnKey,
+                        directed=directed,
+                        edgeFilter=edgeFilter,
+                        vertexFilter=vertexFilter,
+                        edgeCostFunc=edgeCostFunc,
+                        vertexCostFunc=vertexCostFunc,
+                        turnCostFunc=turnCostFunc,
+                        useAStar=useAStar,
+                        heuristicScale=heuristicScale,
+                        returnVertices=returnVertices,
+                        returnEdges=returnEdges,
+                        returnCost=returnCost,
+                        snapEndpoints=False,
+                        tolerance=tolerance,
+                        silent=silent,
+                    )
+                )
+
             return result
 
-        by_source: Dict[int, List[Tuple[int, int]]] = {}
-        for i, pair in enumerate(pair_list):
-            if not isinstance(pair, (list, tuple)) or len(pair) < 2:
-                continue
-            s, t = pair[0], pair[1]
-            by_source.setdefault(s, []).append((i, t))
+        # ------------------------------------------------------------------
+        # Group by source
+        # ------------------------------------------------------------------
 
-        result: List[Optional[List[int]]] = [None] * len(pair_list)
-        for s, items in by_source.items():
-            targets = [t for _, t in items]
-            paths = TGraph.ShortestPathsFromSource(graph, s, targets=targets, mode=mode, useNumba=useNumba)
-            for i, t in items:
-                result[i] = paths.get(t, None)
+        by_source = {}
+
+        for i, pair in enumerate(resolved_pairs):
+
+            if pair is None:
+                continue
+
+            source_index, target_index = pair
+
+            by_source.setdefault(
+                source_index,
+                [],
+            ).append(
+                (
+                    i,
+                    target_index,
+                )
+            )
+
+        result = [None] * len(pair_list)
+
+        # ------------------------------------------------------------------
+        # One tree per source
+        # ------------------------------------------------------------------
+
+        for source_index, items in by_source.items():
+
+            targets = [
+                target
+                for _, target in items
+            ]
+
+            paths = TGraph.ShortestPathsFromSource(
+                graph,
+                source_index,
+                targets=targets,
+                mode=mode,
+                useNumba=useNumba,
+                returnTree=False,
+                vertexKey=vertexKey,
+                edgeKey=edgeKey,
+                turnWeight=turnWeight,
+                turnPower=turnPower,
+                turnKey=turnKey,
+                directed=directed,
+                edgeFilter=edgeFilter,
+                vertexFilter=None,
+                edgeCostFunc=edgeCostFunc,
+                vertexCostFunc=vertexCostFunc,
+                turnCostFunc=None,
+                useAStar=useAStar,
+                heuristicScale=heuristicScale,
+                returnVertices=returnVertices,
+                returnEdges=returnEdges,
+                returnCost=returnCost,
+                snapEndpoints=False,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+            for i, target_index in items:
+                result[i] = paths.get(
+                    target_index
+                )
+
         return result
 
     @staticmethod
-    def ShortestPathsFromSource(graph: "TGraph", source: int, targets: Optional[Iterable[int]] = None,
-                                mode: str = "out", useNumba: bool = False,
-                                returnTree: bool = False) -> Dict[int, Optional[List[int]]]:
+    def ShortestPathsFromSource(
+        graph: "TGraph",
+        source,
+        targets=None,
+        mode: str = "out",
+        useNumba: bool = False,
+        returnTree: bool = False,
+        vertexKey: str = "",
+        edgeKey: str = "Length",
+        turnWeight: float = 0.0,
+        turnPower: float = 1.0,
+        turnKey: str = "",
+        directed=None,
+        edgeFilter: callable = None,
+        vertexFilter: callable = None,
+        edgeCostFunc: callable = None,
+        vertexCostFunc: callable = None,
+        turnCostFunc: callable = None,
+        useAStar: bool = False,
+        heuristicScale: float = 1.0,
+        returnVertices: bool = False,
+        returnEdges: bool = False,
+        returnCost: bool = False,
+        snapEndpoints: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns shortest paths from one source vertex to reachable vertices.
+        Returns least-cost paths from one source vertex to the requested targets.
+
+        For ordinary additive edge and vertex costs, one shortest-path tree is reused
+        for efficiency. If turn-dependent costs or a vertex filter are supplied,
+        each target is solved independently using TGraph.ShortestPath so that the
+        results remain exactly consistent with that method.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        source : int
-            The input source vertex, vertex index, or source identifier.
-        targets : Optional[Iterable[int]] , optional
-            The input targets value. Default is None.
+        source : Any
+            The source vertex.
+        targets : iterable , optional
+            The target vertices. If None, all active graph vertices are used.
         mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+            Traversal mode: "out", "in", or "all". Default is "out".
         useNumba : bool , optional
-            If set to True, Numba acceleration is used when available. Default is False.
+            If True, Numba acceleration is used where applicable. Default is False.
         returnTree : bool , optional
-            The input return tree value. Default is False.
+            If True, the reusable shortest-path tree is returned under the "_tree"
+            key when such a tree is mathematically valid. Default is False.
+        vertexKey : str , optional
+            Numeric vertex dictionary cost key. Default is "".
+        edgeKey : str , optional
+            Edge cost key. "Length" uses geometric length. Default is "Length".
+        turnWeight : float , optional
+            Built-in turn-cost multiplier. Default is 0.
+        turnPower : float , optional
+            Turn severity exponent. Default is 1.
+        turnKey : str , optional
+            Vertex dictionary key used to scale turn cost. Default is "".
+        directed : bool , optional
+            Compatibility direction override. Default is None.
+        edgeFilter : callable , optional
+            Edge traversal filter. Default is None.
+        vertexFilter : callable , optional
+            Vertex traversal filter. Default is None.
+        edgeCostFunc : callable , optional
+            Custom edge cost function. Default is None.
+        vertexCostFunc : callable , optional
+            Custom vertex cost function. Default is None.
+        turnCostFunc : callable , optional
+            Custom turn cost function. Default is None.
+        useAStar : bool , optional
+            If True, A* is used for individual target searches when applicable.
+            Default is False.
+        heuristicScale : float , optional
+            A* heuristic multiplier. Default is 1.
+        returnVertices : bool , optional
+            If True, path vertex records are also returned. Default is False.
+        returnEdges : bool , optional
+            If True, path edge records are also returned. Default is False.
+        returnCost : bool , optional
+            If True, total routing cost is also returned. Default is False.
+        snapEndpoints : bool , optional
+            If True, unresolved endpoints are snapped to active graph vertices.
+            Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        Dict[int, Optional[List[int]]]
-            The resulting shortest paths from source list.
+        dict
+            A dictionary mapping target vertices or resolved target indices to path
+            results.
         """
-        tree = TGraph.ShortestPathTree(graph, source, mode=mode, useNumba=useNumba, includePaths=False)
-        if not isinstance(tree, dict):
+        if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.ShortestPathsFromSource - Error: The input graph is not a valid TGraph. Returning {}.")
+            return {}
+
+        def _resolve(value):
+            idx = TGraph._as_index(value)
+
+            if graph._validate_vertex_index(idx):
+                return idx
+
+            if not snapEndpoints:
+                return None
+
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True,
+                )
+
+                idx = TGraph._as_index(record)
+
+                return (
+                    idx
+                    if graph._validate_vertex_index(idx)
+                    else None
+                )
+
+            except Exception:
+                return None
+
+        def _key(raw, resolved):
+            try:
+                hash(raw)
+                return raw
+            except Exception:
+                return resolved
+
+        def _format(path, edge_indices, cost):
+
+            if path is None:
+                return None
+
+            out = [list(path)]
+
+            if returnVertices:
+                out.append([
+                    graph._vertices[i]
+                    for i in path
+                ])
+
+            if returnEdges:
+                out.append([
+                    graph._edges[i]
+                    for i in edge_indices
+                ])
+
+            if returnCost:
+                out.append(float(cost))
+
+            return (
+                out[0]
+                if len(out) == 1
+                else tuple(out)
+            )
+
+        source_index = _resolve(source)
+
+        if source_index is None:
+            if not silent:
+                print("TGraph.ShortestPathsFromSource - Error: Could not resolve the source vertex. Returning {}.")
             return {}
 
         if targets is None:
-            target_list = list(tree.get("distance", {}).keys())
+
+            target_inputs = [
+                v.get("index")
+                for v in graph._vertices
+                if isinstance(v, dict)
+                and v.get("active", True)
+                and isinstance(v.get("index"), int)
+            ]
+
         else:
-            target_list = list(targets)
 
-        parent = tree.get("parent", {})
-        distance = tree.get("distance", {})
+            target_inputs = list(targets)
 
-        def _path_to(target: int) -> Optional[List[int]]:
-            if target not in distance or distance.get(target, -1) < 0:
-                return None
-            if target == source:
-                return [source]
-            path = [target]
-            cur = target
-            while cur != source:
-                cur = parent.get(cur, None)
-                if cur is None:
-                    return None
-                path.append(cur)
-            path.reverse()
-            return path
+        resolved_targets = []
+        result = {}
 
-        result: Dict[int, Optional[List[int]]] = {t: _path_to(t) for t in target_list}
+        for raw in target_inputs:
+
+            idx = _resolve(raw)
+            key = _key(raw, idx)
+
+            if idx is None:
+
+                if key is not None:
+                    result[key] = None
+
+                continue
+
+            resolved_targets.append(
+                (
+                    key,
+                    idx,
+                )
+            )
+
+        try:
+            turn_active = (
+                callable(turnCostFunc)
+                or bool(turnKey)
+                or float(turnWeight) != 0.0
+            )
+        except Exception:
+            turn_active = (
+                callable(turnCostFunc)
+                or bool(turnKey)
+                or bool(turnWeight)
+            )
+
+        # A target is exempt from vertexFilter in ShortestPath. Since that
+        # exemption changes for every target, a single tree cannot exactly
+        # reproduce independent filtered searches.
+        use_individual_searches = (
+            turn_active
+            or callable(vertexFilter)
+        )
+
+        # ------------------------------------------------------------------
+        # Exact individual searches
+        # ------------------------------------------------------------------
+
+        if use_individual_searches:
+
+            for key, target_index in resolved_targets:
+
+                result[key] = TGraph.ShortestPath(
+                    graph,
+                    source_index,
+                    target_index,
+                    mode=mode,
+                    useNumba=useNumba,
+                    vertexKey=vertexKey,
+                    edgeKey=edgeKey,
+                    turnWeight=turnWeight,
+                    turnPower=turnPower,
+                    turnKey=turnKey,
+                    directed=directed,
+                    edgeFilter=edgeFilter,
+                    vertexFilter=vertexFilter,
+                    edgeCostFunc=edgeCostFunc,
+                    vertexCostFunc=vertexCostFunc,
+                    turnCostFunc=turnCostFunc,
+                    useAStar=useAStar,
+                    heuristicScale=heuristicScale,
+                    returnVertices=returnVertices,
+                    returnEdges=returnEdges,
+                    returnCost=returnCost,
+                    snapEndpoints=False,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+
+            if returnTree:
+
+                if not silent:
+                    print(
+                        "TGraph.ShortestPathsFromSource - Warning: A single reusable "
+                        "shortest-path tree cannot exactly represent turn-dependent "
+                        "costs or target-specific vertex-filter exemptions. "
+                        "'_tree' is set to None."
+                    )
+
+                result["_tree"] = None
+
+            return result
+
+        # ------------------------------------------------------------------
+        # Reusable additive-cost tree
+        # ------------------------------------------------------------------
+
+        tree = TGraph.ShortestPathTree(
+            graph,
+            source_index,
+            mode=mode,
+            useNumba=useNumba,
+            includePaths=True,
+            includeEdges=returnEdges,
+            vertexKey=vertexKey,
+            edgeKey=edgeKey,
+            directed=directed,
+            edgeFilter=edgeFilter,
+            vertexFilter=None,
+            edgeCostFunc=edgeCostFunc,
+            vertexCostFunc=vertexCostFunc,
+            snapEndpoints=False,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+        if not isinstance(tree, dict):
+            return {}
+
+        paths = tree.get(
+            "paths",
+            {},
+        )
+
+        edge_paths = tree.get(
+            "edgePaths",
+            {},
+        )
+
+        distances = tree.get(
+            "distance",
+            {},
+        )
+
+        for key, target_index in resolved_targets:
+
+            path = paths.get(target_index)
+
+            if path is None:
+
+                result[key] = None
+                continue
+
+            edge_indices = (
+                edge_paths.get(
+                    target_index,
+                    [],
+                )
+                if returnEdges
+                else []
+            )
+
+            cost = distances.get(
+                target_index,
+                -1.0,
+            )
+
+            result[key] = _format(
+                path,
+                edge_indices,
+                cost,
+            )
+
         if returnTree:
-            result["_tree"] = tree  # type: ignore[index]
+            result["_tree"] = tree
+
         return result
 
     @staticmethod
-    def ShortestPathTree(graph: "TGraph", source: int, mode: str = "out", useNumba: bool = False,
-                         includePaths: bool = False) -> Optional[Dict[str, Any]]:
+    def ShortestPathTree(
+        graph: "TGraph",
+        source,
+        mode: str = "out",
+        useNumba: bool = False,
+        includePaths: bool = False,
+        includeEdges: bool = False,
+        vertexKey: str = "",
+        edgeKey: str = "Length",
+        directed=None,
+        edgeFilter: callable = None,
+        vertexFilter: callable = None,
+        edgeCostFunc: callable = None,
+        vertexCostFunc: callable = None,
+        snapEndpoints: bool = True,
+        tolerance: float = 0.0001,
+        silent: bool = False,
+    ):
         """
-        Returns a shortest path tree rooted at the input source vertex.
+        Returns a least-cost shortest-path tree rooted at the input source vertex.
+
+        The tree supports the same additive edge and vertex costs as
+        TGraph.ShortestPath. Turn-dependent costs are intentionally not accepted:
+        when path cost depends on the incoming edge, a single parent per vertex is
+        not mathematically sufficient to represent all shortest paths.
 
         Parameters
         ----------
-        graph : 'TGraph'
+        graph : TGraph
             The input TGraph.
-        source : int
-            The input source vertex, vertex index, or source identifier.
+        source : Any
+            The source vertex. This may be a stable vertex index, TGraph vertex
+            record, Topologic vertex, or coordinate-like input.
         mode : str , optional
-            The traversal or adjacency mode. Valid values are typically "out", "in", or "all".
-            Default is 'out'.
+            Traversal mode: "out", "in", or "all". Default is "out".
         useNumba : bool , optional
-            If set to True, Numba acceleration is used when available. Default is False.
+            If True, Numba acceleration is used when available for pure hop-count
+            routing. Default is False.
         includePaths : bool , optional
-            If set to True, include paths are included. Default is False.
+            If True, the returned dictionary includes complete vertex paths from
+            the source to every reachable vertex. Default is False.
+        includeEdges : bool , optional
+            If True, the returned dictionary includes ordered edge-index paths.
+            Default is False.
+        vertexKey : str , optional
+            Numeric vertex dictionary key added to the cost when a vertex is
+            entered. Default is "".
+        edgeKey : str , optional
+            Numeric edge dictionary key used as traversal cost. "Length",
+            "Distance", or "Metric" uses geometric edge length. "hop", "hops",
+            "unweighted", or "unit" uses unit edge cost. Default is "Length".
+        directed : bool , optional
+            Compatibility override. True is equivalent to mode="out"; False is
+            equivalent to mode="all"; None uses mode. Default is None.
+        edgeFilter : callable(edgeRecord) -> bool , optional
+            Returns False for edges that may not be traversed. Default is None.
+        vertexFilter : callable(vertexRecord) -> bool , optional
+            Returns False for vertices that may not be traversed. The source vertex
+            is always allowed. Default is None.
+        edgeCostFunc : callable(edgeRecord) -> float , optional
+            Custom edge cost overriding edgeKey. Default is None.
+        vertexCostFunc : callable(vertexRecord) -> float , optional
+            Custom vertex cost overriding vertexKey. Default is None.
+        snapEndpoints : bool , optional
+            If True, unresolved source input is snapped to the nearest active graph
+            vertex. Default is True.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If True, error and warning messages are suppressed. Default is False.
 
         Returns
         -------
-        Optional[Dict[str, Any]]
-            The resulting shortest path tree dictionary.
+        dict or None
+            A dictionary containing:
+
+            - source: resolved source vertex index
+            - mode: traversal mode
+            - parent: predecessor vertex for each vertex
+            - parentEdge: predecessor edge for each vertex
+            - distance: least routing cost from the source
+            - hops: number of edges from the source
+            - reachable: reachable vertex indices
+            - paths: optional complete vertex paths
+            - edgePaths: optional complete edge-index paths
         """
+        import heapq
+        import math
+
         if not isinstance(graph, TGraph):
+            if not silent:
+                print("TGraph.ShortestPathTree - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
-        mode = str(mode).lower()
+        def _number(value, default=0.0):
+            if isinstance(value, bool):
+                return float(int(value))
+            if isinstance(value, (list, tuple)) and len(value) == 1:
+                value = value[0]
+            try:
+                return float(value)
+            except Exception:
+                return float(default)
+
+        def _dictionary(record):
+            d = record.get("dictionary", {}) if isinstance(record, dict) else {}
+            return d if isinstance(d, dict) else {}
+
+        def _resolve(value):
+            idx = TGraph._as_index(value)
+            if graph._validate_vertex_index(idx):
+                return idx
+            if not snapEndpoints:
+                return None
+            try:
+                record = TGraph.NearestVertex(
+                    graph,
+                    vertex=value,
+                    active=True,
+                    copy=False,
+                    asTopologic=False,
+                    silent=True,
+                )
+                idx = TGraph._as_index(record)
+                return idx if graph._validate_vertex_index(idx) else None
+            except Exception:
+                return None
+
+        mode_aliases = {
+            "forward": "out",
+            "outgoing": "out",
+            "reverse": "in",
+            "incoming": "in",
+            "undirected": "all",
+            "bidirectional": "all",
+            "both": "all",
+        }
+
+        mode = str(mode or "out").strip().lower()
+        mode = mode_aliases.get(mode, mode)
+
+        if directed is not None:
+            mode = "out" if bool(directed) else "all"
+
         if mode not in ("out", "in", "all"):
-            mode = "out"
-
-        c = TGraph.Compile(graph, useNumpy=useNumba, useSciPy=False, useNumba=useNumba)
-        if not isinstance(c, dict):
+            if not silent:
+                print("TGraph.ShortestPathTree - Error: mode must be 'out', 'in', or 'all'. Returning None.")
             return None
 
-        pos = c.get("position", {})
-        if source not in pos:
+        source_index = _resolve(source)
+
+        if source_index is None:
+            if not silent:
+                print("TGraph.ShortestPathTree - Error: Could not resolve the source vertex. Returning None.")
             return None
 
-        s = pos[source]
-        n = c.get("n", 0)
-        verts = c.get("vertices", [])
+        active_vertices = sorted(
+            v.get("index")
+            for v in graph._vertices
+            if isinstance(v, dict)
+            and v.get("active", True)
+            and isinstance(v.get("index"), int)
+        )
 
-        parent_compact = None
-        distance_compact = None
+        active_set = set(active_vertices)
 
-        if useNumba and c.get("numpy_available", False):
-            indptr_key = "indptr_in" if mode == "in" else ("indptr_all" if mode == "all" else "indptr_out")
-            indices_key = "indices_in" if mode == "in" else ("indices_all" if mode == "all" else "indices_out")
-            bfs_tree = TGraph._NumbaBFSTreeKernel()
-            if bfs_tree is not None and indptr_key in c and indices_key in c:
+        if source_index not in active_set:
+            return None
+
+        # ------------------------------------------------------------------
+        # Vertex filter
+        # ------------------------------------------------------------------
+
+        allowed_vertex = {i: True for i in active_vertices}
+
+        if callable(vertexFilter):
+            for i in active_vertices:
+                if i == source_index:
+                    continue
                 try:
-                    parent_compact, distance_compact = bfs_tree(c[indptr_key], c[indices_key], s)
+                    allowed_vertex[i] = bool(vertexFilter(graph._vertices[i]))
                 except Exception:
-                    parent_compact = None
-                    distance_compact = None
+                    allowed_vertex[i] = True
 
-        if parent_compact is None or distance_compact is None:
-            adj_key = "adj_in" if mode == "in" else ("adj_all" if mode == "all" else "adj_out")
-            adj = c.get(adj_key, [])
-            parent = [-1] * n
-            distance = [-1] * n
-            queue = [0] * max(1, n)
-            head = 0
-            tail = 0
-            distance[s] = 0
-            queue[tail] = s
-            tail += 1
+        # ------------------------------------------------------------------
+        # Coordinates
+        # ------------------------------------------------------------------
 
-            while head < tail:
-                u = queue[head]
-                head += 1
-                nd = distance[u] + 1
-                for v in adj[u]:
-                    if distance[v] < 0:
-                        distance[v] = nd
-                        parent[v] = u
-                        queue[tail] = v
-                        tail += 1
+        coords = {}
 
-            parent_compact = parent
-            distance_compact = distance
-
-        parent_stable: Dict[int, Optional[int]] = {}
-        distance_stable: Dict[int, int] = {}
-        reachable: List[int] = []
-
-        for i, stable in enumerate(verts):
+        for i in active_vertices:
+            c = TGraph.Coordinates(graph, i, default=None)
             try:
-                d = int(distance_compact[i])
+                coords[i] = (
+                    float(c[0]),
+                    float(c[1]),
+                    float(c[2]) if len(c) > 2 else 0.0,
+                )
             except Exception:
-                d = -1
-            distance_stable[stable] = d
-            if d >= 0:
-                reachable.append(stable)
-            try:
-                p = int(parent_compact[i])
-            except Exception:
-                p = -1
-            parent_stable[stable] = None if p < 0 else verts[p]
+                coords[i] = None
 
-        result: Dict[str, Any] = {
-            "source": source,
+        def _distance(a, b):
+            ca = coords.get(a)
+            cb = coords.get(b)
+
+            if ca is None or cb is None:
+                return None
+
+            dx = cb[0] - ca[0]
+            dy = cb[1] - ca[1]
+            dz = cb[2] - ca[2]
+
+            return math.sqrt(dx * dx + dy * dy + dz * dz)
+
+        # ------------------------------------------------------------------
+        # Vertex costs
+        # ------------------------------------------------------------------
+
+        vertex_cost = {i: 0.0 for i in active_vertices}
+
+        if callable(vertexCostFunc):
+            for i in active_vertices:
+                try:
+                    vertex_cost[i] = _number(
+                        vertexCostFunc(graph._vertices[i]),
+                        0.0,
+                    )
+                except Exception:
+                    vertex_cost[i] = 0.0
+
+        elif vertexKey:
+            for i in active_vertices:
+                vertex_cost[i] = _number(
+                    _dictionary(graph._vertices[i]).get(vertexKey),
+                    0.0,
+                )
+
+        vertex_cost[source_index] = 0.0
+
+        if any(value < 0.0 for value in vertex_cost.values()):
+            if not silent:
+                print("TGraph.ShortestPathTree - Error: Negative vertex costs are not supported. Returning None.")
+            return None
+
+        # ------------------------------------------------------------------
+        # Edge costs
+        # ------------------------------------------------------------------
+
+        edge_key = str(edgeKey).strip().lower() if edgeKey is not None else ""
+
+        geometric = (
+            edgeKey is None
+            or edge_key in ("", "length", "distance", "metric")
+        )
+
+        hop_count = edge_key in (
+            "hop",
+            "hops",
+            "unweighted",
+            "unit",
+        )
+
+        edge_cost = {}
+        allowed_edge = {}
+        active_edges = []
+
+        for edge in graph._edges:
+
+            if not isinstance(edge, dict):
+                continue
+
+            if not edge.get("active", True):
+                continue
+
+            ei = edge.get("index")
+            src = edge.get("src")
+            dst = edge.get("dst")
+
+            if not isinstance(ei, int):
+                continue
+
+            if src not in active_set or dst not in active_set:
+                continue
+
+            allowed = True
+
+            if callable(edgeFilter):
+                try:
+                    allowed = bool(edgeFilter(edge))
+                except Exception:
+                    allowed = True
+
+            allowed_edge[ei] = allowed
+            active_edges.append(edge)
+
+            if callable(edgeCostFunc):
+                try:
+                    cost = _number(edgeCostFunc(edge), 0.0)
+                except Exception:
+                    cost = 0.0
+
+            elif geometric:
+                cost = _distance(src, dst)
+
+                if cost is None:
+                    cost = 1.0
+
+            elif hop_count:
+                cost = 1.0
+
+            else:
+                cost = _number(
+                    _dictionary(edge).get(edgeKey),
+                    0.0,
+                )
+
+            if cost < 0.0:
+                if not silent:
+                    print("TGraph.ShortestPathTree - Error: Negative edge costs are not supported. Returning None.")
+                return None
+
+            edge_cost[ei] = cost
+
+        # ------------------------------------------------------------------
+        # Edge-aware adjacency
+        # ------------------------------------------------------------------
+
+        adjacency = {i: [] for i in active_vertices}
+
+        for edge in active_edges:
+
+            ei = edge["index"]
+
+            if not allowed_edge.get(ei, False):
+                continue
+
+            src = edge["src"]
+            dst = edge["dst"]
+
+            edge_directed = bool(
+                edge.get("directed", graph._directed)
+            )
+
+            if mode == "all" or not edge_directed:
+
+                adjacency[src].append((dst, ei))
+
+                if src != dst:
+                    adjacency[dst].append((src, ei))
+
+            elif mode == "out":
+
+                adjacency[src].append((dst, ei))
+
+            else:  # mode == "in"
+
+                adjacency[dst].append((src, ei))
+
+        for i in adjacency:
+            adjacency[i].sort(
+                key=lambda item: (item[0], item[1])
+            )
+
+        # ------------------------------------------------------------------
+        # Output structures
+        # ------------------------------------------------------------------
+
+        parent = {i: None for i in active_vertices}
+        parent_edge = {i: None for i in active_vertices}
+        distance = {i: -1.0 for i in active_vertices}
+        hops = {i: -1 for i in active_vertices}
+
+        # ------------------------------------------------------------------
+        # Numba BFS fast path
+        # ------------------------------------------------------------------
+
+        simple_hop = (
+            hop_count
+            and not vertexKey
+            and not callable(vertexCostFunc)
+            and not callable(edgeCostFunc)
+            and not callable(edgeFilter)
+            and not callable(vertexFilter)
+        )
+
+        used_numba = False
+
+        if useNumba and simple_hop:
+
+            try:
+                c = TGraph.Compile(
+                    graph,
+                    useNumpy=True,
+                    useSciPy=False,
+                    useNumba=True,
+                )
+
+                if isinstance(c, dict) and source_index in c.get("position", {}):
+
+                    s = c["position"][source_index]
+
+                    _, indptr_key, indices_key = TGraph._CompiledAdjacencyKeys(mode)
+
+                    bfs_tree = TGraph._NumbaBFSTreeKernel()
+
+                    if (
+                        bfs_tree is not None
+                        and indptr_key in c
+                        and indices_key in c
+                    ):
+
+                        p_compact, d_compact = bfs_tree(
+                            c[indptr_key],
+                            c[indices_key],
+                            s,
+                        )
+
+                        verts = c["vertices"]
+
+                        for i, stable in enumerate(verts):
+
+                            d = int(d_compact[i])
+
+                            distance[stable] = (
+                                float(d) if d >= 0 else -1.0
+                            )
+
+                            hops[stable] = d
+
+                            p = int(p_compact[i])
+
+                            if p >= 0:
+
+                                parent_stable = verts[p]
+
+                                parent[stable] = parent_stable
+
+                                for neighbour, ei in adjacency.get(parent_stable, []):
+
+                                    if neighbour == stable:
+                                        parent_edge[stable] = ei
+                                        break
+
+                        used_numba = True
+
+            except Exception:
+                used_numba = False
+
+        # ------------------------------------------------------------------
+        # Dijkstra
+        # ------------------------------------------------------------------
+
+        if not used_numba:
+
+            best = {
+                source_index: 0.0
+            }
+
+            hop_best = {
+                source_index: 0
+            }
+
+            queue = [
+                (
+                    0.0,
+                    0,
+                    source_index,
+                )
+            ]
+
+            while queue:
+
+                current_cost, current_hops, current = heapq.heappop(queue)
+
+                if current_cost != best.get(current):
+                    continue
+
+                for neighbour, ei in adjacency.get(current, []):
+
+                    if not allowed_vertex.get(neighbour, False):
+                        continue
+
+                    new_cost = (
+                        current_cost
+                        + edge_cost[ei]
+                        + vertex_cost[neighbour]
+                    )
+
+                    new_hops = current_hops + 1
+
+                    old_cost = best.get(
+                        neighbour,
+                        float("inf"),
+                    )
+
+                    old_hops = hop_best.get(
+                        neighbour,
+                        10**18,
+                    )
+
+                    if (
+                        new_cost < old_cost
+                        or (
+                            new_cost == old_cost
+                            and new_hops < old_hops
+                        )
+                    ):
+
+                        best[neighbour] = new_cost
+                        hop_best[neighbour] = new_hops
+
+                        parent[neighbour] = current
+                        parent_edge[neighbour] = ei
+
+                        heapq.heappush(
+                            queue,
+                            (
+                                new_cost,
+                                new_hops,
+                                neighbour,
+                            ),
+                        )
+
+            for i in active_vertices:
+
+                if i in best:
+
+                    distance[i] = float(best[i])
+                    hops[i] = int(hop_best[i])
+
+        # ------------------------------------------------------------------
+        # Result
+        # ------------------------------------------------------------------
+
+        reachable = [
+            i
+            for i in active_vertices
+            if distance.get(i, -1.0) >= 0.0
+        ]
+
+        result = {
+            "source": source_index,
             "mode": mode,
-            "parent": parent_stable,
-            "distance": distance_stable,
+            "parent": parent,
+            "parentEdge": parent_edge,
+            "distance": distance,
+            "hops": hops,
             "reachable": reachable,
         }
 
-        if includePaths:
-            paths: Dict[int, Optional[List[int]]] = {}
-            for target in verts:
-                if distance_stable.get(target, -1) < 0:
+        # ------------------------------------------------------------------
+        # Optional complete paths
+        # ------------------------------------------------------------------
+
+        if includePaths or includeEdges:
+
+            paths = {}
+            edge_paths = {}
+
+            for target in active_vertices:
+
+                if distance.get(target, -1.0) < 0.0:
+
                     paths[target] = None
+                    edge_paths[target] = None
+
                     continue
-                if target == source:
-                    paths[target] = [source]
+
+                if target == source_index:
+
+                    paths[target] = [source_index]
+                    edge_paths[target] = []
+
                     continue
+
                 path = [target]
-                cur = target
+                edges = []
+
+                current = target
                 ok = True
-                while cur != source:
-                    cur_parent = parent_stable.get(cur, None)
-                    if cur_parent is None:
+
+                while current != source_index:
+
+                    p = parent.get(current)
+                    ei = parent_edge.get(current)
+
+                    if p is None or ei is None:
                         ok = False
                         break
-                    path.append(cur_parent)
-                    cur = cur_parent
-                if ok:
-                    path.reverse()
-                    paths[target] = path
-                else:
+
+                    edges.append(ei)
+                    path.append(p)
+
+                    current = p
+
+                if not ok:
+
                     paths[target] = None
-            result["paths"] = paths
+                    edge_paths[target] = None
+
+                else:
+
+                    path.reverse()
+                    edges.reverse()
+
+                    paths[target] = path
+                    edge_paths[target] = edges
+
+            if includePaths:
+                result["paths"] = paths
+
+            if includeEdges:
+                result["edgePaths"] = edge_paths
 
         return result
-
 
     @staticmethod
     def ShortestPathViaVertices(
@@ -21274,200 +23157,841 @@ class TGraph:
         optimize: bool = False,
         tolerance: float = 0.0001,
         silent: bool = False,
+        vertexKey: str = "",
+        viaKey: str = None,
+        viaValues: list = None,
+        edgeKey: str = "Length",
+        turnWeight: float = 0.0,
+        turnPower: float = 1.0,
+        turnKey: str = "",
+        mode: str = "out",
+        useNumba: bool = False,
+        directed=None,
+        edgeFilter: callable = None,
+        vertexFilter: callable = None,
+        edgeCostFunc: callable = None,
+        vertexCostFunc: callable = None,
+        turnCostFunc: callable = None,
+        useAStar: bool = False,
+        heuristicScale: float = 1.0,
+        returnVertices: bool = False,
+        returnEdges: bool = False,
+        returnCost: bool = False,
+        snapEndpoints: bool = True,
     ):
         """
-        Returns a shortest path that passes through a sequence of required vertices.
+        Returns a least-cost path that passes through required vertices in order.
+
+        Required vertices can be supplied directly through `vertices`, or selected
+        by matching `viaValues` against the vertex dictionary key `viaKey`.
+        Explicit `vertices` take precedence when both mechanisms are supplied.
 
         Parameters
         ----------
         graph : TGraph
             The input TGraph.
         startVertex : Any
-            The start vertex. This can be a TGraph vertex index, TGraph vertex
-            record, Topologic vertex, or coordinate-like input if NearestVertex can
-            resolve it.
+            The start vertex.
         endVertex : Any
-            The end vertex. This can be a TGraph vertex index, TGraph vertex record,
-            Topologic vertex, or coordinate-like input if NearestVertex can resolve it.
+            The end vertex.
         vertices : list , optional
-            The required intermediate vertices or vertex indices. Default is None.
+            Ordered intermediate vertices through which the path must pass.
+            Default is None.
         optimize : bool , optional
-            If True, repeated vertices caused by the path doubling back onto itself
-            are eliminated using loop-erasure. This can produce a simpler valid path
-            from the start vertex to the end vertex, but the resulting path may no
-            longer pass through all specified intermediate vertices. Default is False.
+            If True, removable loops are erased after the route is assembled.
+            Loops are removed only when all required vertices remain present in the
+            requested order. Default is False.
         tolerance : float , optional
-            The desired tolerance. Currently used only as a compatibility argument
-            for future coordinate-based resolution. Default is 0.0001.
+            The desired tolerance. Default is 0.0001.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
+        vertexKey : str , optional
+            Numeric vertex dictionary key added to path cost. Default is "".
+        viaKey : str , optional
+            Vertex dictionary key used to locate required via vertices when
+            `vertices` is None. Default is None.
+        viaValues : list , optional
+            Ordered dictionary values to locate through viaKey. Default is None.
+        edgeKey : str , optional
+            Edge cost key. "Length" uses geometric length. Default is "Length".
+        turnWeight : float , optional
+            Built-in turn-cost multiplier. Default is 0.
+        turnPower : float , optional
+            Turn severity exponent. Default is 1.
+        turnKey : str , optional
+            Vertex dictionary key used to scale turn cost. Default is "".
+        mode : str , optional
+            Traversal mode: "out", "in", or "all". Default is "out".
+        useNumba : bool , optional
+            If True, Numba acceleration is used where applicable. Default is False.
+        directed : bool , optional
+            Compatibility direction override. Default is None.
+        edgeFilter : callable , optional
+            Edge traversal filter. Default is None.
+        vertexFilter : callable , optional
+            Vertex traversal filter. Default is None.
+        edgeCostFunc : callable , optional
+            Custom edge cost function. Default is None.
+        vertexCostFunc : callable , optional
+            Custom vertex cost function. Default is None.
+        turnCostFunc : callable , optional
+            Custom turn cost function. Default is None.
+        useAStar : bool , optional
+            If True, A* is used for segment searches when applicable.
+            Default is False.
+        heuristicScale : float , optional
+            A* heuristic multiplier. Default is 1.
+        returnVertices : bool , optional
+            If True, ordered TGraph vertex records are also returned.
+            Default is False.
+        returnEdges : bool , optional
+            If True, ordered TGraph edge records are also returned.
+            Default is False.
+        returnCost : bool , optional
+            If True, total cost of the complete returned route is also returned.
+            Default is False.
+        snapEndpoints : bool , optional
+            If True, unresolved inputs are snapped to nearest active graph vertices.
+            Default is True.
 
         Returns
         -------
-        list or None
-            The resulting path as a list of TGraph vertex indices, or None if a
-            required segment cannot be found.
+        list or tuple or None
+            By default, the ordered stable vertex indices. Optional data are appended
+            in this order: vertex records, edge records, total cost.
         """
+        import math
 
         if not isinstance(graph, TGraph):
             if not silent:
                 print("TGraph.ShortestPathViaVertices - Error: The input graph is not a valid TGraph. Returning None.")
             return None
 
-        def _resolve_index(v):
-            """
-            Resolves an input vertex-like object to a TGraph vertex index.
-            """
+        def _number(value, default=0.0):
+            if isinstance(value, bool):
+                return float(int(value))
 
-            if v is None:
+            if isinstance(value, (list, tuple)) and len(value) == 1:
+                value = value[0]
+
+            try:
+                return float(value)
+            except Exception:
+                return float(default)
+
+        def _dictionary(record):
+            d = record.get(
+                "dictionary",
+                {},
+            ) if isinstance(record, dict) else {}
+
+            return (
+                d
+                if isinstance(d, dict)
+                else {}
+            )
+
+        def _resolve(value):
+
+            idx = TGraph._as_index(value)
+
+            if graph._validate_vertex_index(idx):
+                return idx
+
+            if not snapEndpoints:
                 return None
 
-            # TGraph vertex record.
-            if isinstance(v, dict):
-                if "index" in v:
-                    try:
-                        idx = int(v["index"])
-                        if graph._validate_vertex_index(idx, active=True):
-                            return idx
-                    except Exception:
-                        pass
-
-            # Direct integer-like index.
             try:
-                idx = int(v)
-                if graph._validate_vertex_index(idx, active=True):
-                    return idx
-            except Exception:
-                pass
-
-            # Existing private resolver, if available.
-            try:
-                idx = TGraph._as_index(v)
-                if idx is not None:
-                    idx = int(idx)
-                    if graph._validate_vertex_index(idx, active=True):
-                        return idx
-            except Exception:
-                pass
-
-            # Coordinate / Topologic vertex fallback using NearestVertex, if present.
-            try:
-                nearest = TGraph.NearestVertex(
+                record = TGraph.NearestVertex(
                     graph,
-                    vertex=v,
-                    copy=False,
+                    vertex=value,
                     active=True,
+                    copy=False,
                     asTopologic=False,
                     silent=True,
                 )
-                if isinstance(nearest, dict) and "index" in nearest:
-                    idx = int(nearest["index"])
-                    if graph._validate_vertex_index(idx, active=True):
-                        return idx
+
+                idx = TGraph._as_index(record)
+
+                return (
+                    idx
+                    if graph._validate_vertex_index(idx)
+                    else None
+                )
+
             except Exception:
-                pass
-
-            return None
-
-        def _loop_erased_path(path):
-            """
-            Removes loops from a walk by deleting the vertices between repeated
-            occurrences of the same vertex.
-
-            Example
-            -------
-            [0, 1, 2, 3, 2, 4] becomes [0, 1, 2, 4]
-            """
-
-            if not path:
-                return []
-
-            result = []
-            positions = {}
-
-            for v in path:
-                if v in positions:
-                    # A loop has been detected. Remove everything after the first
-                    # occurrence of v.
-                    keep_until = positions[v]
-
-                    for removed in result[keep_until + 1:]:
-                        positions.pop(removed, None)
-
-                    result = result[:keep_until + 1]
-                else:
-                    positions[v] = len(result)
-                    result.append(v)
-
-            return result
-
-        # Build required sequence.
-        raw_sequence = [startVertex] + list(vertices or []) + [endVertex]
-        sequence = [_resolve_index(v) for v in raw_sequence]
-
-        if any(v is None for v in sequence):
-            if not silent:
-                print("TGraph.ShortestPathViaVertices - Error: Could not resolve one or more input vertices. Returning None.")
-            return None
-
-        # Remove consecutive duplicates. These are valid and should not force a
-        # ShortestPath(a, a) call.
-        compact_sequence = []
-
-        for v in sequence:
-            if not compact_sequence or compact_sequence[-1] != v:
-                compact_sequence.append(v)
-
-        if len(compact_sequence) == 0:
-            return []
-
-        if len(compact_sequence) == 1:
-            return [compact_sequence[0]]
-
-        mode = "out" if getattr(graph, "_directed", False) else "all"
-
-        final = []
-
-        for a, b in zip(compact_sequence[:-1], compact_sequence[1:]):
-            # A same-vertex segment is valid and contributes no additional path.
-            if a == b:
-                segment = [a]
-            else:
-                try:
-                    segment = TGraph.ShortestPath(graph, a, b, mode=mode)
-                except TypeError:
-                    # Fallback for ShortestPath implementations without a mode argument.
-                    segment = TGraph.ShortestPath(graph, a, b)
-
-            if segment is None or len(segment) == 0:
-                if not silent:
-                    print(f"TGraph.ShortestPathViaVertices - Warning: No path found between {a} and {b}. Returning None.")
                 return None
 
-            # Ensure segment is a list of indices.
-            clean_segment = []
+        def _format(
+            path_indices,
+            edge_records,
+            cost,
+        ):
 
-            for item in segment:
-                idx = _resolve_index(item)
-                if idx is None:
-                    if not silent:
-                        print("TGraph.ShortestPathViaVertices - Error: ShortestPath returned an unresolved vertex. Returning None.")
-                    return None
-                clean_segment.append(idx)
+            out = [
+                list(path_indices)
+            ]
 
-            if not final:
-                final.extend(clean_segment)
-            else:
-                # Avoid duplicating the shared endpoint between consecutive segments.
-                if final[-1] == clean_segment[0]:
-                    final.extend(clean_segment[1:])
+            if returnVertices:
+
+                out.append([
+                    graph._vertices[i]
+                    for i in path_indices
+                ])
+
+            if returnEdges:
+
+                out.append(
+                    list(edge_records)
+                )
+
+            if returnCost:
+
+                out.append(
+                    float(cost)
+                )
+
+            return (
+                out[0]
+                if len(out) == 1
+                else tuple(out)
+            )
+
+        # ------------------------------------------------------------------
+        # Loop erasure that preserves required vertices
+        # ------------------------------------------------------------------
+
+        def _contains_required_in_order(
+            path,
+            required,
+        ):
+
+            if not required:
+                return True
+
+            j = 0
+
+            for vertex_index in path:
+
+                if vertex_index == required[j]:
+
+                    j += 1
+
+                    if j == len(required):
+                        return True
+
+            return False
+
+        def _loop_erase_preserving_required(
+            path,
+            edge_records,
+            required,
+        ):
+
+            path = list(path)
+            edge_records = list(edge_records)
+
+            while True:
+
+                seen = {}
+                changed = False
+
+                for j, vertex_index in enumerate(path):
+
+                    if vertex_index not in seen:
+
+                        seen[vertex_index] = j
+                        continue
+
+                    i = seen[vertex_index]
+
+                    candidate_path = (
+                        path[:i + 1]
+                        + path[j + 1:]
+                    )
+
+                    candidate_edges = (
+                        edge_records[:i]
+                        + edge_records[j:]
+                    )
+
+                    if _contains_required_in_order(
+                        candidate_path,
+                        required,
+                    ):
+
+                        path = candidate_path
+                        edge_records = candidate_edges
+                        changed = True
+                        break
+
+                    # This occurrence cannot be erased because it would remove
+                    # a required waypoint. It can still become the start of a
+                    # later removable loop.
+                    seen[vertex_index] = j
+
+                if not changed:
+                    break
+
+            return path, edge_records
+
+        # ------------------------------------------------------------------
+        # Geometry helpers used for final total-cost calculation
+        # ------------------------------------------------------------------
+
+        def _coords(index):
+
+            c = TGraph.Coordinates(
+                graph,
+                index,
+                default=None,
+            )
+
+            try:
+                return (
+                    float(c[0]),
+                    float(c[1]),
+                    float(c[2]) if len(c) > 2 else 0.0,
+                )
+            except Exception:
+                return None
+
+        def _distance(a, b):
+
+            ca = _coords(a)
+            cb = _coords(b)
+
+            if ca is None or cb is None:
+                return None
+
+            dx = cb[0] - ca[0]
+            dy = cb[1] - ca[1]
+            dz = cb[2] - ca[2]
+
+            return math.sqrt(
+                dx * dx
+                + dy * dy
+                + dz * dz
+            )
+
+        def _spread(a, b, c):
+
+            ca = _coords(a)
+            cb = _coords(b)
+            cc = _coords(c)
+
+            if (
+                ca is None
+                or cb is None
+                or cc is None
+            ):
+                return 0.0
+
+            p = (
+                cb[0] - ca[0],
+                cb[1] - ca[1],
+                cb[2] - ca[2],
+            )
+
+            q = (
+                cc[0] - cb[0],
+                cc[1] - cb[1],
+                cc[2] - cb[2],
+            )
+
+            np = math.sqrt(
+                p[0] * p[0]
+                + p[1] * p[1]
+                + p[2] * p[2]
+            )
+
+            nq = math.sqrt(
+                q[0] * q[0]
+                + q[1] * q[1]
+                + q[2] * q[2]
+            )
+
+            if np <= 0.0 or nq <= 0.0:
+                return 0.0
+
+            dot = (
+                p[0] * q[0]
+                + p[1] * q[1]
+                + p[2] * q[2]
+            ) / (np * nq)
+
+            return (
+                math.acos(
+                    max(
+                        -1.0,
+                        min(
+                            1.0,
+                            dot,
+                        ),
+                    )
+                )
+                / math.pi
+            )
+
+        # ------------------------------------------------------------------
+        # Cost of final assembled route
+        # ------------------------------------------------------------------
+
+        def _path_cost(
+            path_indices,
+            edge_records,
+        ):
+
+            if len(path_indices) < 2:
+                return 0.0
+
+            edge_key = (
+                str(edgeKey).strip().lower()
+                if edgeKey is not None
+                else ""
+            )
+
+            geometric = (
+                edgeKey is None
+                or edge_key in (
+                    "",
+                    "length",
+                    "distance",
+                    "metric",
+                )
+            )
+
+            hop_count = edge_key in (
+                "hop",
+                "hops",
+                "unweighted",
+                "unit",
+            )
+
+            total = 0.0
+
+            # --------------------------------------------------------------
+            # Edge + entered-vertex costs
+            # --------------------------------------------------------------
+
+            for i, edge in enumerate(edge_records):
+
+                if callable(edgeCostFunc):
+
+                    try:
+                        edge_cost = _number(
+                            edgeCostFunc(edge),
+                            0.0,
+                        )
+                    except Exception:
+                        edge_cost = 0.0
+
+                elif geometric:
+
+                    edge_cost = _distance(
+                        path_indices[i],
+                        path_indices[i + 1],
+                    )
+
+                    if edge_cost is None:
+                        edge_cost = 1.0
+
+                elif hop_count:
+
+                    edge_cost = 1.0
+
                 else:
-                    final.extend(clean_segment)
+
+                    edge_cost = _number(
+                        _dictionary(edge).get(edgeKey),
+                        0.0,
+                    )
+
+                next_vertex = graph._vertices[
+                    path_indices[i + 1]
+                ]
+
+                if callable(vertexCostFunc):
+
+                    try:
+                        vertex_cost = _number(
+                            vertexCostFunc(next_vertex),
+                            0.0,
+                        )
+                    except Exception:
+                        vertex_cost = 0.0
+
+                elif vertexKey:
+
+                    vertex_cost = _number(
+                        _dictionary(next_vertex).get(vertexKey),
+                        0.0,
+                    )
+
+                else:
+
+                    vertex_cost = 0.0
+
+                total += (
+                    edge_cost
+                    + vertex_cost
+                )
+
+            # --------------------------------------------------------------
+            # Turn costs
+            # --------------------------------------------------------------
+
+            if (
+                callable(turnCostFunc)
+                or bool(turnKey)
+                or _number(turnWeight, 0.0) != 0.0
+            ):
+
+                tw = _number(
+                    turnWeight,
+                    0.0,
+                )
+
+                tp = _number(
+                    turnPower,
+                    1.0,
+                )
+
+                for i in range(
+                    1,
+                    len(path_indices) - 1,
+                ):
+
+                    spread = _spread(
+                        path_indices[i - 1],
+                        path_indices[i],
+                        path_indices[i + 1],
+                    )
+
+                    if callable(turnCostFunc):
+
+                        try:
+                            turn_cost = _number(
+                                turnCostFunc(
+                                    graph._vertices[path_indices[i - 1]],
+                                    graph._vertices[path_indices[i]],
+                                    graph._vertices[path_indices[i + 1]],
+                                    edge_records[i - 1],
+                                    edge_records[i],
+                                    spread,
+                                ),
+                                0.0,
+                            )
+
+                        except Exception:
+                            turn_cost = 0.0
+
+                    else:
+
+                        multiplier = 1.0
+
+                        if turnKey:
+
+                            multiplier = _number(
+                                _dictionary(
+                                    graph._vertices[
+                                        path_indices[i]
+                                    ]
+                                ).get(turnKey),
+                                1.0,
+                            )
+
+                        try:
+                            turn_cost = (
+                                tw
+                                * multiplier
+                                * (spread ** tp)
+                            )
+
+                        except Exception:
+                            turn_cost = (
+                                tw
+                                * multiplier
+                                * spread
+                            )
+
+                    total += turn_cost
+
+            return float(total)
+
+        # ------------------------------------------------------------------
+        # Resolve endpoints
+        # ------------------------------------------------------------------
+
+        start_index = _resolve(
+            startVertex
+        )
+
+        end_index = _resolve(
+            endVertex
+        )
+
+        if (
+            start_index is None
+            or end_index is None
+        ):
+
+            if not silent:
+                print("TGraph.ShortestPathViaVertices - Error: Could not resolve the start or end vertex. Returning None.")
+
+            return None
+
+        # ------------------------------------------------------------------
+        # Determine required intermediate vertices
+        # ------------------------------------------------------------------
+
+        if vertices is not None:
+
+            # Explicit TGraph waypoint list takes precedence.
+            via_inputs = list(vertices)
+
+        elif (
+            viaKey is not None
+            and viaValues is not None
+        ):
+
+            via_inputs = []
+
+            active_vertices = [
+                vertex
+                for vertex in graph._vertices
+                if isinstance(vertex, dict)
+                and vertex.get("active", True)
+            ]
+
+            for via_value in list(viaValues):
+
+                match = None
+
+                for vertex in active_vertices:
+
+                    if (
+                        _dictionary(vertex).get(
+                            viaKey,
+                            None,
+                        )
+                        == via_value
+                    ):
+
+                        match = vertex.get(
+                            "index"
+                        )
+
+                        break
+
+                if match is None:
+
+                    if not silent:
+                        print(
+                            f"TGraph.ShortestPathViaVertices - Error: Could not find "
+                            f"a vertex whose dictionary value at '{viaKey}' equals "
+                            f"{via_value!r}. Returning None."
+                        )
+
+                    return None
+
+                via_inputs.append(
+                    match
+                )
+
+        else:
+
+            via_inputs = []
+
+        # ------------------------------------------------------------------
+        # Resolve via inputs
+        # ------------------------------------------------------------------
+
+        via_indices = []
+
+        for vertex in via_inputs:
+
+            idx = _resolve(vertex)
+
+            if idx is None:
+
+                if not silent:
+                    print("TGraph.ShortestPathViaVertices - Error: Could not resolve one or more via vertices. Returning None.")
+
+                return None
+
+            via_indices.append(
+                idx
+            )
+
+        sequence = (
+            [start_index]
+            + via_indices
+            + [end_index]
+        )
+
+        # Consecutive duplicates do not define another routing segment.
+        compact_sequence = []
+
+        for index in sequence:
+
+            if (
+                not compact_sequence
+                or compact_sequence[-1] != index
+            ):
+
+                compact_sequence.append(
+                    index
+                )
+
+        if len(compact_sequence) == 1:
+
+            return _format(
+                [compact_sequence[0]],
+                [],
+                0.0,
+            )
+
+        # ------------------------------------------------------------------
+        # No actual via vertices: exact ShortestPath delegation
+        # ------------------------------------------------------------------
+
+        if len(compact_sequence) == 2:
+
+            return TGraph.ShortestPath(
+                graph,
+                compact_sequence[0],
+                compact_sequence[1],
+                mode=mode,
+                useNumba=useNumba,
+                vertexKey=vertexKey,
+                edgeKey=edgeKey,
+                turnWeight=turnWeight,
+                turnPower=turnPower,
+                turnKey=turnKey,
+                directed=directed,
+                edgeFilter=edgeFilter,
+                vertexFilter=vertexFilter,
+                edgeCostFunc=edgeCostFunc,
+                vertexCostFunc=vertexCostFunc,
+                turnCostFunc=turnCostFunc,
+                useAStar=useAStar,
+                heuristicScale=heuristicScale,
+                returnVertices=returnVertices,
+                returnEdges=returnEdges,
+                returnCost=returnCost,
+                snapEndpoints=False,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # ------------------------------------------------------------------
+        # Solve each required segment
+        # ------------------------------------------------------------------
+
+        final_path = []
+        final_edges = []
+
+        for a, b in zip(
+            compact_sequence[:-1],
+            compact_sequence[1:],
+        ):
+
+            result = TGraph.ShortestPath(
+                graph,
+                a,
+                b,
+                mode=mode,
+                useNumba=useNumba,
+                vertexKey=vertexKey,
+                edgeKey=edgeKey,
+                turnWeight=turnWeight,
+                turnPower=turnPower,
+                turnKey=turnKey,
+                directed=directed,
+                edgeFilter=edgeFilter,
+                vertexFilter=vertexFilter,
+                edgeCostFunc=edgeCostFunc,
+                vertexCostFunc=vertexCostFunc,
+                turnCostFunc=turnCostFunc,
+                useAStar=useAStar,
+                heuristicScale=heuristicScale,
+                returnVertices=False,
+                returnEdges=True,
+                returnCost=False,
+                snapEndpoints=False,
+                tolerance=tolerance,
+                silent=True,
+            )
+
+            if result is None:
+
+                if not silent:
+                    print(
+                        f"TGraph.ShortestPathViaVertices - Warning: "
+                        f"No path found between {a} and {b}. Returning None."
+                    )
+
+                return None
+
+            try:
+                segment_path, segment_edges = result
+            except Exception:
+
+                if not silent:
+                    print("TGraph.ShortestPathViaVertices - Error: Unexpected ShortestPath return value. Returning None.")
+
+                return None
+
+            if not segment_path:
+                return None
+
+            if not final_path:
+
+                final_path.extend(
+                    segment_path
+                )
+
+            else:
+
+                # Shared endpoint already exists in final_path.
+                final_path.extend(
+                    segment_path[1:]
+                )
+
+            final_edges.extend(
+                segment_edges
+            )
+
+        # ------------------------------------------------------------------
+        # Optional loop erasure
+        # ------------------------------------------------------------------
 
         if optimize:
-            final = _loop_erased_path(final)
 
-        return final
+            final_path, final_edges = _loop_erase_preserving_required(
+                final_path,
+                final_edges,
+                compact_sequence,
+            )
+
+        # Recalculate cost over the complete assembled path. This is important
+        # because it also counts turn penalties at the boundaries between
+        # consecutive via segments.
+        cost = (
+            _path_cost(
+                final_path,
+                final_edges,
+            )
+            if returnCost
+            else 0.0
+        )
+
+        return _format(
+            final_path,
+            final_edges,
+            cost,
+        )
     # @staticmethod
     # def ShortestPathViaVertices(
     #     graph: "TGraph",
@@ -22458,7 +24982,15 @@ class TGraph:
         b = TGraph.VertexIndex(graph, vertexB)
         if a is None or b is None:
             return None
-        path = TGraph.ShortestPath(graph, a, b, mode=mode)
+        path = TGraph.ShortestPath(
+            graph,
+            a,
+            b,
+            mode=mode,
+            edgeKey="hop",
+            snapEndpoints=False,
+            silent=silent,
+        )
         return None if path is None else max(0, len(path) - 1)
 
     @staticmethod
