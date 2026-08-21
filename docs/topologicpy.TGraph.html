@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.62 documentation</title>
+  <title>topologicpy.TGraph module &mdash; topologicpy 0.9.63 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.62
+                0.9.63
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -753,7 +753,7 @@
 <td><p>Partitions the input graph and stores partition ids in dictionaries.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Path" title="topologicpy.TGraph.TGraph.Path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Path</span></code></a>(graph, vertexA, vertexB[, tolerance, ...])</p></td>
-<td><p>Returns a path between two vertices of the input TGraph.</p></td>
+<td><p>Returns a least-cost path between two vertices of the input TGraph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.PathLength" title="topologicpy.TGraph.TGraph.PathLength"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PathLength</span></code></a>(graph, path[, mantissa, silent])</p></td>
 <td><p>Computes the geometric length of a TGraph path by summing the Euclidean distances between consecutive vertex coordinates.</p></td>
@@ -843,19 +843,19 @@
 <td><p>Sets the dictionary of a vertex in this TGraph.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPath" title="topologicpy.TGraph.TGraph.ShortestPath"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPath</span></code></a>(graph, source, target[, mode, ...])</p></td>
-<td><p>Returns a shortest path between two vertices of the input TGraph.</p></td>
+<td><p>Returns a least-cost path between two vertices of the input TGraph.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathTree" title="topologicpy.TGraph.TGraph.ShortestPathTree"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathTree</span></code></a>(graph, source[, mode, ...])</p></td>
-<td><p>Returns a shortest path tree rooted at the input source vertex.</p></td>
+<td><p>Returns a least-cost shortest-path tree rooted at the input source vertex.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathViaVertices" title="topologicpy.TGraph.TGraph.ShortestPathViaVertices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathViaVertices</span></code></a>(graph, startVertex, ...)</p></td>
-<td><p>Returns a shortest path that passes through a sequence of required vertices.</p></td>
+<td><p>Returns a least-cost path that passes through required vertices in order.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPaths" title="topologicpy.TGraph.TGraph.ShortestPaths"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPaths</span></code></a>(graph, pairs[, mode, ...])</p></td>
-<td><p>Returns shortest paths between all requested vertex pairs of the input TGraph.</p></td>
+<td><p>Returns least-cost paths for all requested source-target pairs.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.ShortestPathsFromSource" title="topologicpy.TGraph.TGraph.ShortestPathsFromSource"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ShortestPathsFromSource</span></code></a>(graph, source[, ...])</p></td>
-<td><p>Returns shortest paths from one source vertex to reachable vertices.</p></td>
+<td><p>Returns least-cost paths from one source vertex to the requested targets.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.TGraph.TGraph.Show" title="topologicpy.TGraph.TGraph.Show"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Show</span></code></a>(*graphs[, sagitta, absolute, sides, ...])</p></td>
 <td><p>Displays a representation of the input TGraph.</p></td>
@@ -6659,25 +6659,29 @@ operation.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.Path">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">Path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexA</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexB</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.Path" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a path between two vertices of the input TGraph.</p>
+<dd><p>Returns a least-cost path between two vertices of the input TGraph.</p>
+<p>This is a convenience wrapper around TGraph.ShortestPath using its default
+geometric-length cost.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>vertexA</strong><span class="classifier">Any</span></dt><dd><p>The first input vertex or vertex index.</p>
+<dt><strong>vertexA</strong><span class="classifier">Any</span></dt><dd><p>The first input vertex. This may be a stable vertex index, TGraph vertex
+record, Topologic vertex, or coordinate-like input.</p>
 </dd>
-<dt><strong>vertexB</strong><span class="classifier">Any</span></dt><dd><p>The second input vertex or vertex index.</p>
+<dt><strong>vertexB</strong><span class="classifier">Any</span></dt><dd><p>The second input vertex. This may be a stable vertex index, TGraph vertex
+record, Topologic vertex, or coordinate-like input.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
-<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, error and warning messages are suppressed. Default is False.</p>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[int]</dt><dd><p>The resulting path list.</p>
+<dt>list or None</dt><dd><p>The ordered list of stable TGraph vertex indices forming the path.</p>
 </dd>
 </dl>
 </dd>
@@ -7236,28 +7240,93 @@ that representation. It only updates the lightweight TGraph record.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ShortestPath">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPath" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a shortest path between two vertices of the input TGraph.</p>
-<dl class="field-list simple">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPath</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnWeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnPower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">bool</span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAStar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristicScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnCost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapEndpoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPath" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a least-cost path between two vertices of the input TGraph.</p>
+<p>The default cost is geometric edge length. The method also supports vertex
+costs, edge dictionary costs, turn penalties, custom filters and cost
+functions, directed traversal, A* search, and unweighted hop-count routing.</p>
+<dl class="field-list">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dd class="field-odd"><dl>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>source</strong><span class="classifier">int</span></dt><dd><p>The input source vertex, vertex index, or source identifier.</p>
+<dt><strong>source</strong><span class="classifier">Any</span></dt><dd><p>The source vertex. This may be a stable vertex index, a TGraph vertex
+record, a Topologic vertex, or a coordinate sequence.</p>
 </dd>
-<dt><strong>target</strong><span class="classifier">int</span></dt><dd><p>The input target vertex, vertex index, graph, or comparison value, depending on
-context.</p>
+<dt><strong>target</strong><span class="classifier">Any</span></dt><dd><p>The target vertex. This may be a stable vertex index, a TGraph vertex
+record, a Topologic vertex, or a coordinate sequence.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>Traversal mode: “out”, “in”, or “all”. “out” respects stored directed
+edges, “in” traverses directed edges in reverse, and “all” treats all
+edges as bidirectional. Undirected edges are bidirectional in every mode.
+Default is “out”.</p>
 </dd>
-<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, Numba acceleration is used when available. Default is False.</p>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, Numba acceleration is used when available for pure hop-count
+routing (edgeKey=”hop”) when no advanced routing options require the
+Python engine. Default is False.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary key added to the cost when a vertex is entered.
+The source cost is always zero. Default is “”.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric edge dictionary key used as traversal cost. “Length”, “Distance”,
+or “Metric” uses Euclidean endpoint distance. “hop”, “hops”,
+“unweighted”, or “unit” assigns cost 1 to every edge. Empty or None uses
+geometric length. Default is “Length”.</p>
+</dd>
+<dt><strong>turnWeight</strong><span class="classifier">float , optional</span></dt><dd><p>Multiplier for the built-in turn penalty. Zero disables it. Default is 0.</p>
+</dd>
+<dt><strong>turnPower</strong><span class="classifier">float , optional</span></dt><dd><p>Exponent applied to normalized turn severity. Default is 1.</p>
+</dd>
+<dt><strong>turnKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary key that locally scales built-in turn cost.
+Missing values default to 1. Default is “”.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>Compatibility override for Graph.ShortestPath. True is equivalent to
+mode=”out”; False is equivalent to mode=”all”; None uses mode.
+Default is None.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable(edgeRecord) -&gt; bool , optional</span></dt><dd><p>Returns False for edges that may not be traversed. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable(vertexRecord) -&gt; bool , optional</span></dt><dd><p>Returns False for vertices that may not be visited. Source and target
+are always allowed. Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable(edgeRecord) -&gt; float , optional</span></dt><dd><p>Custom edge cost. Overrides edgeKey. Default is None.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable(vertexRecord) -&gt; float , optional</span></dt><dd><p>Custom vertex cost. Overrides vertexKey. Default is None.</p>
+</dd>
+<dt><strong>turnCostFunc</strong><span class="classifier">callable(prevVertex, currentVertex, nextVertex,</span></dt><dd><blockquote>
+<div><p>inEdge, outEdge, spread) -&gt; float , optional</p>
+</div></blockquote>
+<p>Custom turn cost. Vertex and edge arguments are TGraph records. spread
+is normalized to [0, 1], where 0 is straight and 1 is a reversal.
+Overrides turnWeight, turnPower, and turnKey. Default is None.</p>
+</dd>
+<dt><strong>useAStar</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, A* is used when geometric edge length is the base edge cost.
+Otherwise Dijkstra search is used. Default is False.</p>
+</dd>
+<dt><strong>heuristicScale</strong><span class="classifier">float , optional</span></dt><dd><p>Euclidean A* heuristic multiplier clamped to [0, 1]. Default is 1.</p>
+</dd>
+<dt><strong>returnVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, also returns the ordered live TGraph vertex records.
+Default is False.</p>
+</dd>
+<dt><strong>returnEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, also returns the ordered live TGraph edge records.
+Default is False.</p>
+</dd>
+<dt><strong>returnCost</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, also returns the total routing cost. Default is False.</p>
+</dd>
+<dt><strong>snapEndpoints</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, unresolved source/target inputs are snapped to the nearest
+active TGraph vertices. Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Retained for API compatibility. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>Optional[List[int]]</dt><dd><p>The resulting shortest path list.</p>
+<dt>list or tuple or None</dt><dd><p>By default, the ordered list of stable vertex indices. Optional return
+data are appended in this order: vertex records, edge records, total cost.
+Returns None if no path exists.</p>
 </dd>
 </dl>
 </dd>
@@ -7266,27 +7335,73 @@ Default is ‘out’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ShortestPathTree">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includePaths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">str</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathTree" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a shortest path tree rooted at the input source vertex.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathTree</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includePaths</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">includeEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapEndpoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathTree" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a least-cost shortest-path tree rooted at the input source vertex.</p>
+<p>The tree supports the same additive edge and vertex costs as
+TGraph.ShortestPath. Turn-dependent costs are intentionally not accepted:
+when path cost depends on the incoming edge, a single parent per vertex is
+not mathematically sufficient to represent all shortest paths.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>source</strong><span class="classifier">int</span></dt><dd><p>The input source vertex, vertex index, or source identifier.</p>
+<dt><strong>source</strong><span class="classifier">Any</span></dt><dd><p>The source vertex. This may be a stable vertex index, TGraph vertex
+record, Topologic vertex, or coordinate-like input.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>Traversal mode: “out”, “in”, or “all”. Default is “out”.</p>
 </dd>
-<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, Numba acceleration is used when available. Default is False.</p>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, Numba acceleration is used when available for pure hop-count
+routing. Default is False.</p>
 </dd>
-<dt><strong>includePaths</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, include paths are included. Default is False.</p>
+<dt><strong>includePaths</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned dictionary includes complete vertex paths from
+the source to every reachable vertex. Default is False.</p>
+</dd>
+<dt><strong>includeEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the returned dictionary includes ordered edge-index paths.
+Default is False.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary key added to the cost when a vertex is
+entered. Default is “”.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric edge dictionary key used as traversal cost. “Length”,
+“Distance”, or “Metric” uses geometric edge length. “hop”, “hops”,
+“unweighted”, or “unit” uses unit edge cost. Default is “Length”.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>Compatibility override. True is equivalent to mode=”out”; False is
+equivalent to mode=”all”; None uses mode. Default is None.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable(edgeRecord) -&gt; bool , optional</span></dt><dd><p>Returns False for edges that may not be traversed. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable(vertexRecord) -&gt; bool , optional</span></dt><dd><p>Returns False for vertices that may not be traversed. The source vertex
+is always allowed. Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable(edgeRecord) -&gt; float , optional</span></dt><dd><p>Custom edge cost overriding edgeKey. Default is None.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable(vertexRecord) -&gt; float , optional</span></dt><dd><p>Custom vertex cost overriding vertexKey. Default is None.</p>
+</dd>
+<dt><strong>snapEndpoints</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, unresolved source input is snapped to the nearest active graph
+vertex. Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>Optional[Dict[str, Any]]</dt><dd><p>The resulting shortest path tree dictionary.</p>
+<dt>dict or None</dt><dd><p>A dictionary containing:</p>
+<ul class="simple">
+<li><p>source: resolved source vertex index</p></li>
+<li><p>mode: traversal mode</p></li>
+<li><p>parent: predecessor vertex for each vertex</p></li>
+<li><p>parentEdge: predecessor edge for each vertex</p></li>
+<li><p>distance: least routing cost from the source</p></li>
+<li><p>hops: number of edges from the source</p></li>
+<li><p>reachable: reachable vertex indices</p></li>
+<li><p>paths: optional complete vertex paths</p></li>
+<li><p>edgePaths: optional complete edge-index paths</p></li>
+</ul>
 </dd>
 </dl>
 </dd>
@@ -7295,38 +7410,85 @@ Default is ‘out’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ShortestPathViaVertices">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathViaVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">startVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathViaVertices" title="Permalink to this definition"></a></dt>
-<dd><p>Returns a shortest path that passes through a sequence of required vertices.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathViaVertices</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">startVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">endVertex</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">optimize</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">viaValues</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">list</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnWeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnPower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAStar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristicScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnCost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapEndpoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathViaVertices" title="Permalink to this definition"></a></dt>
+<dd><p>Returns a least-cost path that passes through required vertices in order.</p>
+<p>Required vertices can be supplied directly through <cite>vertices</cite>, or selected
+by matching <cite>viaValues</cite> against the vertex dictionary key <cite>viaKey</cite>.
+Explicit <cite>vertices</cite> take precedence when both mechanisms are supplied.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>startVertex</strong><span class="classifier">Any</span></dt><dd><p>The start vertex. This can be a TGraph vertex index, TGraph vertex
-record, Topologic vertex, or coordinate-like input if NearestVertex can
-resolve it.</p>
+<dt><strong>startVertex</strong><span class="classifier">Any</span></dt><dd><p>The start vertex.</p>
 </dd>
-<dt><strong>endVertex</strong><span class="classifier">Any</span></dt><dd><p>The end vertex. This can be a TGraph vertex index, TGraph vertex record,
-Topologic vertex, or coordinate-like input if NearestVertex can resolve it.</p>
+<dt><strong>endVertex</strong><span class="classifier">Any</span></dt><dd><p>The end vertex.</p>
 </dd>
-<dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>The required intermediate vertices or vertex indices. Default is None.</p>
+<dt><strong>vertices</strong><span class="classifier">list , optional</span></dt><dd><p>Ordered intermediate vertices through which the path must pass.
+Default is None.</p>
 </dd>
-<dt><strong>optimize</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, repeated vertices caused by the path doubling back onto itself
-are eliminated using loop-erasure. This can produce a simpler valid path
-from the start vertex to the end vertex, but the resulting path may no
-longer pass through all specified intermediate vertices. Default is False.</p>
+<dt><strong>optimize</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, removable loops are erased after the route is assembled.
+Loops are removed only when all required vertices remain present in the
+requested order. Default is False.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Currently used only as a compatibility argument
-for future coordinate-based resolution. Default is 0.0001.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary key added to path cost. Default is “”.</p>
+</dd>
+<dt><strong>viaKey</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key used to locate required via vertices when
+<cite>vertices</cite> is None. Default is None.</p>
+</dd>
+<dt><strong>viaValues</strong><span class="classifier">list , optional</span></dt><dd><p>Ordered dictionary values to locate through viaKey. Default is None.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge cost key. “Length” uses geometric length. Default is “Length”.</p>
+</dd>
+<dt><strong>turnWeight</strong><span class="classifier">float , optional</span></dt><dd><p>Built-in turn-cost multiplier. Default is 0.</p>
+</dd>
+<dt><strong>turnPower</strong><span class="classifier">float , optional</span></dt><dd><p>Turn severity exponent. Default is 1.</p>
+</dd>
+<dt><strong>turnKey</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key used to scale turn cost. Default is “”.</p>
+</dd>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>Traversal mode: “out”, “in”, or “all”. Default is “out”.</p>
+</dd>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, Numba acceleration is used where applicable. Default is False.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>Compatibility direction override. Default is None.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Edge traversal filter. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Vertex traversal filter. Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom edge cost function. Default is None.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom vertex cost function. Default is None.</p>
+</dd>
+<dt><strong>turnCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom turn cost function. Default is None.</p>
+</dd>
+<dt><strong>useAStar</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, A* is used for segment searches when applicable.
+Default is False.</p>
+</dd>
+<dt><strong>heuristicScale</strong><span class="classifier">float , optional</span></dt><dd><p>A* heuristic multiplier. Default is 1.</p>
+</dd>
+<dt><strong>returnVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, ordered TGraph vertex records are also returned.
+Default is False.</p>
+</dd>
+<dt><strong>returnEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, ordered TGraph edge records are also returned.
+Default is False.</p>
+</dd>
+<dt><strong>returnCost</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, total cost of the complete returned route is also returned.
+Default is False.</p>
+</dd>
+<dt><strong>snapEndpoints</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, unresolved inputs are snapped to nearest active graph vertices.
+Default is True.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>list or None</dt><dd><p>The resulting path as a list of TGraph vertex indices, or None if a
-required segment cannot be found.</p>
+<dt>list or tuple or None</dt><dd><p>By default, the ordered stable vertex indices. Optional data are appended
+in this order: vertex records, edge records, total cost.</p>
 </dd>
 </dl>
 </dd>
@@ -7335,29 +7497,76 @@ required segment cannot be found.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ShortestPaths">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pairs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Any</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupThreshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.5</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPaths" title="Permalink to this definition"></a></dt>
-<dd><p>Returns shortest paths between all requested vertex pairs of the input TGraph.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPaths</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">pairs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">grouped</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'auto'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">groupThreshold</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.5</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnWeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnPower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAStar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristicScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnCost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapEndpoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPaths" title="Permalink to this definition"></a></dt>
+<dd><p>Returns least-cost paths for all requested source-target pairs.</p>
+<p>The current TGraph meaning of ShortestPaths is preserved: this is a batch
+operation over source-target pairs, not a k-shortest-alternative-paths
+operation.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>pairs</strong><span class="classifier">Iterable[Tuple[int, int]]</span></dt><dd><p>The input pairs value.</p>
+<dt><strong>pairs</strong><span class="classifier">iterable</span></dt><dd><p>An iterable of (source, target) pairs.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>Traversal mode: “out”, “in”, or “all”. Default is “out”.</p>
 </dd>
-<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, Numba acceleration is used when available. Default is False.</p>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, Numba acceleration is used where applicable. Default is False.</p>
 </dd>
-<dt><strong>grouped</strong><span class="classifier">Any , optional</span></dt><dd><p>The input grouped value. Default is ‘auto’.</p>
+<dt><strong>grouped</strong><span class="classifier">bool or str , optional</span></dt><dd><p>If True, requests sharing a source are grouped and solved together.
+If “auto”, grouping is selected using groupThreshold. Default is “auto”.</p>
 </dd>
-<dt><strong>groupThreshold</strong><span class="classifier">float , optional</span></dt><dd><p>The input group threshold value. Default is 1.5.</p>
+<dt><strong>groupThreshold</strong><span class="classifier">float , optional</span></dt><dd><p>Minimum average targets per source required for automatic grouping.
+Default is 1.5.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary cost key. Default is “”.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge cost key. “Length” uses geometric length. Default is “Length”.</p>
+</dd>
+<dt><strong>turnWeight</strong><span class="classifier">float , optional</span></dt><dd><p>Built-in turn-cost multiplier. Default is 0.</p>
+</dd>
+<dt><strong>turnPower</strong><span class="classifier">float , optional</span></dt><dd><p>Turn severity exponent. Default is 1.</p>
+</dd>
+<dt><strong>turnKey</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key used to scale turn cost. Default is “”.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>Compatibility direction override. Default is None.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Edge traversal filter. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Vertex traversal filter. Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom edge cost function. Default is None.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom vertex cost function. Default is None.</p>
+</dd>
+<dt><strong>turnCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom turn cost function. Default is None.</p>
+</dd>
+<dt><strong>useAStar</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, A* is used for individual searches when applicable.
+Default is False.</p>
+</dd>
+<dt><strong>heuristicScale</strong><span class="classifier">float , optional</span></dt><dd><p>A* heuristic multiplier. Default is 1.</p>
+</dd>
+<dt><strong>returnVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, vertex records are also returned for each path.
+Default is False.</p>
+</dd>
+<dt><strong>returnEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, edge records are also returned for each path.
+Default is False.</p>
+</dd>
+<dt><strong>returnCost</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, total routing cost is also returned for each path.
+Default is False.</p>
+</dd>
+<dt><strong>snapEndpoints</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, unresolved endpoints are snapped to active graph vertices.
+Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>List[Optional[List[int]]]</dt><dd><p>The resulting shortest paths list.</p>
+<dt>list</dt><dd><p>Path results corresponding one-to-one with the input pairs.</p>
 </dd>
 </dl>
 </dd>
@@ -7366,29 +7575,74 @@ Default is ‘out’.</p>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.TGraph.TGraph.ShortestPathsFromSource">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathsFromSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Iterable</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnTree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">Dict</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">,</span></span><span class="w"> </span><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">List</span><span class="p"><span class="pre">[</span></span><span class="pre">int</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span></span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathsFromSource" title="Permalink to this definition"></a></dt>
-<dd><p>Returns shortest paths from one source vertex to reachable vertices.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ShortestPathsFromSource</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">graph</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference internal" href="#topologicpy.TGraph.TGraph" title="topologicpy.TGraph.TGraph"><span class="pre">TGraph</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">source</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">targets</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'out'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useNumba</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnTree</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">'Length'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnWeight</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnPower</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnKey</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexFilter</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edgeCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">vertexCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">turnCostFunc</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">callable</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">useAStar</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">heuristicScale</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnVertices</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnEdges</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">returnCost</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">snapEndpoints</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.TGraph.TGraph.ShortestPathsFromSource" title="Permalink to this definition"></a></dt>
+<dd><p>Returns least-cost paths from one source vertex to the requested targets.</p>
+<p>For ordinary additive edge and vertex costs, one shortest-path tree is reused
+for efficiency. If turn-dependent costs or a vertex filter are supplied,
+each target is solved independently using TGraph.ShortestPath so that the
+results remain exactly consistent with that method.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
-<dt><strong>graph</strong><span class="classifier">‘TGraph’</span></dt><dd><p>The input TGraph.</p>
+<dt><strong>graph</strong><span class="classifier">TGraph</span></dt><dd><p>The input TGraph.</p>
 </dd>
-<dt><strong>source</strong><span class="classifier">int</span></dt><dd><p>The input source vertex, vertex index, or source identifier.</p>
+<dt><strong>source</strong><span class="classifier">Any</span></dt><dd><p>The source vertex.</p>
 </dd>
-<dt><strong>targets</strong><span class="classifier">Optional[Iterable[int]] , optional</span></dt><dd><p>The input targets value. Default is None.</p>
+<dt><strong>targets</strong><span class="classifier">iterable , optional</span></dt><dd><p>The target vertices. If None, all active graph vertices are used.</p>
 </dd>
-<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>The traversal or adjacency mode. Valid values are typically “out”, “in”, or “all”.
-Default is ‘out’.</p>
+<dt><strong>mode</strong><span class="classifier">str , optional</span></dt><dd><p>Traversal mode: “out”, “in”, or “all”. Default is “out”.</p>
 </dd>
-<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, Numba acceleration is used when available. Default is False.</p>
+<dt><strong>useNumba</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, Numba acceleration is used where applicable. Default is False.</p>
 </dd>
-<dt><strong>returnTree</strong><span class="classifier">bool , optional</span></dt><dd><p>The input return tree value. Default is False.</p>
+<dt><strong>returnTree</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, the reusable shortest-path tree is returned under the “_tree”
+key when such a tree is mathematically valid. Default is False.</p>
+</dd>
+<dt><strong>vertexKey</strong><span class="classifier">str , optional</span></dt><dd><p>Numeric vertex dictionary cost key. Default is “”.</p>
+</dd>
+<dt><strong>edgeKey</strong><span class="classifier">str , optional</span></dt><dd><p>Edge cost key. “Length” uses geometric length. Default is “Length”.</p>
+</dd>
+<dt><strong>turnWeight</strong><span class="classifier">float , optional</span></dt><dd><p>Built-in turn-cost multiplier. Default is 0.</p>
+</dd>
+<dt><strong>turnPower</strong><span class="classifier">float , optional</span></dt><dd><p>Turn severity exponent. Default is 1.</p>
+</dd>
+<dt><strong>turnKey</strong><span class="classifier">str , optional</span></dt><dd><p>Vertex dictionary key used to scale turn cost. Default is “”.</p>
+</dd>
+<dt><strong>directed</strong><span class="classifier">bool , optional</span></dt><dd><p>Compatibility direction override. Default is None.</p>
+</dd>
+<dt><strong>edgeFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Edge traversal filter. Default is None.</p>
+</dd>
+<dt><strong>vertexFilter</strong><span class="classifier">callable , optional</span></dt><dd><p>Vertex traversal filter. Default is None.</p>
+</dd>
+<dt><strong>edgeCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom edge cost function. Default is None.</p>
+</dd>
+<dt><strong>vertexCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom vertex cost function. Default is None.</p>
+</dd>
+<dt><strong>turnCostFunc</strong><span class="classifier">callable , optional</span></dt><dd><p>Custom turn cost function. Default is None.</p>
+</dd>
+<dt><strong>useAStar</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, A* is used for individual target searches when applicable.
+Default is False.</p>
+</dd>
+<dt><strong>heuristicScale</strong><span class="classifier">float , optional</span></dt><dd><p>A* heuristic multiplier. Default is 1.</p>
+</dd>
+<dt><strong>returnVertices</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, path vertex records are also returned. Default is False.</p>
+</dd>
+<dt><strong>returnEdges</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, path edge records are also returned. Default is False.</p>
+</dd>
+<dt><strong>returnCost</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, total routing cost is also returned. Default is False.</p>
+</dd>
+<dt><strong>snapEndpoints</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, unresolved endpoints are snapped to active graph vertices.
+Default is True.</p>
+</dd>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
+</dd>
+<dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
 <dd class="field-even"><dl class="simple">
-<dt>Dict[int, Optional[List[int]]]</dt><dd><p>The resulting shortest paths from source list.</p>
+<dt>dict</dt><dd><p>A dictionary mapping target vertices or resolved target indices to path
+results.</p>
 </dd>
 </dl>
 </dd>

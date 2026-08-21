@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy &mdash; topologicpy 0.9.62 documentation</title>
+  <title>topologicpy &mdash; topologicpy 0.9.63 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -32,7 +32,7 @@
             <a href="#" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.62
+                0.9.63
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -179,7 +179,7 @@
 <div class="highlight-ttl notranslate"><div class="highlight"><pre><span></span>@<span class="nv">prefix</span><span class="w"> </span><span class="nv">top</span>:<span class="w"> </span><span class="o">&lt;</span><span class="nv">http</span>:<span class="o">//</span><span class="nv">w3id</span>.<span class="nv">org</span><span class="o">/</span><span class="nv">topologicpy</span>#<span class="o">&gt;</span><span class="w"> </span>.
 
 <span class="nl">:room_101</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Room</span><span class="w"> </span><span class="c1">;</span>
-<span class="w">    </span><span class="nv">top</span>:<span class="nv">hasArea</span><span class="w"> </span><span class="s2">&quot;24.6&quot;</span><span class="o">^^</span><span class="nv">xsd</span>:<span class="nv">double</span><span class="w"> </span><span class="c1">;</span>
+<span class="w">    </span><span class="nv">top</span>:<span class="nv">hasArea</span><span class="w"> </span><span class="s2">"24.6"</span><span class="o">^^</span><span class="nv">xsd</span>:<span class="nv">double</span><span class="w"> </span><span class="c1">;</span>
 <span class="w">    </span><span class="nv">top</span>:<span class="nv">adjacentTo</span><span class="w"> </span>:<span class="nv">corridor_1</span><span class="w"> </span>.
 
 <span class="nl">:wall_12</span><span class="w"> </span><span class="nv">a</span><span class="w"> </span><span class="nv">top</span>:<span class="nv">Wall</span><span class="w"> </span><span class="c1">;</span>
@@ -191,9 +191,9 @@
 <h3>Python Example<a class="headerlink" href="#python-example" title="Permalink to this heading"></a></h3>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">topologicpy.Ontology</span><span class="w"> </span><span class="kn">import</span> <span class="n">Ontology</span>
 
-<span class="n">Ontology</span><span class="o">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">&quot;top:Room&quot;</span><span class="p">)</span>
-<span class="n">Ontology</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">&quot;Room 101&quot;</span><span class="p">)</span>
-<span class="n">Ontology</span><span class="o">.</span><span class="n">SetCategory</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">&quot;space&quot;</span><span class="p">)</span>
+<span class="n">Ontology</span><span class="o">.</span><span class="n">SetClass</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">"top:Room"</span><span class="p">)</span>
+<span class="n">Ontology</span><span class="o">.</span><span class="n">SetLabel</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">"Room 101"</span><span class="p">)</span>
+<span class="n">Ontology</span><span class="o">.</span><span class="n">SetCategory</span><span class="p">(</span><span class="n">cell</span><span class="p">,</span> <span class="s2">"space"</span><span class="p">)</span>
 
 <span class="n">ttl</span> <span class="o">=</span> <span class="n">Ontology</span><span class="o">.</span><span class="n">TTLString</span><span class="p">(</span><span class="n">cell</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">ttl</span><span class="p">)</span>

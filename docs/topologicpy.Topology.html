@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.62 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.63 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.62
+                0.9.63
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -1074,9 +1074,9 @@ types (lists/dicts) that preserves equality semantics.
 - If you need the original (potentially unhashable) values back for complex keys,
 you can inspect any representative item’s dictionary value in that group.</p>
 <p class="rubric">Examples</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">BinByDictionaryKey</span><span class="p">(</span><span class="n">topologies</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;material&quot;</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">metal_group</span> <span class="o">=</span> <span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steel&quot;</span><span class="p">,</span> <span class="p">[])</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">missing</span> <span class="o">=</span> <span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;__MISSING__&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span><span class="p">,</span> <span class="n">counts</span> <span class="o">=</span> <span class="n">BinByDictionaryKey</span><span class="p">(</span><span class="n">topologies</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"material"</span><span class="p">,</span> <span class="n">return_counts</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metal_group</span> <span class="o">=</span> <span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"steel"</span><span class="p">,</span> <span class="p">[])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">missing</span> <span class="o">=</span> <span class="n">groups</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"__MISSING__"</span><span class="p">,</span> <span class="p">[])</span>
 </pre></div>
 </div>
 </dd></dl>
