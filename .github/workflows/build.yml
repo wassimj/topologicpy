@@ -187,21 +187,17 @@ jobs:
           cache-environment: true
           cache-downloads: true
       - name: Set version from git tag/readable name (${{ needs.prepare-build-info.outputs.anyversion }})
-        shell: micromamba-shell {0}
         run: echo "__version__ = '${{ needs.prepare-build-info.outputs.anyversion }}'" > src/topologicpy/version.py
       - name: Install TopologicPy and test dependencies
-        shell: micromamba-shell {0}
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -e '.[test]'
+          micromamba run -n topologicpy-occ python -m pip install --upgrade pip
+          micromamba run -n topologicpy-occ python -m pip install -e '.[test]'
       - name: Verify PythonOCC backend
-        shell: micromamba-shell {0}
         run: |
-          python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'PythonOCCBackend'"
-          python -c "import OCC; print('pythonocc/OCC import: OK')"
+          micromamba run -n topologicpy-occ python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'PythonOCCBackend'"
+          micromamba run -n topologicpy-occ python -c "import OCC; print('pythonocc/OCC import: OK')"
       - name: Run full test suite with PythonOCC
-        shell: micromamba-shell {0}
-        run: pytest
+        run: micromamba run -n topologicpy-occ pytest
 
   publish-pypi-release:
     runs-on: ubuntu-latest
