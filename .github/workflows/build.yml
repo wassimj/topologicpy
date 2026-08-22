@@ -117,7 +117,7 @@ jobs:
           if-no-files-found: error
           retention-days: 60
 
-  test-topologiccore:
+  test:
     name: Test TopologicCore with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     env:
@@ -162,7 +162,7 @@ jobs:
         run: pytest
 
   test-pythonocc:
-    name: Test PythonOCC with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
+    name: Test PythonOCC 7.9.3 with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     needs:
       - prepare-build-info
@@ -176,7 +176,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     steps:
       - uses: actions/checkout@v6
-      - name: Create PythonOCC environment with Python ${{ matrix.python-version }}
+      - name: Create PythonOCC environment
         uses: mamba-org/setup-micromamba@v3
         with:
           environment-name: topologicpy-occ
@@ -197,10 +197,9 @@ jobs:
       - name: Verify PythonOCC backend
         shell: micromamba-shell {0}
         run: |
-          python -c "import sys; print('Python:', sys.version)"
           python -c "from topologicpy.Core import Core; backend = Core.Backend(); print('Active backend:', backend.__class__.__name__); assert backend.__class__.__name__ == 'PythonOCCBackend'"
           python -c "import OCC; print('pythonocc/OCC import: OK')"
-      - name: Run tests
+      - name: Run full test suite with PythonOCC
         shell: micromamba-shell {0}
         run: pytest
 
@@ -210,7 +209,7 @@ jobs:
     needs:
       - prepare-build-info
       - build
-      - test-topologiccore
+      - test
       - test-pythonocc
     name: Consider & Publish PyPI Release
     permissions:
