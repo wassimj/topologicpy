@@ -117,7 +117,7 @@ jobs:
           if-no-files-found: error
           retention-days: 60
 
-  test:
+  test-topologiccore:
     name: Test TopologicCore with Python ${{ matrix.python-version }} on ${{ startsWith(matrix.os, 'macos-') && 'macOS' || startsWith(matrix.os, 'windows-') && 'Windows' || 'Linux' }}
     runs-on: ${{ matrix.os }}
     env:
@@ -205,7 +205,7 @@ jobs:
     needs:
       - prepare-build-info
       - build
-      - test
+      - test-topologiccore
       - test-pythonocc
     name: Consider & Publish PyPI Release
     permissions:
