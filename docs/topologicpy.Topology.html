@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy.Topology module &mdash; topologicpy 0.9.63 documentation</title>
+  <title>topologicpy.Topology module &mdash; topologicpy 0.9.64 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -33,7 +33,7 @@
             <a href="index.html" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.63
+                0.9.64
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -330,7 +330,7 @@
 <td><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddContent" title="topologicpy.Topology.Topology.AddContent"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddContent</span></code></a>(topology[, contents, ...])</p></td>
-<td><p>Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.</p></td>
+<td><p>Adds the input contents to the input topology or to its subtopologies based on the input subTopologyType.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#topologicpy.Topology.Topology.AddDictionary" title="topologicpy.Topology.Topology.AddDictionary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AddDictionary</span></code></a>(topology, dictionary[, silent])</p></td>
 <td><p>Adds the input dictionary to the input topology.</p></td>
@@ -831,8 +831,9 @@
 </table>
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.AddApertures">
-<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddApertures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddApertures" title="Permalink to this definition"></a></dt>
-<dd><p>Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.</p>
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddApertures</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">apertures</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">exclusive</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddApertures" title="Permalink to this definition"></a></dt>
+<dd><p>Adds the input list of apertures to the input topology or to its
+subtopologies based on the input subTopologyType.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
@@ -840,11 +841,16 @@
 </dd>
 <dt><strong>apertures</strong><span class="classifier">list</span></dt><dd><p>The input list of apertures.</p>
 </dd>
-<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. Default is False.</p>
+<dt><strong>exclusive</strong><span class="classifier">bool , optional</span></dt><dd><p>If set to True, one (sub)topology will accept only one aperture.
+Otherwise, one (sub)topology can accept multiple apertures.
+Default is False.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the apertures. This can be “cell”, “face”, “edge”, or “vertex”. It is case insensitive. If set to None, the apertures will be added to the input topology. Default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The subtopology type to which to add the apertures. This can be
+“cell”, “face”, “edge”, or “vertex”. It is case insensitive. If
+set to None, the apertures will be added to the input topology.
+Default is None.</p>
 </dd>
-<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001. This is larger than the usual 0.0001 as it seems to work better.</p>
+<dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.001.</p>
 </dd>
 <dt><strong>silent</strong><span class="classifier">bool , optional</span></dt><dd><p>If True, error and warning messages are suppressed. Default is False.</p>
 </dd>
@@ -862,15 +868,19 @@
 <dl class="py method">
 <dt class="sig sig-object py" id="topologicpy.Topology.Topology.AddContent">
 <em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">AddContent</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">topology</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">contents</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">subTopologyType</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">str</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tolerance</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.0001</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">silent</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">bool</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#topologicpy.Topology.Topology.AddContent" title="Permalink to this definition"></a></dt>
-<dd><p>Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.</p>
+<dd><p>Adds the input contents to the input topology or to its subtopologies
+based on the input subTopologyType.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>topology</strong><span class="classifier">topologic_core.Topology</span></dt><dd><p>The input topology.</p>
 </dd>
-<dt><strong>contents</strong><span class="classifier">list or topologic_core.Topology</span></dt><dd><p>The input list of contents (of type topologic_core.Topology). A single topology is also accepted as input.</p>
+<dt><strong>contents</strong><span class="classifier">list or topologic_core.Topology</span></dt><dd><p>The input content topology or list of content topologies.</p>
 </dd>
-<dt><strong>subTopologyType</strong><span class="classifier">string , optional</span></dt><dd><p>The subtopology type to which to add the contents. This can be “cellcomplex”, “cell”, “shell”, “face”, “wire”, “edge”, or “vertex”. It is case insensitive. If set to None, the contents will be added to the input topology. Default is None.</p>
+<dt><strong>subTopologyType</strong><span class="classifier">str , optional</span></dt><dd><p>The subtopology type to which to add the contents. This can be
+“cellcomplex”, “cell”, “shell”, “face”, “wire”, “edge”, or
+“vertex”. It is case insensitive. If set to None, the contents are
+added to the input topology. Default is None.</p>
 </dd>
 <dt><strong>tolerance</strong><span class="classifier">float , optional</span></dt><dd><p>The desired tolerance. Default is 0.0001.</p>
 </dd>

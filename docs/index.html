@@ -4,7 +4,7 @@
   <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
 
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>topologicpy &mdash; topologicpy 0.9.63 documentation</title>
+  <title>TopologicPy &mdash; topologicpy 0.9.64 documentation</title>
       <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
       <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!--[if lt IE 9]>
@@ -32,7 +32,7 @@
             <a href="#" class="icon icon-home"> topologicpy
           </a>
               <div class="version">
-                0.9.63
+                0.9.64
               </div>
 <div role="search">
   <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
@@ -61,7 +61,7 @@
           <div role="navigation" aria-label="Page navigation">
   <ul class="wy-breadcrumbs">
       <li><a href="#" class="icon icon-home"></a> &raquo;</li>
-      <li>topologicpy</li>
+      <li>TopologicPy</li>
       <li class="wy-breadcrumbs-aside">
             <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
       </li>
@@ -96,52 +96,71 @@
 }
 </style>
 <section id="topologicpy">
-<h1>topologicpy<a class="headerlink" href="#topologicpy" title="Permalink to this heading"></a></h1>
+<h1>TopologicPy<a class="headerlink" href="#topologicpy" title="Permalink to this heading"></a></h1>
 <img src="https://topologic.app/wp-content/uploads/2023/02/topologicpy-logo-no-loop.gif" alt="topologicpy logo" width="250" loop="1"></section>
 <section id="an-ai-powered-spatial-modelling-and-analysis-software-library-for-architecture-engineering-and-construction">
 <h1>An AI-Powered Spatial Modelling and Analysis Software Library for Architecture, Engineering, and Construction<a class="headerlink" href="#an-ai-powered-spatial-modelling-and-analysis-software-library-for-architecture-engineering-and-construction" title="Permalink to this heading"></a></h1>
 <section id="introduction">
 <h2>Introduction<a class="headerlink" href="#introduction" title="Permalink to this heading"></a></h2>
-<p>Welcome to topologicpy (rhymes with apple pie). topologicpy is an open-source python 3 implementation of <a class="reference external" href="https://topologic.app">Topologic</a> which is a powerful spatial modelling and analysis software library that revolutionizes the way you design architectural spaces, buildings, and artefacts. Topologic’s advanced features enable you to create hierarchical and topological information-rich 3D representations that offer unprecedented flexibility and control in your design process. With the integration of geometry, topology, information, and artificial intelligence, Topologic enriches Building Information Models with Building <em>Intelligence</em> Models.</p>
-<p>Two of Topologic’s main strengths are its support for <em>defeaturing</em> and <em>encoded meshing</em>. By simplifying the geometry of a model and removing small or unnecessary details not needed for analysis, defeaturing allows for faster and more accurate analysis while maintaining topological consistency. This feature enables you to transform low-quality, heavy BIM models into high-quality, lightweight representations ready for rigorous analysis effortlessly. Encoded meshing allows you to use the same base elements available in your commercial BIM platform to cleanly build 3D information-encoded models that match your exacting specifications.</p>
-<p>Topologic’s versatility extends to entities with mixed dimensionalities, enabling structural models, for example, to be represented coherently. Lines can represent columns and beams, surfaces can represent walls and slabs, and volumes can represent solids. Even non-building entities like structural loads can be efficiently attached to the structure. This approach creates mixed-dimensional models that are highly compatible with structural analysis simulation software.</p>
-<p>Topologic’s graph-based representation makes it a natural fit for integrating with Graph Machine Learning (GML), graph databases, knowledge graphs, and GraphRAG workflows, an exciting new branch of artificial intelligence. With GML, you can process vast amounts of connected data and extract valuable insights quickly and accurately. Topologic’s intelligent algorithms for graph and node classification take GML to the next level by using the extracted data to classify building typologies, predict associations, and complete missing information in building information models. This integration empowers you to leverage the historical knowledge embedded in your databases and make informed decisions about your current design projects. With Topologic and GML, you can streamline your workflow, enhance your productivity, and achieve your project goals with greater efficiency and precision.</p>
-<p>Experience Topologic’s comprehensive and well-documented Application Protocol Interface (API) and enjoy the freedom and flexibility that Topologic offers in your architectural design process. Topologic uses cutting-edge C++-based non-manifold topology (NMT) core technology (<a class="reference external" href="https://www.opencascade.com/">Open CASCADE</a>), and python bindings. Interacting with Topologic is easily accomplished through a command-Line interface and scripts, visual data flow programming (VDFP) plugins for popular BIM software, and cloud-based interfaces through <a class="reference external" href="https://streamlit.io/">Streamlit</a>. You can easily interact with Topologic in various ways to perform design and analysis tasks or even seamlessly customize and embed it in your own in-house software and workflows. Plus, Topologic includes several industry-standard methods for data transport including IFC, OBJ, BREP, HBJSON, CSV, as well serializing through cloud-based services such as <a class="reference external" href="https://speckle.systems/">Speckle</a>.</p>
-<p>Topologic’s open-source philosophy and licensing (<a class="reference external" href="https://opensource.org/license/lgpl-3-0">LGPL</a>) enables you to achieve your design vision with minimal incremental costs, ensuring a high return on investment. You control and own your information outright, and nothing is ever trapped in an expensive subscription model. Topologic empowers you to build and share data apps with ease, giving you the flexibility to choose between local or cloud-based options and the peace of mind to focus on what matters most.</p>
-<p>Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.</p>
+<p>Welcome to <strong>TopologicPy</strong> (rhymes with <em>apple pie</em>). TopologicPy is a powerful, open-source Python library for spatial modelling, topology, graph analysis, and computational design in Architecture, Engineering, and Construction (AEC). It enables the creation and analysis of information-rich representations of architectural spaces, buildings, infrastructure, and other spatial systems by integrating <strong>geometry, topology, semantics, graphs, and computation</strong> within a coherent programming framework.</p>
+<p>At the heart of TopologicPy is support for <strong>non-manifold topology (NMT)</strong>. Unlike conventional solid-modelling approaches, NMT allows entities of different dimensionalities to coexist within a single coherent model. Vertices, edges, surfaces, volumes, and their assemblies can therefore represent complex spatial and analytical systems while explicitly preserving their connectivity and adjacency relationships. This makes TopologicPy particularly well suited to applications in architectural space planning, building analysis, structural modelling, circulation and navigation, energy and environmental analysis, and other workflows in which relationships between entities are as important as their geometric form.</p>
+<p>TopologicPy supports <strong>mixed-dimensional models</strong> naturally. For example, lines may represent beams, columns, circulation paths, or network connections; surfaces may represent walls, slabs, zones, or analytical boundaries; and volumes may represent rooms, buildings, or other spatial regions. These entities can coexist within the same topological structure and carry associated dictionaries and semantic information. This provides a flexible foundation for translating between geometric models, Building Information Models (BIM), analytical models, and graph-based representations.</p>
+<p>A major strength of TopologicPy is its ability to transform spatial and topological models into <strong>graphs</strong>. Buildings and other spatial systems can be represented through nodes and edges describing adjacency, accessibility, containment, visibility, connectivity, or other relationships. TopologicPy provides graph algorithms for path finding, centrality, community detection, spatial analysis, and related operations, while also supporting integration with <strong>Graph Machine Learning (GML)</strong> workflows. These capabilities make it possible to investigate spatial configurations computationally and to apply machine-learning techniques to problems such as classification, prediction, pattern recognition, and inference over connected spatial data.</p>
+<p>TopologicPy also supports <strong>semantic and knowledge-based representations</strong>. Its graph and ontology capabilities can be used to construct knowledge graphs, represent relationships derived from BIM and IFC data, perform reasoning, and connect spatial models with broader semantic information. This provides a foundation for workflows involving knowledge graphs, rule-based reasoning, graph databases, and emerging approaches such as GraphRAG and AI-assisted spatial analysis.</p>
+<p>TopologicPy provides a comprehensive Python <strong>Application Programming Interface (API)</strong> designed for scripting, Jupyter notebooks, computational design workflows, research applications, and integration into larger software systems. Its geometry and topology capabilities are currently powered primarily by <strong>PythonOCC/OpenCASCADE</strong>, providing access to the mature Open CASCADE geometric modelling kernel through Python. TopologicPy also maintains support for alternative topology backends, allowing the Python API to remain increasingly independent of any single underlying geometry engine.</p>
+<p>Interoperability is an important part of the library. TopologicPy supports widely used formats and workflows including <strong>IFC, BREP, OBJ, STL, DXF, JSON, CSV, RDF/TTL, and HBJSON</strong>, among others. Its IFC capabilities enable geometric, topological, spatial, and semantic information to be extracted from Building Information Models and transformed into structures suitable for analysis, graph generation, reasoning, and downstream computational workflows.</p>
+<p>TopologicPy is distributed as open-source software under the <strong>`GNU Lesser General Public License (LGPL) &lt;https://opensource.org/license/lgpl-3-0&gt;`_</strong>. This allows it to be used, extended, embedded, and integrated into both research and professional workflows without dependence on proprietary subscription-based platforms. The library is designed to provide an extensible computational foundation on which researchers, designers, engineers, educators, and software developers can build their own spatial analysis and design tools.</p>
+<p>TopologicPy can be used interactively in Python and Jupyter environments, incorporated into automated analysis pipelines, or embedded within larger applications. By bringing together <strong>geometry, non-manifold topology, graph computation, semantics, and artificial intelligence</strong>, TopologicPy provides a flexible platform for computationally understanding and working with the spatial relationships that underpin the built environment.</p>
 </section>
 <section id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this heading"></a></h2>
-<p>topologicpy can be installed using the <strong>pip</strong> command as such:</p>
-<p><code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">topologicpy</span> <span class="pre">--upgrade</span></code></p>
+<section id="recommended-conda">
+<h3>Recommended: Conda<a class="headerlink" href="#recommended-conda" title="Permalink to this heading"></a></h3>
+<p>TopologicPy can be installed from conda-forge:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy
+conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+</section>
+<section id="pip">
+<h3>Pip<a class="headerlink" href="#pip" title="Permalink to this heading"></a></h3>
+<p>TopologicPy can also be installed from PyPI:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span>topologicpy<span class="w"> </span>--upgrade
+</pre></div>
+</div>
+</section>
 </section>
 <section id="prerequisites">
 <h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Permalink to this heading"></a></h2>
-<p>topologicpy depends on the following python libraries which will be installed automatically from pip:</p>
-<details>
-<summary>
-<b>Expand to view dependencies</b>
-</summary>
-* [numpy](http://numpy.org) >= 1.24.0
-* [scipy](http://scipy.org) >= 1.10.0
-* [plotly](http://plotly.com/) >= 5.11.0
-* [ifcopenshell](http://ifcopenshell.org/) >=0.7.9
-* [ipfshttpclient](https://pypi.org/project/ipfshttpclient/) >= 0.7.0
-* [web3](https://web3py.readthedocs.io/en/stable/) >=5.30.0
-* [openstudio](https://openstudio.net/) >= 3.4.0
-* [topologic_core](https://pypi.org/project/topologic_core/) >= 6.0.6
-* [lbt-ladybug](https://pypi.org/project/lbt-ladybug/) >= 0.25.161
-* [lbt-honeybee](https://pypi.org/project/lbt-honeybee/) >= 0.6.12
-* [honeybee-energy](https://pypi.org/project/honeybee-energy/) >= 1.91.49
-* [json](https://docs.python.org/3/library/json.html) >= 2.0.9
-* [py2neo](https://py2neo.org/) >= 2021.2.3
-* [pyvisgraph](https://github.com/TaipanRex/pyvisgraph) >= 0.2.1
-* [specklepy](https://github.com/specklesystems/specklepy) >= 2.7.6
-* [pandas](https://pandas.pydata.org/) >= 1.4.2
-* [scipy](https://scipy.org/) >= 1.8.1
-* [dgl](https://github.com/dmlc/dgl) >= 0.8.2</details></section>
-<section id="how-to-start-using-topologic">
-<h2>How to start using Topologic<a class="headerlink" href="#how-to-start-using-topologic" title="Permalink to this heading"></a></h2>
+<p>TopologicPy requires Python 3.8 or newer and currently supports Python versions below 3.15.</p>
+<section id="core-dependencies">
+<h3>Core Dependencies<a class="headerlink" href="#core-dependencies" title="Permalink to this heading"></a></h3>
+<p>TopologicPy depends on the following Python libraries:</p>
+<details><summary><b>Expand to view dependencies</b></summary><ul class="simple">
+<li><p><a class="reference external" href="https://numpy.org/">numpy</a> &gt;= 1.18.0</p></li>
+<li><p><a class="reference external" href="https://scipy.org/">scipy</a> &gt;= 1.4.1</p></li>
+<li><p><a class="reference external" href="https://pandas.pydata.org/">pandas</a></p></li>
+<li><p><a class="reference external" href="https://shapely.readthedocs.io/">shapely</a></p></li>
+<li><p><a class="reference external" href="https://plotly.com/python/">plotly</a></p></li>
+<li><p><a class="reference external" href="https://github.com/lark-parser/lark">lark</a></p></li>
+<li><p><a class="reference external" href="https://pypi.org/project/webcolors/">webcolors</a></p></li>
+<li><p><a class="reference external" href="https://nbformat.readthedocs.io/">nbformat</a></p></li>
+</ul>
+</details><p>These dependencies are installed automatically when TopologicPy is installed.</p>
+</section>
+<section id="geometry-and-topology-backend">
+<h3>Geometry and Topology Backend<a class="headerlink" href="#geometry-and-topology-backend" title="Permalink to this heading"></a></h3>
+<p>TopologicPy requires a geometry and topology backend.</p>
+<p>When TopologicPy is installed from <strong>conda-forge</strong>, the recommended
+<a class="reference external" href="https://github.com/tpaviot/pythonocc-core">pythonocc-core</a> backend is installed automatically:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>conda<span class="w"> </span>create<span class="w"> </span>-n<span class="w"> </span>topologicpy<span class="w"> </span>-c<span class="w"> </span>conda-forge<span class="w"> </span>topologicpy
+conda<span class="w"> </span>activate<span class="w"> </span>topologicpy
+</pre></div>
+</div>
+</section>
+</section>
+<section id="how-to-start-using-topologicpy">
+<h2>How to start using TopologicPy<a class="headerlink" href="#how-to-start-using-topologicpy" title="Permalink to this heading"></a></h2>
 <ol class="arabic simple">
 <li><p>Open your favourite python editor (<a class="reference external" href="https://jupyter.org/">jupyter notebook</a> is highly recommended)</p></li>
 <li><p>Type ‘import topologicpy’</p></li>
