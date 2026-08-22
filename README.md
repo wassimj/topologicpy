@@ -20,9 +20,23 @@ Topologic’s open-source philosophy and licensing ([LGPL](https://opensource.or
 Join the revolution in architectural design with Topologic. Try it today and see the difference for yourself.
 
 ## Installation
-topologicpy can be installed using the **pip** command as such:
 
-`pip install topologicpy --upgrade`
+### Recommended: Conda
+
+TopologicPy can be installed from conda-forge:
+
+```bash
+conda create -n topologicpy -c conda-forge topologicpy
+conda activate topologicpy
+```
+
+### Pip
+
+TopologicPy can also be installed from PyPI:
+
+```bash
+pip install topologicpy --upgrade
+```
 
 ## Prerequisites
 
