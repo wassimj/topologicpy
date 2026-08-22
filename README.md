@@ -40,34 +40,42 @@ pip install topologicpy --upgrade
 
 ## Prerequisites
 
-topologicpy depends on the following python libraries which will be installed automatically from pip:
+TopologicPy requires Python 3.8 or newer and currently supports Python versions below 3.15.
+
+### Core Dependencies
+
+TopologicPy depends on the following Python libraries:
 
 <details>
-<summary>
-<b>Expand to view dependencies</b>
-</summary>
-* [numpy](http://numpy.org) >= 1.24.0
-* [scipy](http://scipy.org) >= 1.10.0
-* [plotly](http://plotly.com/) >= 5.11.0
-* [ifcopenshell](http://ifcopenshell.org/) >=0.7.9
-* [ipfshttpclient](https://pypi.org/project/ipfshttpclient/) >= 0.7.0
-* [web3](https://web3py.readthedocs.io/en/stable/) >=5.30.0
-* [openstudio](https://openstudio.net/) >= 3.4.0
-* [topologic_core](https://pypi.org/project/topologic_core/) >= 6.0.6
-* [lbt-ladybug](https://pypi.org/project/lbt-ladybug/) >= 0.25.161
-* [lbt-honeybee](https://pypi.org/project/lbt-honeybee/) >= 0.6.12
-* [honeybee-energy](https://pypi.org/project/honeybee-energy/) >= 1.91.49
-* [json](https://docs.python.org/3/library/json.html) >= 2.0.9
-* [py2neo](https://py2neo.org/) >= 2021.2.3
-* [pyvisgraph](https://github.com/TaipanRex/pyvisgraph) >= 0.2.1
-* [specklepy](https://github.com/specklesystems/specklepy) >= 2.7.6
-* [pandas](https://pandas.pydata.org/) >= 1.4.2
-* [scipy](https://scipy.org/) >= 1.8.1
-* [dgl](https://github.com/dmlc/dgl) >= 0.8.2
+
+<summary><b>Expand to view dependencies</b></summary>
+
+* [numpy](https://numpy.org/) >= 1.18.0
+* [scipy](https://scipy.org/) >= 1.4.1
+* [pandas](https://pandas.pydata.org/)
+* [shapely](https://shapely.readthedocs.io/)
+* [plotly](https://plotly.com/python/)
+* [lark](https://github.com/lark-parser/lark)
+* [webcolors](https://pypi.org/project/webcolors/)
+* [nbformat](https://nbformat.readthedocs.io/)
 
 </details>
 
-## How to start using Topologic
+These dependencies are installed automatically when TopologicPy is installed.
+
+### Geometry and Topology Backend
+
+TopologicPy requires a geometry and topology backend.
+
+When TopologicPy is installed from **conda-forge**, the recommended
+[pythonocc-core](https://github.com/tpaviot/pythonocc-core) backend is installed automatically:
+
+```bash
+conda create -n topologicpy -c conda-forge topologicpy
+conda activate topologicpy
+```
+
+## How to start using TopologicPy
 1. Open your favourite python editor ([jupyter notebook](https://jupyter.org/) is highly recommended)
 1. Type 'import topologicpy'
 1. Start using the API
@@ -168,4 +176,3 @@ Or you can import the following .bib formatted references into your favourite re
 ```
 
 topologicpy: © 2026 Wassim Jabi
-
