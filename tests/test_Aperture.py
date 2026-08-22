@@ -146,3 +146,33 @@ def test_host_aperture_retrieval_is_repeatable():
     assert len(second) == 1
     assert _contains_same(first, aperture_topology)
     assert _contains_same(second, aperture_topology)
+
+def test_by_topology_context_registers_context_with_aperture():
+    """The created aperture must retain the context used to create it."""
+    host = _rectangle(width=2, length=2)
+    context = _context_for_topology(host)
+    aperture_topology = _rectangle(width=0.5, length=0.5)
+
+    aperture = Aperture.ByTopologyContext(
+        aperture_topology,
+        context,
+    )
+
+    assert Topology.IsInstance(aperture, "Aperture")
+
+    contexts = Topology.Contexts(
+        aperture,
+        silent=True,
+    )
+
+    assert isinstance(contexts, list)
+    assert len(contexts) == 1
+
+    returned_host = Context.Topology(contexts[0])
+
+    assert Topology.IsInstance(returned_host, "Face")
+    assert Topology.IsSame(
+        returned_host,
+        host,
+        silent=True,
+    )
