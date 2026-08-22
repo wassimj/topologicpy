@@ -434,9 +434,17 @@ class Topology():
             return defaultValue
 
     @staticmethod
-    def AddApertures(topology, apertures, exclusive=False, subTopologyType=None, tolerance=0.001, silent: bool = False):
+    def AddApertures(
+        topology,
+        apertures,
+        exclusive: bool = False,
+        subTopologyType: str = None,
+        tolerance: float = 0.001,
+        silent: bool = False
+    ):
         """
-        Adds the input list of apertures to the input topology or to its subtopologies based on the input subTopologyType.
+        Adds the input list of apertures to the input topology or to its
+        subtopologies based on the input subTopologyType.
 
         Parameters
         ----------
@@ -445,11 +453,16 @@ class Topology():
         apertures : list
             The input list of apertures.
         exclusive : bool , optional
-            If set to True, one (sub)topology will accept only one aperture. Otherwise, one (sub)topology can accept multiple apertures. Default is False.
-        subTopologyType : string , optional
-            The subtopology type to which to add the apertures. This can be "cell", "face", "edge", or "vertex". It is case insensitive. If set to None, the apertures will be added to the input topology. Default is None.
+            If set to True, one (sub)topology will accept only one aperture.
+            Otherwise, one (sub)topology can accept multiple apertures.
+            Default is False.
+        subTopologyType : str , optional
+            The subtopology type to which to add the apertures. This can be
+            "cell", "face", "edge", or "vertex". It is case insensitive. If
+            set to None, the apertures will be added to the input topology.
+            Default is None.
         tolerance : float , optional
-            The desired tolerance. Default is 0.001. This is larger than the usual 0.0001 as it seems to work better.
+            The desired tolerance. Default is 0.001.
         silent : bool , optional
             If True, error and warning messages are suppressed. Default is False.
 
@@ -457,101 +470,240 @@ class Topology():
         -------
         topologic_core.Topology
             The input topology with the apertures added to it.
-
         """
-        from topologicpy.Topology import Topology
         from topologicpy.Vertex import Vertex
         from topologicpy.Dictionary import Dictionary
         from topologicpy.BVH import BVH
 
-        def best_candidate(aperture, candidates, tolerance=0.0001):
-            ap_iv = Topology.InternalVertex(aperture)
+        def best_candidate(aperture, candidates):
+            try:
+                ap_iv = Topology.InternalVertex(
+                    aperture,
+                    tolerance=tolerance
+                )
+            except Exception:
+                ap_iv = None
+
+            if not Topology.IsInstance(ap_iv, "Vertex"):
+                try:
+                    ap_iv = Topology.Centroid(aperture)
+                except Exception:
+                    ap_iv = None
+
+            if not Topology.IsInstance(ap_iv, "Vertex"):
+                return None
+
             for candidate in candidates:
-                if Vertex.IsInternal(ap_iv, candidate, tolerance=tolerance):
-                    return candidate
+                try:
+                    if Vertex.IsInternal(
+                        ap_iv,
+                        candidate,
+                        tolerance=tolerance
+                    ):
+                        return candidate
+                except Exception:
+                    continue
+
             return None
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.AddApertures - Error: The input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.AddApertures - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
+
         if not apertures:
             if not silent:
-                print("Topology.Apertures- Warning: The input apertures parameter is an empty list. Returning the input topology.")
+                print(
+                    "Topology.AddApertures - Warning: The input apertures parameter "
+                    "is empty. Returning the input topology."
+                )
             return topology
+
         if not isinstance(apertures, list):
             if not silent:
-                print("Topology.AddApertures - Error: the input apertures parameter is not a list. Returning None.")
+                print(
+                    "Topology.AddApertures - Error: The input apertures parameter "
+                    "is not a list. Returning None."
+                )
             return None
 
-        apertures = [x for x in apertures if Topology.IsInstance(x, "Topology")]
-        if len(apertures) < 1:
+        apertures = [
+            aperture
+            for aperture in apertures
+            if Topology.IsInstance(aperture, "Topology")
+        ]
+
+        if len(apertures) == 0:
+            if not silent:
+                print(
+                    "Topology.AddApertures - Warning: The input apertures list "
+                    "contains no valid topologies. Returning the input topology."
+                )
             return topology
 
-        if not subTopologyType:
+        if subTopologyType is None:
             subTopologyType = "self"
-        if not subTopologyType.lower() in ["self", "cell", "face", "edge", "vertex"]:
+
+        if not isinstance(subTopologyType, str):
             if not silent:
-                print("Topology.AddApertures - Error: the input subtopology type parameter is not a recognized type. Returning None.")
+                print(
+                    "Topology.AddApertures - Error: The input subTopologyType "
+                    "parameter is not a string. Returning None."
+                )
+            return None
+
+        subTopologyType = subTopologyType.lower()
+
+        if subTopologyType not in [
+            "self",
+            "cell",
+            "face",
+            "edge",
+            "vertex",
+        ]:
+            if not silent:
+                print(
+                    "Topology.AddApertures - Error: The input subTopologyType "
+                    "parameter is not a recognized type. Returning None."
+                )
             return None
 
         cleaned_apertures = []
+
         for aperture in apertures:
-            d = Topology.Dictionary(aperture)
-            d = Dictionary.SetValueAtKey(d, "type", "Aperture")
-            aperture = Topology.SetDictionary(aperture, d)
+            dictionary = Topology.Dictionary(aperture)
+            dictionary = Dictionary.SetValueAtKey(
+                dictionary,
+                "type",
+                "Aperture"
+            )
+            aperture = Topology.SetDictionary(
+                aperture,
+                dictionary
+            )
             cleaned_apertures.append(aperture)
 
         apertures = cleaned_apertures
 
-        if subTopologyType.lower() == "self":
-            topology = Topology.AddContent(topology, apertures, subTopologyType=subTopologyType, tolerance=tolerance)
+        if subTopologyType == "self":
+            return Topology.AddContent(
+                topology,
+                apertures,
+                subTopologyType="self",
+                tolerance=tolerance,
+                silent=silent
+            )
+
+        subTopologies = Topology.SubTopologies(
+            topology,
+            subTopologyType=subTopologyType
+        ) or []
+
+        if len(subTopologies) == 0:
+            if not silent:
+                print(
+                    f"Topology.AddApertures - Warning: The input topology has no "
+                    f"subtopologies of type '{subTopologyType}'. Returning the "
+                    "input topology."
+                )
             return topology
-        else:
-            subTopologies = Topology.SubTopologies(topology, subTopologyType=subTopologyType)
-            bvh = BVH.ByTopologies(subTopologies, silent=True)
-            used = []
 
-            for aperture in apertures:
-                candidates = BVH.Clashes(bvh, aperture)
-                if not isinstance(candidates, list) or len(candidates) == 0:
+        try:
+            bvh = BVH.ByTopologies(
+                subTopologies,
+                silent=True
+            )
+        except Exception:
+            bvh = None
+
+        used = []
+
+        for aperture in apertures:
+            if bvh is not None:
+                try:
+                    candidates = BVH.Clashes(
+                        bvh,
+                        aperture
+                    )
+                except Exception:
+                    candidates = []
+            else:
+                candidates = list(subTopologies)
+
+            if not isinstance(candidates, list) or len(candidates) == 0:
+                continue
+
+            if len(candidates) == 1:
+                subTopology = candidates[0]
+            else:
+                subTopology = best_candidate(
+                    aperture,
+                    candidates
+                )
+
+            if not Topology.IsInstance(subTopology, "Topology"):
+                continue
+
+            if exclusive:
+                already_used = False
+
+                for used_topology in used:
+                    try:
+                        if Topology.IsSame(
+                            subTopology,
+                            used_topology,
+                            silent=True
+                        ):
+                            already_used = True
+                            break
+                    except Exception:
+                        continue
+
+                if already_used:
                     continue
 
-                if len(candidates) == 1:
-                    subTopology = candidates[0]
-                else:
-                    subTopology = best_candidate(aperture, candidates, tolerance=tolerance)
+            result = Topology.AddContent(
+                subTopology,
+                [aperture],
+                subTopologyType="self",
+                tolerance=tolerance,
+                silent=silent
+            )
 
-                if not Topology.IsInstance(subTopology, "Topology"):
-                    continue
+            if not Topology.IsInstance(result, "Topology"):
+                continue
 
-                if exclusive == True and subTopology in used:
-                    continue
-
-                subTopology = Topology.AddContent(subTopology, [aperture], subTopologyType="self", tolerance=tolerance)
-
-                if exclusive == True:
-                    used.append(subTopology)
+            if exclusive:
+                used.append(result)
 
         return topology
     
     @staticmethod
-    def AddContent(topology,
-                   contents = None,
-                   subTopologyType: str = None,
-                   tolerance: float = 0.0001,
-                   silent: bool = False):
+    def AddContent(
+        topology,
+        contents=None,
+        subTopologyType: str = None,
+        tolerance: float = 0.0001,
+        silent: bool = False
+    ):
         """
-        Adds the input list of contents to the input topology or to its subtpologies based on the input subTopologyType.
+        Adds the input contents to the input topology or to its subtopologies
+        based on the input subTopologyType.
 
         Parameters
         ----------
         topology : topologic_core.Topology
             The input topology.
         contents : list or topologic_core.Topology
-            The input list of contents (of type topologic_core.Topology). A single topology is also accepted as input.
-        subTopologyType : string , optional
-            The subtopology type to which to add the contents. This can be "cellcomplex", "cell", "shell", "face", "wire", "edge", or "vertex". It is case insensitive. If set to None, the contents will be added to the input topology. Default is None.
+            The input content topology or list of content topologies.
+        subTopologyType : str , optional
+            The subtopology type to which to add the contents. This can be
+            "cellcomplex", "cell", "shell", "face", "wire", "edge", or
+            "vertex". It is case insensitive. If set to None, the contents are
+            added to the input topology. Default is None.
         tolerance : float , optional
             The desired tolerance. Default is 0.0001.
         silent : bool , optional
@@ -561,92 +713,230 @@ class Topology():
         -------
         topologic_core.Topology
             The input topology with the contents added to it.
-
         """
-
         from topologicpy.Vertex import Vertex
         from topologicpy.Context import Context
-        from topologicpy.Dictionary import Dictionary
-
 
         if not Topology.IsInstance(topology, "Topology"):
             if not silent:
-                print("Topology.AddContent - Error: the input topology parameter is not a valid topology. Returning None.")
+                print(
+                    "Topology.AddContent - Error: The input topology parameter "
+                    "is not a valid topology. Returning None."
+                )
             return None
-        if not contents:
+
+        if contents is None or contents == []:
             if not silent:
-                print("Topology.AddContent - Warning: the input contents parameter is not a valid input. Returning the input topology unmodified.")
+                print(
+                    "Topology.AddContent - Warning: The input contents parameter "
+                    "is empty. Returning the input topology unmodified."
+                )
             return topology
+
         if not isinstance(contents, list):
             contents = [contents]
-        if not isinstance(contents, list):
+
+        contents = [
+            content
+            for content in contents
+            if Topology.IsInstance(content, "Topology")
+        ]
+
+        if len(contents) == 0:
             if not silent:
-                print("Topology.AddContent - Error: the input contents parameter is not a list. Returning None.")
-            return None
-        contents = [x for x in contents if Topology.IsInstance(x, "Topology")]
-        if len(contents) < 1:
-            if not silent:
-                print("Topology.AddContent - Warning: the input contents parameter is empty. Returning the input topology unmodified.")
+                print(
+                    "Topology.AddContent - Warning: The input contents parameter "
+                    "contains no valid topologies. Returning the input topology "
+                    "unmodified."
+                )
             return topology
-        if not subTopologyType:
+
+        if subTopologyType is None:
             subTopologyType = "self"
-        if not subTopologyType.lower() in ["self", "cellcomplex", "cell", "shell", "face", "wire", "edge", "vertex"]:
-            print("Topology.AddContent - Error: the input subtopology type parameter is not a recognized type. Returning None.")
+
+        if not isinstance(subTopologyType, str):
+            if not silent:
+                print(
+                    "Topology.AddContent - Error: The input subTopologyType "
+                    "parameter is not a string. Returning None."
+                )
             return None
-        
-        copy_contents = [Topology.Copy(x) for x in contents]
-        for i, content in enumerate(contents):
-            d = Topology.Dictionary(content)
-            copy_contents[i] = Topology.SetDictionary(copy_contents[i], d)
 
-        if subTopologyType.lower() == "self":
+        subTopologyType = subTopologyType.lower()
+
+        valid_types = [
+            "self",
+            "cellcomplex",
+            "cell",
+            "shell",
+            "face",
+            "wire",
+            "edge",
+            "vertex",
+        ]
+
+        if subTopologyType not in valid_types:
+            if not silent:
+                print(
+                    "Topology.AddContent - Error: The input subTopologyType "
+                    "parameter is not a recognized type. Returning None."
+                )
+            return None
+
+        copy_contents = []
+
+        for content in contents:
+            try:
+                copied_content = Topology.Copy(content)
+            except Exception:
+                copied_content = None
+
+            if not Topology.IsInstance(copied_content, "Topology"):
+                if not silent:
+                    print(
+                        "Topology.AddContent - Warning: Could not copy one input "
+                        "content topology. Skipping it."
+                    )
+                continue
+
+            dictionary = Topology.Dictionary(content)
+            copied_content = Topology.SetDictionary(
+                copied_content,
+                dictionary
+            )
+
+            copy_contents.append(copied_content)
+
+        if len(copy_contents) == 0:
+            if not silent:
+                print(
+                    "Topology.AddContent - Warning: Could not copy any input "
+                    "contents. Returning the input topology unmodified."
+                )
+            return topology
+
+        if subTopologyType == "self":
             context = Context.ByTopologyParameters(topology)
+
             for content in copy_contents:
-                # content.AddContext(context) # H to Core
-                Core.InstanceCall(content, 'AddContext', context)
-                # topology.AddContent(content) # H to Core
-                Core.InstanceCall(topology, 'AddContent', content)
+                if context is not None:
+                    Core.InstanceCall(
+                        content,
+                        "AddContext",
+                        context
+                    )
+
+                Core.InstanceCall(
+                    topology,
+                    "AddContent",
+                    content
+                )
+
+            return topology
+
+        if subTopologyType == "cellcomplex":
+            subtopologies = Topology.CellComplexes(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "cell":
+            subtopologies = Topology.Cells(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "shell":
+            subtopologies = Topology.Shells(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "face":
+            subtopologies = Topology.Faces(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "wire":
+            subtopologies = Topology.Wires(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "edge":
+            subtopologies = Topology.Edges(
+                topology,
+                silent=True
+            ) or []
+        elif subTopologyType == "vertex":
+            subtopologies = Topology.Vertices(
+                topology,
+                silent=True
+            ) or []
         else:
-            subTopologyType = subTopologyType.lower()
+            subtopologies = []
 
-            if subTopologyType == "cellcomplex":
-                subtopologies = Topology.CellComplexes(topology, silent=True)
-            elif subTopologyType == "cell":
-                subtopologies = Topology.Cells(topology, silent=True)
-            elif subTopologyType == "shell":
-                subtopologies = Topology.Shells(topology, silent=True)
-            elif subTopologyType == "face":
-                subtopologies = Topology.Faces(topology, silent=True)
-            elif subTopologyType == "wire":
-                subtopologies = Topology.Wires(topology, silent=True)
-            elif subTopologyType == "edge":
-                subtopologies = Topology.Edges(topology, silent=True)
-            elif subTopologyType == "vertex":
-                subtopologies = Topology.Vertices(topology, silent=True)
-            else:
-                subtopologies = []
+        if len(subtopologies) == 0:
+            return topology
 
-            for content in copy_contents:
+        for content in copy_contents:
+            content_vertex = None
+
+            try:
+                content_vertex = Topology.InternalVertex(
+                    content,
+                    tolerance=tolerance
+                )
+            except Exception:
+                content_vertex = None
+
+            if not Topology.IsInstance(content_vertex, "Vertex"):
                 try:
-                    content_vertex = Topology.InternalVertex(content, tolerance=tolerance)
+                    content_vertex = Topology.Centroid(content)
                 except Exception:
-                    try:
-                        content_vertex = Topology.Centroid(content)
-                    except Exception:
-                        content_vertex = None
+                    content_vertex = None
 
-                if content_vertex is None:
+            if not Topology.IsInstance(content_vertex, "Vertex"):
+                continue
+
+            for subtopology in subtopologies:
+                try:
+                    is_internal = Vertex.IsInternal(
+                        content_vertex,
+                        subtopology,
+                        tolerance=tolerance
+                    )
+                except Exception:
+                    is_internal = False
+
+                if not is_internal:
                     continue
 
-                for subtopology in subtopologies:
-                    try:
-                        if Vertex.IsInternal(content_vertex, subtopology, tolerance=tolerance):
-                            context = Context.ByTopologyParameters(subtopology)
-                            Core.InstanceCall(content, "AddContext", context)
-                            Core.InstanceCall(subtopology, "AddContent", content)
-                            break
-                    except Exception:
-                        continue
+                try:
+                    context = Context.ByTopologyParameters(
+                        subtopology
+                    )
+
+                    if context is not None:
+                        Core.InstanceCall(
+                            content,
+                            "AddContext",
+                            context
+                        )
+
+                    Core.InstanceCall(
+                        subtopology,
+                        "AddContent",
+                        content
+                    )
+
+                except Exception as error:
+                    if not silent:
+                        print(
+                            "Topology.AddContent - Warning: Could not attach a "
+                            f"content topology to the selected {subTopologyType}. "
+                            f"Skipping it. ({error})"
+                        )
+                    continue
+
+                break
+
         return topology
     
     @staticmethod

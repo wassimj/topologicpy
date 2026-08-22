@@ -1737,9 +1737,9 @@ class Topology:
         Wraps an existing OCCT shape as the corresponding PythonOCC backend
         topology.
 
-        Container topologies such as Shell, Cell and CellComplex are wrapped
-        shallowly. Their subtopologies are discovered from the underlying OCCT
-        shape only when requested.
+        Shape-keyed dictionaries and relationships are restored from
+        AttributeManager so that metadata survives reconstruction of transient
+        Python wrappers around the same OCCT topology.
         """
         if _is_null_shape(shape):
             return None
@@ -1751,76 +1751,124 @@ class Topology:
 
         manager = AttributeManager.GetInstance()
 
+        dictionary_known = dictionary is not None or manager.HasDictionary(shape)
+        contents_known = contents is not None or manager.HasContents(shape)
+        contexts_known = contexts is not None or manager.HasContexts(shape)
+        apertures_known = apertures is not None or manager.HasApertures(shape)
+
         if dictionary is None:
-            if manager.HasDictionary(shape):
-                dictionary = manager.GetDictionary(shape)
-            else:
-                dictionary = {}
+            dictionary = manager.GetDictionary(shape) if manager.HasDictionary(shape) else {}
         else:
-            manager.SetDictionary(
-                shape,
-                dictionary
-            )
-        contents = list(contents) if contents else []
-        contexts = list(contexts) if contexts else []
-        apertures = list(apertures) if apertures else []
+            manager.SetDictionary(shape, dictionary)
+            dictionary = manager.GetDictionary(shape)
+
+        if contents is None:
+            contents = manager.GetContents(shape) if manager.HasContents(shape) else []
+        else:
+            manager.SetContents(shape, _safe_list(contents))
+            contents = manager.GetContents(shape)
+
+        if contexts is None:
+            contexts = manager.GetContexts(shape) if manager.HasContexts(shape) else []
+        else:
+            manager.SetContexts(shape, _safe_list(contexts))
+            contexts = manager.GetContexts(shape)
+
+        if apertures is None:
+            apertures = manager.GetApertures(shape) if manager.HasApertures(shape) else []
+        else:
+            manager.SetApertures(shape, _safe_list(apertures))
+            apertures = manager.GetApertures(shape)
+
+        def _finalize(result):
+            if result is None:
+                return None
+
+            actual_shape = _shape_from_topology(result)
+
+            if not _is_null_shape(actual_shape):
+                if dictionary_known:
+                    manager.SetDictionary(actual_shape, dictionary)
+                if contents_known:
+                    manager.SetContents(actual_shape, contents)
+                if contexts_known:
+                    manager.SetContexts(actual_shape, contexts)
+                if apertures_known:
+                    manager.SetApertures(actual_shape, apertures)
+
+            try:
+                result.dictionary = dictionary
+            except Exception:
+                pass
+            try:
+                result.contents = list(contents)
+            except Exception:
+                pass
+            try:
+                result.contexts = list(contexts)
+            except Exception:
+                pass
+            try:
+                result.apertures = list(apertures)
+            except Exception:
+                pass
+
+            return result
 
         # ------------------------------------------------------------------
         # Vertex / Edge / Wire / Face
-        #
-        # Leave these on their existing specialised paths for now.
         # ------------------------------------------------------------------
-
         if shape_type in (
             TopAbs_VERTEX,
             TopAbs_EDGE,
             TopAbs_WIRE,
             TopAbs_FACE,
         ):
-            return _wrap_shape_as_topology(
-                shape,
-                dictionary=dictionary,
-                contents=contents,
-                contexts=contexts,
-                apertures=apertures,
+            return _finalize(
+                _wrap_shape_as_topology(
+                    shape,
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
             )
 
         # ------------------------------------------------------------------
         # Shell -- shallow wrapper only.
         # ------------------------------------------------------------------
-
         if shape_type == TopAbs_SHELL:
             from .shell import Shell
-
-            return Shell(
-                shape=topods_Shell(shape),
-                faces=[],
-                dictionary=dictionary,
-                contents=contents,
-                contexts=contexts,
-                apertures=apertures,
+            return _finalize(
+                Shell(
+                    shape=topods_Shell(shape),
+                    faces=[],
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
             )
 
         # ------------------------------------------------------------------
         # Solid -> Cell -- shallow wrapper only.
         # ------------------------------------------------------------------
-
         if shape_type == TopAbs_SOLID:
             from .cell import Cell
-
-            return Cell(
-                shape=topods_Solid(shape),
-                shells=[],
-                dictionary=dictionary,
-                contents=contents,
-                contexts=contexts,
-                apertures=apertures,
+            return _finalize(
+                Cell(
+                    shape=topods_Solid(shape),
+                    shells=[],
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
             )
 
         # ------------------------------------------------------------------
         # CompSolid -> CellComplex
         # ------------------------------------------------------------------
-
         if shape_type == TopAbs_COMPSOLID:
             from .cell import Cell
             from .cell_complex import CellComplex
@@ -1833,42 +1881,42 @@ class Topology:
             # Preserve the existing backend behaviour of unwrapping a
             # one-solid CompSolid to a Cell.
             if len(solids) == 1:
-                return Cell(
-                    shape=topods_Solid(solids[0]),
-                    shells=[],
+                return _finalize(
+                    Cell(
+                        shape=topods_Solid(solids[0]),
+                        shells=[],
+                        dictionary=dictionary,
+                        contents=contents,
+                        contexts=contexts,
+                        apertures=apertures,
+                    )
+                )
+
+            return _finalize(
+                CellComplex(
+                    shape=shape,
+                    cells=[],
                     dictionary=dictionary,
                     contents=contents,
                     contexts=contexts,
                     apertures=apertures,
                 )
-
-            return CellComplex(
-                shape=shape,
-                cells=[],
-                dictionary=dictionary,
-                contents=contents,
-                contexts=contexts,
-                apertures=apertures,
             )
 
         # ------------------------------------------------------------------
         # Compound
-        #
-        # A generic OCCT Compound must be semantically normalised. Boolean
-        # operations commonly return Compounds containing topology that can be
-        # represented more specifically as a Vertex, Edge, Wire, Face, Shell,
-        # Cell, CellComplex, or Cluster.
         # ------------------------------------------------------------------
-
         if shape_type == TopAbs_COMPOUND:
-            return _wrap_shape_as_topology(
-                shape,
-                dictionary=dictionary,
-                contents=contents,
-                contexts=contexts,
-                apertures=apertures,
+            return _finalize(
+                _wrap_shape_as_topology(
+                    shape,
+                    dictionary=dictionary,
+                    contents=contents,
+                    contexts=contexts,
+                    apertures=apertures,
+                )
             )
-        
+
         return None
 
     @staticmethod
@@ -2261,55 +2309,191 @@ class Topology:
             return 0
         return result
 
-    def Apertures(self, hostTopology=None, output=None):
-        result = _safe_list(getattr(self, "apertures", []) if self is not None else [])
+    def Apertures(self, output=None):
+        """
+        Returns the apertures attached to this topology.
+
+        The signature intentionally matches topologic_core's output-list calling
+        convention: topology.Apertures(output_list).
+        """
+        if self is None:
+            result = []
+        else:
+            shape = _shape_from_topology(self)
+            local = _safe_list(getattr(self, "apertures", []))
+
+            if not _is_null_shape(shape):
+                manager = AttributeManager.GetInstance()
+                if manager.HasApertures(shape):
+                    result = manager.GetApertures(shape)
+                else:
+                    result = _deduplicate_by_identity(local)
+                    if result:
+                        manager.SetApertures(shape, result)
+            else:
+                result = _deduplicate_by_identity(local)
+
+            try:
+                self.apertures = list(result)
+            except Exception:
+                pass
+
         if output is not None:
             output.extend(result)
             return 0
+
         return result
 
     def Contents(self, output=None):
-        result = _safe_list(getattr(self, "contents", []) if self is not None else [])
+        """Returns the contents attached to this topology."""
+        if self is None:
+            result = []
+        else:
+            shape = _shape_from_topology(self)
+            local = _safe_list(getattr(self, "contents", []))
+
+            if not _is_null_shape(shape):
+                manager = AttributeManager.GetInstance()
+                if manager.HasContents(shape):
+                    result = manager.GetContents(shape)
+                else:
+                    result = _deduplicate_by_identity(local)
+                    if result:
+                        manager.SetContents(shape, result)
+            else:
+                result = _deduplicate_by_identity(local)
+
+            try:
+                self.contents = list(result)
+            except Exception:
+                pass
+
         if output is not None:
             output.extend(result)
             return 0
+
         return result
 
     def Contexts(self, output=None):
-        result = _safe_list(getattr(self, "contexts", []) if self is not None else [])
+        """Returns the contexts attached to this topology."""
+        if self is None:
+            result = []
+        else:
+            shape = _shape_from_topology(self)
+            local = _safe_list(getattr(self, "contexts", []))
+
+            if not _is_null_shape(shape):
+                manager = AttributeManager.GetInstance()
+                if manager.HasContexts(shape):
+                    result = manager.GetContexts(shape)
+                else:
+                    result = _deduplicate_by_identity(local)
+                    if result:
+                        manager.SetContexts(shape, result)
+            else:
+                result = _deduplicate_by_identity(local)
+
+            try:
+                self.contexts = list(result)
+            except Exception:
+                pass
+
         if output is not None:
             output.extend(result)
             return 0
+
         return result
 
     def AddContent(self, content: Any):
+        """Adds one content topology and persists the relationship by OCCT shape identity."""
         if self is None or content is None:
             return self
-        self.contents = _deduplicate_by_identity(_safe_list(getattr(self, "contents", [])) + [content])
+
+        shape = _shape_from_topology(self)
+
+        if not _is_null_shape(shape):
+            manager = AttributeManager.GetInstance()
+            if manager.HasContents(shape):
+                current = manager.GetContents(shape)
+            else:
+                current = _safe_list(getattr(self, "contents", []))
+
+            current = _deduplicate_by_identity(current + [content])
+            manager.SetContents(shape, current)
+            self.contents = manager.GetContents(shape)
+        else:
+            self.contents = _deduplicate_by_identity(
+                _safe_list(getattr(self, "contents", [])) + [content]
+            )
+
         return self
 
     def AddContents(self, contents: Any, typeID: Any = None):
+        """Adds multiple contents. typeID is accepted for topologic_core compatibility."""
         for content in _safe_list(contents):
             self.AddContent(content)
+
         return self
 
     def AddContext(self, context: Any):
+        """Adds one context and persists the relationship by OCCT shape identity."""
         if self is None or context is None:
             return self
-        self.contexts = _deduplicate_by_identity(_safe_list(getattr(self, "contexts", [])) + [context])
+
+        shape = _shape_from_topology(self)
+
+        if not _is_null_shape(shape):
+            manager = AttributeManager.GetInstance()
+            if manager.HasContexts(shape):
+                current = manager.GetContexts(shape)
+            else:
+                current = _safe_list(getattr(self, "contexts", []))
+
+            current = _deduplicate_by_identity(current + [context])
+            manager.SetContexts(shape, current)
+            self.contexts = manager.GetContexts(shape)
+        else:
+            self.contexts = _deduplicate_by_identity(
+                _safe_list(getattr(self, "contexts", [])) + [context]
+            )
+
         return self
 
     def RemoveContents(self, contents: Any):
+        """Removes contents using topological identity and persists the result."""
         if self is None:
             return self
-        to_remove_ids = {id(c) for c in _safe_list(contents)}
-        to_remove_uuids = {getattr(c, "_uuid", None) for c in _safe_list(contents)}
+
+        to_remove = _safe_list(contents)
+        shape = _shape_from_topology(self)
+
+        if not _is_null_shape(shape):
+            manager = AttributeManager.GetInstance()
+            if manager.HasContents(shape):
+                current = manager.GetContents(shape)
+            else:
+                current = _safe_list(getattr(self, "contents", []))
+        else:
+            current = _safe_list(getattr(self, "contents", []))
+
         kept = []
-        for item in _safe_list(getattr(self, "contents", [])):
-            if id(item) in to_remove_ids or getattr(item, "_uuid", object()) in to_remove_uuids:
-                continue
-            kept.append(item)
+        for item in current:
+            remove = False
+            for candidate in to_remove:
+                if Topology.IsSame(item, candidate):
+                    remove = True
+                    break
+
+            if not remove:
+                kept.append(item)
+
+        kept = _deduplicate_by_identity(kept)
         self.contents = kept
+
+        if not _is_null_shape(shape):
+            manager.SetContents(shape, kept)
+            self.contents = manager.GetContents(shape)
+
         return self
 
     def Distance(
