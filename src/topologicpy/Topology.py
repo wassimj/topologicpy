@@ -3229,8 +3229,168 @@ class Topology():
         )
 
     
+
     @staticmethod
-    def BoundingBox(topology, optimize: int = 0, axes: str ="xyz", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+    def BoundingBox(topology, optimize: int = 0, axes: str = "xyz", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns a bounding topology for the input topology.
+
+        For ``optimize == 0`` the PythonOCC backend uses OCCT's precise
+        BRepBndLib.AddOptimal calculation, which is both faster and more
+        accurate for curved geometry than bounding only the topology vertices.
+        Optimized/oriented and axis-constrained searches retain the existing
+        implementation until their rotation-dictionary semantics are migrated
+        separately.
+        """
+        if (
+            Topology.IsInstance(topology, "Topology")
+            and optimize == 0
+            and isinstance(axes, str)
+            and any(c in axes.lower() for c in "xyz")
+            and not Topology.IsInstance(topology, "Vertex")
+        ):
+            try:
+                bounds = Core.InstanceCall(
+                    topology,
+                    "BoundingBoxNative",
+                    mantissa,
+                )
+
+                if isinstance(bounds, (list, tuple)) and len(bounds) == 6:
+                    from topologicpy.Cell import Cell
+                    from topologicpy.Dictionary import Dictionary
+                    from topologicpy.Edge import Edge
+                    from topologicpy.Face import Face
+                    from topologicpy.Vertex import Vertex
+
+                    xmin, ymin, zmin, xmax, ymax, zmax = [
+                        float(v) for v in bounds
+                    ]
+
+                    width = xmax - xmin
+                    length = ymax - ymin
+                    height = zmax - zmin
+                    dimensions = [width, length, height]
+                    active = [abs(d) > tolerance for d in dimensions]
+                    active_count = sum(active)
+
+                    # Keep one-dimensional/zero-dimensional cases on the
+                    # established implementation.
+                    if active_count >= 2:
+                        corners = [
+                            Vertex.ByCoordinates(xmin, ymin, zmin),
+                            Vertex.ByCoordinates(xmax, ymin, zmin),
+                            Vertex.ByCoordinates(xmax, ymax, zmin),
+                            Vertex.ByCoordinates(xmin, ymax, zmin),
+                            Vertex.ByCoordinates(xmin, ymin, zmax),
+                            Vertex.ByCoordinates(xmax, ymin, zmax),
+                            Vertex.ByCoordinates(xmax, ymax, zmax),
+                            Vertex.ByCoordinates(xmin, ymax, zmax),
+                        ]
+
+                        box = None
+
+                        if active_count == 3:
+                            face_indices = [
+                                [0, 1, 2, 3],
+                                [4, 7, 6, 5],
+                                [0, 4, 5, 1],
+                                [1, 5, 6, 2],
+                                [2, 6, 7, 3],
+                                [3, 7, 4, 0],
+                            ]
+                            box_faces = [
+                                Face.ByVertices(
+                                    [corners[i] for i in indices],
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+                                for indices in face_indices
+                            ]
+                            box_faces = [
+                                face
+                                for face in box_faces
+                                if Topology.IsInstance(face, "Face")
+                            ]
+                            if len(box_faces) == 6:
+                                box = Cell.ByFaces(
+                                    box_faces,
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+
+                        elif active_count == 2:
+                            if not active[2]:
+                                ids = [0, 1, 2, 3]
+                            elif not active[1]:
+                                ids = [0, 1, 5, 4]
+                            else:
+                                ids = [0, 3, 7, 4]
+
+                            box = Face.ByVertices(
+                                [corners[i] for i in ids],
+                                tolerance=tolerance,
+                                silent=True,
+                            )
+
+                        if Topology.IsInstance(box, "Topology"):
+                            dictionary = Topology.Dictionary(
+                                topology,
+                                silent=True,
+                            )
+                            dictionary = Dictionary.SetValuesAtKeys(
+                                dictionary,
+                                [
+                                    "xrot",
+                                    "yrot",
+                                    "zrot",
+                                    "xmin",
+                                    "ymin",
+                                    "zmin",
+                                    "xmax",
+                                    "ymax",
+                                    "zmax",
+                                    "width",
+                                    "length",
+                                    "height",
+                                ],
+                                [
+                                    0,
+                                    0,
+                                    0,
+                                    round(xmin, mantissa),
+                                    round(ymin, mantissa),
+                                    round(zmin, mantissa),
+                                    round(xmax, mantissa),
+                                    round(ymax, mantissa),
+                                    round(zmax, mantissa),
+                                    round(width, mantissa),
+                                    round(length, mantissa),
+                                    round(height, mantissa),
+                                ],
+                                silent=True,
+                            )
+                            box = Topology.SetDictionary(
+                                box,
+                                dictionary,
+                                silent=True,
+                            )
+                            return box
+
+            except Exception:
+                pass
+
+        return Topology._LegacyBoundingBox_BackendV2(
+            topology,
+            optimize=optimize,
+            axes=axes,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def _LegacyBoundingBox_BackendV2(topology, optimize: int = 0, axes: str ="xyz", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a cell representing a bounding box of the input topology. The returned cell contains a dictionary with keys "xrot", "yrot", and "zrot" that represents rotations around the X, Y, and Z axes. If applied in the order of Z, Y, X, the resulting box will become axis-aligned.
 
@@ -6645,7 +6805,152 @@ class Topology():
             return None
         return Topology.ByXYZFile(file, frameIdKey=frameIdKey, vertexIdKey=vertexIdKey)
     
+
+    @staticmethod
     def CanonicalMatrix(topology, n: int = 10, normalize: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the canonical transformation matrices of the input topology.
+
+        The PythonOCC fast path reuses ``Topology.PrincipalAxes`` instead of
+        creating an n-by-n point grid on every face and running a second PCA.
+        If any native prerequisite is unavailable, the preserved legacy
+        implementation is used unchanged.
+        """
+        if not Topology.IsInstance(topology, "Topology"):
+            return Topology._LegacyCanonicalMatrix_BackendV2(
+                topology,
+                n=n,
+                normalize=normalize,
+                mantissa=mantissa,
+                silent=silent,
+            )
+
+        # Only use the optimized route when the backend exposes native
+        # principal axes. TopologicCore automatically falls through.
+        try:
+            probe = Core.InstanceCall(topology, "PrincipalAxesNative", mantissa)
+            native_available = isinstance(probe, tuple) and len(probe) == 2
+        except Exception:
+            native_available = False
+
+        if not native_available:
+            return Topology._LegacyCanonicalMatrix_BackendV2(
+                topology,
+                n=n,
+                normalize=normalize,
+                mantissa=mantissa,
+                silent=silent,
+            )
+
+        try:
+            from itertools import permutations
+            import numpy as np
+
+            from topologicpy.CellComplex import CellComplex
+            from topologicpy.Edge import Edge
+            from topologicpy.Matrix import Matrix
+            from topologicpy.Vertex import Vertex
+
+            faces = Topology.Faces(topology, silent=True) or []
+            if len(faces) == 0:
+                return Topology._LegacyCanonicalMatrix_BackendV2(
+                    topology,
+                    n=n,
+                    normalize=normalize,
+                    mantissa=mantissa,
+                    silent=silent,
+                )
+
+            if Topology.IsInstance(topology, "CellComplex"):
+                top = CellComplex.ExternalBoundary(topology)
+            else:
+                top = topology
+
+            centroid = Topology.Centroid(top)
+            if not Topology.IsInstance(centroid, "Vertex"):
+                raise ValueError
+
+            cx = Vertex.X(centroid, mantissa=mantissa)
+            cy = Vertex.Y(centroid, mantissa=mantissa)
+            cz = Vertex.Z(centroid, mantissa=mantissa)
+
+            translation_matrix = Matrix.ByTranslation(-cx, -cy, -cz)
+
+            scale_factor = 1.0
+            if normalize:
+                longest_edges = Topology.LongestEdges(
+                    top,
+                    removeCoplanarFaces=True,
+                    silent=True,
+                )
+                if not longest_edges:
+                    raise ValueError
+                max_length = Edge.Length(longest_edges[0], mantissa=mantissa)
+                if max_length is None or abs(float(max_length)) <= 1.0e-15:
+                    raise ValueError
+                scale_factor = 1.0 / float(max_length)
+
+            scaling_matrix = Matrix.ByScaling(
+                scale_factor,
+                scale_factor,
+                scale_factor,
+            )
+
+            axes = Topology.PrincipalAxes(
+                top,
+                n=n,
+                mantissa=mantissa,
+                silent=True,
+            )
+            if not isinstance(axes, (list, tuple)) or len(axes) != 3:
+                raise ValueError
+
+            eigenvectors = np.array(
+                [
+                    [
+                        float(axis[0]),
+                        float(axis[1]),
+                        float(axis[2]),
+                    ]
+                    for axis in axes
+                ],
+                dtype=float,
+            ).T
+
+            if eigenvectors.shape != (3, 3):
+                raise ValueError
+
+            standard_axes = np.eye(3)
+            candidate_matrices = []
+
+            for perm in permutations(standard_axes):
+                rotation_matrix = np.eye(4)
+                rotation_matrix[:3, :3] = np.array(perm).T @ eigenvectors.T
+
+                combined = Matrix.Multiply(
+                    rotation_matrix.tolist(),
+                    Matrix.Multiply(
+                        scaling_matrix,
+                        translation_matrix,
+                    ),
+                )
+                candidate_matrices.append(combined)
+
+            if len(candidate_matrices) == 6:
+                return candidate_matrices
+
+        except Exception:
+            pass
+
+        return Topology._LegacyCanonicalMatrix_BackendV2(
+            topology,
+            n=n,
+            normalize=normalize,
+            mantissa=mantissa,
+            silent=silent,
+        )
+
+    def _LegacyCanonicalMatrix_BackendV2(topology, n: int = 10, normalize: bool = False, mantissa: int = 6, silent: bool = False):
         """
         Returns the canonical matrix of the input topology.
         The canonical matrix refers to a transformation matrix that maps an object's
@@ -11830,8 +12135,75 @@ class Topology():
         }
         return d
 
+
     @staticmethod
     def MeshData(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Creates a mesh-data Python dictionary from the input topology.
+
+        The PythonOCC fast path preserves the existing Copy/Triangulate
+        semantics but indexes native OCCT subshapes directly instead of writing
+        temporary ``_n_`` dictionaries onto every vertex, edge, face, and cell.
+        Graph/TGraph and unsupported cases use the preserved implementation.
+        """
+        # Preserve Graph/TGraph special semantics exactly.
+        try:
+            from topologicpy.TGraph import TGraph
+            if isinstance(topology, TGraph):
+                return Topology._LegacyMeshData_BackendV2(
+                    topology,
+                    mode=mode,
+                    transferDictionaries=transferDictionaries,
+                    mantissa=mantissa,
+                    silent=silent,
+                )
+        except Exception:
+            pass
+
+        if Topology.IsInstance(topology, "Graph"):
+            return Topology._LegacyMeshData_BackendV2(
+                topology,
+                mode=mode,
+                transferDictionaries=transferDictionaries,
+                mantissa=mantissa,
+                silent=silent,
+            )
+
+        if Topology.IsInstance(topology, "Topology"):
+            try:
+                top = Topology.Copy(topology)
+                if not Topology.IsInstance(top, "Topology"):
+                    raise ValueError
+
+                top = Topology.Triangulate(
+                    top,
+                    transferDictionaries=transferDictionaries,
+                    silent=silent,
+                )
+                if not Topology.IsInstance(top, "Topology"):
+                    raise ValueError
+
+                result = Core.InstanceCall(
+                    top,
+                    "MeshDataNative",
+                    mode,
+                    mantissa,
+                )
+                if isinstance(result, dict):
+                    return result
+            except Exception:
+                pass
+
+        return Topology._LegacyMeshData_BackendV2(
+            topology,
+            mode=mode,
+            transferDictionaries=transferDictionaries,
+            mantissa=mantissa,
+            silent=silent,
+        )
+
+    @staticmethod
+    def _LegacyMeshData_BackendV2(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
         """
         Creates a mesh data python dictionary from the input topology.
 
@@ -12793,8 +13165,52 @@ class Topology():
             silent=silent
         )
 
+
     @staticmethod
     def PrincipalAxes(topology, n: int = 10, mantissa: int = 6, silent: bool = False):
+        """
+        Returns the principal axes (vectors) of the input topology.
+
+        On the PythonOCC backend, exact OCCT mass properties are used for
+        non-degenerate Faces, Shells, Cells, and CellComplexes. Symmetric,
+        degenerate, aggregate, or unsupported cases fall back to the preserved
+        sampling/PCA implementation. The ``n`` parameter is retained for API
+        compatibility and for the fallback path.
+        """
+        from topologicpy.Vector import Vector
+
+        if Topology.IsInstance(topology, "Topology"):
+            try:
+                status, axes = Core.InstanceCall(
+                    topology,
+                    "PrincipalAxesNative",
+                    mantissa,
+                )
+                if status is True and isinstance(axes, (list, tuple)) and len(axes) == 3:
+                    result = []
+                    for axis in axes:
+                        if not isinstance(axis, (list, tuple)) or len(axis) != 3:
+                            raise ValueError
+                        result.append(
+                            Vector.ByCoordinates(
+                                float(axis[0]),
+                                float(axis[1]),
+                                float(axis[2]),
+                            )
+                        )
+                    return tuple(result)
+            except Exception:
+                pass
+
+        return Topology._LegacyPrincipalAxes_BackendV2(
+            topology,
+            n=n,
+            mantissa=mantissa,
+            silent=silent,
+        )
+
+    @staticmethod
+    def _LegacyPrincipalAxes_BackendV2(topology, n: int = 10, mantissa: int = 6, silent: bool = False):
         """
         Returns the prinicipal axes (vectors) of the input topology.
         Please note that this is not a perfect algorithm and it can get confused based on the geometry of the input.
@@ -12882,8 +13298,38 @@ class Topology():
         z_axis = Vector.ByCoordinates(*eigenvectors[:, 2])
         return x_axis, y_axis, z_axis
 
+
     @staticmethod
     def RemoveCollinearEdges(topology, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Removes collinear edges from the input topology.
+
+        On the PythonOCC backend, a conservative native fast path is attempted
+        for topologies whose edges are all linear. Unsupported or ambiguous
+        cases fall back to the preserved legacy implementation.
+        """
+        if Topology.IsInstance(topology, "Topology"):
+            try:
+                status, result = Core.InstanceCall(
+                    topology,
+                    "RemoveCollinearEdgesNative",
+                    angTolerance,
+                    tolerance,
+                )
+                if status is True:
+                    return result
+            except Exception:
+                pass
+
+        return Topology._LegacyRemoveCollinearEdges_BackendV2(
+            topology,
+            angTolerance=angTolerance,
+            tolerance=tolerance,
+            silent=silent,
+        )
+
+    @staticmethod
+    def _LegacyRemoveCollinearEdges_BackendV2(topology, angTolerance: float = 0.1, tolerance: float = 0.0001, silent: bool = False):
         """
         Removes the collinear edges of the input topology
 

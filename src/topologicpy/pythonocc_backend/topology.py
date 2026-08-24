@@ -5635,6 +5635,437 @@ class Topology:
             return True, Topology._RebuildFromMembers(remaining, tolerance)
         except Exception:
             return False, None
+
+    # -------------------------------------------------------------------
+    # Native performance-critical operations (Backend Audit V2)
+    # -------------------------------------------------------------------
+
+    def RemoveCollinearEdgesNative(
+        self,
+        angTolerance: float = 0.1,
+        tolerance: float = 0.0001,
+    ):
+        """
+        Conservative native collinear-edge removal.
+
+        Returns
+        -------
+        tuple
+            ``(status, result)``. ``status=False`` requests the public method
+            to use its legacy fallback.
+
+        Notes
+        -----
+        ShapeUpgrade_UnifySameDomain can also unify same-domain curved edges.
+        To preserve TopologicPy's "collinear" semantics, the native route is
+        used only when every OCCT edge is a straight line.
+        """
+        type_name = _topology_type_name(self)
+
+        if type_name in ("Vertex", "Edge"):
+            return True, self
+
+        # Preserve the mature Wire/Cluster/Aperture behavior. Edge unification
+        # is most useful and safest in BRep containers where face-edge
+        # incidence is explicit.
+        if type_name not in ("Face", "Shell", "Cell", "CellComplex"):
+            return False, None
+
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return False, None
+
+        try:
+            from OCC.Core.BRepAdaptor import BRepAdaptor_Curve
+            from OCC.Core.GeomAbs import GeomAbs_Line
+            from OCC.Core.ShapeUpgrade import ShapeUpgrade_UnifySameDomain
+
+            edges = _iter_occ_subshapes_unique(shape, TopAbs_EDGE)
+            if not edges:
+                return True, self
+
+            for edge_shape in edges:
+                adaptor = BRepAdaptor_Curve(edge_shape)
+                if adaptor.GetType() != GeomAbs_Line:
+                    return False, None
+
+            unifier = ShapeUpgrade_UnifySameDomain(
+                shape,
+                True,   # UnifyEdges
+                False,  # UnifyFaces
+                False,  # ConcatBSplines
+            )
+
+            if hasattr(unifier, "SetLinearTolerance"):
+                unifier.SetLinearTolerance(
+                    max(abs(float(tolerance)), 1.0e-12)
+                )
+
+            if hasattr(unifier, "SetAngularTolerance"):
+                unifier.SetAngularTolerance(
+                    math.radians(max(0.0, float(angTolerance)))
+                )
+
+            unifier.Build()
+            unified_shape = unifier.Shape()
+
+            if _is_null_shape(unified_shape):
+                return False, None
+
+            unified_edges = _iter_occ_subshapes_unique(
+                unified_shape,
+                TopAbs_EDGE,
+            )
+            if len(unified_edges) >= len(edges):
+                return False, None
+
+            result = Topology.ByOcctShape(unified_shape)
+            if result is None:
+                return False, None
+
+            try:
+                result.SetDictionary(Topology.GetDictionary(self))
+            except Exception:
+                try:
+                    result.dictionary = Topology.GetDictionary(self)
+                except Exception:
+                    pass
+
+            for attribute in ("contents", "contexts", "apertures"):
+                try:
+                    setattr(
+                        result,
+                        attribute,
+                        list(getattr(self, attribute, []) or []),
+                    )
+                except Exception:
+                    pass
+
+            return True, result
+
+        except Exception:
+            return False, None
+
+    def PrincipalAxesNative(self, mantissa: int = 6):
+        """
+        Returns mass-property principal axes for non-degenerate native BReps.
+
+        The returned axes are ordered from the smallest principal moment of
+        inertia to the largest, corresponding to the longest-to-shortest
+        geometric directions for anisotropic objects. Symmetric/degenerate
+        cases deliberately return ``status=False`` so the established PCA
+        implementation can resolve the ambiguity.
+        """
+        type_name = _topology_type_name(self)
+        if type_name not in ("Face", "Shell", "Cell", "CellComplex"):
+            return False, None
+
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return False, None
+
+        try:
+            from OCC.Core.BRepGProp import brepgprop
+            from OCC.Core.GProp import GProp_GProps
+            from OCC.Core.gp import gp_Ax1, gp_Dir
+
+            props = GProp_GProps()
+
+            if type_name in ("Cell", "CellComplex"):
+                brepgprop.VolumeProperties(
+                    shape,
+                    props,
+                    False,
+                    False,
+                    False,
+                )
+            else:
+                brepgprop.SurfaceProperties(
+                    shape,
+                    props,
+                    False,
+                    False,
+                )
+
+            if abs(float(props.Mass())) <= 1.0e-15:
+                return False, None
+
+            principal = props.PrincipalProperties()
+
+            axes_raw = [
+                principal.FirstAxisOfInertia(),
+                principal.SecondAxisOfInertia(),
+                principal.ThirdAxisOfInertia(),
+            ]
+
+            center = props.CentreOfMass()
+            pairs = []
+
+            for axis in axes_raw:
+                x = float(axis.X())
+                y = float(axis.Y())
+                z = float(axis.Z())
+
+                norm = math.sqrt(x * x + y * y + z * z)
+                if norm <= 1.0e-15:
+                    return False, None
+
+                x /= norm
+                y /= norm
+                z /= norm
+
+                moment = float(
+                    props.MomentOfInertia(
+                        gp_Ax1(
+                            center,
+                            gp_Dir(x, y, z),
+                        )
+                    )
+                )
+
+                if not math.isfinite(moment):
+                    return False, None
+
+                pairs.append([moment, [x, y, z]])
+
+            pairs.sort(key=lambda item: item[0])
+            moments = [item[0] for item in pairs]
+
+            scale = max(abs(value) for value in moments)
+            if scale <= 1.0e-15:
+                return False, None
+
+            # Principal directions are not unique when moments are equal. Use
+            # the established PCA path in those cases rather than returning an
+            # arbitrary OCCT basis that could change canonical orientation.
+            degeneracy_tolerance = max(scale * 1.0e-10, 1.0e-14)
+            for i in range(3):
+                for j in range(i + 1, 3):
+                    if abs(moments[i] - moments[j]) <= degeneracy_tolerance:
+                        return False, None
+
+            axes = [list(item[1]) for item in pairs]
+
+            # Deterministic sign: make the largest-magnitude component of each
+            # axis positive. Axis sign is physically arbitrary.
+            for axis in axes:
+                dominant = max(range(3), key=lambda index: abs(axis[index]))
+                if axis[dominant] < 0.0:
+                    axis[0] *= -1.0
+                    axis[1] *= -1.0
+                    axis[2] *= -1.0
+
+            # Return a right-handed orthonormal frame.
+            cross = [
+                axes[0][1] * axes[1][2] - axes[0][2] * axes[1][1],
+                axes[0][2] * axes[1][0] - axes[0][0] * axes[1][2],
+                axes[0][0] * axes[1][1] - axes[0][1] * axes[1][0],
+            ]
+            handedness = (
+                cross[0] * axes[2][0]
+                + cross[1] * axes[2][1]
+                + cross[2] * axes[2][2]
+            )
+            if handedness < 0.0:
+                axes[2][0] *= -1.0
+                axes[2][1] *= -1.0
+                axes[2][2] *= -1.0
+
+            precision = max(0, int(mantissa))
+            axes = [
+                [round(component, precision) for component in axis]
+                for axis in axes
+            ]
+
+            return True, axes
+
+        except Exception:
+            return False, None
+
+    def BoundingBoxNative(self, mantissa: int = 6):
+        """
+        Returns the precise native axis-aligned bounds:
+        ``[xmin, ymin, zmin, xmax, ymax, zmax]``.
+        """
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return None
+
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRepBndLib import brepbndlib
+
+            bbox = Bnd_Box()
+            brepbndlib.AddOptimal(
+                shape,
+                bbox,
+                True,   # useTriangulation
+                False,  # useShapeTolerance
+            )
+
+            if bbox.IsVoid():
+                return None
+
+            values = list(bbox.Get())
+            if len(values) != 6:
+                return None
+
+            precision = max(0, int(mantissa))
+            return [
+                round(float(value), precision)
+                for value in values
+            ]
+
+        except Exception:
+            return None
+
+    def MeshDataNative(self, mode: int = 1, mantissa: int = 6):
+        """
+        Creates mesh-data connectivity using indexed native OCCT shape maps.
+
+        The input is expected to have already been copied/triangulated by the
+        public method, preserving the existing MeshData semantics.
+        """
+        try:
+            from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+
+            type_name = _topology_type_name(self)
+
+            vertices = (
+                [self]
+                if type_name == "Vertex"
+                else (Topology.Vertices(self) or [])
+            )
+            edges = (
+                [self]
+                if type_name == "Edge"
+                else (Topology.Edges(self) or [])
+            )
+            faces = (
+                [self]
+                if type_name == "Face"
+                else (Topology.Faces(self) or [])
+            )
+            cells = (
+                [self]
+                if type_name == "Cell"
+                else (Topology.Cells(self) or [])
+            )
+
+            def make_map(items):
+                indexed = TopTools_IndexedMapOfShape()
+                for item in items:
+                    shape = _shape_from_topology(item)
+                    if _is_null_shape(shape):
+                        return None
+                    indexed.Add(shape)
+                return indexed
+
+            vertex_map = make_map(vertices)
+            edge_map = make_map(edges)
+            face_map = make_map(faces)
+
+            if vertex_map is None or edge_map is None or face_map is None:
+                return None
+
+            def find_zero_based(indexed, item):
+                shape = _shape_from_topology(item)
+                if _is_null_shape(shape):
+                    return None
+                index = int(indexed.FindIndex(shape))
+                if index <= 0:
+                    return None
+                return index - 1
+
+            precision = max(0, int(mantissa))
+
+            vertex_coordinates = [
+                [
+                    round(float(vertex.x), precision),
+                    round(float(vertex.y), precision),
+                    round(float(vertex.z), precision),
+                ]
+                for vertex in vertices
+            ]
+
+            edge_connectivity = []
+            for edge in edges:
+                edge_vertices = Topology.Vertices(edge) or []
+                if len(edge_vertices) < 2:
+                    return None
+
+                indices = [
+                    find_zero_based(vertex_map, edge_vertices[0]),
+                    find_zero_based(vertex_map, edge_vertices[-1]),
+                ]
+                if any(index is None for index in indices):
+                    return None
+                edge_connectivity.append(indices)
+
+            face_connectivity = []
+            for face in faces:
+                if int(mode) == 1:
+                    items = Topology.Edges(face) or []
+                    indexed = edge_map
+                else:
+                    items = Topology.Vertices(face) or []
+                    indexed = vertex_map
+
+                indices = [
+                    find_zero_based(indexed, item)
+                    for item in items
+                ]
+                if any(index is None for index in indices):
+                    return None
+                face_connectivity.append(indices)
+
+            cell_connectivity = []
+            for cell in cells:
+                cell_faces = Topology.Faces(cell) or []
+                indices = [
+                    find_zero_based(face_map, face)
+                    for face in cell_faces
+                ]
+                if any(index is None for index in indices):
+                    return None
+                cell_connectivity.append(indices)
+
+            def python_dictionary(item):
+                try:
+                    dictionary = Topology.GetDictionary(item)
+                    if isinstance(dictionary, dict):
+                        return dict(dictionary)
+                except Exception:
+                    pass
+                return {}
+
+            return {
+                "mode": mode,
+                "vertices": vertex_coordinates,
+                "edges": edge_connectivity,
+                "faces": face_connectivity,
+                "cells": cell_connectivity,
+                "vertex_dicts": [
+                    python_dictionary(vertex)
+                    for vertex in vertices
+                ],
+                "edge_dicts": [
+                    python_dictionary(edge)
+                    for edge in edges
+                ],
+                "face_dicts": [
+                    python_dictionary(face)
+                    for face in faces
+                ],
+                "cell_dicts": [
+                    python_dictionary(cell)
+                    for cell in cells
+                ],
+            }
+
+        except Exception:
+            return None
+
     def SharedTopologies(self, otherTopology: Any, typeID: Any = None, output=None):
         type_name = None
         if isinstance(typeID, str):
