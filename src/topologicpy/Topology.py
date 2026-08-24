@@ -7607,6 +7607,25 @@ class Topology():
 
     @staticmethod
     def Degree(topology, hostTopology, silent: bool = False):
+        '\n        Returns the number of immediate super topologies that use the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        hostTopology : topologic_core.Topology\n            The input host topology to which the input topology belongs\n        silent : bool, optional\n            If set to True, error and warning messages are suppressed. Default is False.\n        \n        Returns\n        -------\n        int\n            The degree of the topology (the number of immediate super topologies that use the input topology).\n        \n        '
+        if not Topology.IsInstance(topology, "topology"):
+            if not silent:
+                print("Topology.Degree - Error: the input topology parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(hostTopology, "topology"):
+            if not silent:
+                print("Topology.Degree - Error: the input hostTopology parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topology, "DegreeNative", hostTopology)
+                if isinstance(result, int) and not isinstance(result, bool):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyDegree_BackendV1(topology, hostTopology=hostTopology, silent=silent)
+    @staticmethod
+    def _LegacyDegree_BackendV1(topology, hostTopology, silent: bool = False):
         """
         Returns the number of immediate super topologies that use the input topology
 
@@ -10804,6 +10823,21 @@ class Topology():
     
     @staticmethod
     def IsPlanar(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        '\n        Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        mantissa : int , optional\n            The desired length of the mantissa. Default is 6\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        bool\n            True if all the vertices of the input topology are co-planar. False otherwise.\n\n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.IsPlanar - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topology, "IsPlanarNative", mantissa, tolerance)
+                if isinstance(result, bool):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyIsPlanar_BackendV1(topology, mantissa=mantissa, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyIsPlanar_BackendV1(topology, mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns True if all the vertices of the input topology are co-planar. Returns False otherwise.
 
@@ -11318,6 +11352,28 @@ class Topology():
 
     @staticmethod
     def MergeAll(*topologies, tolerance: float = 0.0001, silent: bool = False):
+        '\n        Merge all the input topologies.\n\n        Parameters\n        ----------\n        *topologies : list\n            The list of input topologies.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The resulting merged Topology\n\n        '
+        from topologicpy.Helper import Helper
+        topologyList = Helper.Flatten(list(topologies))
+        topologyList = [t for t in topologyList if Topology.IsInstance(t, "Topology")]
+        if len(topologyList) < 1:
+            if not silent:
+                print("Topology.MergeAll - Error: the input topologyList does not contain any valid topologies. Returning None.")
+            return None
+        if len(topologyList) == 1:
+            if not silent:
+                print("Topology.MergeAll - Warning: The input list of topologies does not contains only one valid topology. Returning that topology.")
+            return topologyList[0]
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topologyList[0], "MergeAllNative", topologyList[1:], tolerance)
+                if Topology.IsInstance(result, "Topology"):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyMergeAll_BackendV1(*topologyList, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyMergeAll_BackendV1(*topologies, tolerance: float = 0.0001, silent: bool = False):
         """
         Merge all the input topologies.
 
@@ -12361,6 +12417,26 @@ class Topology():
 
     @staticmethod
     def OpenFaces(topology, silent: bool = False):
+        '\n        Returns the faces that border no cells.\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n        \n        Returns\n        -------\n        list\n            The list of open edges.\n        \n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.OpenFaces - Error: the input topology parameter is not a valid topology. Returning None.")
+            return None
+        topology_type = Topology.TypeAsString(topology)
+        if topology_type.lower() not in ["face", "shell", "cell", "cellcomplex", "cluster"]:
+            if not silent:
+                print("Topology.OpenFaces - Error: The input topology parameter is not a suitable topology for this function. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topology, "OpenFacesNative")
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyOpenFaces_BackendV1(topology, silent=silent)
+    @staticmethod
+    def _LegacyOpenFaces_BackendV1(topology, silent: bool = False):
         """
         Returns the faces that border no cells.
 
@@ -12392,6 +12468,26 @@ class Topology():
     
     @staticmethod
     def OpenEdges(topology, silent: bool = True):
+        '\n        Returns the edges that border only one face.\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n        \n        Returns\n        -------\n        list\n            The list of open edges.\n        \n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.OpenEdges - Error: the input topology parameter is not a valid topology. Returning None.")
+            return None
+        topology_type = Topology.TypeAsString(topology)
+        if topology_type.lower() not in ["edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster", "aperture"]:
+            if not silent:
+                print("Topology.OpenEdges - Error: The input topology parameter is not a suitable topology for this function. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topology, "OpenEdgesNative")
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyOpenEdges_BackendV1(topology, silent=silent)
+    @staticmethod
+    def _LegacyOpenEdges_BackendV1(topology, silent: bool = True):
         """
         Returns the edges that border only one face.
 
@@ -12423,6 +12519,26 @@ class Topology():
     
     @staticmethod
     def OpenVertices(topology, silent: bool = False):
+        '\n        Returns the vertices that border only one edge.\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n        \n        Returns\n        -------\n        list\n            The list of open edges.\n        \n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.OpenVertices - Error: the input topology parameter is not a valid topology. Returning None.")
+            return None
+        topology_type = Topology.TypeAsString(topology)
+        if topology_type.lower() not in ["vertex", "edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster", "aperture"]:
+            if not silent:
+                print("Topology.OpenVertices - Error: The input topology parameter is not a suitable topology for this function. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                result = Core.InstanceCall(topology, "OpenVerticesNative")
+                if isinstance(result, list):
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyOpenVertices_BackendV1(topology, silent=silent)
+    @staticmethod
+    def _LegacyOpenVertices_BackendV1(topology, silent: bool = False):
         """
         Returns the vertices that border only one edge.
 
@@ -13285,6 +13401,24 @@ class Topology():
 
     @staticmethod
     def RemoveEdges(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
+        '\n        Removes the input list of faces from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        edges : list\n            The input list of edges.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of edges removed.\n\n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.RemoveEdges - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        edges = [e for e in edges if Topology.IsInstance(e, "Edge")]
+        if len(edges) < 1:
+            return topology
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                status, result = Core.InstanceCall(topology, "RemoveEdgesNative", edges, tolerance)
+                if status is True:
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyRemoveEdges_BackendV1(topology, edges=edges, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyRemoveEdges_BackendV1(topology, edges: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
         Removes the input list of faces from the input topology
 
@@ -13349,6 +13483,24 @@ class Topology():
 
     @staticmethod
     def RemoveFaces(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
+        '\n        Removes the input list of faces from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        faces : list\n            The input list of faces.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of faces removed.\n\n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.RemoveFaces - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        faces = [f for f in faces if Topology.IsInstance(f, "Face")]
+        if len(faces) < 1:
+            return topology
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                status, result = Core.InstanceCall(topology, "RemoveFacesNative", faces, tolerance)
+                if status is True:
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyRemoveFaces_BackendV1(topology, faces=faces, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyRemoveFaces_BackendV1(topology, faces: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
         Removes the input list of faces from the input topology
 
@@ -13447,6 +13599,26 @@ class Topology():
 
     @staticmethod
     def RemoveVertices(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
+        '\n        Removes the input list of vertices from the input topology\n\n        Parameters\n        ----------\n        topology : topologic_core.Topology\n            The input topology.\n        vertices : list\n            The input list of vertices.\n        tolerance : float , optional\n            The desired tolerance. Default is 0.0001.\n        silent : bool , optional\n            If set to True, error and warning messages are suppressed. Default is False.\n\n        Returns\n        -------\n        topologic_core.Topology\n            The input topology with the input list of vertices removed.\n\n        '
+        if not Topology.IsInstance(topology, "Topology"):
+            if not silent:
+                print("Topology.RemoveVertices - Error: The input topology parameter is not a valid topology. Returning None.")
+            return None
+        vertices = [v for v in vertices if Topology.IsInstance(v, "Vertex")]
+        if len(vertices) < 1:
+            if not silent:
+                print("Topology.RemoveFacesBySelectors - Warning: The input vertices parameter does not contain any valid selectors. Returning the input topology.")
+            return topology
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                status, result = Core.InstanceCall(topology, "RemoveVerticesNative", vertices, tolerance)
+                if status is True:
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyRemoveVertices_BackendV1(topology, vertices=vertices, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyRemoveVertices_BackendV1(topology, vertices: list = [], tolerance: float = 0.0001, silent: bool = False):
         """
         Removes the input list of vertices from the input topology
 
@@ -15686,7 +15858,26 @@ class Topology():
         return Topology.SubTopologies(topology=topology, subTopologyType="shell", silent=silent)
 
     @staticmethod
-    def ShortestEdge(topologyA,
+    def ShortestEdge(topologyA, topologyB, tolerance: float = 0.0001, silent: bool = False):
+        '\n        Returns the shortest connecting Edge between two topologies.\n\n        This method deterministically finds the pair of closest points between\n        topologyA and topologyB by examining their sub-topologies (vertices,\n        edges, and faces). It then returns a new Edge whose endpoints lie at\n        these two closest points.\n\n        Parameters\n        ----------\n        topologyA : topologic_core.Topology\n            The first input topology.\n        topologyB : topologic_core.Topology\n            The second input topology.\n        tolerance : float , optional\n            Numerical tolerance for detecting near-zero distances and\n            degeneracies. Default is 1e-6.\n        silent : bool , optional\n            If True, the method will not print warnings. Default is False.\n\n        Returns\n        -------\n        topologic_core.Edge or None\n            A new Edge whose start and end vertices represent the closest points\n            on topologyA and topologyB, respectively. Returns None if a valid\n            distance cannot be computed.\n\n        Notes\n        -----\n        - Sub-topologies are collected using:\n            * Topology.Vertices(topology)\n            * Topology.Edges(topology)\n            * Topology.Faces(topology)\n        - The returned Edge is not required to belong to either original\n            topology; it is a geometric representation of the shortest segment.\n        - If the shortest distance is (numerically) zero, the start and end\n            vertices of the returned Edge will coincide (or be extremely close).\n        '
+        if not Topology.IsInstance(topologyA, "Topology"):
+            if not silent:
+                print("Topology.ShortestEdge - Error: The input topologyA parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology.IsInstance(topologyB, "Topology"):
+            if not silent:
+                print("Topology.ShortestEdge - Error: The input topologyB parameter is not a valid topology. Returning None.")
+            return None
+        if not Topology._IsTopologicCoreBackend():
+            try:
+                status, result = Core.InstanceCall(topologyA, "ShortestEdgeNative", topologyB, tolerance)
+                if status is True:
+                    return result
+            except Exception:
+                pass
+        return Topology._LegacyShortestEdge_BackendV1(topologyA, topologyB, tolerance=tolerance, silent=silent)
+    @staticmethod
+    def _LegacyShortestEdge_BackendV1(topologyA,
                      topologyB,
                      tolerance: float = 0.0001,
                      silent: bool = False):

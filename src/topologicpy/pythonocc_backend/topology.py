@@ -5262,9 +5262,79 @@ class Topology:
         return result
 
     def SuperTopologies(self, hostTopology: Any, typeName: str, output=None):
+        """Returns exact super-topologies using OCCT ancestry/shape identity."""
         getter_name = Topology._SUBTOPOLOGY_GETTERS.get(str(typeName).strip().lower()) if typeName else None
         result = []
-        if getter_name is not None and hostTopology is not None:
+        if getter_name is None or hostTopology is None:
+            if output is not None:
+                output.extend(result)
+                return 0
+            return result
+
+        self_shape = _shape_from_topology(self)
+        host_shape = _shape_from_topology(hostTopology)
+        type_map = {
+            "vertex": TopAbs_VERTEX,
+            "edge": TopAbs_EDGE,
+            "wire": TopAbs_WIRE,
+            "face": TopAbs_FACE,
+            "shell": TopAbs_SHELL,
+            "cell": TopAbs_SOLID,
+            "cellcomplex": TopAbs_COMPSOLID,
+            "cluster": TopAbs_COMPOUND,
+        }
+        source_type = type_map.get((_topology_type_name(self) or "").lower())
+        target_type = type_map.get(str(typeName).strip().lower())
+
+        if (not _is_null_shape(self_shape) and not _is_null_shape(host_shape)
+                and source_type is not None and target_type is not None):
+            try:
+                from OCC.Core.TopExp import TopExp
+                from OCC.Core.TopTools import TopTools_IndexedDataMapOfShapeListOfShape, TopTools_ListIteratorOfListOfShape
+                amap = TopTools_IndexedDataMapOfShapeListOfShape()
+                TopExp.MapShapesAndAncestors(host_shape, source_type, target_type, amap)
+                if amap.Contains(self_shape):
+                    shape_list = amap.FindFromKey(self_shape)
+                    it = TopTools_ListIteratorOfListOfShape(shape_list)
+                    while it.More():
+                        ancestor = it.Value()
+                        if not ancestor.IsSame(self_shape):
+                            wrapped = Topology.ByOcctShape(ancestor)
+                            if wrapped is not None:
+                                result.append(wrapped)
+                        it.Next()
+                    result = _deduplicate_by_identity(result)
+                    if output is not None:
+                        output.extend(result)
+                        return 0
+                    return result
+            except Exception:
+                pass
+
+            # Exact fallback when a particular pythonocc build does not expose
+            # MapShapesAndAncestors in the expected binding form.
+            try:
+                candidates = getattr(Topology, getter_name)(hostTopology) or []
+                for candidate in candidates:
+                    candidate_shape = _shape_from_topology(candidate)
+                    if _is_null_shape(candidate_shape) or candidate_shape.IsSame(self_shape):
+                        continue
+                    contained = any(
+                        subshape.IsSame(self_shape)
+                        for subshape in _iter_occ_subshapes_unique(candidate_shape, source_type)
+                    )
+                    if contained:
+                        result.append(candidate)
+                result = _deduplicate_by_identity(result)
+                if output is not None:
+                    output.extend(result)
+                    return 0
+                return result
+            except Exception:
+                pass
+
+        # Preserve the historical fallback only for shapeless aggregate wrappers.
+        try:
             candidates = getattr(Topology, getter_name)(hostTopology) or []
             self_vertices = {vertex_key(v) for v in (Topology.Vertices(self) or []) if hasattr(v, "x")}
             for candidate in candidates:
@@ -5273,12 +5343,250 @@ class Topology:
                 candidate_vertices = {vertex_key(v) for v in (Topology.Vertices(candidate) or []) if hasattr(v, "x")}
                 if self_vertices and self_vertices.issubset(candidate_vertices):
                     result.append(candidate)
+        except Exception:
+            result = []
         result = _deduplicate_by_identity(result)
         if output is not None:
             output.extend(result)
             return 0
         return result
 
+    # -------------------------------------------------------------------
+    # Backend Audit V1: performance-critical native operations
+    # -------------------------------------------------------------------
+    @staticmethod
+    def _ImmediateSuperTypeName(topology, hostTopology):
+        t = (_topology_type_name(topology) or "").lower()
+        h = (_topology_type_name(hostTopology) or "").lower()
+        if t == "vertex" and h in ("edge", "wire", "face", "shell", "cell", "cellcomplex", "cluster"):
+            return "edge"
+        if t == "edge":
+            if h == "wire": return "wire"
+            if h in ("face", "shell", "cell", "cellcomplex", "cluster"): return "face"
+        if t == "wire" and h in ("face", "shell", "cell", "cellcomplex", "cluster"):
+            return "face"
+        if t == "face":
+            if h == "shell": return "shell"
+            if h in ("cell", "cellcomplex", "cluster"): return "cell"
+        if t == "shell" and h in ("cell", "cellcomplex", "cluster"):
+            return "cell"
+        if t == "cell" and h in ("cellcomplex", "cluster"):
+            return "cellcomplex"
+        return None
+
+    def DegreeNative(self, hostTopology):
+        super_type = Topology._ImmediateSuperTypeName(self, hostTopology)
+        if super_type is None:
+            return 0
+        return len(self.SuperTopologies(hostTopology, super_type) or [])
+
+    def OpenEdgesNative(self):
+        return [e for e in (Topology.Edges(self) or []) if e.DegreeNative(self) < 2]
+
+    def OpenFacesNative(self):
+        return [f for f in (Topology.Faces(self) or []) if f.DegreeNative(self) < 1]
+
+    def OpenVerticesNative(self):
+        return [v for v in (Topology.Vertices(self) or []) if v.DegreeNative(self) < 2]
+
+    def IsPlanarNative(self, mantissa: int = 6, tolerance: float = 0.0001):
+        vertices = Topology.Vertices(self) or []
+        if len(vertices) <= 3:
+            return True
+        points = [(round(float(v.x), int(mantissa)), round(float(v.y), int(mantissa)), round(float(v.z), int(mantissa))) for v in vertices]
+        tol = max(abs(float(tolerance)), 1.0e-15)
+        p0 = points[0]
+        p1 = None
+        for p in points[1:]:
+            dx, dy, dz = p[0]-p0[0], p[1]-p0[1], p[2]-p0[2]
+            if dx*dx + dy*dy + dz*dz > tol*tol:
+                p1 = p
+                break
+        if p1 is None:
+            return True
+        ax, ay, az = p1[0]-p0[0], p1[1]-p0[1], p1[2]-p0[2]
+        a2 = ax*ax + ay*ay + az*az
+        normal = None
+        for p in points[1:]:
+            bx, by, bz = p[0]-p0[0], p[1]-p0[1], p[2]-p0[2]
+            b2 = bx*bx + by*by + bz*bz
+            nx, ny, nz = ay*bz-az*by, az*bx-ax*bz, ax*by-ay*bx
+            n2 = nx*nx + ny*ny + nz*nz
+            if a2 > 0.0 and b2 > 0.0 and n2 > (tol*tol)*a2:
+                normal = (nx, ny, nz)
+                break
+        if normal is None:
+            return True
+        nx, ny, nz = normal
+        norm = math.sqrt(nx*nx + ny*ny + nz*nz)
+        if norm <= 0.0:
+            return True
+        nx, ny, nz = nx/norm, ny/norm, nz/norm
+        for p in points:
+            d = abs(nx*(p[0]-p0[0]) + ny*(p[1]-p0[1]) + nz*(p[2]-p0[2]))
+            if d > tol:
+                return False
+        return True
+
+    def ShortestEdgeNative(self, otherTopology, tolerance: float = 0.0001):
+        if BRepExtrema_DistShapeShape is None:
+            return False, None
+        def operand_shapes(topology):
+            shape = _shape_from_topology(topology)
+            if not _is_null_shape(shape):
+                return [shape]
+            try:
+                shapes = _collect_boolean_operand_shapes(topology) or []
+            except Exception:
+                shapes = []
+            return [s for s in shapes if not _is_null_shape(s)]
+        shapes_a, shapes_b = operand_shapes(self), operand_shapes(otherTopology)
+        if not shapes_a or not shapes_b:
+            return False, None
+        best = None
+        best_p = best_q = None
+        for sa in shapes_a:
+            for sb in shapes_b:
+                try:
+                    dss = BRepExtrema_DistShapeShape(sa, sb)
+                    if not dss.IsDone() or dss.NbSolution() < 1:
+                        continue
+                    value = float(dss.Value())
+                    if not math.isfinite(value):
+                        continue
+                    if best is None or value < best:
+                        best = value
+                        best_p = dss.PointOnShape1(1)
+                        best_q = dss.PointOnShape2(1)
+                        if value <= tolerance:
+                            return True, None
+                except Exception:
+                    continue
+        if best is None or best_p is None or best_q is None:
+            return False, None
+        if best <= tolerance:
+            return True, None
+        try:
+            from OCC.Core.BRepBuilderAPI import BRepBuilderAPI_MakeEdge
+            maker = BRepBuilderAPI_MakeEdge(best_p, best_q)
+            if not maker.IsDone():
+                return False, None
+            result = Topology.ByOcctShape(maker.Edge())
+            return (True, result) if result is not None else (False, None)
+        except Exception:
+            return False, None
+
+    def MergeAllNative(self, otherTopologies, tolerance: float = 0.0001):
+        if BOPAlgo_CellsBuilder is None:
+            return None
+        operands = [self] + list(otherTopologies or [])
+        shapes = []
+        for operand in operands:
+            try:
+                operand_shapes = _collect_boolean_operand_shapes(operand) or []
+            except Exception:
+                operand_shapes = []
+            if not operand_shapes:
+                shape = _shape_from_topology(operand)
+                if not _is_null_shape(shape):
+                    operand_shapes = [shape]
+            shapes.extend([s for s in operand_shapes if not _is_null_shape(s)])
+        if len(shapes) < 2:
+            return None
+        try:
+            builder = BOPAlgo_CellsBuilder()
+            if hasattr(builder, "SetRunParallel"):
+                try: builder.SetRunParallel(True)
+                except Exception: pass
+            for shape in shapes:
+                builder.AddArgument(shape)
+            builder.Perform()
+            if hasattr(builder, "HasErrors") and builder.HasErrors():
+                return None
+            builder.AddAllToResult()
+            result_shape = builder.Shape()
+        except Exception:
+            return None
+        if _is_null_shape(result_shape):
+            return None
+        result_shape = _postprocess_boolean_result(result_shape)
+        result_shape = _unify_same_domain(result_shape)
+        result_shape = _promote_to_compsolid_if_multi_solid(result_shape)
+        if _is_null_shape(result_shape):
+            return None
+        result = Topology.ByOcctShape(result_shape, dictionary={}, contents=[], contexts=[], apertures=[])
+        if result is None:
+            return None
+        for operand in operands:
+            try: _transfer_contents(operand, result)
+            except Exception: pass
+        return result
+
+    @staticmethod
+    def _SameAsAny(topology, candidates):
+        for candidate in candidates or []:
+            try:
+                if Topology.IsSame(topology, candidate): return True
+            except Exception:
+                pass
+        return False
+
+    @staticmethod
+    def _RebuildFromMembers(members, tolerance: float = 0.0001):
+        if len(members) < 1: return None
+        if len(members) == 1: return members[0]
+        from .cluster import Cluster
+        cluster = Cluster.ByTopologies(members)
+        if cluster is None: return None
+        try: return cluster.SelfMerge(tolerance=tolerance)
+        except TypeError:
+            try: return cluster.SelfMerge()
+            except Exception: return cluster
+        except Exception: return cluster
+
+    def RemoveFacesNative(self, faces, tolerance: float = 0.0001):
+        try:
+            all_faces = Topology.Faces(self) or []
+            if not all_faces: return True, self
+            remaining = [f for f in all_faces if not Topology._SameAsAny(f, faces)]
+            if len(remaining) == len(all_faces): return True, self
+            return True, Topology._RebuildFromMembers(remaining, tolerance)
+        except Exception:
+            return False, None
+
+    def RemoveEdgesNative(self, edges, tolerance: float = 0.0001):
+        try:
+            all_edges = Topology.Edges(self) or []
+            if not all_edges: return True, self
+            matching = [e for e in all_edges if Topology._SameAsAny(e, edges)]
+            if not matching: return True, self
+            all_faces = Topology.Faces(self) or []
+            if all_faces:
+                remove_faces = []
+                for edge in matching:
+                    remove_faces.extend(edge.SuperTopologies(self, "face") or [])
+                return self.RemoveFacesNative(_deduplicate_by_identity(remove_faces), tolerance)
+            remaining = [e for e in all_edges if not Topology._SameAsAny(e, matching)]
+            return True, Topology._RebuildFromMembers(remaining, tolerance)
+        except Exception:
+            return False, None
+
+    def RemoveVerticesNative(self, vertices, tolerance: float = 0.0001):
+        try:
+            all_vertices = Topology.Vertices(self) or []
+            if not all_vertices: return True, self
+            matching = [v for v in all_vertices if Topology._SameAsAny(v, vertices)]
+            if not matching: return True, self
+            all_edges = Topology.Edges(self) or []
+            if all_edges:
+                remove_edges = []
+                for vertex in matching:
+                    remove_edges.extend(vertex.SuperTopologies(self, "edge") or [])
+                return self.RemoveEdgesNative(_deduplicate_by_identity(remove_edges), tolerance)
+            remaining = [v for v in all_vertices if not Topology._SameAsAny(v, matching)]
+            return True, Topology._RebuildFromMembers(remaining, tolerance)
+        except Exception:
+            return False, None
     def SharedTopologies(self, otherTopology: Any, typeID: Any = None, output=None):
         type_name = None
         if isinstance(typeID, str):
