@@ -882,6 +882,125 @@ class Helper:
             reverse=True
         )[:count]
 
+
+    @staticmethod
+    def TransferDictionariesByKey(topologies, selectors, key, silent: bool = False):
+        """
+        Transfers dictionaries from selectors to matching topologies using a shared dictionary key.
+
+        Each topology in the input list is inspected for the specified dictionary key.
+        Each selector must contain a dictionary, either as a topology dictionary or as
+        the value associated with the "dictionary" key of a Python dictionary.
+
+        When the value associated with the specified key in a selector matches the
+        corresponding value in one or more topologies, the selector dictionary is
+        assigned to those topologies.
+
+        Parameters
+        ----------
+        topologies : list
+            The input list of topologies.
+        selectors : list
+            The input list of selectors. A selector can be a topology containing a
+            dictionary or a Python dictionary containing a "dictionary" entry.
+        key : str
+            The dictionary key used to match selectors to topologies.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed. Default is False.
+
+        Returns
+        -------
+        list
+            The list of topologies with transferred dictionaries.
+
+        """
+        from topologicpy.Dictionary import Dictionary
+        from topologicpy.Topology import Topology
+
+        if not isinstance(topologies, list):
+            if not silent:
+                print("Helper.TransferDictionariesByKey - Error: The input topologies parameter is not a valid list. Returning None.")
+            return None
+
+        if not isinstance(selectors, list):
+            if not silent:
+                print("Helper.TransferDictionariesByKey - Error: The input selectors parameter is not a valid list. Returning None.")
+            return None
+
+        if not isinstance(key, str) or len(key.strip()) == 0:
+            if not silent:
+                print("Helper.TransferDictionariesByKey - Error: The input key parameter is not a valid string. Returning None.")
+            return None
+
+        if len(topologies) == 0:
+            return []
+
+        result = list(topologies)
+
+        # Map each dictionary value to the indices of all matching topologies.
+        topology_map = {}
+
+        for i, topology in enumerate(result):
+            if not Topology.IsInstance(topology, "Topology"):
+                continue
+
+            try:
+                dictionary = Topology.Dictionary(topology)
+                value = Dictionary.ValueAtKey(dictionary, key, None)
+            except Exception:
+                continue
+
+            if value is None:
+                continue
+
+            # String conversion makes matching robust across equivalent scalar types
+            # and preserves the behaviour of the original implementation.
+            lookup_key = str(value)
+
+            if lookup_key not in topology_map:
+                topology_map[lookup_key] = []
+
+            topology_map[lookup_key].append(i)
+
+        # Transfer selector dictionaries to matching topologies.
+        for selector in selectors:
+            dictionary = None
+
+            if Topology.IsInstance(selector, "Topology"):
+                try:
+                    dictionary = Topology.Dictionary(selector)
+                except Exception:
+                    continue
+
+            elif isinstance(selector, dict):
+                dictionary = selector.get("dictionary", None)
+
+            if dictionary is None:
+                continue
+
+            try:
+                value = Dictionary.ValueAtKey(dictionary, key, None)
+            except Exception:
+                continue
+
+            if value is None:
+                continue
+
+            indices = topology_map.get(str(value), [])
+
+            for i in indices:
+                try:
+                    updated_topology = Topology.SetDictionary(result[i], dictionary)
+                    if updated_topology is not None:
+                        result[i] = updated_topology
+                except Exception:
+                    if not silent:
+                        print(
+                            "Helper.TransferDictionariesByKey - Warning: "
+                            f"Could not transfer a dictionary for key value '{value}'."
+                        )
+
+        return result
     @staticmethod
     def Transpose(listA):
         """

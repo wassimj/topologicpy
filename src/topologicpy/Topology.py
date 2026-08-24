@@ -24406,10 +24406,37 @@ class Topology():
         """
         Triangulates the input topology.
 
-        ``mode == 0`` uses OCCT's native ``BRepMesh_IncrementalMesh`` on the
-        PythonOCC backend. Face location transforms and reversed face
-        orientation are explicitly respected. Nonzero gmsh modes and
-        dictionary-transfer paths retain the existing implementation.
+        Parameters
+        ----------
+        topology : topologic_core.Topology
+            The input topology.
+        transferDictionaries : bool , optional
+            If set to True, the dictionaries of the faces in the input topology
+            will be transferred to the created triangular faces. Default is False.
+        mode : int , optional
+            The desired mode of meshing algorithm. Several options are available:
+            0: Classic
+            1: MeshAdapt
+            3: Initial Mesh Only
+            5: Delaunay
+            6: Frontal-Delaunay
+            7: BAMG
+            8: Frontal-Delaunay for Quads
+            9: Packing of Parallelograms
+            All options other than 0 use the gmsh library.
+        meshSize : float , optional
+            The desired mesh size when using a meshing mode. If set to None,
+            it is calculated automatically. Default is None.
+        tolerance : float , optional
+            The desired tolerance. Default is 0.0001.
+        silent : bool , optional
+            If set to True, error and warning messages are suppressed.
+            Default is False.
+
+        Returns
+        -------
+        topologic_core.Topology
+            The triangulated topology.
         """
         # Keep metadata-transfer and gmsh behavior completely unchanged.
         if transferDictionaries or mode != 0:
@@ -24450,6 +24477,19 @@ class Topology():
                 tolerance=tolerance,
                 silent=silent,
             )
+
+        # Preserve failure visibility of the public face query.
+        try:
+            topology_faces = Topology.Faces(topology, silent=True)
+        except Exception:
+            if not silent:
+                print("Topology.Triangulate - Error: The input topology has no faces. Returning None.")
+            return None
+
+        if not isinstance(topology_faces, list) or len(topology_faces) < 1:
+            if not silent:
+                print("Topology.Triangulate - Error: The input topology has no faces. Returning None.")
+            return None
 
         try:
             from topologicpy.Cell import Cell
