@@ -3230,8 +3230,253 @@ class Topology():
 
     
 
+
     @staticmethod
     def BoundingBox(topology, optimize: int = 0, axes: str = "xyz", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Returns a bounding topology for the input topology.
+
+        The PythonOCC backend uses OCCT's precise AABB implementation for
+        ``optimize == 0`` (through the preserved V2 path) and a native oriented
+        bounding box for ``optimize > 0`` when all three rotation axes are
+        enabled. Optimization levels 1-5 use OCCT's fast OBB search and levels
+        6-10 request OCCT's optimal OBB search. Axis-constrained optimization
+        retains the existing algorithm.
+
+        The returned topology preserves the established dictionary contract:
+        ``xrot``, ``yrot``, and ``zrot`` are the rotations which, when applied
+        in Z, Y, X order about the box centre, align the oriented box with the
+        world axes.
+        """
+        if (
+            Topology.IsInstance(topology, "Topology")
+            and not Topology.IsInstance(topology, "Vertex")
+            and isinstance(axes, str)
+            and isinstance(optimize, int)
+            and optimize > 0
+            and all(axis in axes.lower() for axis in "xyz")
+        ):
+            try:
+                data = Core.InstanceCall(
+                    topology,
+                    "BoundingBoxOBBNative",
+                    bool(optimize >= 6),
+                )
+
+                if isinstance(data, dict):
+                    from topologicpy.Cell import Cell
+                    from topologicpy.Dictionary import Dictionary
+                    from topologicpy.Face import Face
+                    from topologicpy.Vertex import Vertex
+
+                    center = [float(v) for v in data.get("center", [])]
+                    xdir = [float(v) for v in data.get("xdir", [])]
+                    ydir = [float(v) for v in data.get("ydir", [])]
+                    zdir = [float(v) for v in data.get("zdir", [])]
+                    half = [float(v) for v in data.get("half_sizes", [])]
+
+                    if not (
+                        len(center) == 3
+                        and len(xdir) == 3
+                        and len(ydir) == 3
+                        and len(zdir) == 3
+                        and len(half) == 3
+                    ):
+                        raise ValueError
+
+                    def _norm(v):
+                        m = sum(c * c for c in v) ** 0.5
+                        if m <= 1.0e-15:
+                            raise ValueError
+                        return [c / m for c in v]
+
+                    def _cross(a, b):
+                        return [
+                            a[1] * b[2] - a[2] * b[1],
+                            a[2] * b[0] - a[0] * b[2],
+                            a[0] * b[1] - a[1] * b[0],
+                        ]
+
+                    def _dot(a, b):
+                        return sum(a[i] * b[i] for i in range(3))
+
+                    xdir = _norm(xdir)
+                    ydir = _norm(ydir)
+                    zdir = _norm(zdir)
+
+                    # Ensure a right-handed frame. Flipping one direction does
+                    # not alter the geometric OBB because each extent is
+                    # symmetric about its centre.
+                    if _dot(_cross(xdir, ydir), zdir) < 0.0:
+                        zdir = [-v for v in zdir]
+
+                    hx, hy, hz = [abs(v) for v in half]
+                    active = [2.0 * hx > tolerance, 2.0 * hy > tolerance, 2.0 * hz > tolerance]
+                    active_count = sum(active)
+
+                    # Preserve the established fallback for line-like and
+                    # point-like cases.
+                    if active_count >= 2:
+                        cx, cy, cz = center
+
+                        u = [xdir[i] * hx for i in range(3)]
+                        v = [ydir[i] * hy for i in range(3)]
+                        w = [zdir[i] * hz for i in range(3)]
+
+                        def _point(su, sv, sw):
+                            return Vertex.ByCoordinates(
+                                cx + su * u[0] + sv * v[0] + sw * w[0],
+                                cy + su * u[1] + sv * v[1] + sw * w[1],
+                                cz + su * u[2] + sv * v[2] + sw * w[2],
+                            )
+
+                        box = None
+
+                        if active_count == 3:
+                            corners = [
+                                _point(-1, -1, -1),
+                                _point( 1, -1, -1),
+                                _point( 1,  1, -1),
+                                _point(-1,  1, -1),
+                                _point(-1, -1,  1),
+                                _point( 1, -1,  1),
+                                _point( 1,  1,  1),
+                                _point(-1,  1,  1),
+                            ]
+                            face_indices = [
+                                [0, 1, 2, 3],
+                                [4, 7, 6, 5],
+                                [0, 4, 5, 1],
+                                [1, 5, 6, 2],
+                                [2, 6, 7, 3],
+                                [3, 7, 4, 0],
+                            ]
+                            box_faces = [
+                                Face.ByVertices(
+                                    [corners[i] for i in ids],
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+                                for ids in face_indices
+                            ]
+                            box_faces = [
+                                face for face in box_faces
+                                if Topology.IsInstance(face, "Face")
+                            ]
+                            if len(box_faces) == 6:
+                                box = Cell.ByFaces(
+                                    box_faces,
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+                        else:
+                            basis = []
+                            if active[0]:
+                                basis.append(u)
+                            if active[1]:
+                                basis.append(v)
+                            if active[2]:
+                                basis.append(w)
+                            if len(basis) == 2:
+                                a, b = basis
+                                face_vertices = []
+                                for sa, sb in [(-1, -1), (1, -1), (1, 1), (-1, 1)]:
+                                    face_vertices.append(
+                                        Vertex.ByCoordinates(
+                                            cx + sa * a[0] + sb * b[0],
+                                            cy + sa * a[1] + sb * b[1],
+                                            cz + sa * a[2] + sb * b[2],
+                                        )
+                                    )
+                                box = Face.ByVertices(
+                                    face_vertices,
+                                    tolerance=tolerance,
+                                    silent=True,
+                                )
+
+                        if Topology.IsInstance(box, "Topology"):
+                            # R_align = U^T, where U has the OBB directions as
+                            # columns. Topology's documented alignment order is
+                            # Z then Y then X, therefore R = Rx * Ry * Rz.
+                            r00, r01, r02 = xdir[0], xdir[1], xdir[2]
+                            r10, r11, r12 = ydir[0], ydir[1], ydir[2]
+                            r20, r21, r22 = zdir[0], zdir[1], zdir[2]
+
+                            import math
+                            sy = max(-1.0, min(1.0, r02))
+                            yang = math.asin(sy)
+                            cy = math.cos(yang)
+
+                            if abs(cy) > 1.0e-12:
+                                xang = math.atan2(-r12, r22)
+                                zang = math.atan2(-r01, r00)
+                            else:
+                                zang = 0.0
+                                if sy >= 0.0:
+                                    xang = math.atan2(r10, r11)
+                                else:
+                                    xang = math.atan2(-r10, r11)
+
+                            xrot = math.degrees(xang)
+                            yrot = math.degrees(yang)
+                            zrot = math.degrees(zang)
+
+                            width = 2.0 * hx
+                            length = 2.0 * hy
+                            height = 2.0 * hz
+
+                            # These extrema match the legacy meaning: bounds of
+                            # the geometry after it has been aligned about the
+                            # box centre, not world AABB extrema of the returned
+                            # oriented topology.
+                            xmin, xmax = cx - hx, cx + hx
+                            ymin, ymax = cy - hy, cy + hy
+                            zmin, zmax = cz - hz, cz + hz
+
+                            dictionary = Topology.Dictionary(topology, silent=True)
+                            dictionary = Dictionary.SetValuesAtKeys(
+                                dictionary,
+                                [
+                                    "xrot", "yrot", "zrot",
+                                    "xmin", "ymin", "zmin",
+                                    "xmax", "ymax", "zmax",
+                                    "width", "length", "height",
+                                ],
+                                [
+                                    round(xrot, mantissa),
+                                    round(yrot, mantissa),
+                                    round(zrot, mantissa),
+                                    round(xmin, mantissa),
+                                    round(ymin, mantissa),
+                                    round(zmin, mantissa),
+                                    round(xmax, mantissa),
+                                    round(ymax, mantissa),
+                                    round(zmax, mantissa),
+                                    round(width, mantissa),
+                                    round(length, mantissa),
+                                    round(height, mantissa),
+                                ],
+                                silent=True,
+                            )
+                            return Topology.SetDictionary(
+                                box,
+                                dictionary,
+                                silent=True,
+                            )
+            except Exception:
+                pass
+
+        # V2 remains authoritative for AABB and for constrained-axis searches.
+        return Topology._LegacyBoundingBox_BackendV3(
+            topology,
+            optimize=optimize,
+            axes=axes,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    @staticmethod
+    def _LegacyBoundingBox_BackendV3(topology, optimize: int = 0, axes: str = "xyz", mantissa: int = 6, tolerance: float = 0.0001, silent: bool = False):
         """
         Returns a bounding topology for the input topology.
 
@@ -9966,8 +10211,94 @@ class Topology():
                                            silent=True)
         return flat_topology
     
+
     @staticmethod
     def Geometry(topology,
+                transferDictionaries: bool = False,
+                triangulate: bool = False,
+                mode : int = 0,
+                meshSize : float = None,
+                mantissa: int = 6,
+                tolerance: float = 0.0001,
+                silent: bool = False):
+        """
+        Returns the geometry of the input topology in mesh-data form.
+
+        On PythonOCC, the default dictionary-free ``mode == 0`` path uses a
+        shared native OCCT extraction engine. Faces with holes are triangulated
+        natively even when ``triangulate`` is False, preserving the established
+        Geometry contract. Dictionary-bearing and gmsh modes retain the proven
+        implementation unchanged.
+        """
+        # Metadata and non-classic gmsh modes are intentionally outside this
+        # tranche. Preserve them byte-for-byte through the V3 legacy method.
+        if transferDictionaries or mode != 0:
+            return Topology._LegacyGeometry_BackendV3(
+                topology,
+                transferDictionaries=transferDictionaries,
+                triangulate=triangulate,
+                mode=mode,
+                meshSize=meshSize,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        # Graph and TGraph have separate semantics and are not OCCT BReps.
+        try:
+            from topologicpy.TGraph import TGraph
+            if isinstance(topology, TGraph):
+                return Topology._LegacyGeometry_BackendV3(
+                    topology,
+                    transferDictionaries=transferDictionaries,
+                    triangulate=triangulate,
+                    mode=mode,
+                    meshSize=meshSize,
+                    mantissa=mantissa,
+                    tolerance=tolerance,
+                    silent=silent,
+                )
+        except Exception:
+            pass
+
+        if Topology.IsInstance(topology, "Graph"):
+            return Topology._LegacyGeometry_BackendV3(
+                topology,
+                transferDictionaries=transferDictionaries,
+                triangulate=triangulate,
+                mode=mode,
+                meshSize=meshSize,
+                mantissa=mantissa,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        if Topology.IsInstance(topology, "Topology"):
+            try:
+                result = Core.InstanceCall(
+                    topology,
+                    "GeometryNative",
+                    bool(triangulate),
+                    mantissa,
+                    tolerance,
+                )
+                if isinstance(result, dict):
+                    return result
+            except Exception:
+                pass
+
+        return Topology._LegacyGeometry_BackendV3(
+            topology,
+            transferDictionaries=transferDictionaries,
+            triangulate=triangulate,
+            mode=mode,
+            meshSize=meshSize,
+            mantissa=mantissa,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    @staticmethod
+    def _LegacyGeometry_BackendV3(topology,
                 transferDictionaries: bool = False,
                 triangulate: bool = False,
                 mode : int = 0,
@@ -12136,8 +12467,73 @@ class Topology():
         return d
 
 
+
     @staticmethod
     def MeshData(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
+        """
+        Creates mesh data from the input topology.
+
+        The PythonOCC dictionary-free path now reads the native OCCT
+        triangulation directly and builds indexed vertices, edges, triangular
+        faces, and cell-to-face connectivity without first copying,
+        triangulating, rebuilding, and re-traversing a Topologic topology.
+        Dictionary transfer and aggregate Graph/Cluster cases retain the V2
+        implementation.
+        """
+        if transferDictionaries:
+            return Topology._LegacyMeshData_BackendV3(
+                topology,
+                mode=mode,
+                transferDictionaries=transferDictionaries,
+                mantissa=mantissa,
+                silent=silent,
+            )
+
+        try:
+            from topologicpy.TGraph import TGraph
+            if isinstance(topology, TGraph):
+                return Topology._LegacyMeshData_BackendV3(
+                    topology,
+                    mode=mode,
+                    transferDictionaries=transferDictionaries,
+                    mantissa=mantissa,
+                    silent=silent,
+                )
+        except Exception:
+            pass
+
+        if Topology.IsInstance(topology, "Graph") or Topology.IsInstance(topology, "Cluster"):
+            return Topology._LegacyMeshData_BackendV3(
+                topology,
+                mode=mode,
+                transferDictionaries=transferDictionaries,
+                mantissa=mantissa,
+                silent=silent,
+            )
+
+        if Topology.IsInstance(topology, "Topology"):
+            try:
+                result = Core.InstanceCall(
+                    topology,
+                    "MeshDataFastNative",
+                    mode,
+                    mantissa,
+                    0.0001,
+                )
+                if isinstance(result, dict):
+                    return result
+            except Exception:
+                pass
+
+        return Topology._LegacyMeshData_BackendV3(
+            topology,
+            mode=mode,
+            transferDictionaries=transferDictionaries,
+            mantissa=mantissa,
+            silent=silent,
+        )
+    @staticmethod
+    def _LegacyMeshData_BackendV3(topology, mode: int = 1, transferDictionaries: bool = False, mantissa: int = 6, silent: bool = False):
         """
         Creates a mesh-data Python dictionary from the input topology.
 
@@ -24004,8 +24400,149 @@ class Topology():
 
     #     return return_topology
 
+
     @staticmethod
-    def Triangulate(
+    def Triangulate(topology, transferDictionaries: bool = False, mode: int = 0, meshSize: float = None, tolerance: float = 0.0001, silent: bool = False):
+        """
+        Triangulates the input topology.
+
+        ``mode == 0`` uses OCCT's native ``BRepMesh_IncrementalMesh`` on the
+        PythonOCC backend. Face location transforms and reversed face
+        orientation are explicitly respected. Nonzero gmsh modes and
+        dictionary-transfer paths retain the existing implementation.
+        """
+        # Keep metadata-transfer and gmsh behavior completely unchanged.
+        if transferDictionaries or mode != 0:
+            return Topology._LegacyTriangulate_BackendV3(
+                topology,
+                transferDictionaries=transferDictionaries,
+                mode=mode,
+                meshSize=meshSize,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        if not Topology.IsInstance(topology, "Topology"):
+            return Topology._LegacyTriangulate_BackendV3(
+                topology,
+                transferDictionaries=transferDictionaries,
+                mode=mode,
+                meshSize=meshSize,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        t = Topology.Type(topology)
+
+        # Preserve diagnostics/identity behavior and let the legacy Cluster
+        # branch recurse into this optimized method for its face-bearing parts.
+        if t in [
+            Topology.TypeID("Vertex"),
+            Topology.TypeID("Edge"),
+            Topology.TypeID("Wire"),
+            Topology.TypeID("Cluster"),
+        ]:
+            return Topology._LegacyTriangulate_BackendV3(
+                topology,
+                transferDictionaries=transferDictionaries,
+                mode=mode,
+                meshSize=meshSize,
+                tolerance=tolerance,
+                silent=silent,
+            )
+
+        try:
+            from topologicpy.Cell import Cell
+            from topologicpy.CellComplex import CellComplex
+            from topologicpy.Cluster import Cluster
+            from topologicpy.Face import Face
+            from topologicpy.Shell import Shell
+            from topologicpy.Vertex import Vertex
+
+            data = Core.InstanceCall(
+                topology,
+                "TriangulateDataNative",
+                tolerance,
+            )
+
+            if not isinstance(data, list) or len(data) < 1:
+                raise ValueError
+
+            face_triangles = []
+
+            for record in data:
+                if not isinstance(record, dict):
+                    raise ValueError
+
+                source_face = record.get("source_face", None)
+                keep_source = bool(record.get("keep_source", False))
+
+                if keep_source:
+                    if not Topology.IsInstance(source_face, "Face"):
+                        raise ValueError
+                    face_triangles.append(source_face)
+                    continue
+
+                triangles = record.get("triangles", [])
+                if not isinstance(triangles, list) or len(triangles) < 1:
+                    raise ValueError
+
+                for triangle in triangles:
+                    if not isinstance(triangle, (list, tuple)) or len(triangle) != 3:
+                        raise ValueError
+                    vertices = []
+                    for coords in triangle:
+                        if not isinstance(coords, (list, tuple)) or len(coords) != 3:
+                            raise ValueError
+                        vertices.append(
+                            Vertex.ByCoordinates(
+                                float(coords[0]),
+                                float(coords[1]),
+                                float(coords[2]),
+                            )
+                        )
+                    tri_face = Face.ByVertices(
+                        vertices,
+                        tolerance=tolerance,
+                        silent=True,
+                    )
+                    if not Topology.IsInstance(tri_face, "Face"):
+                        raise ValueError
+                    face_triangles.append(tri_face)
+
+            if len(face_triangles) < 1:
+                raise ValueError
+
+            result = None
+            if t in [Topology.TypeID("Face"), Topology.TypeID("Shell")]:
+                result = Shell.ByFaces(face_triangles, tolerance=tolerance)
+            elif t == Topology.TypeID("Cell"):
+                result = Cell.ByFaces(face_triangles, tolerance=tolerance)
+            elif t == Topology.TypeID("CellComplex"):
+                result = CellComplex.ByFaces(face_triangles, tolerance=tolerance)
+
+            if result is None:
+                result = Topology.SelfMerge(
+                    Cluster.ByTopologies(face_triangles),
+                    tolerance=tolerance,
+                )
+
+            if Topology.IsInstance(result, "Topology"):
+                return result
+
+        except Exception:
+            pass
+
+        return Topology._LegacyTriangulate_BackendV3(
+            topology,
+            transferDictionaries=transferDictionaries,
+            mode=mode,
+            meshSize=meshSize,
+            tolerance=tolerance,
+            silent=silent,
+        )
+    @staticmethod
+    def _LegacyTriangulate_BackendV3(
         topology,
         transferDictionaries: bool = False,
         mode: int = 0,

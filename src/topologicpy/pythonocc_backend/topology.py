@@ -5882,6 +5882,582 @@ class Topology:
         except Exception:
             return False, None
 
+
+    # -------------------------------------------------------------------
+    # Backend Audit V3: native mesh / geometry / OBB extraction
+    # -------------------------------------------------------------------
+
+    def BoundingBoxOBBNative(self, optimal: bool = True):
+        """Returns native OCCT oriented-bounding-box data."""
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return None
+
+        try:
+            from OCC.Core.Bnd import Bnd_OBB
+            from OCC.Core.BRepBndLib import brepbndlib
+
+            obb = Bnd_OBB()
+            brepbndlib.AddOBB(
+                shape,
+                obb,
+                True,          # use triangulation when available
+                bool(optimal), # search tighter candidate axes
+                False,         # do not inflate by BRep tolerances
+            )
+
+            if obb.IsVoid():
+                return None
+
+            center = obb.Center()
+            xd = obb.XDirection()
+            yd = obb.YDirection()
+            zd = obb.ZDirection()
+
+            return {
+                "center": [float(center.X()), float(center.Y()), float(center.Z())],
+                "xdir": [float(xd.X()), float(xd.Y()), float(xd.Z())],
+                "ydir": [float(yd.X()), float(yd.Y()), float(yd.Z())],
+                "zdir": [float(zd.X()), float(zd.Y()), float(zd.Z())],
+                "half_sizes": [
+                    abs(float(obb.XHSize())),
+                    abs(float(obb.YHSize())),
+                    abs(float(obb.ZHSize())),
+                ],
+            }
+        except Exception:
+            return None
+
+    @staticmethod
+    def _MeshDeflectionNative(shape, tolerance: float = 0.0001):
+        """Derives a scale-aware OCCT meshing deflection."""
+        tol = max(abs(float(tolerance)), 1.0e-9)
+        try:
+            from OCC.Core.Bnd import Bnd_Box
+            from OCC.Core.BRepBndLib import brepbndlib
+
+            bbox = Bnd_Box()
+            brepbndlib.AddOptimal(shape, bbox, True, False)
+            if not bbox.IsVoid():
+                xmin, ymin, zmin, xmax, ymax, zmax = bbox.Get()
+                dx = float(xmax) - float(xmin)
+                dy = float(ymax) - float(ymin)
+                dz = float(zmax) - float(zmin)
+                diagonal = math.sqrt(dx * dx + dy * dy + dz * dz)
+                if math.isfinite(diagonal) and diagonal > tol:
+                    # 0.5% of the model diagonal is a practical CAD tessellation
+                    # default: sufficiently fine for geometric export without
+                    # creating pathological triangle counts on curved surfaces.
+                    return max(tol, diagonal * 0.005)
+        except Exception:
+            pass
+        return tol
+
+    @staticmethod
+    def _TriangulationForFaceNative(face_shape):
+        """Returns ``(triangulation, location)`` for an OCCT face."""
+        try:
+            from OCC.Core.BRep import BRep_Tool
+            from OCC.Core.TopLoc import TopLoc_Location
+
+            face_shape = topods_Face(face_shape)
+            location = TopLoc_Location()
+            triangulation = BRep_Tool.Triangulation(face_shape, location)
+
+            if triangulation is None:
+                return None, None
+            if hasattr(triangulation, "IsNull") and triangulation.IsNull():
+                return None, None
+
+            # pythonocc issue #1444 documents versions where the output
+            # TopLoc_Location passed to BRep_Tool.Triangulation is not updated
+            # correctly. A face's own Location is the safe fallback for normal
+            # BRep placement transforms.
+            try:
+                face_location = face_shape.Location()
+                if (
+                    hasattr(location, "IsIdentity")
+                    and location.IsIdentity()
+                    and hasattr(face_location, "IsIdentity")
+                    and not face_location.IsIdentity()
+                ):
+                    location = face_location
+            except Exception:
+                pass
+
+            return triangulation, location
+        except Exception:
+            return None, None
+
+    @staticmethod
+    def _TriangleCoordinatesNative(face_shape, tolerance: float = 0.0001):
+        """Extracts correctly located/oriented triangle coordinates."""
+        try:
+            from OCC.Core.TopAbs import TopAbs_REVERSED
+
+            triangulation, location = Topology._TriangulationForFaceNative(face_shape)
+            if triangulation is None:
+                return None
+
+            transform = None
+            try:
+                if location is not None and not location.IsIdentity():
+                    transform = location.Transformation()
+            except Exception:
+                transform = None
+
+            reversed_face = (face_shape.Orientation() == TopAbs_REVERSED)
+            tol2 = max(abs(float(tolerance)), 1.0e-12) ** 2
+            result = []
+
+            def point_xyz(index):
+                point = triangulation.Node(int(index))
+                if transform is not None:
+                    try:
+                        point = point.Transformed(transform)
+                    except Exception:
+                        point.Transform(transform)
+                return [float(point.X()), float(point.Y()), float(point.Z())]
+
+            for i in range(1, int(triangulation.NbTriangles()) + 1):
+                triangle = triangulation.Triangle(i)
+                n1, n2, n3 = triangle.Get()
+                if reversed_face:
+                    n2, n3 = n3, n2
+
+                p1 = point_xyz(n1)
+                p2 = point_xyz(n2)
+                p3 = point_xyz(n3)
+
+                ax = p2[0] - p1[0]
+                ay = p2[1] - p1[1]
+                az = p2[2] - p1[2]
+                bx = p3[0] - p1[0]
+                by = p3[1] - p1[1]
+                bz = p3[2] - p1[2]
+                cx = ay * bz - az * by
+                cy = az * bx - ax * bz
+                cz = ax * by - ay * bx
+                area_measure2 = cx * cx + cy * cy + cz * cz
+
+                if area_measure2 <= tol2 * tol2:
+                    continue
+
+                result.append([p1, p2, p3])
+
+            return result
+        except Exception:
+            return None
+
+    def _GeometryDataNative(self, triangulate_faces: bool = False, mesh_all_faces: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Shared extraction engine used by Geometry, MeshData, and Triangulate.
+
+        It preserves Geometry's historic tolerance-aware coordinate merging but
+        replaces the O(n^2) scan with a spatial hash. When faces must be
+        triangulated, the entire BRep is meshed once in OCCT.
+        """
+        shape = _shape_from_topology(self)
+        if _is_null_shape(shape):
+            return None
+
+        type_name = _topology_type_name(self)
+        if type_name == "Cluster":
+            return None
+
+        try:
+            from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+            from OCC.Core.BRepTools import BRepTools_WireExplorer, breptools
+            from OCC.Core.TopTools import TopTools_IndexedMapOfShape
+
+            precision = max(0, int(mantissa))
+            threshold = max(
+                1.0e-4,
+                10.0 ** (-(max(precision, 3) - 1)),
+            )
+            inv_threshold = 1.0 / threshold
+
+            coordinates = []
+            buckets = {}
+
+            def bucket_key(coords):
+                return tuple(
+                    int(math.floor(float(value) * inv_threshold))
+                    for value in coords
+                )
+
+            def add_coordinate(coords):
+                c = [round(float(value), precision) for value in coords]
+                key = bucket_key(c)
+
+                for dx in (-1, 0, 1):
+                    for dy in (-1, 0, 1):
+                        for dz in (-1, 0, 1):
+                            neighbor = (key[0] + dx, key[1] + dy, key[2] + dz)
+                            for index in buckets.get(neighbor, []):
+                                existing = coordinates[index]
+                                if (
+                                    abs(existing[0] - c[0]) <= threshold
+                                    and abs(existing[1] - c[1]) <= threshold
+                                    and abs(existing[2] - c[2]) <= threshold
+                                ):
+                                    return index
+
+                index = len(coordinates)
+                coordinates.append(c)
+                buckets.setdefault(key, []).append(index)
+                return index
+
+            def wrapper_coords(vertex):
+                return [float(vertex.x), float(vertex.y), float(vertex.z)]
+
+            source_vertices = (
+                [self]
+                if type_name == "Vertex"
+                else (Topology.Vertices(self) or [])
+            )
+            source_edges = (
+                [self]
+                if type_name == "Edge"
+                else (Topology.Edges(self) or [])
+            )
+            source_faces = (
+                [self]
+                if type_name == "Face"
+                else (Topology.Faces(self) or [])
+            )
+            source_cells = (
+                [self]
+                if type_name == "Cell"
+                else (Topology.Cells(self) or [])
+            )
+
+            for vertex in source_vertices:
+                add_coordinate(wrapper_coords(vertex))
+
+            base_vertex_count = len(coordinates)
+
+            original_edges = []
+            for edge in source_edges:
+                edge_vertices = Topology.Vertices(edge) or []
+                if len(edge_vertices) < 2:
+                    continue
+                i0 = add_coordinate(wrapper_coords(edge_vertices[0]))
+                i1 = add_coordinate(wrapper_coords(edge_vertices[-1]))
+                original_edges.append([i0, i1])
+
+            face_should_mesh = []
+            requires_mesh = False
+            for face in source_faces:
+                face_vertices = Topology.Vertices(face) or []
+                face_wires = Topology.Wires(face) or []
+                has_holes = len(face_wires) > 1
+                # Geometry(triangulate=True) historically delegates every
+                # face to Face.Triangulate, including curved faces with very
+                # few topological vertices. Topology.Triangulate, by contrast,
+                # only triangulates faces containing more than three vertices.
+                # Keep both semantics while sharing one extraction engine.
+                should_mesh = (
+                    has_holes
+                    or (
+                        bool(triangulate_faces)
+                        and (bool(mesh_all_faces) or len(face_vertices) > 3)
+                    )
+                )
+                face_should_mesh.append(should_mesh)
+                requires_mesh = requires_mesh or should_mesh
+
+            if requires_mesh:
+                linear_deflection = Topology._MeshDeflectionNative(shape, tolerance)
+                mesher = BRepMesh_IncrementalMesh(
+                    shape,
+                    float(linear_deflection),
+                    False,
+                    0.5,
+                    True,
+                )
+                try:
+                    mesher.Perform()
+                except Exception:
+                    pass
+                if hasattr(mesher, "IsDone") and not mesher.IsDone():
+                    return None
+
+            output_faces = []
+            face_sources = []
+
+            for source_index, face in enumerate(source_faces):
+                face_shape = _shape_from_topology(face)
+                if _is_null_shape(face_shape):
+                    return None
+
+                if face_should_mesh[source_index]:
+                    triangles = Topology._TriangleCoordinatesNative(
+                        face_shape,
+                        tolerance=tolerance,
+                    )
+                    if not triangles:
+                        return None
+                    for triangle in triangles:
+                        indices = [add_coordinate(point) for point in triangle]
+                        if len(set(indices)) == 3:
+                            output_faces.append(indices)
+                            face_sources.append(source_index)
+                    continue
+
+                # Preserve an existing triangular face unchanged and preserve
+                # Geometry's non-triangulated polygon behavior using the
+                # ordered outer boundary.
+                try:
+                    outer_wire = breptools.OuterWire(topods_Face(face_shape))
+                    explorer = BRepTools_WireExplorer(outer_wire)
+                    indices = []
+                    while explorer.More():
+                        vertex_shape = explorer.CurrentVertex()
+                        vertex = Topology.ByOcctShape(vertex_shape)
+                        if vertex is None or not hasattr(vertex, "x"):
+                            return None
+                        index = add_coordinate(wrapper_coords(vertex))
+                        if not indices or indices[-1] != index:
+                            indices.append(index)
+                        explorer.Next()
+
+                    if len(indices) > 1 and indices[0] == indices[-1]:
+                        indices.pop()
+
+                    if len(indices) >= 3:
+                        output_faces.append(indices)
+                        face_sources.append(source_index)
+                    else:
+                        return None
+                except Exception:
+                    return None
+
+            # Build a native source-face map once so cell connectivity can be
+            # expressed in terms of source-face indices. Map semantics use
+            # OCCT shape identity (orientation-insensitive IsSame behavior).
+            source_face_map = TopTools_IndexedMapOfShape()
+            for face in source_faces:
+                face_shape = _shape_from_topology(face)
+                if _is_null_shape(face_shape):
+                    return None
+                source_face_map.Add(face_shape)
+
+            source_cell_faces = []
+            for cell in source_cells:
+                indices = []
+                for face in Topology.Faces(cell) or []:
+                    face_shape = _shape_from_topology(face)
+                    if _is_null_shape(face_shape):
+                        continue
+                    source_index = int(source_face_map.FindIndex(face_shape))
+                    if source_index > 0:
+                        indices.append(source_index - 1)
+                source_cell_faces.append(indices)
+
+            return {
+                "vertices": coordinates,
+                "original_edges": original_edges,
+                "faces": output_faces,
+                "face_sources": face_sources,
+                "source_faces": source_faces,
+                "source_cell_faces": source_cell_faces,
+                "base_vertex_count": base_vertex_count,
+            }
+
+        except Exception:
+            return None
+
+    def GeometryNative(self, triangulate: bool = False, mantissa: int = 6, tolerance: float = 0.0001):
+        """Dictionary-free native implementation of Topology.Geometry."""
+        data = self._GeometryDataNative(
+            triangulate_faces=bool(triangulate),
+            mesh_all_faces=True,
+            mantissa=mantissa,
+            tolerance=tolerance,
+        )
+        if not isinstance(data, dict):
+            return None
+
+        base_vertex_count = int(data.get("base_vertex_count", 0))
+        return {
+            "vertices": data.get("vertices", []),
+            "edges": data.get("original_edges", []),
+            "faces": data.get("faces", []),
+            # Preserve the current dictionary-free Geometry shape: the
+            # topology path historically appends empty dictionaries for the
+            # original vertices only, while edge/face lists remain empty.
+            "vertex_dicts": [{} for _ in range(base_vertex_count)],
+            "edge_dicts": [],
+            "face_dicts": [],
+        }
+
+    def TriangulateDataNative(self, tolerance: float = 0.0001):
+        """Returns triangle coordinates grouped by source face."""
+        data = self._GeometryDataNative(
+            triangulate_faces=True,
+            mesh_all_faces=False,
+            mantissa=12,
+            tolerance=tolerance,
+        )
+        if not isinstance(data, dict):
+            return None
+
+        source_faces = data.get("source_faces", [])
+        faces = data.get("faces", [])
+        sources = data.get("face_sources", [])
+        vertices = data.get("vertices", [])
+
+        if len(faces) != len(sources):
+            return None
+
+        records = [
+            {
+                "source_face": source_face,
+                "keep_source": False,
+                "triangles": [],
+            }
+            for source_face in source_faces
+        ]
+
+        source_vertex_counts = [
+            len(Topology.Vertices(face) or [])
+            for face in source_faces
+        ]
+        source_wire_counts = [
+            len(Topology.Wires(face) or [])
+            for face in source_faces
+        ]
+
+        for source_index, count in enumerate(source_vertex_counts):
+            if count == 3 and source_wire_counts[source_index] <= 1:
+                records[source_index]["keep_source"] = True
+
+        for face_indices, source_index in zip(faces, sources):
+            source_index = int(source_index)
+            if records[source_index]["keep_source"]:
+                continue
+            if len(face_indices) != 3:
+                return None
+            records[source_index]["triangles"].append(
+                [vertices[int(index)] for index in face_indices]
+            )
+
+        for record in records:
+            if not record["keep_source"] and not record["triangles"]:
+                return None
+
+        return records
+
+    def MeshDataFastNative(self, mode: int = 1, mantissa: int = 6, tolerance: float = 0.0001):
+        """
+        Creates MeshData directly from native triangulation when doing so does
+        not alter the established dictionary output.
+
+        The historical MeshData method reports existing dictionaries even when
+        ``transferDictionaries`` is False; that flag controls dictionary
+        transfer to newly triangulated entities, not whether dictionaries are
+        returned. If any exported source vertex/edge/face/cell already carries
+        a dictionary, return None so the public method uses the preserved V2
+        implementation.
+        """
+        try:
+            type_name = _topology_type_name(self)
+            dictionary_items = []
+            dictionary_items.extend(
+                [self] if type_name == "Vertex" else (Topology.Vertices(self) or [])
+            )
+            dictionary_items.extend(
+                [self] if type_name == "Edge" else (Topology.Edges(self) or [])
+            )
+            dictionary_items.extend(
+                [self] if type_name == "Face" else (Topology.Faces(self) or [])
+            )
+            dictionary_items.extend(
+                [self] if type_name == "Cell" else (Topology.Cells(self) or [])
+            )
+
+            for item in dictionary_items:
+                dictionary = Topology.GetDictionary(item)
+                if isinstance(dictionary, dict) and len(dictionary) > 0:
+                    return None
+        except Exception:
+            # If dictionary state cannot be established reliably, prefer the
+            # proven implementation rather than risk dropping metadata.
+            return None
+
+        # MeshData historically calls Topology.Triangulate first, whose
+        # classic behavior only triangulates faces with >3 vertices.
+        data = self._GeometryDataNative(
+            triangulate_faces=True,
+            mesh_all_faces=False,
+            mantissa=mantissa,
+            tolerance=tolerance,
+        )
+        if not isinstance(data, dict):
+            return None
+
+        vertices = list(data.get("vertices", []))
+        faces_by_vertex = [list(face) for face in data.get("faces", [])]
+        face_sources = list(data.get("face_sources", []))
+        source_cell_faces = list(data.get("source_cell_faces", []))
+
+        if faces_by_vertex:
+            edge_lookup = {}
+            edges = []
+            faces_by_edge = []
+
+            for face in faces_by_vertex:
+                if len(face) < 3:
+                    return None
+                face_edge_indices = []
+                for i in range(len(face)):
+                    a = int(face[i])
+                    b = int(face[(i + 1) % len(face)])
+                    if a == b:
+                        return None
+                    key = (a, b) if a < b else (b, a)
+                    edge_index = edge_lookup.get(key)
+                    if edge_index is None:
+                        edge_index = len(edges)
+                        edge_lookup[key] = edge_index
+                        edges.append([a, b])
+                    face_edge_indices.append(edge_index)
+                faces_by_edge.append(face_edge_indices)
+        else:
+            edges = [list(edge) for edge in data.get("original_edges", [])]
+            faces_by_edge = []
+
+        source_to_output = {}
+        for output_index, source_index in enumerate(face_sources):
+            source_to_output.setdefault(int(source_index), []).append(output_index)
+
+        cells = []
+        for source_face_indices in source_cell_faces:
+            output_indices = []
+            seen = set()
+            for source_index in source_face_indices:
+                for output_index in source_to_output.get(int(source_index), []):
+                    if output_index not in seen:
+                        seen.add(output_index)
+                        output_indices.append(output_index)
+            cells.append(output_indices)
+
+        # Preserve legacy semantics exactly: only the integer value 1 selects
+        # edge-indexed faces. All other values select vertex-indexed faces.
+        faces = faces_by_edge if mode == 1 else faces_by_vertex
+
+        return {
+            "mode": mode,
+            "vertices": vertices,
+            "edges": edges,
+            "faces": faces,
+            "cells": cells,
+            "vertex_dicts": [{} for _ in vertices],
+            "edge_dicts": [{} for _ in edges],
+            "face_dicts": [{} for _ in faces],
+            "cell_dicts": [{} for _ in cells],
+        }
     def BoundingBoxNative(self, mantissa: int = 6):
         """
         Returns the precise native axis-aligned bounds:
